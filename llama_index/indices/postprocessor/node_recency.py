@@ -155,7 +155,8 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         embed_model = self.service_context.embed_model
         for node in sorted_nodes:
             embed_model.queue_text_for_embedding(
-                node.node.get_doc_id(), node.node.get_content(metadata_mode=MetadataMode.EMBED)
+                node.node.get_doc_id(),
+                node.node.get_content(metadata_mode=MetadataMode.EMBED),
             )
 
         _, text_embeddings = embed_model.get_queued_text_embeddings()

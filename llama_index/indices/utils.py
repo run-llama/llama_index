@@ -75,7 +75,10 @@ def default_format_node_batch_fn(
     fmt_node_txts = []
     for idx in range(len(summary_nodes)):
         number = idx + 1
-        fmt_node_txts.append(f"Document {number}:\n{summary_nodes[idx].get_content(metadata_mode=MetadataMode.LLM)}")
+        fmt_node_txts.append(
+            f"Document {number}:\n"
+            f"{summary_nodes[idx].get_content(metadata_mode=MetadataMode.LLM)}"
+        )
     return "\n\n".join(fmt_node_txts)
 
 

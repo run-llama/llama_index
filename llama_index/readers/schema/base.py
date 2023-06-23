@@ -13,6 +13,8 @@ class Document(TextNode):
 
     """
 
+    _compat_fields = {"doc_id": "id_"}
+
     @classmethod
     def get_type(cls) -> str:
         """Get Document type."""
@@ -21,11 +23,12 @@ class Document(TextNode):
     @property
     def doc_id(self) -> str:
         """Get document ID."""
-        return self.node_id
+        return self.id_
 
-    @doc_id.setter
-    def doc_id(self, value: str) -> None:
-        self._id = value
+    def __setattr__(self, name: str, value: object) -> None:
+        if name in self._compat_fields:
+            name = self._compat_fields[name]
+        super().__setattr__(name, value)
 
     def to_langchain_format(self) -> LCDocument:
         """Convert struct to LangChain document format."""

@@ -87,7 +87,7 @@ class QdrantVectorStore(VectorStore):
                 vectors.append(result.embedding)
                 node = result.node
 
-                metadata = node_to_metadata_dict(node)
+                metadata = node_to_metadata_dict(node, remove_text=False)
 
                 payloads.append(metadata)
 

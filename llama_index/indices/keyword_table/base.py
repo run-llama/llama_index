@@ -122,7 +122,9 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     ) -> None:
         """Add document to index."""
         for n in nodes:
-            keywords = self._extract_keywords(n.get_content(metadata_mode=MetadataMode.LLM))
+            keywords = self._extract_keywords(
+                n.get_content(metadata_mode=MetadataMode.LLM)
+            )
             index_struct.add_node(list(keywords), n)
 
     async def _async_add_nodes_to_index(
@@ -130,7 +132,9 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     ) -> None:
         """Add document to index."""
         for n in nodes:
-            keywords = await self._async_extract_keywords(n.get_content(metadata_mode=MetadataMode.LLM))
+            keywords = await self._async_extract_keywords(
+                n.get_content(metadata_mode=MetadataMode.LLM)
+            )
             index_struct.add_node(list(keywords), n)
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> KeywordTable:
@@ -148,7 +152,9 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes."""
         for n in nodes:
-            keywords = self._extract_keywords(n.get_content(metadata_mode=MetadataMode.LLM))
+            keywords = self._extract_keywords(
+                n.get_content(metadata_mode=MetadataMode.LLM)
+            )
             self._index_struct.add_node(list(keywords), n)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:

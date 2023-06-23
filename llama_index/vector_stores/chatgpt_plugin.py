@@ -7,7 +7,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from tqdm.auto import tqdm
 
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -25,7 +25,7 @@ def convert_docs_to_json(embedding_results: List[NodeWithEmbedding]) -> List[Dic
         # https://rb.gy/nmac9u
         doc_dict = {
             "id": embedding_result.id,
-            "text": embedding_result.node.get_content(),
+            "text": embedding_result.node.get_content(metadata_mode=MetadataMode.NONE),
             # NOTE: this is the doc_id to reference document
             "source_id": embedding_result.ref_doc_id,
             # "url": "...",

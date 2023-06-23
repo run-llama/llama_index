@@ -25,7 +25,7 @@ from llama_index.schema import (
     NodeWithScore,
     RelatedNodeInfo,
     TextNode,
-    MetadataMode
+    MetadataMode,
 )
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
@@ -206,14 +206,32 @@ def test_fixed_recency_postprocessor(
 
     # try in extra_info
     nodes = [
-        TextNode(text="Hello world.", id_="1", metadata={"date": "2020-01-01"}),
-        TextNode(text="This is a test.", id_="2", metadata={"date": "2020-01-02"}),
         TextNode(
-            text="This is another test.", id_="3", metadata={"date": "2020-01-03"}
+            text="Hello world.",
+            id_="1",
+            metadata={"date": "2020-01-01"},
+            metadata_keys_to_exclude_for_embed=["date"],
         ),
-        TextNode(text="This is a test v2.", id_="4", metadata={"date": "2020-01-04"}),
+        TextNode(
+            text="This is a test.",
+            id_="2",
+            metadata={"date": "2020-01-02"},
+            metadata_keys_to_exclude_for_embed=["date"],
+        ),
+        TextNode(
+            text="This is another test.",
+            id_="3",
+            metadata={"date": "2020-01-03"},
+            metadata_keys_to_exclude_for_embed=["date"],
+        ),
+        TextNode(
+            text="This is a test v2.",
+            id_="4",
+            metadata={"date": "2020-01-04"},
+            metadata_keys_to_exclude_for_embed=["date"],
+        ),
     ]
-    node_with_scores = [NodeWithScore(Node=node) for node in nodes]
+    node_with_scores = [NodeWithScore(node=node) for node in nodes]
 
     service_context = ServiceContext.from_defaults()
 
@@ -223,7 +241,10 @@ def test_fixed_recency_postprocessor(
         node_with_scores, query_bundle=query_bundle
     )
     assert len(result_nodes) == 1
-    assert result_nodes[0].node.get_content() == "date: 2020-01-04\n\nThis is a test v2."    
+    assert (
+        result_nodes[0].node.get_content(metadata_mode=MetadataMode.ALL)
+        == "date: 2020-01-04\n\nThis is a test v2."
+    )
 
 
 @patch.object(LLMPredictor, "predict", side_effect=mock_recency_predict)
@@ -248,15 +269,36 @@ def test_embedding_recency_postprocessor(
 
     # try in node info
     nodes = [
-        TextNode(text="Hello world.", id_="1", metadata={"date": "2020-01-01"}),
-        TextNode(text="This is a test.", id_="2", metadata={"date": "2020-01-02"}),
         TextNode(
-            text="This is another test.", id_="3", metadata={"date": "2020-01-02"}
+            text="Hello world.",
+            id_="1",
+            metadata={"date": "2020-01-01"},
+            metadata_keys_to_exclude_for_embed=["date"],
         ),
         TextNode(
-            text="This is another test.", id_="3v2", metadata={"date": "2020-01-03"}
+            text="This is a test.",
+            id_="2",
+            metadata={"date": "2020-01-02"},
+            metadata_keys_to_exclude_for_embed=["date"],
         ),
-        TextNode(text="This is a test v2.", id_="4", metadata={"date": "2020-01-04"}),
+        TextNode(
+            text="This is another test.",
+            id_="3",
+            metadata={"date": "2020-01-02"},
+            metadata_keys_to_exclude_for_embed=["date"],
+        ),
+        TextNode(
+            text="This is another test.",
+            id_="3v2",
+            metadata={"date": "2020-01-03"},
+            metadata_keys_to_exclude_for_embed=["date"],
+        ),
+        TextNode(
+            text="This is a test v2.",
+            id_="4",
+            metadata={"date": "2020-01-04"},
+            metadata_keys_to_exclude_for_embed=["date"],
+        ),
     ]
     nodes_with_scores = [NodeWithScore(node=node) for node in nodes]
     service_context = ServiceContext.from_defaults()

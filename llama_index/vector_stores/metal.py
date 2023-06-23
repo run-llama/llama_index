@@ -1,7 +1,7 @@
 import math
 from typing import Any, List
 
-from llama_index.schema import TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -126,7 +126,9 @@ class MetalVectorStore(VectorStore):
             ids.append(result.id)
 
             metadata = {}
-            metadata["text"] = result.node.get_content() or ""
+            metadata["text"] = (
+                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+            )
 
             additional_metadata = node_to_metadata_dict(result.node, remove_text=True)
             metadata.update(additional_metadata)

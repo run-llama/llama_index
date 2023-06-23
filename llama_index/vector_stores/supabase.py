@@ -14,6 +14,7 @@ from llama_index.vector_stores.types import (
 from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
 )
 
 logger = logging.getLogger(__name__)
@@ -146,7 +147,9 @@ class SupabaseVectorStore(VectorStore):
                 node = metadata_dict_to_node(metadata)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = metadata_dict_to_node(metadata)
+                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
                 node = TextNode(
                     id_=id_,
                     text=text,

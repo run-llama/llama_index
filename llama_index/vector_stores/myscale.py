@@ -13,7 +13,7 @@ from llama_index.readers.myscale import (
     escape_str,
     format_list_to_string,
 )
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
@@ -102,7 +102,9 @@ class MyScaleVectorStore(VectorStore):
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
                 "type": "String",
-                "extract_func": lambda x: escape_str(x.node.get_content() or ""),
+                "extract_func": lambda x: escape_str(
+                    x.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+                ),
             },
             "vector": {
                 "type": "Array(Float32)",

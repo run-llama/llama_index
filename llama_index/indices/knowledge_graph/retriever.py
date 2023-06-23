@@ -152,7 +152,9 @@ class KGTableRetriever(BaseRetriever):
                         # node-keywords extraction with LLM will be called only once
                         # during indexing.
                         extended_subjs = self._get_keywords(
-                            self._docstore.get_node(node_id).get_content(metadata_mode=MetadataMode.LLM)
+                            self._docstore.get_node(node_id).get_content(
+                                metadata_mode=MetadataMode.LLM
+                            )
                         )
                         subjs.update(extended_subjs)
 
@@ -264,7 +266,12 @@ class KGTableRetriever(BaseRetriever):
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
         }
-        rel_text_node = TextNode(text="\n".join(rel_info), metadata=rel_node_info)
+        rel_text_node = TextNode(
+            text="\n".join(rel_info),
+            metadata=rel_node_info,
+            metadata_keys_to_exclude_for_embed=["kg_rel_map", "kg_rel_texts"],
+            metadata_keys_to_exclude_for_llm=["kg_rel_map", "kg_rel_texts"],
+        )
         # this node is constructed from rel_texts, give high confidence to avoid cutoff
         sorted_nodes_with_scores.append(
             NodeWithScore(node=rel_text_node, score=DEFAULT_NODE_SCORE)
