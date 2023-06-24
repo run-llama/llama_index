@@ -9,12 +9,8 @@ LLMType = Union[LLM, BaseLanguageModel]
 
 
 def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
-    if llm is None:
-        return OpenAI()
-
     if isinstance(llm, BaseLanguageModel):
+        # NOTE: if it's a langchain model, wrap it in a LangChainLLM
         return LangChainLLM(llm=llm)
-    elif isinstance(llm, LLM):
-        return llm
-    else:
-        raise ValueError(f"Invalid LLM type: {type(llm)}")
+    
+    return llm or OpenAI()
