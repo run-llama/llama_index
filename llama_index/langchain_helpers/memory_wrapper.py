@@ -2,10 +2,13 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema import AIMessage
-from langchain.schema import BaseMemory as Memory
-from langchain.schema import BaseMessage, HumanMessage
+from llama_index.bridge.langchain import (
+    BaseChatMemory,
+    AIMessage,
+    BaseMemory as Memory,
+    BaseMessage,
+    HumanMessage,
+)
 from pydantic import Field
 
 from llama_index.indices.base import BaseIndex

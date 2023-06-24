@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from langchain.output_parsers import PydanticOutputParser
+from llama_index.bridge.langchain import PydanticOutputParser
 from pydantic import BaseModel, Field
 
 from llama_index.evaluation.base import BaseEvaluator, Evaluation

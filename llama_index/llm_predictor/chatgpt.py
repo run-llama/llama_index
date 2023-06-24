@@ -4,16 +4,17 @@ import logging
 from typing import Any, List, Optional, Union
 
 import openai
-from langchain import LLMChain
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts.base import BasePromptTemplate
-from langchain.prompts.chat import (
+from llama_index.bridge.langchain import (
+    LLMChain,
+    ChatOpenAI,
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
+    BaseLanguageModel,
+    BaseMessage,
+    PromptTemplate,
+    BasePromptTemplate,
 )
-from langchain.prompts.prompt import PromptTemplate
-from langchain.base_language import BaseLanguageModel, BaseMessage
 
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts.base import Prompt
