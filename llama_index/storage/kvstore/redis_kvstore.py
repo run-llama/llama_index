@@ -1,0 +1,120 @@
+import json
+from typing import Any, Dict, Optional
+from redis import Redis
+
+from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
+
+IMPORT_ERROR_MSG = "`redis` package not found, please run `pip install redis`"
+
+
+class RedisKVStore(BaseKVStore):
+    """Redis KV Store.
+
+    Args:
+        redis_client (Any): Redis client
+        redis_url (Optional[str]): Redis server URI
+
+    Raises:
+            ValueError: If redis-py is not installed
+
+    Examples:
+        >>> from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
+        >>> # Create a RedisKVStore
+        >>> redis_kv_store = RedisKVStore(
+        >>>     redis_url="redis://127.0.0.1:6379")
+
+    """
+
+    def __init__(
+        self,
+        redis_client: Optional[Redis],
+        redis_url: Optional[str] = "redis://127.0.0.1:6379",
+        **kwargs: Any,
+    ) -> None:
+        try:
+            import redis
+        except ImportError:
+            raise ValueError(IMPORT_ERROR_MSG)
+
+        # user could inject customized redis client.
+        # for instance, redis have specific TLS connection, etc.
+        if redis_client is not None:
+            self._redis_client = redis_client
+            return
+
+        if redis_url is not None:
+            # otherwise, try initializing redis client
+            try:
+                # connect to redis from url
+                self._redis_client = redis.from_url(redis_url, **kwargs)
+            except ValueError as e:
+                raise ValueError(f"Redis failed to connect: {e}")
+        else:
+            raise ValueError("Redis url or redis client is needed for init")
+
+    def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
+        """Put a key-value pair into the store.
+
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+
+        """
+        self._redis_client.hset(name=collection, key=key, value=json.dumps(val))
+
+    def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
+        """Get a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        """
+        val_str = self._redis_client.hget(name=collection, key=key)
+        if val_str is None:
+            return None
+        return json.loads(val_str)
+
+    def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """Get all values from the store."""
+        collection_kv_dict = dict()
+        for key, val_str in self._redis_client.hscan_iter(name=collection):
+            value = dict(json.loads(val_str))
+            collection_kv_dict[str(key)] = value
+        return collection_kv_dict
+
+    def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """Delete a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        """
+        deleted_num = self._redis_client.hdel(collection, key)
+        return bool(deleted_num > 0)
+
+    @classmethod
+    def from_host_and_port(
+        cls,
+        host: str,
+        port: int,
+    ) -> "RedisKVStore":
+        """Load a RedisKVStore from a Redis host and port.
+
+        Args:
+            host (str): Redis host
+            port (int): Redis port
+        """
+        url = "redis://{}:{}".format(host, port)
+        return cls(redis_client=None, redis_url=url)
+
+    @classmethod
+    def from_redis_client(cls, redis_client: Redis) -> "RedisKVStore":
+        """Load a RedisKVStore from a Redis Client.
+
+        Args:
+            redis_client (Redis): Redis client
+        """
+        return cls(redis_client=redis_client)
