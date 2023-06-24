@@ -1,5 +1,5 @@
 from typing import Any, Coroutine, Sequence
-from pydantic import BaseModel, Model
+from pydantic import BaseModel
 from langchain.base_language import BaseLanguageModel
 
 from llama_index.llms.base import (
@@ -22,7 +22,23 @@ class LangChainLLM(LLM, BaseModel):
         return super().chat(messages, **kwargs)
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
-        return super().complete(prompt, **kwargs)
+
+        raise NotImplementedError()
+
+        # handler = StreamingGeneratorCallbackHandler()
+
+        # if not hasattr(self._llm, "callbacks"):
+        #     raise ValueError("LLM must support callbacks to use streaming.")
+
+        # self._llm.callbacks = [handler]
+
+        # if not getattr(self._llm, "streaming", False):
+        #     raise ValueError("LLM must support streaming and set streaming=True.")
+
+        # thread = Thread(target=self._predict, args=[prompt], kwargs=prompt_args)
+        # thread.start()
+
+        # response_gen = handler.get_response_gen()
 
     async def achat(
         self, messages: Sequence[Message], **kwargs: Any

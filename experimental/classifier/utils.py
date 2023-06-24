@@ -81,7 +81,7 @@ def get_eval_preds(
     eval_preds = []
     for i in range(n):
         eval_str = get_sorted_dict_str(eval_df.iloc[i].to_dict())
-        response, _ = llm_predictor.predict(
+        response = llm_predictor.predict(
             train_prompt, train_str=train_str, eval_str=eval_str
         )
         pred = extract_float_given_response(response)

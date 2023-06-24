@@ -160,7 +160,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -175,7 +175,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         extra_info["sql_query"] = sql_query_str
 
         if self._synthesize_response:
-            response_str, _ = self._service_context.llm_predictor.predict(
+            response_str = self._service_context.llm_predictor.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query=sql_query_str,
@@ -260,7 +260,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -275,7 +275,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         extra_info["sql_query"] = sql_query_str
 
         if self._synthesize_response:
-            response_str, _ = self._service_context.llm_predictor.predict(
+            response_str = self._service_context.llm_predictor.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query=sql_query_str,

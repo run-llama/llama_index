@@ -41,6 +41,8 @@ class ChatDeltaResponse(ChatResponse):
         return self.delta
 
 
+StreamChatResponse = Generator[ChatDeltaResponse, None, None]
+
 # ===== Generic Model Output - Completion =====
 class CompletionResponse(BaseModel):
     text: str
@@ -57,6 +59,9 @@ class CompletionDeltaResponse(CompletionResponse):
         return self.delta
 
 
+StreamCompletionResponse = Generator[CompletionDeltaResponse, None, None]
+
+# ===== Generic Model Output - Combined =====
 CompletionResponseType = Union[
     CompletionResponse, Generator[CompletionDeltaResponse, None, None]
 ]
@@ -81,20 +86,42 @@ class LLM(ABC):
         pass
 
     @abstractmethod
-    def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponseType:
+    def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
         pass
 
     @abstractmethod
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        pass
+
+    @abstractmethod
+    def stream_chat(
+        self, messages: Sequence[Message], **kwargs: Any
+    ) -> StreamChatResponse:
+        pass
+
+    @abstractmethod
+    def stream_complete(self, prompt: str, **kwargs: Any) -> StreamCompletionResponse:
         pass
 
     # ===== Async Endpoints =====
     @abstractmethod
     async def achat(
         self, messages: Sequence[Message], **kwargs: Any
-    ) -> ChatResponseType:
+    ) -> ChatResponse:
         pass
 
     @abstractmethod
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        pass
+
+    @abstractmethod
+    async def astream_chat(
+        self, messages: Sequence[Message], **kwargs: Any
+    ) -> StreamChatResponse:
+        pass
+
+    @abstractmethod
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> StreamCompletionResponse:
         pass

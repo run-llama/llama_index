@@ -2,6 +2,7 @@
 
 from langchain.base_language import BaseLanguageModel
 from langchain.chat_models import ChatOpenAI
+from langchain.chat_models.base import BaseChatModel
 from langchain.llms import Cohere, AI21, OpenAI
 
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
@@ -9,6 +10,8 @@ from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
 
 
+def is_chat_model(llm: BaseLanguageModel):
+    return isinstance(llm, BaseChatModel)
 
 
 def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:

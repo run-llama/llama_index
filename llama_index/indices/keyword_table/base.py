@@ -195,7 +195,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response, formatted_prompt = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm_predictor.predict(
             self.keyword_extract_template,
             text=text,
         )

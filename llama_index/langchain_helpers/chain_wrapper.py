@@ -4,7 +4,6 @@
 # NOTE: this is for backwards compatibility
 
 from llama_index.llm_predictor.base import (  # noqa: F401
-    LLMChain,
     LLMMetadata,
     LLMPredictor,
 )

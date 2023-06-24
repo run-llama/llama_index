@@ -82,7 +82,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         chat_history_str = to_chat_buffer(chat_history)
         logger.debug(chat_history_str)
 
-        response, _ = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm_predictor.predict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,

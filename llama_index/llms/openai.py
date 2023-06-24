@@ -1,10 +1,10 @@
 from typing import Any, Dict, Generator, Optional, Sequence
 
 from pydantic import BaseModel, Field
-from llama_index.llm_predictor.base import LLMMetadata
 
 from llama_index.llms.base import (
     LLM,
+    LLMMetadata,
     ChatDeltaResponse,
     ChatMessage,
     ChatResponse,

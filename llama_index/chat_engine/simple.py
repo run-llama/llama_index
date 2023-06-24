@@ -79,7 +79,7 @@ class SimpleChatEngine(BaseChatEngine):
             response = generation.message.content
         else:
             history_buffer = to_chat_buffer(self._chat_history)
-            response, _ = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 self._prompt,
                 history=history_buffer,
                 message=message,

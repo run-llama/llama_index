@@ -76,7 +76,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         schema_str = VectorStoreQuerySpec.schema_json(indent=4)
 
         # call LLM
-        output, _ = self._service_context.llm_predictor.predict(
+        output = self._service_context.llm_predictor.predict(
             self._prompt,
             schema_str=schema_str,
             info_str=info_str,

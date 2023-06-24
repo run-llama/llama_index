@@ -229,7 +229,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._sql_join_synthesis_prompt,
             query_str=query_bundle.query_str,
             sql_query_str=sql_query,

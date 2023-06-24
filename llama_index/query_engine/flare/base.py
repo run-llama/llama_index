@@ -174,7 +174,7 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
             # e.g.
             # The colors on the flag of Ghana have the following meanings. Red is
             # for [Search(Ghana flag meaning)],...
-            lookahead_resp, fmt_response = self._service_context.llm_predictor.predict(
+            lookahead_resp = self._service_context.llm_predictor.predict(
                 self._instruct_prompt,
                 query_str=query_bundle.query_str,
                 existing_answer=cur_response,
