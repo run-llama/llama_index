@@ -12,7 +12,7 @@ from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.prompts.base import Prompt
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 import logging
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.callbacks.base import CallbackManager
 

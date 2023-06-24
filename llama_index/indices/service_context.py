@@ -10,7 +10,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.llms.utils import LLMType
 from llama_index.logger import LlamaLogger

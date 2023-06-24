@@ -15,7 +15,7 @@ from llama_index.indices.query.query_transform.prompts import (
     StepDecomposeQueryTransformPrompt,
 )
 from llama_index.indices.query.schema import QueryBundle, QueryType
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT

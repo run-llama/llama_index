@@ -4,7 +4,7 @@ from typing import Dict, Optional
 from llama_index.evaluation.base import Evaluation
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import Response
