@@ -2,7 +2,7 @@
 from typing import Any, List
 from unittest.mock import patch
 
-from llama_index.embeddings.base import mean_agg
+from llama_index.embeddings.base import SimilarityMode, mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
 
 
@@ -83,10 +83,10 @@ def test_embedding_similarity_euclidean() -> None:
     text1_embedding = [0.0, 1.0]  # further from query_embedding distance=1.414
     text2_embedding = [1.0, 1.0]  # closer to query_embedding distance=1.0
     euclidean_similarity1 = embed_model.similarity(
-        query_embedding, text1_embedding, mode="euclidean"
+        query_embedding, text1_embedding, mode=SimilarityMode.EUCLIDEAN
     )
     euclidean_similarity2 = embed_model.similarity(
-        query_embedding, text2_embedding, mode="euclidean"
+        query_embedding, text2_embedding, mode=SimilarityMode.EUCLIDEAN
     )
     assert euclidean_similarity1 < euclidean_similarity2
 
