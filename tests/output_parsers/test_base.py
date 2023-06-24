@@ -1,8 +1,10 @@
 """Test Output parsers."""
 
 
-from langchain.output_parsers import ResponseSchema
-from langchain.schema import BaseOutputParser as LCOutputParser
+from llama_index.bridge.langchain import (
+    ResponseSchema,
+    BaseOutputParser as LCOutputParser,
+)
 
 from llama_index.output_parsers.langchain import LangchainOutputParser
 

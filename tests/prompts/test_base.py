@@ -3,10 +3,12 @@
 from unittest.mock import MagicMock
 
 import pytest
-from langchain import PromptTemplate
-from langchain.chains.prompt_selector import ConditionalPromptSelector
-from langchain.chat_models.base import BaseChatModel
-from langchain.chat_models.openai import ChatOpenAI
+from llama_index.bridge.langchain import (
+    PromptTemplate,
+    ConditionalPromptSelector,
+    BaseChatModel,
+    ChatOpenAI,
+)
 
 from llama_index.prompts.base import Prompt
 
