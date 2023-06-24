@@ -1,7 +1,6 @@
 from typing import Any, Optional
 
-from langchain.chat_models.base import BaseChatModel
-from langchain.schema import ChatGeneration
+from llama_index.bridge.langchain import BaseChatModel, ChatGeneration
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
 from llama_index.chat_engine.utils import (

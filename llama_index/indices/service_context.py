@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from langchain.base_language import BaseLanguageModel
+from llama_index.bridge.langchain import BaseLanguageModel
 
 import llama_index
 from llama_index.callbacks.base import CallbackManager

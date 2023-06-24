@@ -4,7 +4,7 @@ Active Retrieval Augmented Generation.
 
 """
 
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 from typing import Optional
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext

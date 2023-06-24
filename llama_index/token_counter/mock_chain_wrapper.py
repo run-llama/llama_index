@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional
 
-from langchain.llms.base import BaseLLM
+from llama_index.bridge.langchain import BaseLLM
 
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor import LLMPredictor

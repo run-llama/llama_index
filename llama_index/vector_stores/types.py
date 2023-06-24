@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, List, Optional, Protocol, Union, runtime_checkable
 
 import fsspec
-from pydantic import BaseModel, StrictInt, StrictFloat, StrictStr
+from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
 
 from llama_index.data_structs.node import Node
 
@@ -49,6 +49,7 @@ class VectorStoreQueryMode(str, Enum):
     DEFAULT = "default"
     SPARSE = "sparse"
     HYBRID = "hybrid"
+    TEXT_SEARCH = "text_search"
 
     # fit learners
     SVM = "svm"

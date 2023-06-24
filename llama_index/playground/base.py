@@ -5,7 +5,7 @@ import time
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pandas as pd
-from langchain.input import get_color_mapping, print_text
+from llama_index.bridge.langchain import get_color_mapping, print_text
 
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.list.base import ListIndex, ListRetrieverMode
