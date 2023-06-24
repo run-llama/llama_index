@@ -3,7 +3,7 @@
 from string import Formatter
 from typing import Any, Optional
 
-from langchain.schema import BaseOutputParser as LCOutputParser
+from llama_index.bridge.langchain import BaseOutputParser as LCOutputParser
 
 from llama_index.output_parsers.base import BaseOutputParser
 

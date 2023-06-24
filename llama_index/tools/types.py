@@ -2,7 +2,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
-from langchain.tools import StructuredTool, Tool
+from llama_index.bridge.langchain import StructuredTool, Tool
 from pydantic import BaseModel
 
 
