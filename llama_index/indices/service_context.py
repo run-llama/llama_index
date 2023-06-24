@@ -139,7 +139,7 @@ class ServiceContext:
         embed_model.callback_manager = callback_manager
 
         prompt_helper = prompt_helper or _get_default_prompt_helper(
-            llm_metadata=llm_predictor.get_llm_metadata(),
+            llm_metadata=llm_predictor.metadata,
             context_window=context_window,
             num_output=num_output,
         )
@@ -203,7 +203,7 @@ class ServiceContext:
         embed_model.callback_manager = callback_manager
 
         prompt_helper = prompt_helper or _get_default_prompt_helper(
-            llm_metadata=llm_predictor.get_llm_metadata(),
+            llm_metadata=llm_predictor.metadata,
             context_window=context_window,
             num_output=num_output,
         )

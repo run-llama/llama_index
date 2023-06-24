@@ -66,7 +66,8 @@ class LLMPredictor(BaseLLMPredictor):
         #     langchain.llm_cache = cache
         self.callback_manager = callback_manager or CallbackManager([])
 
-    def get_llm_metadata(self) -> LLMMetadata:
+    @property
+    def metadata(self) -> LLMMetadata:
         return self._llm.metadata
 
     def _log_start(self, prompt: Prompt, prompt_args: dict) -> None:

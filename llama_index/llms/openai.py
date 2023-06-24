@@ -13,6 +13,8 @@ from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseType,
     Message,
+    StreamChatResponse,
+    StreamCompletionResponse,
 )
 from llama_index.llms.generic_utils import (
     chat_response_to_completion_response,
@@ -30,7 +32,6 @@ from llama_index.llms.openai_utils import (
 
 class OpenAI(LLM, BaseModel):
     model: str = Field("gpt-3.5-turbo")
-    stream: bool = False
     temperature: float = 0.0
     max_tokens: Optional[int] = None
     additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -43,7 +44,7 @@ class OpenAI(LLM, BaseModel):
             num_output=self.max_tokens or -1,
         )
 
-    def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponseType:
+    def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
         if self._is_chat_model:
             return self._chat(messages, **kwargs)
         else:
@@ -53,13 +54,33 @@ class OpenAI(LLM, BaseModel):
             # normalize output
             return completion_response_to_chat_response(completion_response)
 
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
+    def stream_chat(
+        self, messages: Sequence[Message], **kwargs: Any
+    ) -> StreamChatResponse:
+        if self._is_chat_model:
+            return self._stream_chat(messages, **kwargs)
+        else:
+            # normalize input
+            prompt = messages_to_prompt(messages)
+            completion_response = self._stream_complete(prompt, **kwargs)
+            # normalize output
+            return completion_response_to_chat_response(completion_response)
+
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         if self._is_chat_model:
             messages = prompt_to_messages(prompt)
             chat_response = self._chat(messages, **kwargs)
             return chat_response_to_completion_response(chat_response)
         else:
             return self._complete(prompt, **kwargs)
+
+    def stream_complete(self, prompt: str, **kwargs: Any) -> StreamCompletionResponse:
+        if self._is_chat_model:
+            messages = prompt_to_messages(prompt)
+            chat_response = self._stream_chat(messages, **kwargs)
+            return chat_response_to_completion_response(chat_response)
+        else:
+            return self._stream_complete(prompt, **kwargs)
 
     @property
     def _is_chat_model(self) -> bool:
@@ -71,7 +92,6 @@ class OpenAI(LLM, BaseModel):
             "model": self.model,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "stream": self.stream,
         }
         model_kwargs = {
             **base_kwargs,
@@ -91,46 +111,54 @@ class OpenAI(LLM, BaseModel):
 
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
+        response = completion_with_retry(
+            is_chat_model=self._is_chat_model,
+            max_retries=self.max_retries,
+            messages=message_dicts,
+            stream=False,
+            **all_kwargs,
+        )
+        role = response["choices"][0]["message"]["role"]
+        text = response["choices"][0]["message"]["content"]
+        return ChatResponse(
+            message=ChatMessage(
+                role=role,
+                content=text,
+            ),
+            raw=response,
+        )
 
-        if not self.stream:
-            response = completion_with_retry(
+    def _stream_chat(
+        self, messages: Sequence[Message], **kwargs: Any
+    ) -> ChatResponseType:
+        if not self._is_chat_model:
+            raise ValueError("This model is not a chat model.")
+
+        message_dicts = to_openai_message_dicts(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
+
+        def gen() -> Generator[ChatDeltaResponse, None, None]:
+            text = ""
+            for response in completion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
                 messages=message_dicts,
+                stream=True,
                 **all_kwargs,
-            )
-            role = response["choices"][0]["message"]["role"]
-            text = response["choices"][0]["message"]["content"]
-            return ChatResponse(
-                message=ChatMessage(
-                    role=role,
-                    content=text,
-                ),
-                raw=response,
-            )
-        else:
+            ):
+                role = response["choices"][0]["delta"].get("role", "assistant")
+                delta = response["choices"][0]["delta"].get("content", "")
+                text += delta
+                yield ChatDeltaResponse(
+                    message=ChatMessage(
+                        role=role,
+                        content=text,
+                    ),
+                    delta=delta,
+                    raw=response,
+                )
 
-            def gen() -> Generator[ChatDeltaResponse, None, None]:
-                text = ""
-                for response in completion_with_retry(
-                    is_chat_model=self._is_chat_model,
-                    max_retries=self.max_retries,
-                    messages=message_dicts,
-                    **all_kwargs,
-                ):
-                    role = response["choices"][0]["delta"].get("role", "assistant")
-                    delta = response["choices"][0]["delta"].get("content", "")
-                    text += delta
-                    yield ChatDeltaResponse(
-                        message=ChatMessage(
-                            role=role,
-                            content=text,
-                        ),
-                        delta=delta,
-                        raw=response,
-                    )
-
-            return gen()
+        return gen()
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
         if self._is_chat_model:
@@ -142,37 +170,47 @@ class OpenAI(LLM, BaseModel):
             max_tokens = self._get_max_token_for_prompt(prompt)
             all_kwargs["max_tokens"] = max_tokens
 
-        if not self.stream:
-            response = completion_with_retry(
+        response = completion_with_retry(
+            is_chat_model=self._is_chat_model,
+            max_retries=self.max_retries,
+            prompt=prompt,
+            stream=False,
+            **all_kwargs,
+        )
+        text = response["choices"][0]["text"]
+        return CompletionResponse(
+            text=text,
+            raw=response,
+        )
+
+    def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
+        if self._is_chat_model:
+            raise ValueError("This model is a chat model.")
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.max_tokens is None:
+            # NOTE: non-chat completion endpoint requires max_tokens to be set
+            max_tokens = self._get_max_token_for_prompt(prompt)
+            all_kwargs["max_tokens"] = max_tokens
+
+        def gen() -> Generator[CompletionDeltaResponse, None, None]:
+            text = ""
+            for response in completion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
                 prompt=prompt,
+                stream=True,
                 **all_kwargs,
-            )
-            text = response["choices"][0]["text"]
-            return CompletionResponse(
-                text=text,
-                raw=response,
-            )
-        else:
+            ):
+                delta = response["choices"][0]["delta"].get("content", "")
+                text += delta
+                yield CompletionDeltaResponse(
+                    delta=delta,
+                    text=text,
+                    raw=response,
+                )
 
-            def gen() -> Generator[CompletionDeltaResponse, None, None]:
-                text = ""
-                for response in completion_with_retry(
-                    is_chat_model=self._is_chat_model,
-                    max_retries=self.max_retries,
-                    prompt=prompt,
-                    **all_kwargs,
-                ):
-                    delta = response["choices"][0]["delta"].get("content", "")
-                    text += delta
-                    yield CompletionDeltaResponse(
-                        delta=delta,
-                        text=text,
-                        raw=response,
-                    )
-
-            return gen()
+        return gen()
 
     def _get_max_token_for_prompt(self, prompt: str) -> int:
         try:
@@ -196,10 +234,24 @@ class OpenAI(LLM, BaseModel):
         self,
         messages: Sequence[Message],
         **kwargs: Any,
-    ) -> ChatResponseType:
+    ) -> ChatResponse:
         # TODO: implement async chat
         return self.chat(messages, **kwargs)
 
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
+    async def astream_chat(
+        self,
+        messages: Sequence[Message],
+        **kwargs: Any,
+    ) -> StreamChatResponse:
+        # TODO: implement async chat
+        return self.stream_chat(messages, **kwargs)
+
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         # TODO: implement async complete
         return self.complete(prompt, **kwargs)
+
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> StreamCompletionResponse:
+        # TODO: implement async complete
+        return self.stream_complete(prompt, **kwargs)
