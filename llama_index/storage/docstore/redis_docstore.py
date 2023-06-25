@@ -1,7 +1,6 @@
-from typing import Optional
+from typing import Optional, Any
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
-from redis import Redis
 
 
 class RedisDocumentStore(KVDocumentStore):
@@ -26,7 +25,7 @@ class RedisDocumentStore(KVDocumentStore):
     @classmethod
     def from_redis_client(
         cls,
-        redis_client: Redis,
+        redis_client: Any,
         namespace: Optional[str] = None,
     ) -> "RedisDocumentStore":
         """Load a RedisDocumentStore from a Redis Client."""

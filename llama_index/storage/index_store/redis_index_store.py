@@ -1,7 +1,6 @@
-from typing import Optional
+from typing import Optional, Any
 from llama_index.storage.index_store.keyval_index_store import KVIndexStore
 from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
-from redis import Redis
 
 
 class RedisIndexStore(KVIndexStore):
@@ -24,7 +23,7 @@ class RedisIndexStore(KVIndexStore):
     @classmethod
     def from_redis_client(
         cls,
-        redis_client: Redis,
+        redis_client: Any,
         namespace: Optional[str] = None,
     ) -> "RedisIndexStore":
         """Load a RedisIndexStore from a Redis Client."""
