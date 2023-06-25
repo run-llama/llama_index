@@ -1,6 +1,5 @@
 """Query plan tool."""
 
-from langchain.input import print_text
 from pydantic import BaseModel, Field
 from typing import Dict, List, Any, Optional
 
