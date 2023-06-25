@@ -39,4 +39,4 @@ def test_build_index(
     all_ref_doc_info = index.ref_doc_info
     for idx, (doc_id, ref_doc_info) in enumerate(all_ref_doc_info.items()):
         assert docs[idx].doc_id == doc_id
-        assert len(ref_doc_info.doc_ids) == 2
+        assert len(ref_doc_info.node_ids) == 2

@@ -86,6 +86,8 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
                 node.get_content(metadata_mode=MetadataMode.LLM)
             )
             new_node = deepcopy(node)
+            new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
+            new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
             new_node.metadata[self.pii_node_info_key] = mapping_info
             new_node.get_content() == new_text
             new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
@@ -131,6 +133,8 @@ class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
                 ner, node.get_content(metadata_mode=MetadataMode.LLM)
             )
             new_node = deepcopy(node)
+            new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
+            new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
             new_node.metadata[self.pii_node_info_key] = mapping_info
             new_node.get_content() == new_text
             new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))

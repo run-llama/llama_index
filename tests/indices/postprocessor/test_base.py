@@ -206,25 +206,25 @@ def test_fixed_recency_postprocessor(
             text="Hello world.",
             id_="1",
             metadata={"date": "2020-01-01"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
         TextNode(
             text="This is a test.",
             id_="2",
             metadata={"date": "2020-01-02"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
         TextNode(
             text="This is another test.",
             id_="3",
             metadata={"date": "2020-01-03"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
         TextNode(
             text="This is a test v2.",
             id_="4",
             metadata={"date": "2020-01-04"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
     ]
     node_with_scores = [NodeWithScore(node=node) for node in nodes]
@@ -269,31 +269,31 @@ def test_embedding_recency_postprocessor(
             text="Hello world.",
             id_="1",
             metadata={"date": "2020-01-01"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
         TextNode(
             text="This is a test.",
             id_="2",
             metadata={"date": "2020-01-02"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
         TextNode(
             text="This is another test.",
             id_="3",
             metadata={"date": "2020-01-02"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
         TextNode(
             text="This is another test.",
             id_="3v2",
             metadata={"date": "2020-01-03"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
         TextNode(
             text="This is a test v2.",
             id_="4",
             metadata={"date": "2020-01-04"},
-            metadata_keys_to_exclude_for_embed=["date"],
+            excluded_embed_metadata_keys=["date"],
         ),
     ]
     nodes_with_scores = [NodeWithScore(node=node) for node in nodes]

@@ -17,7 +17,7 @@ DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
 class RefDocInfo(DataClassJsonMixin):
     """Dataclass to represent ingested documents."""
 
-    doc_ids: List = field(default_factory=list)
+    node_ids: List = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 

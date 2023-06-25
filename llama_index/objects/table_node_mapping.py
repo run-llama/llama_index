@@ -52,8 +52,8 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
         return TextNode(
             text=table_text,
             metadata={"name": obj.table_name, "context": obj.context_str},
-            metadata_keys_to_exclude_for_embed=["name", "context"],
-            metadata_keys_to_exclude_for_llm=["name", "context"],
+            excluded_embed_metadata_keys=["name", "context"],
+            excluded_llm_metadata_keys=["name", "context"],
         )
 
     def _from_node(self, node: BaseNode) -> SQLTableSchema:

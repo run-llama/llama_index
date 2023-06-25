@@ -76,7 +76,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 
         return VectorIndexRetriever(
-            self, doc_ids=list(self.index_struct.nodes_dict.values()), **kwargs
+            self,
+            doc_ids=list(self.index_struct.nodes_dict.values()),
+            **kwargs,
         )
 
     def _get_node_embedding_results(
@@ -267,8 +269,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not self._vector_store.stores_text or self._store_nodes_override:
             ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
             if ref_doc_info is not None:
-                for doc_id in ref_doc_info.doc_ids:
-                    self._index_struct.delete(doc_id)
+                for node_id in ref_doc_info.node_ids:
+                    self._index_struct.delete(node_id)
 
         # delete from docstore only if needed
         if (

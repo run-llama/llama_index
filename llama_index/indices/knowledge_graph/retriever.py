@@ -269,8 +269,8 @@ class KGTableRetriever(BaseRetriever):
         rel_text_node = TextNode(
             text="\n".join(rel_info),
             metadata=rel_node_info,
-            metadata_keys_to_exclude_for_embed=["kg_rel_map", "kg_rel_texts"],
-            metadata_keys_to_exclude_for_llm=["kg_rel_map", "kg_rel_texts"],
+            excluded_embed_metadata_keys=["kg_rel_map", "kg_rel_texts"],
+            excluded_llm_metadata_keys=["kg_rel_map", "kg_rel_texts"],
         )
         # this node is constructed from rel_texts, give high confidence to avoid cutoff
         sorted_nodes_with_scores.append(
