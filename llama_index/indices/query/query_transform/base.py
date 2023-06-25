@@ -4,7 +4,7 @@ import dataclasses
 from abc import abstractmethod
 from typing import Dict, Optional, cast
 
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 
 from llama_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,

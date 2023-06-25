@@ -3,7 +3,7 @@
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-from langchain.llms.base import BaseLLM
+from llama_index.bridge.langchain import BaseLLM
 
 from llama_index.indices.keyword_table.base import KeywordTableIndex
 from llama_index.indices.list.base import ListIndex

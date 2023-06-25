@@ -1,6 +1,6 @@
 """SQL Join query engine."""
 
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 from typing import Optional, cast, Dict, Callable
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine

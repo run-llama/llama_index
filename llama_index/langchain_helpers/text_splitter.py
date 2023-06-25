@@ -2,8 +2,8 @@
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
-from langchain.text_splitter import TextSplitter
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
+from llama_index.bridge.langchain import TextSplitter
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

@@ -4,6 +4,7 @@ from langchain.input import print_text
 from pydantic import BaseModel, Field
 from typing import Dict, List, Any, Optional
 
+from llama_index.bridge.langchain import print_text
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import NodeWithScore, TextNode

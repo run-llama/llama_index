@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import List, Optional
 
-from langchain.chat_models import ChatOpenAI
+from llama_index.bridge.langchain import ChatOpenAI
 
 from llama_index import (
     Document,

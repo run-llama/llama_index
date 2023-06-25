@@ -1,7 +1,7 @@
 """Test PromptHelper."""
 from typing import cast
 
-from langchain import PromptTemplate as LangchainPrompt
+from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
 
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes

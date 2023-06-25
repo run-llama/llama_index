@@ -1,7 +1,7 @@
 """SQL wrapper around SQLDatabase in langchain."""
 from typing import Any, Dict, List, Tuple, Optional
 
-from langchain.sql_database import SQLDatabase as LangchainSQLDatabase
+from llama_index.bridge.langchain import SQLDatabase as LangchainSQLDatabase
 from sqlalchemy import MetaData, create_engine, insert, text
 from sqlalchemy.engine import Engine
 

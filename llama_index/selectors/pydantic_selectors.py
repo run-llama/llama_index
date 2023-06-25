@@ -1,4 +1,4 @@
-from langchain.chat_models import ChatOpenAI
+from llama_index.bridge.langchain import ChatOpenAI
 from typing import Any, Optional, Sequence
 
 from llama_index.indices.query.schema import QueryBundle

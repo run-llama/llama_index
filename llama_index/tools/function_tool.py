@@ -2,7 +2,7 @@ from typing import Any, Optional, Callable, Type
 
 from pydantic import BaseModel
 from llama_index.tools.types import BaseTool, ToolMetadata
-from langchain.tools import Tool, StructuredTool
+from llama_index.bridge.langchain import Tool, StructuredTool
 from inspect import signature
 from llama_index.tools.utils import create_schema_from_function
 

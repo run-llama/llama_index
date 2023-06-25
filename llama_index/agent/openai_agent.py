@@ -2,9 +2,7 @@ import json
 from abc import abstractmethod
 from typing import Callable, List, Optional
 
-from langchain.chat_models import ChatOpenAI
-from langchain.memory import ChatMessageHistory
-from langchain.schema import FunctionMessage
+from llama_index.bridge.langchain import FunctionMessage, ChatMessageHistory, ChatOpenAI
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
