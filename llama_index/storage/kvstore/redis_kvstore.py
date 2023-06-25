@@ -1,6 +1,5 @@
 import json
-from typing import Any, Dict, Optional
-from redis import Redis
+from typing import Any, Dict, Optional, cast
 
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
@@ -27,26 +26,26 @@ class RedisKVStore(BaseKVStore):
 
     def __init__(
         self,
-        redis_client: Optional[Redis],
+        redis_client: Any,
         redis_url: Optional[str] = "redis://127.0.0.1:6379",
         **kwargs: Any,
     ) -> None:
         try:
-            import redis
+            from redis import Redis
         except ImportError:
             raise ValueError(IMPORT_ERROR_MSG)
 
         # user could inject customized redis client.
         # for instance, redis have specific TLS connection, etc.
         if redis_client is not None:
-            self._redis_client = redis_client
+            self._redis_client = cast(Redis, redis_client)
             return
 
         if redis_url is not None:
             # otherwise, try initializing redis client
             try:
                 # connect to redis from url
-                self._redis_client = redis.from_url(redis_url, **kwargs)
+                self._redis_client = Redis.from_url(redis_url, **kwargs)
             except ValueError as e:
                 raise ValueError(f"Redis failed to connect: {e}")
         else:
@@ -107,11 +106,11 @@ class RedisKVStore(BaseKVStore):
             host (str): Redis host
             port (int): Redis port
         """
-        url = "redis://{}:{}".format(host, port)
+        url = f"redis://{host}:{port}".format(host=host, port=port)
         return cls(redis_client=None, redis_url=url)
 
     @classmethod
-    def from_redis_client(cls, redis_client: Redis) -> "RedisKVStore":
+    def from_redis_client(cls, redis_client: Any) -> "RedisKVStore":
         """Load a RedisKVStore from a Redis Client.
 
         Args:
