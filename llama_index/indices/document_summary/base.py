@@ -43,8 +43,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
     Args:
         summary_template (Optional[SummaryPrompt]): A Summary Prompt
-        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
             (see :ref:`Prompt-Templates`).
+        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
 
     """
 
