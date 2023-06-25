@@ -165,7 +165,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self._retriever.retrieve(query_bundle)
+        nodes = await self._retriever.aretrieve(query_bundle)
         self.callback_manager.on_event_end(
             CBEventType.RETRIEVE,
             payload={EventPayload.NODES: nodes},

@@ -239,6 +239,15 @@ class OpenAIEmbedding(BaseEmbedding):
             **self.openai_kwargs,
         )
 
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        """The asynchronous version of _get_query_embedding."""
+        return await aget_embedding(
+            query,
+            engine=self.query_engine,
+            deployment_id=self.deployment_name,
+            **self.openai_kwargs,
+        )
+
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return get_embedding(
