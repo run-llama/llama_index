@@ -17,10 +17,12 @@ def is_chat_model(llm: BaseLanguageModel):
 
 
 def to_lc_messages(messages: Sequence[Message]) -> Sequence[LCMessage]:
+    # TODO 
     return []
 
 
 def from_lc_messages(messages: Sequence[LCMessage]) -> Sequence[Message]:
+    # TODO
     return []
 
 def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
