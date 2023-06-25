@@ -14,7 +14,7 @@ from typing import Any, Callable, Optional
 
 from llama_index.bridge.langchain import BaseLLM
 
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 
 
 def get_callable(llm: Optional[BaseLLM]) -> Optional[Callable]:
