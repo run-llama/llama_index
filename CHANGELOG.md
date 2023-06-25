@@ -4,7 +4,7 @@
 
 ### New Features
 - Add typesense vector store (#6561)
-- 
+- add df output parser (#6576)
 
 ### Bug Fixes / Nits
 - Track langchain dependency via bridge module. (#6573)
