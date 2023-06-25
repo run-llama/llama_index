@@ -75,10 +75,9 @@ class BaseNode(BaseModel):
     """"
     metadata fields
     - injected as part of the text shown to LLMs as context
+    - injected as part of the text for generating embeddings
     - used by vector DBs for metadata filtering
 
-    This must be a flat dictionary, 
-    and only uses str keys, and (str, int, float) values.
     """
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="A flat dictionary of metadata fields"
