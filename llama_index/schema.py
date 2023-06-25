@@ -251,7 +251,7 @@ class TextNode(BaseNode):
 
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         """Get object content."""
-        metadata_str = self.metadata_str(mode=metadata_mode)
+        metadata_str = self.metadata_str(mode=metadata_mode).strip()
         return self.text_template.format(
             content=self.text, metadata_str=metadata_str
         ).strip()
