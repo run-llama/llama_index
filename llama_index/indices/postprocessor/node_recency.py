@@ -56,8 +56,6 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
     top_k: int = 1
     # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
-    # if false, then search node info
-    in_metadata: bool = True
 
     def postprocess_nodes(
         self,
@@ -81,9 +79,8 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
         #     return nodes
 
         # sort nodes by date
-        info_dict_attr = "metadata" if self.in_metadata else "node_info"
         node_dates = pd.to_datetime(
-            [getattr(node.node, info_dict_attr)[self.date_key] for node in nodes]
+            [node.node.metadata[self.date_key] for node in nodes]
         )
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes = [nodes[idx] for idx in sorted_node_idxs]

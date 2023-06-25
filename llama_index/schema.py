@@ -95,11 +95,11 @@ class BaseNode(BaseModel):
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="A flat dictionary of metadata fields"
     )
-    metadata_keys_to_exclude_for_embed: List[str] = Field(
+    excluded_embed_metadata_keys: List[str] = Field(
         default_factory=list,
         description="Metadata keys that are exluded from text for the embed model.",
     )
-    metadata_keys_to_exclude_for_llm: List[str] = Field(
+    excluded_llm_metadata_keys: List[str] = Field(
         default_factory=list,
         description="Metadata keys that are exluded from text for the LLM.",
     )
@@ -276,11 +276,11 @@ class TextNode(BaseNode):
 
         usable_metadata_keys = set(self.metadata.keys())
         if mode == MetadataMode.LLM:
-            for key in self.metadata_keys_to_exclude_for_llm:
+            for key in self.excluded_llm_metadata_keys:
                 if key in usable_metadata_keys:
                     usable_metadata_keys.remove(key)
         elif mode == MetadataMode.EMBED:
-            for key in self.metadata_keys_to_exclude_for_embed:
+            for key in self.excluded_embed_metadata_keys:
                 if key in usable_metadata_keys:
                     usable_metadata_keys.remove(key)
 

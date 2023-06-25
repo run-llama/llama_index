@@ -65,7 +65,7 @@ class KVDocumentStore(BaseDocumentStore):
         return {key: json_to_doc(json) for key, json in json_dict.items()}
 
     def add_documents(
-        self, docs: Sequence[BaseNode], allow_update: bool = True
+        self, nodes: Sequence[BaseNode], allow_update: bool = True
     ) -> None:
         """Add a document to the store.
 
@@ -74,32 +74,32 @@ class KVDocumentStore(BaseDocumentStore):
             allow_update (bool): allow update of docstore from document
 
         """
-        for doc in docs:
+        for node in nodes:
             # NOTE: doc could already exist in the store, but we overwrite it
-            if not allow_update and self.document_exists(doc.node_id):
+            if not allow_update and self.document_exists(node.node_id):
                 raise ValueError(
-                    f"doc_id {doc.node_id} already exists. "
+                    f"node_id {node.node_id} already exists. "
                     "Set allow_update to True to overwrite."
                 )
-            node_key = doc.node_id
-            data = doc_to_json(doc)
+            node_key = node.node_id
+            data = doc_to_json(node)
             self._kvstore.put(node_key, data, collection=self._node_collection)
 
             # update doc_collection if needed
-            metadata = {"doc_hash": doc.hash}
-            if isinstance(doc, TextNode) and doc.ref_doc_id is not None:
-                ref_doc_info = self.get_ref_doc_info(doc.ref_doc_id) or RefDocInfo()
-                ref_doc_info.doc_ids.append(doc.node_id)
+            metadata = {"doc_hash": node.hash}
+            if isinstance(node, TextNode) and node.ref_doc_id is not None:
+                ref_doc_info = self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
+                ref_doc_info.node_ids.append(node.node_id)
                 if not ref_doc_info.metadata:
-                    ref_doc_info.metadata = doc.metadata or {}
+                    ref_doc_info.metadata = node.metadata or {}
                 self._kvstore.put(
-                    doc.ref_doc_id,
+                    node.ref_doc_id,
                     ref_doc_info.to_dict(),
                     collection=self._ref_doc_collection,
                 )
 
                 # update metadata with map
-                metadata["ref_doc_id"] = doc.ref_doc_id
+                metadata["ref_doc_id"] = node.ref_doc_id
                 self._kvstore.put(
                     node_key, metadata, collection=self._metadata_collection
                 )
@@ -131,6 +131,15 @@ class KVDocumentStore(BaseDocumentStore):
         )
         if not ref_doc_info:
             return None
+
+        # TODO: deprecated legacy support
+        if "doc_ids" in ref_doc_info:
+            ref_doc_info["node_ids"] = ref_doc_info.get("doc_ids", [])
+            ref_doc_info.pop("doc_ids")
+
+            ref_doc_info["metadata"] = ref_doc_info.get("extra_info", {})
+            ref_doc_info.pop("extra_info")
+
         return RefDocInfo(**ref_doc_info)
 
     def get_all_ref_doc_info(self) -> Optional[Dict[str, RefDocInfo]]:
@@ -138,7 +147,19 @@ class KVDocumentStore(BaseDocumentStore):
         ref_doc_infos = self._kvstore.get_all(collection=self._ref_doc_collection)
         if ref_doc_infos is None:
             return None
-        return {key: RefDocInfo(**val) for key, val in ref_doc_infos.items()}
+
+        # TODO: deprecated legacy support
+        all_ref_doc_infos = {}
+        for doc_id, ref_doc_info in ref_doc_infos.items():
+            if "doc_ids" in ref_doc_info:
+                ref_doc_info["node_ids"] = ref_doc_info.get("doc_ids", [])
+                ref_doc_info.pop("doc_ids")
+
+                ref_doc_info["metadata"] = ref_doc_info.get("extra_info", {})
+                ref_doc_info.pop("extra_info")
+                all_ref_doc_infos[doc_id] = RefDocInfo(**ref_doc_info)
+
+        return all_ref_doc_infos
 
     def ref_doc_exists(self, ref_doc_id: str) -> bool:
         """Check if a ref_doc_id has been ingested."""
@@ -166,10 +187,10 @@ class KVDocumentStore(BaseDocumentStore):
         if ref_doc_info is not None:
             ref_doc_obj = RefDocInfo(**ref_doc_info)
 
-            ref_doc_obj.doc_ids.remove(doc_id)
+            ref_doc_obj.node_ids.remove(doc_id)
 
             # delete ref_doc from collection if it has no more doc_ids
-            if len(ref_doc_obj.doc_ids) > 0:
+            if len(ref_doc_obj.node_ids) > 0:
                 self._kvstore.put(
                     ref_doc_id,
                     ref_doc_obj.to_dict(),
@@ -200,7 +221,7 @@ class KVDocumentStore(BaseDocumentStore):
             else:
                 return
 
-        for doc_id in ref_doc_info.doc_ids:
+        for doc_id in ref_doc_info.node_ids:
             self.delete_document(doc_id, raise_error=False, remove_ref_doc_node=False)
 
         self._kvstore.delete(ref_doc_id, collection=self._metadata_collection)

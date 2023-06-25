@@ -9,7 +9,7 @@ from llama_index.langchain_helpers.text_splitter import (
     TextSplitter,
     TokenTextSplitter,
 )
-from llama_index.readers.schema.base import ImageDocument
+from llama_index.readers.schema.base import Document, ImageDocument
 from llama_index.schema import (
     BaseNode,
     NodeRelationship,
@@ -82,18 +82,25 @@ def get_nodes_from_document(
                 },
             )
             nodes.append(image_node)  # type: ignore
-        else:
+        elif isinstance(document, Document):
             node = TextNode(
                 text=text_chunk,
                 embedding=document.embedding,
-                metadata=document.metadata if include_metadata else {},
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
+                metadata=document.metadata if include_metadata else {},
+                excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
+                excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
+                metadata_seperator=document.metadata_seperator,
+                text_template=document.text_template,
+                weight=document.weight,
                 relationships={
                     NodeRelationship.SOURCE: document.as_related_node_info()
                 },
             )
             nodes.append(node)
+        else:
+            raise ValueError(f"Unknown document type: {type(document)}")
 
     # if include_prev_next_rel, then add prev/next relationships
     if include_prev_next_rel:

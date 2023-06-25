@@ -19,8 +19,8 @@ def convert_tool_to_node(tool: BaseTool) -> TextNode:
     return TextNode(
         text=node_text,
         metadata={"name": tool.metadata.name},
-        metadata_keys_to_exclude_for_embed=["name"],
-        metadata_keys_to_exclude_for_llm=["name"],
+        excluded_embed_metadata_keys=["name"],
+        excluded_llm_metadata_keys=["name"],
     )
 
 
