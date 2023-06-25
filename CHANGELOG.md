@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [v0.6.33] - 2023-06-25
+
+### New Features
+- Add typesense vector store (#6561)
+- 
+
+### Bug Fixes / Nits
+- Track langchain dependency via bridge module. (#6573)
+
 ## [v0.6.32] - 2023-06-23
 
 ### New Features
