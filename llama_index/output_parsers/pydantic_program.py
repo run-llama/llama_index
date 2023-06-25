@@ -1,7 +1,7 @@
 """Pydantic program output parser."""
 
 
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 from llama_index.program.base_program import Model, BasePydanticProgram
 from typing import Generic
 

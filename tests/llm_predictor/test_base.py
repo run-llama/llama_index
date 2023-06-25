@@ -7,7 +7,7 @@ import pytest
 from langchain.llms.fake import FakeListLLM
 
 from llama_index.llm_predictor.structured import LLMPredictor, StructuredLLMPredictor
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 

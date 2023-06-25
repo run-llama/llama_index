@@ -8,7 +8,7 @@ https://github.com/jxnl/openai_function_call/blob/main/auto_dataframe.py
 
 from typing import Optional, List, Any, Type
 from pydantic import BaseModel, Field
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 from llama_index.output_parsers.pydantic_program import PydanticProgramOutputParser
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
