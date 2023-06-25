@@ -34,6 +34,7 @@ def get_data_model(base: Type, index_name: str) -> Any:
 
 class PGVectorStore(VectorStore):
     stores_text = True
+    flat_metadata = False
 
     def __init__(self, connection_string: str, table_name: str) -> None:
         try:
@@ -111,7 +112,9 @@ class PGVectorStore(VectorStore):
                     doc_id=result.id,
                     embedding=result.embedding,
                     text=result.node.get_content(metadata_mode=MetadataMode.NONE),
-                    metadata=node_to_metadata_dict(result.node, remove_text=True),
+                    metadata=node_to_metadata_dict(
+                        result.node, remove_text=True, flat_metadata=self.flat_metadata
+                    ),
                 )
                 session.add(item)
             session.commit()

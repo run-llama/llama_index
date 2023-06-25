@@ -51,6 +51,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
     """
 
     stores_text: bool = True
+    flat_metadata: bool = True
 
     def __init__(
         self,
@@ -106,7 +107,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
             node_id = result.id
             node = result.node
 
-            metadata = node_to_metadata_dict(node, remove_text=True)
+            metadata = node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=self.flat_metadata
+            )
 
             entry = {
                 self._id_key: node_id,

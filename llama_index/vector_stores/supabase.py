@@ -38,6 +38,7 @@ class SupabaseVectorStore(VectorStore):
     """
 
     stores_text = True
+    flat_metadata = False
 
     def __init__(
         self,
@@ -95,7 +96,9 @@ class SupabaseVectorStore(VectorStore):
         for result in embedding_results:
             # NOTE: keep text in metadata dict since there's no special field in
             #       Supabase Vector.
-            metadata_dict = node_to_metadata_dict(result.node, remove_text=False)
+            metadata_dict = node_to_metadata_dict(
+                result.node, remove_text=False, flat_metadata=self.flat_metadata
+            )
 
             data.append((result.id, result.embedding, metadata_dict))
             ids.append(result.id)

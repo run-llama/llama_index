@@ -35,6 +35,7 @@ def _to_filter_expr(filters: MetadataFilters) -> str:
 class TairVectorStore(VectorStore):
     stores_text = True
     stores_node = True
+    flat_metadata = False
 
     def __init__(
         self,
@@ -152,7 +153,9 @@ class TairVectorStore(VectorStore):
                 "doc_id": result.ref_doc_id,
                 "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
             }
-            metadata_dict = node_to_metadata_dict(result.node, remove_text=True)
+            metadata_dict = node_to_metadata_dict(
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
+            )
             attributes.update(metadata_dict)
 
             ids.append(result.id)

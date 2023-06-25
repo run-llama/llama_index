@@ -6,11 +6,31 @@ from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, Text
 DEFAULT_TEXT_KEY = "text"
 
 
+def _validate_is_flat_dict(metadata_dict: dict) -> None:
+    """
+    Validate that metadata dict is flat,
+    and key is str, and value is one of (str, int, float, None).
+    """
+    for key, val in metadata_dict.items():
+        if not isinstance(key, str):
+            raise ValueError("Metadata key must be str!")
+        if not isinstance(val, (str, int, float, type(None))):
+            raise ValueError(
+                f"Value for metadata {key} must be one of (str, int, float, None)"
+            )
+
+
 def node_to_metadata_dict(
-    node: BaseNode, remove_text: bool = False, text_field: str = DEFAULT_TEXT_KEY
+    node: BaseNode,
+    remove_text: bool = False,
+    text_field: str = DEFAULT_TEXT_KEY,
+    flat_metadata: bool = False,
 ) -> dict:
     """Common logic for saving Node data into metadata dict."""
     metadata: Dict[str, Any] = node.metadata
+
+    if flat_metadata:
+        _validate_is_flat_dict(metadata)
 
     # store entire node as json string - some minor text duplication
     node_dict = node.dict()

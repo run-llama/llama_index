@@ -44,6 +44,7 @@ class ChromaVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    flat_metadata: bool = True
 
     def __init__(self, chroma_collection: Any, **kwargs: Any) -> None:
         """Init params."""
@@ -74,7 +75,11 @@ class ChromaVectorStore(VectorStore):
         documents = []
         for result in embedding_results:
             embeddings.append(result.embedding)
-            metadatas.append(node_to_metadata_dict(result.node, remove_text=True))
+            metadatas.append(
+                node_to_metadata_dict(
+                    result.node, remove_text=True, flat_metadata=self.flat_metadata
+                )
+            )
             ids.append(result.id)
             documents.append(
                 result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
@@ -141,8 +146,6 @@ class ChromaVectorStore(VectorStore):
         ):
             try:
                 node = metadata_dict_to_node(metadata)
-
-                # add back the content
                 node.set_content(text)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility

@@ -38,6 +38,7 @@ class QdrantVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    flat_metadata: bool = False
 
     def __init__(
         self, collection_name: str, client: Optional[Any] = None, **kwargs: Any
@@ -87,7 +88,9 @@ class QdrantVectorStore(VectorStore):
                 vectors.append(result.embedding)
                 node = result.node
 
-                metadata = node_to_metadata_dict(node, remove_text=False)
+                metadata = node_to_metadata_dict(
+                    node, remove_text=False, flat_metadata=self.flat_metadata
+                )
 
                 payloads.append(metadata)
 

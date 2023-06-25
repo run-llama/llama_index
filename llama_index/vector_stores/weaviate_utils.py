@@ -146,7 +146,9 @@ def add_node(
     metadata = {}
     metadata[text_key] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
 
-    additional_metadata = node_to_metadata_dict(node, remove_text=True)
+    additional_metadata = node_to_metadata_dict(
+        node, remove_text=True, flat_metadata=False
+    )
     metadata.update(additional_metadata)
 
     vector = node.embedding
