@@ -8,7 +8,7 @@ import logging
 from typing import Any, Callable, List, Optional, cast
 
 from llama_index import utils
-from llama_index.data_structs.node import Node
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -21,6 +21,7 @@ from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
     node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
 )
 
 _logger = logging.getLogger(__name__)
@@ -109,9 +110,13 @@ class TypesenseVectorStore(VectorStore):
             doc = {
                 "id": node.id,
                 "vec": node.embedding,
-                f"{self._text_key}": node.node.text,
+                f"{self._text_key}": node.node.get_content(
+                    metadata_mode=MetadataMode.NONE
+                ),
                 "ref_doc_id": node.ref_doc_id,
-                f"{self._metadata_key}": node_to_metadata_dict(node.node),
+                f"{self._metadata_key}": node_to_metadata_dict(
+                    node.node, remove_text=True
+                ),
             }
             upsert_docs.append(doc)
 
@@ -229,22 +234,28 @@ class TypesenseVectorStore(VectorStore):
             document = hit["document"]
             id = document["id"]
             text = document[self._text_key]
-            extra_info, node_info, relationships = metadata_dict_to_node(
-                document[self._metadata_key], text_key=self._text_key
-            )
 
             # Note that typesense distances range from 0 to 2, \
             # where 0 is most similar and 2 is most dissimilar
             if query.mode is not VectorStoreQueryMode.TEXT_SEARCH:
                 score = hit["vector_distance"]
 
-            node = Node(
-                text=text,
-                doc_id=id,
-                extra_info=extra_info,
-                node_info=node_info,
-                relationships=relationships,
-            )
+            try:
+                node = metadata_dict_to_node(document[self._metadata_key])
+                node.text = text
+            except Exception:
+                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                    document[self._metadata_key], text_key=self._text_key
+                )
+                node = TextNode(
+                    text=text,
+                    id_=id,
+                    metadata=extra_info,
+                    start_chart_idx=node_info.get("start", None),
+                    end_chart_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
             top_k_ids.append(id)
             top_k_nodes.append(node)
             if query.mode is not VectorStoreQueryMode.TEXT_SEARCH:
