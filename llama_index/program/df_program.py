@@ -6,8 +6,7 @@ https://github.com/jxnl/openai_function_call/blob/main/auto_dataframe.py
 
 """
 
-from llama_index.program.base_program import BasePydanticProgram
-from typing import Type, Any, Optional, List, Dict
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
 
@@ -20,7 +19,8 @@ class DataFrameRow(BaseModel):
 
     row_values: List[Dict] = Field(
         ...,
-        description="List of dictionaries, where each dictionary is a column-value pair.",
+        description="""List of dictionaries, where each dictionary is a \
+        column-value pair.""",
     )
 
 

@@ -1,10 +1,9 @@
 """Pydantic program output parser."""
 
 
-from pydantic import BaseModel
 from llama_index.output_parsers.base import BaseOutputParser
 from llama_index.program.base_program import Model, BasePydanticProgram
-from typing import Optional, Any, Generic
+from typing import Generic
 
 
 DEFAULT_INPUT_PROMPT_TMPL = "{input_str}"

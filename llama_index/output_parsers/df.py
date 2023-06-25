@@ -6,7 +6,7 @@ https://github.com/jxnl/openai_function_call/blob/main/auto_dataframe.py
 
 """
 
-from typing import Optional, List, Dict, Any, Type
+from typing import Optional, List, Any, Type
 from pydantic import BaseModel, Field
 from llama_index.output_parsers.base import BaseOutputParser
 from llama_index.output_parsers.pydantic_program import PydanticProgramOutputParser
@@ -175,22 +175,25 @@ class DFRowsOutputParser(BaseOutputParser):
     @classmethod
     def from_defaults(
         cls,
-        pydantic_program_cls: Type[BasePydanticProgram] = None,
+        pydantic_program_cls: Optional[Type[BasePydanticProgram]] = None,
         df_parser_template_str: str = DEFAULT_ROWS_DF_PARSER_TMPL,
         df: Optional[pd.DataFrame] = None,
         column_schema: Optional[str] = None,
         input_key: str = "input_str",
-    ) -> "DFFullOutputParser":
-        """Full DF output parser."""
+        **kwargs: Any
+    ) -> "DFRowsOutputParser":
+        """Rows DF output parser."""
         pydantic_program_cls = pydantic_program_cls or OpenAIPydanticProgram
 
         # either one of df or column_schema needs to be specified
         if df is None and column_schema is None:
             raise ValueError(
-                "Either `df` or `column_schema` must be specified for DFRowsOutputParser."
+                "Either `df` or `column_schema` must be specified for "
+                "DFRowsOutputParser."
             )
         # first, inject the column schema into the template string
         if column_schema is None:
+            assert df is not None
             # by default, show column schema and some example values
             column_schema = ", ".join(df.columns)
 
