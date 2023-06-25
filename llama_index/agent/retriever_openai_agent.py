@@ -4,9 +4,8 @@ from llama_index.agent.openai_agent import BaseOpenAIAgent
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools.types import BaseTool
 from typing import Optional, List
-from langchain.chat_models import ChatOpenAI
+from llama_index.bridge.langchain import ChatOpenAI, ChatMessageHistory
 from llama_index.callbacks.base import CallbackManager
-from langchain.memory import ChatMessageHistory
 from llama_index.agent.openai_agent import (
     SUPPORTED_MODEL_NAMES,
     DEFAULT_MAX_FUNCTION_CALLS,

@@ -4,10 +4,10 @@ from typing import Any, Tuple
 from unittest.mock import patch
 
 import pytest
-from langchain.llms.fake import FakeListLLM
+from llama_index.bridge.langchain import FakeListLLM
 
 from llama_index.llm_predictor.structured import LLMPredictor, StructuredLLMPredictor
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 
@@ -61,7 +61,7 @@ def test_struct_llm_predictor_with_cache() -> None:
     """Test LLM predictor."""
     from gptcache.processor.pre import get_prompt
     from gptcache.manager.factory import get_data_manager
-    from langchain.cache import GPTCache
+    from llama_index.bridge.langchain import GPTCache
 
     def init_gptcache_map(cache_obj: Cache) -> None:
         cache_path = "test"

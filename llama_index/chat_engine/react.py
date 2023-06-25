@@ -1,7 +1,6 @@
 from typing import Any, Optional, Sequence
 
-from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_memory import BaseChatMemory
+from llama_index.bridge.langchain import ConversationBufferMemory, BaseChatMemory
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
 from llama_index.chat_engine.utils import is_chat_model, to_langchain_chat_history

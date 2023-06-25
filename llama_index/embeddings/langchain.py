@@ -3,7 +3,7 @@
 
 from typing import Any, List
 
-from langchain.embeddings.base import Embeddings as LCEmbeddings
+from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 
 from llama_index.embeddings.base import BaseEmbedding
 

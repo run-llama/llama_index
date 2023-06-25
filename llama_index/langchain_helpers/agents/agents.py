@@ -2,10 +2,13 @@
 
 from typing import Any, Optional
 
-from langchain.agents import AgentExecutor, initialize_agent
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.llms.base import BaseLLM
-from langchain.agents.agent_types import AgentType
+from llama_index.bridge.langchain import (
+    BaseLLM,
+    AgentType,
+    AgentExecutor,
+    initialize_agent,
+    BaseCallbackManager,
+)
 
 from llama_index.langchain_helpers.agents.toolkits import LlamaToolkit
 

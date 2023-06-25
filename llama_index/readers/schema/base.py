@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from langchain.docstore.document import Document as LCDocument
+from llama_index.bridge.langchain import Document as LCDocument
 
 from llama_index.schema import BaseDocument
 
