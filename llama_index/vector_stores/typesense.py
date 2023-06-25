@@ -47,7 +47,8 @@ class TypesenseVectorStore(VectorStore):
     """
 
     stores_text: bool = True
-    is_embedding_query = False
+    is_embedding_query: bool = False
+    flat_metadata: bool = False
 
     def __init__(
         self,
@@ -115,7 +116,7 @@ class TypesenseVectorStore(VectorStore):
                 ),
                 "ref_doc_id": node.ref_doc_id,
                 f"{self._metadata_key}": node_to_metadata_dict(
-                    node.node, remove_text=True
+                    node.node, remove_text=True, flat_metadata=self.flat_metadata
                 ),
             }
             upsert_docs.append(doc)

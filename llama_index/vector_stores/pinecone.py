@@ -118,6 +118,7 @@ class PineconeVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    flat_metadata: bool = True
 
     def __init__(
         self,
@@ -186,7 +187,9 @@ class PineconeVectorStore(VectorStore):
             node_id = result.id
             node = result.node
 
-            metadata = node_to_metadata_dict(node, remove_text=False)
+            metadata = node_to_metadata_dict(
+                node, remove_text=False, flat_metadata=self.flat_metadata
+            )
 
             entry = {
                 ID_KEY: node_id,

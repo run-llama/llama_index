@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 class RedisVectorStore(VectorStore):
     stores_text = True
     stores_node = True
+    flat_metadata = False
 
     tokenizer = TokenEscaper()
 
@@ -152,7 +153,9 @@ class RedisVectorStore(VectorStore):
                 "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
                 self._vector_key: array_to_buffer(result.embedding),
             }
-            additional_metadata = node_to_metadata_dict(result.node, remove_text=True)
+            additional_metadata = node_to_metadata_dict(
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
+            )
             mapping.update(additional_metadata)
 
             ids.append(result.id)

@@ -51,6 +51,7 @@ class MetalVectorStore(VectorStore):
 
         self.metal_client = Metal(api_key, client_id, index_id)
         self.stores_text = True
+        self.flat_metadata = False
         self.is_embedding_query = True
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -82,7 +83,7 @@ class MetalVectorStore(VectorStore):
             # load additional Node data
             try:
                 node = metadata_dict_to_node(item["metadata"])
-                node.set_content(text)
+                node.text = text
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
@@ -130,7 +131,9 @@ class MetalVectorStore(VectorStore):
                 result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
             )
 
-            additional_metadata = node_to_metadata_dict(result.node, remove_text=True)
+            additional_metadata = node_to_metadata_dict(
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
+            )
             metadata.update(additional_metadata)
 
             payload = {

@@ -35,6 +35,7 @@ class DocArrayVectorStore(VectorStore, ABC):
     _ref_docs: Dict[str, List[str]]
 
     stores_text: bool = True
+    flat_metadata: bool = False
 
     def _update_ref_docs(self, docs) -> None:  # type: ignore[no-untyped-def]
         pass
@@ -118,7 +119,9 @@ class DocArrayVectorStore(VectorStore, ABC):
         docs = DocList[self._schema](  # type: ignore[name-defined]
             self._schema(
                 id=result.id,
-                metadata=node_to_metadata_dict(result.node),
+                metadata=node_to_metadata_dict(
+                    result.node, flat_metadata=self.flat_metadata
+                ),
                 text=result.node.get_content(metadata_mode=MetadataMode.NONE),
                 embedding=result.embedding,
             )

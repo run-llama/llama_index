@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
 
+from llama_index.schema import MetadataMode
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
@@ -63,6 +64,7 @@ class DeepLakeVectorStore(VectorStore):
     """
 
     stores_text: bool = False
+    flat_metadata: bool = False
 
     def __init__(
         self,
@@ -165,7 +167,7 @@ class DeepLakeVectorStore(VectorStore):
             metadata = result.node.metadata or {}
             metadata = {**metadata, **{"document_id": result.ref_doc_id}}
             id = result.id
-            text = result.node.get_content()
+            text = result.node.get_content(metadata_mode=MetadataMode.NONE)
 
             data_to_injest.append(
                 {
