@@ -6,7 +6,7 @@ from llama_index.bridge.langchain import BasePromptTemplate as BaseLangchainProm
 from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
 from llama_index.bridge.langchain import BaseLanguageModel, ConditionalPromptSelector
 
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 from llama_index.prompts.prompt_type import PromptType
 
 
