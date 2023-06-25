@@ -8,7 +8,7 @@ from llama_index.data_structs.node import NodeWithScore, Node
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 from llama_index.indices.query.schema import QueryBundle
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 
 
 DEFAULT_NAME = "query_plan_tool"

@@ -3,6 +3,7 @@
 # For testing
 pytest==7.2.1
 pytest-dotenv==0.5.2
+pytest-asyncio==0.21.0
 
 # third-party (libraries)
 rake_nltk==1.0.6

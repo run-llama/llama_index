@@ -6,8 +6,8 @@ import logging
 import os
 from typing import Dict, List, Optional
 
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
+from llama_index.bridge.langchain import ChatOpenAI
+from llama_index.bridge.langchain import HumanMessage
 from llama_index.response.schema import Response
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm

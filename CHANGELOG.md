@@ -1,9 +1,33 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.33] - 2023-06-25
+
+### New Features
+- Add typesense vector store (#6561)
+- add df output parser (#6576)
+
+### Bug Fixes / Nits
+- Track langchain dependency via bridge module. (#6573)
+
+## [v0.6.32] - 2023-06-23
+
+### New Features
+- add object index  (#6548)
+- add SQL Schema Node Mapping + SQLTableRetrieverQueryEngine + obj index fixes (#6569)
+- sql refactor (NLSQLTableQueryEngine) (#6529)
+
+### Bug Fixes / Nits
+- Update vector_stores.md (#6562)
+- Minor `BaseResponseBuilder` interface cleanup (#6557)
+- Refactor TreeSummarize (#6550)
+
+
+## [v0.6.31] - 2023-06-22
 
 ### Bug Fixes / Nits
 - properly convert weaviate distance to score (#6545)
+- refactor tree summarize and fix bug to not truncate context (#6550)
+- fix custom KG retrieval notebook nits (#6551)
 
 ## [v0.6.30] - 2023-06-21
 

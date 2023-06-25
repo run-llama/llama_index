@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import List, Optional, Sequence, cast
 
-from langchain.input import get_color_mapping, print_text
+from llama_index.bridge.langchain import get_color_mapping, print_text
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
