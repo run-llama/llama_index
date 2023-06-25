@@ -70,7 +70,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
         prompt = Prompt(prompt_template_str)
-        function_call = function_call or "auto"
+        function_call = function_call or {"name": output_cls.schema()["title"]}
         return cls(
             output_cls=output_cls,
             llm=llm,
