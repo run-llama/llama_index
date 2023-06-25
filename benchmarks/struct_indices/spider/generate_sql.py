@@ -5,9 +5,8 @@ import logging
 import os
 import re
 
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
-from langchain.base_language import BaseLanguageModel
+from llama_index.bridge.langchain import ChatOpenAI, OpenAI
+from llama_index.bridge.langchain import BaseLanguageModel
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 

@@ -1,7 +1,6 @@
 from typing import Any, Dict, Generic, Optional, Type, Union
 
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
+from llama_index.bridge.langchain import ChatOpenAI, HumanMessage
 
 from llama_index.program.base_program import BasePydanticProgram, Model
 from llama_index.prompts.base import Prompt

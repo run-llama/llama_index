@@ -1,25 +1,17 @@
 import json
 from abc import abstractmethod
-from typing import Optional, Callable, List
+from typing import Callable, List, Optional
 
-from llama_index.agent.utils import FunctionMessage, monkey_patch_langchain
+from llama_index.bridge.langchain import FunctionMessage, ChatMessageHistory, ChatOpenAI
 
-# TODO: right now langchain does not support function messages
-#       monkey patch it to support it
-monkey_patch_langchain()
-
-from langchain.chat_models import ChatOpenAI  # noqa: E402
-from langchain.memory import ChatMessageHistory  # noqa: E402
-
-from llama_index.data_structs.node import NodeWithScore  # noqa: E402
-from llama_index.data_structs.node import Node  # noqa: E402
-from llama_index.indices.base_retriever import BaseRetriever  # noqa: E402
-from llama_index.callbacks.base import CallbackManager  # noqa: E402
-from llama_index.chat_engine.types import BaseChatEngine  # noqa: E402
-from llama_index.indices.query.base import BaseQueryEngine  # noqa: E402
-from llama_index.indices.query.schema import QueryBundle  # noqa: E402
-from llama_index.response.schema import RESPONSE_TYPE, Response  # noqa: E402
-from llama_index.tools import BaseTool  # noqa: E402
+from llama_index.callbacks.base import CallbackManager
+from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.data_structs.node import Node, NodeWithScore
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.tools import BaseTool
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 SUPPORTED_MODEL_NAMES = [

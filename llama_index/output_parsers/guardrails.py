@@ -12,7 +12,7 @@ except ImportError:
 from copy import deepcopy
 from typing import Any, Callable, Optional
 
-from langchain.llms.base import BaseLLM
+from llama_index.bridge.langchain import BaseLLM
 
 from llama_index.output_parsers.base import BaseOutputParser
 

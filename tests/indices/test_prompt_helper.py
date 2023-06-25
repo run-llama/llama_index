@@ -1,7 +1,7 @@
 """Test PromptHelper."""
 from typing import cast
 
-from langchain import PromptTemplate as LangchainPrompt
+from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
 
 from llama_index.data_structs.node import Node
 from llama_index.indices.prompt_helper import PromptHelper

@@ -1,6 +1,6 @@
 """Prompts for ChatGPT."""
 
-from langchain.prompts.chat import (
+from llama_index.bridge.langchain import (
     AIMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,

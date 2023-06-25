@@ -1,9 +1,67 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.32] - 2023-06-23
+
+### New Features
+- add object index  (#6548)
+- add SQL Schema Node Mapping + SQLTableRetrieverQueryEngine + obj index fixes (#6569)
+- sql refactor (NLSQLTableQueryEngine) (#6529)
+
+### Bug Fixes / Nits
+- Update vector_stores.md (#6562)
+- Minor `BaseResponseBuilder` interface cleanup (#6557)
+- Refactor TreeSummarize (#6550)
+
+
+## [v0.6.31] - 2023-06-22
+
+### Bug Fixes / Nits
+- properly convert weaviate distance to score (#6545)
+- refactor tree summarize and fix bug to not truncate context (#6550)
+- fix custom KG retrieval notebook nits (#6551)
+
+## [v0.6.30] - 2023-06-21
+
+### New Features
+- multi-selector support in router query engine (#6518)
+- pydantic selector support in router query engine using OpenAI function calling API (#6518)
+- streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
+- metadata filtering support in `QdrantVectorStore` (#6476)
+- add `PGVectorStore` to support postgres with pgvector (#6190)
+
+### Bug Fixes / Nits
+- better error handling in the mbox reader (#6248)
+- Fix blank similarity score when using weaviate (#6512)
+- fix for sorted nodes in `PrevNextNodePostprocessor` (#6048)
+
+### Breaking/Deprecated API Changes
+- Refactor PandasQueryEngine to take in df directly, deprecate PandasIndex (#6527)
+
+## [v0.6.29] - 2023-06-20
+
+### New Features
+
+- query planning tool with OpenAI Function API (#6520)
+- docs: example of kg+vector index (#6497)
+- Set context window sizes for Cohere and AI21(J2 model) (#6485)
+
+### Bug Fixes / Nits
+- add default input size for Cohere and AI21 (#6485)
+- docs: replace comma with colon in dict object (#6439)
+- extra space in prompt and error message update (#6443)
+- [Issue 6417] Fix prompt_templates docs page (#6499)
+- Rip out monkey patch and update model to context window mapping (#6490)
+
+## [v0.6.28] - 2023-06-19
 
 ### New Features
 - New OpenAI Agent + Query Engine Cookbook (#6496)
+- allow recursive data extraction (pydantic program)  (#6503)
+
+### Bug Fixes / Nits
+- update mongo interface (#6501)
+- fixes that we forgot to include for openai pydantic program (#6503) (#6504)
+- Fix github pics in Airbyte notebook (#6493)
 
 ## [v0.6.27] - 2023-06-16
 
@@ -13,7 +71,7 @@
 - OpenAI Retrieval Function Agent (#6491)
 
 ### Breaking/Deprecated API Changes
-- Deprecated current token tracking (llm predicotr and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
+- Deprecated current token tracking (llm predictor and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
 - Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
 
 ### Bug Fixes / Nits

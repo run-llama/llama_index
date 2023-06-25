@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever

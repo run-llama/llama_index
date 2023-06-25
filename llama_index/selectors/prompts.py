@@ -49,11 +49,39 @@ DEFAULT_MULTI_SELECT_PROMPT_TMPL = (
     "{context_list}"
     "\n---------------------\n"
     "Using only the choices above and not prior knowledge, return the top choices "
-    "(no more than {max_outputs}, ranked by most relevant to least) that "
+    "(no more than {max_outputs}, but only select what is needed) that "
     "are most relevant to the question: '{query_str}'\n"
 )
 
 
 DEFAULT_MULTIPLE_SELECT_PROMPT = Prompt(
     template=DEFAULT_MULTI_SELECT_PROMPT_TMPL, prompt_type=PromptType.MULTI_SELECT
+)
+
+# single pydantic select
+DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL = (
+    "Some choices are given below. It is provided in a numbered list "
+    "(1 to {num_choices}),"
+    "where each item in the list corresponds to a summary.\n"
+    "---------------------\n"
+    "{context_list}"
+    "\n---------------------\n"
+    "Using only the choices above and not prior knowledge, generate "
+    "the selection object and reason that is most relevant to the "
+    "question: '{query_str}'\n"
+)
+
+
+# multiple pydantic select
+DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL = (
+    "Some choices are given below. It is provided in a numbered "
+    "list (1 to {num_choices}), "
+    "where each item in the list corresponds to a summary.\n"
+    "---------------------\n"
+    "{context_list}"
+    "\n---------------------\n"
+    "Using only the choices above and not prior knowledge, return the top choice(s) "
+    "(no more than {max_outputs}, but only select what is needed) by generating "
+    "the selection object and reasons that are most relevant to the "
+    "question: '{query_str}'\n"
 )

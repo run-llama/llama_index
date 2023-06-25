@@ -145,5 +145,5 @@ modules/
 Pipfile
 Pipfile.lock
 
-# pyrightconfig
+# pyright
 pyrightconfig.json

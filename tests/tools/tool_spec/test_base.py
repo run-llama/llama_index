@@ -20,7 +20,6 @@ class AbcSchema(BaseModel):
 
 
 class TestToolSpec(BaseToolSpec):
-
     spec_functions: List[str] = ["foo", "bar", "abc"]
 
     def foo(self, arg1: str, arg2: int) -> str:

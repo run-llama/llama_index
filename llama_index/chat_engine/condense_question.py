@@ -119,7 +119,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         response = self._query_engine.query(condensed_question)
 
         # Record response
-        self._chat_history.append((message, str(response)))
+        self._chat_history.append((message, response))
         return response
 
     async def achat(self, message: str) -> RESPONSE_TYPE:
@@ -135,9 +135,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         response = await self._query_engine.aquery(condensed_question)
 
         # Record response
-        self._chat_history.append((message, str(response)))
+        self._chat_history.append((message, response))
         return response
 
     def reset(self) -> None:
         # Clear chat history
         self._chat_history = []
+
+    @property
+    def chat_history(self) -> ChatHistoryType:
+        """Get chat history as human and ai message pairs."""
+        return [(str(human), str(ai)) for human, ai in self._chat_history]

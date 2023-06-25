@@ -191,8 +191,30 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
-        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.node.get_doc_id())
-        return list(sorted_nodes)
+        all_nodes_values: List[NodeWithScore] = list(all_nodes.values())
+        sorted_nodes: List[NodeWithScore] = list()
+        for node in all_nodes_values:
+            # variable to check if cand node is inserted
+            node_inserted = False
+            for i, cand in enumerate(sorted_nodes):
+                node_id = node.node.get_doc_id()
+                # prepend to current candidate
+                if node_id == cand.node.relationships.get(
+                    DocumentRelationship.PREVIOUS
+                ):
+                    node_inserted = True
+                    sorted_nodes.insert(i, node)
+                    break
+                # append to current candidate
+                elif node_id == cand.node.relationships.get(DocumentRelationship.NEXT):
+                    node_inserted = True
+                    sorted_nodes.insert(i + 1, node)
+                    break
+
+            if not node_inserted:
+                sorted_nodes.append(node)
+
+        return sorted_nodes
 
 
 DEFAULT_INFER_PREV_NEXT_TMPL = (

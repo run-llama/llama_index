@@ -34,6 +34,8 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
     During query time, the user can either specify a raw SQL query
     or a natural language query to retrieve their data.
 
+    NOTE: this is deprecated.
+
     Args:
         documents (Optional[Sequence[DOCUMENTS_INPUT]]): Documents to index.
             NOTE: in the SQL index, this is an optional field.

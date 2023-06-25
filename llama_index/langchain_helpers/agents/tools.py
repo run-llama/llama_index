@@ -2,7 +2,7 @@
 
 from typing import Dict
 
-from langchain.tools import BaseTool
+from llama_index.bridge.langchain import BaseTool
 from pydantic import BaseModel, Field
 
 from llama_index.indices.query.base import BaseQueryEngine
