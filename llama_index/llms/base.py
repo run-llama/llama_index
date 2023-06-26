@@ -87,7 +87,7 @@ class LLM(ABC):
         pass
 
     @abstractmethod
-    def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         pass
 
     @abstractmethod
@@ -96,7 +96,7 @@ class LLM(ABC):
 
     @abstractmethod
     def stream_chat(
-        self, messages: Sequence[Message], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> StreamChatResponse:
         pass
 
@@ -106,7 +106,9 @@ class LLM(ABC):
 
     # ===== Async Endpoints =====
     @abstractmethod
-    async def achat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         pass
 
     @abstractmethod
@@ -115,7 +117,7 @@ class LLM(ABC):
 
     @abstractmethod
     async def astream_chat(
-        self, messages: Sequence[Message], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> StreamChatResponse:
         pass
 

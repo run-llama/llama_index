@@ -23,7 +23,7 @@ def is_chat_model(llm: BaseLanguageModel):
 
 
 def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LCMessage]:
-    lc_messages = []
+    lc_messages: List[LCMessage] = []
     for message in messages:
         if message.role == "user":
             lc_messages.append(
@@ -51,9 +51,9 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LCMessage]:
     return lc_messages
 
 
-def from_lc_messages(messages: Sequence[LCMessage]) -> List[Message]:
-    messages = []
-    for lc_message in messages:
+def from_lc_messages(lc_messages: Sequence[LCMessage]) -> List[ChatMessage]:
+    messages: List[ChatMessage] = []
+    for lc_message in lc_messages:
         if isinstance(lc_message, HumanMessage):
             messages.append(
                 ChatMessage(
@@ -81,6 +81,7 @@ def from_lc_messages(messages: Sequence[LCMessage]) -> List[Message]:
             )
         else:
             raise ValueError(f"Invalid message type: {type(lc_message)}")
+    return messages
 
 
 def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
