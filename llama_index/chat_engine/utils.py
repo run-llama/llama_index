@@ -27,7 +27,7 @@ def to_langchain_chat_history(
     return history
 
 
-def is_chat_model(service_context: ServiceContext) -> bool:
+def is_lc_chat_model(service_context: ServiceContext) -> bool:
     llm_predictor = service_context.llm_predictor
     if not isinstance(llm_predictor, LLMPredictor):
         return False
