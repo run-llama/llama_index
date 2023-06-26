@@ -67,7 +67,7 @@ class ChromaReader(BaseReader):
             results["metadatas"],
         ):
             document = Document(
-                doc_id=result[0][0],
+                id_=result[0][0],
                 text=result[1][0],
                 embedding=result[2][0],
                 metadata=result[3][0],

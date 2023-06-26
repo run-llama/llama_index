@@ -66,6 +66,9 @@ class BaseNode(BaseModel):
 
     """
 
+    class Config:
+        allow_population_by_field_name = True
+
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
     )
@@ -81,7 +84,9 @@ class BaseNode(BaseModel):
 
     """
     metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="A flat dictionary of metadata fields"
+        default_factory=dict,
+        description="A flat dictionary of metadata fields",
+        alias="extra_info",
     )
     excluded_embed_metadata_keys: List[str] = Field(
         default_factory=list,
@@ -334,7 +339,14 @@ class Document(TextNode):
 
     """
 
-    _compat_fields = {"doc_id": "id_"}
+    # TODO: A lot of backwards compatibility logic here, clean up
+    id_: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique ID of the node.",
+        alias="doc_id",
+    )
+
+    _compat_fields = {"doc_id": "id_", "extra_info": "metadata"}
 
     @classmethod
     def get_type(cls) -> str:
