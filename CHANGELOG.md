@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.34] - 2023-06-26
 
 ### New Features
 - New `TextNode`/`Document` object classes based on pydantic (#6586)
@@ -9,6 +9,10 @@
 
 ### Bug Fixes / Nits
 - use `NLTK_DATA` env var to control NLTK download location (#6579)
+- [discord] save author as metadata in group_conversations.py (#6592)
+- bs4 -> beautifulsoup4 in requirements (#6582)
+- negate euclidean distance (#6564)
+- add df output parser notebook link to docs (#6581)
 
 ### Breaking/Deprecated API Changes
 - `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
