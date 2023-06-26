@@ -71,12 +71,25 @@ class VectorIndexRetriever(BaseRetriever):
                         query_bundle.embedding_strs
                     )
                 )
+        return self._get_nodes_with_embeddings(query_bundle)
 
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        if self._vector_store.is_embedding_query:
+            if query_bundle.embedding is None:
+                query_bundle.embedding = await self._service_context.embed_model.aget_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
+
+        return self._get_nodes_with_embeddings(query_bundle)
+
+    def _get_nodes_with_embeddings(
+        self, query_bundle_with_embeddings: QueryBundle
+    ) -> List[NodeWithScore]:
         query = VectorStoreQuery(
-            query_embedding=query_bundle.embedding,
+            query_embedding=query_bundle_with_embeddings.embedding,
             similarity_top_k=self._similarity_top_k,
             doc_ids=self._doc_ids,
-            query_str=query_bundle.query_str,
+            query_str=query_bundle_with_embeddings.query_str,
             mode=self._vector_store_query_mode,
             alpha=self._alpha,
             filters=self._filters,
