@@ -140,6 +140,7 @@ class SimpleVectorStore(VectorStore):
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
 
+        weights = None
         if query.doc_ids:
             available_ids = set(query.doc_ids)
 
