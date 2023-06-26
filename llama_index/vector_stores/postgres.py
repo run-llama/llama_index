@@ -109,7 +109,7 @@ class PGVectorStore(VectorStore):
                 ids.append(result.id)
 
                 item = self.table_class(
-                    doc_id=result.id,
+                    id_=result.id,
                     embedding=result.embedding,
                     text=result.node.get_content(metadata_mode=MetadataMode.NONE),
                     metadata=node_to_metadata_dict(

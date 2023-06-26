@@ -171,6 +171,6 @@ class MyScaleReader(BaseReader):
         )
 
         return [
-            Document(doc_id=r["doc_id"], text=r["text"], metadata=r["metadata"])
+            Document(id_=r["doc_id"], text=r["text"], metadata=r["metadata"])
             for r in self.client.query(query_statement).named_results()
         ]

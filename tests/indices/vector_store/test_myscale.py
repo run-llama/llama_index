@@ -33,7 +33,7 @@ def documents() -> List[Document]:
         "This is another test.\n"
         "This is a test v2."
     )
-    return [Document(doc_id="1", text=doc_text)]
+    return [Document(id_="1", text=doc_text)]
 
 
 @pytest.fixture

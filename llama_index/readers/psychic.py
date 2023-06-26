@@ -71,7 +71,7 @@ class PsychicReader(BaseReader):
             docs.append(
                 Document(
                     text=text,
-                    doc_id=doc_id,
+                    id_=doc_id,
                     metadata={"connector_id": connector_id, "account_id": account_id},
                 )
             )

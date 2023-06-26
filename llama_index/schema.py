@@ -334,7 +334,7 @@ class Document(TextNode):
 
     """
 
-    _compat_fields = {"doc_id": "id_"}
+    _compat_fields = {"doc_id": "id_", "extra_info": "metadata"}
 
     @classmethod
     def get_type(cls) -> str:
