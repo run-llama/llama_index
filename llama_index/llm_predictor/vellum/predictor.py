@@ -29,9 +29,6 @@ class VellumPredictor(BaseLLMPredictor):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        # Needed by BaseLLMPredictor
-        self._total_tokens_used = 0
-        self._last_token_usage: Optional[int] = None
         self.callback_manager = callback_manager or CallbackManager([])
 
         # Vellum-specific
@@ -78,7 +75,6 @@ class VellumPredictor(BaseLLMPredictor):
         )
 
         def text_generator() -> Generator:
-            self._increment_token_usage(text=compiled_prompt.text)
             complete_text = ""
 
             while True:
@@ -106,8 +102,6 @@ class VellumPredictor(BaseLLMPredictor):
 
                 completion_text_delta = result.data.completion.text
                 complete_text += completion_text_delta
-
-                self._increment_token_usage(text=completion_text_delta)
 
                 yield completion_text_delta
 
@@ -142,23 +136,6 @@ class VellumPredictor(BaseLLMPredictor):
         # via Vellum's API based on the LLM that backs the registered prompt's
         # deployment. This is not currently possible, so we use default values.
         return LLMMetadata()
-
-    @property
-    def total_tokens_used(self) -> int:
-        """Get the total tokens used so far."""
-        return self._total_tokens_used
-
-    @property
-    def last_token_usage(self) -> int:
-        """Get the last token usage."""
-        if self._last_token_usage is None:
-            return 0
-        return self._last_token_usage
-
-    @last_token_usage.setter
-    def last_token_usage(self, value: int) -> None:
-        """Set the last token usage."""
-        self._last_token_usage = value
 
     def _prepare_generate_call(
         self, prompt: Prompt, **prompt_args: Any
@@ -195,9 +172,6 @@ class VellumPredictor(BaseLLMPredictor):
 
         completion_text = result.text
 
-        self._increment_token_usage(num_tokens=compiled_prompt.num_tokens)
-        self._increment_token_usage(text=completion_text)
-
         self.callback_manager.on_event_end(
             CBEventType.LLM,
             payload={
@@ -208,19 +182,6 @@ class VellumPredictor(BaseLLMPredictor):
         )
 
         return completion_text
-
-    def _increment_token_usage(
-        self, text: Optional[str] = None, num_tokens: Optional[int] = None
-    ) -> None:
-        """Update internal state to track token usage."""
-
-        if text is not None and num_tokens is not None:
-            raise ValueError("Only one of text and num_tokens can be specified")
-
-        if text is not None:
-            num_tokens = self._count_tokens(text)
-
-        self._total_tokens_used += num_tokens or 0
 
     @staticmethod
     def _count_tokens(text: str) -> int:
