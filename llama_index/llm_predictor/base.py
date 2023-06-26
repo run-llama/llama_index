@@ -48,10 +48,11 @@ class LLMPredictor(BaseLLMPredictor):
     """LLM predictor class.
 
     A lightweight wrapper on top of LLMs that handles:
-    - conversion of prompts to the string input format expected by LLMs 
+    - conversion of prompts to the string input format expected by LLMs
     - logging of prompts and responses to a callback manager
 
-    Mostly keeping around for legacy reasons.
+    NOTE: Mostly keeping around for legacy reasons. A potential future path is to
+    deprecate this class and move all functionality into the LLM class.
     """
 
     def __init__(
@@ -65,9 +66,11 @@ class LLMPredictor(BaseLLMPredictor):
 
     @property
     def metadata(self) -> LLMMetadata:
+        """Get LLM metadata."""
         return self._llm.metadata
 
     def _log_start(self, prompt: Prompt, prompt_args: dict) -> None:
+        """Log start of an LLM event."""
         llm_payload = prompt_args.copy()
         llm_payload[EventPayload.TEMPLATE] = prompt
         event_id = self.callback_manager.on_event_start(
@@ -78,6 +81,7 @@ class LLMPredictor(BaseLLMPredictor):
         return event_id
 
     def _log_end(self, event_id: str, output: str, formatted_prompt: str) -> None:
+        """Log end of an LLM event."""
         prompt_tokens_count = count_tokens(formatted_prompt)
         prediction_tokens_count = count_tokens(output)
         self.callback_manager.on_event_end(
@@ -94,7 +98,7 @@ class LLMPredictor(BaseLLMPredictor):
         )
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
-        """Predict the answer to a query."""
+        """Predict."""
         event_id = self._log_start(prompt, prompt_args)
 
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
@@ -106,13 +110,13 @@ class LLMPredictor(BaseLLMPredictor):
         return output
 
     def stream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
-        """Stream the answer to a query."""
+        """Stream."""
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         stream_response = self._llm.stream_complete(formatted_prompt)
         return stream_response
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
-        """Async predict the answer to a query."""
+        """Async predict."""
         event_id = self._log_start(prompt, prompt_args)
 
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
@@ -123,7 +127,7 @@ class LLMPredictor(BaseLLMPredictor):
         return output
 
     async def astream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
-        """Stream the answer to a query."""
+        """Async stream."""
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         stream_response = await self._llm.astream_complete(formatted_prompt)
         return stream_response
