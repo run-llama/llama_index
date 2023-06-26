@@ -60,7 +60,7 @@ class NotionToolSpec(BaseToolSpec):
         """
         page_ids = page_ids or []
         docs = self.reader.load_data(page_ids=page_ids, database_id=database_id)
-        return "\n".join([doc.get_text() for doc in docs])
+        return "\n".join([doc.get_content() for doc in docs])
 
     def search_data(
         self,

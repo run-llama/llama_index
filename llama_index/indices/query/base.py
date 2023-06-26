@@ -5,9 +5,9 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
 

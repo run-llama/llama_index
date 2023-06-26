@@ -29,5 +29,5 @@ def test_pandas_query_engine(mock_service_context: ServiceContext) -> None:
         assert str(response) == 'df["population"].iloc[0]'
     else:
         assert str(response) == "2930000"
-    extra_info = cast(Dict[str, Any], response.extra_info)
-    assert extra_info["pandas_instruction_str"] == ('df["population"].iloc[0]')
+    metadata = cast(Dict[str, Any], response.metadata)
+    assert metadata["pandas_instruction_str"] == ('df["population"].iloc[0]')

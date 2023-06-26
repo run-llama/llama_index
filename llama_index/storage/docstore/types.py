@@ -4,9 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from typing import Any, Dict, List, Optional, Sequence
-from llama_index.data_structs.node import Node
 
-from llama_index.schema import BaseDocument
+from llama_index.schema import BaseNode
 
 
 DEFAULT_PERSIST_FNAME = "docstore.json"
@@ -18,8 +17,8 @@ DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
 class RefDocInfo(DataClassJsonMixin):
     """Dataclass to represent ingested documents."""
 
-    doc_ids: List = field(default_factory=list)
-    extra_info: Dict[str, Any] = field(default_factory=dict)
+    node_ids: List = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 class BaseDocumentStore(ABC):
@@ -35,19 +34,17 @@ class BaseDocumentStore(ABC):
     # ===== Main interface =====
     @property
     @abstractmethod
-    def docs(self) -> Dict[str, BaseDocument]:
+    def docs(self) -> Dict[str, BaseNode]:
         ...
 
     @abstractmethod
     def add_documents(
-        self, docs: Sequence[BaseDocument], allow_update: bool = True
+        self, docs: Sequence[BaseNode], allow_update: bool = True
     ) -> None:
         ...
 
     @abstractmethod
-    def get_document(
-        self, doc_id: str, raise_error: bool = True
-    ) -> Optional[BaseDocument]:
+    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
         ...
 
     @abstractmethod
@@ -82,7 +79,9 @@ class BaseDocumentStore(ABC):
         """Delete a ref_doc and all it's associated nodes."""
 
     # ===== Nodes =====
-    def get_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[Node]:
+    def get_nodes(
+        self, node_ids: List[str], raise_error: bool = True
+    ) -> List[BaseNode]:
         """Get nodes from docstore.
 
         Args:
@@ -92,7 +91,7 @@ class BaseDocumentStore(ABC):
         """
         return [self.get_node(node_id, raise_error=raise_error) for node_id in node_ids]
 
-    def get_node(self, node_id: str, raise_error: bool = True) -> Node:
+    def get_node(self, node_id: str, raise_error: bool = True) -> BaseNode:
         """Get node from docstore.
 
         Args:
@@ -101,11 +100,11 @@ class BaseDocumentStore(ABC):
 
         """
         doc = self.get_document(node_id, raise_error=raise_error)
-        if not isinstance(doc, Node):
+        if not isinstance(doc, BaseNode):
             raise ValueError(f"Document {node_id} is not a Node.")
         return doc
 
-    def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, Node]:
+    def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, BaseNode]:
         """Get node dict from docstore given a mapping of index to node ids.
 
         Args:

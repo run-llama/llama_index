@@ -5,11 +5,11 @@ from typing import Any, Optional, Sequence
 
 import pandas as pd
 
-from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import PandasStructTable
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
+from llama_index.schema import BaseNode
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
     def __init__(
         self,
         df: pd.DataFrame,
-        nodes: Optional[Sequence[Node]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[PandasStructTable] = None,
         **kwargs: Any,
     ) -> None:
@@ -66,12 +66,12 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
 
         return PandasQueryEngine.from_index(self, **kwargs)
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> PandasStructTable:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
         return index_struct
 
-    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         raise NotImplementedError("We currently do not support inserting documents.")
 

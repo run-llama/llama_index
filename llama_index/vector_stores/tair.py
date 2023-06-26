@@ -5,7 +5,7 @@ An index that is built on top of Alibaba Cloud's Tair database.
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -35,6 +35,7 @@ def _to_filter_expr(filters: MetadataFilters) -> str:
 class TairVectorStore(VectorStore):
     stores_text = True
     stores_node = True
+    flat_metadata = False
 
     def __init__(
         self,
@@ -150,9 +151,11 @@ class TairVectorStore(VectorStore):
             attributes = {
                 "id": result.id,
                 "doc_id": result.ref_doc_id,
-                "text": result.node.get_text(),
+                "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
             }
-            metadata_dict = node_to_metadata_dict(result.node)
+            metadata_dict = node_to_metadata_dict(
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
+            )
             attributes.update(metadata_dict)
 
             ids.append(result.id)
@@ -227,12 +230,15 @@ class TairVectorStore(VectorStore):
             pipe.tvs_hmget(self._index_name, key, "id", "doc_id", "text")
         metadatas = pipe.execute()
         for i, m in enumerate(metadatas):
+            # TODO: properly get the _node_conent
             doc_id = m[0].decode()
-            node = Node(
+            node = TextNode(
                 text=m[2].decode(),
-                doc_id=doc_id,
+                id_=doc_id,
                 embedding=None,
-                relationships={DocumentRelationship.SOURCE: m[1].decode()},
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=m[1].decode())
+                },
             )
             ids.append(doc_id)
             nodes.append(node)

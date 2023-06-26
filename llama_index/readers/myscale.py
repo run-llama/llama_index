@@ -3,7 +3,7 @@ import logging
 from typing import Any, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class MyScaleSettings:
         )
 
         query_statement = f"""
-            SELECT id, doc_id, text, node_info, extra_info, 
+            SELECT id, doc_id, text, node_info, metadata, 
             distance{search_params_str}(vector, {query_embed_str}) AS dist
             FROM {self.database}.{self.table} {where_str}
             ORDER BY dist {order}
@@ -171,6 +171,6 @@ class MyScaleReader(BaseReader):
         )
 
         return [
-            Document(doc_id=r["doc_id"], text=r["text"], extra_info=r["extra_info"])
+            Document(doc_id=r["doc_id"], text=r["text"], metadata=r["metadata"])
             for r in self.client.query(query_statement).named_results()
         ]

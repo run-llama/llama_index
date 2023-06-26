@@ -1,8 +1,8 @@
 import os
 from typing import List, Optional
-from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.schema import NodeWithScore
 
 
 class CohereRerank(BaseNodePostprocessor):
@@ -38,7 +38,7 @@ class CohereRerank(BaseNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
-        texts = [node.node.get_text() for node in nodes]
+        texts = [node.node.get_content() for node in nodes]
         results = self._client.rerank(
             model=self._model,
             top_n=self._top_n,
@@ -49,7 +49,7 @@ class CohereRerank(BaseNodePostprocessor):
         new_nodes = []
         for result in results:
             new_node_with_score = NodeWithScore(
-                nodes[result.index].node, result.relevance_score
+                node=nodes[result.index].node, score=result.relevance_score
             )
             new_nodes.append(new_node_with_score)
         return new_nodes

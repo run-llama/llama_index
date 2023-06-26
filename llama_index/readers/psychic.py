@@ -4,7 +4,7 @@ import os
 from typing import List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class PsychicReader(BaseReader):
                 Document(
                     text=text,
                     doc_id=doc_id,
-                    extra_info={"connector_id": connector_id, "account_id": account_id},
+                    metadata={"connector_id": connector_id, "account_id": account_id},
                 )
             )
 
