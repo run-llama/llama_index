@@ -39,6 +39,13 @@ class GuidancePydanticProgram(BasePydanticProgram, Generic[Model]):
         self._output_cls = output_cls
         self._verbose = verbose
 
+    @classmethod
+    def from_defaults(
+        cls, output_cls: Type[Model], prompt_template_str: str, **kwargs: Any
+    ) -> "GuidancePydanticProgram":
+        """From defaults."""
+        return cls(output_cls, prompt_template_str, **kwargs)
+
     @property
     def output_cls(self) -> Type[Model]:
         return self._output_cls
