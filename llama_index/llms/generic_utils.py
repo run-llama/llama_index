@@ -101,8 +101,8 @@ def chat_response_to_completion_response(
 
 
 def completion_to_chat_decorator(
-    func: Callable[..., CompletionResponse]
-) -> Callable[..., ChatResponse]:
+    func: Callable[..., CompletionResponseType]
+) -> Callable[..., ChatResponseType]:
     """Convert a completion function to a chat function."""
 
     def wrapper(messages: Sequence[Message], **kwargs: Any) -> ChatResponseType:
@@ -116,8 +116,8 @@ def completion_to_chat_decorator(
 
 
 def chat_to_completion_decorator(
-    func: Callable[..., ChatResponse]
-) -> Callable[..., CompletionResponse]:
+    func: Callable[..., ChatResponseType]
+) -> Callable[..., CompletionResponseType]:
     """Convert a chat function to a completion function."""
 
     def wrapper(prompt: str, **kwargs: Any) -> ChatResponse:

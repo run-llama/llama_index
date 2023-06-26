@@ -11,7 +11,7 @@ class Message(BaseModel):
     additional_kwargs: dict = Field(default_factory=dict)
 
     def __str__(self) -> str:
-        return self.content
+        return self.content or ""
 
 
 class ChatMessage(Message):

@@ -54,8 +54,8 @@ class LangChainLLM(LLM):
         if not hasattr(self._llm, "callbacks"):
             raise ValueError("LLM must support callbacks to use streaming.")
 
-        self._llm.callbacks = [handler]
-        self._llm.streaming = True
+        self._llm.callbacks = [handler]  # type: ignore
+        self._llm.streaming = True  # type: ignore
 
         thread = Thread(target=self.chat, args=[messages], kwargs=kwargs)
         thread.start()
@@ -81,8 +81,8 @@ class LangChainLLM(LLM):
         if not hasattr(self._llm, "callbacks"):
             raise ValueError("LLM must support callbacks to use streaming.")
 
-        self._llm.callbacks = [handler]
-        self._llm.streaming = True
+        self._llm.callbacks = [handler]  # type: ignore
+        self._llm.streaming = True  # type: ignore
 
         thread = Thread(target=self.complete, args=[prompt], kwargs=kwargs)
         thread.start()

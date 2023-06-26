@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import List, Sequence
 from langchain.base_language import BaseLanguageModel
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
@@ -14,12 +14,12 @@ def is_chat_model(llm: BaseLanguageModel):
     return isinstance(llm, BaseChatModel)
 
 
-def to_lc_messages(messages: Sequence[Message]) -> Sequence[LCMessage]:
+def to_lc_messages(messages: Sequence[Message]) -> List[LCMessage]:
     # TODO
     return []
 
 
-def from_lc_messages(messages: Sequence[LCMessage]) -> Sequence[Message]:
+def from_lc_messages(messages: Sequence[LCMessage]) -> List[Message]:
     # TODO
     return []
 
