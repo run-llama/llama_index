@@ -81,11 +81,8 @@ class GlobalsHelper:
             try:
                 nltk.data.find("corpora/stopwords")
             except LookupError:
-                nltkDataFolder = os.environ.get("NLTK_DATA")
-                if nltkDataFolder is None:
-                    nltk.download("stopwords")
-                else:
-                    nltk.download("stopwords", download_dir=nltkDataFolder)
+                nltk_data_dir = os.environ.get("NLTK_DATA", None)
+                nltk.download("stopwords", download_dir=nltk_data_dir)
             self._stopwords = stopwords.words("english")
         return self._stopwords
 
