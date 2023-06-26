@@ -12,7 +12,7 @@ from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
-from llama_index.utils import globals_helper
+from llama_index.prompts.base import Prompt
 
 
 class VellumPredictor(BaseLLMPredictor):
@@ -36,7 +36,16 @@ class VellumPredictor(BaseLLMPredictor):
         self._async_vellum_client = AsyncVellum(api_key=vellum_api_key)
         self._prompt_registry = VellumPromptRegistry(vellum_api_key=vellum_api_key)
 
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+    @property
+    def metadata(self) -> LLMMetadata:
+        """Get LLM metadata."""
+
+        # Note: We use default values here, but ideally we would retrieve this metadata
+        # via Vellum's API based on the LLM that backs the registered prompt's
+        # deployment. This is not currently possible, so we use default values.
+        return LLMMetadata()
+
+    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Predict the answer to a query."""
 
         from vellum import GenerateRequest
@@ -56,9 +65,9 @@ class VellumPredictor(BaseLLMPredictor):
             result, compiled_prompt, event_id
         )
 
-        return completion_text, compiled_prompt.text
+        return completion_text
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
         """Stream the answer to a query."""
 
         from vellum import GenerateRequest, GenerateStreamResult
@@ -107,7 +116,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return text_generator(), compiled_prompt.text
 
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Asynchronously predict the answer to a query."""
 
         from vellum import GenerateRequest
@@ -127,15 +136,10 @@ class VellumPredictor(BaseLLMPredictor):
             result, compiled_prompt, event_id
         )
 
-        return completion_text, compiled_prompt.text
+        return completion_text
 
-    def get_llm_metadata(self) -> LLMMetadata:
-        """Get LLM metadata."""
-
-        # Note: We use default values here, but ideally we would retrieve this metadata
-        # via Vellum's API based on the LLM that backs the registered prompt's
-        # deployment. This is not currently possible, so we use default values.
-        return LLMMetadata()
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
+        return self.stream(prompt, **prompt_args)
 
     def _prepare_generate_call(
         self, prompt: Prompt, **prompt_args: Any
@@ -182,11 +186,3 @@ class VellumPredictor(BaseLLMPredictor):
         )
 
         return completion_text
-
-    @staticmethod
-    def _count_tokens(text: str) -> int:
-        # This is considered an approximation of the number of tokens used.
-        # As a future improvement, Vellum will make it possible to get back the
-        # exact number of tokens used via API.
-        tokens = globals_helper.tokenizer(text)
-        return len(tokens)
