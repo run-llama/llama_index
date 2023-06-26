@@ -14,7 +14,6 @@ from llama_index.indices.tree.select_leaf_embedding_retriever import (
 )
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.langchain_helpers.chain_wrapper import (
-    LLMChain,
     LLMMetadata,
     LLMPredictor,
 )
