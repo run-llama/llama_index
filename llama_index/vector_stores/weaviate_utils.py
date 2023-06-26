@@ -104,9 +104,13 @@ def get_all_properties(client: Any, class_name: str) -> List[str]:
 
 def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
     """Get converted node similarity from distance."""
-    distance = float(entry["_additional"][similarity_key])
+    distance = entry["_additional"].get(similarity_key, 0.0)
+
+    if distance is None:
+        return 1.0
+
     # convert distance https://forum.weaviate.io/t/distance-vs-certainty-scores/258
-    return 1.0 - distance
+    return 1.0 - float(distance)
 
 
 def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
@@ -114,7 +118,6 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     additional = entry.pop("_additional")
     text = entry.pop(text_key, "")
     embedding = additional.pop("vector", None)
-
     try:
         node = metadata_dict_to_node(entry)
         node.text = text
