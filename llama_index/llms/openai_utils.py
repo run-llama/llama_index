@@ -1,8 +1,9 @@
 import logging
-from typing import Any, Callable, List, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import openai
 from openai import Completion, ChatCompletion
+from pydantic import BaseModel
 from tenacity import (
     before_sleep_log,
     retry,
@@ -208,3 +209,13 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
 def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:
     """Convert openai message dicts to generic messages."""
     return [from_openai_message_dict(message_dict) for message_dict in message_dicts]
+
+
+def to_openai_function(pydantic_class: BaseModel) -> Dict[str, Any]:
+    """Convert pydantic class to OpenAI function."""
+    schema = pydantic_class.schema()
+    return {
+        "name": schema["title"],
+        "description": schema["description"],
+        "parameters": pydantic_class.schema(),
+    }

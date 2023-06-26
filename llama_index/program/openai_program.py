@@ -2,6 +2,7 @@ from typing import Any, Dict, Generic, Optional, Type, Union
 
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.base import ChatMessage
+from llama_index.llms.openai_utils import to_openai_function
 
 from llama_index.program.base_program import BasePydanticProgram, Model
 from llama_index.prompts.base import Prompt
@@ -10,16 +11,6 @@ SUPPORTED_MODEL_NAMES = [
     "gpt-3.5-turbo-0613",
     "gpt-4-0613",
 ]
-
-
-def _openai_function(output_cls: Type[Model]) -> Dict[str, Any]:
-    """Convert pydantic class to OpenAI function."""
-    schema = output_cls.schema()
-    return {
-        "name": schema["title"],
-        "description": schema["description"],
-        "parameters": output_cls.schema(),
-    }
 
 
 def _openai_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
@@ -91,7 +82,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
     ) -> Model:
         formatted_prompt = self._prompt.format(**kwargs)
 
-        openai_fn_spec = _openai_function(self._output_cls)
+        openai_fn_spec = to_openai_function(self._output_cls)
 
         chat_response = self._llm.chat(
             messages=[ChatMessage(role="user", content=formatted_prompt)],
