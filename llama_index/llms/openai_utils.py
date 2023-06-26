@@ -180,22 +180,20 @@ def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
         return openai.Completion
 
 
-def to_openai_message_dict(message: Message) -> dict:
+def to_openai_message_dict(message: ChatMessage) -> dict:
     """Convert generic message to OpenAI message dict."""
-    if isinstance(message, ChatMessage):
-        return {"role": message.role, "content": message.content}
-    elif isinstance(message, FunctionMessage):
+    if isinstance(message, FunctionMessage):
         return {"role": message.role, "content": message.content, "name": message.name}
     else:
-        raise ValueError(f"Unknown message type: {type(message)}")
+        return {"role": message.role, "content": message.content}
 
 
-def to_openai_message_dicts(messages: Sequence[Message]) -> List[dict]:
+def to_openai_message_dicts(messages: Sequence[ChatMessage]) -> List[dict]:
     """Convert generic messages to OpenAI message dicts."""
     return [to_openai_message_dict(message) for message in messages]
 
 
-def from_openai_message_dict(message_dict: dict) -> Message:
+def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
     content = message_dict["content"] or ""
@@ -207,6 +205,6 @@ def from_openai_message_dict(message_dict: dict) -> Message:
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
 
-def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[Message]:
+def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:
     """Convert openai message dicts to generic messages."""
     return [from_openai_message_dict(message_dict) for message_dict in message_dicts]
