@@ -20,6 +20,7 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.llms.openai_utils import (
     completion_with_retry,
+    from_openai_message_dict,
     is_chat_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
@@ -27,7 +28,7 @@ from llama_index.llms.openai_utils import (
 
 
 class OpenAI(LLM, BaseModel):
-    model: str = Field("gpt-3.5-turbo")
+    model: str = Field("gpt-3.5-turbo-0613")
     temperature: float = 0.0
     max_tokens: Optional[int] = None
     additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -106,15 +107,10 @@ class OpenAI(LLM, BaseModel):
             stream=False,
             **all_kwargs,
         )
-        role = response["choices"][0]["message"]["role"]
-        text = response["choices"][0]["message"]["content"]
-        return ChatResponse(
-            message=ChatMessage(
-                role=role,
-                content=text,
-            ),
-            raw=response,
-        )
+        message_dict = response["choices"][0]["message"]
+        message = from_openai_message_dict(message_dict)
+
+        return ChatResponse(message=message, raw=response)
 
     def _stream_chat(
         self, messages: Sequence[Message], **kwargs: Any

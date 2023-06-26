@@ -7,7 +7,7 @@ from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 # ===== Generic Model Input - Chat =====
 class Message(BaseModel):
-    content: str
+    content: Optional[str]
     additional_kwargs: dict = Field(default_factory=dict)
 
     def __str__(self) -> str:

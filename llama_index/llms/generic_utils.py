@@ -70,7 +70,7 @@ def chat_response_to_completion_response(
     """Convert a chat response to a completion response."""
     if isinstance(chat_response, ChatResponse):
         return CompletionResponse(
-            text=chat_response.message.content,
+            text=chat_response.message.content or "",
             raw=chat_response.raw,
         )
     elif isinstance(chat_response, Generator):
@@ -79,7 +79,7 @@ def chat_response_to_completion_response(
             for delta in chat_response:
                 assert isinstance(delta, ChatDeltaResponse)
                 yield CompletionDeltaResponse(
-                    text=delta.message.content,
+                    text=delta.message.content or "",
                     delta=delta.delta,
                     raw=delta.raw,
                 )
