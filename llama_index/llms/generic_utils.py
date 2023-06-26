@@ -1,4 +1,4 @@
-from typing import Generator, Sequence
+from typing import Any, Callable, Generator, Sequence
 
 from llama_index.llms.base import (
     ChatDeltaResponse,
@@ -28,7 +28,7 @@ def messages_to_prompt(messages: Sequence[Message]) -> str:
         if addtional_kwargs:
             string_message += f"\n{addtional_kwargs}"
         string_messages.append(string_message)
-    
+
     string_messages.append("assistant: ")
     return "\n".join(string_messages)
 
@@ -88,3 +88,33 @@ def chat_response_to_completion_response(
 
     else:
         return ValueError("Invalid chat response type.")
+
+
+def completion_to_chat_decorator(
+    func: Callable[..., CompletionResponse]
+) -> Callable[..., ChatResponse]:
+    """Convert a completion function to a chat function."""
+
+    def wrapper(messages: Sequence[Message], **kwargs: Any) -> ChatResponseType:
+        # normalize input
+        prompt = messages_to_prompt(messages)
+        completion_response = func(prompt, **kwargs)
+        # normalize output
+        return completion_response_to_chat_response(completion_response)
+
+    return wrapper
+
+
+def chat_to_completion_decorator(
+    func: Callable[..., ChatResponse]
+) -> Callable[..., CompletionResponse]:
+    """Convert a chat function to a completion function."""
+
+    def wrapper(prompt: str, **kwargs: Any) -> ChatResponse:
+        # normalize input
+        messages = prompt_to_messages(prompt)
+        chat_response = func(messages, **kwargs)
+        # normalize output
+        return chat_response_to_completion_response(chat_response)
+
+    return wrapper

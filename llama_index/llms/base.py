@@ -3,6 +3,13 @@ from typing import Any, Generator, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.llms.base import (
+    ChatResponse,
+    CompletionResponse,
+    Message,
+    StreamChatResponse,
+    StreamCompletionResponse,
+)
 
 
 # ===== Generic Model Input - Chat =====
@@ -105,9 +112,7 @@ class LLM(ABC):
 
     # ===== Async Endpoints =====
     @abstractmethod
-    async def achat(
-        self, messages: Sequence[Message], **kwargs: Any
-    ) -> ChatResponse:
+    async def achat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
         pass
 
     @abstractmethod

@@ -47,23 +47,19 @@ class BaseLLMPredictor(Protocol):
 class LLMPredictor(BaseLLMPredictor):
     """LLM predictor class.
 
-    Args:
-        llm (Optional[LLMType]): LLM
-        # cache (Optional[langchain.cache.BaseCache]) : use cached result for LLM
+    A lightweight wrapper on top of LLMs that handles logging and
+    callback management.
+
+    Mostly keeping around for legacy reasons.
     """
 
     def __init__(
         self,
         llm: Optional[LLMType] = None,
-        # TODO: bring this back
-        # cache: Optional[BaseCache] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
         self._llm = resolve_llm(llm)
-        # TODO: move this to be langchain specific
-        # if cache is not None:
-        #     langchain.llm_cache = cache
         self.callback_manager = callback_manager or CallbackManager([])
 
     @property
