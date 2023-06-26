@@ -6,7 +6,7 @@ from typing import Any, Generator, Optional, Protocol, runtime_checkable
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llms.base import LLMMetadata, StreamCompletionResponse
+from llama_index.llms.base import LLM, LLMMetadata, StreamCompletionResponse
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import Prompt
 from llama_index.utils import count_tokens
@@ -63,6 +63,11 @@ class LLMPredictor(BaseLLMPredictor):
         """Initialize params."""
         self._llm = resolve_llm(llm)
         self.callback_manager = callback_manager or CallbackManager([])
+
+    @property
+    def llm(self) -> LLM:
+        """Get LLM."""
+        return self._llm
 
     @property
     def metadata(self) -> LLMMetadata:

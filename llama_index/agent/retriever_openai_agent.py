@@ -43,7 +43,7 @@ class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
         cls,
         retriever: ObjectRetriever[BaseTool],
         llm: Optional[OpenAI] = None,
-        chat_history: Optional[ChatMessage] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
