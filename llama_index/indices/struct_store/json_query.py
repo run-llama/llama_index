@@ -169,7 +169,7 @@ class JSONQueryEngine(BaseQueryEngine):
             print_text(f"> JSONPath Output: {json_path_output}\n")
 
         if self._synthesize_response:
-            response_str, _ = await self._service_context.llm_predictor.apredict(
+            response_str = await self._service_context.llm_predictor.apredict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 json_schema=self._json_schema,

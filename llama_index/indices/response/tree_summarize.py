@@ -68,7 +68,7 @@ class TreeSummarize(BaseResponseBuilder):
                     context_str=text_chunks[0],
                 )
             else:
-                response, _ = await self._service_context.llm_predictor.apredict(
+                response = await self._service_context.llm_predictor.apredict(
                     summary_template,
                     context_str=text_chunks[0],
                 )

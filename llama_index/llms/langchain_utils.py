@@ -1,5 +1,3 @@
-
-
 from typing import Sequence
 from langchain.base_language import BaseLanguageModel
 from langchain.chat_models import ChatOpenAI
@@ -17,13 +15,14 @@ def is_chat_model(llm: BaseLanguageModel):
 
 
 def to_lc_messages(messages: Sequence[Message]) -> Sequence[LCMessage]:
-    # TODO 
+    # TODO
     return []
 
 
 def from_lc_messages(messages: Sequence[LCMessage]) -> Sequence[Message]:
     # TODO
     return []
+
 
 def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
     """Get LLM metadata from llm."""

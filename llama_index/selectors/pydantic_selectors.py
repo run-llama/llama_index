@@ -1,7 +1,7 @@
-from llama_index.bridge.langchain import ChatOpenAI
 from typing import Any, Optional, Sequence
 
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.llms.openai import OpenAI
 from llama_index.program.openai_program import (
     OpenAIPydanticProgram,
     BasePydanticProgram,
@@ -44,7 +44,7 @@ class PydanticSingleSelector(BaseSelector):
     def from_defaults(
         cls,
         program: Optional[BasePydanticProgram] = None,
-        llm: Optional[ChatOpenAI] = None,
+        llm: Optional[OpenAI] = None,
         prompt_template_str: str = DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
         verbose: bool = False,
     ) -> "PydanticSingleSelector":
@@ -94,7 +94,7 @@ class PydanticMultiSelector(BaseSelector):
     def from_defaults(
         cls,
         program: Optional[BasePydanticProgram] = None,
-        llm: Optional[ChatOpenAI] = None,
+        llm: Optional[OpenAI] = None,
         prompt_template_str: str = DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
         max_outputs: Optional[int] = None,
         verbose: bool = False,
