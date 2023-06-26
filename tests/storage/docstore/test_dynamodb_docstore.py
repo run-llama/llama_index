@@ -3,7 +3,7 @@ from typing import Generator, List
 import pytest
 from pytest import MonkeyPatch
 
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore.dynamodb_docstore import DynamoDBDocumentStore
 from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document, ImageDocument
+from llama_index.schema import Document, ImageDocument
 
 
 class ImageCaptionReader(BaseReader):

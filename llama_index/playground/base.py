@@ -11,7 +11,7 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.list.base import ListIndex, ListRetrieverMode
 from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
 from llama_index.indices.vector_store import VectorStoreIndex
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 DEFAULT_INDEX_CLASSES: List[Type[BaseIndex]] = [
     VectorStoreIndex,

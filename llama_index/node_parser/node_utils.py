@@ -9,7 +9,7 @@ from llama_index.langchain_helpers.text_splitter import (
     TextSplitter,
     TokenTextSplitter,
 )
-from llama_index.readers.schema.base import Document, ImageDocument
+from llama_index.schema import Document, ImageDocument
 from llama_index.schema import (
     BaseNode,
     NodeRelationship,

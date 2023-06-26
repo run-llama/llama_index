@@ -5,7 +5,7 @@ import os
 from typing import Any, List
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 

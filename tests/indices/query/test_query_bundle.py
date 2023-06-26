@@ -8,7 +8,7 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 @pytest.fixture

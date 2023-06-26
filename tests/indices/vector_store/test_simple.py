@@ -7,7 +7,7 @@ from llama_index.indices.loading import load_index_from_storage
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import SimpleVectorStore
 

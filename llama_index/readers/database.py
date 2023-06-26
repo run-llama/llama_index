@@ -7,7 +7,7 @@ from sqlalchemy.engine import Engine
 
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class DatabaseReader(BaseReader):

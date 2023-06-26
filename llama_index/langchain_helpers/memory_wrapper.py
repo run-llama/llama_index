@@ -12,7 +12,7 @@ from llama_index.bridge.langchain import (
 from pydantic import Field
 
 from llama_index.indices.base import BaseIndex
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.utils import get_new_id
 
 

@@ -6,7 +6,7 @@ import pytest
 
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.node_parser.node_utils import get_nodes_from_document
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.schema import MetadataMode
 
 

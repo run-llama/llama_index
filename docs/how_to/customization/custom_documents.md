@@ -131,13 +131,3 @@ document = Document(
 print("The LLM sees this: \n", document.get_content(metadata_mode=MetadataMode.LLM))
 print("The Embedding model sees this: \n", document.get_content(metadata_mode=MetadataMode.EMBED))
 ```
-
-## Advanced - Document Weighting
-
-Some documents are more important than others. If you are using the default vector store in LlamaIndex, you can take advantage of weighted retrieval! Each `Document` can be assigned a weight (which is also inherited to it's nodes) that used used during vector retrieval. The weight is simply multiplied to the base similarity score when calculating similarity between text and the query string to an index.
-
-```python
-document = Document(text="Super important text", weight=1.2)
-```
-
-In this case, if the base similarity score was 0.8, this weight will increase it to 0.96, making it more likely to be retrieved and seen by the LLM!

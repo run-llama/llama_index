@@ -8,7 +8,7 @@ import pytest
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.schema import TextNode
 from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,

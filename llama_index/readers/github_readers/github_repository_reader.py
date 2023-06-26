@@ -28,7 +28,7 @@ from llama_index.readers.github_readers.utils import (
     get_file_extension,
     print_if_verbose,
 )
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 

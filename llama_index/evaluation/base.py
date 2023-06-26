@@ -8,7 +8,7 @@ from typing import List, Optional
 from llama_index.indices.base import ServiceContext
 from llama_index.indices.list.base import ListIndex
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.response.schema import Response
 
 
