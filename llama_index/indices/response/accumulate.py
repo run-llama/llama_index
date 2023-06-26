@@ -23,7 +23,7 @@ class Accumulate(BaseResponseBuilder):
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
         return list(item for sublist in md_array for item in sublist)
 
-    def format_response(self, outputs: List[Any], separator: str) -> str:
+    def _format_response(self, outputs: List[Any], separator: str) -> str:
         responses: List[str] = []
         for response in outputs:
             responses.append(response or "Empty Response")
@@ -37,7 +37,7 @@ class Accumulate(BaseResponseBuilder):
         query_str: str,
         text_chunks: Sequence[str],
         separator: str = "\n---------------------\n",
-        **kwargs: Any,
+        **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Apply the same prompt to text chunks and return async responses"""
 
@@ -52,13 +52,14 @@ class Accumulate(BaseResponseBuilder):
         flattened_tasks = self.flatten_list(tasks)
         outputs = await asyncio.gather(*flattened_tasks)
 
-        return self.format_response(outputs, separator)
+        return self._format_response(outputs, separator)
 
     def get_response(
         self,
         query_str: str,
         text_chunks: Sequence[str],
         separator: str = "\n---------------------\n",
+        **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Apply the same prompt to text chunks and return responses"""
 
@@ -75,7 +76,7 @@ class Accumulate(BaseResponseBuilder):
         if self._use_async:
             outputs = run_async_tasks(outputs)
 
-        return self.format_response(outputs, separator)
+        return self._format_response(outputs, separator)
 
     def _give_responses(
         self, query_str: str, text_chunk: str, use_async: bool = False
