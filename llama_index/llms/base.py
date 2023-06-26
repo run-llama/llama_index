@@ -27,7 +27,7 @@ class FunctionMessage(ChatMessage):
 
 # ===== Generic Model Output - Chat =====
 class ChatResponse(BaseModel):
-    message: Message
+    message: ChatMessage
     raw: Optional[dict] = None
 
     def __str__(self) -> str:
