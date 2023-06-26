@@ -12,7 +12,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional, Sequence
 
 from llama_index.indices.service_context import ServiceContext
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
@@ -51,7 +50,6 @@ class BaseResponseBuilder(ABC):
         )
 
     @abstractmethod
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -62,7 +60,6 @@ class BaseResponseBuilder(ABC):
         ...
 
     @abstractmethod
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,

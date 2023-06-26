@@ -3,7 +3,6 @@ from typing import Any, Generator, Sequence, cast
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
@@ -17,7 +16,6 @@ class SimpleSummarize(BaseResponseBuilder):
         super().__init__(service_context, streaming)
         self._text_qa_template = text_qa_template
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -54,7 +52,6 @@ class SimpleSummarize(BaseResponseBuilder):
 
         return response
 
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,

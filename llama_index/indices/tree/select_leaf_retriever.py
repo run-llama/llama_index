@@ -28,7 +28,6 @@ from llama_index.prompts.prompts import (
     TreeSelectPrompt,
 )
 from llama_index.response.schema import Response
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -429,7 +428,6 @@ class TreeSelectLeafRetriever(BaseRetriever):
         else:
             return self._retrieve_level(children_nodes, query_bundle, level + 1)
 
-    @llm_token_counter("retrieve")
     def _retrieve(
         self,
         query_bundle: QueryBundle,

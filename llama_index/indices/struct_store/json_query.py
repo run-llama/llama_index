@@ -11,7 +11,6 @@ from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
-from llama_index.token_counter.token_counter import llm_token_counter
 
 logger = logging.getLogger(__name__)
 IMPORT_ERROR_MSG = (
@@ -97,7 +96,6 @@ class JSONQueryEngine(BaseQueryEngine):
         """Get JSON schema context."""
         return json.dumps(self._json_schema)
 
-    @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         schema = self._get_schema_context()
@@ -143,7 +141,6 @@ class JSONQueryEngine(BaseQueryEngine):
 
         return Response(response=response_str, extra_info=response_extra_info)
 
-    @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         schema = self._get_schema_context()
 

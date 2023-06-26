@@ -5,7 +5,6 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
@@ -36,7 +35,6 @@ class Accumulate(BaseResponseBuilder):
             [f"Response {index + 1}: {item}" for index, item in enumerate(responses)]
         )
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -59,7 +57,6 @@ class Accumulate(BaseResponseBuilder):
 
         return self.format_response(outputs, separator)
 
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,

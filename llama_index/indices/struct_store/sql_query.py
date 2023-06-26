@@ -17,7 +17,6 @@ from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.objects.base import ObjectRetriever
 
@@ -154,7 +153,6 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
         return tables_desc_str
 
-    @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
@@ -187,7 +185,6 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
-    @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
@@ -254,7 +251,6 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         """
 
-    @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
@@ -287,7 +283,6 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
-    @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)

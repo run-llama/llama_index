@@ -4,7 +4,6 @@ from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
@@ -18,7 +17,6 @@ class Generation(BaseResponseBuilder):
         super().__init__(service_context, streaming)
         self._input_prompt = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -44,7 +42,6 @@ class Generation(BaseResponseBuilder):
             )
             return stream_response
 
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,

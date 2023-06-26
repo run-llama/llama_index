@@ -6,7 +6,6 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.response.utils import get_response_text
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,6 @@ class Refine(BaseResponseBuilder):
         self.text_qa_template = text_qa_template
         self._refine_template = refine_template
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -33,7 +31,6 @@ class Refine(BaseResponseBuilder):
     ) -> RESPONSE_TEXT_TYPE:
         return self.get_response(query_str, text_chunks, **response_kwargs)
 
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,

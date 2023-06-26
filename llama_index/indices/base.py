@@ -12,7 +12,6 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
-from llama_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
 IndexType = TypeVar("IndexType", bound="BaseIndex")
@@ -159,7 +158,6 @@ class BaseIndex(Generic[IS], ABC):
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
 
-    @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
         self._docstore.add_documents(nodes, allow_update=True)
@@ -169,7 +167,6 @@ class BaseIndex(Generic[IS], ABC):
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Index-specific logic for inserting nodes to the index struct."""
 
-    @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert nodes."""
         with self._service_context.callback_manager.as_trace("insert_nodes"):
