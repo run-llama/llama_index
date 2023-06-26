@@ -13,7 +13,7 @@ from llama_index.readers.file.mbox_reader import MboxReader
 from llama_index.readers.file.slides_reader import PptxReader
 from llama_index.readers.file.tabular_reader import PandasCSVReader
 from llama_index.readers.file.video_audio_reader import VideoAudioReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".pdf": PDFReader,

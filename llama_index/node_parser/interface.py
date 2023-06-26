@@ -3,7 +3,7 @@ from typing import List, Sequence
 
 from abc import ABC, abstractmethod
 
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.schema import BaseNode
 
 

@@ -3,7 +3,7 @@ from typing import List
 import pytest
 
 from llama_index.storage.docstore.mongo_docstore import MongoDocumentStore
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.schema import BaseNode
 from llama_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 

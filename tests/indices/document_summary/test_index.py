@@ -1,7 +1,7 @@
 """Test document summary index.""" ""
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from tests.mock_utils.mock_prompts import MOCK_TEXT_QA_PROMPT, MOCK_REFINE_PROMPT
 

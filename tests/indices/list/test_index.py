@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.list.base import ListIndex, ListRetrieverMode
 from llama_index.indices.service_context import ServiceContext
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.schema import BaseNode
 
 

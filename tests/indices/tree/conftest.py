@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple
 import pytest
 
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_QUERY_PROMPT,

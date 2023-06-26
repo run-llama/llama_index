@@ -11,7 +11,7 @@ from llama_index.indices.loading import (
 )
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.schema import BaseNode
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.index_store.simple_index_store import SimpleIndexStore

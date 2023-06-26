@@ -2,7 +2,7 @@
 
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.readers.slack import SlackReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from typing import Optional, List, Type
 from pydantic import BaseModel
 import logging

@@ -7,7 +7,7 @@ from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.response.schema import RESPONSE_TYPE, Response
 
 logger = logging.getLogger(__name__)

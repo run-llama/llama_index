@@ -9,7 +9,7 @@ from llama_index.indices.response import ResponseMode, get_response_builder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 

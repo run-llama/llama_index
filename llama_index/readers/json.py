@@ -5,7 +5,7 @@ import re
 from typing import Any, Generator, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 def _depth_first_yield(

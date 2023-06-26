@@ -18,7 +18,7 @@ from llama_index.langchain_helpers.chain_wrapper import (
     LLMPredictor,
 )
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.schema import BaseNode
 from tests.mock_utils.mock_predict import mock_llmchain_predict
 from tests.mock_utils.mock_prompts import (

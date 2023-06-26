@@ -10,7 +10,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class MockEmbedding(BaseEmbedding):
