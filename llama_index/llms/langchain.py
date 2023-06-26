@@ -25,6 +25,10 @@ from llama_index.llms.langchain_utils import (
 class LangChainLLM(LLM):
     def __init__(self, llm: BaseLanguageModel) -> None:
         self._llm = llm
+    
+    @property
+    def llm(self) -> BaseLanguageModel:
+        return self._llm
 
     @property
     def metadata(self) -> LLMMetadata:

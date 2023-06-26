@@ -47,8 +47,9 @@ class BaseLLMPredictor(Protocol):
 class LLMPredictor(BaseLLMPredictor):
     """LLM predictor class.
 
-    A lightweight wrapper on top of LLMs that handles logging and
-    callback management.
+    A lightweight wrapper on top of LLMs that handles:
+    - conversion of prompts to the string input format expected by LLMs 
+    - logging of prompts and responses to a callback manager
 
     Mostly keeping around for legacy reasons.
     """
@@ -77,8 +78,6 @@ class LLMPredictor(BaseLLMPredictor):
         return event_id
 
     def _log_end(self, event_id: str, output: str, formatted_prompt: str) -> None:
-        # NOTE: We assume that the value of formatted_prompt is exactly the thing
-        # eventually sent to OpenAI, or whatever LLM downstream
         prompt_tokens_count = count_tokens(formatted_prompt)
         prediction_tokens_count = count_tokens(output)
         self.callback_manager.on_event_end(
