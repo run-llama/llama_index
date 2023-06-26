@@ -7,6 +7,9 @@
 - `TextNode`/`Document` objects support metadata customization (metadata templates, exclude metadata from LLM or embeddings) (#6586)
 - Nodes no longer require flat metadata dictionaries, unless the vector store you use requires it (#6586)
 
+### Bug Fixes / Nits
+- use `NLTK_DATA` env var to control NLTK download location (#6579)
+
 ### Breaking/Deprecated API Changes
 - `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
 - `TextNode` and `Document` must be instansiated with kwargs: `Document(text=text)` (#6586)
