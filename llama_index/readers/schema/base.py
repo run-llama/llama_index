@@ -3,7 +3,7 @@ from typing import Optional
 
 from llama_index.bridge.langchain import Document as LCDocument
 
-from llama_index.schema import TextNode
+from llama_index.schema import TextNode, ObjectType
 
 
 class Document(TextNode):
@@ -18,7 +18,7 @@ class Document(TextNode):
     @classmethod
     def get_type(cls) -> str:
         """Get Document type."""
-        return "Document"
+        return ObjectType.DOCUMENT
 
     @property
     def doc_id(self) -> str:
