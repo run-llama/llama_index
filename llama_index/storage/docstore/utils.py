@@ -1,6 +1,13 @@
 from llama_index.constants import DATA_KEY, TYPE_KEY
 from llama_index.readers.schema.base import Document
-from llama_index.schema import BaseNode, ImageNode, IndexNode, TextNode
+from llama_index.schema import (
+    BaseNode,
+    ImageNode,
+    IndexNode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 
 
 def doc_to_json(doc: BaseNode) -> dict:
@@ -39,9 +46,14 @@ def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
     doc: BaseNode
 
     text = data_dict.get("text", "")
-    metadata = data_dict.get("extra_info", {})
+    metadata = data_dict.get("extra_info", {}) or {}
     id_ = data_dict.get("doc_id", None)
+
     relationships = data_dict.get("relationships", {})
+    relationships = {
+        NodeRelationship(k): RelatedNodeInfo(node_id=v)
+        for k, v in relationships.items()
+    }
 
     if doc_type == Document.get_type():
         doc = Document(

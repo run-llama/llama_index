@@ -31,10 +31,10 @@ class NodeRelationship(str, Enum):
 
 
 class ObjectType(str, Enum):
-    DOCUMENT = auto()
     TEXT = auto()
     IMAGE = auto()
     INDEX = auto()
+    DOCUMENT = auto()
 
 
 class MetadataMode(str, Enum):
