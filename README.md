@@ -48,9 +48,9 @@ Interested in contributing? See our [Contribution Guide](CONTRIBUTING.md) for mo
 
 ## 📄 Documentation
 
-Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest/.
+Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest/. 
 
-Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources!
+Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources! 
 
 
 ## 💻 Example Usage
