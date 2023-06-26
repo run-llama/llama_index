@@ -185,7 +185,7 @@ class OpenAIAgent(BaseOpenAIAgent):
     ) -> "OpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
-        llm = llm or OpenAI()
+        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
@@ -250,7 +250,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         callback_manager: Optional[CallbackManager] = None,
     ) -> "RetrieverOpenAIAgent":
         lc_chat_history = chat_history or []
-        llm = llm or OpenAI
+        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
