@@ -56,10 +56,10 @@ def completion_response_to_chat_response(
 
 def stream_completion_response_to_chat_response(
     completion_response: StreamCompletionResponse,
-) -> ChatResponseType:
+) -> StreamChatResponse:
     """Convert a stream completion response to a stream chat response."""
 
-    def gen() -> Generator[ChatDeltaResponse, None, None]:
+    def gen() -> StreamChatResponse:
         for delta in completion_response:
             assert isinstance(delta, CompletionDeltaResponse)
             yield ChatDeltaResponse(
@@ -91,7 +91,7 @@ def stream_chat_response_to_completion_response(
 ) -> StreamCompletionResponse:
     """Convert a stream chat response to a completion response."""
 
-    def gen() -> Generator[CompletionDeltaResponse, None, None]:
+    def gen() -> StreamCompletionResponse:
         for delta in chat_response:
             assert isinstance(delta, ChatDeltaResponse)
             yield CompletionDeltaResponse(
@@ -159,6 +159,6 @@ def stream_chat_to_completion_decorator(
         messages = prompt_to_messages(prompt)
         chat_response = func(messages, **kwargs)
         # normalize output
-        return chat_response_to_completion_response(chat_response)
+        return stream_chat_response_to_completion_response(chat_response)
 
     return wrapper

@@ -34,7 +34,7 @@ class LangChainLLM(LLM):
     def metadata(self) -> LLMMetadata:
         return get_llm_metadata(self._llm)
 
-    def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         lc_messages = to_lc_messages(messages)
         lc_message = self._llm.predict_messages(messages=lc_messages, **kwargs)
         message = from_lc_messages([lc_message])[0]
@@ -45,7 +45,7 @@ class LangChainLLM(LLM):
         return CompletionResponse(text=output_str)
 
     def stream_chat(
-        self, messages: Sequence[Message], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> StreamChatResponse:
         handler = StreamingGeneratorCallbackHandler()
 
@@ -97,7 +97,9 @@ class LangChainLLM(LLM):
 
         return gen()
 
-    async def achat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         # TODO: Implement async chat
         return self.chat(messages, **kwargs)
 
@@ -106,7 +108,7 @@ class LangChainLLM(LLM):
         return self.complete(prompt, **kwargs)
 
     async def astream_chat(
-        self, messages: Sequence[Message], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> StreamChatResponse:
         # TODO: Implement async stream_chat
         return self.stream_chat(messages, **kwargs)

@@ -18,7 +18,7 @@ from llama_index.llms.base import ChatMessage, LLMMetadata, Message, FunctionMes
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
 
 
-def is_chat_model(llm: BaseLanguageModel):
+def is_chat_model(llm: BaseLanguageModel) -> bool:
     return isinstance(llm, BaseChatModel)
 
 
