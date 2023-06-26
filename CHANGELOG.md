@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- use `NLTK_DATA` env var to control NLTK download location (#6579)
+
 ## [v0.6.33] - 2023-06-25
 
 ### New Features
