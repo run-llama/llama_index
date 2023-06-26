@@ -63,7 +63,7 @@ class TreeSummarize(BaseResponseBuilder):
         if len(text_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
-                response, _ = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm_predictor.stream(
                     summary_template,
                     context_str=text_chunks[0],
                 )
@@ -117,7 +117,7 @@ class TreeSummarize(BaseResponseBuilder):
         if len(text_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
-                response, _ = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm_predictor.stream(
                     summary_template,
                     context_str=text_chunks[0],
                 )

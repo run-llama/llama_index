@@ -156,7 +156,6 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
     Depending on the prompt, return response.
 
     """
-    formatted_prompt = prompt.format(**prompt_args)
     full_prompt_args = prompt.get_full_format_args(prompt_args)
     if prompt.prompt_type == PromptType.SUMMARY:
         response = _mock_summary_predict(full_prompt_args)
@@ -199,12 +198,10 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
     else:
         response = str(full_prompt_args)
 
-    return response, formatted_prompt
+    return response
 
 
-def patch_llmpredictor_predict(
-    self: Any, prompt: Prompt, **prompt_args: Any
-) -> Tuple[str, str]:
+def patch_llmpredictor_predict(self: Any, prompt: Prompt, **prompt_args: Any) -> str:
     """Mock predict method of LLMPredictor.
 
     Depending on the prompt, return response.
@@ -215,13 +212,11 @@ def patch_llmpredictor_predict(
 
 async def patch_llmpredictor_apredict(
     self: Any, prompt: Prompt, **prompt_args: Any
-) -> Tuple[str, str]:
+) -> str:
     """Mock apredict method of LLMPredictor."""
     return patch_llmpredictor_predict(self, prompt, **prompt_args)
 
 
-async def mock_llmpredictor_apredict(
-    prompt: Prompt, **prompt_args: Any
-) -> Tuple[str, str]:
+async def mock_llmpredictor_apredict(prompt: Prompt, **prompt_args: Any) -> str:
     """Mock apredict method of LLMPredictor."""
     return mock_llmpredictor_predict(prompt, **prompt_args)

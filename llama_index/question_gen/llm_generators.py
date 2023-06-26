@@ -53,7 +53,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        prediction, _ = self._llm_predictor.predict(
+        prediction = self._llm_predictor.predict(
             prompt=self._prompt,
             tools_str=tools_str,
             query_str=query_str,

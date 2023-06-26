@@ -91,7 +91,7 @@ class LLMSingleSelector(BaseSelector):
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction, _ = self._llm_predictor.predict(
+        prediction = self._llm_predictor.predict(
             prompt=self._prompt,
             num_choices=len(choices),
             context_list=choices_text,
@@ -177,7 +177,7 @@ class LLMMultiSelector(BaseSelector):
         context_list = _build_choices_text(choices)
         max_outputs = self._max_outputs or len(choices)
 
-        prediction, _ = self._llm_predictor.predict(
+        prediction = self._llm_predictor.predict(
             prompt=self._prompt,
             num_choices=len(choices),
             max_outputs=max_outputs,

@@ -36,7 +36,7 @@ class Generation(BaseResponseBuilder):
             )
             return response
         else:
-            stream_response, _ = self._service_context.llm_predictor.stream(
+            stream_response = self._service_context.llm_predictor.stream(
                 self._input_prompt,
                 query_str=query_str,
             )
@@ -58,7 +58,7 @@ class Generation(BaseResponseBuilder):
             )
             return response
         else:
-            stream_response, _ = self._service_context.llm_predictor.stream(
+            stream_response = self._service_context.llm_predictor.stream(
                 self._input_prompt,
                 query_str=query_str,
             )

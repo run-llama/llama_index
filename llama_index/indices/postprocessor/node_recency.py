@@ -71,7 +71,7 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
 
         # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
         # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-        # raw_pred, _ = self.service_context.llm_predictor.predict(
+        # raw_pred = self.service_context.llm_predictor.predict(
         #     prompt=infer_recency_prompt,
         #     query_str=query_bundle.query_str,
         # )
@@ -137,7 +137,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
 
         # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
         # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-        # raw_pred, _ = self.service_context.llm_predictor.predict(
+        # raw_pred = self.service_context.llm_predictor.predict(
         #     prompt=infer_recency_prompt,
         #     query_str=query_bundle.query_str,
         # )

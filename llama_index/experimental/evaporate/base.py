@@ -121,7 +121,7 @@ class EvaporateExtractor:
         field2count: dict = defaultdict(int)
         for node in nodes:
             llm_predictor = self._service_context.llm_predictor
-            result, _ = llm_predictor.predict(
+            result = llm_predictor.predict(
                 self._schema_id_prompt, topic=topic, chunk=node.get_text()
             )
 

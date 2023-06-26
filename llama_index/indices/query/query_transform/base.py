@@ -109,7 +109,7 @@ class HyDEQueryTransform(BaseQueryTransform):
         """Run query transform."""
         # TODO: support generating multiple hypothetical docs
         query_str = query_bundle.query_str
-        hypothetical_doc, _ = self._llm_predictor.predict(
+        hypothetical_doc = self._llm_predictor.predict(
             self._hyde_prompt, context_str=query_str
         )
         embedding_strs = [hypothetical_doc]
@@ -155,7 +155,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
         query_str = query_bundle.query_str
-        new_query_str, _ = self._llm_predictor.predict(
+        new_query_str = self._llm_predictor.predict(
             self._decompose_query_prompt,
             query_str=query_str,
             context_str=index_summary,

@@ -199,7 +199,7 @@ class BaseStructDatapointExtractor:
             logger.info(f"> Adding chunk {i}: {fmt_text_chunk}")
             # if embedding specified in document, pass it to the Node
             schema_text = self._get_schema_text()
-            response_str, _ = self._llm_predictor.predict(
+            response_str = self._llm_predictor.predict(
                 self._schema_extract_prompt,
                 text=text_chunk,
                 schema=schema_text,

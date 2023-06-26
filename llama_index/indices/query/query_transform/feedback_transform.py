@@ -94,7 +94,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         if feedback is None:
             return query_str
         else:
-            new_query_str, _ = self.llm_predictor.predict(
+            new_query_str = self.llm_predictor.predict(
                 self.resynthesis_prompt,
                 query_str=query_str,
                 response=response.response,
