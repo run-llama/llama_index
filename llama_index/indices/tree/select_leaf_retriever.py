@@ -180,10 +180,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            (
-                response,
-                formatted_query_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -204,20 +201,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            (
-                response,
-                formatted_query_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )
 
-        logger.debug(
-            f">[Level {level}] current prompt template: {formatted_query_prompt}"
-        )
-        self._service_context.llama_logger.add_log(
-            {"formatted_prompt_template": formatted_query_prompt, "level": level}
-        )
         debug_str = f">[Level {level}] Current response: {response}"
         logger.debug(debug_str)
         if self._verbose:
@@ -308,10 +296,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            (
-                response,
-                formatted_query_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -332,20 +317,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            (
-                response,
-                formatted_query_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )
 
-        logger.debug(
-            f">[Level {level}] current prompt template: {formatted_query_prompt}"
-        )
-        self._service_context.llama_logger.add_log(
-            {"formatted_prompt_template": formatted_query_prompt, "level": level}
-        )
         debug_str = f">[Level {level}] Current response: {response}"
         logger.debug(debug_str)
         if self._verbose:
