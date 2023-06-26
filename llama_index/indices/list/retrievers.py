@@ -79,7 +79,6 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
             node_embeddings,
             similarity_top_k=self._similarity_top_k,
             embedding_ids=list(range(len(nodes))),
-            weights=[n.weight for n in nodes],
         )
 
         top_k_nodes = [nodes[i] for i in top_idxs]
