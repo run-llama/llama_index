@@ -167,7 +167,6 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         if self.embedding_filter_level == "documents":
             if self.storage_context is None:
                 raise ValueError("Missing storage context.")
-            # get the node_ids for each retrieved document
             sorted_doc_ids = list(
                 dict.fromkeys(
                     [
@@ -177,7 +176,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
                     ]
                 )
             )
-            sorted_node_ids_for_docs = []
+            sorted_node_ids_for_docs: List[List[str]] = []
             for ref_doc_id in sorted_doc_ids:
                 doc_info = self.storage_context.docstore.get_ref_doc_info(ref_doc_id)
                 if doc_info is not None and doc_info.doc_ids is not None:
@@ -193,7 +192,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
                     if _node is not None:
                         embed_model.queue_text_for_embedding(node_id, _node.get_text())
 
-            # get the embeddings for each doc by averaging the doc's node embeddings
+            # get the embeddings for each doc by averaging the doc node embeddings
             _, text_embeddings = embed_model.get_queued_text_embeddings()
             idx_offset = 0
             sorted_doc_embeddings = []
@@ -204,7 +203,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
                 sorted_doc_embeddings.append(doc_embedding)
                 idx_offset += len(node_ids)
 
-            # calculate cosine similarity for each pair of document vectors
+            # calculate cosine similarity for each pair of document embeddings
             doc_ids_to_skip: Set[str] = set()
             num_of_embeddings = len(sorted_doc_embeddings)
             for i in range(num_of_embeddings):
@@ -219,13 +218,11 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
                         doc_ids_to_skip.add(older_doc_id)
 
             # return filtered nodes
-            filtered_nodes = [
+            return [
                 node
                 for node in sorted_nodes
                 if node.node.ref_doc_id not in doc_ids_to_skip
             ]
-
-            return filtered_nodes
         else:
             # get embeddings for each node
             embed_model = self.service_context.embed_model
@@ -255,12 +252,11 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
                     cosine_sim = np.dot(query_embedding, text_embeddings[idx2])
                     if cosine_sim > self.similarity_cutoff:
                         node_ids_to_skip.add(node2.node.get_doc_id())
-            filtered_nodes = [
+            return [
                 node
                 for node in sorted_nodes
                 if node.node.get_doc_id() not in node_ids_to_skip
             ]
-            return filtered_nodes
 
 
 class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
