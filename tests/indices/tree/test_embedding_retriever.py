@@ -20,7 +20,6 @@ from llama_index.langchain_helpers.chain_wrapper import (
 )
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.readers.schema.base import Document
-from tests.mock_utils.mock_predict import mock_llmchain_predict
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_SUMMARY_PROMPT,
@@ -98,10 +97,8 @@ def _mock_tokenizer(text: str) -> int:
     return len(text.split(" "))
 
 
-@patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
 @patch("llama_index.llm_predictor.base.OpenAI")
 @patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
-@patch.object(LLMChain, "__init__", return_value=None)
 @patch.object(
     TreeSelectLeafEmbeddingRetriever,
     "_get_query_text_embedding_similarities",
@@ -117,10 +114,8 @@ def test_query_and_count_tokens(
     _mock_count_tokens: Any,
     _mock_split_text: Any,
     _mock_similarity: Any,
-    _mock_llmchain: Any,
     _mock_llm_metadata: Any,
     _mock_init: Any,
-    _mock_predict: Any,
     index_kwargs: Dict,
     documents: List[Document],
 ) -> None:
