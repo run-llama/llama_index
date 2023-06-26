@@ -26,7 +26,6 @@ class RedisKVStore(BaseKVStore):
 
     def __init__(
         self,
-        redis_client: Any,
         redis_url: Optional[str] = "redis://127.0.0.1:6379",
         **kwargs: Any,
     ) -> None:
@@ -37,11 +36,9 @@ class RedisKVStore(BaseKVStore):
 
         # user could inject customized redis client.
         # for instance, redis have specific TLS connection, etc.
-        if redis_client is not None:
-            self._redis_client = cast(Redis, redis_client)
-            return
-
-        if redis_url is not None:
+        if "redis_client" in kwargs:
+            self._redis_client = cast(Redis, kwargs["redis_client"])
+        elif redis_url is not None:
             # otherwise, try initializing redis client
             try:
                 # connect to redis from url
@@ -49,7 +46,7 @@ class RedisKVStore(BaseKVStore):
             except ValueError as e:
                 raise ValueError(f"Redis failed to connect: {e}")
         else:
-            raise ValueError("Redis url or redis client is needed for init")
+            raise ValueError("Either 'redis_client' or redis_url must be provided.")
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         """Put a key-value pair into the store.
@@ -80,7 +77,7 @@ class RedisKVStore(BaseKVStore):
         collection_kv_dict = dict()
         for key, val_str in self._redis_client.hscan_iter(name=collection):
             value = dict(json.loads(val_str))
-            collection_kv_dict[str(key)] = value
+            collection_kv_dict[str(key.deocode())] = value
         return collection_kv_dict
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
