@@ -74,7 +74,7 @@ class LLMPredictor(BaseLLMPredictor):
         """Get LLM metadata."""
         return self._llm.metadata
 
-    def _log_start(self, prompt: Prompt, prompt_args: dict) -> None:
+    def _log_start(self, prompt: Prompt, prompt_args: dict) -> str:
         """Log start of an LLM event."""
         llm_payload = prompt_args.copy()
         llm_payload[EventPayload.TEMPLATE] = prompt

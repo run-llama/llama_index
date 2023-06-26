@@ -19,7 +19,7 @@ class SimpleChatEngine(BaseChatEngine):
     def __init__(
         self,
         llm: LLM,
-        chat_history: ChatHistoryType,
+        chat_history: List[ChatMessage],
     ) -> None:
         self._llm = llm
         self._chat_history = chat_history
@@ -52,7 +52,9 @@ class SimpleChatEngine(BaseChatEngine):
 
         return Response(response=chat_response.message.content)
 
-    async def achat(self, message: str) -> RESPONSE_TYPE:
+    async def achat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
 
         chat_history = chat_history or self._chat_history
         chat_history.append(ChatMessage(content=message, role="user"))

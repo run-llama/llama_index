@@ -72,7 +72,7 @@ class ReActChatEngine(BaseChatEngine):
             )
         return cls(
             query_engine_tools=query_engine_tools,
-            llm=lc_llm,
+            llm=llm,
             memory=memory,
             verbose=verbose,
         )
@@ -103,14 +103,14 @@ class ReActChatEngine(BaseChatEngine):
 
     def _create_agent(self) -> AgentExecutor:
         tools = [qe_tool.as_langchain_tool() for qe_tool in self._query_engine_tools]
-        if is_chat_model(self._llm):
+        if is_chat_model(self._llm.llm):
             agent_type = AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION
         else:
             agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
 
         return initialize_agent(
             tools=tools,
-            llm=self._llm,
+            llm=self._llm.llm,
             agent=agent_type,
             memory=self._memory,
             verbose=self._verbose,

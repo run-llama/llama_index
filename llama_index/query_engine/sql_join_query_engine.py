@@ -115,7 +115,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         query_str = query_bundle.query_str
         sql_query = extra_info["sql_query"]
         sql_query_response = extra_info["sql_query_response"]
-        new_query_str, formatted_prompt = self._llm_predictor.predict(
+        new_query_str = self._llm_predictor.predict(
             self._sql_augment_transform_prompt,
             query_str=query_str,
             sql_query_str=sql_query,

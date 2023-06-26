@@ -100,17 +100,13 @@ class JSONQueryEngine(BaseQueryEngine):
         """Answer a query."""
         schema = self._get_schema_context()
 
-        (
-            json_path_response_str,
-            formatted_prompt,
-        ) = self._service_context.llm_predictor.predict(
+        json_path_response_str = self._service_context.llm_predictor.predict(
             self._json_path_prompt,
             schema=schema,
             query_str=query_bundle.query_str,
         )
 
         if self._verbose:
-            print_text(f"> JSONPath Prompt: {formatted_prompt}\n")
             print_text(
                 f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
             )
@@ -144,17 +140,13 @@ class JSONQueryEngine(BaseQueryEngine):
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         schema = self._get_schema_context()
 
-        (
-            json_path_response_str,
-            formatted_prompt,
-        ) = await self._service_context.llm_predictor.apredict(
+        json_path_response_str = await self._service_context.llm_predictor.apredict(
             self._json_path_prompt,
             schema=schema,
             query_str=query_bundle.query_str,
         )
 
         if self._verbose:
-            print_text(f"> JSONPath Prompt: {formatted_prompt}\n")
             print_text(
                 f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
             )

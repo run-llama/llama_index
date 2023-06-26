@@ -18,7 +18,7 @@ class StructuredLLMPredictor(LLMPredictor):
 
     """
 
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Predict the answer to a query.
 
         Args:
@@ -28,7 +28,7 @@ class StructuredLLMPredictor(LLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        llm_prediction, formatted_prompt = super().predict(prompt, **prompt_args)
+        llm_prediction = super().predict(prompt, **prompt_args)
         # run output parser
         if prompt.output_parser is not None:
             # TODO: return other formats
@@ -36,9 +36,9 @@ class StructuredLLMPredictor(LLMPredictor):
         else:
             parsed_llm_prediction = llm_prediction
 
-        return parsed_llm_prediction, formatted_prompt
+        return parsed_llm_prediction
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use
@@ -55,7 +55,7 @@ class StructuredLLMPredictor(LLMPredictor):
             "Streaming is not supported for structured LLM predictor."
         )
 
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Async predict the answer to a query.
 
         Args:
@@ -65,9 +65,9 @@ class StructuredLLMPredictor(LLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        llm_prediction, formatted_prompt = await super().apredict(prompt, **prompt_args)
+        llm_prediction = await super().apredict(prompt, **prompt_args)
         if prompt.output_parser is not None:
             parsed_llm_prediction = str(prompt.output_parser.parse(llm_prediction))
         else:
             parsed_llm_prediction = llm_prediction
-        return parsed_llm_prediction, formatted_prompt
+        return parsed_llm_prediction

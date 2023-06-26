@@ -114,7 +114,7 @@ class VellumPredictor(BaseLLMPredictor):
 
                 yield completion_text_delta
 
-        return text_generator(), compiled_prompt.text
+        return text_generator()
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Asynchronously predict the answer to a query."""

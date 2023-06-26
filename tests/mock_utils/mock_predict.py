@@ -150,7 +150,7 @@ def _mock_conversation(prompt_args: Dict) -> str:
     return prompt_args["history"] + ":" + prompt_args["message"]
 
 
-def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> str:
     """Mock predict method of LLMPredictor.
 
     Depending on the prompt, return response.

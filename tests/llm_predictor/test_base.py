@@ -43,16 +43,12 @@ def test_struct_llm_predictor(mock_init: Any, mock_predict: Any) -> None:
     llm_predictor = StructuredLLMPredictor()
     output_parser = MockOutputParser()
     prompt = SimpleInputPrompt("{query_str}", output_parser=output_parser)
-    llm_prediction, formatted_output = llm_predictor.predict(
-        prompt, query_str="hello world"
-    )
+    llm_prediction = llm_predictor.predict(prompt, query_str="hello world")
     assert llm_prediction == "hello world\nhello world"
 
     # no change
     prompt = SimpleInputPrompt("{query_str}")
-    llm_prediction, formatted_output = llm_predictor.predict(
-        prompt, query_str="hello world"
-    )
+    llm_prediction = llm_predictor.predict(prompt, query_str="hello world")
     assert llm_prediction == "hello world"
 
 
@@ -78,20 +74,14 @@ def test_struct_llm_predictor_with_cache() -> None:
     predictor = LLMPredictor(llm, False, GPTCache(init_gptcache_map))
 
     prompt = DEFAULT_SIMPLE_INPUT_PROMPT
-    llm_prediction, formatted_output = predictor.predict(
-        prompt, query_str="hello world"
-    )
+    llm_prediction = predictor.predict(prompt, query_str="hello world")
     assert llm_prediction == "helloworld"
 
     # due to cached result, faked llm is called only once
-    llm_prediction, formatted_output = predictor.predict(
-        prompt, query_str="hello world"
-    )
+    llm_prediction = predictor.predict(prompt, query_str="hello world")
     assert llm_prediction == "helloworld"
 
     # no cache, return sequence
     llm.cache = False
-    llm_prediction, formatted_output = predictor.predict(
-        prompt, query_str="hello world"
-    )
+    llm_prediction = predictor.predict(prompt, query_str="hello world")
     assert llm_prediction == "helloworld2"

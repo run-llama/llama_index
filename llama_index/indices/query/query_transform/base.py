@@ -244,7 +244,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
         query_str = query_bundle.query_str
-        new_query_str, formatted_prompt = self._llm_predictor.predict(
+        new_query_str = self._llm_predictor.predict(
             self._step_decompose_query_prompt,
             prev_reasoning=fmt_prev_reasoning,
             query_str=query_str,
@@ -252,7 +252,6 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
         )
         if self.verbose:
             print_text(f"> Current query: {query_str}\n", color="yellow")
-            print_text(f"> Formatted prompt: {formatted_prompt}\n", color="pink")
             print_text(f"> New query: {new_query_str}\n", color="pink")
         return QueryBundle(
             query_str=new_query_str,

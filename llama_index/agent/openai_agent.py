@@ -135,7 +135,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             # send function call & output back to get another response
             response = await self._llm.achat(chat_history, functions=functions)
             ai_message = response.message
-            chat_history(ai_message)
+            chat_history.append(ai_message)
             function_call = ai_message.additional_kwargs.get("function_call", None)
 
         return Response(ai_message.content)

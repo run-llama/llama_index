@@ -27,10 +27,7 @@ class Generation(BaseResponseBuilder):
         del text_chunks
 
         if not self._streaming:
-            (
-                response,
-                formatted_prompt,
-            ) = await self._service_context.llm_predictor.apredict(
+            response = await self._service_context.llm_predictor.apredict(
                 self._input_prompt,
                 query_str=query_str,
             )

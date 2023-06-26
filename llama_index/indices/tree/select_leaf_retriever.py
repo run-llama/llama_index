@@ -133,17 +133,13 @@ class TreeSelectLeafRetriever(BaseRetriever):
             return cur_response
         else:
             context_msg = selected_node.get_text()
-            (
-                cur_response,
-                formatted_refine_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            cur_response = self._service_context.llm_predictor.predict(
                 self._refine_template,
                 query_str=query_str,
                 existing_answer=prev_response,
                 context_msg=context_msg,
             )
 
-            logger.debug(f">[Level {level}] Refine prompt: {formatted_refine_prompt}")
             logger.debug(f">[Level {level}] Current refined response: {cur_response} ")
             return cur_response
 

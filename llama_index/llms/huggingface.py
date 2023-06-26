@@ -104,7 +104,7 @@ class HuggingFaceLLM(LLM):
             context_window=self._max_input_size, num_output=self._max_new_tokens
         )
 
-    def complete(self, prompt: str, **kwargs: Any) -> Tuple[str, str]:
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Predict the answer to a query.
 
         Args:
