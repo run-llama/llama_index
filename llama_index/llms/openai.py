@@ -122,7 +122,8 @@ class OpenAI(LLM, BaseModel):
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         def gen() -> Generator[ChatDeltaResponse, None, None]:
-            text = ""
+            content = ""
+            function_call: Optional[dict] = None
             for response in completion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
@@ -130,15 +131,25 @@ class OpenAI(LLM, BaseModel):
                 stream=True,
                 **all_kwargs,
             ):
-                role = response["choices"][0]["delta"].get("role", "assistant")
-                delta = response["choices"][0]["delta"].get("content", "")
-                text += delta or ""
+                delta = response["choices"][0]["delta"]
+                role = delta.get("role", "assistant")
+                content_delta = delta.get("content", "") or ""
+                content += content_delta
+
+                function_call_delta = delta.get("function_call", None)
+                if function_call_delta is not None:
+                    if function_call is None:
+                        function_call = function_call_delta
+                    else:
+                        function_call["arguments"] += function_call_delta["arguments"]
+
                 yield ChatDeltaResponse(
                     message=ChatMessage(
                         role=role,
-                        content=text,
+                        content=content,
+                        additional_kwargs={"function_call": function_call},
                     ),
-                    delta=delta,
+                    delta=content_delta,
                     raw=response,
                 )
 
