@@ -2,7 +2,7 @@
 
 LlamaIndex (GPT Index) is a data framework for your LLM application.
 
-PyPI:
+PyPI: 
 - LlamaIndex: https://pypi.org/project/llama-index/.
 - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 
@@ -41,6 +41,7 @@ LlamaIndex provides tools for both beginner users and advanced users. Our high-l
 5 lines of code. Our lower-level APIs allow advanced users to customize and extend any module (data connectors, indices, retrievers, query engines, reranking modules),
 to fit their needs.
 
+
 ## 💡 Contributing
 
 Interested in contributing? See our [Contribution Guide](CONTRIBUTING.md) for more details.
@@ -48,7 +49,9 @@ Interested in contributing? See our [Contribution Guide](CONTRIBUTING.md) for mo
 ## 📄 Documentation
 
 Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest/.
+
 Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources!
+
 
 ## 💻 Example Usage
 
@@ -68,11 +71,13 @@ documents = SimpleDirectoryReader('data').load_data()
 index = VectorStoreIndex.from_documents(documents)
 ```
 
+
 To query:
 ```python
 query_engine = index.as_query_engine()
 query_engine.query("<question_text>?")
 ```
+
 
 By default, data is stored in-memory.
 To persist to disk (under `./storage`):
@@ -91,11 +96,12 @@ storage_context = StorageContext.from_defaults(persist_dir='./storage')
 index = load_index_from_storage(storage_context)
 ```
 
+
 ## 🔧 Dependencies
 
 The main third-party package requirements are `tiktoken`, `openai`, and `langchain`.
 
-All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`.
+All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`. 
 
 
 ## 📖 Citation
