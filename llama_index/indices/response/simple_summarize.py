@@ -31,19 +31,15 @@ class SimpleSummarize(BaseResponseBuilder):
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
-            (
-                response,
-                formatted_prompt,
-            ) = await self._service_context.llm_predictor.apredict(
+            response = await self._service_context.llm_predictor.apredict(
                 text_qa_template,
                 context_str=node_text,
             )
         else:
-            response, formatted_prompt = self._service_context.llm_predictor.stream(
+            response = self._service_context.llm_predictor.stream(
                 text_qa_template,
                 context_str=node_text,
             )
-        self._log_prompt_and_response(formatted_prompt, response)
 
         if isinstance(response, str):
             response = response or "Empty Response"
@@ -67,16 +63,15 @@ class SimpleSummarize(BaseResponseBuilder):
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
-            (response, formatted_prompt,) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 text_qa_template,
                 context_str=node_text,
             )
         else:
-            response, formatted_prompt = self._service_context.llm_predictor.stream(
+            response = self._service_context.llm_predictor.stream(
                 text_qa_template,
                 context_str=node_text,
             )
-        self._log_prompt_and_response(formatted_prompt, response)
 
         if isinstance(response, str):
             response = response or "Empty Response"

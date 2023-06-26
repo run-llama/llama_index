@@ -25,10 +25,7 @@ class Accumulate(BaseResponseBuilder):
 
     def format_response(self, outputs: List[Any], separator: str) -> str:
         responses: List[str] = []
-        for response, formatted_prompt in outputs:
-            self._log_prompt_and_response(
-                formatted_prompt, response, log_prefix="Initial"
-            )
+        for response in outputs:
             responses.append(response or "Empty Response")
 
         return separator.join(

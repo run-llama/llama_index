@@ -77,23 +77,14 @@ class Refine(BaseResponseBuilder):
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                (
-                    response,
-                    formatted_prompt,
-                ) = self._service_context.llm_predictor.predict(
+                response = self._service_context.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
-                )
-                self._log_prompt_and_response(
-                    formatted_prompt, response, log_prefix="Initial"
                 )
             elif response is None and self._streaming:
-                response, formatted_prompt = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
-                )
-                self._log_prompt_and_response(
-                    formatted_prompt, response, log_prefix="Initial"
                 )
             else:
                 response = self._refine_response_single(
@@ -131,15 +122,12 @@ class Refine(BaseResponseBuilder):
 
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                (
-                    response,
-                    formatted_prompt,
-                ) = self._service_context.llm_predictor.predict(
+                response = self._service_context.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
             else:
-                response, formatted_prompt = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
@@ -147,7 +135,4 @@ class Refine(BaseResponseBuilder):
                 query_str=query_str, existing_answer=response
             )
 
-            self._log_prompt_and_response(
-                formatted_prompt, response, log_prefix="Refined"
-            )
         return response

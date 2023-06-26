@@ -33,22 +33,6 @@ class BaseResponseBuilder(ABC):
     def service_context(self) -> ServiceContext:
         return self._service_context
 
-    def _log_prompt_and_response(
-        self,
-        formatted_prompt: str,
-        response: RESPONSE_TEXT_TYPE,
-        log_prefix: str = "",
-    ) -> None:
-        """Log prompt and response from LLM."""
-        logger.debug(f"> {log_prefix} prompt template: {formatted_prompt}")
-        self._service_context.llama_logger.add_log(
-            {"formatted_prompt_template": formatted_prompt}
-        )
-        logger.debug(f"> {log_prefix} response: {response}")
-        self._service_context.llama_logger.add_log(
-            {f"{log_prefix.lower()}_response": response or "Empty Response"}
-        )
-
     @abstractmethod
     def get_response(
         self,
