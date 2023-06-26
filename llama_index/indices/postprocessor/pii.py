@@ -89,7 +89,7 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
             new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
             new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
             new_node.metadata[self.pii_node_info_key] = mapping_info
-            new_node.get_content() == new_text
+            new_node.set_content(new_text)
             new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
 
         return new_nodes
@@ -136,7 +136,7 @@ class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
             new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
             new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
             new_node.metadata[self.pii_node_info_key] = mapping_info
-            new_node.get_content() == new_text
+            new_node.set_content(new_text)
             new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
 
         return new_nodes

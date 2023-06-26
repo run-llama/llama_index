@@ -179,14 +179,15 @@ class MongoDBAtlasVectorSearch(VectorStore):
             text = res.pop(self._text_key)
             score = res.pop("score")
             id = res.pop(self._id_key)
+            metadata_dict = res.pop(self._metadata_key)
 
             try:
-                node = metadata_dict_to_node(res.pop(self._metadata_key))
+                node = metadata_dict_to_node(metadata_dict)
                 node.set_content(text)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    res.pop(self._metadata_key)
+                    metadata_dict
                 )
 
                 node = TextNode(
