@@ -7,7 +7,8 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 from llama_index.tools.types import BaseTool, ToolMetadata
 from llama_index.readers.base import BaseReader
-from typing import Any, Optional, Dict, Type
+from typing import Any, Optional, Dict, Type, Callable, List
+from llama_index.readers.schema.base import Document
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.tools.utils import create_schema_from_function
@@ -18,8 +19,9 @@ from llama_index.tools.function_tool import FunctionTool
 class OnDemandLoaderTool(BaseTool):
     """On-demand data loader tool.
 
-    Loads data with `reader.load_data()` or `tool()`, stores in index, and queries
-    for relevant data with a natural language query string.
+    Loads data with by calling the provided loader function,
+    stores in index, and queries for relevant data with a
+    natural language query string.
 
     """
 
@@ -28,19 +30,17 @@ class OnDemandLoaderTool(BaseTool):
         index_cls: Type[BaseIndex],
         index_kwargs: Dict,
         metadata: ToolMetadata,
-        reader: Optional[BaseReader] = None,
-        tool: Optional[FunctionTool] = None,
+        loader: Callable[..., List[Document]],
         use_query_str_in_loader: bool = False,
         query_str_kwargs_key: str = "query_str",
     ) -> None:
         """Init params."""
-        self._reader = reader
+        self._loader = loader
         self._index_cls = index_cls
         self._index_kwargs = index_kwargs
         self._use_query_str_in_loader = use_query_str_in_loader
         self._metadata = metadata
         self._query_str_kwargs_key = query_str_kwargs_key
-        self._tool = tool
 
     @property
     def metadata(self) -> ToolMetadata:
@@ -74,7 +74,7 @@ class OnDemandLoaderTool(BaseTool):
 
         metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
         return cls(
-            reader=reader,
+            loader=reader.load_data,
             index_cls=index_cls,
             index_kwargs=index_kwargs,
             use_query_str_in_loader=use_query_str_in_loader,
@@ -107,7 +107,7 @@ class OnDemandLoaderTool(BaseTool):
             )
         metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
         return cls(
-            tool=tool,
+            loader=tool,
             index_cls=index_cls,
             index_kwargs=index_kwargs,
             use_query_str_in_loader=use_query_str_in_loader,
@@ -126,10 +126,9 @@ class OnDemandLoaderTool(BaseTool):
             query_str = kwargs[self._query_str_kwargs_key]
         else:
             query_str = kwargs.pop(self._query_str_kwargs_key)
-        if self._tool:
-            docs = self._tool(*args, **kwargs)
-        else:
-            docs = self._reader.load_data(*args, **kwargs)
+
+        docs = self._loader(*args, **kwargs)
+
         index = self._index_cls.from_documents(docs, **self._index_kwargs)
         # TODO: add query kwargs
         query_engine = index.as_query_engine()
