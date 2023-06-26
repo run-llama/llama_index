@@ -15,20 +15,16 @@ def get_top_k_embeddings(
     similarity_top_k: Optional[int] = None,
     embedding_ids: Optional[List] = None,
     similarity_cutoff: Optional[float] = None,
-    weights: Optional[List[float]] = None,
 ) -> Tuple[List[float], List]:
     """Get top nodes by similarity to the query."""
     if embedding_ids is None:
         embedding_ids = [i for i in range(len(embeddings))]
 
-    if weights is None:
-        weights = [1.0 for _ in range(len(embeddings))]
-
     similarity_fn = similarity_fn or default_similarity_fn
 
     similarity_heap: List[Tuple[float, Any]] = []
     for i, emb in enumerate(embeddings):
-        similarity = similarity_fn(query_embedding, emb) * weights[i]
+        similarity = similarity_fn(query_embedding, emb)
         if similarity_cutoff is None or similarity > similarity_cutoff:
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
             if similarity_top_k and len(similarity_heap) > similarity_top_k:

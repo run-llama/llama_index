@@ -67,10 +67,6 @@ class BaseNode(BaseModel):
     embedding: Optional[List[float]] = Field(
         default=None, description="Embedding of the node."
     )
-    weight: float = Field(
-        default=1.0,
-        description="Optional field to weight the node similarity during retrieval.",
-    )
 
     """"
     metadata fields

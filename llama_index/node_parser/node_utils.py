@@ -93,7 +93,6 @@ def get_nodes_from_document(
                 excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
                 metadata_seperator=document.metadata_seperator,
                 text_template=document.text_template,
-                weight=document.weight,
                 relationships={
                     NodeRelationship.SOURCE: document.as_related_node_info()
                 },

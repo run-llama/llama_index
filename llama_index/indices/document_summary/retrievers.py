@@ -128,7 +128,6 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             node_embeddings,
             similarity_top_k=self._similarity_top_k,
             embedding_ids=list(range(len(summary_nodes))),
-            weights=[n.weight for n in summary_nodes],
         )
 
         top_k_summary_ids = [summary_ids[i] for i in top_idxs]

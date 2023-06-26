@@ -48,7 +48,6 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
     text_id_to_ref_doc_id: Dict[str, str] = field(default_factory=dict)
-    text_id_to_weight: Dict[str, float] = field(default_factory=dict)
 
 
 class SimpleVectorStore(VectorStore):
@@ -63,7 +62,6 @@ class SimpleVectorStore(VectorStore):
     """
 
     stores_text: bool = False
-    default_weight: float = 1.0
 
     def __init__(
         self,
@@ -105,7 +103,6 @@ class SimpleVectorStore(VectorStore):
         for result in embedding_results:
             self._data.embedding_dict[result.id] = result.embedding
             self._data.text_id_to_ref_doc_id[result.id] = result.ref_doc_id
-            self._data.text_id_to_weight[result.id] = result.node.weight
         return [result.id for result in embedding_results]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -124,7 +121,6 @@ class SimpleVectorStore(VectorStore):
         for text_id in text_ids_to_delete:
             del self._data.embedding_dict[text_id]
             del self._data.text_id_to_ref_doc_id[text_id]
-            del self._data.text_id_to_weight[text_id]
 
     def query(
         self,
@@ -140,16 +136,11 @@ class SimpleVectorStore(VectorStore):
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
 
-        weights = None
         if query.doc_ids:
             available_ids = set(query.doc_ids)
 
             node_ids = [t[0] for t in items if t[0] in available_ids]
             embeddings = [t[1] for t in items if t[0] in available_ids]
-            weights = [
-                self._data.text_id_to_weight.get(id, self.default_weight)
-                for id in node_ids
-            ]
         else:
             node_ids = [t[0] for t in items]
             embeddings = [t[1] for t in items]
@@ -178,7 +169,6 @@ class SimpleVectorStore(VectorStore):
                 embeddings,
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=node_ids,
-                weights=weights,
             )
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
