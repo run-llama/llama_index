@@ -72,3 +72,30 @@ def test_redis_docstore_hash(
     # Test getting non-existent
     doc_hash = ds.get_document_hash("test_not_exist")
     assert doc_hash is None
+
+
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
+def test_redis_docstore_deserialization(
+    redis_docstore: RedisDocumentStore, documents: List[Document]
+) -> None:
+    from llama_index import (
+        ListIndex,
+        StorageContext,
+        Document,
+    )
+    from llama_index.storage.docstore import RedisDocumentStore
+    from llama_index.storage.index_store import RedisIndexStore
+
+    ds = RedisDocumentStore.from_host_and_port(
+        "127.0.0.1", int(6379), namespace="data4"
+    )
+    idxs = RedisIndexStore.from_host_and_port("127.0.0.1", int(6379), namespace="data4")
+
+    storage_context = StorageContext.from_defaults(docstore=ds, index_store=idxs)
+
+    index = ListIndex.from_documents(
+        [Document("hello world2")], storage_context=storage_context
+    )
+    # fails here
+    doc = index.docstore.docs
+    print(doc)

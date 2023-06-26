@@ -19,6 +19,7 @@ class RedisIndexStore(KVIndexStore):
     ) -> None:
         """Init a RedisIndexStore."""
         super().__init__(redis_kvstore, namespace=namespace)
+        self._collection = f"{namespace}/index"
 
     @classmethod
     def from_redis_client(

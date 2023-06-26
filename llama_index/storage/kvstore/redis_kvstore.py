@@ -26,7 +26,7 @@ class RedisKVStore(BaseKVStore):
 
     def __init__(
         self,
-        redis_url: Optional[str] = "redis://127.0.0.1:6379",
+        redis_uri: Optional[str] = "redis://127.0.0.1:6379",
         **kwargs: Any,
     ) -> None:
         try:
@@ -38,11 +38,11 @@ class RedisKVStore(BaseKVStore):
         # for instance, redis have specific TLS connection, etc.
         if "redis_client" in kwargs:
             self._redis_client = cast(Redis, kwargs["redis_client"])
-        elif redis_url is not None:
+        elif redis_uri is not None:
             # otherwise, try initializing redis client
             try:
                 # connect to redis from url
-                self._redis_client = Redis.from_url(redis_url, **kwargs)
+                self._redis_client = Redis.from_url(redis_uri, **kwargs)
             except ValueError as e:
                 raise ValueError(f"Redis failed to connect: {e}")
         else:
@@ -77,7 +77,7 @@ class RedisKVStore(BaseKVStore):
         collection_kv_dict = dict()
         for key, val_str in self._redis_client.hscan_iter(name=collection):
             value = dict(json.loads(val_str))
-            collection_kv_dict[str(key.deocode())] = value
+            collection_kv_dict[key.decode()] = value
         return collection_kv_dict
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
@@ -104,7 +104,7 @@ class RedisKVStore(BaseKVStore):
             port (int): Redis port
         """
         url = f"redis://{host}:{port}".format(host=host, port=port)
-        return cls(redis_client=None, redis_url=url)
+        return cls(redis_uri=url)
 
     @classmethod
     def from_redis_client(cls, redis_client: Any) -> "RedisKVStore":

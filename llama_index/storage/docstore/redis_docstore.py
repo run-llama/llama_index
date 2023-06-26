@@ -21,6 +21,7 @@ class RedisDocumentStore(KVDocumentStore):
     ) -> None:
         """Init a RedisDocumentStore."""
         super().__init__(redis_kvstore, namespace)
+        self._node_collection = f"{namespace}/doc"
 
     @classmethod
     def from_redis_client(
