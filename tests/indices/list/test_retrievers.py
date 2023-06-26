@@ -47,12 +47,10 @@ def test_embedding_query(
     assert nodes[0].node.text == "Hello world."
 
 
-def mock_llmpredictor_predict(
-    self: Any, prompt: Prompt, **prompt_args: Any
-) -> Tuple[str, str]:
+def mock_llmpredictor_predict(self: Any, prompt: Prompt, **prompt_args: Any) -> str:
     """Patch llm predictor predict."""
     assert isinstance(prompt, ChoiceSelectPrompt)
-    return "Doc: 2, Relevance: 5", ""
+    return "Doc: 2, Relevance: 5"
 
 
 @patch.object(
