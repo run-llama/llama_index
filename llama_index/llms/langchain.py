@@ -1,6 +1,5 @@
 from threading import Thread
 from typing import Any, Generator, Sequence
-from pydantic import BaseModel
 from langchain.base_language import BaseLanguageModel
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 
@@ -11,7 +10,6 @@ from llama_index.llms.base import (
     ChatResponse,
     CompletionDeltaResponse,
     CompletionResponse,
-    CompletionResponseType,
     LLMMetadata,
     Message,
     StreamChatResponse,
@@ -24,35 +22,36 @@ from llama_index.llms.langchain_utils import (
 )
 
 
-class LangChainLLM(LLM, BaseModel):
-    llm: BaseLanguageModel
+class LangChainLLM(LLM):
+    def __init__(self, llm: BaseLanguageModel) -> None:
+        self._llm = llm
 
     @property
     def metadata(self) -> LLMMetadata:
-        return get_llm_metadata(self.llm)
+        return get_llm_metadata(self._llm)
 
     def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
         lc_messages = to_lc_messages(messages)
-        lc_message = self.llm.predict_messages(messages=lc_messages, **kwargs)
+        lc_message = self._llm.predict_messages(messages=lc_messages, **kwargs)
         message = from_lc_messages([lc_message])[0]
         return ChatResponse(message=message)
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        output_str = self.llm.predict(prompt, **kwargs)
-        return CompletionResponseType(text=output_str)
+        output_str = self._llm.predict(prompt, **kwargs)
+        return CompletionResponse(text=output_str)
 
     def stream_chat(
         self, messages: Sequence[Message], **kwargs: Any
     ) -> StreamChatResponse:
         handler = StreamingGeneratorCallbackHandler()
 
-        if not hasattr(self.llm, "streaming"):
+        if not hasattr(self._llm, "streaming"):
             raise ValueError("LLM must support streaming.")
-        if not hasattr(self.llm, "callbacks"):
+        if not hasattr(self._llm, "callbacks"):
             raise ValueError("LLM must support callbacks to use streaming.")
 
-        self.llm.callbacks = [handler]
-        self.llm.streaming = True
+        self._llm.callbacks = [handler]
+        self._llm.streaming = True
 
         thread = Thread(target=self.chat, args=[messages], kwargs=kwargs)
         thread.start()
@@ -73,13 +72,13 @@ class LangChainLLM(LLM, BaseModel):
     def stream_complete(self, prompt: str, **kwargs: Any) -> StreamCompletionResponse:
         handler = StreamingGeneratorCallbackHandler()
 
-        if not hasattr(self.llm, "streaming"):
+        if not hasattr(self._llm, "streaming"):
             raise ValueError("LLM must support streaming.")
-        if not hasattr(self.llm, "callbacks"):
+        if not hasattr(self._llm, "callbacks"):
             raise ValueError("LLM must support callbacks to use streaming.")
 
-        self.llm.callbacks = [handler]
-        self.llm.streaming = True
+        self._llm.callbacks = [handler]
+        self._llm.streaming = True
 
         thread = Thread(target=self.complete, args=[prompt], kwargs=kwargs)
         thread.start()
@@ -95,17 +94,21 @@ class LangChainLLM(LLM, BaseModel):
         return gen()
 
     async def achat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
+        # TODO: Implement async chat
         return self.chat(messages, **kwargs)
 
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        # TODO: Implement async complete
         return self.complete(prompt, **kwargs)
 
     async def astream_chat(
         self, messages: Sequence[Message], **kwargs: Any
     ) -> StreamChatResponse:
+        # TODO: Implement async stream_chat
         return self.stream_chat(messages, **kwargs)
 
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> StreamCompletionResponse:
+        # TODO: Implement async stream_complete
         return self.stream_complete(prompt, **kwargs)
