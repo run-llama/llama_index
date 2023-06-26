@@ -46,6 +46,7 @@ StreamChatResponse = Generator[ChatDeltaResponse, None, None]
 # ===== Generic Model Output - Completion =====
 class CompletionResponse(BaseModel):
     text: str
+    additional_kwargs: dict = Field(default_factory=dict)
     raw: Optional[dict] = None
 
     def __str__(self) -> str:

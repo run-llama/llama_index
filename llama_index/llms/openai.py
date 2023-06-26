@@ -132,7 +132,7 @@ class OpenAI(LLM, BaseModel):
             ):
                 role = response["choices"][0]["delta"].get("role", "assistant")
                 delta = response["choices"][0]["delta"].get("content", "")
-                text += delta
+                text += delta or ""
                 yield ChatDeltaResponse(
                     message=ChatMessage(
                         role=role,

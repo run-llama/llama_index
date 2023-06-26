@@ -44,7 +44,11 @@ def completion_response_to_chat_response(
     """Convert a completion response to a chat response."""
     if isinstance(completion_response, CompletionResponse):
         return ChatResponse(
-            message=ChatMessage(role="assistant", content=completion_response.text),
+            message=ChatMessage(
+                role="assistant",
+                content=completion_response.text,
+                additional_kwargs=completion_response.additional_kwargs,
+            ),
             raw=completion_response.raw,
         )
     elif isinstance(completion_response, Generator):
@@ -53,7 +57,11 @@ def completion_response_to_chat_response(
             for delta in completion_response:
                 assert isinstance(delta, CompletionDeltaResponse)
                 yield ChatDeltaResponse(
-                    message=ChatMessage(role="assistant", content=delta.text),
+                    message=ChatMessage(
+                        role="assistant",
+                        content=delta.text,
+                        additional_kwargs=delta.additional_kwargs,
+                    ),
                     delta=delta.delta,
                     raw=delta.raw,
                 )
@@ -71,6 +79,7 @@ def chat_response_to_completion_response(
     if isinstance(chat_response, ChatResponse):
         return CompletionResponse(
             text=chat_response.message.content or "",
+            additional_kwargs=chat_response.message.additional_kwargs,
             raw=chat_response.raw,
         )
     elif isinstance(chat_response, Generator):
@@ -80,6 +89,7 @@ def chat_response_to_completion_response(
                 assert isinstance(delta, ChatDeltaResponse)
                 yield CompletionDeltaResponse(
                     text=delta.message.content or "",
+                    additional_kwargs=delta.message.additional_kwargs,
                     delta=delta.delta,
                     raw=delta.raw,
                 )
