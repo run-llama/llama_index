@@ -22,6 +22,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
+from llama_index.storage.storage_context import StorageContext
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -241,14 +242,14 @@ def test_fixed_recency_postprocessor(
 @patch.object(
     OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
 )
-def test_embedding_recency_postprocessor(
+def test_default_embedding_recency_postprocessor(
     _mock_query_embed: Any,
     _mock_texts: Any,
     _mock_text: Any,
     _mock_init: Any,
     _mock_predict: Any,
 ) -> None:
-    """Test fixed recency processor."""
+    """Test embedding recency processor with node embedding filtering (default)."""
 
     # try in node info
     nodes = [
@@ -273,12 +274,97 @@ def test_embedding_recency_postprocessor(
     )
     assert len(result_nodes) == 4
     assert result_nodes[0].node.get_text() == "This is a test v2."
-    assert cast(Dict, result_nodes[0].node_info)["date"] == "2020-01-04"
+    assert cast(Dict, result_nodes[0].node.node_info)["date"] == "2020-01-04"
     assert result_nodes[1].node.get_text() == "This is another test."
     assert result_nodes[1].node.get_doc_id() == "3v2"
-    assert cast(Dict, result_nodes[1].node_info)["date"] == "2020-01-03"
+    assert cast(Dict, result_nodes[1].node.node_info)["date"] == "2020-01-03"
     assert result_nodes[2].node.get_text() == "This is a test."
-    assert cast(Dict, result_nodes[2].node_info)["date"] == "2020-01-02"
+    assert cast(Dict, result_nodes[2].node.node_info)["date"] == "2020-01-02"
+
+
+@patch.object(LLMPredictor, "predict", side_effect=mock_recency_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_doc_filtering_embedding_recency_postprocessor(
+    _mock_query_embed: Any,
+    _mock_texts: Any,
+    _mock_text: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+) -> None:
+    """Test document filtering embedding recency processor."""
+
+    # try in node info
+    old_doc_id = "v1"
+    old_doc_date = "2020-01-01"
+    old_doc_rel = {DocumentRelationship.SOURCE: old_doc_id}
+
+    new_doc_id = "v2"
+    new_doc_date = "2020-02-02"
+    new_doc_rel = {DocumentRelationship.SOURCE: new_doc_id}
+    nodes = [
+        Node(
+            "This is a test v1.",
+            doc_id=old_doc_id,
+            node_info={"date": old_doc_date},
+            relationships=old_doc_rel,
+        ),
+        Node(
+            "This is a test.",
+            doc_id=old_doc_id,
+            node_info={"date": old_doc_date},
+            relationships=old_doc_rel,
+        ),
+        Node(
+            "This is a test v2.",
+            doc_id=new_doc_id,
+            node_info={"date": new_doc_date},
+            relationships=new_doc_rel,
+        ),
+        Node(
+            "This is a test.",
+            doc_id=new_doc_id,
+            node_info={"date": new_doc_date},
+            relationships=new_doc_rel,
+        ),
+    ]
+
+    nodes_with_scores = [NodeWithScore(node) for node in nodes]
+    service_context = ServiceContext.from_defaults()
+    storage_context = StorageContext.from_defaults()
+    storage_context.docstore.add_documents(nodes)
+
+    postprocessor = EmbeddingRecencyPostprocessor(
+        top_k=1,
+        service_context=service_context,
+        storage_context=storage_context,
+        in_extra_info=False,
+        query_embedding_tmpl="{context_str}",
+        embedding_filter_level="documents",
+    )
+    query_bundle: QueryBundle = QueryBundle(query_str="What is?")
+    result_nodes = postprocessor.postprocess_nodes(
+        nodes_with_scores, query_bundle=query_bundle
+    )
+
+    # should not have any nodes from old doc
+    assert len(result_nodes) == 2
+    first_result, second_result = [result_nodes[0].node, result_nodes[1].node]
+    assert first_result.get_text() == "This is a test."
+    assert cast(Dict, first_result.node_info)["date"] == new_doc_date
+    assert first_result.get_doc_id() == new_doc_id
+
+    assert second_result.get_text() == "This is a test v2."
+    assert cast(Dict, second_result.node_info)["date"] == new_doc_date
+    assert second_result.get_doc_id() == new_doc_id
 
 
 @patch.object(LLMPredictor, "predict", side_effect=mock_recency_predict)
