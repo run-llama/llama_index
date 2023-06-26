@@ -196,7 +196,6 @@ class DocArrayVectorStore(VectorStore, ABC):
                     id_=doc.id,
                     text=doc.text,
                     metadata=metadata,
-                    node_info=node_info,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),
                     relationships=relationships,
