@@ -46,7 +46,7 @@ class OpenAI(LLM, BaseModel):
             chat_fn = self._chat
         else:
             chat_fn = completion_to_chat_decorator(self._complete)
-            return chat_fn(messages, **kwargs)
+        return chat_fn(messages, **kwargs)
 
     def stream_chat(
         self, messages: Sequence[Message], **kwargs: Any
