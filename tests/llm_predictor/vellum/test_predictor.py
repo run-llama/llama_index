@@ -26,12 +26,9 @@ def test_predict__basic(
 
     predictor = vellum_predictor_factory(vellum_client=vellum_client)
 
-    completion_text, compiled_prompt_text = predictor.predict(
-        dummy_prompt, thing="greeting"
-    )
+    completion_text = predictor.predict(dummy_prompt, thing="greeting")
 
     assert completion_text == "Hello, world!"
-    assert compiled_prompt_text == "What's you're favorite greeting?"
 
 
 def test_predict__callback_manager(
