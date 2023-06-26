@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [v0.6.34.post1] - 2023-06-26
+
+### Bug Fixes / Nits
+- Patch imports for Document obj for backwards compatibility (#6597)
+
 ## [v0.6.34] - 2023-06-26
 
 ### New Features
