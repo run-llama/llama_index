@@ -150,7 +150,7 @@ class TokenTextSplitter(TextSplitter):
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
 
-        # NOTE: Consider extra info str that will be added to the chunk at query time
+        # NOTE: Consider metadata info str that will be added to the chunk at query time
         #       This reduces the effective chunk size that we can have
         if metadata_str is not None:
             # NOTE: extra 2 newline chars for formatting when prepending in query
@@ -351,7 +351,7 @@ class SentenceSplitter(TextSplitter):
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
 
-        # NOTE: Consider extra info str that will be added to the chunk at query time
+        # NOTE: Consider metadata info str that will be added to the chunk at query time
         #       This reduces the effective chunk size that we can have
         if metadata_str is not None:
             # NOTE: extra 2 newline chars for formatting when prepending in query

@@ -37,7 +37,7 @@ def display_source_node(source_node: NodeWithScore, source_length: int = 100) ->
 
 
 def display_metadata(metadata: Dict[str, Any]) -> None:
-    """Display extra info for jupyter notebook."""
+    """Display metadata for jupyter notebook."""
     display(metadata)
 
 

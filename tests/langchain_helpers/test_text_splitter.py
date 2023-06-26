@@ -45,7 +45,7 @@ def test_split_long_token() -> None:
 
 
 def test_split_with_metadata_str() -> None:
-    """Test split while taking into account chunk size used by extra info str."""
+    """Test split while taking into account chunk size used by metadata str."""
     text = " ".join(["foo"] * 20)
     metadata_str = "test_metadata_str"
 

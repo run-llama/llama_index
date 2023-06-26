@@ -17,7 +17,7 @@ class TransformQueryEngine(BaseQueryEngine):
     Args:
         query_engine (BaseQueryEngine): A query engine object.
         query_transform (BaseQueryTransform): A query transform object.
-        transform_metadata (Optional[dict]): Extra info to pass to the
+        transform_metadata (Optional[dict]): metadata to pass to the
             query transform.
         callback_manager (Optional[CallbackManager]): A callback manager.
 

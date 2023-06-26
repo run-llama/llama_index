@@ -7,7 +7,6 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt
-from llama_index.schema import BaseNode, MetadataMode
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 

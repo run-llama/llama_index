@@ -9,7 +9,7 @@ from llama_index.utils import truncate_text
 
 
 def pprint_metadata(metadata: Dict[str, Any]) -> None:
-    """Display extra info for jupyter notebook."""
+    """Display metadata for jupyter notebook."""
     pprint(metadata)
 
 

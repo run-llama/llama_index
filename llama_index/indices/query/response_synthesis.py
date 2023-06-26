@@ -126,7 +126,7 @@ class ResponseSynthesizer:
         self,
         nodes: List[BaseNode],
     ) -> Optional[Dict[str, Any]]:
-        """Get extra info for response."""
+        """Get metadata for response."""
         return {node.node_id: node.metadata for node in nodes}
 
     def _prepare_response_output(

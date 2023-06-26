@@ -284,7 +284,7 @@ class KGTableRetriever(BaseRetriever):
     def _get_metadata_for_response(
         self, nodes: List[BaseNode]
     ) -> Optional[Dict[str, Any]]:
-        """Get extra info for response."""
+        """Get metadata for response."""
         for node in nodes:
             if node.metadata is None or "kg_rel_map" not in node.metadata:
                 continue

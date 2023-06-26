@@ -1,5 +1,6 @@
 """Query plan tool."""
 
+from llama_index.bridge.langchain import print_text
 from pydantic import BaseModel, Field
 from typing import Dict, List, Any, Optional
 

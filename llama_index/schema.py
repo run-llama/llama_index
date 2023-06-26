@@ -107,8 +107,8 @@ class BaseNode(BaseModel):
         """Get object content."""
 
     @abstractmethod
-    def metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
-        """Extra info string."""
+    def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
+        """Metadata string."""
 
     @abstractmethod
     def set_content(self, value: Any) -> None:
@@ -252,12 +252,12 @@ class TextNode(BaseNode):
 
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         """Get object content."""
-        metadata_str = self.metadata_str(mode=metadata_mode).strip()
+        metadata_str = self.get_metadata_str(mode=metadata_mode).strip()
         return self.text_template.format(
             content=self.text, metadata_str=metadata_str
         ).strip()
 
-    def metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
+    def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
         """metadata info string."""
         if mode == MetadataMode.NONE:
             return ""

@@ -33,7 +33,7 @@ def get_text_splits_from_document(
         # use this to extract extra information about the chunks
         text_splits = text_splitter.split_text_with_overlaps(
             document.get_content(metadata_mode=MetadataMode.NONE),
-            metadata_str=document.metadata_str() if include_metadata else None,
+            metadata_str=document.get_metadata_str() if include_metadata else None,
         )
     else:
         text_chunks = text_splitter.split_text(

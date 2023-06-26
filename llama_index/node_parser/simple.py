@@ -18,7 +18,7 @@ class SimpleNodeParser(NodeParser):
 
     Args:
         text_splitter (Optional[TextSplitter]): text splitter
-        include_metadata (bool): whether to include extra info in nodes
+        include_metadata (bool): whether to include metadata in nodes
         include_prev_next_rel (bool): whether to include prev/next relationships
 
     """
@@ -71,7 +71,7 @@ class SimpleNodeParser(NodeParser):
 
         Args:
             documents (Sequence[Document]): documents to parse
-            include_metadata (bool): whether to include extra info in nodes
+            include_metadata (bool): whether to include metadata in nodes
 
         """
         event_id = self.callback_manager.on_event_start(

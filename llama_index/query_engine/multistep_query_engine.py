@@ -162,7 +162,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             text_chunks.append(cur_qa_text)
             for source_node in cur_response.source_nodes:
                 source_nodes.append(source_node)
-            # update extra info
+            # update metadata
             final_response_metadata["sub_qa"].append(
                 (updated_query_bundle.query_str, cur_response)
             )

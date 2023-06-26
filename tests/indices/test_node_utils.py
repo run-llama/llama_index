@@ -52,7 +52,7 @@ def test_get_nodes_from_document(
 def test_get_nodes_from_document_with_metadata(
     documents: List[Document], text_splitter: TokenTextSplitter
 ) -> None:
-    """Test get nodes from document with extra info have desired chunk size."""
+    """Test get nodes from document with metadata have desired chunk size."""
     nodes = get_nodes_from_document(
         documents[0],
         text_splitter,
