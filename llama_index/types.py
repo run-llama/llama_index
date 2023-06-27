@@ -3,7 +3,8 @@ from typing import Protocol, Any
 from abc import abstractmethod
 
 
-RESPONSE_TEXT_TYPE = Union[str, Generator]
+StreamTokens = Generator[str, None, None]
+RESPONSE_TEXT_TYPE = Union[str, StreamTokens]
 
 
 # TODO: move into a `core` folder

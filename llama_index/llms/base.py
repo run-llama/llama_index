@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generator, Literal, Optional, Sequence, Union
+from typing import Any, Generator, Literal, Optional, Sequence
 
 from pydantic import BaseModel, Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS

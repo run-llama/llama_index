@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Tuple, Generator, Optional, cast
+from typing import Any, Tuple, Optional, cast
 
 from llama_index import Prompt
 from llama_index.callbacks import CallbackManager
@@ -12,6 +12,7 @@ from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
+from llama_index.types import StreamTokens
 
 
 class VellumPredictor(BaseLLMPredictor):
@@ -66,7 +67,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
         """Stream the answer to a query."""
 
         from vellum import GenerateRequest, GenerateStreamResult
@@ -82,7 +83,7 @@ class VellumPredictor(BaseLLMPredictor):
             ],
         )
 
-        def text_generator() -> Generator:
+        def text_generator() -> StreamTokens:
             complete_text = ""
 
             while True:
@@ -137,7 +138,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
         return self.stream(prompt, **prompt_args)
 
     def _prepare_generate_call(
