@@ -48,27 +48,35 @@ class Answer(DataClassJsonMixin):
 
 class SelectionOutputParser(BaseOutputParser):
     def _marshal_llm_to_json(self, output: str) -> str:
-        """Extract a valid JSON array from a string.
-        Extracts a substring that represents a valid JSON array.
+        """Extract a valid JSON object or array from a string.
+        Extracts a substring that represents a valid JSON object or array.
 
         Args:
-            output: A string that may contain a valid JSON array surrounded by
+            output: A string that may contain a valid JSON object or array surrounded by
             extraneous characters or information.
 
         Returns:
-            A string representing a valid JSON array.
+            A string representing a valid JSON object or array.
 
         """
         output = output.strip()
-        left = output.find("[")
-        right = output.rfind("]")
+        if output[0] == '{':
+            left = output.find("{")
+            right = output.rfind("}")
+        elif output[0] == '[':
+            left = output.find("[")
+            right = output.rfind("]")
+        else:
+            raise ValueError('Invalid JSON string')
         output = output[left : right + 1]
         return output
 
     def parse(self, output: str) -> Any:
         output = self._marshal_llm_to_json(output)
-        json_list = json.loads(output)
-        answers = [Answer.from_dict(json_dict) for json_dict in json_list]
+        json_output = json.loads(output)
+        if isinstance(json_output, dict):
+            json_output = [json_output]
+        answers = [Answer.from_dict(json_dict) for json_dict in json_output]
         return StructuredOutput(raw_output=output, parsed_output=answers)
 
     def format(self, prompt_template: str) -> str:
