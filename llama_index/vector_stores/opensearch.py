@@ -9,6 +9,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 
 class OpensearchVectorClient:
@@ -104,19 +105,18 @@ class OpensearchVectorClient:
         """Store results in the index."""
         bulk_req: List[Dict[Any, Any]] = []
         for result in results:
-            node_info = {}
             if isinstance(result.node, TextNode):
-                node_info = result.node.node_info
+                pass
             bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
+
+            metadata = node_to_metadata_dict(result.node, remove_text=True)
             bulk_req.append(
                 {
                     self._text_field: result.node.get_content(
                         metadata_mode=MetadataMode.NONE
                     ),
                     self._embedding_field: result.embedding,
-                    self._metadata_field: result.node.metadata,
-                    "node_info": node_info,
-                    "relationships": result.node.relationships,
+                    self._metadata_field: metadata,
                 }
             )
         bulk = "\n".join([json.dumps(v) for v in bulk_req]) + "\n"
@@ -160,25 +160,31 @@ class OpensearchVectorClient:
         scores = []
         for hit in res.json()["hits"]["hits"]:
             source = hit["_source"]
-            text = source[self._text_field]
-            metadata = source.get(self._metadata_field)
             node_id = hit["_id"]
-            node_info = source.get("node_info")
-            relationships = source.get("relationships")
-            start_char_idx = None
-            end_char_idx = None
-            if isinstance(node_info, dict):
-                start_char_idx = node_info.get("start", None)
-                end_char_idx = node_info.get("end", None)
+            text = source[self._text_field]
+            metadata = source.get(self._metadata_field, None)
 
-            node = TextNode(
-                text=text,
-                metadata=metadata,
-                id_=node_id,
-                start_char_idx=start_char_idx,
-                end_char_idx=end_char_idx,
-                relationships=relationships,
-            )
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.text = text
+            except Exception:
+                # TODO: Legacy support for old nodes
+                node_info = source.get("node_info")
+                relationships = source.get("relationships")
+                start_char_idx = None
+                end_char_idx = None
+                if isinstance(node_info, dict):
+                    start_char_idx = node_info.get("start", None)
+                    end_char_idx = node_info.get("end", None)
+
+                node = TextNode(
+                    text=text,
+                    metadata=metadata,
+                    id_=node_id,
+                    start_char_idx=start_char_idx,
+                    end_char_idx=end_char_idx,
+                    relationships=relationships,
+                )
             ids.append(node_id)
             nodes.append(node)
             scores.append(hit["_score"])
