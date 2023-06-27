@@ -89,6 +89,7 @@ class MockLLMPredictor(BaseLLMPredictor):
         """Initialize params."""
         self.max_tokens = max_tokens
 
+    @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata()
 
@@ -123,7 +124,7 @@ class MockLLMPredictor(BaseLLMPredictor):
     def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Mock predict."""
         event_id = self._log_start(prompt, prompt_args)
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+        formatted_prompt = prompt.format(**prompt_args)
 
         prompt_str = prompt.prompt_type
         if prompt_str == PromptType.SUMMARY:
