@@ -25,7 +25,7 @@ You can also choose to construct documents manually. LlamaIndex exposes the `Doc
 from llama_index import Document
 
 text_list = [text1, text2, ...]
-documents = [Document(t) for t in text_list]
+documents = [Document(text=t) for t in text_list]
 ```
 
 A Document represents a lightweight container around the data source. You can now choose to proceed with one of the 
