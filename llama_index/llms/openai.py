@@ -198,7 +198,7 @@ class OpenAI(LLM, BaseModel):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["delta"].get("content", "")
+                delta = response["choices"][0]["text"]
                 text += delta
                 yield CompletionDeltaResponse(
                     delta=delta,
