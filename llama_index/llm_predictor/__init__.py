@@ -1,11 +1,13 @@
 """Init params."""
 
 from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llm_predictor.mock import MockLLMPredictor
+# NOTE: this results in a circular import
+# from llama_index.llm_predictor.mock import MockLLMPredictor
 from llama_index.llm_predictor.structured import StructuredLLMPredictor
 
 __all__ = [
     "LLMPredictor",
-    "MockLLMPredictor",
+    # NOTE: this results in a circular import
+    # "MockLLMPredictor",
     "StructuredLLMPredictor",
 ]
