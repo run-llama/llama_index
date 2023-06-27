@@ -10,17 +10,17 @@ def test_simple_chat_engine(
 
     engine.reset()
     response = engine.chat("Test message 1")
-    assert str(response) == ":Test message 1"
+    assert str(response) == "user: Test message 1\nassistant: "
 
     response = engine.chat("Test message 2")
     assert (
         str(response)
-        == "\nuser: Test message 1\nassistant: :Test message 1:Test message 2"
+        == "user: Test message 1\nassistant: user: Test message 1\nassistant: \nuser: Test message 2\nassistant: "
     )
 
     engine.reset()
     response = engine.chat("Test message 3")
-    assert str(response) == ":Test message 3"
+    assert str(response) == "user: Test message 3\nassistant: "
 
 
 def test_simple_chat_engine_with_init_history(
@@ -37,5 +37,5 @@ def test_simple_chat_engine_with_init_history(
     response = engine.chat("new human message")
     assert (
         str(response)
-        == "\nuser: test human message\nassistant: test ai message\nuser: new human message\nassistant: "
+        == "user: test human message\nassistant: test ai message\nuser: new human message\nassistant: "
     )

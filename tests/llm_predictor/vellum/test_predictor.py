@@ -125,16 +125,12 @@ def test_stream__basic(
 
     predictor = vellum_predictor_factory(vellum_client=vellum_client)
 
-    completion_generator, compiled_prompt_text = predictor.stream(
-        dummy_prompt, thing="greeting"
-    )
+    completion_generator = predictor.stream(dummy_prompt, thing="greeting")
 
     assert next(completion_generator) == "Hello,"
     assert next(completion_generator) == " world!"
     with pytest.raises(StopIteration):
         next(completion_generator)
-
-    assert compiled_prompt_text == "What's you're favorite greeting?"
 
 
 def test_stream__callback_manager(
@@ -198,9 +194,7 @@ def test_stream__callback_manager(
             vellum_prompt_registry=prompt_registry,
         )
 
-        completion_generator, compiled_prompt_text = predictor.stream(
-            dummy_prompt, thing="greeting"
-        )
+        completion_generator = predictor.stream(dummy_prompt, thing="greeting")
 
     assert next(completion_generator) == "Hello,"
     assert next(completion_generator) == " world!"
