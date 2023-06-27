@@ -5,15 +5,13 @@ from llama_index.prompts.prompts import Prompt
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.llm_predictor import LLMPredictor
 from unittest.mock import patch
-from typing import List, Any, Tuple
+from typing import List, Any
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.indices.postprocessor.llm_rerank import LLMRerank
 from llama_index.indices.service_context import ServiceContext
 
 
-def mock_llmpredictor_predict(
-    self: Any, prompt: Prompt, **prompt_args: Any
-) -> Tuple[str, str]:
+def mock_llmpredictor_predict(self: Any, prompt: Prompt, **prompt_args: Any) -> str:
     """Patch llm predictor predict."""
     assert isinstance(prompt, QuestionAnswerPrompt)
     context_str = prompt_args["context_str"]
@@ -35,7 +33,7 @@ def mock_llmpredictor_predict(
             choices_and_scores.append((idx + 1, score))
 
     result_strs = [f"Doc: {str(c)}, Relevance: {s}" for c, s in choices_and_scores]
-    return "\n".join(result_strs), ""
+    return "\n".join(result_strs)
 
 
 def mock_format_node_batch_fn(nodes: List[Node]) -> str:

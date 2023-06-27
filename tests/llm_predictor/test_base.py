@@ -26,9 +26,9 @@ class MockOutputParser(BaseOutputParser):
         return output
 
 
-def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> str:
     """Mock LLMPredictor predict."""
-    return prompt_args["query_str"], "mocked formatted prompt"
+    return prompt_args["query_str"]
 
 
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
