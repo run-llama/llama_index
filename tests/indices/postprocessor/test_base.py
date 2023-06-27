@@ -5,7 +5,6 @@ from typing import Dict, cast
 
 import pytest
 
-from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.node import (
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
@@ -17,8 +16,6 @@ from llama_index.indices.postprocessor.node_recency import (
 )
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.llm_predictor import LLMPredictor
-from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 from llama_index.schema import (
     NodeRelationship,
     NodeWithScore,
@@ -180,7 +177,7 @@ def test_fixed_recency_postprocessor(
     ]
     node_with_scores = [NodeWithScore(node=node) for node in nodes]
 
-    service_context = ServiceContext.from_defaults()
+    ServiceContext.from_defaults()
 
     postprocessor = FixedRecencyPostprocessor(
         top_k=1, service_context=mock_service_context
@@ -234,7 +231,7 @@ def test_embedding_recency_postprocessor(
             excluded_embed_metadata_keys=["date"],
         ),
     ]
-    nodes_with_scores = [NodeWithScore(node) for node in nodes]
+    nodes_with_scores = [NodeWithScore(node=node) for node in nodes]
 
     postprocessor = EmbeddingRecencyPostprocessor(
         top_k=1,

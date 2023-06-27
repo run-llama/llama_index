@@ -12,7 +12,6 @@ from llama_index.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
 from llama_index.indices.tree.base import TreeIndex
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.schema import Document
 from llama_index.schema import BaseNode
 from tests.mock_utils.mock_prompts import (
