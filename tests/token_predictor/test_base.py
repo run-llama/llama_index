@@ -1,9 +1,7 @@
 """Test token predictor."""
 
 from typing import Any
-from unittest.mock import MagicMock, patch
-
-from llama_index.bridge.langchain import BaseLLM
+from unittest.mock import patch
 
 from llama_index.indices.keyword_table.base import KeywordTableIndex
 from llama_index.indices.list.base import ListIndex
@@ -11,7 +9,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.schema import Document
-from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
+from llama_index.llm_predictor.mock import MockLLMPredictor
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
@@ -27,8 +25,7 @@ def test_token_predictor(mock_split: Any) -> None:
         "This is a test v2."
     )
     document = Document(text=doc_text)
-    llm = MagicMock(spec=BaseLLM)
-    llm_predictor = MockLLMPredictor(max_tokens=256, llm=llm)
+    llm_predictor = MockLLMPredictor(max_tokens=256)
     service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
     # test tree index

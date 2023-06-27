@@ -177,8 +177,6 @@ def test_fixed_recency_postprocessor(
     ]
     node_with_scores = [NodeWithScore(node=node) for node in nodes]
 
-    ServiceContext.from_defaults()
-
     postprocessor = FixedRecencyPostprocessor(
         top_k=1, service_context=mock_service_context
     )
