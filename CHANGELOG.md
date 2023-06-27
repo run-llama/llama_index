@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Fix serialization for OpenSearch vector stores (#6612)
+- More robust JSON parsing from LLM for `SelectionOutputParser` (#6610)
 
 ## [v0.6.34] - 2023-06-26
 
