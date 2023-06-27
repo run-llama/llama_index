@@ -8,7 +8,6 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -22,6 +21,7 @@ from llama_index.prompts.choice_select import (
     DEFAULT_CHOICE_SELECT_PROMPT,
     ChoiceSelectPrompt,
 )
+from llama_index.schema import NodeWithScore, BaseNode, MetadataMode
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
                 node_ids = self._index.index_struct.summary_id_to_node_ids[summary_id]
                 nodes = self._index.docstore.get_nodes(node_ids)
                 relevance = relevances[idx] if relevances is not None else None
-                results.extend([NodeWithScore(n, score=relevance) for n in nodes])
+                results.extend([NodeWithScore(node=n, score=relevance) for n in nodes])
 
         return results
 
@@ -135,11 +135,11 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         for summary_id in top_k_summary_ids:
             node_ids = self._index.index_struct.summary_id_to_node_ids[summary_id]
             nodes = self._index.docstore.get_nodes(node_ids)
-            results.extend([NodeWithScore(n) for n in nodes])
+            results.extend([NodeWithScore(node=n) for n in nodes])
         return results
 
     def _get_embeddings(
-        self, query_bundle: QueryBundle, nodes: List[Node]
+        self, query_bundle: QueryBundle, nodes: List[BaseNode]
     ) -> Tuple[List[float], List[List[float]]]:
         """Get top nodes by similarity to the query."""
         embed_model = self._index.service_context.embed_model
@@ -162,9 +162,12 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         id_to_embed_map: Dict[str, List[float]] = {}
         for node in nodes:
             if node.embedding is None:
-                embed_model.queue_text_for_embedding(node.get_doc_id(), node.get_text())
+                embed_model.queue_text_for_embedding(
+                    node.node_id,
+                    node.get_content(metadata_mode=MetadataMode.EMBED),
+                )
             else:
-                id_to_embed_map[node.get_doc_id()] = node.embedding
+                id_to_embed_map[node.node_id] = node.embedding
 
         (
             result_ids,
@@ -179,5 +182,5 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
-        node_embeddings = [id_to_embed_map[n.get_doc_id()] for n in nodes]
+        node_embeddings = [id_to_embed_map[n.node_id] for n in nodes]
         return query_bundle.embedding, node_embeddings

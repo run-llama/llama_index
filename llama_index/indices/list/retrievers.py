@@ -2,7 +2,6 @@
 import logging
 from typing import Any, Callable, List, Optional, Tuple
 
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -16,6 +15,7 @@ from llama_index.prompts.choice_select import (
     DEFAULT_CHOICE_SELECT_PROMPT,
     ChoiceSelectPrompt,
 )
+from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class ListIndexRetriever(BaseRetriever):
 
         node_ids = self._index.index_struct.nodes
         nodes = self._index.docstore.get_nodes(node_ids)
-        return [NodeWithScore(node) for node in nodes]
+        return [NodeWithScore(node=node) for node in nodes]
 
 
 class ListIndexEmbeddingRetriever(BaseRetriever):
@@ -85,15 +85,15 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
 
         node_with_scores = []
         for node, similarity in zip(top_k_nodes, top_similarities):
-            node_with_scores.append(NodeWithScore(node, score=similarity))
+            node_with_scores.append(NodeWithScore(node=node, score=similarity))
 
         logger.debug(f"> Top {len(top_idxs)} nodes:\n")
         nl = "\n"
-        logger.debug(f"{ nl.join([n.get_text() for n in top_k_nodes]) }")
+        logger.debug(f"{ nl.join([n.get_content() for n in top_k_nodes]) }")
         return node_with_scores
 
     def _get_embeddings(
-        self, query_bundle: QueryBundle, nodes: List[Node]
+        self, query_bundle: QueryBundle, nodes: List[BaseNode]
     ) -> Tuple[List[float], List[List[float]]]:
         """Get top nodes by similarity to the query."""
         if query_bundle.embedding is None:
@@ -110,7 +110,7 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
                 nodes_embedded += 1
                 node.embedding = (
                     self._index.service_context.embed_model.get_text_embedding(
-                        node.get_text()
+                        node.get_content(metadata_mode=MetadataMode.EMBED)
                     )
                 )
 
@@ -184,7 +184,7 @@ class ListIndexLLMRetriever(BaseRetriever):
             relevances = relevances or [1.0 for _ in choice_nodes]
             results.extend(
                 [
-                    NodeWithScore(node, score=relevance)
+                    NodeWithScore(node=node, score=relevance)
                     for node, relevance in zip(choice_nodes, relevances)
                 ]
             )

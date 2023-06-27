@@ -64,8 +64,8 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
         # NOTE: override query method in order to fetch the right results.
         # NOTE: since the query_str is a SQL query, it doesn't make sense
         # to use ResponseBuilder anywhere.
-        response_str, extra_info = self._sql_database.run_sql(query_bundle.query_str)
-        response = Response(response=response_str, extra_info=extra_info)
+        response_str, metadata = self._sql_database.run_sql(query_bundle.query_str)
+        response = Response(response=response_str, metadata=metadata)
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
@@ -169,8 +169,8 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        raw_response_str, extra_info = self._sql_database.run_sql(sql_query_str)
-        extra_info["sql_query"] = sql_query_str
+        raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
+        metadata["sql_query"] = sql_query_str
 
         if self._synthesize_response:
             response_str = self._service_context.llm_predictor.predict(
@@ -182,7 +182,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         else:
             response_str = raw_response_str
 
-        response = Response(response=response_str, extra_info=extra_info)
+        response = Response(response=response_str, metadata=metadata)
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
@@ -201,9 +201,9 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        response_str, extra_info = self._sql_database.run_sql(sql_query_str)
-        extra_info["sql_query"] = sql_query_str
-        response = Response(response=response_str, extra_info=extra_info)
+        response_str, metadata = self._sql_database.run_sql(sql_query_str)
+        metadata["sql_query"] = sql_query_str
+        response = Response(response=response_str, metadata=metadata)
         return response
 
 
@@ -264,8 +264,8 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        raw_response_str, extra_info = self._sql_database.run_sql(sql_query_str)
-        extra_info["sql_query"] = sql_query_str
+        raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
+        metadata["sql_query"] = sql_query_str
 
         if self._synthesize_response:
             response_str = self._service_context.llm_predictor.predict(
@@ -277,7 +277,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         else:
             response_str = raw_response_str
 
-        response = Response(response=response_str, extra_info=extra_info)
+        response = Response(response=response_str, metadata=metadata)
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
@@ -296,9 +296,9 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        response_str, extra_info = self._sql_database.run_sql(sql_query_str)
-        extra_info["sql_query"] = sql_query_str
-        response = Response(response=response_str, extra_info=extra_info)
+        response_str, metadata = self._sql_database.run_sql(sql_query_str)
+        metadata["sql_query"] = sql_query_str
+        response = Response(response=response_str, metadata=metadata)
         return response
 
 

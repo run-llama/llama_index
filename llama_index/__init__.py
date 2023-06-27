@@ -89,12 +89,12 @@ from llama_index.prompts.prompts import (
 )
 
 # readers
+from llama_index.schema import Document
 from llama_index.readers import (
     BeautifulSoupWebReader,
     ChromaReader,
     DeepLakeReader,
     DiscordReader,
-    Document,
     FaissReader,
     GithubRepositoryReader,
     GoogleDocsReader,

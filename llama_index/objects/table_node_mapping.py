@@ -5,7 +5,7 @@ from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
 from typing import Any, Sequence, Optional
 from pydantic import BaseModel
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-from llama_index.data_structs.node import Node
+from llama_index.schema import BaseNode, TextNode
 
 
 class SQLTableSchema(BaseModel):
@@ -38,7 +38,7 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     def _add_object(self, obj: SQLTableSchema) -> None:
         raise NotImplementedError
 
-    def to_node(self, obj: SQLTableSchema) -> Node:
+    def to_node(self, obj: SQLTableSchema) -> TextNode:
         """To node."""
         # taken from existing schema logic
         table_text = (
@@ -49,15 +49,17 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
             table_text += f"Context of table {obj.table_name}:\n"
             table_text += obj.context_str
 
-        return Node(
+        return TextNode(
             text=table_text,
-            node_info={"name": obj.table_name, "context": obj.context_str},
+            metadata={"name": obj.table_name, "context": obj.context_str},
+            excluded_embed_metadata_keys=["name", "context"],
+            excluded_llm_metadata_keys=["name", "context"],
         )
 
-    def _from_node(self, node: Node) -> SQLTableSchema:
+    def _from_node(self, node: BaseNode) -> SQLTableSchema:
         """From node."""
-        if node.node_info is None:
-            raise ValueError("Node info must be set")
+        if node.metadata is None:
+            raise ValueError("Metadata must be set")
         return SQLTableSchema(
-            table_name=node.node_info["name"], context_str=node.node_info["context"]
+            table_name=node.metadata["name"], context_str=node.metadata["context"]
         )

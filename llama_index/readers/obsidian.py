@@ -13,7 +13,7 @@ from llama_index.bridge.langchain import Document as LCDocument
 
 from llama_index.readers.base import BaseReader
 from llama_index.readers.file.markdown_reader import MarkdownReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class ObsidianReader(BaseReader):

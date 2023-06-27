@@ -7,7 +7,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from llama_index.data_structs.node import Node
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.experimental.evaporate.prompts import (
     FN_GENERATION_PROMPT,
     SCHEMA_ID_PROMPT,
@@ -115,17 +115,21 @@ class EvaporateExtractor:
         self._fn_generate_prompt = fn_generate_prompt or FN_GENERATION_PROMPT
 
     def identify_fields(
-        self, nodes: List[Node], topic: str, fields_top_k: int = 5
+        self, nodes: List[BaseNode], topic: str, fields_top_k: int = 5
     ) -> List:
         """Identify fields from nodes."""
         field2count: dict = defaultdict(int)
         for node in nodes:
             llm_predictor = self._service_context.llm_predictor
             result = llm_predictor.predict(
-                self._schema_id_prompt, topic=topic, chunk=node.get_text()
+                self._schema_id_prompt,
+                topic=topic,
+                chunk=node.get_content(metadata_mode=MetadataMode.LLM),
             )
 
-            existing_fields = extract_field_dicts(result, node.get_text())
+            existing_fields = extract_field_dicts(
+                result, node.get_content(metadata_mode=MetadataMode.LLM)
+            )
 
             for field in existing_fields:
                 field2count[field] += 1
@@ -138,7 +142,7 @@ class EvaporateExtractor:
 
         return sorted_fields
 
-    def extract_fn_from_nodes(self, nodes: List[Node], field: str) -> str:
+    def extract_fn_from_nodes(self, nodes: List[BaseNode], field: str) -> str:
         """Extract function from nodes."""
         function_field = get_function_field_from_attribute(field)
         index = ListIndex(nodes)
@@ -180,7 +184,7 @@ class EvaporateExtractor:
         return fn_str
 
     def run_fn_on_nodes(
-        self, nodes: List[Node], fn_str: str, field_name: str, num_timeouts: int = 1
+        self, nodes: List[BaseNode], fn_str: str, field_name: str, num_timeouts: int = 1
     ) -> List:
         """Run function on nodes.
 
@@ -194,7 +198,7 @@ class EvaporateExtractor:
         for node in nodes:
             global result
             global node_text
-            node_text = node.get_text()
+            node_text = node.get_content()
             # this is temporary
             result = []
             try:
@@ -207,7 +211,11 @@ class EvaporateExtractor:
         return results
 
     def extract_datapoints_with_fn(
-        self, nodes: List[Node], topic: str, sample_k: int = 5, fields_top_k: int = 5
+        self,
+        nodes: List[BaseNode],
+        topic: str,
+        sample_k: int = 5,
+        fields_top_k: int = 5,
     ) -> List[Dict]:
         """Extract datapoints from a list of nodes, given a topic."""
         idxs = list(range(len(nodes)))

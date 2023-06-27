@@ -1,5 +1,29 @@
 # ChangeLog
 
+## [v0.6.34] - 2023-06-26
+
+### Patch Update (v0.6.34.post1)
+- Patch imports for Document obj for backwards compatibility (#6597)
+
+### New Features
+- New `TextNode`/`Document` object classes based on pydantic (#6586)
+- `TextNode`/`Document` objects support metadata customization (metadata templates, exclude metadata from LLM or embeddings) (#6586)
+- Nodes no longer require flat metadata dictionaries, unless the vector store you use requires it (#6586)
+
+### Bug Fixes / Nits
+- use `NLTK_DATA` env var to control NLTK download location (#6579)
+- [discord] save author as metadata in group_conversations.py (#6592)
+- bs4 -> beautifulsoup4 in requirements (#6582)
+- negate euclidean distance (#6564)
+- add df output parser notebook link to docs (#6581)
+
+### Breaking/Deprecated API Changes
+- `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
+- `TextNode` and `Document` must be instansiated with kwargs: `Document(text=text)` (#6586)
+- `TextNode` (fka `Node`) has a `id_` or `node_id` property, rather than `doc_id` (#6586)
+- `TextNode` and `Document` have a metadata property, which replaces the extra_info property (#6586)
+- `TextNode` no longer has a `node_info` property (start/end indexes are accessed directly with `start/end_char_idx` attributes) (#6586)
+
 ## [v0.6.33] - 2023-06-25
 
 ### New Features

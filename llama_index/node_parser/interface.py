@@ -3,8 +3,8 @@ from typing import List, Sequence
 
 from abc import ABC, abstractmethod
 
-from llama_index.data_structs.node import Node
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
+from llama_index.schema import BaseNode
 
 
 class NodeParser(ABC):
@@ -14,7 +14,7 @@ class NodeParser(ABC):
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
-    ) -> List[Node]:
+    ) -> List[BaseNode]:
         """Parse documents into nodes.
 
         Args:

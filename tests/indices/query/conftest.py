@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import pytest
 from llama_index.data_structs.struct_type import IndexStructType
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
@@ -58,13 +58,13 @@ def retriever_kwargs() -> Dict:
 def documents() -> List[Document]:
     """Get documents."""
     docs = [
-        Document("This is a test v2."),
-        Document("This is another test."),
-        Document("This is a test."),
-        Document("Hello world."),
-        Document("Hello world."),
-        Document("This is a test."),
-        Document("This is another test."),
-        Document("This is a test v2."),
+        Document(text="This is a test v2."),
+        Document(text="This is another test."),
+        Document(text="This is a test."),
+        Document(text="Hello world."),
+        Document(text="Hello world."),
+        Document(text="This is a test."),
+        Document(text="This is another test."),
+        Document(text="This is a test v2."),
     ]
     return docs

@@ -41,7 +41,7 @@ for year in years:
     year_docs = loader.load_data(file=Path(f'./data/UBER/UBER_{year}.html'), split_documents=False)
     # insert year metadata into each year
     for d in year_docs:
-        d.extra_info = {"year": year}
+        d.metadata = {"year": year}
     doc_set[year] = year_docs
     all_docs.extend(year_docs)
 ```

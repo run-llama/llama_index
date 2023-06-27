@@ -3,14 +3,14 @@ import logging
 import re
 from typing import Dict, List, Optional, Set, Tuple
 
-from llama_index.data_structs.node import Node
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
 
 _logger = logging.getLogger(__name__)
 
 
-def get_sorted_node_list(node_dict: Dict[int, Node]) -> List[Node]:
+def get_sorted_node_list(node_dict: Dict[int, BaseNode]) -> List[BaseNode]:
     """Get sorted node list. Used by tree-strutured indices."""
     sorted_indices = sorted(node_dict.keys())
     return [node_dict[index] for index in sorted_indices]
@@ -58,14 +58,14 @@ def log_vector_store_query_result(
     fmt_txts = []
     for node_idx, node_similarity, node in zip(result.ids, similarities, result.nodes):
         fmt_txt = f"> [Node {node_idx}] [Similarity score: \
-            {float(node_similarity):.6}] {truncate_text(node.get_text(), 100)}"
+            {float(node_similarity):.6}] {truncate_text(node.get_content(), 100)}"
         fmt_txts.append(fmt_txt)
     top_k_node_text = "\n".join(fmt_txts)
     logger.debug(f"> Top {len(result.nodes)} nodes:\n{top_k_node_text}")
 
 
 def default_format_node_batch_fn(
-    summary_nodes: List[Node],
+    summary_nodes: List[BaseNode],
 ) -> str:
     """Default format node batch function.
 
@@ -75,7 +75,10 @@ def default_format_node_batch_fn(
     fmt_node_txts = []
     for idx in range(len(summary_nodes)):
         number = idx + 1
-        fmt_node_txts.append(f"Document {number}:\n{summary_nodes[idx].get_text()}")
+        fmt_node_txts.append(
+            f"Document {number}:\n"
+            f"{summary_nodes[idx].get_content(metadata_mode=MetadataMode.LLM)}"
+        )
     return "\n\n".join(fmt_node_txts)
 
 

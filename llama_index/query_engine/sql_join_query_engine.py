@@ -110,11 +110,11 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         )
         self._check_stop_parser = check_stop_parser or _default_check_stop
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
         query_str = query_bundle.query_str
-        sql_query = extra_info["sql_query"]
-        sql_query_response = extra_info["sql_query_response"]
+        sql_query = metadata["sql_query"]
+        sql_query_response = metadata["sql_query_response"]
         new_query_str = self._llm_predictor.predict(
             self._sql_augment_transform_prompt,
             query_str=query_str,
@@ -200,7 +200,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             return sql_response
 
         sql_query = (
-            sql_response.extra_info["sql_query"] if sql_response.extra_info else None
+            sql_response.metadata["sql_query"] if sql_response.metadata else None
         )
         if self._verbose:
             print_text(f"SQL query: {sql_query}\n", color="yellow")
@@ -209,7 +209,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         # given SQL db, transform query into new query
         new_query = self._sql_augment_query_transform(
             query_bundle.query_str,
-            extra_info={
+            metadata={
                 "sql_query": _format_sql_query(sql_query),
                 "sql_query_response": str(sql_response),
             },
@@ -239,14 +239,14 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         )
         if self._verbose:
             print_text(f"Final response: {response_str}\n", color="green")
-        response_extra_info = {
-            **(sql_response.extra_info or {}),
-            **(other_response.extra_info or {}),
+        response_metadata = {
+            **(sql_response.metadata or {}),
+            **(other_response.metadata or {}),
         }
         source_nodes = other_response.source_nodes
         return Response(
             response_str,
-            extra_info=response_extra_info,
+            metadata=response_metadata,
             source_nodes=source_nodes,
         )
 

@@ -3,8 +3,8 @@ from typing import List
 import pytest
 
 from llama_index.storage.docstore.mongo_docstore import MongoDocumentStore
-from llama_index.readers.schema.base import Document
-from llama_index.schema import BaseDocument
+from llama_index.schema import Document
+from llama_index.schema import BaseNode
 from llama_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 
 try:
@@ -16,8 +16,8 @@ except ImportError:
 @pytest.fixture
 def documents() -> List[Document]:
     return [
-        Document("doc_1"),
-        Document("doc_2"),
+        Document(text="doc_1"),
+        Document(text="doc_2"),
     ]
 
 
@@ -36,7 +36,7 @@ def test_mongo_docstore(
     # test adding documents
     ds.add_documents(documents)
     assert len(ds.docs) == 2
-    assert all(isinstance(doc, BaseDocument) for doc in ds.docs.values())
+    assert all(isinstance(doc, BaseNode) for doc in ds.docs.values())
 
     # test updating documents
     ds.add_documents(documents)
@@ -46,7 +46,7 @@ def test_mongo_docstore(
     # test getting documents
     doc0 = ds.get_document(documents[0].get_doc_id())
     assert doc0 is not None
-    assert documents[0].text == doc0.text
+    assert documents[0].get_content() == doc0.get_content()
 
     # test deleting documents
     ds.delete_document(documents[0].get_doc_id())

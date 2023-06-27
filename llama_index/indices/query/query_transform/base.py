@@ -33,16 +33,16 @@ class BaseQueryTransform:
     """
 
     @abstractmethod
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
 
     def run(
         self,
         query_bundle_or_str: QueryType,
-        extra_info: Optional[Dict] = None,
+        metadata: Optional[Dict] = None,
     ) -> QueryBundle:
         """Run query transform."""
-        extra_info = extra_info or {}
+        metadata = metadata or {}
         if isinstance(query_bundle_or_str, str):
             query_bundle = QueryBundle(
                 query_str=query_bundle_or_str,
@@ -51,15 +51,15 @@ class BaseQueryTransform:
         else:
             query_bundle = query_bundle_or_str
 
-        return self._run(query_bundle, extra_info=extra_info)
+        return self._run(query_bundle, metadata=metadata)
 
     def __call__(
         self,
         query_bundle_or_str: QueryType,
-        extra_info: Optional[Dict] = None,
+        metadata: Optional[Dict] = None,
     ) -> QueryBundle:
         """Run query processor."""
-        return self.run(query_bundle_or_str, extra_info=extra_info)
+        return self.run(query_bundle_or_str, metadata=metadata)
 
 
 class IdentityQueryTransform(BaseQueryTransform):
@@ -69,7 +69,7 @@ class IdentityQueryTransform(BaseQueryTransform):
 
     """
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
         return query_bundle
 
@@ -105,7 +105,7 @@ class HyDEQueryTransform(BaseQueryTransform):
         self._hyde_prompt = hyde_prompt or DEFAULT_HYDE_PROMPT
         self._include_original = include_original
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
         # TODO: support generating multiple hypothetical docs
         query_str = query_bundle.query_str
@@ -147,10 +147,10 @@ class DecomposeQueryTransform(BaseQueryTransform):
         )
         self.verbose = verbose
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
         # currently, just get text from the index structure
-        index_summary = cast(str, extra_info.get("index_summary", "None"))
+        index_summary = cast(str, metadata.get("index_summary", "None"))
 
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
@@ -194,9 +194,9 @@ class ImageOutputQueryTransform(BaseQueryTransform):
         self._width = width
         self._query_prompt = query_prompt or DEFAULT_IMAGE_OUTPUT_PROMPT
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
-        del extra_info  # Unused
+        del metadata  # Unused
         new_query_str = self._query_prompt.format(
             query_str=query_bundle.query_str, image_width=self._width
         )
@@ -232,13 +232,13 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
         )
         self.verbose = verbose
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
         index_summary = cast(
             str,
-            extra_info.get("index_summary", "None"),
+            metadata.get("index_summary", "None"),
         )
-        prev_reasoning = cast(Response, extra_info.get("prev_reasoning"))
+        prev_reasoning = cast(Response, metadata.get("prev_reasoning"))
         fmt_prev_reasoning = f"\n{prev_reasoning}" if prev_reasoning else "None"
 
         # given the text from the index, we can use the query bundle to generate

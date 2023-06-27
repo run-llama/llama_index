@@ -47,12 +47,12 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         self.should_resynthesize_query = resynthesize_query
         self.resynthesis_prompt = resynthesis_prompt or DEFAULT_RESYNTHESIS_PROMPT
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         orig_query_str = query_bundle.query_str
-        if extra_info.get("evaluation") and isinstance(
-            extra_info.get("evaluation"), Evaluation
+        if metadata.get("evaluation") and isinstance(
+            metadata.get("evaluation"), Evaluation
         ):
-            self.evaluation = extra_info.get("evaluation")
+            self.evaluation = metadata.get("evaluation")
         if self.evaluation is None or not isinstance(self.evaluation, Evaluation):
             raise ValueError("Evaluation is not set.")
         if self.evaluation.feedback == "YES" or self.evaluation.feedback == "NO":

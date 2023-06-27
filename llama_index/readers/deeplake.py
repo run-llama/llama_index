@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 
 import numpy as np
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 distance_metric_map = {
     "l2": lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),
@@ -105,8 +105,8 @@ class DeepLakeReader(BaseReader):
         documents = []
         for idx in indices:
             document = Document(
-                doc_id=dataset[idx].ids.numpy().tolist()[0],
                 text=str(dataset[idx].text.numpy().tolist()[0]),
+                id_=dataset[idx].ids.numpy().tolist()[0],
             )
 
             documents.append(document)

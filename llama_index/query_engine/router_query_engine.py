@@ -4,7 +4,6 @@ from typing import Callable, List, Optional, Sequence
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
@@ -14,6 +13,7 @@ from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
 from llama_index.selectors.types import BaseSelector
+from llama_index.schema import BaseNode
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import ToolMetadata
 from llama_index.objects.base import ObjectRetriever
@@ -192,17 +192,17 @@ class RouterQueryEngine(BaseQueryEngine):
         return final_response
 
 
-def default_node_to_metadata_fn(node: Node) -> ToolMetadata:
+def default_node_to_metadata_fn(node: BaseNode) -> ToolMetadata:
     """Default node to metadata function.
 
     We use the node's text as the Tool description.
 
     """
 
-    extra_info = node.extra_info or {}
-    if "tool_name" not in extra_info:
-        raise ValueError("Node must have a tool_name in extra_info.")
-    return ToolMetadata(name=extra_info["tool_name"], description=node.get_text())
+    metadata = node.metadata or {}
+    if "tool_name" not in metadata:
+        raise ValueError("Node must have a tool_name in metadata.")
+    return ToolMetadata(name=metadata["tool_name"], description=node.get_content())
 
 
 class RetrieverRouterQueryEngine(BaseQueryEngine):

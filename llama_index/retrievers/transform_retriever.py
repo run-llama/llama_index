@@ -1,8 +1,9 @@
 from typing import List, Optional
-from llama_index.data_structs.node import NodeWithScore
+
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.schema import NodeWithScore
 
 
 class TransformRetriever(BaseRetriever):
@@ -17,14 +18,14 @@ class TransformRetriever(BaseRetriever):
         self,
         retriever: BaseRetriever,
         query_transform: BaseQueryTransform,
-        transform_extra_info: Optional[dict] = None,
+        transform_metadata: Optional[dict] = None,
     ) -> None:
         self._retriever = retriever
         self._query_transform = query_transform
-        self._transform_extra_info = transform_extra_info
+        self._transform_metadata = transform_metadata
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query_bundle = self._query_transform.run(
-            query_bundle, extra_info=self._transform_extra_info
+            query_bundle, metadata=self._transform_metadata
         )
         return self._retriever.retrieve(query_bundle)

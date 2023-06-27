@@ -131,11 +131,11 @@ class JSONQueryEngine(BaseQueryEngine):
         else:
             response_str = json.dumps(json_path_output)
 
-        response_extra_info = {
+        response_metadata = {
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(response=response_str, extra_info=response_extra_info)
+        return Response(response=response_str, metadata=response_metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         schema = self._get_schema_context()
@@ -171,8 +171,8 @@ class JSONQueryEngine(BaseQueryEngine):
         else:
             response_str = json.dumps(json_path_output)
 
-        response_extra_info = {
+        response_metadata = {
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(response=response_str, extra_info=response_extra_info)
+        return Response(response=response_str, metadata=response_metadata)

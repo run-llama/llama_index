@@ -2,7 +2,7 @@
 from typing import Any, List
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class YoutubeTranscriptReader(BaseReader):
@@ -34,5 +34,5 @@ class YoutubeTranscriptReader(BaseReader):
             transcript = ""
             for chunk in srt:
                 transcript = transcript + chunk["text"] + "\n"
-            results.append(Document(transcript))
+            results.append(Document(text=transcript))
         return results
