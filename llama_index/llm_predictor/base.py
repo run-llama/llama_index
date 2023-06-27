@@ -7,26 +7,22 @@ from threading import Thread
 from typing import Any, Generator, Optional, Protocol, Tuple, runtime_checkable
 
 import openai
-from llama_index.bridge.langchain import langchain
-from llama_index.bridge.langchain import BaseCache, Cohere, LLMChain, OpenAI
-from llama_index.bridge.langchain import ChatOpenAI, AI21, BaseLanguageModel
 
+from llama_index.bridge.langchain import (AI21, BaseCache, BaseLanguageModel,
+                                          ChatOpenAI, Cohere, LLMChain, OpenAI,
+                                          langchain)
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.constants import (
-    AI21_J2_CONTEXT_WINDOW,
-    COHERE_CONTEXT_WINDOW,
-    DEFAULT_CONTEXT_WINDOW,
-    DEFAULT_NUM_OUTPUTS,
-)
-from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
-from llama_index.llm_predictor.openai_utils import openai_modelname_to_contextsize
+from llama_index.constants import (AI21_J2_CONTEXT_WINDOW,
+                                   COHERE_CONTEXT_WINDOW,
+                                   DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS)
+from llama_index.langchain_helpers.streaming import \
+    StreamingGeneratorCallbackHandler
+from llama_index.llm_predictor.openai_utils import \
+    openai_modelname_to_contextsize
 from llama_index.prompts.base import Prompt
-from llama_index.utils import (
-    ErrorToRetry,
-    globals_helper,
-    retry_on_exceptions_with_backoff,
-)
+from llama_index.utils import (ErrorToRetry, globals_helper,
+                               retry_on_exceptions_with_backoff)
 
 logger = logging.getLogger(__name__)
 
@@ -271,9 +267,23 @@ class LLMPredictor(BaseLLMPredictor):
             str: The predicted answer.
 
         """
+        llm_payload = {**prompt_args}
+        llm_payload[EventPayload.TEMPLATE] = prompt
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.LLM,
+            payload=llm_payload,
+        )
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+        prompt_tokens_count = self._count_tokens(formatted_prompt)
+        incomplete_payload = {
+            EventPayload.PROMPT: formatted_prompt,
+            # deprecated
+            "formatted_prompt_tokens_count": prompt_tokens_count,
+        }
 
-        handler = StreamingGeneratorCallbackHandler()
+        handler = StreamingGeneratorCallbackHandler(
+            formatted_prompt, event_id, self.callback_manager
+        )
 
         if not hasattr(self._llm, "callbacks"):
             raise ValueError("LLM must support callbacks to use streaming.")
