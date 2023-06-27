@@ -27,10 +27,10 @@ class OnDemandLoaderTool(BaseTool):
 
     def __init__(
         self,
+        loader: Callable[..., List[Document]],
         index_cls: Type[BaseIndex],
         index_kwargs: Dict,
         metadata: ToolMetadata,
-        loader: Callable[..., List[Document]],
         use_query_str_in_loader: bool = False,
         query_str_kwargs_key: str = "query_str",
     ) -> None:
