@@ -2,7 +2,7 @@
 from typing import List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class SteamshipFileReader(BaseReader):
@@ -71,20 +71,18 @@ class SteamshipFileReader(BaseReader):
 
         docs = []
         for file in files:
-            extra_info = {"source": file.handle}
+            metadata = {"source": file.handle}
 
             for tag in file.tags:
-                extra_info[tag.kind] = tag.value
+                metadata[tag.kind] = tag.value
 
             if collapse_blocks:
                 text = join_str.join([b.text for b in file.blocks])
-                docs.append(
-                    Document(text=text, doc_id=file.handle, extra_info=extra_info)
-                )
+                docs.append(Document(text=text, id_=file.handle, metadata=metadata))
             else:
                 docs.extend(
                     [
-                        Document(text=b.text, doc_id=file.handle, extra_info=extra_info)
+                        Document(text=b.text, id_=file.handle, metadata=metadata)
                         for b in file.blocks
                     ]
                 )

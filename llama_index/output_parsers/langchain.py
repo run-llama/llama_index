@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from llama_index.bridge.langchain import BaseOutputParser as LCOutputParser
 
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 
 
 class LangchainOutputParser(BaseOutputParser):

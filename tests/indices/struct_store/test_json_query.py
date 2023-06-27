@@ -71,5 +71,5 @@ def test_json_query_engine(
     else:
         assert response.response == json.dumps([test_json_return_value])
 
-    extra_info = cast(Dict[str, Any], response.extra_info)
-    assert extra_info["json_path_response_str"] == TEST_LLM_OUTPUT
+    metadata = cast(Dict[str, Any], response.metadata)
+    assert metadata["json_path_response_str"] == TEST_LLM_OUTPUT

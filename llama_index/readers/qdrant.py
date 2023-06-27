@@ -3,7 +3,7 @@
 from typing import List, Optional, cast, Dict
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class QdrantReader(BaseReader):
@@ -177,9 +177,9 @@ class QdrantReader(BaseReader):
             except ValueError as e:
                 raise ValueError("Could not cast vector to List[float].") from e
             document = Document(
-                doc_id=payload.get("doc_id"),
+                id_=payload.get("doc_id"),
                 text=payload.get("text"),
-                extra_info=payload.get("extra_info"),
+                metadata=payload.get("metadata"),
                 embedding=vector,
             )
             documents.append(document)

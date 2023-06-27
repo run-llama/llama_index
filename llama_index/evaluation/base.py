@@ -8,7 +8,7 @@ from typing import List, Optional
 from llama_index.indices.base import ServiceContext
 from llama_index.indices.list.base import ListIndex
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.response.schema import Response
 
 
@@ -133,7 +133,7 @@ class ResponseEvaluator:
         context = []
 
         for context_info in response.source_nodes:
-            context.append(Document(context_info.node.get_text()))
+            context.append(Document(text=context_info.node.get_content()))
 
         return context
 
@@ -253,7 +253,7 @@ class QueryResponseEvaluator(BaseEvaluator):
         context = []
 
         for context_info in response.source_nodes:
-            context.append(Document(context_info.node.get_text()))
+            context.append(Document(text=context_info.node.get_content()))
 
         return context
 

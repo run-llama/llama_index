@@ -10,7 +10,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class MockEmbedding(BaseEmbedding):
@@ -37,7 +37,7 @@ def test_get_set_compare(
 ) -> None:
     """Test basic comparison of indices."""
     mock_service_context.embed_model = MockEmbedding()
-    documents = [Document("They're taking the Hobbits to Isengard!")]
+    documents = [Document(text="They're taking the Hobbits to Isengard!")]
 
     indices = [
         VectorStoreIndex.from_documents(
@@ -72,8 +72,8 @@ def test_from_docs(
     """Test initialization via a list of documents."""
     mock_service_context.embed_model = MockEmbedding()
     documents = [
-        Document("I can't carry it for you."),
-        Document("But I can carry you!"),
+        Document(text="I can't carry it for you."),
+        Document(text="But I can carry you!"),
     ]
 
     playground = Playground.from_docs(

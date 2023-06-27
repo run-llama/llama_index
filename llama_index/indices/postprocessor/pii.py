@@ -1,13 +1,13 @@
 """PII postprocessor."""
+import json
+from copy import deepcopy
+from typing import List, Optional, Dict, Tuple, Callable
 
 from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
-from llama_index.data_structs.node import NodeWithScore
-from typing import List, Optional, Dict, Tuple, Callable
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
-from copy import deepcopy
-import json
+from llama_index.schema import NodeWithScore, MetadataMode
 
 
 DEFAULT_PII_TMPL = (
@@ -82,12 +82,15 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
         new_nodes = []
         for node_with_score in nodes:
             node = node_with_score.node
-            new_text, mapping_info = self.mask_pii(node.get_text())
+            new_text, mapping_info = self.mask_pii(
+                node.get_content(metadata_mode=MetadataMode.LLM)
+            )
             new_node = deepcopy(node)
-            new_node.node_info = new_node.node_info or {}
-            new_node.node_info[self.pii_node_info_key] = mapping_info
-            new_node.text = new_text
-            new_nodes.append(NodeWithScore(new_node, node_with_score.score))
+            new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
+            new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
+            new_node.metadata[self.pii_node_info_key] = mapping_info
+            new_node.set_content(new_text)
+            new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
 
         return new_nodes
 
@@ -126,11 +129,14 @@ class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
         new_nodes = []
         for node_with_score in nodes:
             node = node_with_score.node
-            new_text, mapping_info = self.mask_pii(ner, node.get_text())
+            new_text, mapping_info = self.mask_pii(
+                ner, node.get_content(metadata_mode=MetadataMode.LLM)
+            )
             new_node = deepcopy(node)
-            new_node.node_info = new_node.node_info or {}
-            new_node.node_info[self.pii_node_info_key] = mapping_info
-            new_node.text = new_text
-            new_nodes.append(NodeWithScore(new_node, node_with_score.score))
+            new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
+            new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
+            new_node.metadata[self.pii_node_info_key] = mapping_info
+            new_node.set_content(new_text)
+            new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
 
         return new_nodes

@@ -1,8 +1,7 @@
-import json
 import math
-from typing import Any, Dict, List, Tuple
+from typing import Any, List
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -10,7 +9,11 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 
 def _to_metal_filters(standard_filters: MetadataFilters) -> list:
@@ -23,17 +26,6 @@ def _to_metal_filters(standard_filters: MetadataFilters) -> list:
             }
         )
     return filters
-
-
-def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict, dict]:
-    if "extra_info" in metadata:
-        extra_info = json.loads(metadata["extra_info"])
-    else:
-        extra_info = {}
-    ref_doc_id = metadata["doc_id"]
-    relationships = {DocumentRelationship.SOURCE: ref_doc_id}
-    node_info: dict = {}
-    return extra_info, node_info, relationships
 
 
 class MetalVectorStore(VectorStore):
@@ -59,6 +51,7 @@ class MetalVectorStore(VectorStore):
 
         self.metal_client = Metal(api_key, client_id, index_id)
         self.stores_text = True
+        self.flat_metadata = False
         self.is_embedding_query = True
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -89,22 +82,23 @@ class MetalVectorStore(VectorStore):
 
             # load additional Node data
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(
-                    item["metadata"]
-                )
+                node = metadata_dict_to_node(item["metadata"])
+                node.text = text
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     item["metadata"]
                 )
 
-            node = Node(
-                text=text,
-                doc_id=id_,
-                extra_info=extra_info,
-                node_info=node_info,
-                relationships=relationships,
-            )
+                node = TextNode(
+                    text=text,
+                    id_=id_,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
             nodes.append(node)
             ids.append(id_)
 
@@ -133,9 +127,13 @@ class MetalVectorStore(VectorStore):
             ids.append(result.id)
 
             metadata = {}
-            metadata["text"] = result.node.text or ""
+            metadata["text"] = (
+                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+            )
 
-            additional_metadata = node_to_metadata_dict(result.node)
+            additional_metadata = node_to_metadata_dict(
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
+            )
             metadata.update(additional_metadata)
 
             payload = {

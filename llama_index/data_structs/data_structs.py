@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Sequence, Set
 
 from dataclasses_json import DataClassJsonMixin
 
-from llama_index.data_structs.node import Node
+from llama_index.schema import BaseNode
 from llama_index.data_structs.struct_type import IndexStructType
 
 
@@ -53,54 +53,55 @@ class IndexGraph(IndexStruct):
         """Get the size of the graph."""
         return len(self.all_nodes)
 
-    def get_index(self, node: Node) -> int:
+    def get_index(self, node: BaseNode) -> int:
         """Get index of node."""
-        return self.node_id_to_index[node.get_doc_id()]
+        return self.node_id_to_index[node.node_id]
 
     def insert(
         self,
-        node: Node,
+        node: BaseNode,
         index: Optional[int] = None,
-        children_nodes: Optional[Sequence[Node]] = None,
+        children_nodes: Optional[Sequence[BaseNode]] = None,
     ) -> None:
         """Insert node."""
         index = index or self.size
-        node_id = node.get_doc_id()
+        node_id = node.node_id
 
         self.all_nodes[index] = node_id
 
         if children_nodes is None:
             children_nodes = []
-        children_ids = [n.get_doc_id() for n in children_nodes]
+        children_ids = [n.node_id for n in children_nodes]
         self.node_id_to_children_ids[node_id] = children_ids
 
-    def get_children(self, parent_node: Optional[Node]) -> Dict[int, str]:
+    def get_children(self, parent_node: Optional[BaseNode]) -> Dict[int, str]:
         """Get children nodes."""
         if parent_node is None:
             return self.root_nodes
         else:
-            parent_id = parent_node.get_doc_id()
+            parent_id = parent_node.node_id
             children_ids = self.node_id_to_children_ids[parent_id]
             return {
                 self.node_id_to_index[child_id]: child_id for child_id in children_ids
             }
 
     def insert_under_parent(
-        self, node: Node, parent_node: Optional[Node], new_index: Optional[int] = None
+        self,
+        node: BaseNode,
+        parent_node: Optional[BaseNode],
+        new_index: Optional[int] = None,
     ) -> None:
         """Insert under parent node."""
         new_index = new_index or self.size
         if parent_node is None:
-            self.root_nodes[new_index] = node.get_doc_id()
-            self.node_id_to_children_ids[node.get_doc_id()] = []
+            self.root_nodes[new_index] = node.node_id
+            self.node_id_to_children_ids[node.node_id] = []
         else:
-            if parent_node.doc_id not in self.node_id_to_children_ids:
-                self.node_id_to_children_ids[parent_node.get_doc_id()] = []
-            self.node_id_to_children_ids[parent_node.get_doc_id()].append(
-                node.get_doc_id()
-            )
+            if parent_node.node_id not in self.node_id_to_children_ids:
+                self.node_id_to_children_ids[parent_node.node_id] = []
+            self.node_id_to_children_ids[parent_node.node_id].append(node.node_id)
 
-        self.all_nodes[new_index] = node.get_doc_id()
+        self.all_nodes[new_index] = node.node_id
 
     @classmethod
     def get_type(cls) -> IndexStructType:
@@ -114,12 +115,12 @@ class KeywordTable(IndexStruct):
 
     table: Dict[str, Set[str]] = field(default_factory=dict)
 
-    def add_node(self, keywords: List[str], node: Node) -> None:
+    def add_node(self, keywords: List[str], node: BaseNode) -> None:
         """Add text to table."""
         for keyword in keywords:
             if keyword not in self.table:
                 self.table[keyword] = set()
-            self.table[keyword].add(node.get_doc_id())
+            self.table[keyword].add(node.node_id)
 
     @property
     def node_ids(self) -> Set[str]:
@@ -148,10 +149,10 @@ class IndexList(IndexStruct):
 
     nodes: List[str] = field(default_factory=list)
 
-    def add_node(self, node: Node) -> None:
+    def add_node(self, node: BaseNode) -> None:
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
-        self.nodes.append(node.get_doc_id())
+        self.nodes.append(node.node_id)
 
     @classmethod
     def get_type(cls) -> IndexStructType:
@@ -177,14 +178,14 @@ class IndexDict(IndexStruct):
 
     def add_node(
         self,
-        node: Node,
+        node: BaseNode,
         text_id: Optional[str] = None,
     ) -> str:
         """Add text to table, return current position in list."""
         # # don't worry about child indices for now, nodes are all in order
         # self.nodes_dict[int_id] = node
-        vector_id = text_id if text_id is not None else node.get_doc_id()
-        self.nodes_dict[vector_id] = node.get_doc_id()
+        vector_id = text_id if text_id is not None else node.node_id
+        self.nodes_dict[vector_id] = node.node_id
 
         return vector_id
 
@@ -223,9 +224,9 @@ class KG(IndexStruct):
         """Add embedding to dict."""
         self.embedding_dict[triplet_str] = embedding
 
-    def add_node(self, keywords: List[str], node: Node) -> None:
+    def add_node(self, keywords: List[str], node: BaseNode) -> None:
         """Add text to table."""
-        node_id = node.get_doc_id()
+        node_id = node.node_id
         for keyword in keywords:
             if keyword not in self.table:
                 self.table[keyword] = set()

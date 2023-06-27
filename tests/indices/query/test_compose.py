@@ -7,7 +7,7 @@ from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableInde
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 def test_recursive_query_list_tree(

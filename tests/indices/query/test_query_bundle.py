@@ -8,7 +8,7 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def documents() -> List[Document]:
         "This is another test.\n"
         "This is a test v2."
     )
-    return [Document(doc_text)]
+    return [Document(text=doc_text)]
 
 
 class MockEmbedding(BaseEmbedding):
@@ -67,4 +67,4 @@ def test_embedding_query(
     retriever = index.as_retriever(retriever_mode="embedding", similarity_top_k=1)
     nodes = retriever.retrieve(query_bundle)
     assert len(nodes) == 1
-    assert nodes[0].node.text == "Correct."
+    assert nodes[0].node.get_content() == "Correct."

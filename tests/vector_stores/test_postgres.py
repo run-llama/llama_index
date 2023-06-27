@@ -2,7 +2,7 @@ from typing import List, Any, Dict, Union, Generator
 
 import pytest
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import PGVectorStore
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
 
@@ -56,18 +56,22 @@ def node_embeddings() -> List[NodeWithEmbedding]:
     return [
         NodeWithEmbedding(
             embedding=[1.0] * 1536,
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="aaa",
-                relationships={DocumentRelationship.SOURCE: "test-0"},
+                id_="aaa",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
+                },
             ),
         ),
         NodeWithEmbedding(
             embedding=[0.0] * 1536,
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="bbb",
-                relationships={DocumentRelationship.SOURCE: "test-1"},
+                id_="bbb",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
+                },
             ),
         ),
     ]
@@ -98,7 +102,7 @@ def test_add_to_db_and_query(
     res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].doc_id == "aaa"
+    assert res.nodes[0].node_id == "aaa"
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
@@ -118,10 +122,10 @@ def test_add_to_db_query_and_delete(
     res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].doc_id == "bbb"
+    assert res.nodes[0].node_id == "bbb"
     pg.delete("bbb")
 
     res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].doc_id == "aaa"
+    assert res.nodes[0].node_id == "aaa"

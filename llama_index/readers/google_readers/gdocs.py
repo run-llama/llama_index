@@ -5,7 +5,7 @@ import os
 from typing import Any, List
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
 
@@ -59,7 +59,7 @@ class GoogleDocsReader(BaseReader):
         results = []
         for document_id in document_ids:
             doc = self._load_doc(document_id)
-            results.append(Document(doc, extra_info={"document_id": document_id}))
+            results.append(Document(text=doc, metadata={"document_id": document_id}))
         return results
 
     def _load_doc(self, document_id: str) -> str:

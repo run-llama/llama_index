@@ -2,7 +2,7 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.data_structs import Node
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -40,7 +40,7 @@ class OpensearchVectorClient:
         dim: int,
         embedding_field: str = "embedding",
         text_field: str = "content",
-        extra_info_field: str = "extra_info",
+        metadata_field: str = "metadata",
         method: Optional[dict] = None,
         auth: Optional[dict] = None,
     ):
@@ -82,7 +82,7 @@ class OpensearchVectorClient:
         self._dim = dim
         self._index = index
         self._text_field = text_field
-        self._extra_info_field = extra_info_field
+        self._metadata_field = metadata_field
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -104,13 +104,18 @@ class OpensearchVectorClient:
         """Store results in the index."""
         bulk_req: List[Dict[Any, Any]] = []
         for result in results:
+            node_info = {}
+            if isinstance(result.node, TextNode):
+                node_info = result.node.node_info
             bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
             bulk_req.append(
                 {
-                    self._text_field: result.node.get_text(),
+                    self._text_field: result.node.get_content(
+                        metadata_mode=MetadataMode.NONE
+                    ),
                     self._embedding_field: result.embedding,
-                    self._extra_info_field: result.node.extra_info,
-                    "node_info": result.node.node_info,
+                    self._metadata_field: result.node.metadata,
+                    "node_info": node_info,
                     "relationships": result.node.relationships,
                 }
             )
@@ -156,18 +161,25 @@ class OpensearchVectorClient:
         for hit in res.json()["hits"]["hits"]:
             source = hit["_source"]
             text = source[self._text_field]
-            extra_info = source.get(self._extra_info_field)
-            doc_id = hit["_id"]
+            metadata = source.get(self._metadata_field)
+            node_id = hit["_id"]
             node_info = source.get("node_info")
             relationships = source.get("relationships")
-            node = Node(
+            start_char_idx = None
+            end_char_idx = None
+            if isinstance(node_info, dict):
+                start_char_idx = node_info.get("start", None)
+                end_char_idx = node_info.get("end", None)
+
+            node = TextNode(
                 text=text,
-                extra_info=extra_info,
-                doc_id=doc_id,
-                node_info=node_info,
+                metadata=metadata,
+                id_=node_id,
+                start_char_idx=start_char_idx,
+                end_char_idx=end_char_idx,
                 relationships=relationships,
             )
-            ids.append(doc_id)
+            ids.append(node_id)
             nodes.append(node)
             scores.append(hit["_score"])
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)

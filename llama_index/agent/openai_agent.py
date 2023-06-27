@@ -6,7 +6,7 @@ from llama_index.bridge.langchain import FunctionMessage, ChatMessageHistory, Ch
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
-from llama_index.data_structs.node import Node, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
@@ -223,7 +223,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
     def __init__(
         self,
         retriever: BaseRetriever,
-        node_to_tool_fn: Callable[[Node], BaseTool],
+        node_to_tool_fn: Callable[[BaseNode], BaseTool],
         llm: ChatOpenAI,
         chat_history: ChatMessageHistory,
         verbose: bool = False,
@@ -244,7 +244,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
     def from_retriever(
         cls,
         retriever: BaseRetriever,
-        node_to_tool_fn: Callable[[Node], BaseTool],
+        node_to_tool_fn: Callable[[BaseNode], BaseTool],
         llm: Optional[ChatOpenAI] = None,
         chat_history: Optional[ChatMessageHistory] = None,
         verbose: bool = False,

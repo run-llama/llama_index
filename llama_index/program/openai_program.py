@@ -58,6 +58,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         llm: Optional[ChatOpenAI] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> "OpenAIPydanticProgram":
         llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
         if not isinstance(llm, ChatOpenAI):
@@ -69,7 +70,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
         prompt = Prompt(prompt_template_str)
-        function_call = function_call or "auto"
+        function_call = function_call or {"name": output_cls.schema()["title"]}
         return cls(
             output_cls=output_cls,
             llm=llm,

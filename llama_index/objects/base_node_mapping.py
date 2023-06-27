@@ -2,7 +2,7 @@
 
 from typing import TypeVar, Generic, Sequence, Any, Optional
 from abc import abstractmethod
-from llama_index.data_structs.node import Node
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 
 OT = TypeVar("OT")
 
@@ -47,21 +47,21 @@ class BaseObjectNodeMapping(Generic[OT]):
         """
 
     @abstractmethod
-    def to_node(self, obj: OT) -> Node:
+    def to_node(self, obj: OT) -> TextNode:
         """To node."""
         pass
 
-    def to_nodes(self, objs: Sequence[OT]) -> Sequence[Node]:
+    def to_nodes(self, objs: Sequence[OT]) -> Sequence[TextNode]:
         return [self.to_node(obj) for obj in objs]
 
-    def from_node(self, node: Node) -> OT:
+    def from_node(self, node: BaseNode) -> OT:
         """From node."""
         obj = self._from_node(node)
         self.validate_object(obj)
         return obj
 
     @abstractmethod
-    def _from_node(self, node: Node) -> OT:
+    def _from_node(self, node: BaseNode) -> OT:
         """From node."""
 
 
@@ -87,8 +87,8 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
     def _add_object(self, obj: Any) -> None:
         self._objs[hash(str(obj))] = obj
 
-    def to_node(self, obj: Any) -> Node:
-        return Node(text=str(obj))
+    def to_node(self, obj: Any) -> TextNode:
+        return TextNode(text=str(obj))
 
-    def _from_node(self, node: Node) -> Any:
-        return self._objs[hash(node.text)]
+    def _from_node(self, node: BaseNode) -> Any:
+        return self._objs[hash(node.get_content(metadata_mode=MetadataMode.NONE))]

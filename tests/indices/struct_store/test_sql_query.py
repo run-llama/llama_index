@@ -12,7 +12,7 @@ from llama_index.indices.struct_store.sql_query import (
     SQLStructStoreQueryEngine,
 )
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 def test_sql_index_query(
