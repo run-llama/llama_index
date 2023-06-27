@@ -105,8 +105,6 @@ class OpensearchVectorClient:
         """Store results in the index."""
         bulk_req: List[Dict[Any, Any]] = []
         for result in results:
-            if isinstance(result.node, TextNode):
-                pass
             bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
 
             metadata = node_to_metadata_dict(result.node, remove_text=True)
