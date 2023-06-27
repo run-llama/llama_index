@@ -21,6 +21,7 @@ class ChromaReader(BaseReader):
         self,
         collection_name: str,
         persist_directory: Optional[str] = None,
+        chroma_api_impl: str = "rest",
         host: str = "localhost",
         port: int = 8000,
     ) -> None:
@@ -39,7 +40,7 @@ class ChromaReader(BaseReader):
 
         self._client = chromadb.Client(
             Settings(
-                chroma_api_impl="rest",
+                chroma_api_impl=chroma_api_impl,
                 chroma_server_host=host,
                 chroma_server_http_port=port,
                 persist_directory=persist_directory
