@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import fsspec
 
-from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.readers.redis.utils import (
     TokenEscaper,
     array_to_buffer,
@@ -15,6 +14,7 @@ from llama_index.readers.redis.utils import (
     convert_bytes,
     get_redis_query,
 )
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 class RedisVectorStore(VectorStore):
     stores_text = True
     stores_node = True
+    flat_metadata = False
 
     tokenizer = TokenEscaper()
 
@@ -149,10 +150,12 @@ class RedisVectorStore(VectorStore):
             mapping = {
                 "id": result.id,
                 "doc_id": result.ref_doc_id,
-                "text": result.node.get_text(),
+                "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
                 self._vector_key: array_to_buffer(result.embedding),
             }
-            additional_metadata = node_to_metadata_dict(result.node)
+            additional_metadata = node_to_metadata_dict(
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
+            )
             mapping.update(additional_metadata)
 
             ids.append(result.id)
@@ -257,11 +260,13 @@ class RedisVectorStore(VectorStore):
         scores = []
         for doc in results.docs:
             # TODO: properly retrieve metadata
-            node = Node(
+            node = TextNode(
                 text=doc.text,
-                doc_id=doc.id,
+                id_=doc.id,
                 embedding=None,
-                relationships={DocumentRelationship.SOURCE: doc.doc_id},
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc.doc_id)
+                },
             )
             ids.append(doc.id)
             nodes.append(node)

@@ -3,7 +3,6 @@ from typing import Any, Dict, Generator, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response import (
@@ -19,6 +18,7 @@ from llama_index.prompts.prompts import (
     SimpleInputPrompt,
 )
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
@@ -122,12 +122,12 @@ class ResponseSynthesizer:
             verbose,
         )
 
-    def _get_extra_info_for_response(
+    def _get_metadata_for_response(
         self,
-        nodes: List[Node],
+        nodes: List[BaseNode],
     ) -> Optional[Dict[str, Any]]:
-        """Get extra info for response."""
-        return {node.get_doc_id(): node.extra_info for node in nodes}
+        """Get metadata for response."""
+        return {node.node_id: node.metadata for node in nodes}
 
     def _prepare_response_output(
         self,
@@ -135,7 +135,7 @@ class ResponseSynthesizer:
         source_nodes: List[NodeWithScore],
     ) -> RESPONSE_TYPE:
         """Prepare response object from response string."""
-        response_extra_info = self._get_extra_info_for_response(
+        response_metadata = self._get_metadata_for_response(
             [node_with_score.node for node_with_score in source_nodes]
         )
 
@@ -143,13 +143,13 @@ class ResponseSynthesizer:
             return Response(
                 response_str,
                 source_nodes=source_nodes,
-                extra_info=response_extra_info,
+                metadata=response_metadata,
             )
         elif response_str is None or isinstance(response_str, Generator):
             return StreamingResponse(
                 response_str,
                 source_nodes=source_nodes,
-                extra_info=response_extra_info,
+                metadata=response_metadata,
             )
         else:
             raise ValueError(
@@ -168,7 +168,7 @@ class ResponseSynthesizer:
 
         text_chunks = []
         for node_with_score in nodes:
-            text = node_with_score.node.get_text()
+            text = node_with_score.node.get_content(metadata_mode=MetadataMode.LLM)
             if self._optimizer is not None:
                 text = self._optimizer.optimize(query_bundle, text)
             text_chunks.append(text)
@@ -207,7 +207,7 @@ class ResponseSynthesizer:
 
         text_chunks = []
         for node_with_score in nodes:
-            text = node_with_score.node.get_text()
+            text = node_with_score.node.get_content(metadata_mode=MetadataMode.LLM)
             if self._optimizer is not None:
                 text = self._optimizer.optimize(query_bundle, text)
             text_chunks.append(text)

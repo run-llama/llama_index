@@ -7,7 +7,7 @@ import pytest
 
 from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
@@ -21,7 +21,7 @@ def documents() -> List[Document]:
         "This is another test.\n"
         "This is a test v2."
     )
-    return [Document(doc_text)]
+    return [Document(text=doc_text)]
 
 
 @patch(
@@ -39,7 +39,7 @@ def test_build_table(
         documents, service_context=mock_service_context
     )
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
-    table_chunks = {n.get_text() for n in nodes}
+    table_chunks = {n.get_content() for n in nodes}
     assert len(table_chunks) == 4
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
@@ -78,7 +78,7 @@ def test_build_table_async(
         documents, use_async=True, service_context=mock_service_context
     )
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
-    table_chunks = {n.get_text() for n in nodes}
+    table_chunks = {n.get_content() for n in nodes}
     assert len(table_chunks) == 4
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
@@ -113,7 +113,7 @@ def test_insert(
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
-    table_chunks = {n.get_text() for n in nodes}
+    table_chunks = {n.get_content() for n in nodes}
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
     assert "This is another test." in table_chunks
@@ -133,8 +133,8 @@ def test_insert(
     }
 
     # test insert with doc_id
-    document1 = Document("This is", doc_id="test_id1")
-    document2 = Document("test v3", doc_id="test_id2")
+    document1 = Document(text="This is", id_="test_id1")
+    document2 = Document(text="test v3", id_="test_id2")
     table = SimpleKeywordTableIndex([])
     table.insert(document1)
     table.insert(document2)
@@ -160,9 +160,9 @@ def test_delete(
 ) -> None:
     """Test insert."""
     new_documents = [
-        Document("Hello world.\nThis is a test.", doc_id="test_id_1"),
-        Document("This is another test.", doc_id="test_id_2"),
-        Document("This is a test v2.", doc_id="test_id_3"),
+        Document(text="Hello world.\nThis is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+        Document(text="This is a test v2.", id_="test_id_3"),
     ]
 
     # test delete
@@ -176,7 +176,7 @@ def test_delete(
 
     # test node contents after delete
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
-    node_texts = {n.get_text() for n in nodes}
+    node_texts = {n.get_content() for n in nodes}
     assert node_texts == {"This is another test.", "This is a test v2."}
 
     table = SimpleKeywordTableIndex.from_documents(
@@ -195,5 +195,5 @@ def test_delete(
 
     # test node contents after delete
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
-    node_texts = {n.get_text() for n in nodes}
+    node_texts = {n.get_content() for n in nodes}
     assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}

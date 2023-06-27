@@ -1,30 +1,47 @@
 import json
 from typing import Any, Dict, Tuple
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
 
 DEFAULT_TEXT_KEY = "text"
 
 
-def node_to_metadata_dict(node: Node) -> dict:
+def _validate_is_flat_dict(metadata_dict: dict) -> None:
+    """
+    Validate that metadata dict is flat,
+    and key is str, and value is one of (str, int, float, None).
+    """
+    for key, val in metadata_dict.items():
+        if not isinstance(key, str):
+            raise ValueError("Metadata key must be str!")
+        if not isinstance(val, (str, int, float, type(None))):
+            raise ValueError(
+                f"Value for metadata {key} must be one of (str, int, float, None)"
+            )
+
+
+def node_to_metadata_dict(
+    node: BaseNode,
+    remove_text: bool = False,
+    text_field: str = DEFAULT_TEXT_KEY,
+    flat_metadata: bool = False,
+) -> dict:
     """Common logic for saving Node data into metadata dict."""
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = node.metadata
 
-    # store extra_info directly to allow metadata filtering
-    if node.extra_info is not None:
-        metadata.update(node.extra_info)
+    if flat_metadata:
+        _validate_is_flat_dict(metadata)
 
-    # json-serialize the node_info
-    node_info_str = ""
-    if node.node_info is not None:
-        node_info_str = json.dumps(node.node_info)
-    metadata["node_info"] = node_info_str
+    # store entire node as json string - some minor text duplication
+    node_dict = node.dict()
+    if remove_text:
+        node_dict[text_field] = ""
 
-    # json-serialize the relationships
-    relationships_str = ""
-    if node.relationships is not None:
-        relationships_str = json.dumps(node.relationships)
-    metadata["relationships"] = relationships_str
+    # remove embedding from node_dict
+    node_dict["embedding"] = None
+
+    # dump remainer of node_dict to json string
+    metadata["_node_content"] = json.dumps(node_dict)
 
     # store ref doc id at top level to allow metadata filtering
     # kept for backwards compatibility, will consolidate in future
@@ -35,7 +52,17 @@ def node_to_metadata_dict(node: Node) -> dict:
     return metadata
 
 
-def metadata_dict_to_node(
+def metadata_dict_to_node(metadata: dict) -> TextNode:
+    """Common logic for loading Node data from metadata dict."""
+    node_json = metadata.get("_node_content", None)
+    if node_json is None:
+        raise ValueError("Node content not found in metadata dict.")
+
+    return TextNode.parse_raw(node_json)
+
+
+# TODO: Deprecated conversion functions
+def legacy_metadata_dict_to_node(
     metadata: dict, text_key: str = DEFAULT_TEXT_KEY
 ) -> Tuple[dict, dict, dict]:
     """Common logic for loading Node data from metadata dict."""
@@ -51,12 +78,13 @@ def metadata_dict_to_node(
 
     # load relationships from json string
     relationships_str = metadata.pop("relationships", "")
-    relationships: Dict[DocumentRelationship, str]
+    relationships: Dict[NodeRelationship, RelatedNodeInfo]
     if relationships_str == "":
         relationships = {}
     else:
         relationships = {
-            DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
+            NodeRelationship(k): RelatedNodeInfo(node_id=str(v))
+            for k, v in json.loads(relationships_str).items()
         }
 
     # remove other known fields
@@ -66,14 +94,14 @@ def metadata_dict_to_node(
     metadata.pop("doc_id", None)
     metadata.pop("ref_doc_id", None)
 
-    # remaining metadata is extra_info or node_info
-    extra_info = {}
+    # remaining metadata is metadata or node_info
+    metadata = {}
     for key, val in metadata.items():
-        # NOTE: right now we enforce extra_info to be dict of simple types.
+        # NOTE: right now we enforce metadata to be dict of simple types.
         #       dump anything that's not a simple type into node_info.
         if isinstance(val, (str, int, float, type(None))):
-            extra_info[key] = val
+            metadata[key] = val
         else:
             node_info[key] = val
 
-    return extra_info, node_info, relationships
+    return metadata, node_info, relationships

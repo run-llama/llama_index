@@ -1,7 +1,7 @@
 """LanceDB vector store."""
 from typing import Any, List, Optional
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -75,7 +75,7 @@ class LanceDBVectorStore(VectorStore):
                     "id": result.id,
                     "doc_id": result.ref_doc_id,
                     "vector": result.embedding,
-                    "text": result.node.get_text(),
+                    "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
                 }
             )
             ids.append(result.id)
@@ -119,11 +119,11 @@ class LanceDBVectorStore(VectorStore):
         results = lance_query.to_df()
         nodes = []
         for _, item in results.iterrows():
-            node = Node(
-                doc_id=item.id,
+            node = TextNode(
                 text=item.text,
+                id_=item.id,
                 relationships={
-                    DocumentRelationship.SOURCE: item.doc_id,
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
                 },
             )
             nodes.append(node)

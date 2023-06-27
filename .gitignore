@@ -144,3 +144,6 @@ modules/
 # pipenv
 Pipfile
 Pipfile.lock
+
+# pyright
+pyrightconfig.json

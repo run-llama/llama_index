@@ -143,7 +143,7 @@ response = query_engine.query("Which city has the highest population?")
 print(response)
 ```
 
-You can access the underlying derived SQL query through `response.extra_info['sql_query']`.
+You can access the underlying derived SQL query through `response.metadata['sql_query']`.
 It should look something like this:
 ```sql
 SELECT city_name, population

@@ -5,7 +5,7 @@ import re
 from typing import Any, Generator, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 def _depth_first_yield(
@@ -86,7 +86,7 @@ class JSONReader(BaseReader):
                 useful_lines = [
                     line for line in lines if not re.match(r"^[{}\[\],]*$", line)
                 ]
-                return [Document("\n".join(useful_lines))]
+                return [Document(text="\n".join(useful_lines))]
             elif self.levels_back is not None:
                 # If levels_back is set, we make the embeddings contain the labels
                 # from further up the JSON tree
@@ -95,4 +95,4 @@ class JSONReader(BaseReader):
                         data, self.levels_back, self.collapse_length, []
                     )
                 ]
-                return [Document("\n".join(lines))]
+                return [Document(text="\n".join(lines))]

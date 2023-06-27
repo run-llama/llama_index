@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import requests  # type: ignore
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
 BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
@@ -155,11 +155,11 @@ class NotionPageReader(BaseReader):
             page_ids = self.query_database(database_id)
             for page_id in page_ids:
                 page_text = self.read_page(page_id)
-                docs.append(Document(page_text, extra_info={"page_id": page_id}))
+                docs.append(Document(text=page_text, metadata={"page_id": page_id}))
         else:
             for page_id in page_ids:
                 page_text = self.read_page(page_id)
-                docs.append(Document(page_text, extra_info={"page_id": page_id}))
+                docs.append(Document(text=page_text, metadata={"page_id": page_id}))
 
         return docs
 

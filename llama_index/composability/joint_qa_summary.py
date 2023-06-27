@@ -7,7 +7,7 @@ from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.query_engine.router_query_engine import RouterQueryEngine
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.storage.storage_context import StorageContext
 from llama_index.tools.query_engine import QueryEngineTool

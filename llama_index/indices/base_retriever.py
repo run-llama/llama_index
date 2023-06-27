@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
-from llama_index.data_structs.node import NodeWithScore
 
+from llama_index.schema import NodeWithScore
 from llama_index.indices.query.schema import QueryBundle, QueryType
 
 

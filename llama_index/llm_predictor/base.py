@@ -6,12 +6,10 @@ from dataclasses import dataclass
 from threading import Thread
 from typing import Any, Generator, Optional, Protocol, Tuple, runtime_checkable
 
-import langchain
 import openai
-from langchain import BaseCache, Cohere, LLMChain, OpenAI
-from langchain.base_language import BaseLanguageModel
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import AI21
+from llama_index.bridge.langchain import langchain
+from llama_index.bridge.langchain import BaseCache, Cohere, LLMChain, OpenAI
+from llama_index.bridge.langchain import ChatOpenAI, AI21, BaseLanguageModel
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

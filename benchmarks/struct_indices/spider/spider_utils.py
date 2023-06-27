@@ -4,8 +4,8 @@ import json
 import os
 from typing import Dict, Tuple, Union
 
-from langchain import OpenAI
-from langchain.chat_models import ChatOpenAI
+from llama_index.bridge.langchain import OpenAI
+from llama_index.bridge.langchain import ChatOpenAI
 from sqlalchemy import create_engine, text
 
 from llama_index import SQLStructStoreIndex, LLMPredictor, SQLDatabase

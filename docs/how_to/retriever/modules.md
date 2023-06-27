@@ -30,8 +30,12 @@ VectorIndexAutoRetriever </examples/vector_stores/chroma_auto_retriever.ipynb>
 
 
 ## Knowledge Graph Index
-* KGTableRetriever
-* KGTableRetriever
+```{toctree}
+---
+maxdepth: 1
+---
+Custom Retriever (KG Index and Vector Store Index) </examples/index_structs/knowledge_graph/KnowledgeGraphIndex_vs_VectorStoreIndex_vs_CustomIndex_combined.ipynb>
+```
 * KGTableRetriever
 
 ## Document Summary Index

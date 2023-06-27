@@ -2,9 +2,9 @@
 from abc import abstractmethod
 from typing import Any, List
 
-from langchain.docstore.document import Document as LCDocument
+from llama_index.bridge.langchain import Document as LCDocument
 
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class BaseReader:

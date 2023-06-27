@@ -186,7 +186,7 @@ class WeaviateVectorStore(VectorStore):
                 )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             logger.debug(f"Using hybrid search with alpha {query.alpha}")
-            query = query_builder.with_hybrid(
+            query_builder = query_builder.with_hybrid(
                 query=query.query_str,
                 alpha=query.alpha,
                 vector=vector,

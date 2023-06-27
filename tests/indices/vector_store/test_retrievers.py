@@ -1,9 +1,10 @@
 from typing import List, cast
-from llama_index.data_structs.node import DocumentRelationship, Node
+
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import SimpleVectorStore
 
@@ -25,7 +26,7 @@ def test_faiss_query(
     retriever = index.as_retriever(similarity_top_k=1)
     nodes = retriever.retrieve(QueryBundle(query_str))
     assert len(nodes) == 1
-    assert nodes[0].node.text == "This is another test."
+    assert nodes[0].node.get_content() == "This is another test."
 
 
 def test_simple_query(
@@ -42,7 +43,7 @@ def test_simple_query(
     retriever = index.as_retriever(similarity_top_k=1)
     nodes = retriever.retrieve(QueryBundle(query_str))
     assert len(nodes) == 1
-    assert nodes[0].node.text == "This is another test."
+    assert nodes[0].node.get_content() == "This is another test."
 
 
 def test_query_and_similarity_scores(
@@ -55,7 +56,7 @@ def test_query_and_similarity_scores(
         "This is another test.\n"
         "This is a test v2."
     )
-    document = Document(doc_text)
+    document = Document(text=doc_text)
     index = VectorStoreIndex.from_documents(
         [document], service_context=mock_service_context
     )
@@ -73,12 +74,12 @@ def test_simple_check_ids(
 ) -> None:
     """Test build VectorStoreIndex."""
     ref_doc_id = "ref_doc_id_test"
-    source_rel = {DocumentRelationship.SOURCE: ref_doc_id}
+    source_rel = {NodeRelationship.SOURCE: RelatedNodeInfo(node_id=ref_doc_id)}
     all_nodes = [
-        Node("Hello world.", doc_id="node1", relationships=source_rel),
-        Node("This is a test.", doc_id="node2", relationships=source_rel),
-        Node("This is another test.", doc_id="node3", relationships=source_rel),
-        Node("This is a test v2.", doc_id="node4", relationships=source_rel),
+        TextNode(text="Hello world.", id_="node1", relationships=source_rel),
+        TextNode(text="This is a test.", id_="node2", relationships=source_rel),
+        TextNode(text="This is another test.", id_="node3", relationships=source_rel),
+        TextNode(text="This is a test v2.", id_="node4", relationships=source_rel),
     ]
     index = VectorStoreIndex(all_nodes, service_context=mock_service_context)
 
@@ -86,9 +87,9 @@ def test_simple_check_ids(
     query_str = "What is?"
     retriever = index.as_retriever()
     nodes = retriever.retrieve(QueryBundle(query_str))
-    assert nodes[0].node.text == "This is another test."
+    assert nodes[0].node.get_content() == "This is another test."
     assert nodes[0].node.ref_doc_id == "ref_doc_id_test"
-    assert nodes[0].node.doc_id == "node3"
+    assert nodes[0].node.node_id == "node3"
     vector_store = cast(SimpleVectorStore, index._vector_store)
     assert "node3" in vector_store._data.embedding_dict
     assert "node3" in vector_store._data.text_id_to_ref_doc_id
@@ -101,12 +102,12 @@ def test_faiss_check_ids(
     """Test embedding query."""
 
     ref_doc_id = "ref_doc_id_test"
-    source_rel = {DocumentRelationship.SOURCE: ref_doc_id}
+    source_rel = {NodeRelationship.SOURCE: RelatedNodeInfo(node_id=ref_doc_id)}
     all_nodes = [
-        Node("Hello world.", doc_id="node1", relationships=source_rel),
-        Node("This is a test.", doc_id="node2", relationships=source_rel),
-        Node("This is another test.", doc_id="node3", relationships=source_rel),
-        Node("This is a test v2.", doc_id="node4", relationships=source_rel),
+        TextNode(text="Hello world.", id_="node1", relationships=source_rel),
+        TextNode(text="This is a test.", id_="node2", relationships=source_rel),
+        TextNode(text="This is another test.", id_="node3", relationships=source_rel),
+        TextNode(text="This is a test v2.", id_="node4", relationships=source_rel),
     ]
 
     index = VectorStoreIndex(
@@ -119,9 +120,9 @@ def test_faiss_check_ids(
     query_str = "What is?"
     retriever = index.as_retriever()
     nodes = retriever.retrieve(QueryBundle(query_str))
-    assert nodes[0].node.text == "This is another test."
+    assert nodes[0].node.get_content() == "This is another test."
     assert nodes[0].node.ref_doc_id == "ref_doc_id_test"
-    assert nodes[0].node.doc_id == "node3"
+    assert nodes[0].node.node_id == "node3"
 
 
 def test_query_and_count_tokens(mock_service_context: ServiceContext) -> None:
@@ -132,7 +133,7 @@ def test_query_and_count_tokens(mock_service_context: ServiceContext) -> None:
         "This is another test.\n"
         "This is a test v2."
     )
-    document = Document(doc_text)
+    document = Document(text=doc_text)
     index = VectorStoreIndex.from_documents(
         [document], service_context=mock_service_context
     )

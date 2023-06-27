@@ -8,9 +8,9 @@ import logging
 import os
 from collections import Counter
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -23,6 +23,7 @@ from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
     node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
 )
 
 ID_KEY = "id"
@@ -33,17 +34,6 @@ METADATA_KEY = "metadata"
 DEFAULT_BATCH_SIZE = 100
 
 _logger = logging.getLogger(__name__)
-
-
-def _get_node_info_from_metadata(
-    metadata: Dict[str, Any], field_prefix: str
-) -> Dict[str, Any]:
-    """Get node extra info from metadata."""
-    node_extra_info = {}
-    for key, value in metadata.items():
-        if key.startswith(field_prefix + "_"):
-            node_extra_info[key.replace(field_prefix + "_", "")] = value
-    return node_extra_info
 
 
 def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
@@ -110,14 +100,6 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     return filters
 
 
-def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict, dict]:
-    extra_info = _get_node_info_from_metadata(metadata, "extra_info")
-    node_info = _get_node_info_from_metadata(metadata, "node_info")
-    doc_id = metadata["doc_id"]
-    relationships = {DocumentRelationship.SOURCE: doc_id}
-    return extra_info, node_info, relationships
-
-
 class PineconeVectorStore(VectorStore):
     """Pinecone Vector Store.
 
@@ -136,6 +118,7 @@ class PineconeVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    flat_metadata: bool = True
 
     def __init__(
         self,
@@ -204,8 +187,9 @@ class PineconeVectorStore(VectorStore):
             node_id = result.id
             node = result.node
 
-            metadata = node_to_metadata_dict(node)
-            metadata[self._text_key] = node.text or ""
+            metadata = node_to_metadata_dict(
+                node, remove_text=False, flat_metadata=self.flat_metadata
+            )
 
             entry = {
                 ID_KEY: node_id,
@@ -214,7 +198,8 @@ class PineconeVectorStore(VectorStore):
             }
             if self._add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
-                    [node.get_text()], self._tokenizer
+                    [node.get_content(metadata_mode=MetadataMode.EMBED)],
+                    self._tokenizer,
                 )[0]
                 entry[SPARSE_VECTOR_KEY] = sparse_vector
 
@@ -303,28 +288,27 @@ class PineconeVectorStore(VectorStore):
         top_k_ids = []
         top_k_scores = []
         for match in response.matches:
-            text = match.metadata[self._text_key]
-            id = match.id
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(
-                    match.metadata, text_key=self._text_key
-                )
+                node = metadata_dict_to_node(match.metadata)
             except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
-                # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
-                    match.metadata
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    match.metadata, text_key=self._text_key
                 )
 
-            node = Node(
-                text=text,
-                doc_id=id,
-                extra_info=extra_info,
-                node_info=node_info,
-                relationships=relationships,
-            )
+                text = match.metadata[self._text_key]
+                id = match.id
+                node = TextNode(
+                    text=text,
+                    id_=id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
             top_k_ids.append(match.id)
             top_k_nodes.append(node)
             top_k_scores.append(match.score)

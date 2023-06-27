@@ -8,12 +8,13 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.data_structs.node import Node
+from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import get_sorted_node_list, truncate_text
 from llama_index.prompts.prompts import SummaryPrompt
+from llama_index.schema import MetadataMode
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class GPTTreeIndexBuilder:
 
     def build_from_nodes(
         self,
-        nodes: Sequence[Node],
+        nodes: Sequence[BaseNode],
         build_tree: bool = True,
     ) -> IndexGraph:
         """Build from text.
@@ -72,7 +73,7 @@ class GPTTreeIndexBuilder:
 
     def _prepare_node_and_text_chunks(
         self, cur_node_ids: Dict[int, str]
-    ) -> Tuple[List[int], List[List[Node]], List[str]]:
+    ) -> Tuple[List[int], List[List[BaseNode]], List[str]]:
         """Prepare node and text chunks."""
         cur_nodes = {
             index: self._docstore.get_node(node_id)
@@ -87,7 +88,10 @@ class GPTTreeIndexBuilder:
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             truncated_chunks = self._service_context.prompt_helper.truncate(
                 prompt=self.summary_prompt,
-                text_chunks=[node.get_text() for node in cur_nodes_chunk],
+                text_chunks=[
+                    node.get_content(metadata_mode=MetadataMode.LLM)
+                    for node in cur_nodes_chunk
+                ],
             )
             text_chunk = "\n".join(truncated_chunks)
             indices.append(i)
@@ -99,7 +103,7 @@ class GPTTreeIndexBuilder:
         self,
         index_graph: IndexGraph,
         indices: List[int],
-        cur_nodes_chunks: List[List[Node]],
+        cur_nodes_chunks: List[List[BaseNode]],
         summaries: List[str],
     ) -> Dict[int, str]:
         """Construct parent nodes.
@@ -115,12 +119,10 @@ class GPTTreeIndexBuilder:
                 f"> {i}/{len(cur_nodes_chunk)}, "
                 f"summary: {truncate_text(new_summary, 50)}"
             )
-            new_node = Node(
-                text=new_summary,
-            )
+            new_node = TextNode(text=new_summary)
             index_graph.insert(new_node, children_nodes=cur_nodes_chunk)
             index = index_graph.get_index(new_node)
-            new_node_dict[index] = new_node.get_doc_id()
+            new_node_dict[index] = new_node.node_id
             self._docstore.add_documents([new_node], allow_update=False)
         return new_node_dict
 

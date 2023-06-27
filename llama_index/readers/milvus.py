@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class MilvusReader(BaseReader):
@@ -99,7 +99,7 @@ class MilvusReader(BaseReader):
         # TODO: In future append embedding when more efficient
         for hit in res[0]:
             document = Document(
-                doc_id=hit.entity.get("doc_id"),
+                id_=hit.entity.get("doc_id"),
                 text=hit.entity.get("text"),
             )
 

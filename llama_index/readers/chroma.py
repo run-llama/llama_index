@@ -3,7 +3,7 @@
 from typing import Any, List, Optional, Union
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class ChromaReader(BaseReader):
@@ -67,10 +67,10 @@ class ChromaReader(BaseReader):
             results["metadatas"],
         ):
             document = Document(
-                doc_id=result[0][0],
+                id_=result[0][0],
                 text=result[1][0],
                 embedding=result[2][0],
-                extra_info=result[3][0],
+                metadata=result[3][0],
             )
             documents.append(document)
 
