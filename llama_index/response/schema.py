@@ -2,9 +2,9 @@
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
-from llama_index.llm_predictor.base import StreamTokens
 
 from llama_index.schema import NodeWithScore
+from llama_index.types import StreamTokens
 from llama_index.utils import truncate_text
 
 
