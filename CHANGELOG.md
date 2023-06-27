@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix serialization for OpenSearch vector stores (#6612)
+
 ## [v0.6.34] - 2023-06-26
 
 ### Patch Update (v0.6.34.post1)
