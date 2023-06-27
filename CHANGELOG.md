@@ -2,6 +2,9 @@
 
 ## [v0.6.34] - 2023-06-26
 
+### Patch Update (v0.6.34.post1)
+- Patch imports for Document obj for backwards compatibility (#6597)
+
 ### New Features
 - New `TextNode`/`Document` object classes based on pydantic (#6586)
 - `TextNode`/`Document` objects support metadata customization (metadata templates, exclude metadata from LLM or embeddings) (#6586)
