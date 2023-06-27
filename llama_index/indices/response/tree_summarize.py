@@ -85,8 +85,7 @@ class TreeSummarize(BaseResponseBuilder):
                 for text_chunk in text_chunks
             ]
 
-            outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)
-            summaries = [output[0] for output in outputs]
+            summaries: List[str] = await asyncio.gather(*tasks)
 
             # recursively summarize the summaries
             return await self.aget_response(
@@ -139,14 +138,13 @@ class TreeSummarize(BaseResponseBuilder):
                     for text_chunk in text_chunks
                 ]
 
-                outputs: List[Tuple[str, str]] = run_async_tasks(tasks)
-                summaries = [output[0] for output in outputs]
+                summaries: List[str] = run_async_tasks(tasks)
             else:
                 summaries = [
                     self._service_context.llm_predictor.predict(
                         summary_template,
                         context_str=text_chunk,
-                    )[0]
+                    )
                     for text_chunk in text_chunks
                 ]
 
