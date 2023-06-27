@@ -109,6 +109,8 @@ query_engine = SQLTableRetrieverQueryEngine(
 response = query_engine.query("Which city has the highest population?")
 print(response)
 ```
+Now when we query the retriever query engine, it will retrieve the relevant table schema
+and synthesize a SQL query and a response from the results of that query.
 
 ## Concluding Thoughts
 
