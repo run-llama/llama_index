@@ -54,7 +54,6 @@ def stream_completion_response_to_chat_response(
 
     def gen() -> StreamChatResponse:
         for delta in completion_response:
-            assert isinstance(delta, CompletionDeltaResponse)
             yield ChatDeltaResponse(
                 message=ChatMessage(
                     role="assistant",
@@ -86,7 +85,6 @@ def stream_chat_response_to_completion_response(
 
     def gen() -> StreamCompletionResponse:
         for delta in chat_response:
-            assert isinstance(delta, ChatDeltaResponse)
             yield CompletionDeltaResponse(
                 text=delta.message.content or "",
                 additional_kwargs=delta.message.additional_kwargs,

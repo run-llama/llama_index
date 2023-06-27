@@ -6,12 +6,15 @@ from typing import Any, Generator, Optional, Protocol, runtime_checkable
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llms.base import LLM, LLMMetadata, StreamCompletionResponse
+from llama_index.llm_predictor.utils import stream_completion_response_to_tokens
+from llama_index.llms.base import LLM, LLMMetadata
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import Prompt
 from llama_index.utils import count_tokens
 
 logger = logging.getLogger(__name__)
+
+StreamTokens = Generator[str, None, None]
 
 
 @runtime_checkable
@@ -30,7 +33,7 @@ class BaseLLMPredictor(Protocol):
         """Predict the answer to a query."""
 
     @abstractmethod
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> StreamCompletionResponse:
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
         """Stream the answer to a query."""
 
     @abstractmethod
@@ -38,9 +41,7 @@ class BaseLLMPredictor(Protocol):
         """Async predict the answer to a query."""
 
     @abstractmethod
-    async def astream(
-        self, prompt: Prompt, **prompt_args: Any
-    ) -> StreamCompletionResponse:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
         """Async predict the answer to a query."""
 
 
@@ -114,11 +115,12 @@ class LLMPredictor(BaseLLMPredictor):
 
         return output
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
         """Stream."""
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         stream_response = self._llm.stream_complete(formatted_prompt)
-        return stream_response
+        stream_tokens = stream_completion_response_to_tokens(stream_response)
+        return stream_tokens
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Async predict."""
@@ -131,8 +133,9 @@ class LLMPredictor(BaseLLMPredictor):
         self._log_end(event_id, output, formatted_prompt)
         return output
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> Generator:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
         """Async stream."""
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         stream_response = await self._llm.astream_complete(formatted_prompt)
-        return stream_response
+        stream_tokens = stream_completion_response_to_tokens(stream_response)
+        return stream_tokens

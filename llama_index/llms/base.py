@@ -8,7 +8,7 @@ from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 # ===== Generic Model Input - Chat =====
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "function"] = "user"
-    content: Optional[str]
+    content: Optional[str] = ""
     additional_kwargs: dict = Field(default_factory=dict)
     name: Optional[str] = None
 
@@ -52,12 +52,6 @@ class CompletionDeltaResponse(CompletionResponse):
 
 
 StreamCompletionResponse = Generator[CompletionDeltaResponse, None, None]
-
-# ===== Generic Model Output - Combined =====
-CompletionResponseType = Union[
-    CompletionResponse, Generator[CompletionDeltaResponse, None, None]
-]
-ChatResponseType = Union[ChatResponse, Generator[ChatDeltaResponse, None, None]]
 
 
 class LLMMetadata(BaseModel):
