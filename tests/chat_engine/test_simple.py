@@ -15,7 +15,7 @@ def test_simple_chat_engine(
     response = engine.chat("Test message 2")
     assert (
         str(response)
-        == "\nHuman: Test message 1\nAssistant: :Test message 1:Test message 2"
+        == "\nuser: Test message 1\nassistant: :Test message 1:Test message 2"
     )
 
     engine.reset()
@@ -29,7 +29,7 @@ def test_simple_chat_engine_with_init_history(
     engine = SimpleChatEngine.from_defaults(
         service_context=mock_service_context,
         chat_history=[
-            ChatMessage(role="human", content="test human message"),
+            ChatMessage(role="user", content="test human message"),
             ChatMessage(role="assistant", content="test ai message"),
         ],
     )
@@ -37,5 +37,5 @@ def test_simple_chat_engine_with_init_history(
     response = engine.chat("new human message")
     assert (
         str(response)
-        == "\nHuman: test human message\nAssistant: test ai message:new human message"
+        == "\nuser: test human message\nassistant: test ai message\nuser: new human message\nassistant: "
     )

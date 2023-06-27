@@ -4,7 +4,7 @@ from llama_index.llms.base import LLM
 from llama_index.llms.base import (
     ChatResponse,
     CompletionResponse,
-    Message,
+    ChatMessage,
     StreamChatResponse,
     StreamCompletionResponse,
 )
@@ -21,26 +21,26 @@ class CustomLLM(LLM):
         `stream_complete`, and `metadata` methods.
     """
 
-    def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         chat_fn = completion_to_chat_decorator(self.complete)
         return chat_fn(messages, **kwargs)
 
     def stream_chat(
-        self, messages: Sequence[Message], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> StreamChatResponse:
         stream_chat_fn = stream_completion_to_chat_decorator(self.stream_complete)
         return stream_chat_fn(messages, **kwargs)
 
     async def achat(
         self,
-        messages: Sequence[Message],
+        messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
         return self.chat(messages, **kwargs)
 
     async def astream_chat(
         self,
-        messages: Sequence[Message],
+        messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> StreamChatResponse:
         return self.stream_chat(messages, **kwargs)

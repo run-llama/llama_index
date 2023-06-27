@@ -6,21 +6,16 @@ from llama_index.llms.base import (
     ChatResponse,
     CompletionDeltaResponse,
     CompletionResponse,
-    Message,
     StreamChatResponse,
     StreamCompletionResponse,
 )
 
 
-def messages_to_prompt(messages: Sequence[Message]) -> str:
+def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
     """Convert messages to a string prompt."""
     string_messages = []
     for message in messages:
-        if isinstance(message, ChatMessage):
-            role = message.role
-        else:
-            role = "unknown"
-
+        role = message.role
         content = message.content
         string_message = f"{role}: {content}"
 
@@ -33,7 +28,7 @@ def messages_to_prompt(messages: Sequence[Message]) -> str:
     return "\n".join(string_messages)
 
 
-def prompt_to_messages(prompt: str) -> Sequence[Message]:
+def prompt_to_messages(prompt: str) -> Sequence[ChatMessage]:
     """Convert a string prompt to a sequence of messages."""
     return [ChatMessage(role="user", content=prompt)]
 
@@ -107,7 +102,7 @@ def completion_to_chat_decorator(
 ) -> Callable[..., ChatResponse]:
     """Convert a completion function to a chat function."""
 
-    def wrapper(messages: Sequence[Message], **kwargs: Any) -> ChatResponse:
+    def wrapper(messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # normalize input
         prompt = messages_to_prompt(messages)
         completion_response = func(prompt, **kwargs)
@@ -122,7 +117,7 @@ def stream_completion_to_chat_decorator(
 ) -> Callable[..., StreamChatResponse]:
     """Convert a completion function to a chat function."""
 
-    def wrapper(messages: Sequence[Message], **kwargs: Any) -> StreamChatResponse:
+    def wrapper(messages: Sequence[ChatMessage], **kwargs: Any) -> StreamChatResponse:
         # normalize input
         prompt = messages_to_prompt(messages)
         completion_response = func(prompt, **kwargs)

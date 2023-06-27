@@ -8,7 +8,7 @@ from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import ChatMessage, FunctionMessage
+from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools import BaseTool
@@ -30,7 +30,7 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 def call_function(
     tools: List[BaseTool], function_call: dict, verbose: bool = False
-) -> FunctionMessage:
+) -> ChatMessage:
     """Call a function and return the output as a string."""
     name = function_call["name"]
     arguments_str = function_call["arguments"]
@@ -43,9 +43,7 @@ def call_function(
     if verbose:
         print(f"Got output: {output}")
         print("========================")
-    return FunctionMessage(
-        content=str(output), name=function_call["name"], role="function"
-    )
+    return ChatMessage(content=str(output), name=function_call["name"], role="function")
 
 
 class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):

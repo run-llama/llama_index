@@ -22,6 +22,7 @@ class SimpleChatEngine(BaseChatEngine):
         chat_history: List[ChatMessage],
     ) -> None:
         self._llm = llm
+        print(self._llm)
         self._chat_history = chat_history
 
     @classmethod

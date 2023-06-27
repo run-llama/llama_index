@@ -1,28 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generator, Optional, Sequence, Union
+from typing import Any, Generator, Literal, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 
 # ===== Generic Model Input - Chat =====
-class Message(BaseModel):
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant", "function"] = "user"
     content: Optional[str]
     additional_kwargs: dict = Field(default_factory=dict)
-
-    def __str__(self) -> str:
-        return self.content or ""
-
-
-class ChatMessage(Message):
-    role: str
+    name: Optional[str] = None
 
     def __str__(self) -> str:
         return f"{self.role}: {self.content}"
-
-
-class FunctionMessage(ChatMessage):
-    name: str
 
 
 # ===== Generic Model Output - Chat =====

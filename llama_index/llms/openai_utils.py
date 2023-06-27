@@ -12,7 +12,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.llms.base import ChatMessage, FunctionMessage
+from llama_index.llms.base import ChatMessage
 
 GPT4_MODELS = {
     # stable model names:
@@ -183,10 +183,16 @@ def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
 
 def to_openai_message_dict(message: ChatMessage) -> dict:
     """Convert generic message to OpenAI message dict."""
-    if isinstance(message, FunctionMessage):
-        return {"role": message.role, "content": message.content, "name": message.name}
-    else:
-        return {"role": message.role, "content": message.content}
+    message_dict = {
+        "role": message.role,
+        "content": message.content,
+    }
+
+    # NOTE: openai function message has name as additional argument
+    if message.name is not None:
+        message_dict["name"] = message.name
+
+    return message_dict
 
 
 def to_openai_message_dicts(messages: Sequence[ChatMessage]) -> List[dict]:

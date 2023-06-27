@@ -10,11 +10,11 @@ from llama_index.bridge.langchain import (
     BaseMessage as LCMessage,
     HumanMessage,
     AIMessage,
-    FunctionMessage as LCFunctionMessage,
+    FunctionMessage,
 )
 
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
-from llama_index.llms.base import ChatMessage, LLMMetadata, FunctionMessage
+from llama_index.llms.base import ChatMessage, LLMMetadata
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
 
 
@@ -38,9 +38,10 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LCMessage]:
                 )
             )
         elif message.role == "function":
-            assert isinstance(message, FunctionMessage)
+            if message.name is None:
+                raise ValueError("name cannot be None for function message.")
             lc_messages.append(
-                LCFunctionMessage(
+                FunctionMessage(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
                     name=message.name,
@@ -70,9 +71,9 @@ def from_lc_messages(lc_messages: Sequence[LCMessage]) -> List[ChatMessage]:
                     role="assistant",
                 )
             )
-        elif isinstance(lc_message, LCFunctionMessage):
+        elif isinstance(lc_message, FunctionMessage):
             messages.append(
-                FunctionMessage(
+                ChatMessage(
                     content=lc_message.content,
                     additional_kwargs=lc_message.additional_kwargs,
                     name=lc_message.name,
