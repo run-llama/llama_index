@@ -1,5 +1,5 @@
 """LLM predictor tests."""
-from typing import Any, Tuple
+from typing import Any
 from unittest.mock import patch
 
 

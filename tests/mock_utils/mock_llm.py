@@ -1,6 +1,5 @@
 from typing import Any
 from llama_index.llms.base import (
-    LLM,
     CompletionDeltaResponse,
     CompletionResponse,
     LLMMetadata,
@@ -10,6 +9,10 @@ from llama_index.llms.custom import CustomLLM
 
 
 class MockLLM(CustomLLM):
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata()
+
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         return CompletionResponse(
             text=prompt,
@@ -24,6 +27,3 @@ class MockLLM(CustomLLM):
                 )
 
         return gen()
-
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata()

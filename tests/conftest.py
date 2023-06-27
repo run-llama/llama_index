@@ -1,13 +1,12 @@
 # import os
 # import socket
 from typing import Any
-from unittest.mock import Mock
 
 import pytest
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM, LLMMetadata
+from llama_index.llms.base import LLMMetadata
 
 
 from tests.indices.vector_store.mock_services import MockEmbedding
