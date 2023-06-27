@@ -7,6 +7,7 @@ DEFAULT_TEXT_KEY = "text"
 DEFAULT_EMBEDDING_KEY = "embedding"
 DEFAULT_DOC_ID_KEY = "doc_id"
 
+
 def node_to_metadata_dict(node: Node) -> dict:
     """Common logic for saving Node data into metadata dict."""
     metadata: Dict[str, Any] = {}

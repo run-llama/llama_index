@@ -4,20 +4,22 @@ An index that is built within Milvus.
 
 """
 import logging
-import sys
 from typing import Any, List, Optional
 from uuid import uuid4
 
-sys.path.append('/Users/nawafalageel/Documents/GitHub/llama_index')
-
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryMode,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (DEFAULT_DOC_ID_KEY,
-                                             DEFAULT_EMBEDDING_KEY,
-                                             DEFAULT_TEXT_KEY)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import (
+    DEFAULT_DOC_ID_KEY,
+    DEFAULT_EMBEDDING_KEY,
+    DEFAULT_TEXT_KEY,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -123,9 +125,7 @@ class MilvusVectorStore(VectorStore):
 
         # Figure out if there is already a created collection
         if utility.has_collection(self.collection_name, using=self.alias):
-            self.collection = Collection(
-                self.collection_name, using=self.alias
-            )
+            self.collection = Collection(self.collection_name, using=self.alias)
         else:
             self.collection = None
 
@@ -191,8 +191,13 @@ class MilvusVectorStore(VectorStore):
             logger.debug(f"Creating new connection: {self.alias}")
 
     def _create_collection(self) -> None:
-        from pymilvus import (Collection, CollectionSchema, DataType,
-                              FieldSchema, MilvusException)
+        from pymilvus import (
+            Collection,
+            CollectionSchema,
+            DataType,
+            FieldSchema,
+            MilvusException,
+        )
 
         try:
             fields = [
@@ -254,7 +259,9 @@ class MilvusVectorStore(VectorStore):
 
             try:
                 self.collection.create_index(
-                    self.embedding_field, index_params=self.index_params, using=self.alias
+                    self.embedding_field,
+                    index_params=self.index_params,
+                    using=self.alias,
                 )
             # If default did not work, most likely on Zilliz Cloud
             except MilvusException:
@@ -265,7 +272,9 @@ class MilvusVectorStore(VectorStore):
                     "params": {},
                 }
                 self.collection.create_index(
-                    self.embedding_field, index_params=self.index_params, using=self.alias
+                    self.embedding_field,
+                    index_params=self.index_params,
+                    using=self.alias,
                 )
 
             # If search params dont exist already, grab the default
@@ -368,7 +377,9 @@ class MilvusVectorStore(VectorStore):
         try:
             # Begin by querying for the primary keys to delete
             doc_ids = ['"' + entry + '"' for entry in doc_ids]
-            entries = self.collection.query(f"{self.doc_id_field} in [{','.join(doc_ids)}]")
+            entries = self.collection.query(
+                f"{self.doc_id_field} in [{','.join(doc_ids)}]"
+            )
             ids = [entry["id"] for entry in entries]
             ids = ['"' + entry + '"' for entry in ids]
             self.collection.delete(f"id in [{','.join(ids)}]")
