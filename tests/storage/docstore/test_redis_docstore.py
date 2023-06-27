@@ -4,7 +4,7 @@ import pytest
 
 from llama_index.storage.docstore.redis_docstore import RedisDocumentStore
 from llama_index.readers.schema.base import Document
-from llama_index.schema import BaseDocument
+from llama_index.schema import BaseNode
 from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
 
 try:
@@ -36,7 +36,7 @@ def test_redis_docstore(
     # test adding documents
     ds.add_documents(documents)
     assert len(ds.docs) == 2
-    assert all(isinstance(doc, BaseDocument) for doc in ds.docs.values())
+    assert all(isinstance(doc, BaseNode) for doc in ds.docs.values())
 
     # test updating documents
     ds.add_documents(documents)
