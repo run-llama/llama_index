@@ -10,7 +10,6 @@ from llama_index.llms.base import (
     ChatResponse,
     CompletionDeltaResponse,
     CompletionResponse,
-    Message,
     StreamChatResponse,
     StreamCompletionResponse,
 )

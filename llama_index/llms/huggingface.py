@@ -7,9 +7,8 @@ from llama_index.llms.base import (
 
 import logging
 from threading import Thread
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
-from llama_index.llms.base import LLMMetadata
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
 

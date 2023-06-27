@@ -11,7 +11,6 @@ from llama_index.llms.base import (
     CompletionDeltaResponse,
     CompletionResponse,
     LLMMetadata,
-    Message,
     StreamChatResponse,
     StreamCompletionResponse,
 )

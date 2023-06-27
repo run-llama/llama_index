@@ -1,7 +1,7 @@
 """Mock predict."""
 
 import json
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType

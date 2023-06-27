@@ -13,18 +13,10 @@ from llama_index.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
 from llama_index.indices.tree.base import TreeIndex
-from llama_index.langchain_helpers.chain_wrapper import (
-    LLMMetadata,
-    LLMPredictor,
-)
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.readers.schema.base import Document
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_SUMMARY_PROMPT,
-)
-from tests.mock_utils.mock_text_splitter import (
-    mock_token_splitter_newline_with_overlaps,
 )
 
 

@@ -12,7 +12,6 @@ from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
-from llama_index.prompts.base import Prompt
 
 
 class VellumPredictor(BaseLLMPredictor):

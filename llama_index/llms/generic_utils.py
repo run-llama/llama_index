@@ -1,13 +1,11 @@
-from typing import Any, Callable, Generator, Sequence
+from typing import Any, Callable, Sequence
 
 from llama_index.llms.base import (
     ChatDeltaResponse,
     ChatMessage,
     ChatResponse,
-    ChatResponseType,
     CompletionDeltaResponse,
     CompletionResponse,
-    CompletionResponseType,
     Message,
     StreamChatResponse,
     StreamCompletionResponse,

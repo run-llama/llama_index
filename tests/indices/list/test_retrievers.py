@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List
 from unittest.mock import patch
 
 from llama_index.indices.list.base import ListIndex

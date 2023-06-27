@@ -12,7 +12,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.llms.base import ChatMessage, FunctionMessage, Message
+from llama_index.llms.base import ChatMessage, FunctionMessage
 
 GPT4_MODELS = {
     # stable model names:

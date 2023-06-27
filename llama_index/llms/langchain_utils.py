@@ -14,7 +14,7 @@ from llama_index.bridge.langchain import (
 )
 
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
-from llama_index.llms.base import ChatMessage, LLMMetadata, Message, FunctionMessage
+from llama_index.llms.base import ChatMessage, LLMMetadata, FunctionMessage
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
 
 

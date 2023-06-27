@@ -1,18 +1,13 @@
 """LLM predictor tests."""
-import os
 from typing import Any, Tuple
 from unittest.mock import patch
 
-import pytest
-from llama_index.bridge.langchain import FakeListLLM
 
 from llama_index.llm_predictor.structured import LLMPredictor, StructuredLLMPredictor
 from llama_index.types import BaseOutputParser
-from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 
 try:
-    from gptcache import Cache
 
     gptcache_installed = True
 except ImportError:

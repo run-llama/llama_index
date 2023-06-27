@@ -1,7 +1,7 @@
 """Node postprocessor tests."""
 
 from pathlib import Path
-from typing import Any, Dict, Tuple, cast
+from typing import Dict, cast
 
 import pytest
 
@@ -17,7 +17,6 @@ from llama_index.indices.postprocessor.node_recency import (
 )
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
 

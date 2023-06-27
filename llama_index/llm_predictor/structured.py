@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import Any, Generator, Tuple
+from typing import Any, Generator
 
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts.base import Prompt
