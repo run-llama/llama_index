@@ -10,7 +10,7 @@ from llama_index.llms.base import LLMMetadata
 
 
 from tests.indices.vector_store.mock_services import MockEmbedding
-from tests.mock_utils.mock_llm import MockLLM
+from llama_index.llms.mock import MockLLM
 from tests.mock_utils.mock_predict import (
     patch_llmpredictor_apredict,
     patch_llmpredictor_predict,

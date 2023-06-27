@@ -1,18 +1,19 @@
-"""Mock chain wrapper."""
+"""Mock LLM Predictor."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-from llama_index.bridge.langchain import BaseLLM
+from llama_index.callbacks.schema import CBEventType, EventPayload
 
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.llm_predictor import LLMPredictor
+from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llms.base import LLMMetadata, StreamCompletionResponse
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import (
     mock_extract_keywords_response,
     mock_extract_kg_triplets_response,
 )
-from llama_index.utils import globals_helper
+from llama_index.utils import count_tokens, globals_helper
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py
 
@@ -81,45 +82,86 @@ def _mock_knowledge_graph_triplet_extract(prompt_args: Dict, max_triplets: int) 
     )
 
 
-class MockLLMPredictor(LLMPredictor):
+class MockLLMPredictor(BaseLLMPredictor):
     """Mock LLM Predictor."""
 
-    def __init__(
-        self, max_tokens: int = DEFAULT_NUM_OUTPUTS, llm: Optional[BaseLLM] = None
-    ) -> None:
+    def __init__(self, max_tokens: int = DEFAULT_NUM_OUTPUTS) -> None:
         """Initialize params."""
-        super().__init__(llm)
-        # NOTE: don't call super, we don't want to instantiate LLM
         self.max_tokens = max_tokens
-        self._total_tokens_used = 0
-        self.flag = True
-        self._last_token_usage = None
 
-    def _predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata()
+
+    def _log_start(self, prompt: Prompt, prompt_args: dict) -> str:
+        """Log start of an LLM event."""
+        llm_payload = prompt_args.copy()
+        llm_payload[EventPayload.TEMPLATE] = prompt
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.LLM,
+            payload=llm_payload,
+        )
+
+        return event_id
+
+    def _log_end(self, event_id: str, output: str, formatted_prompt: str) -> None:
+        """Log end of an LLM event."""
+        prompt_tokens_count = count_tokens(formatted_prompt)
+        prediction_tokens_count = count_tokens(output)
+        self.callback_manager.on_event_end(
+            CBEventType.LLM,
+            payload={
+                EventPayload.RESPONSE: output,
+                EventPayload.PROMPT: formatted_prompt,
+                # deprecated
+                "formatted_prompt_tokens_count": prompt_tokens_count,
+                "prediction_tokens_count": prediction_tokens_count,
+                "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
+            },
+            event_id=event_id,
+        )
+
+    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Mock predict."""
+        event_id = self._log_start(prompt, prompt_args)
+        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+
         prompt_str = prompt.prompt_type
         if prompt_str == PromptType.SUMMARY:
-            return _mock_summary_predict(self.max_tokens, prompt_args)
+            output = _mock_summary_predict(self.max_tokens, prompt_args)
         elif prompt_str == PromptType.TREE_INSERT:
-            return _mock_insert_predict()
+            output = _mock_insert_predict()
         elif prompt_str == PromptType.TREE_SELECT:
-            return _mock_query_select()
+            output = _mock_query_select()
         elif prompt_str == PromptType.TREE_SELECT_MULTIPLE:
-            return _mock_query_select_multiple(prompt_args["num_chunks"])
+            output = _mock_query_select_multiple(prompt_args["num_chunks"])
         elif prompt_str == PromptType.REFINE:
-            return _mock_refine(self.max_tokens, prompt, prompt_args)
+            output = _mock_refine(self.max_tokens, prompt, prompt_args)
         elif prompt_str == PromptType.QUESTION_ANSWER:
-            return _mock_answer(self.max_tokens, prompt_args)
+            output = _mock_answer(self.max_tokens, prompt_args)
         elif prompt_str == PromptType.KEYWORD_EXTRACT:
-            return _mock_keyword_extract(prompt_args)
+            output = _mock_keyword_extract(prompt_args)
         elif prompt_str == PromptType.QUERY_KEYWORD_EXTRACT:
-            return _mock_query_keyword_extract(prompt_args)
+            output = _mock_query_keyword_extract(prompt_args)
         elif prompt_str == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
-            return _mock_knowledge_graph_triplet_extract(
+            output = _mock_knowledge_graph_triplet_extract(
                 prompt_args, prompt.partial_dict.get("max_knowledge_triplets", 2)
             )
         elif prompt_str == PromptType.CUSTOM:
             # we don't know specific prompt type, return generic response
-            return ""
+            output = ""
         else:
             raise ValueError("Invalid prompt type.")
+
+        self._log_end(event_id, output, formatted_prompt)
+        return output
+
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> StreamCompletionResponse:
+        raise NotImplementedError
+
+    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+        return self.predict(prompt, **prompt_args)
+
+    async def astream(
+        self, prompt: Prompt, **prompt_args: Any
+    ) -> StreamCompletionResponse:
+        raise NotImplementedError
