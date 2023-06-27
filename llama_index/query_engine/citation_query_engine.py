@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.node import NodeWithScore, Node
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.callbacks.base import CallbackManager
@@ -17,6 +16,7 @@ from llama_index.langchain_helpers.text_splitter import (
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import NodeWithScore, TextNode
 
 
 CITATION_QA_TEMPLATE = Prompt(
@@ -188,11 +188,13 @@ class CitationQueryEngine(BaseQueryEngine):
         """Modify retrieved nodes to be granular sources."""
         new_nodes: List[NodeWithScore] = []
         for node in nodes:
-            splits = self.text_splitter.split_text_with_overlaps(node.node.get_text())
+            splits = self.text_splitter.split_text_with_overlaps(
+                node.node.get_content()
+            )
 
             start_offset = 0
-            if node.node.node_info:
-                start_offset = int(node.node.node_info.get("start", 0))
+            if isinstance(node.node, TextNode) and node.node.start_char_idx is not None:
+                start_offset = node.node.start_char_idx
 
             for split in splits:
                 text = f"Source {len(new_nodes)+1}:\n{split.text_chunk}\n"
@@ -201,21 +203,19 @@ class CitationQueryEngine(BaseQueryEngine):
                 num_char_overlap = split.num_char_overlap or 0
                 chunk_len = len(split.text_chunk)
 
-                new_node_info = (
-                    node.node.node_info.copy() if node.node.node_info else {}
-                )
-                new_node_info["start"] = start_offset - num_char_overlap
-                new_node_info["end"] = start_offset - num_char_overlap + chunk_len
+                start_char_idx = start_offset - num_char_overlap
+                end_char_idx = start_offset - num_char_overlap + chunk_len
 
                 start_offset += chunk_len + 1
 
                 new_nodes.append(
                     NodeWithScore(
-                        node=Node(
+                        node=TextNode(
                             text=text,
-                            extra_info=node.node.extra_info or {},
+                            metadata=node.node.metadata or {},
                             relationships=node.node.relationships or {},
-                            node_info=new_node_info,
+                            start_char_idx=start_char_idx,
+                            end_char_idx=end_char_idx,
                         ),
                         score=node.score,
                     )
@@ -260,14 +260,16 @@ class CitationQueryEngine(BaseQueryEngine):
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         query_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = self._retriever.retrieve(query_bundle)
         nodes = self._create_citation_nodes(nodes)
         self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
+            CBEventType.RETRIEVE,
+            payload={EventPayload.NODES: nodes},
+            event_id=retrieve_id,
         )
 
         response = self._response_synthesizer.synthesize(
@@ -277,7 +279,7 @@ class CitationQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": response},
+            payload={EventPayload.RESPONSE: response},
             event_id=query_id,
         )
         return response
@@ -285,14 +287,16 @@ class CitationQueryEngine(BaseQueryEngine):
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         query_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = self._retriever.retrieve(query_bundle)
         nodes = self._create_citation_nodes(nodes)
         self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
+            CBEventType.RETRIEVE,
+            payload={EventPayload.NODES: nodes},
+            event_id=retrieve_id,
         )
 
         response = await self._response_synthesizer.asynthesize(
@@ -302,7 +306,7 @@ class CitationQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": response},
+            payload={EventPayload.RESPONSE: response},
             event_id=query_id,
         )
         return response

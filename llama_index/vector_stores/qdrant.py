@@ -4,9 +4,9 @@ An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, List, Optional, Tuple, cast
+from typing import Any, List, Optional, cast
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
@@ -14,18 +14,13 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _legacy_metadata_dict_to_node(payload: Any) -> Tuple[dict, dict, dict]:
-    extra_info = payload.get("extra_info", {})
-    relationships = {
-        DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
-    }
-    node_info: dict = {}
-    return extra_info, node_info, relationships
 
 
 class QdrantVectorStore(VectorStore):
@@ -43,6 +38,7 @@ class QdrantVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    flat_metadata: bool = False
 
     def __init__(
         self, collection_name: str, client: Optional[Any] = None, **kwargs: Any
@@ -87,14 +83,14 @@ class QdrantVectorStore(VectorStore):
             payloads = []
             for result in result_batch:
                 assert isinstance(result, NodeWithEmbedding)
+                assert isinstance(result.node, TextNode)
                 node_ids.append(result.id)
                 vectors.append(result.embedding)
                 node = result.node
 
-                metadata = {}
-                metadata["text"] = node.text or ""
-                additional_metadata = node_to_metadata_dict(node)
-                metadata.update(additional_metadata)
+                metadata = node_to_metadata_dict(
+                    node, remove_text=False, flat_metadata=self.flat_metadata
+                )
 
                 payloads.append(metadata)
 
@@ -188,20 +184,22 @@ class QdrantVectorStore(VectorStore):
         for point in response:
             payload = cast(Payload, point.payload)
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(payload)
+                node = metadata_dict_to_node(payload)
             except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
                 logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
                 )
 
-            node = Node(
-                doc_id=str(point.id),
-                text=payload.get("text"),
-                extra_info=extra_info,
-                node_info=node_info,
-                relationships=relationships,
-            )
+                node = TextNode(
+                    id_=str(point.id),
+                    text=payload.get("text"),
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
             nodes.append(node)
             similarities.append(point.score)
             ids.append(str(point.id))
@@ -212,7 +210,13 @@ class QdrantVectorStore(VectorStore):
         if not query.doc_ids and not query.query_str:
             return None
 
-        from qdrant_client.http.models import FieldCondition, Filter, MatchAny
+        from qdrant_client.http.models import (
+            FieldCondition,
+            Filter,
+            MatchAny,
+            MatchValue,
+            Range,
+        )
 
         must_conditions = []
 
@@ -220,11 +224,34 @@ class QdrantVectorStore(VectorStore):
             must_conditions.append(
                 FieldCondition(
                     key="doc_id",
-                    match=MatchAny(any=[doc_id for doc_id in query.doc_ids]),
+                    match=MatchAny(any=query.doc_ids),
                 )
             )
-        # TODO: implement this
-        if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for Qdrant yet.")
+
+        # Qdrant does not use the query.query_str property for the filtering. Full-text
+        # filtering cannot handle longer queries and can effectively filter our all the
+        # nodes. See: https://github.com/jerryjliu/llama_index/pull/1181
+
+        if query.filters is None:
+            return Filter(must=must_conditions)
+
+        for subfilter in query.filters.filters:
+            if isinstance(subfilter.value, float):
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(
+                            gte=subfilter.value,
+                            lte=subfilter.value,
+                        ),
+                    )
+                )
+            else:
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchValue(value=subfilter.value),
+                    )
+                )
 
         return Filter(must=must_conditions)

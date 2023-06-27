@@ -1,18 +1,23 @@
 """Pandas csv structured store."""
 
+import logging
 from typing import Any, Optional, Sequence
 
-from llama_index.data_structs.node import Node
+import pandas as pd
+
 from llama_index.data_structs.table import PandasStructTable
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
+from llama_index.schema import BaseNode
 
-import pandas as pd
+logger = logging.getLogger(__name__)
 
 
 class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
     """Pandas Index.
+
+    Deprecated. Please use :class:`PandasQueryEngine` instead.
 
     The PandasIndex is an index that stores
     a Pandas dataframe under the hood.
@@ -32,11 +37,16 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
     def __init__(
         self,
         df: pd.DataFrame,
-        nodes: Optional[Sequence[Node]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[PandasStructTable] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        logger.warning(
+            "PandasIndex is deprecated. \
+            Please directly use `PandasQueryEngine(df)` instead."
+        )
+
         if nodes is not None:
             raise ValueError("We currently do not support indexing documents or nodes.")
         self.df = df
@@ -52,16 +62,16 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.indices.struct_store.pandas_query import NLPandasQueryEngine
+        from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
 
-        return NLPandasQueryEngine(self, **kwargs)
+        return PandasQueryEngine.from_index(self, **kwargs)
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> PandasStructTable:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
         return index_struct
 
-    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         raise NotImplementedError("We currently do not support inserting documents.")
 

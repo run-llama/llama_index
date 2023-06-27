@@ -7,13 +7,13 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.myscale import (
     MyScaleSettings,
     escape_str,
     format_list_to_string,
 )
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
@@ -102,7 +102,9 @@ class MyScaleVectorStore(VectorStore):
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
                 "type": "String",
-                "extract_func": lambda x: escape_str(x.node.text or ""),
+                "extract_func": lambda x: escape_str(
+                    x.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+                ),
             },
             "vector": {
                 "type": "Array(Float32)",
@@ -112,9 +114,9 @@ class MyScaleVectorStore(VectorStore):
                 "type": "JSON",
                 "extract_func": lambda x: json.dumps(x.node.node_info),
             },
-            "extra_info": {
+            "metadata": {
                 "type": "JSON",
-                "extract_func": lambda x: json.dumps(x.node.extra_info),
+                "extract_func": lambda x: json.dumps(x.node.metadata),
             },
         }
 
@@ -238,12 +240,21 @@ class MyScaleVectorStore(VectorStore):
         ids = []
         similarities = []
         for r in self._client.query(query_statement).named_results():
-            node = Node(
-                doc_id=r["doc_id"],
+            start_char_idx = None
+            end_char_idx = None
+            if isinstance(r["node_info"], dict):
+                start_char_idx = r["node_info"].get("start", None)
+                end_char_idx = r["node_info"].get("end", None)
+
+            node = TextNode(
+                id_=r["doc_id"],
                 text=r["text"],
-                extra_info=r["extra_info"],
-                node_info=r["node_info"],
-                relationships={DocumentRelationship.SOURCE: r["doc_id"]},
+                metadata=r["metadata"],
+                start_char_idx=start_char_idx,
+                end_char_idx=end_char_idx,
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=r["doc_id"])
+                },
             )
 
             nodes.append(node)

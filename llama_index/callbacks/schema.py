@@ -36,6 +36,16 @@ class CBEventType(str, Enum):
     TREE = "tree"
 
 
+class EventPayload(str, Enum):
+    DOCUMENTS = "documents"  # list of documents before parsing
+    CHUNKS = "chunks"  # list of text chunks
+    NODES = "nodes"  # list of nodes
+    PROMPT = "formatted_prompt"  # formatted prompt sent to LLM
+    RESPONSE = "response"  # response from LLM
+    TEMPLATE = "template"  # template used in LLM call
+    QUERY_STR = "query_str"  # query used for query engine
+
+
 # events that will never have children events
 LEAF_EVENTS = (CBEventType.CHUNKING, CBEventType.LLM, CBEventType.EMBEDDING)
 

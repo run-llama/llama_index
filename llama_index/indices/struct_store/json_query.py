@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
@@ -137,11 +137,11 @@ class JSONQueryEngine(BaseQueryEngine):
         else:
             response_str = json.dumps(json_path_output)
 
-        response_extra_info = {
+        response_metadata = {
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(response=response_str, extra_info=response_extra_info)
+        return Response(response=response_str, metadata=response_metadata)
 
     @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
@@ -182,8 +182,8 @@ class JSONQueryEngine(BaseQueryEngine):
         else:
             response_str = json.dumps(json_path_output)
 
-        response_extra_info = {
+        response_metadata = {
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(response=response_str, extra_info=response_extra_info)
+        return Response(response=response_str, metadata=response_metadata)

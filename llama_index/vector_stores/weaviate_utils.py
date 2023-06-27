@@ -4,20 +4,18 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 """
 
-import json
 import logging
-from dataclasses import field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 if TYPE_CHECKING:
     from weaviate import Client
 
-from llama_index.data_structs.data_structs import Node
-from llama_index.data_structs.node import DocumentRelationship
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
     node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
 )
 
 _logger = logging.getLogger(__name__)
@@ -104,69 +102,60 @@ def get_all_properties(client: Any, class_name: str) -> List[str]:
     return [p["name"] for p in schema["properties"]]
 
 
-def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, dict]:
-    """Legacy logic for converting metadata dict to node data.
-    Only for backwards compatibility.
-    """
-    extra_info_str = entry["extra_info"]
-    if extra_info_str == "":
-        extra_info = {}
-    else:
-        extra_info = json.loads(extra_info_str)
+def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
+    """Get converted node similarity from distance."""
+    distance = entry["_additional"].get(similarity_key, 0.0)
 
-    node_info_str = entry["node_info"]
-    if node_info_str == "":
-        node_info = {}
-    else:
-        node_info = json.loads(node_info_str)
+    if distance is None:
+        return 1.0
 
-    relationships_str = entry["relationships"]
-    relationships: Dict[DocumentRelationship, str]
-    if relationships_str == "":
-        relationships = field(default_factory=dict)
-    else:
-        relationships = {
-            DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
-        }
-    return extra_info, node_info, relationships
+    # convert distance https://forum.weaviate.io/t/distance-vs-certainty-scores/258
+    return 1.0 - float(distance)
 
 
-def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
+def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     """Convert to Node."""
     additional = entry.pop("_additional")
     text = entry.pop(text_key, "")
-
+    embedding = additional.pop("vector", None)
     try:
-        extra_info, node_info, relationships = metadata_dict_to_node(entry)
+        node = metadata_dict_to_node(entry)
+        node.text = text
+        node.embedding = embedding
     except Exception as e:
         _logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
-        extra_info, node_info, relationships = _legacy_metadata_dict_to_node(entry)
+        metadata, node_info, relationships = legacy_metadata_dict_to_node(entry)
 
-    return Node(
-        text=text,
-        doc_id=additional["id"],
-        extra_info=extra_info,
-        node_info=node_info,
-        relationships=relationships,
-    )
+        node = TextNode(
+            text=text,
+            id_=additional["id"],
+            metadata=metadata,
+            start_char_idx=node_info.get("start", None),
+            end_char_idx=node_info.get("end", None),
+            relationships=relationships,
+            embedding=embedding,
+        )
+    return node
 
 
 def add_node(
     client: "Client",
-    node: Node,
+    node: BaseNode,
     class_name: str,
     batch: Optional[Any] = None,
     text_key: str = DEFAULT_TEXT_KEY,
 ) -> None:
     """Add node."""
     metadata = {}
-    metadata[text_key] = node.text or ""
+    metadata[text_key] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
 
-    additional_metadata = node_to_metadata_dict(node)
+    additional_metadata = node_to_metadata_dict(
+        node, remove_text=True, flat_metadata=False
+    )
     metadata.update(additional_metadata)
 
     vector = node.embedding
-    id = node.get_doc_id()
+    id = node.node_id
 
     # if batch object is provided (via a context manager), use that instead
     if batch is not None:

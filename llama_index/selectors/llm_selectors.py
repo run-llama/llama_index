@@ -3,7 +3,8 @@ from typing import Any, List, Optional, Sequence, cast
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
+from llama_index.output_parsers.base import StructuredOutput
+from llama_index.types import BaseOutputParser
 from llama_index.output_parsers.selection import Answer, SelectionOutputParser
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.selectors.prompts import (
@@ -12,7 +13,7 @@ from llama_index.selectors.prompts import (
     MultiSelectPrompt,
     SingleSelectPrompt,
 )
-from llama_index.selectors.types import BaseSelector, SelectorResult
+from llama_index.selectors.types import BaseSelector, SelectorResult, SingleSelection
 from llama_index.tools.types import ToolMetadata
 
 
@@ -30,9 +31,13 @@ def _structured_output_to_selector_result(output: Any) -> SelectorResult:
     """Convert structured output to selector result."""
     structured_output = cast(StructuredOutput, output)
     answers = cast(List[Answer], structured_output.parsed_output)
-    inds = [answer.choice - 1 for answer in answers]  # for zero indexing
-    reasons = [answer.reason for answer in answers]
-    return SelectorResult(inds=inds, reasons=reasons)
+
+    # adjust for zero indexing
+    selections = [
+        SingleSelection(index=answer.choice - 1, reason=answer.reason)
+        for answer in answers
+    ]
+    return SelectorResult(selections=selections)
 
 
 class LLMSingleSelector(BaseSelector):

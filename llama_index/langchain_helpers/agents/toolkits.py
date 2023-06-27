@@ -2,8 +2,7 @@
 
 from typing import List
 
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools import BaseTool
+from llama_index.bridge.langchain import BaseTool, BaseToolkit
 from pydantic import Field
 
 from llama_index.langchain_helpers.agents.tools import (

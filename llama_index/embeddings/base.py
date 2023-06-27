@@ -8,7 +8,7 @@ from typing import Callable, Coroutine, List, Optional, Tuple
 import numpy as np
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.utils import globals_helper
 
 # TODO: change to numpy array
@@ -37,7 +37,8 @@ def similarity(
 ) -> float:
     """Get embedding similarity."""
     if mode == SimilarityMode.EUCLIDEAN:
-        return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
+        # Using -euclidean distance as similarity to achieve same ranking order
+        return -float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
     elif mode == SimilarityMode.DOT_PRODUCT:
         product = np.dot(embedding1, embedding2)
         return product
@@ -78,7 +79,9 @@ class BaseEmbedding:
         query_tokens_count = len(self._tokenizer(query))
         self._total_tokens_used += query_tokens_count
         self.callback_manager.on_event_end(
-            CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
+            CBEventType.EMBEDDING,
+            payload={EventPayload.CHUNKS: [query]},
+            event_id=event_id,
         )
         return query_embedding
 
@@ -134,7 +137,9 @@ class BaseEmbedding:
         text_tokens_count = len(self._tokenizer(text))
         self._total_tokens_used += text_tokens_count
         self.callback_manager.on_event_end(
-            CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
+            CBEventType.EMBEDDING,
+            payload={EventPayload.CHUNKS: [text]},
+            event_id=event_id,
         )
         return text_embedding
 
@@ -170,7 +175,7 @@ class BaseEmbedding:
                 result_embeddings.extend(embeddings)
                 self.callback_manager.on_event_end(
                     CBEventType.EMBEDDING,
-                    payload={"num_nodes": len(embeddings)},
+                    payload={EventPayload.CHUNKS: cur_batch_texts},
                     event_id=event_id,
                 )
 
@@ -208,7 +213,7 @@ class BaseEmbedding:
                 result_ids.extend(cur_batch_ids)
                 self.callback_manager.on_event_end(
                     CBEventType.EMBEDDING,
-                    payload={"num_nodes": len(cur_batch_ids)},
+                    payload={EventPayload.CHUNKS: cur_batch_texts},
                     event_id=event_id,
                 )
 

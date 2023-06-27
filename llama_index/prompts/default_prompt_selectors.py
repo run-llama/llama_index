@@ -1,5 +1,5 @@
 """Prompt selectors."""
-from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
+from llama_index.bridge.langchain import ConditionalPromptSelector, is_chat_model
 
 from llama_index.prompts.chat_prompts import (
     CHAT_REFINE_PROMPT,

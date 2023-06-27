@@ -4,7 +4,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
@@ -12,6 +11,7 @@ from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.prompts.prompts import QueryKeywordExtractPrompt
+from llama_index.schema import BaseNode, NodeWithScore, TextNode, MetadataMode
 from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -130,26 +130,33 @@ class KGTableRetriever(BaseRetriever):
         rel_texts = []
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
-
         if self._retriever_mode != KGRetrieverMode.EMBEDDING:
             for keyword in keywords:
                 subjs = set((keyword,))
-                if self.use_global_node_triplets:
-                    # Get nodes from keyword search, and add them to the subjs set.
-                    # This helps introduce more global knowledge into the query.
-                    # While it's more expensive, thus to be turned off by default,
-                    # it can be useful for some applications.
-                    node_ids = self._index_struct.search_node_by_keyword(keyword)
-                    for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
-                        if node_id in node_visited:
-                            continue
+                node_ids = self._index_struct.search_node_by_keyword(keyword)
+                for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
+                    if node_id in node_visited:
+                        continue
+
+                    if self._include_text:
+                        chunk_indices_count[node_id] += 1
+
+                    node_visited.add(node_id)
+                    if self.use_global_node_triplets:
+                        # Get nodes from keyword search, and add them to the subjs
+                        # set. This helps introduce more global knowledge into the
+                        # query. While it's more expensive, thus to be turned off
+                        # by default, it can be useful for some applications.
+
+                        # TODO: we should a keyword-node_id map in IndexStruct, so that
+                        # node-keywords extraction with LLM will be called only once
+                        # during indexing.
                         extended_subjs = self._get_keywords(
-                            self._docstore.get_node(node_id).get_text()
+                            self._docstore.get_node(node_id).get_content(
+                                metadata_mode=MetadataMode.LLM
+                            )
                         )
-                        node_visited.add(node_id)
                         subjs.update(extended_subjs)
-                        if self._include_text:
-                            chunk_indices_count[node_id] += 1
 
                 rel_map = self._graph_store.get_rel_map(
                     list(subjs), self.graph_store_query_depth
@@ -233,15 +240,17 @@ class KGTableRetriever(BaseRetriever):
         # rel_text_nodes = [Node(text=rel_text) for rel_text in rel_texts]
         # for node_processor in self._node_postprocessors:
         #     rel_text_nodes = node_processor.postprocess_nodes(rel_text_nodes)
-        # rel_texts = [node.get_text() for node in rel_text_nodes]
+        # rel_texts = [node.get_content() for node in rel_text_nodes]
 
         sorted_nodes_with_scores = []
         for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
             # nodes are found with keyword mapping, give high conf to avoid cutoff
-            sorted_nodes_with_scores.append(NodeWithScore(node, DEFAULT_NODE_SCORE))
+            sorted_nodes_with_scores.append(
+                NodeWithScore(node=node, score=DEFAULT_NODE_SCORE)
+            )
             logger.info(
                 f"> Querying with idx: {chunk_idx}: "
-                f"{truncate_text(node.get_text(), 80)}"
+                f"{truncate_text(node.get_content(), 80)}"
             )
 
         # add relationships as Node
@@ -257,22 +266,27 @@ class KGTableRetriever(BaseRetriever):
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
         }
-        rel_text_node = Node(text="\n".join(rel_info), node_info=rel_node_info)
+        rel_text_node = TextNode(
+            text="\n".join(rel_info),
+            metadata=rel_node_info,
+            excluded_embed_metadata_keys=["kg_rel_map", "kg_rel_texts"],
+            excluded_llm_metadata_keys=["kg_rel_map", "kg_rel_texts"],
+        )
         # this node is constructed from rel_texts, give high confidence to avoid cutoff
         sorted_nodes_with_scores.append(
-            NodeWithScore(rel_text_node, DEFAULT_NODE_SCORE)
+            NodeWithScore(node=rel_text_node, score=DEFAULT_NODE_SCORE)
         )
         rel_info_text = "\n".join(rel_info)
         logger.info(f"> Extracted relationships: {rel_info_text}")
 
         return sorted_nodes_with_scores
 
-    def _get_extra_info_for_response(
-        self, nodes: List[Node]
+    def _get_metadata_for_response(
+        self, nodes: List[BaseNode]
     ) -> Optional[Dict[str, Any]]:
-        """Get extra info for response."""
+        """Get metadata for response."""
         for node in nodes:
-            if node.node_info is None or "kg_rel_map" not in node.node_info:
+            if node.metadata is None or "kg_rel_map" not in node.metadata:
                 continue
-            return node.node_info
+            return node.metadata
         raise ValueError("kg_rel_map must be found in at least one Node.")

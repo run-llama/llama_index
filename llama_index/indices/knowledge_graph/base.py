@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.data_structs.data_structs import KG
-from llama_index.data_structs.node import Node
 from llama_index.graph_stores.simple import SimpleGraphStore
 from llama_index.graph_stores.types import GraphStore
 from llama_index.indices.base import BaseIndex
@@ -24,6 +23,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 
@@ -52,7 +52,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[KG] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
@@ -120,6 +120,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         knowledge_strs = response.strip().split("\n")
         results = []
         for text in knowledge_strs:
+            if text == "" or text[0] != "(":
+                # skip empty lines and non-triplets
+                continue
             tokens = text[1:-1].split(",")
             if len(tokens) != 3:
                 continue
@@ -127,12 +130,14 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             results.append((subj.strip(), pred.strip(), obj.strip()))
         return results
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KG:
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> KG:
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = self.index_struct_cls()
         for n in nodes:
-            triplets = self._extract_triplets(n.get_text())
+            triplets = self._extract_triplets(
+                n.get_content(metadata_mode=MetadataMode.LLM)
+            )
             logger.debug(f"> Extracted triplets: {triplets}")
             for triplet in triplets:
                 subj, _, obj = triplet
@@ -153,10 +158,12 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         return index_struct
 
-    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         for n in nodes:
-            triplets = self._extract_triplets(n.get_text())
+            triplets = self._extract_triplets(
+                n.get_content(metadata_mode=MetadataMode.LLM)
+            )
             logger.debug(f"Extracted triplets: {triplets}")
             for triplet in triplets:
                 subj, _, obj = triplet
@@ -186,7 +193,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         """
         self._graph_store.upsert_triplet(*triplet)
 
-    def add_node(self, keywords: List[str], node: Node) -> None:
+    def add_node(self, keywords: List[str], node: BaseNode) -> None:
         """Add node.
 
         Used for manual insertion of nodes (keyed by keywords).
@@ -200,7 +207,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self._docstore.add_documents([node], allow_update=True)
 
     def upsert_triplet_and_node(
-        self, triplet: Tuple[str, str, str], node: Node
+        self, triplet: Tuple[str, str, str], node: BaseNode
     ) -> None:
         """Upsert KG triplet and node.
 
@@ -217,7 +224,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self.upsert_triplet(triplet)
         self.add_node([subj, obj], node)
 
-    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
 
@@ -230,19 +237,22 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         all_ref_doc_info = {}
         for node in nodes:
-            ref_doc_id = node.ref_doc_id
-            if not ref_doc_id:
+            ref_node = node.source_node
+            if not ref_node:
                 continue
 
-            ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+            ref_doc_info = self.docstore.get_ref_doc_info(ref_node.node_id)
             if not ref_doc_info:
                 continue
 
-            all_ref_doc_info[ref_doc_id] = ref_doc_info
+            all_ref_doc_info[ref_node.node_id] = ref_doc_info
         return all_ref_doc_info
 
-    def get_networkx_graph(self) -> Any:
+    def get_networkx_graph(self, limit: int = 100) -> Any:
         """Get networkx representation of the graph structure.
+
+        Args:
+            limit (int): Number of starting nodes to be included in the graph.
 
         NOTE: This function requires networkx to be installed.
         NOTE: This is a beta feature.
@@ -256,17 +266,18 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             )
 
         g = nx.Graph()
-        # add nodes
-        # TBD: for simple triplets, nodes could be omitted
+        # add nodes with limited number of starting nodes
         for node_name in self.index_struct.table.keys():
+            if limit <= 0:
+                break
             g.add_node(node_name)
+            limit -= 1
 
         # add edges
-        # TBD: limit for full graph scan could be added
-        rel_map = self._graph_store.get_rel_map(None, 1)
+        rel_map = self._graph_store.get_rel_map(list(g.nodes().keys()), 1)
         for keyword in rel_map.keys():
-            for obj, rel in rel_map[keyword]:
-                g.add_edge(keyword, obj, title=rel)
+            for rel, obj in rel_map[keyword]:
+                g.add_edge(keyword, obj, label=rel, title=rel)
 
         return g
 

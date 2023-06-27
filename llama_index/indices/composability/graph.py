@@ -3,10 +3,10 @@
 from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
 from llama_index.data_structs.data_structs import IndexStruct
-from llama_index.data_structs.node import IndexNode, DocumentRelationship
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
+from llama_index.schema import IndexNode, NodeRelationship, RelatedNodeInfo, ObjectType
 from llama_index.storage.storage_context import StorageContext
 
 
@@ -57,7 +57,6 @@ class ComposableGraph:
         """Create composable graph using this index class as the root."""
         service_context = service_context or ServiceContext.from_defaults()
         with service_context.callback_manager.as_trace("graph_construction"):
-
             if index_summaries is None:
                 for index in children_indices:
                     if index.index_struct.summary is None:
@@ -87,7 +86,11 @@ class ComposableGraph:
                 index_node = IndexNode(
                     text=summary,
                     index_id=index.index_id,
-                    relationships={DocumentRelationship.SOURCE: index.index_id},
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(
+                            node_id=index.index_id, node_type=ObjectType.INDEX
+                        )
+                    },
                 )
                 index_nodes.append(index_node)
 

@@ -1,10 +1,133 @@
 # ChangeLog
 
+## [v0.6.34] - 2023-06-26
+
+### Patch Update (v0.6.34.post1)
+- Patch imports for Document obj for backwards compatibility (#6597)
+
+### New Features
+- New `TextNode`/`Document` object classes based on pydantic (#6586)
+- `TextNode`/`Document` objects support metadata customization (metadata templates, exclude metadata from LLM or embeddings) (#6586)
+- Nodes no longer require flat metadata dictionaries, unless the vector store you use requires it (#6586)
+
+### Bug Fixes / Nits
+- use `NLTK_DATA` env var to control NLTK download location (#6579)
+- [discord] save author as metadata in group_conversations.py (#6592)
+- bs4 -> beautifulsoup4 in requirements (#6582)
+- negate euclidean distance (#6564)
+- add df output parser notebook link to docs (#6581)
+
+### Breaking/Deprecated API Changes
+- `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
+- `TextNode` and `Document` must be instansiated with kwargs: `Document(text=text)` (#6586)
+- `TextNode` (fka `Node`) has a `id_` or `node_id` property, rather than `doc_id` (#6586)
+- `TextNode` and `Document` have a metadata property, which replaces the extra_info property (#6586)
+- `TextNode` no longer has a `node_info` property (start/end indexes are accessed directly with `start/end_char_idx` attributes) (#6586)
+
+## [v0.6.33] - 2023-06-25
+
+### New Features
+- Add typesense vector store (#6561)
+- add df output parser (#6576)
+
+### Bug Fixes / Nits
+- Track langchain dependency via bridge module. (#6573)
+
+## [v0.6.32] - 2023-06-23
+
+### New Features
+- add object index  (#6548)
+- add SQL Schema Node Mapping + SQLTableRetrieverQueryEngine + obj index fixes (#6569)
+- sql refactor (NLSQLTableQueryEngine) (#6529)
+
+### Bug Fixes / Nits
+- Update vector_stores.md (#6562)
+- Minor `BaseResponseBuilder` interface cleanup (#6557)
+- Refactor TreeSummarize (#6550)
+
+
+## [v0.6.31] - 2023-06-22
+
+### Bug Fixes / Nits
+- properly convert weaviate distance to score (#6545)
+- refactor tree summarize and fix bug to not truncate context (#6550)
+- fix custom KG retrieval notebook nits (#6551)
+
+## [v0.6.30] - 2023-06-21
+
+### New Features
+- multi-selector support in router query engine (#6518)
+- pydantic selector support in router query engine using OpenAI function calling API (#6518)
+- streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
+- metadata filtering support in `QdrantVectorStore` (#6476)
+- add `PGVectorStore` to support postgres with pgvector (#6190)
+
+### Bug Fixes / Nits
+- better error handling in the mbox reader (#6248)
+- Fix blank similarity score when using weaviate (#6512)
+- fix for sorted nodes in `PrevNextNodePostprocessor` (#6048)
+
+### Breaking/Deprecated API Changes
+- Refactor PandasQueryEngine to take in df directly, deprecate PandasIndex (#6527)
+
+## [v0.6.29] - 2023-06-20
+
+### New Features
+
+- query planning tool with OpenAI Function API (#6520)
+- docs: example of kg+vector index (#6497)
+- Set context window sizes for Cohere and AI21(J2 model) (#6485)
+
+### Bug Fixes / Nits
+- add default input size for Cohere and AI21 (#6485)
+- docs: replace comma with colon in dict object (#6439)
+- extra space in prompt and error message update (#6443)
+- [Issue 6417] Fix prompt_templates docs page (#6499)
+- Rip out monkey patch and update model to context window mapping (#6490)
+
+## [v0.6.28] - 2023-06-19
+
+### New Features
+- New OpenAI Agent + Query Engine Cookbook (#6496)
+- allow recursive data extraction (pydantic program)  (#6503)
+
+### Bug Fixes / Nits
+- update mongo interface (#6501)
+- fixes that we forgot to include for openai pydantic program (#6503) (#6504)
+- Fix github pics in Airbyte notebook (#6493)
+
+## [v0.6.27] - 2023-06-16
+
+### New Features
+- Add node doc_id filtering to weaviate (#6467)
+- New `TokenCountingCallback` to customize and track embedding, prompt, and completion token usage (#6440)
+- OpenAI Retrieval Function Agent (#6491)
+
+### Breaking/Deprecated API Changes
+- Deprecated current token tracking (llm predictor and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
+- Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
+
+### Bug Fixes / Nits
+- `as_chat_engine` properly inherits the current service context (#6470)
+- Use namespace when deleting from pinecone (#6475)
+- Fix paths when using fsspec on windows (#3778)
+- Fix for using custom file readers in `SimpleDirectoryReader` (#6477)
+- Edit MMR Notebook (#6486)
+- FLARE fixes (#6484)
+
+## [v0.6.26] - 2023-06-14
+
+### New Features
+- Add OpenAIAgent and tutorial notebook for "build your own agent" (#6461)
+- Add OpenAIPydanticProgram (#6462)
+
+### Bug Fixes / Nits
+- Fix citation engine import (#6456)
+
 ## [v0.6.25] - 2023-06-13
 
 ### New Features
 - Added FLARE query engine (#6419).
-
 
 ## [v0.6.24] - 2023-06-12
 
@@ -12,15 +135,6 @@
 - Added better support for vector store with existing data (e.g. allow configurable text key) for Pinecone and Weaviate. (#6393)
 - Support batched upsert for Pineone (#6393)
 - Added initial [guidance](https://github.com/microsoft/guidance/) integration. Added `GuidancePydanticProgram` for generic structured output generation and `GuidanceQuestionGenerator` for generating sub-questions in `SubQuestionQueryEngine` (#6246).
-
-### Bug Fixes
-- None
-
-### Breaking/Deprecated API Changes
-- None
-
-### Miscellaneous
-- None
 
 ## [v0.6.23] - 2023-06-11
 

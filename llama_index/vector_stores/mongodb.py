@@ -8,7 +8,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.data_structs.node import Node
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -16,7 +16,11 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +33,7 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
     return filters
 
 
-class MongoDBVectorStore(VectorStore):
+class MongoDBAtlasVectorSearch(VectorStore):
     """MongoDB Vector Store.
 
     In this vector store, embeddings and docs are stored within a
@@ -47,6 +51,7 @@ class MongoDBVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    flat_metadata: bool = True
 
     def __init__(
         self,
@@ -102,12 +107,14 @@ class MongoDBVectorStore(VectorStore):
             node_id = result.id
             node = result.node
 
-            metadata = node_to_metadata_dict(node)
+            metadata = node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=self.flat_metadata
+            )
 
             entry = {
                 self._id_key: node_id,
                 self._embedding_key: result.embedding,
-                self._text_key: node.text or "",
+                self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
             }
             data_to_insert.append(entry)
@@ -172,17 +179,26 @@ class MongoDBVectorStore(VectorStore):
             text = res.pop(self._text_key)
             score = res.pop("score")
             id = res.pop(self._id_key)
-            extra_info, node_info, relationships = metadata_dict_to_node(
-                res.pop(self._metadata_key)
-            )
+            metadata_dict = res.pop(self._metadata_key)
 
-            node = Node(
-                text=text,
-                doc_id=id,
-                extra_info=extra_info,
-                node_info=node_info,
-                relationships=relationships,
-            )
+            try:
+                node = metadata_dict_to_node(metadata_dict)
+                node.set_content(text)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata_dict
+                )
+
+                node = TextNode(
+                    text=text,
+                    id_=id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
             top_k_ids.append(id)
             top_k_nodes.append(node)
             top_k_scores.append(score)

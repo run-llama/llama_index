@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.node import NodeWithScore
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
@@ -17,6 +16,7 @@ from llama_index.prompts.prompts import (
     SimpleInputPrompt,
 )
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import NodeWithScore
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
@@ -135,13 +135,15 @@ class RetrieverQueryEngine(BaseQueryEngine):
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         query_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = self._retriever.retrieve(query_bundle)
         self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
+            CBEventType.RETRIEVE,
+            payload={EventPayload.NODES: nodes},
+            event_id=retrieve_id,
         )
 
         response = self._response_synthesizer.synthesize(
@@ -151,7 +153,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": response},
+            payload={EventPayload.RESPONSE: response},
             event_id=query_id,
         )
         return response
@@ -159,13 +161,15 @@ class RetrieverQueryEngine(BaseQueryEngine):
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         query_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = self._retriever.retrieve(query_bundle)
         self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
+            CBEventType.RETRIEVE,
+            payload={EventPayload.NODES: nodes},
+            event_id=retrieve_id,
         )
 
         response = await self._response_synthesizer.asynthesize(
@@ -175,7 +179,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": response},
+            payload={EventPayload.RESPONSE: response},
             event_id=query_id,
         )
         return response

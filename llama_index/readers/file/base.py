@@ -13,7 +13,7 @@ from llama_index.readers.file.mbox_reader import MboxReader
 from llama_index.readers.file.slides_reader import PptxReader
 from llama_index.readers.file.tabular_reader import PandasCSVReader
 from llama_index.readers.file.video_audio_reader import VideoAudioReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".pdf": PDFReader,
@@ -182,19 +182,22 @@ class SimpleDirectoryReader(BaseReader):
                 metadata = self.file_metadata(str(input_file))
 
             file_suffix = input_file.suffix.lower()
-            if file_suffix in self.supported_suffix:
+            if (
+                file_suffix in self.supported_suffix
+                or file_suffix in self.file_extractor
+            ):
                 # use file readers
                 if file_suffix not in self.file_extractor:
                     # instantiate file reader if not already
                     reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
-                docs = reader.load_data(input_file, extra_info=metadata)
+                docs = reader.load_data(input_file, metadata=metadata or {})
 
                 # iterate over docs if needed
                 if self.filename_as_id:
                     for i, doc in enumerate(docs):
-                        doc.doc_id = f"{str(input_file)}_part_{i}"
+                        doc.id_ = f"{str(input_file)}_part_{i}"
 
                 documents.extend(docs)
             else:
@@ -202,9 +205,9 @@ class SimpleDirectoryReader(BaseReader):
                 with open(input_file, "r", errors=self.errors, encoding="utf8") as f:
                     data = f.read()
 
-                doc = Document(data, extra_info=metadata)
+                doc = Document(text=data, metadata=metadata or {})
                 if self.filename_as_id:
-                    doc.doc_id = str(input_file)
+                    doc.id_ = str(input_file)
 
                 documents.append(doc)
 

@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 def test_query(

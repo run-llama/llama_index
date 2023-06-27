@@ -7,7 +7,7 @@ import logging
 from typing import Any, List, Optional
 from uuid import uuid4
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -337,7 +337,7 @@ class MilvusVectorStore(VectorStore):
         for result in embedding_results:
             ids.append(result.id)
             doc_ids.append(result.ref_doc_id)
-            texts.append(result.node.get_text())
+            texts.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
             embeddings.append(result.embedding)
 
         try:
@@ -445,11 +445,13 @@ class MilvusVectorStore(VectorStore):
         ids = []
 
         for hit in res[0]:
-            node = Node(
-                doc_id=hit.id,
-                text=hit.entity.get(self.text_field),
+            node = TextNode(
+                text=hit.entity.get("text"),
+                id_=hit.id,
                 relationships={
-                    DocumentRelationship.SOURCE: hit.entity.get(self.doc_id_field),
+                    NodeRelationship.SOURCE: RelatedNodeInfo(
+                        node_id=hit.entity.get("doc_id")
+                    ),
                 },
             )
             nodes.append(node)

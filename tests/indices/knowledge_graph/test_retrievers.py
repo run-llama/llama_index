@@ -6,7 +6,7 @@ from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.knowledge_graph.retriever import KGTableRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.storage.storage_context import StorageContext
 from tests.indices.knowledge_graph.test_base import MockEmbedding, mock_extract_triplets
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
@@ -42,8 +42,8 @@ def test_as_retriever(
     )
     raw_text = "foo ['is', 'bar']"
     query = rel_initial_text + "\n" + raw_text
-    assert len(nodes) == 1
-    assert nodes[0].node.get_text() == query
+    assert len(nodes) == 2
+    assert nodes[1].node.get_content() == query
 
 
 @patch.object(
@@ -69,7 +69,7 @@ def test_retrievers(
     query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
     nodes = retriever.retrieve(query_bundle)
     assert (
-        nodes[0].node.get_text()
+        nodes[1].node.get_content()
         == "The following are knowledge triplets in max depth 2"
         " in the form of "
         "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
@@ -101,7 +101,7 @@ def test_retriever_no_text(
     query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
     nodes = retriever.retrieve(query_bundle)
     assert (
-        nodes[0].node.get_text()
+        nodes[0].node.get_content()
         == "The following are knowledge triplets in max depth 2"
         " in the form of "
         "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
@@ -134,7 +134,7 @@ def test_retrieve_similarity(
     # uses hyrbid query by default
     nodes = retriever.retrieve(QueryBundle("foo"))
     assert (
-        nodes[0].node.get_text()
+        nodes[1].node.get_content()
         == "The following are knowledge triplets in max depth 2"
         " in the form of "
         "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"

@@ -144,6 +144,7 @@ Output:
 {'Education': 'Before college, the author wrote short stories and experimented with programming on an IBM 1401.', 'Work': 'The author worked on writing and programming outside of school.'}
 ```
 
+### Guides
 
 ```{toctree}
 ---
@@ -153,4 +154,8 @@ maxdepth: 1
 
 ../examples/output_parsing/GuardrailsDemo.ipynb
 ../examples/output_parsing/LangchainOutputParserDemo.ipynb
+../examples/output_parsing/guidance_pydantic_program.ipynb
+../examples/output_parsing/guidance_sub_question.ipynb
+../examples/output_parsing/openai_pydantic_program.ipynb
+../examples/output_parsing/df_output_parser.ipynb
 ```

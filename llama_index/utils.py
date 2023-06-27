@@ -20,6 +20,7 @@ from typing import (
     Union,
     Iterable,
 )
+import os
 
 
 class GlobalsHelper:
@@ -80,7 +81,8 @@ class GlobalsHelper:
             try:
                 nltk.data.find("corpora/stopwords")
             except LookupError:
-                nltk.download("stopwords")
+                nltk_data_dir = os.environ.get("NLTK_DATA", None)
+                nltk.download("stopwords", download_dir=nltk_data_dir)
             self._stopwords = stopwords.words("english")
         return self._stopwords
 
@@ -204,3 +206,13 @@ def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
         if len(b) == 0:
             break
         yield b
+
+
+def concat_dirs(dir1: str, dir2: str) -> str:
+    """
+    Concat dir1 and dir2 while avoiding backslashes when running on windows.
+    os.path.join(dir1,dir2) will add a backslash before dir2 if dir1 does not
+    end with a slash, so we make sure it does.
+    """
+    dir1 += "/" if dir1[-1] != "/" else ""
+    return os.path.join(dir1, dir2)

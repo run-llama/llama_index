@@ -2,8 +2,7 @@ from queue import Queue
 from threading import Event
 from typing import Any, Generator, Union
 
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import LLMResult
+from llama_index.bridge.langchain import BaseCallbackHandler, LLMResult
 
 
 class StreamingGeneratorCallbackHandler(BaseCallbackHandler):

@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
 from collections import defaultdict
-from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import SQLStructTable
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
@@ -15,6 +14,7 @@ from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.schema import BaseNode
 from sqlalchemy import Table
 
 
@@ -33,6 +33,8 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
 
     During query time, the user can either specify a raw SQL query
     or a natural language query to retrieve their data.
+
+    NOTE: this is deprecated.
 
     Args:
         documents (Optional[Sequence[DOCUMENTS_INPUT]]): Documents to index.
@@ -57,7 +59,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[SQLStructTable] = None,
         service_context: Optional[ServiceContext] = None,
         sql_database: Optional[SQLDatabase] = None,
@@ -98,7 +100,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
     def ref_doc_id_column(self) -> Optional[str]:
         return self._ref_doc_id_column
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> SQLStructTable:
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> SQLStructTable:
         """Build index from nodes."""
         index_struct = self.index_struct_cls()
         if len(nodes) == 0:
@@ -122,7 +124,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
                 data_extractor.insert_datapoint_from_nodes(node_set)
         return index_struct
 
-    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         data_extractor = SQLStructDatapointExtractor(
             self._service_context.llm_predictor,

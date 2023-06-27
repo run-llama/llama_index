@@ -2,12 +2,11 @@
 from copy import deepcopy
 from typing import Any, Dict, Optional
 
-from langchain import BasePromptTemplate as BaseLangchainPrompt
-from langchain import PromptTemplate as LangchainPrompt
-from langchain.base_language import BaseLanguageModel
-from langchain.chains.prompt_selector import ConditionalPromptSelector
+from llama_index.bridge.langchain import BasePromptTemplate as BaseLangchainPrompt
+from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
+from llama_index.bridge.langchain import BaseLanguageModel, ConditionalPromptSelector
 
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 from llama_index.prompts.prompt_type import PromptType
 
 

@@ -6,17 +6,21 @@ from dataclasses import dataclass
 from threading import Thread
 from typing import Any, Generator, Optional, Protocol, Tuple, runtime_checkable
 
-import langchain
 import openai
-from langchain import BaseCache, Cohere, LLMChain, OpenAI
-from langchain.base_language import BaseLanguageModel
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import AI21
+from llama_index.bridge.langchain import langchain
+from llama_index.bridge.langchain import BaseCache, Cohere, LLMChain, OpenAI
+from llama_index.bridge.langchain import ChatOpenAI, AI21, BaseLanguageModel
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.constants import (
+    AI21_J2_CONTEXT_WINDOW,
+    COHERE_CONTEXT_WINDOW,
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+)
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
+from llama_index.llm_predictor.openai_utils import openai_modelname_to_contextsize
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
     ErrorToRetry,
@@ -45,20 +49,28 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         raise ValueError("llm must be an instance of langchain.llms.base.LLM")
     if isinstance(llm, OpenAI):
         return LLMMetadata(
-            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
+            context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
         )
     elif isinstance(llm, ChatOpenAI):
         return LLMMetadata(
-            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
+            context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens or -1,
         )
     elif isinstance(llm, Cohere):
-        # TODO: figure out max input size for cohere
-        return LLMMetadata(num_output=llm.max_tokens)
+        # June 2023: Cohere's supported max input size for Generation models is 2048
+        # Reference: <https://docs.cohere.com/docs/tokens>
+        return LLMMetadata(
+            context_window=COHERE_CONTEXT_WINDOW, num_output=llm.max_tokens
+        )
     elif isinstance(llm, AI21):
-        # TODO: figure out max input size for AI21
-        return LLMMetadata(num_output=llm.maxTokens)
+        # June 2023:
+        #   AI21's supported max input size for
+        #   J2 models is 8K (8192 tokens to be exact)
+        # Reference: <https://docs.ai21.com/changelog/increased-context-length-for-j2-foundation-models>  # noqa
+        return LLMMetadata(
+            context_window=AI21_J2_CONTEXT_WINDOW, num_output=llm.maxTokens
+        )
     else:
         return LLMMetadata()
 
@@ -218,7 +230,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         """
         llm_payload = {**prompt_args}
-        llm_payload["template"] = prompt
+        llm_payload[EventPayload.TEMPLATE] = prompt
         event_id = self.callback_manager.on_event_start(
             CBEventType.LLM,
             payload=llm_payload,
@@ -235,8 +247,9 @@ class LLMPredictor(BaseLLMPredictor):
         self.callback_manager.on_event_end(
             CBEventType.LLM,
             payload={
-                "response": llm_prediction,
-                "formatted_prompt": formatted_prompt,
+                EventPayload.RESPONSE: llm_prediction,
+                EventPayload.PROMPT: formatted_prompt,
+                # deprecated
                 "formatted_prompt_tokens_count": prompt_tokens_count,
                 "prediction_tokens_count": prediction_tokens_count,
                 "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
@@ -327,7 +340,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         """
         llm_payload = {**prompt_args}
-        llm_payload["template"] = prompt
+        llm_payload[EventPayload.TEMPLATE] = prompt
         event_id = self.callback_manager.on_event_start(
             CBEventType.LLM, payload=llm_payload
         )
@@ -343,8 +356,9 @@ class LLMPredictor(BaseLLMPredictor):
         self.callback_manager.on_event_end(
             CBEventType.LLM,
             payload={
-                "response": llm_prediction,
-                "formatted_prompt": formatted_prompt,
+                EventPayload.RESPONSE: llm_prediction,
+                EventPayload.PROMPT: formatted_prompt,
+                # deprecated
                 "formatted_prompt_tokens_count": prompt_tokens_count,
                 "prediction_tokens_count": prediction_tokens_count,
                 "total_tokens_used": prompt_tokens_count + prediction_tokens_count,

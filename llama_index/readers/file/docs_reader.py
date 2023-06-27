@@ -7,15 +7,13 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class PDFReader(BaseReader):
     """PDF parser."""
 
-    def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
-    ) -> List[Document]:
+    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
         """Parse file."""
         try:
             import pypdf
@@ -38,19 +36,17 @@ class PDFReader(BaseReader):
                 page_label = pdf.page_labels[page]
 
                 metadata = {"page_label": page_label, "file_name": file.name}
-                if extra_info is not None:
-                    metadata.update(extra_info)
+                if metadata is not None:
+                    metadata.update(metadata)
 
-                docs.append(Document(page_text, extra_info=metadata))
+                docs.append(Document(text=page_text, metadata=metadata))
             return docs
 
 
 class DocxReader(BaseReader):
     """Docx parser."""
 
-    def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
-    ) -> List[Document]:
+    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
         """Parse file."""
         try:
             import docx2txt
@@ -62,7 +58,7 @@ class DocxReader(BaseReader):
 
         text = docx2txt.process(file)
         metadata = {"file_name": file.name}
-        if extra_info is not None:
-            metadata.update(extra_info)
+        if metadata is not None:
+            metadata.update(metadata)
 
-        return [Document(text, extra_info=extra_info)]
+        return [Document(text=text, metadata=metadata)]

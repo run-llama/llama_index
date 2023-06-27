@@ -28,7 +28,7 @@ from llama_index.readers.github_readers.utils import (
     get_file_extension,
     print_if_verbose,
 )
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
@@ -311,8 +311,8 @@ class GithubRepositoryReader(BaseReader):
             )
             document = Document(
                 text=decoded_text,
-                doc_id=blob_data.sha,
-                extra_info={
+                id_=blob_data.sha,
+                metadata={
                     "file_path": full_path,
                     "file_name": full_path.split("/")[-1],
                 },
@@ -365,7 +365,7 @@ class GithubRepositoryReader(BaseReader):
                 tmpfile.close()
                 try:
                     docs = reader.load_data(pathlib.Path(tmpfile.name))
-                    parsed_file = "\n\n".join([doc.get_text() for doc in docs])
+                    parsed_file = "\n\n".join([doc.get_content() for doc in docs])
                 except Exception as e:
                     print_if_verbose(self._verbose, f"error while parsing {file_path}")
                     logger.error(
@@ -380,8 +380,8 @@ class GithubRepositoryReader(BaseReader):
                     return None
                 return Document(
                     text=parsed_file,
-                    doc_id=tree_sha,
-                    extra_info={
+                    id_=tree_sha,
+                    metadata={
                         "file_path": file_path,
                         "file_name": tree_path,
                     },
@@ -419,14 +419,14 @@ if __name__ == "__main__":
             commit_sha="22e198b3b166b5facd2843d6a62ac0db07894a13"
         )
         for document in documents:
-            print(document.extra_info)
+            print(document.metadata)
 
     @timeit
     def load_data_from_branch() -> None:
         """Load data from a branch."""
         documents = reader1.load_data(branch="main")
         for document in documents:
-            print(document.extra_info)
+            print(document.metadata)
 
     input("Press enter to load github repository from branch name...")
 

@@ -2,11 +2,11 @@
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
-from langchain.text_splitter import TextSplitter
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
+from llama_index.bridge.langchain import TextSplitter
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.utils import globals_helper
 
 
@@ -126,38 +126,40 @@ class TokenTextSplitter(TextSplitter):
             new_docs.append(doc)
         return new_docs
 
-    def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
+    def split_text(self, text: str, metadata_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
         event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"text": text}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
-        text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
+        text_splits = self.split_text_with_overlaps(text, metadata_str=metadata_str)
         chunks = [text_split.text_chunk for text_split in text_splits]
         self.callback_manager.on_event_end(
-            CBEventType.CHUNKING, payload={"chunks": chunks}, event_id=event_id
+            CBEventType.CHUNKING,
+            payload={EventPayload.CHUNKS: chunks},
+            event_id=event_id,
         )
         return chunks
 
     def split_text_with_overlaps(
-        self, text: str, extra_info_str: Optional[str] = None
+        self, text: str, metadata_str: Optional[str] = None
     ) -> List[TextSplit]:
         """Split incoming text and return chunks with overlap size."""
         if text == "":
             return []
         event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"text": text}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
 
-        # NOTE: Consider extra info str that will be added to the chunk at query time
+        # NOTE: Consider metadata info str that will be added to the chunk at query time
         #       This reduces the effective chunk size that we can have
-        if extra_info_str is not None:
+        if metadata_str is not None:
             # NOTE: extra 2 newline chars for formatting when prepending in query
-            num_extra_tokens = len(self.tokenizer(f"{extra_info_str}\n\n")) + 1
+            num_extra_tokens = len(self.tokenizer(f"{metadata_str}\n\n")) + 1
             effective_chunk_size = self._chunk_size - num_extra_tokens
 
             if effective_chunk_size <= 0:
                 raise ValueError(
-                    "Effective chunk size is non positive after considering extra_info"
+                    "Effective chunk size is non positive after considering metadata"
                 )
         else:
             effective_chunk_size = self._chunk_size
@@ -237,7 +239,7 @@ class TokenTextSplitter(TextSplitter):
         docs = self._postprocess_splits(docs)
         self.callback_manager.on_event_end(
             CBEventType.CHUNKING,
-            payload={"chunks": [x.text_chunk for x in docs]},
+            payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]},
             event_id=event_id,
         )
         return docs
@@ -336,7 +338,7 @@ class SentenceSplitter(TextSplitter):
         return new_docs
 
     def split_text_with_overlaps(
-        self, text: str, extra_info_str: Optional[str] = None
+        self, text: str, metadata_str: Optional[str] = None
     ) -> List[TextSplit]:
         """
         Split incoming text and return chunks with overlap size.
@@ -346,19 +348,19 @@ class SentenceSplitter(TextSplitter):
         if text == "":
             return []
         event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"text": text}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
 
-        # NOTE: Consider extra info str that will be added to the chunk at query time
+        # NOTE: Consider metadata info str that will be added to the chunk at query time
         #       This reduces the effective chunk size that we can have
-        if extra_info_str is not None:
+        if metadata_str is not None:
             # NOTE: extra 2 newline chars for formatting when prepending in query
-            num_extra_tokens = len(self.tokenizer(f"{extra_info_str}\n\n")) + 1
+            num_extra_tokens = len(self.tokenizer(f"{metadata_str}\n\n")) + 1
             effective_chunk_size = self._chunk_size - num_extra_tokens
 
             if effective_chunk_size <= 0:
                 raise ValueError(
-                    "Effective chunk size is non positive after considering extra_info"
+                    "Effective chunk size is non positive after considering metadata"
                 )
         else:
             effective_chunk_size = self._chunk_size
@@ -443,20 +445,22 @@ class SentenceSplitter(TextSplitter):
 
         self.callback_manager.on_event_end(
             CBEventType.CHUNKING,
-            payload={"chunks": [x.text_chunk for x in docs]},
+            payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]},
             event_id=event_id,
         )
         return docs
 
-    def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
+    def split_text(self, text: str, metadata_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
         event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"text": text}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
-        text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
+        text_splits = self.split_text_with_overlaps(text, metadata_str=metadata_str)
         chunks = [text_split.text_chunk for text_split in text_splits]
         self.callback_manager.on_event_end(
-            CBEventType.CHUNKING, payload={"chunks": chunks}, event_id=event_id
+            CBEventType.CHUNKING,
+            payload={EventPayload.CHUNKS: chunks},
+            event_id=event_id,
         )
         return chunks
 
