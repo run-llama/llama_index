@@ -13,7 +13,7 @@ SUPPORTED_MODEL_NAMES = [
 ]
 
 
-def _openai_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
+def _default_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
     """Default OpenAI function to call."""
     schema = output_cls.schema()
     return {
@@ -62,7 +62,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
         prompt = Prompt(prompt_template_str)
-        function_call = function_call or {"name": output_cls.schema()["title"]}
+        function_call = function_call or _default_function_call(output_cls)
         return cls(
             output_cls=output_cls,
             llm=llm,
