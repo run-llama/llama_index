@@ -60,14 +60,16 @@ class SelectionOutputParser(BaseOutputParser):
 
         """
         output = output.strip()
-        if output[0] == '{':
-            left = output.find("{")
-            right = output.rfind("}")
-        elif output[0] == '[':
-            left = output.find("[")
+        left_square = output.find("[")
+        left_brace = output.find("{")
+
+        if left_square < left_brace:
+            left = left_square
             right = output.rfind("]")
         else:
-            raise ValueError('Invalid JSON string')
+            left = left_brace
+            right = output.rfind("}")
+
         output = output[left : right + 1]
         return output
 
