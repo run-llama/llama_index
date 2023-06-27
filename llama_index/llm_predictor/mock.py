@@ -1,6 +1,7 @@
 """Mock LLM Predictor."""
 
 from typing import Any, Dict
+from llama_index.callbacks.base import CallbackManager
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 
@@ -88,6 +89,7 @@ class MockLLMPredictor(BaseLLMPredictor):
     def __init__(self, max_tokens: int = DEFAULT_NUM_OUTPUTS) -> None:
         """Initialize params."""
         self.max_tokens = max_tokens
+        self.callback_manager = CallbackManager([])
 
     @property
     def metadata(self) -> LLMMetadata:
