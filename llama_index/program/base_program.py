@@ -11,14 +11,6 @@ class BasePydanticProgram(ABC, Generic[Model]):
     Note: this interface is not yet stable.
     """
 
-    @classmethod
-    @abstractmethod
-    def from_defaults(
-        cls, output_cls: Type[Model], prompt_template_str: str, **kwargs: Any
-    ) -> "BasePydanticProgram":
-        """Create a default pydantic program."""
-        raise NotImplementedError
-
     @property
     @abstractmethod
     def output_cls(self) -> Type[Model]:
