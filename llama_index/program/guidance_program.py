@@ -1,17 +1,17 @@
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type
 
-from llama_index.program.base_program import BasePydanticProgram, Model
+from llama_index.program.base_program import Model
 from llama_index.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
     pydantic_to_guidance_output_template_markdown,
 )
-from llama_index.program.llm_prompt_program import BaseLLMPromptProgram
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 
 if TYPE_CHECKING:
     from guidance.llms import LLM as GuidanceLLM
 
 
-class GuidancePydanticProgram(BaseLLMPromptProgram, Generic[Model]):
+class GuidancePydanticProgram(BaseLLMFunctionProgram, Generic[Model]):
     """
     A guidance-based function that returns a pydantic model.
 
@@ -51,12 +51,6 @@ class GuidancePydanticProgram(BaseLLMPromptProgram, Generic[Model]):
     ) -> "GuidancePydanticProgram":
         """From defaults."""
         return cls(output_cls, prompt_template_str, guidance_llm=guidance_llm, **kwargs)
-
-    def llm(self) -> "GuidanceLLM":
-        return self._llm
-
-    def prompt_str(self) -> str:
-        return self._full_str
 
     @property
     def output_cls(self) -> Type[Model]:

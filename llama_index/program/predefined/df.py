@@ -5,11 +5,10 @@ from typing import Type
 
 from typing import Optional, List, Any, Type
 from pydantic import BaseModel, Field
-from llama_index.types import BaseOutputParser
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.prompts import Prompt
-from llama_index.program.llm_prompt_program import BaseLLMPromptProgram
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 import pandas as pd
 
 
@@ -92,7 +91,7 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
 
     def __init__(
         self,
-        pydantic_program_cls: Type[BaseLLMPromptProgram],
+        pydantic_program_cls: Type[BaseLLMFunctionProgram],
         df_parser_template_str: str = DEFAULT_FULL_DF_PARSER_TMPL,
         input_key: str = "input_str",
         **program_kwargs: Any,
@@ -108,7 +107,7 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
     @classmethod
     def from_defaults(
         cls,
-        pydantic_program_cls: Optional[Type[BasePydanticProgram]] = None,
+        pydantic_program_cls: Optional[Type[BaseLLMFunctionProgram]] = None,
         df_parser_template_str: str = DEFAULT_FULL_DF_PARSER_TMPL,
         input_key: str = "input_str",
     ) -> "DFFullProgram":
@@ -135,10 +134,6 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
             raise ValueError(f"Input key {self._input_key} not found in kwds.")
         return self._pydantic_program(**{self._input_key: kwds[self._input_key]})
 
-    def _validate_program(self, pydantic_program: BasePydanticProgram) -> None:
-        if pydantic_program.output_cls != DataFrame:
-            raise ValueError("Output class of pydantic program must be `DataFrame`.")
-
 
 class DFRowsProgram(BasePydanticProgram[DataFrame]):
     """DF Rows output parser.
@@ -149,7 +144,7 @@ class DFRowsProgram(BasePydanticProgram[DataFrame]):
 
     def __init__(
         self,
-        pydantic_program_cls: Type[BasePydanticProgram],
+        pydantic_program_cls: Type[BaseLLMFunctionProgram],
         df_parser_template_str: str = DEFAULT_ROWS_DF_PARSER_TMPL,
         column_schema: Optional[str] = None,
         input_key: str = "input_str",
@@ -181,7 +176,7 @@ class DFRowsProgram(BasePydanticProgram[DataFrame]):
     @classmethod
     def from_defaults(
         cls,
-        pydantic_program_cls: Optional[Type[BasePydanticProgram]] = None,
+        pydantic_program_cls: Optional[Type[BaseLLMFunctionProgram]] = None,
         df_parser_template_str: str = DEFAULT_ROWS_DF_PARSER_TMPL,
         df: Optional[pd.DataFrame] = None,
         column_schema: Optional[str] = None,

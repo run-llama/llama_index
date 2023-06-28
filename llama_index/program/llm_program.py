@@ -9,12 +9,6 @@ from llama_index.bridge.langchain import BaseLanguageModel
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 
-SUPPORTED_MODEL_NAMES = [
-    "gpt-3.5-turbo-0613",
-    "gpt-4-0613",
-]
-
-
 class LLMTextCompletionProgram(BasePydanticProgram, Generic[Model]):
     """
     LLM Text Completion Program.
@@ -48,14 +42,6 @@ class LLMTextCompletionProgram(BasePydanticProgram, Generic[Model]):
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
         llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
-        if not isinstance(llm, ChatOpenAI):
-            raise ValueError("llm must be a ChatOpenAI instance")
-
-        if llm.model_name not in SUPPORTED_MODEL_NAMES:
-            raise ValueError(
-                f"Model name {llm.model_name} not supported. "
-                f"Supported model names: {SUPPORTED_MODEL_NAMES}"
-            )
         prompt = Prompt(prompt_template_str)
         function_call = function_call or {
             "name": output_parser.output_cls.schema()["title"]
@@ -69,7 +55,7 @@ class LLMTextCompletionProgram(BasePydanticProgram, Generic[Model]):
         )
 
     @property
-    def output_parser(self) -> Type[Model]:
+    def output_cls(self) -> Type[Model]:
         return self._output_parser.output_cls
 
     def __call__(
@@ -78,7 +64,7 @@ class LLMTextCompletionProgram(BasePydanticProgram, Generic[Model]):
         **kwargs: Any,
     ) -> Model:
         prompt_with_parse_instrs_tmpl = self._output_parser.format(
-            self._prompt.template_str
+            self._prompt.original_template
         )
         prompt_with_parse_instrs = Prompt(prompt_with_parse_instrs_tmpl)
 

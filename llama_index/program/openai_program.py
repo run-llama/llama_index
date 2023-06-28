@@ -2,8 +2,8 @@ from typing import Any, Dict, Generic, Optional, Type, Union
 
 from llama_index.bridge.langchain import ChatOpenAI, HumanMessage
 
-from llama_index.program.base_program import BasePydanticProgram, Model
-from llama_index.program.llm_prompt_program import BaseLLMPromptProgram
+from llama_index.program.base_program import Model
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import Prompt
 
 SUPPORTED_MODEL_NAMES = [
@@ -30,7 +30,7 @@ def _openai_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
     }
 
 
-class OpenAIPydanticProgram(BaseLLMPromptProgram, Generic[Model]):
+class OpenAIPydanticProgram(BaseLLMFunctionProgram, Generic[Model]):
     """
     An OpenAI-based function that returns a pydantic model.
 
@@ -80,12 +80,6 @@ class OpenAIPydanticProgram(BaseLLMPromptProgram, Generic[Model]):
             function_call=function_call,
             verbose=verbose,
         )
-
-    def llm(self) -> ChatOpenAI:
-        return self._llm
-
-    def prompt_str(self) -> str:
-        return self._prompt.original_template
 
     @property
     def output_cls(self) -> Type[Model]:
