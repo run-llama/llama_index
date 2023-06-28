@@ -28,9 +28,9 @@ install_requires = [
     "beautifulsoup4",  # hotfix for langchain 0.0.212 bug
 ]
 
-# NOTE: if python version >= 3.9, install tiktoken
+# NOTE: if python version >= 3.8, install tiktoken
 # else install transformers
-if sys.version_info >= (3, 9):
+if sys.version_info >= (3, 8):
     install_requires.extend(["tiktoken"])
 else:
     install_requires.extend(["transformers"])
