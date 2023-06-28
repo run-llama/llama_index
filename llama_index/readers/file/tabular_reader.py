@@ -27,7 +27,9 @@ class CSVReader(BaseReader):
         super().__init__(*args, **kwargs)
         self._concat_rows = concat_rows
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file.
 
         Returns:
@@ -44,9 +46,9 @@ class CSVReader(BaseReader):
             for row in csv_reader:
                 text_list.append(", ".join(row))
         if self._concat_rows:
-            return [Document(text="\n".join(text_list), metadata=metadata)]
+            return [Document(text="\n".join(text_list), metadata=extra_info)]
         else:
-            return [Document(text=text, metadata=metadata) for text in text_list]
+            return [Document(text=text, metadata=extra_info) for text in text_list]
 
 
 class PandasCSVReader(BaseReader):
@@ -91,7 +93,9 @@ class PandasCSVReader(BaseReader):
         self._row_joiner = row_joiner
         self._pandas_config = pandas_config
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         df = pd.read_csv(file, **self._pandas_config)
 
@@ -101,7 +105,7 @@ class PandasCSVReader(BaseReader):
 
         if self._concat_rows:
             return [
-                Document(text=(self._row_joiner).join(text_list), metadata=metadata)
+                Document(text=(self._row_joiner).join(text_list), metadata=extra_info)
             ]
         else:
-            return [Document(text=text, metadata=metadata) for text in text_list]
+            return [Document(text=text, metadata=extra_info) for text in text_list]

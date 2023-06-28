@@ -50,7 +50,9 @@ class ImageVisionLLMReader(BaseReader):
         self._keep_image = keep_image
         self._prompt = prompt
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         from PIL import Image
 
@@ -85,6 +87,6 @@ class ImageVisionLLMReader(BaseReader):
             ImageDocument(
                 text=text_str,
                 image=image_str,
-                metadata=metadata,
+                metadata=extra_info,
             )
         ]

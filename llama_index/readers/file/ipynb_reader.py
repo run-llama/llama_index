@@ -18,7 +18,9 @@ class IPYNBReader(BaseReader):
         self._parser_config = parser_config
         self._concatenate = concatenate
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
 
         if file.name.endswith(".ipynb"):
@@ -33,7 +35,7 @@ class IPYNBReader(BaseReader):
         splits.pop(0)
 
         if self._concatenate:
-            docs = [Document(text="\n\n".join(splits), metadata=metadata)]
+            docs = [Document(text="\n\n".join(splits), metadata=extra_info)]
         else:
-            docs = [Document(text=s, metadata=metadata) for s in splits]
+            docs = [Document(text=s, metadata=extra_info) for s in splits]
         return docs

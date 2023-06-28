@@ -50,7 +50,9 @@ class MboxReader(BaseReader):
         self.max_count = max_count
         self.message_format = message_format
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file into string."""
         # Import required libraries
         import mailbox
@@ -102,4 +104,4 @@ class MboxReader(BaseReader):
             if self.max_count > 0 and i >= self.max_count:
                 break
 
-        return [Document(text=result, metadata=metadata) for result in results]
+        return [Document(text=result, metadata=extra_info) for result in results]

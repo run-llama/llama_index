@@ -51,7 +51,9 @@ class ImageReader(BaseReader):
         self._keep_image = keep_image
         self._parse_text = parse_text
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         from PIL import Image
 
@@ -107,4 +109,4 @@ class ImageReader(BaseReader):
             # remove first task start token
             text_str = re.sub(r"<.*?>", "", sequence, count=1).strip()
 
-        return [ImageDocument(text=text_str, image=image_str, metadata=metadata)]
+        return [ImageDocument(text=text_str, image=image_str, metadata=extra_info)]
