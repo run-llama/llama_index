@@ -104,4 +104,4 @@ class MboxReader(BaseReader):
             if self.max_count > 0 and i >= self.max_count:
                 break
 
-        return [Document(text=result, metadata=extra_info) for result in results]
+        return [Document(text=result, metadata=extra_info or {}) for result in results]

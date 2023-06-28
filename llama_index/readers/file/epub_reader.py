@@ -40,4 +40,4 @@ class EpubReader(BaseReader):
                 )
 
         text = "\n".join(text_list)
-        return [Document(text=text, metadata=extra_info)]
+        return [Document(text=text, metadata=extra_info or {})]

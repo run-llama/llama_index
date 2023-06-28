@@ -65,4 +65,4 @@ class DocxReader(BaseReader):
         if extra_info is not None:
             metadata.update(extra_info)
 
-        return [Document(text=text, metadata=metadata)]
+        return [Document(text=text, metadata=metadata or {})]

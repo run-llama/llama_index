@@ -91,6 +91,6 @@ class ImageCaptionReader(BaseReader):
             ImageDocument(
                 text=text_str,
                 image=image_str,
-                metadata=extra_info,
+                metadata=extra_info or {},
             )
         ]

@@ -35,7 +35,7 @@ class IPYNBReader(BaseReader):
         splits.pop(0)
 
         if self._concatenate:
-            docs = [Document(text="\n\n".join(splits), metadata=extra_info)]
+            docs = [Document(text="\n\n".join(splits), metadata=extra_info or {})]
         else:
-            docs = [Document(text=s, metadata=extra_info) for s in splits]
+            docs = [Document(text=s, metadata=extra_info or {}) for s in splits]
         return docs
