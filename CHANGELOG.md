@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Redis support for index stores and docstores (#6575)
+
 ### Bug Fixes / Nits
 - Fix metadata column name in postgres vector store (#6622)
 
