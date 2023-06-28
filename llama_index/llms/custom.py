@@ -1,12 +1,12 @@
 from typing import Any, Sequence
-from llama_index.llms.base import LLM
 
 from llama_index.llms.base import (
-    ChatResponse,
-    CompletionResponse,
+    LLM,
     ChatMessage,
-    StreamChatResponse,
-    StreamCompletionResponse,
+    ChatResponse,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
 )
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
@@ -27,7 +27,7 @@ class CustomLLM(LLM):
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> StreamChatResponse:
+    ) -> ChatResponseGen:
         stream_chat_fn = stream_completion_to_chat_decorator(self.stream_complete)
         return stream_chat_fn(messages, **kwargs)
 
@@ -42,7 +42,7 @@ class CustomLLM(LLM):
         self,
         messages: Sequence[ChatMessage],
         **kwargs: Any,
-    ) -> StreamChatResponse:
+    ) -> ChatResponseGen:
         return self.stream_chat(messages, **kwargs)
 
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
@@ -50,5 +50,5 @@ class CustomLLM(LLM):
 
     async def astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> StreamCompletionResponse:
+    ) -> CompletionResponseGen:
         return self.stream_complete(prompt, **kwargs)

@@ -1,9 +1,10 @@
 from typing import Any
+
 from llama_index.llms.base import (
     CompletionDeltaResponse,
     CompletionResponse,
+    CompletionResponseGen,
     LLMMetadata,
-    StreamCompletionResponse,
 )
 from llama_index.llms.custom import CustomLLM
 
@@ -18,8 +19,8 @@ class MockLLM(CustomLLM):
             text=prompt,
         )
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> StreamCompletionResponse:
-        def gen() -> StreamCompletionResponse:
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        def gen() -> CompletionResponseGen:
             for ch in prompt:
                 yield CompletionDeltaResponse(
                     text=prompt,

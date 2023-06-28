@@ -2,11 +2,7 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional
 
-from llama_index.llms.base import (
-    CompletionResponse,
-    LLMMetadata,
-    StreamCompletionResponse,
-)
+from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
 from llama_index.llms.custom import CustomLLM
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
@@ -137,7 +133,7 @@ class HuggingFaceLLM(CustomLLM):
 
         return CompletionResponse(text=completion, raw=tokens)
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> StreamCompletionResponse:
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use
@@ -183,7 +179,7 @@ class HuggingFaceLLM(CustomLLM):
         thread.start()
 
         # create generator based off of streamer
-        def gen() -> StreamCompletionResponse:
+        def gen() -> CompletionResponseGen:
             for x in streamer:
                 yield x
 

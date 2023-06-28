@@ -1,10 +1,9 @@
 """Mock LLM Predictor."""
 
 from typing import Any, Dict
+
 from llama_index.callbacks.base import CallbackManager
-
 from llama_index.callbacks.schema import CBEventType, EventPayload
-
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.llms.base import LLMMetadata
@@ -14,7 +13,7 @@ from llama_index.token_counter.utils import (
     mock_extract_keywords_response,
     mock_extract_kg_triplets_response,
 )
-from llama_index.types import StreamTokens
+from llama_index.types import TokenGen
 from llama_index.utils import count_tokens, globals_helper
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py
@@ -159,11 +158,11 @@ class MockLLMPredictor(BaseLLMPredictor):
         self._log_end(event_id, output, formatted_prompt)
         return output
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
         raise NotImplementedError
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         return self.predict(prompt, **prompt_args)
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
         raise NotImplementedError

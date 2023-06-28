@@ -8,7 +8,7 @@ from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 # ===== Generic Model Input - Chat =====
 class ChatMessage(BaseModel):
-    role: Literal["user", "assistant", "function"] = "user"
+    role: Literal["system", "user", "assistant", "function"] = "user"
     content: Optional[str] = ""
     additional_kwargs: dict = Field(default_factory=dict)
     name: Optional[str] = None
@@ -21,38 +21,26 @@ class ChatMessage(BaseModel):
 class ChatResponse(BaseModel):
     message: ChatMessage
     raw: Optional[dict] = None
+    delta: Optional[str] = None
 
     def __str__(self) -> str:
         return str(self.message)
 
 
-class ChatDeltaResponse(ChatResponse):
-    delta: str
-
-    def __str__(self) -> str:
-        return self.delta
-
-
-StreamChatResponse = Generator[ChatDeltaResponse, None, None]
+ChatResponseGen = Generator[ChatResponse, None, None]
 
 # ===== Generic Model Output - Completion =====
 class CompletionResponse(BaseModel):
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
     raw: Optional[dict] = None
+    delta: Optional[str] = None
 
     def __str__(self) -> str:
         return self.text
 
 
-class CompletionDeltaResponse(CompletionResponse):
-    delta: str
-
-    def __str__(self) -> str:
-        return self.delta
-
-
-StreamCompletionResponse = Generator[CompletionDeltaResponse, None, None]
+CompletionResponseGen = Generator[CompletionResponse, None, None]
 
 
 class LLMMetadata(BaseModel):
@@ -83,11 +71,11 @@ class LLM(ABC):
     @abstractmethod
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> StreamChatResponse:
+    ) -> ChatResponseGen:
         pass
 
     @abstractmethod
-    def stream_complete(self, prompt: str, **kwargs: Any) -> StreamCompletionResponse:
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         pass
 
     # ===== Async Endpoints =====
@@ -104,11 +92,11 @@ class LLM(ABC):
     @abstractmethod
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> StreamChatResponse:
+    ) -> ChatResponseGen:
         pass
 
     @abstractmethod
     async def astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> StreamCompletionResponse:
+    ) -> CompletionResponseGen:
         pass

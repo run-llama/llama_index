@@ -4,10 +4,10 @@ from llama_index.llms.base import (
     ChatDeltaResponse,
     ChatMessage,
     ChatResponse,
+    ChatResponseGen,
     CompletionDeltaResponse,
     CompletionResponse,
-    StreamChatResponse,
-    StreamCompletionResponse,
+    CompletionResponseGen,
 )
 
 
@@ -48,11 +48,11 @@ def completion_response_to_chat_response(
 
 
 def stream_completion_response_to_chat_response(
-    completion_response: StreamCompletionResponse,
-) -> StreamChatResponse:
+    completion_response: CompletionResponseGen,
+) -> ChatResponseGen:
     """Convert a stream completion response to a stream chat response."""
 
-    def gen() -> StreamChatResponse:
+    def gen() -> ChatResponseGen:
         for delta in completion_response:
             yield ChatDeltaResponse(
                 message=ChatMessage(
@@ -79,11 +79,11 @@ def chat_response_to_completion_response(
 
 
 def stream_chat_response_to_completion_response(
-    chat_response: StreamChatResponse,
-) -> StreamCompletionResponse:
+    chat_response: ChatResponseGen,
+) -> CompletionResponseGen:
     """Convert a stream chat response to a completion response."""
 
-    def gen() -> StreamCompletionResponse:
+    def gen() -> CompletionResponseGen:
         for delta in chat_response:
             yield CompletionDeltaResponse(
                 text=delta.message.content or "",
@@ -111,11 +111,11 @@ def completion_to_chat_decorator(
 
 
 def stream_completion_to_chat_decorator(
-    func: Callable[..., StreamCompletionResponse]
-) -> Callable[..., StreamChatResponse]:
+    func: Callable[..., CompletionResponseGen]
+) -> Callable[..., ChatResponseGen]:
     """Convert a completion function to a chat function."""
 
-    def wrapper(messages: Sequence[ChatMessage], **kwargs: Any) -> StreamChatResponse:
+    def wrapper(messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
         # normalize input
         prompt = messages_to_prompt(messages)
         completion_response = func(prompt, **kwargs)
@@ -141,11 +141,11 @@ def chat_to_completion_decorator(
 
 
 def stream_chat_to_completion_decorator(
-    func: Callable[..., StreamChatResponse]
-) -> Callable[..., StreamCompletionResponse]:
+    func: Callable[..., ChatResponseGen]
+) -> Callable[..., CompletionResponseGen]:
     """Convert a chat function to a completion function."""
 
-    def wrapper(prompt: str, **kwargs: Any) -> StreamCompletionResponse:
+    def wrapper(prompt: str, **kwargs: Any) -> CompletionResponseGen:
         # normalize input
         messages = prompt_to_messages(prompt)
         chat_response = func(messages, **kwargs)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Tuple, Optional, cast
+from typing import Any, Optional, Tuple, cast
 
 from llama_index import Prompt
 from llama_index.callbacks import CallbackManager
@@ -12,7 +12,7 @@ from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
-from llama_index.types import StreamTokens
+from llama_index.types import TokenGen
 
 
 class VellumPredictor(BaseLLMPredictor):
@@ -25,7 +25,7 @@ class VellumPredictor(BaseLLMPredictor):
             "`vellum` package not found, please run `pip install vellum-ai`"
         )
         try:
-            from vellum.client import Vellum, AsyncVellum  # noqa: F401
+            from vellum.client import AsyncVellum, Vellum  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -67,7 +67,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
         """Stream the answer to a query."""
 
         from vellum import GenerateRequest, GenerateStreamResult
@@ -83,7 +83,7 @@ class VellumPredictor(BaseLLMPredictor):
             ],
         )
 
-        def text_generator() -> StreamTokens:
+        def text_generator() -> TokenGen:
             complete_text = ""
 
             while True:
@@ -138,7 +138,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
         return self.stream(prompt, **prompt_args)
 
     def _prepare_generate_call(

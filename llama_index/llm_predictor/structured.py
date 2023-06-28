@@ -6,7 +6,7 @@ from typing import Any
 
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts.base import Prompt
-from llama_index.types import StreamTokens
+from llama_index.types import TokenGen
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class StructuredLLMPredictor(LLMPredictor):
 
         return parsed_llm_prediction
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> StreamTokens:
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use

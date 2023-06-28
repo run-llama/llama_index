@@ -1,10 +1,8 @@
-from typing import Generator, Union
-from typing import Protocol, Any
 from abc import abstractmethod
+from typing import Any, Generator, Protocol, Union
 
-
-StreamTokens = Generator[str, None, None]
-RESPONSE_TEXT_TYPE = Union[str, StreamTokens]
+TokenGen = Generator[str, None, None]
+RESPONSE_TEXT_TYPE = Union[str, TokenGen]
 
 
 # TODO: move into a `core` folder

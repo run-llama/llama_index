@@ -4,14 +4,14 @@ from pydantic import BaseModel, Field
 
 from llama_index.llms.base import (
     LLM,
-    LLMMetadata,
     ChatDeltaResponse,
     ChatMessage,
     ChatResponse,
+    ChatResponseGen,
     CompletionDeltaResponse,
     CompletionResponse,
-    StreamChatResponse,
-    StreamCompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
 )
 from llama_index.llms.generic_utils import (
     chat_to_completion_decorator,
@@ -51,7 +51,7 @@ class OpenAI(LLM, BaseModel):
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> StreamChatResponse:
+    ) -> ChatResponseGen:
         if self._is_chat_model:
             stream_chat_fn = self._stream_chat
         else:
@@ -65,7 +65,7 @@ class OpenAI(LLM, BaseModel):
             complete_fn = self._complete
         return complete_fn(prompt, **kwargs)
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> StreamCompletionResponse:
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         if self._is_chat_model:
             stream_complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
@@ -115,7 +115,7 @@ class OpenAI(LLM, BaseModel):
 
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> StreamChatResponse:
+    ) -> ChatResponseGen:
         if not self._is_chat_model:
             raise ValueError("This model is not a chat model.")
 
@@ -179,7 +179,7 @@ class OpenAI(LLM, BaseModel):
             raw=response,
         )
 
-    def _stream_complete(self, prompt: str, **kwargs: Any) -> StreamCompletionResponse:
+    def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         if self._is_chat_model:
             raise ValueError("This model is a chat model.")
 
@@ -189,7 +189,7 @@ class OpenAI(LLM, BaseModel):
             max_tokens = self._get_max_token_for_prompt(prompt)
             all_kwargs["max_tokens"] = max_tokens
 
-        def gen() -> StreamCompletionResponse:
+        def gen() -> CompletionResponseGen:
             text = ""
             for response in completion_with_retry(
                 is_chat_model=self._is_chat_model,
@@ -238,7 +238,7 @@ class OpenAI(LLM, BaseModel):
         self,
         messages: Sequence[ChatMessage],
         **kwargs: Any,
-    ) -> StreamChatResponse:
+    ) -> ChatResponseGen:
         # TODO: implement async chat
         return self.stream_chat(messages, **kwargs)
 
@@ -248,6 +248,6 @@ class OpenAI(LLM, BaseModel):
 
     async def astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> StreamCompletionResponse:
+    ) -> CompletionResponseGen:
         # TODO: implement async complete
         return self.stream_complete(prompt, **kwargs)
