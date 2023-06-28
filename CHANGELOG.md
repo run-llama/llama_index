@@ -9,7 +9,7 @@
 ### Breaking/Deprecated API Changes
 - Remove (previously deprecated) `llama_index.langchain_helpers.chain_wrapper` module. 
 - Remove (previously deprecated) `llama_index.token_counter.token_counter` module. See [migration guide](/how_to/callbacks/token_counting_migration.html) for more details on new callback based token counting.
-- Replace `ChatGPTLLMPredictor` with `llama_index.llms.OpenAI`. Replace `HuggingFaceLLMPredictor` with `llama_index.llms.HuggingFaceLLM`. See [migration guide](/how_to/customization/llms_migration_guide.html) for more details.
+- Remove `ChatGPTLLMPredictor` and `HuggingFaceLLMPredictor`. See [migration guide](/how_to/customization/llms_migration_guide.html) for more details on replacements.
 
 ### Bug Fixes / Nits
 - Fix serialization for OpenSearch vector stores (#6612)
