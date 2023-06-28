@@ -12,7 +12,3 @@ def test_basic() -> None:
 
     llm.complete(prompt)
     llm.chat([message])
-
-    # NOTE: fake list llm doesn't support streaming
-    # llm.stream_complete(prompt)
-    # llm.stream_chat([message])
