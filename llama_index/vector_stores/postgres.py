@@ -112,7 +112,7 @@ class PGVectorStore(VectorStore):
                     id_=result.id,
                     embedding=result.embedding,
                     text=result.node.get_content(metadata_mode=MetadataMode.NONE),
-                    metadata=node_to_metadata_dict(
+                    metadata_=node_to_metadata_dict(
                         result.node, remove_text=True, flat_metadata=self.flat_metadata
                     ),
                 )
