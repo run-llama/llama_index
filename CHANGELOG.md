@@ -1,9 +1,15 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.35] - 2023-06-28
+- refactor structured output + pydantic programs (#6604)
 
 ### Bug Fixes / Nits
 - Fix serialization for OpenSearch vector stores (#6612)
+- patch docs relationships (#6606)
+- Bug fix for ignoring directories while parsing git repo (#4196)
+- updated Chroma notebook (#6572)
+- Backport old node name (#6614)
+- Add the ability to change chroma implementation (#6601)
 
 ## [v0.6.34] - 2023-06-26
 
