@@ -16,8 +16,8 @@ except ImportError:
 @pytest.fixture
 def documents() -> List[Document]:
     return [
-        Document("doc_1"),
-        Document("doc_2"),
+        Document(text="doc_1"),
+        Document(text="doc_2"),
     ]
 
 
@@ -46,7 +46,7 @@ def test_redis_docstore(
     # test getting documents
     doc0 = ds.get_document(documents[0].get_doc_id())
     assert doc0 is not None
-    assert documents[0].text == doc0.text
+    assert documents[0].get_content() == doc0.get_content()
 
     # test deleting documents
     ds.delete_document(documents[0].get_doc_id())
@@ -94,7 +94,7 @@ def test_redis_docstore_deserialization(
     storage_context = StorageContext.from_defaults(docstore=ds, index_store=idxs)
 
     index = ListIndex.from_documents(
-        [Document("hello world2")], storage_context=storage_context
+        [Document(text="hello world2")], storage_context=storage_context
     )
     # fails here
     doc = index.docstore.docs
