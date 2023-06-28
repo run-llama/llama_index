@@ -105,7 +105,7 @@ def mock_chat_completion_stream(
         yield response
 
 
-def test_completion_model_basic(monkeypatch: MonkeyPatch):
+def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.llms.openai.completion_with_retry", mock_completion
     )
@@ -117,11 +117,11 @@ def test_completion_model_basic(monkeypatch: MonkeyPatch):
     response = llm.complete(prompt)
     assert response.text == "\n\nThis is indeed a test"
 
-    response = llm.chat([message])
-    assert response.message.content == "\n\nThis is indeed a test"
+    chat_response = llm.chat([message])
+    assert chat_response.message.content == "\n\nThis is indeed a test"
 
 
-def test_chat_model_basic(monkeypatch: MonkeyPatch):
+def test_chat_model_basic(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.llms.openai.completion_with_retry", mock_chat_completion
     )
@@ -133,11 +133,11 @@ def test_chat_model_basic(monkeypatch: MonkeyPatch):
     response = llm.complete(prompt)
     assert response.text == "\n\nThis is a test!"
 
-    response = llm.chat([message])
-    assert response.message.content == "\n\nThis is a test!"
+    chat_response = llm.chat([message])
+    assert chat_response.message.content == "\n\nThis is a test!"
 
 
-def test_completion_model_streaming(monkeypatch: MonkeyPatch):
+def test_completion_model_streaming(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.llms.openai.completion_with_retry", mock_completion_stream
     )
@@ -149,12 +149,12 @@ def test_completion_model_streaming(monkeypatch: MonkeyPatch):
     response_gen = llm.stream_complete(prompt)
     responses = list(response_gen)
     assert responses[-1].text == "12"
-    response_gen = llm.stream_chat([message])
-    responses = list(response_gen)
-    assert responses[-1].message.content == "12"
+    chat_response_gen = llm.stream_chat([message])
+    chat_responses = list(chat_response_gen)
+    assert chat_responses[-1].message.content == "12"
 
 
-def test_chat_model_streaming(monkeypatch: MonkeyPatch):
+def test_chat_model_streaming(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.llms.openai.completion_with_retry", mock_chat_completion_stream
     )
@@ -167,7 +167,7 @@ def test_chat_model_streaming(monkeypatch: MonkeyPatch):
     responses = list(response_gen)
     assert responses[-1].text == "\n\n2"
 
-    response_gen = llm.stream_chat([message])
-    responses = list(response_gen)
-    assert responses[-1].message.content == "\n\n2"
-    assert responses[-1].message.role == "assistant"
+    chat_response_gen = llm.stream_chat([message])
+    chat_responses = list(chat_response_gen)
+    assert chat_responses[-1].message.content == "\n\n2"
+    assert chat_responses[-1].message.role == "assistant"

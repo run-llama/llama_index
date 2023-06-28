@@ -41,7 +41,7 @@ class TestLLM(CustomLLM):
         return gen()
 
 
-def test_basic():
+def test_basic() -> None:
     llm = TestLLM()
 
     prompt = "test prompt"
@@ -51,7 +51,7 @@ def test_basic():
     llm.chat([message])
 
 
-def test_streaming():
+def test_streaming() -> None:
     llm = TestLLM()
 
     prompt = "test prompt"
