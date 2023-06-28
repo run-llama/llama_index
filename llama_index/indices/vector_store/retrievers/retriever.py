@@ -112,6 +112,16 @@ class VectorIndexRetriever(BaseRetriever):
                         ] = self._docstore.get_node(  # type: ignore[index]
                             node_id
                         )
+                    # Fix metadata for nodes that have source node in the docstore
+                    elif (
+                        source_node is not None
+                        and source_node.node_id in self._docstore.docs
+                    ):
+                        query_result.nodes[
+                            i
+                        ] = self._docstore.get_node(  # type: ignore[index]
+                            source_node.node_id
+                        )
 
         log_vector_store_query_result(query_result)
 
