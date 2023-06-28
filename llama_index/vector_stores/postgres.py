@@ -22,7 +22,7 @@ def get_data_model(base: Type, index_name: str) -> Any:
         __abstract__ = True  # tShis line is necessary
         id = Column(BIGINT, primary_key=True, autoincrement=True)
         text = Column(VARCHAR, nullable=False)
-        metadata = Column(JSON)
+        metadata_ = Column(JSON)
         doc_id = Column(VARCHAR)  # TODO: change to node_id
         embedding = Column(Vector(1536))  # type: ignore
 
@@ -143,14 +143,14 @@ class PGVectorStore(VectorStore):
         ids = []
         for item, sim in results:
             try:
-                node = metadata_dict_to_node(item.metadata)
+                node = metadata_dict_to_node(item.metadata_)
                 node.set_content(str(item.text))
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 node = TextNode(
                     id_=item.doc_id,
                     text=item.text,
-                    metadata=item.metadata,
+                    metadata=item.metadata_,
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
                     },
