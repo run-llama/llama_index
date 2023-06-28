@@ -65,7 +65,7 @@ class MarkdownReader(BaseReader):
             ]
         else:
             markdown_tups = [
-                (key, re.sub("\n", "", value)) for key, value in markdown_tups
+                (key, re.sub("<.*?>", "", value)) for key, value in markdown_tups
             ]
 
         return markdown_tups
