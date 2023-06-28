@@ -4,11 +4,9 @@ from pydantic import BaseModel, Field
 
 from llama_index.llms.base import (
     LLM,
-    ChatDeltaResponse,
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
-    CompletionDeltaResponse,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
@@ -122,7 +120,7 @@ class OpenAI(LLM, BaseModel):
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        def gen() -> Generator[ChatDeltaResponse, None, None]:
+        def gen() -> ChatResponseGen:
             content = ""
             function_call: Optional[dict] = None
             for response in completion_with_retry(
@@ -144,7 +142,7 @@ class OpenAI(LLM, BaseModel):
                     else:
                         function_call["arguments"] += function_call_delta["arguments"]
 
-                yield ChatDeltaResponse(
+                yield ChatResponse(
                     message=ChatMessage(
                         role=role,
                         content=content,
@@ -200,7 +198,7 @@ class OpenAI(LLM, BaseModel):
             ):
                 delta = response["choices"][0]["text"]
                 text += delta
-                yield CompletionDeltaResponse(
+                yield CompletionResponse(
                     delta=delta,
                     text=text,
                     raw=response,

@@ -6,11 +6,9 @@ from langchain.base_language import BaseLanguageModel
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.llms.base import (
     LLM,
-    ChatDeltaResponse,
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
-    CompletionDeltaResponse,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
@@ -62,11 +60,11 @@ class LangChainLLM(LLM):
 
         response_gen = handler.get_response_gen()
 
-        def gen() -> Generator[ChatDeltaResponse, None, None]:
+        def gen() -> Generator[ChatResponse, None, None]:
             text = ""
             for delta in response_gen:
                 text += delta
-                yield ChatDeltaResponse(
+                yield ChatResponse(
                     message=ChatMessage(text=text),
                     delta=delta,
                 )
@@ -89,11 +87,11 @@ class LangChainLLM(LLM):
 
         response_gen = handler.get_response_gen()
 
-        def gen() -> Generator[CompletionDeltaResponse, None, None]:
+        def gen() -> Generator[CompletionResponse, None, None]:
             text = ""
             for delta in response_gen:
                 text += delta
-                yield CompletionDeltaResponse(delta=delta, text=text)
+                yield CompletionResponse(delta=delta, text=text)
 
         return gen()
 

@@ -1,11 +1,9 @@
 from typing import Any, Callable, Sequence
 
 from llama_index.llms.base import (
-    ChatDeltaResponse,
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
-    CompletionDeltaResponse,
     CompletionResponse,
     CompletionResponseGen,
 )
@@ -54,7 +52,7 @@ def stream_completion_response_to_chat_response(
 
     def gen() -> ChatResponseGen:
         for delta in completion_response:
-            yield ChatDeltaResponse(
+            yield ChatResponse(
                 message=ChatMessage(
                     role="assistant",
                     content=delta.text,
@@ -85,7 +83,7 @@ def stream_chat_response_to_completion_response(
 
     def gen() -> CompletionResponseGen:
         for delta in chat_response:
-            yield CompletionDeltaResponse(
+            yield CompletionResponse(
                 text=delta.message.content or "",
                 additional_kwargs=delta.message.additional_kwargs,
                 delta=delta.delta,
