@@ -80,11 +80,14 @@ query_str = (
 )
 response = query_engine.query(query_str)
 ```
+This query engine should used in any case where you can specify the tables you want
+to query over beforehand, or the total size of all the table schema plus the rest of
+the prompt fits your context window.
 
 ## Building our Table Index
-If we don't know ahead of time which table we would like to use, we would like 
-to store the table schema in an index so that during query time 
-we can retrieve the right schema.
+If we don't know ahead of time which table we would like to use, and the total size of
+the table schema overflows your context window size, we should store the table schema 
+in an index so that during query time we can retrieve the right schema.
 
 The way we can do this is using the SQLTableNodeMapping object, which takes in a 
 SQLDatabase and produces a Node object for each SQLTableSchema object passed 
@@ -92,7 +95,7 @@ into the ObjectIndex constructor.
 
 ```python
 table_node_mapping = SQLTableNodeMapping(sql_database)
-table_schema_objs = [(SQLTableSchema(table_name="city_stats"))]
+table_schema_objs = [(SQLTableSchema(table_name="city_stats")), ...] # one SQLTableSchema for each table
 
 obj_index = ObjectIndex.from_objects(
     table_schema_objs,

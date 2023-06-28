@@ -61,8 +61,6 @@ Here are some relevant resources:
 
 **Guides**
 - [SQL Guide (Core)](../examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
-- [SQL Guide (Setting Context)](../examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb))
-- [SQL Guide (Many Tables)](../examples/index_structs/struct_indices//SQLIndexDemo-ManyTables.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-ManyTables.ipynb))
 - [Pandas Demo](../examples/query_engine/pandas_query_engine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/pandas_query_engine.ipynb))
 
 
