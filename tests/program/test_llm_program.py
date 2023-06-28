@@ -2,16 +2,12 @@
 
 from llama_index.program.llm_program import LLMTextCompletionProgram
 from llama_index.output_parsers.pydantic import PydanticOutputParser
-from llama_index.prompts.prompts import Prompt
-from llama_index.llm_predictor.base import LLMPredictor
-from unittest.mock import patch, MagicMock
-from typing import Any, Tuple
+from unittest.mock import MagicMock
 from pydantic import BaseModel
-from llama_index.bridge.langchain import BaseLanguageModel
 import json
 
 
-class MockLLM:
+class MockLLM(MagicMock):
     def predict(self, prompt: str) -> str:
         test_object = {"hello": "world"}
         return json.dumps(test_object)
