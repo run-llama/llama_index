@@ -302,6 +302,10 @@ class TextNode(BaseNode):
         return self.get_node_info()
 
 
+# TODO: legacy backport of old Node class
+Node = TextNode
+
+
 class ImageNode(TextNode):
     """Node with image."""
 
