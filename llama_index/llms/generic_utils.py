@@ -1,12 +1,7 @@
 from typing import Any, Callable, Sequence
 
-from llama_index.llms.base import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseGen,
-)
+from llama_index.llms.base import (ChatMessage, ChatResponse, ChatResponseGen,
+                                   CompletionResponse, CompletionResponseGen)
 
 
 def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
@@ -46,20 +41,20 @@ def completion_response_to_chat_response(
 
 
 def stream_completion_response_to_chat_response(
-    completion_response: CompletionResponseGen,
+    completion_response_gen: CompletionResponseGen,
 ) -> ChatResponseGen:
     """Convert a stream completion response to a stream chat response."""
 
     def gen() -> ChatResponseGen:
-        for delta in completion_response:
+        for response in completion_response_gen:
             yield ChatResponse(
                 message=ChatMessage(
                     role="assistant",
-                    content=delta.text,
-                    additional_kwargs=delta.additional_kwargs,
+                    content=response.text,
+                    additional_kwargs=response.additional_kwargs,
                 ),
-                delta=delta.delta,
-                raw=delta.raw,
+                delta=response.delta,
+                raw=response.raw,
             )
 
     return gen()
@@ -77,17 +72,17 @@ def chat_response_to_completion_response(
 
 
 def stream_chat_response_to_completion_response(
-    chat_response: ChatResponseGen,
+    chat_response_gen: ChatResponseGen,
 ) -> CompletionResponseGen:
     """Convert a stream chat response to a completion response."""
 
     def gen() -> CompletionResponseGen:
-        for delta in chat_response:
+        for response in chat_response_gen:
             yield CompletionResponse(
-                text=delta.message.content or "",
-                additional_kwargs=delta.message.additional_kwargs,
-                delta=delta.delta,
-                raw=delta.raw,
+                text=response.message.content or "",
+                additional_kwargs=response.message.additional_kwargs,
+                delta=response.delta,
+                raw=response.raw,
             )
 
     return gen()
