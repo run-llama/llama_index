@@ -33,8 +33,11 @@ class PydanticOutputParser(BaseOutputParser):
         match = re.search(
             r"\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
         )
-        json_str = match.group() if match else ""
-        return self._output_cls.parse_raw(json_str)
+        if match:
+            json_str = match.group()
+            return self._output_cls.parse_raw(json_str)
+        else:
+            raise ValueError(f"Could not parse output: {text}")
 
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions."""
