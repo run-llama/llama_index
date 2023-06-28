@@ -5,7 +5,9 @@ from llama_index.bridge.langchain import ChatOpenAI
 from pydantic import BaseModel
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.prompts.base import Prompt
-from llama_index.bridge.langchain import BaseLanguageModel
+from llama_index.bridge.langchain import (
+    BaseLanguageModel,
+)
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 

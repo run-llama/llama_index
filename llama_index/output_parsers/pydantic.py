@@ -5,6 +5,11 @@ from typing import Type, Optional, List, Any
 import re
 import json
 
+PYDANTIC_FORMAT_TMPL = """
+Please use the following JSON schema to format your query:
+{schema}
+"""
+
 
 class PydanticOutputParser(BaseOutputParser):
     """Pydantic Output Parser.
@@ -18,10 +23,12 @@ class PydanticOutputParser(BaseOutputParser):
         self,
         output_cls: Type[Model],
         excluded_schema_keys_from_format: Optional[List] = None,
+        pydantic_format_tmpl: str = PYDANTIC_FORMAT_TMPL,
     ) -> None:
         """Init params."""
         self._output_cls = output_cls
         self._excluded_schema_keys_from_format = excluded_schema_keys_from_format or []
+        self._pydantic_format_tmpl = pydantic_format_tmpl
 
     @property
     def output_cls(self) -> Type[Model]:
@@ -45,4 +52,10 @@ class PydanticOutputParser(BaseOutputParser):
         for key in self._excluded_schema_keys_from_format:
             del schema_dict[key]
 
-        return query + "\n\n" + json.dumps(schema_dict, indent=2)
+        schema_str = json.dumps(schema_dict)
+        # escape left and right brackets with double brackets
+        schema_str = schema_str.replace("{", "{{")
+        schema_str = schema_str.replace("}", "}}")
+        format_str = self._pydantic_format_tmpl.format(schema=schema_str)
+
+        return query + "\n\n" + format_str
