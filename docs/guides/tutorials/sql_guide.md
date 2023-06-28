@@ -63,13 +63,32 @@ from llama_index import SQLDatabase
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 ```
 
+## Natural language SQL
+Once we have constructed our SQL database, we can use the NLSQLTableQueryEngine to
+construct natural language queries that are synthesized into SQL queries.
+
+Note that we need to specify the tables we want to use with this query engine.
+If we don't the query engine will pull all the schema context, which could
+overflow the context window of the LLM.
+```python
+query_engine = NLSQLTableQueryEngine(
+    sql_database=sql_database,
+    tables=["city_stats"],
+)
+query_str = (
+    "Which city has the highest population?"
+)
+response = query_engine.query(query_str)
+```
+
 ## Building our Table Index
-Now that we have our SQLDatabase object, we would like to store the table schema
-in an index so that during query time we can retrieve the right schema.
+If we don't know ahead of time which table we would like to use, we would like 
+to store the table schema in an index so that during query time 
+we can retrieve the right schema.
 
 The way we can do this is using the SQLTableNodeMapping object, which takes in a 
-SQLDatabase and produces a Node object for each SQLTableSchema object passed into the
-ObjectIndex constructor.
+SQLDatabase and produces a Node object for each SQLTableSchema object passed 
+into the ObjectIndex constructor.
 
 ```python
 table_node_mapping = SQLTableNodeMapping(sql_database)
