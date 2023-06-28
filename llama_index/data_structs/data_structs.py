@@ -11,8 +11,12 @@ from typing import Dict, List, Optional, Sequence, Set
 
 from dataclasses_json import DataClassJsonMixin
 
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, TextNode
 from llama_index.data_structs.struct_type import IndexStructType
+
+
+# TODO: legacy backport of old Node class
+Node = TextNode
 
 
 @dataclass

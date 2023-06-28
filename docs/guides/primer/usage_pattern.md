@@ -25,7 +25,7 @@ You can also choose to construct documents manually. LlamaIndex exposes the `Doc
 from llama_index import Document
 
 text_list = [text1, text2, ...]
-documents = [Document(t) for t in text_list]
+documents = [Document(text=t) for t in text_list]
 ```
 
 A Document represents a lightweight container around the data source. You can now choose to proceed with one of the 
@@ -54,16 +54,21 @@ nodes = parser.get_nodes_from_documents(documents)
 You can also choose to construct Node objects manually and skip the first section. For instance,
 
 ```python
-from llama_index.schema import TextNode, NodeRelationship
+from llama_index.schema import TextNode, NodeRelationship, RelatedNodeInfo
 
 node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 # set relationships
-node1.relationships[NodeRelationship.NEXT] = node2.node_id
-node2.relationships[NodeRelationship.PREVIOUS] = node1.node_id
+node1.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=node2.node_id)
+node2.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=node1.node_id)
 nodes = [node1, node2]
 ```
 
+The `RelatedNodeInfo` class can also store additional `metadata` if needed:
+
+```python
+node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=node1.node_id, metadata={"key": "val"})
+```
 
 ## 3. Index Construction
 

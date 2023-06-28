@@ -222,7 +222,7 @@ class GithubRepositoryReader(BaseReader):
                     "\t" * current_depth + f"recursing into {tree_obj.path}",
                 )
                 if self._ignore_directories is not None:
-                    if file_path in self._ignore_directories:
+                    if tree_obj.path in self._ignore_directories:
                         print_if_verbose(
                             self._verbose,
                             "\t" * current_depth

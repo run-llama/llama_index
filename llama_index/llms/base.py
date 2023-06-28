@@ -44,11 +44,7 @@ CompletionResponseGen = Generator[CompletionResponse, None, None]
 
 
 class LLMMetadata(BaseModel):
-    """LLM metadata.
-
-    We extract this metadata to help with our prompts.
-
-    """
+    """LLM metadata."""
 
     context_window: int = DEFAULT_CONTEXT_WINDOW
     num_output: int = DEFAULT_NUM_OUTPUTS
