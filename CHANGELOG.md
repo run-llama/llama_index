@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix metadata column name in postgres vector store (#6622)
+
 ## [v0.6.35] - 2023-06-28
 - refactor structured output + pydantic programs (#6604)
 
