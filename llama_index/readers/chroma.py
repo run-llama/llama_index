@@ -22,7 +22,7 @@ class ChromaReader(BaseReader):
         collection_name: str,
         persist_directory: Optional[str] = None,
         chroma_api_impl: str = "rest",
-        chroma_db_impl: str = None,
+        chroma_db_impl: Optional[str] = None,
         host: str = "localhost",
         port: int = 8000,
     ) -> None:
