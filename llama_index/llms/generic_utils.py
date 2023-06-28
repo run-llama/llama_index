@@ -1,7 +1,12 @@
 from typing import Any, Callable, Sequence
 
-from llama_index.llms.base import (ChatMessage, ChatResponse, ChatResponseGen,
-                                   CompletionResponse, CompletionResponseGen)
+from llama_index.llms.base import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
+)
 
 
 def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
