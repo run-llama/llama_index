@@ -14,7 +14,7 @@ See the sections below for an overview of output parsers and Pydantic programs.
 
 ## 🔬 Anatomy of a Structured Output Function
 
-Here we describe the different components of an LLM-powered structured output function. The pipeline depends on whether you're using a **generic LLM text completion API** or an **LLM function calling API**>.
+Here we describe the different components of an LLM-powered structured output function. The pipeline depends on whether you're using a **generic LLM text completion API** or an **LLM function calling API**.
 
 ![](/_static/structured_output/diagram1.png)
 

@@ -10,6 +10,9 @@ There's a few general types of Pydantic Programs:
 - **Prepackaged Pydantic Programs**: These convert input text into prespecified structured objects.
 
 
+![](/_static/structured_output/program2.png)
+
+
 ## LLM Text Completion Pydantic Programs
 TODO: Coming soon!
 
