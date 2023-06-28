@@ -1,21 +1,20 @@
-from llama_index.llms.base import (
-    LLM,
-    CompletionResponse,
-    LLMMetadata,
-    StreamCompletionResponse,
-)
-
 import logging
 from threading import Thread
 from typing import Any, List, Optional
 
+from llama_index.llms.base import (
+    CompletionResponse,
+    LLMMetadata,
+    StreamCompletionResponse,
+)
+from llama_index.llms.custom import CustomLLM
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
 
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceLLM(LLM):
+class HuggingFaceLLM(CustomLLM):
     def __init__(
         self,
         max_input_size: int = 4096,
