@@ -1,11 +1,7 @@
 from llama_index.program.base_program import BasePydanticProgram
-from llama_index.types import Model
 
-from typing import Type
-
-from typing import Optional, List, Any, Type
+from typing import Optional, List, Any, Type, cast
 from pydantic import BaseModel, Field
-from llama_index.program.base_program import BasePydanticProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.prompts import Prompt
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
@@ -124,7 +120,8 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
         if pydantic_program.output_cls != DataFrame:
             raise ValueError("Output class of pydantic program must be `DataFrame`.")
 
-    def output_cls(self) -> Type[Model]:
+    @property
+    def output_cls(self) -> Type[DataFrame]:
         """Output class."""
         return DataFrame
 
@@ -132,10 +129,12 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
         """Call."""
         if self._input_key not in kwds:
             raise ValueError(f"Input key {self._input_key} not found in kwds.")
-        return self._pydantic_program(**{self._input_key: kwds[self._input_key]})
+        result = self._pydantic_program(**{self._input_key: kwds[self._input_key]})
+        result = cast(DataFrame, result)
+        return result
 
 
-class DFRowsProgram(BasePydanticProgram[DataFrame]):
+class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
     """DF Rows output parser.
 
     Given DF schema, extract text into a set of rows.
@@ -206,12 +205,15 @@ class DFRowsProgram(BasePydanticProgram[DataFrame]):
             **kwargs,
         )
 
-    def output_cls(self) -> Type[Model]:
+    @property
+    def output_cls(self) -> Type[DataFrameRowsOnly]:
         """Output class."""
-        return DataFrame
+        return DataFrameRowsOnly
 
-    def __call__(self, *args: Any, **kwds: Any) -> DataFrame:
+    def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
         """Call."""
         if self._input_key not in kwds:
             raise ValueError(f"Input key {self._input_key} not found in kwds.")
-        return self._pydantic_program(**{self._input_key: kwds[self._input_key]})
+        result = self._pydantic_program(**{self._input_key: kwds[self._input_key]})
+        result = cast(DataFrameRowsOnly, result)
+        return result

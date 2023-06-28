@@ -1,7 +1,7 @@
 """Pydantic output parser."""
 
 from llama_index.types import BaseOutputParser, Model
-from typing import Type, Optional, List
+from typing import Type, Optional, List, Any
 import re
 import json
 
@@ -27,13 +27,13 @@ class PydanticOutputParser(BaseOutputParser):
     def output_cls(self) -> Type[Model]:
         return self._output_cls
 
-    def parse(self, text: str) -> Model:
+    def parse(self, text: str) -> Any:
         """Parse, validate, and correct errors programmatically."""
-        # this regex parsing is taken from langchain.output_parsers.pydantic
+        # NOTE: this regex parsing is taken from langchain.output_parsers.pydantic
         match = re.search(
             r"\{.*\}", text.strip(), re.MULTILINE | re.IGNORECASE | re.DOTALL
         )
-        json_str = match.group()
+        json_str = match.group() if match else ""
         return self._output_cls.parse_raw(json_str)
 
     def format(self, query: str) -> str:

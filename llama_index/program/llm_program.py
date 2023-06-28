@@ -1,15 +1,15 @@
-from typing import Any, Dict, Generic, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
-from llama_index.bridge.langchain import ChatOpenAI, HumanMessage
+from llama_index.bridge.langchain import ChatOpenAI
 
-from llama_index.types import Model
+from pydantic import BaseModel
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.prompts.base import Prompt
 from llama_index.bridge.langchain import BaseLanguageModel
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 
-class LLMTextCompletionProgram(BasePydanticProgram, Generic[Model]):
+class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     """
     LLM Text Completion Program.
 
@@ -55,14 +55,14 @@ class LLMTextCompletionProgram(BasePydanticProgram, Generic[Model]):
         )
 
     @property
-    def output_cls(self) -> Type[Model]:
+    def output_cls(self) -> Type[BaseModel]:
         return self._output_parser.output_cls
 
     def __call__(
         self,
         *args: Any,
         **kwargs: Any,
-    ) -> Model:
+    ) -> BaseModel:
         prompt_with_parse_instrs_tmpl = self._output_parser.format(
             self._prompt.original_template
         )
@@ -70,6 +70,6 @@ class LLMTextCompletionProgram(BasePydanticProgram, Generic[Model]):
 
         formatted_prompt = prompt_with_parse_instrs.format(**kwargs)
 
-        raw_output = self._llm.predict(prompt=formatted_prompt)
+        raw_output = self._llm.predict(formatted_prompt)
         model_output = self._output_parser.parse(raw_output)
         return model_output
