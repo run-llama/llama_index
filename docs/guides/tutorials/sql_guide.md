@@ -198,7 +198,7 @@ the [reference docs](/reference/prompts.rst)).
 city_stats_text = (
     "This table gives information regarding the population and country of a given city.\n"
 )
-context_documents_dict = {"city_stats": [Document(city_stats_text)]}
+context_documents_dict = {"city_stats": [Document(text=city_stats_text)]}
 context_builder = SQLContextContainerBuilder.from_documents(
     context_documents_dict, 
     sql_database
