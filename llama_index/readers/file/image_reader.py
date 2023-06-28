@@ -109,4 +109,6 @@ class ImageReader(BaseReader):
             # remove first task start token
             text_str = re.sub(r"<.*?>", "", sequence, count=1).strip()
 
-        return [ImageDocument(text=text_str, image=image_str, metadata=extra_info or {})]
+        return [
+            ImageDocument(text=text_str, image=image_str, metadata=extra_info or {})
+        ]
