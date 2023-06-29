@@ -63,7 +63,22 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 ```
 
-You can set the level to `DEBUG` for verbose output, or use `level=logging.INFO` for less.
+You can set the level to `DEBUG` for verbose output, or use `level=logging.INFO` for less. 
+
+Or you can use UI tool to collect and explore logs, for example [hayloft](https://github.com/eturchenkov/hayloft):
+
+```
+pip install hayloft
+hayloft start
+```
+
+Add code below to push logs to hayloft local server 
+
+```python
+from hayloft.llama_index import grab_logs
+
+grab_logs()
+```
 
 ### Saving and Loading
 
