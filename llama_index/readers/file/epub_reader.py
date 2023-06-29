@@ -13,7 +13,9 @@ from llama_index.schema import Document
 class EpubReader(BaseReader):
     """Epub Parser."""
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         try:
             import ebooklib
@@ -38,4 +40,4 @@ class EpubReader(BaseReader):
                 )
 
         text = "\n".join(text_list)
-        return [Document(text=text, metadata=metadata)]
+        return [Document(text=text, metadata=extra_info or {})]

@@ -1,6 +1,6 @@
 from typing import List, Any, Type, Optional
 
-from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     VectorStore,
     NodeWithEmbedding,
@@ -22,8 +22,8 @@ def get_data_model(base: Type, index_name: str) -> Any:
         __abstract__ = True  # tShis line is necessary
         id = Column(BIGINT, primary_key=True, autoincrement=True)
         text = Column(VARCHAR, nullable=False)
-        metadata = Column(JSON)
-        doc_id = Column(VARCHAR)  # TODO: change to node_id
+        metadata_ = Column(JSON)
+        node_id = Column(VARCHAR)
         embedding = Column(Vector(1536))  # type: ignore
 
     tablename = "data_%s" % index_name  # dynamic table name
@@ -109,10 +109,10 @@ class PGVectorStore(VectorStore):
                 ids.append(result.id)
 
                 item = self.table_class(
-                    id_=result.id,
+                    node_id=result.id,
                     embedding=result.embedding,
                     text=result.node.get_content(metadata_mode=MetadataMode.NONE),
-                    metadata=node_to_metadata_dict(
+                    metadata_=node_to_metadata_dict(
                         result.node, remove_text=True, flat_metadata=self.flat_metadata
                     ),
                 )
@@ -143,20 +143,15 @@ class PGVectorStore(VectorStore):
         ids = []
         for item, sim in results:
             try:
-                node = metadata_dict_to_node(item.metadata)
+                node = metadata_dict_to_node(item.metadata_)
                 node.set_content(str(item.text))
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 node = TextNode(
-                    id_=item.doc_id,
-                    text=item.text,
-                    metadata=item.metadata,
-                    relationships={
-                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
-                    },
+                    id_=item.node_id, text=item.text, metadata=item.metadata_
                 )
             similarities.append(sim)
-            ids.append(item.doc_id)
+            ids.append(item.node_id)
             nodes.append(node)
 
         return VectorStoreQueryResult(

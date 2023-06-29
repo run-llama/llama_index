@@ -5,19 +5,13 @@ LlamaIndex provides a lot of advanced features, powered by LLM's, to both create
 unstructured data, as well as analyze this structured data through augmented text-to-SQL capabilities.
 
 This guide helps walk through each of these capabilities. Specifically, we cover the following topics:
-- **Inferring Structured Datapoints**: Converting unstructured data to structured data. 
-- **Text-to-SQL (basic)**: How to query a set of tables using natural language.
-- **Injecting Context**: How to inject context for each table into the text-to-SQL prompt. The context
-    can be manually added, or it can be derived from unstructured documents.
-- **Storing Table Context within an Index**: By default, we directly insert the context into the prompt. Sometimes this is not 
-    feasible if the context is large. Here we show how you can actually use a LlamaIndex data structure
-    to contain the table context!
+- **Setup**: Defining up our example SQL Table.
+- **Building our Table Index**: How to go from sql database to a Table Schema Index
+- **Using natural language SQL queries**: How to query our SQL database using natural language.
 
 We will walk through a toy example table which contains city/population/country information.
-
+A notebook for this tutorial is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb).
 ## Setup
-
-A notebook for this initial section is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb).
 
 First, we use SQLAlchemy to setup a simple sqlite db:
 ```python
@@ -69,207 +63,76 @@ from llama_index import SQLDatabase
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 ```
 
-If the db is already populated with data, we can instantiate the SQL index
-with a blank documents list. Otherwise see the below section.
+## Natural language SQL
+Once we have constructed our SQL database, we can use the NLSQLTableQueryEngine to
+construct natural language queries that are synthesized into SQL queries.
+
+Note that we need to specify the tables we want to use with this query engine.
+If we don't the query engine will pull all the schema context, which could
+overflow the context window of the LLM.
+```python
+query_engine = NLSQLTableQueryEngine(
+    sql_database=sql_database,
+    tables=["city_stats"],
+)
+query_str = (
+    "Which city has the highest population?"
+)
+response = query_engine.query(query_str)
+```
+This query engine should used in any case where you can specify the tables you want
+to query over beforehand, or the total size of all the table schema plus the rest of
+the prompt fits your context window.
+
+## Building our Table Index
+If we don't know ahead of time which table we would like to use, and the total size of
+the table schema overflows your context window size, we should store the table schema 
+in an index so that during query time we can retrieve the right schema.
+
+The way we can do this is using the SQLTableNodeMapping object, which takes in a 
+SQLDatabase and produces a Node object for each SQLTableSchema object passed 
+into the ObjectIndex constructor.
 
 ```python
-from llama_index import SQLStructStoreIndex
+table_node_mapping = SQLTableNodeMapping(sql_database)
+table_schema_objs = [(SQLTableSchema(table_name="city_stats")), ...] # one SQLTableSchema for each table
 
-index = SQLStructStoreIndex(
-    [],
-    sql_database=sql_database, 
-    table_name="city_stats",
+obj_index = ObjectIndex.from_objects(
+    table_schema_objs,
+    table_node_mapping,
+    VectorStoreIndex,
 )
 ```
-
-## Inferring Structured Datapoints
-
-LlamaIndex offers the capability to convert unstructured datapoints to structured
-data. In this section, we show how we can populate the `city_stats` table
-by ingesting Wikipedia articles about each city.
-
-First, we use the Wikipedia reader from LlamaHub to load some pages 
-regarding the relevant data.
-
+Here you can see we define our table_node_mapping, and a single SQLTableSchema with the
+"city_stats" table name. We pass these into the ObjectIndex constructor, along with the
+VectorStoreIndex class definition we want to use. This will give us a VectorStoreIndex where
+each Node contains table schema and other context information. You can also add any additional
+context information you'd like.
 ```python
-from llama_index import download_loader
-
-WikipediaReader = download_loader("WikipediaReader")
-wiki_docs = WikipediaReader().load_data(pages=['Toronto', 'Berlin', 'Tokyo'])
-```
-
-When we build the SQL index, we can specify these docs as the 
-first input; these documents will be converted
-to structured datapoints and inserted into the db:
-
-```python
-from llama_index import SQLStructStoreIndex, SQLDatabase
-
-sql_database = SQLDatabase(engine, include_tables=["city_stats"])
-# NOTE: the table_name specified here is the table that you
-# want to extract into from unstructured documents.
-index = SQLStructStoreIndex.from_documents(
-    wiki_docs, 
-    sql_database=sql_database, 
-    table_name="city_stats",
-)
-```
-
-You can take a look at the current table to verify that the datapoints have been inserted!
-
-```python
-# view current table
-stmt = select(
-    city_stats_table.c["city_name", "population", "country"]
-).select_from(city_stats_table)
-
-with engine.connect() as connection:
-    results = connection.execute(stmt).fetchall()
-    print(results)
-```
-
-## Text-to-SQL (basic)
-
-LlamaIndex offers "text-to-SQL" capabilities, both at a very basic level
-and also at a more advanced level. In this section, we show how to make use
-of these text-to-SQL capabilities at a basic level.
-
-A simple example is shown here:
-
-```python
-# set Logging to DEBUG for more detailed outputs
-query_engine = index.as_query_engine()
-response = query_engine.query("Which city has the highest population?")
-print(response)
-```
-
-You can access the underlying derived SQL query through `response.metadata['sql_query']`.
-It should look something like this:
-```sql
-SELECT city_name, population
-FROM city_stats
-ORDER BY population DESC
-LIMIT 1
-```
-
-## Injecting Context
-
-By default, the text-to-SQL prompt just injects the table schema information into the prompt.
-However, oftentimes you may want to add your own context as well. This section shows you how
-you can add context, either manually, or extracted through documents.
-
-We offer you a context builder class to better manage the context within your SQL tables:
-`SQLContextContainerBuilder`. This class takes in the `SQLDatabase` object,
-and a few other optional parameters, and builds a `SQLContextContainer` object
-that you can then pass to the index during construction + query-time.
-
-A notebook for this section is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb).
-
-You can add context manually to the context builder. The code snippet below shows you how:
-
-```python
-# manually set text
+# manually set context text
 city_stats_text = (
     "This table gives information regarding the population and country of a given city.\n"
     "The user will query with codewords, where 'foo' corresponds to population and 'bar'"
     "corresponds to city."
 )
-table_context_dict={"city_stats": city_stats_text}
-context_builder = SQLContextContainerBuilder(sql_database, context_dict=table_context_dict)
-context_container = context_builder.build_context_container()
 
-# building the index
-index = SQLStructStoreIndex.from_documents(
-    wiki_docs, 
-    sql_database=sql_database, 
-    table_name="city_stats",
-    sql_context_container=context_container
-)
+table_node_mapping = SQLTableNodeMapping(sql_database)
+table_schema_objs = [(SQLTableSchema(table_name="city_stats", context_str=city_stats_text))]
 ```
 
-You can also choose to **extract** context from a set of unstructured Documents.
-To do this, you can call `SQLContextContainerBuilder.from_documents`.
-We use the `TableContextPrompt` and the `RefineTableContextPrompt` (see
-the [reference docs](/reference/prompts.rst)).
+## Using natural language SQL queries
+Once we have defined our table schema index obj_index, we can construct a SQLTableRetrieverQueryEngine
+by passing in our SQLDatabase, and a retriever constructed from our object index.
 
 ```python
-# this is a dummy document that we will extract context from
-# in GPTSQLContextContainerBuilder
-city_stats_text = (
-    "This table gives information regarding the population and country of a given city.\n"
+query_engine = SQLTableRetrieverQueryEngine(
+    sql_database, obj_index.as_retriever(similarity_top_k=1)
 )
-context_documents_dict = {"city_stats": [Document(text=city_stats_text)]}
-context_builder = SQLContextContainerBuilder.from_documents(
-    context_documents_dict, 
-    sql_database
-)
-context_container = context_builder.build_context_container()
-
-# building the index
-index = SQLStructStoreIndex.from_documents(
-    wiki_docs, 
-    sql_database=sql_database, 
-    table_name="city_stats",
-    sql_context_container=context_container,
-)
-```
-
-## Storing Table Context within an Index
-
-A database collection can have many tables, and if each table has many columns + a description associated with it,
-then the total context can be quite large.
-
-Luckily, you can choose to use a LlamaIndex data structure to store this table context! 
-Then when the SQL index is queried, we can use this "side" index to retrieve the proper context
-that can be fed into the text-to-SQL prompt.
-
-Here we make use of the `derive_index_from_context` function within `SQLContextContainerBuilder`
-to create a new index. You have flexibility in choosing which index class to specify + 
-which arguments to pass in. We then use a helper method called `query_index_for_context`
-which is a simple wrapper on the `query` call that wraps a query template + 
-stores the context on the generated context container.
-
-You can then build the context container, and pass it to the index during query-time!
-
-A notebook for this section is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo-ManyTables.ipynb).
-
-```python
-from llama_index import SQLStructStoreIndex, SQLDatabase, VectorStoreIndex
-from llama_index.indices.struct_store import SQLContextContainerBuilder
-
-sql_database = SQLDatabase(engine)
-# build a vector index from the table schema information
-context_builder = SQLContextContainerBuilder(sql_database)
-table_schema_index = context_builder.derive_index_from_context(
-    VectorStoreIndex,
-    store_index=True
-)
-
-query_str = "Which city has the highest population?"
-
-# query the table schema index using the helper method
-# to retrieve table context
-context_builder.query_index_for_context(
-    table_schema_index,
-    query_str,
-    store_context_str=True
-)
-
-context_container = context_builder.build_context_container()
-
-index = SQLStructStoreIndex(
-    [],
-    sql_database=sql_database,
-    sql_context_container=context_container
-)
-
-# query the SQL index with the table context
-query_engine = index.as_query_engine()
-response = query_engine.query(query_str)
+response = query_engine.query("Which city has the highest population?")
 print(response)
-
 ```
-
+Now when we query the retriever query engine, it will retrieve the relevant table schema
+and synthesize a SQL query and a response from the results of that query.
 
 ## Concluding Thoughts
 

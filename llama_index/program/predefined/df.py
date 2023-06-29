@@ -1,18 +1,10 @@
-"""Data-frame output parser.
-
-NOTE: inspired from jxnl's repo example here:
-https://github.com/jxnl/openai_function_call/blob/main/auto_dataframe.py
-
-
-"""
-
-from typing import Optional, List, Any, Type
-from pydantic import BaseModel, Field
-from llama_index.types import BaseOutputParser
-from llama_index.output_parsers.pydantic_program import PydanticProgramOutputParser
 from llama_index.program.base_program import BasePydanticProgram
+
+from typing import Optional, List, Any, Type, cast
+from pydantic import BaseModel, Field
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.prompts import Prompt
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 import pandas as pd
 
 
@@ -86,37 +78,35 @@ The column schema is the following: {column_schema}.
 """
 
 
-class DFFullOutputParser(BaseOutputParser):
-    """Full DF output parser.
+class DFFullProgram(BasePydanticProgram[DataFrame]):
+    """Data-frame program.
 
-    Extracts text into a schema.
+    Extracts text into a schema + datapoints.
 
     """
 
     def __init__(
         self,
-        pydantic_program_cls: Type[BasePydanticProgram],
+        pydantic_program_cls: Type[BaseLLMFunctionProgram],
         df_parser_template_str: str = DEFAULT_FULL_DF_PARSER_TMPL,
         input_key: str = "input_str",
+        **program_kwargs: Any,
     ) -> None:
         """Init params."""
         pydantic_program = pydantic_program_cls.from_defaults(
-            DataFrame, df_parser_template_str
+            DataFrame, df_parser_template_str, **program_kwargs
         )
         self._validate_program(pydantic_program)
-        self._pydantic_parser = PydanticProgramOutputParser(pydantic_program, input_key)
-
-    def _validate_program(self, pydantic_program: BasePydanticProgram) -> None:
-        if pydantic_program.output_cls != DataFrame:
-            raise ValueError("Output class of pydantic program must be `DataFrame`.")
+        self._pydantic_program = pydantic_program
+        self._input_key = input_key
 
     @classmethod
     def from_defaults(
         cls,
-        pydantic_program_cls: Optional[Type[BasePydanticProgram]] = None,
+        pydantic_program_cls: Optional[Type[BaseLLMFunctionProgram]] = None,
         df_parser_template_str: str = DEFAULT_FULL_DF_PARSER_TMPL,
         input_key: str = "input_str",
-    ) -> "DFFullOutputParser":
+    ) -> "DFFullProgram":
         """Full DF output parser."""
         pydantic_program_cls = pydantic_program_cls or OpenAIPydanticProgram
 
@@ -126,16 +116,25 @@ class DFFullOutputParser(BaseOutputParser):
             input_key=input_key,
         )
 
-    def parse(self, output: str) -> DataFrame:
-        """Parse, validate, and correct errors programmatically."""
-        return self._pydantic_parser.parse(output)
+    def _validate_program(self, pydantic_program: BasePydanticProgram) -> None:
+        if pydantic_program.output_cls != DataFrame:
+            raise ValueError("Output class of pydantic program must be `DataFrame`.")
 
-    def format(self, query: str) -> str:
-        """Format a query with structured output formatting instructions."""
-        raise NotImplementedError("`format` method not supported for parser.")
+    @property
+    def output_cls(self) -> Type[DataFrame]:
+        """Output class."""
+        return DataFrame
+
+    def __call__(self, *args: Any, **kwds: Any) -> DataFrame:
+        """Call."""
+        if self._input_key not in kwds:
+            raise ValueError(f"Input key {self._input_key} not found in kwds.")
+        result = self._pydantic_program(**{self._input_key: kwds[self._input_key]})
+        result = cast(DataFrame, result)
+        return result
 
 
-class DFRowsOutputParser(BaseOutputParser):
+class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
     """DF Rows output parser.
 
     Given DF schema, extract text into a set of rows.
@@ -144,13 +143,14 @@ class DFRowsOutputParser(BaseOutputParser):
 
     def __init__(
         self,
-        pydantic_program_cls: Type[BasePydanticProgram],
+        pydantic_program_cls: Type[BaseLLMFunctionProgram],
         df_parser_template_str: str = DEFAULT_ROWS_DF_PARSER_TMPL,
         column_schema: Optional[str] = None,
         input_key: str = "input_str",
+        **program_kwargs: Any,
     ) -> None:
         """Init params."""
-        # partial format df parser template string
+        # partial format df parser template string with column schema
         # NOTE: hack where we use prompt class to partial format
         orig_prompt = Prompt(df_parser_template_str)
         new_prompt = Prompt.from_prompt(
@@ -160,11 +160,11 @@ class DFRowsOutputParser(BaseOutputParser):
         )
 
         pydantic_program = pydantic_program_cls.from_defaults(
-            DataFrameRowsOnly, new_prompt.original_template
+            DataFrameRowsOnly, new_prompt.original_template, **program_kwargs
         )
         self._validate_program(pydantic_program)
-
-        self._pydantic_parser = PydanticProgramOutputParser(pydantic_program, input_key)
+        self._pydantic_program = pydantic_program
+        self._input_key = input_key
 
     def _validate_program(self, pydantic_program: BasePydanticProgram) -> None:
         if pydantic_program.output_cls != DataFrameRowsOnly:
@@ -175,13 +175,13 @@ class DFRowsOutputParser(BaseOutputParser):
     @classmethod
     def from_defaults(
         cls,
-        pydantic_program_cls: Optional[Type[BasePydanticProgram]] = None,
+        pydantic_program_cls: Optional[Type[BaseLLMFunctionProgram]] = None,
         df_parser_template_str: str = DEFAULT_ROWS_DF_PARSER_TMPL,
         df: Optional[pd.DataFrame] = None,
         column_schema: Optional[str] = None,
         input_key: str = "input_str",
-        **kwargs: Any
-    ) -> "DFRowsOutputParser":
+        **kwargs: Any,
+    ) -> "DFRowsProgram":
         """Rows DF output parser."""
         pydantic_program_cls = pydantic_program_cls or OpenAIPydanticProgram
 
@@ -202,12 +202,18 @@ class DFRowsOutputParser(BaseOutputParser):
             df_parser_template_str=df_parser_template_str,
             column_schema=column_schema,
             input_key=input_key,
+            **kwargs,
         )
 
-    def parse(self, output: str) -> BasePydanticProgram:
-        """Parse, validate, and correct errors programmatically."""
-        return self._pydantic_parser.parse(output)
+    @property
+    def output_cls(self) -> Type[DataFrameRowsOnly]:
+        """Output class."""
+        return DataFrameRowsOnly
 
-    def format(self, query: str) -> str:
-        """Format a query with structured output formatting instructions."""
-        raise NotImplementedError("`format` method not supported for parser.")
+    def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
+        """Call."""
+        if self._input_key not in kwds:
+            raise ValueError(f"Input key {self._input_key} not found in kwds.")
+        result = self._pydantic_program(**{self._input_key: kwds[self._input_key]})
+        result = cast(DataFrameRowsOnly, result)
+        return result
