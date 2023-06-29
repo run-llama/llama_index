@@ -13,14 +13,15 @@ CHAT_REFINE_PROMPT_TMPL_MSGS = [
     HumanMessagePromptTemplate.from_template("{query_str}"),
     AIMessagePromptTemplate.from_template("{existing_answer}"),
     HumanMessagePromptTemplate.from_template(
-        "We have the opportunity to refine the above answer "
-        "(only if needed) with some more context below.\n"
+        "You have the opportunity to refine the above answer "
+        "with additional context or provide more specific information "
+        "to help me generate a better response.\n"
         "------------\n"
-        "{context_msg}\n"
+        "Context: {context_msg}\n"
         "------------\n"
-        "Given the new context, refine the original answer to better "
-        "answer the question. "
-        "If the context isn't useful, output the original answer again.",
+        "Please refine the original answer based on the new context, "
+        "or if the context is not useful, repeat the original answer:\n"
+        "{existing_answer}"
     ),
 ]
 
