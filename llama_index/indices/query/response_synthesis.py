@@ -4,6 +4,7 @@ from typing import Any, Dict, Generator, List, Optional, Sequence
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
+from llama_index.indices.query.response_context import ResponseContext
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response import (
     BaseResponseBuilder,
@@ -61,6 +62,41 @@ class ResponseSynthesizer:
         self._verbose = verbose
 
     @classmethod
+    def from_context(
+        cls, response_context: ResponseContext, service_context: ServiceContext
+    ) -> "ResponseSynthesizer":
+        """Initialize response synthesizer from response context.
+
+        Args:
+            response_context (ResponseContext): A response context.
+
+        Returns:
+            ResponseSynthesizer: A response synthesizer object.
+        """
+
+        if response_context.response_builder is None:
+            # Get response builder based on response context
+            response_context.response_builder = get_response_builder(
+                service_context,
+                response_context.text_qa_template,
+                response_context.refine_template,
+                response_context.simple_template,
+                response_context.response_mode,
+                use_async=response_context.use_async,
+                streaming=response_context.streaming,
+            )
+
+        return cls(
+            response_builder=response_context.response_builder,
+            response_mode=response_context.response_mode,
+            response_kwargs=response_context.response_kwargs,
+            optimizer=response_context.optimizer,
+            node_postprocessors=response_context.node_postprocessors,
+            callback_manager=response_context.callback_manager,
+            verbose=response_context.verbose,
+        )
+
+    @classmethod
     def from_args(
         cls,
         service_context: Optional[ServiceContext] = None,
@@ -76,7 +112,9 @@ class ResponseSynthesizer:
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         verbose: bool = False,
     ) -> "ResponseSynthesizer":
-        """Initialize response synthesizer from args.
+        """TODO: Deprecated
+
+        Initialize response synthesizer from args.
 
         Args:
             service_context (Optional[ServiceContext]): A service context.
