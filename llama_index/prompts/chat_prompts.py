@@ -19,9 +19,7 @@ CHAT_REFINE_PROMPT_TMPL_MSGS = [
         "Given the new context, refine the original answer to better "
         "answer the question: {query_str}. "
         "If the context isn't useful, output the original answer again.\n"
-        "------------\n"
-        "{existing_answer}\n"
-        "------------"
+        "Original Answer: {existing_answer}"
     ),
 ]
 
