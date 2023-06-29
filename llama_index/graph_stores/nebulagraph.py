@@ -364,7 +364,7 @@ class NebulaGraphStore(GraphStore):
 
         # lower case subjs
         if subjs is not None:
-            subjs = [escape_str(subj.lower()) for subj in subjs]
+            subjs = [escape_str(subj) for subj in subjs]
             if len(subjs) == 0:
                 return {}
 
@@ -381,19 +381,19 @@ class NebulaGraphStore(GraphStore):
         # thus we have to assume subj to be the first entity.tag_name
 
         # lower case subj, rel, obj
-        subj = escape_str(subj.lower())
-        rel = escape_str(rel.lower())
-        obj = escape_str(obj.lower())
+        subj = escape_str(subj)
+        rel = escape_str(rel)
+        obj = escape_str(obj)
 
         edge_type = self._edge_types[0]
         rel_prop_name = self._rel_prop_names[0]
         entity_type = self._tags[0]
         rel_hash = hash_string_to_rank(rel)
         dml_query = (
-            f"INSERT VERTEX `{entity_type}`() "
-            f"  VALUES {QUOTE}{subj}{QUOTE}:();"
-            f"INSERT VERTEX `{entity_type}`() "
-            f"  VALUES {QUOTE}{obj}{QUOTE}:();"
+            f"INSERT VERTEX `{entity_type}`(name) "
+            f"  VALUES {QUOTE}{subj}{QUOTE}:({QUOTE}{subj}{QUOTE});"
+            f"INSERT VERTEX `{entity_type}`(name) "
+            f"  VALUES {QUOTE}{obj}{QUOTE}:({QUOTE}{obj}{QUOTE});"
             f"INSERT EDGE `{edge_type}`(`{rel_prop_name}`) "
             f"  VALUES "
             f"{QUOTE}{subj}{QUOTE}->{QUOTE}{obj}{QUOTE}"
@@ -415,9 +415,9 @@ class NebulaGraphStore(GraphStore):
         """
 
         # lower case subj, rel, obj
-        subj = escape_str(subj.lower())
-        rel = escape_str(rel.lower())
-        obj = escape_str(obj.lower())
+        subj = escape_str(subj)
+        rel = escape_str(rel)
+        obj = escape_str(obj)
 
         # DELETE EDGE serve "player100" -> "team204"@7696463696635583936;
         edge_type = self._edge_types[0]

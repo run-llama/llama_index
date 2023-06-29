@@ -55,6 +55,10 @@ from langchain.sql_database import SQLDatabase
 from langchain.cache import GPTCache, BaseCache
 from langchain.docstore.document import Document
 
+# knowledge graph
+from langchain.chains import GraphCypherQAChain, NebulaGraphQAChain, KuzuQAChain
+from langchain.graphs import Neo4jGraph, NebulaGraph, KuzuGraph
+
 __all__ = [
     "langchain",
     "BaseLLM",
@@ -106,4 +110,10 @@ __all__ = [
     "GPTCache",
     "BaseCache",
     "Document",
+    "GraphCypherQAChain",
+    "NebulaGraphQAChain",
+    "KuzuQAChain",
+    "Neo4jGraph",
+    "NebulaGraph",
+    "KuzuGraph",
 ]
