@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
@@ -66,3 +66,36 @@ class ResponseContext(BaseModel):
     )
     use_async: bool = Field(default=False, description="Whether to use async.")
     verbose: bool = Field(default=False, description="Whether to print verbose output.")
+    
+    # ignore pydantic's type-checking for arbitrary types
+    class Config:
+        arbitrary_types_allowed = True
+
+    @classmethod
+    def from_defaults(
+        cls,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        response_mode: ResponseMode = ResponseMode.COMPACT,
+        text_qa_template: Optional[QuestionAnswerPrompt] = DEFAULT_TEXT_QA_PROMPT,
+        refine_template: Optional[RefinePrompt] = DEFAULT_REFINE_PROMPT_SEL,
+        simple_template: Optional[SimpleInputPrompt] = DEFAULT_SIMPLE_INPUT_PROMPT,
+        response_kwargs: Optional[Dict] = Field(default_factory=dict),
+        callback_manager: Optional[CallbackManager] = None,
+        streaming: bool = False,
+        use_async: bool = False,
+        verbose: bool = False,
+    ) -> "ResponseContext":
+        return cls(
+            node_postprocessors=node_postprocessors,
+            optimizer=optimizer,
+            response_mode=response_mode,
+            text_qa_template=text_qa_template,
+            refine_template=refine_template,
+            simple_template=simple_template,
+            response_kwargs=response_kwargs,
+            callback_manager=callback_manager,
+            streaming=streaming,
+            use_async=use_async,
+            verbose=verbose,
+        )
