@@ -1,6 +1,6 @@
 from typing import List, Any, Type, Optional
 
-from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     VectorStore,
     NodeWithEmbedding,
@@ -23,7 +23,7 @@ def get_data_model(base: Type, index_name: str) -> Any:
         id = Column(BIGINT, primary_key=True, autoincrement=True)
         text = Column(VARCHAR, nullable=False)
         metadata_ = Column(JSON)
-        doc_id = Column(VARCHAR)  # TODO: change to node_id
+        node_id = Column(VARCHAR)
         embedding = Column(Vector(1536))  # type: ignore
 
     tablename = "data_%s" % index_name  # dynamic table name
@@ -109,7 +109,7 @@ class PGVectorStore(VectorStore):
                 ids.append(result.id)
 
                 item = self.table_class(
-                    id_=result.id,
+                    node_id=result.id,
                     embedding=result.embedding,
                     text=result.node.get_content(metadata_mode=MetadataMode.NONE),
                     metadata_=node_to_metadata_dict(
@@ -148,15 +148,10 @@ class PGVectorStore(VectorStore):
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 node = TextNode(
-                    id_=item.doc_id,
-                    text=item.text,
-                    metadata=item.metadata_,
-                    relationships={
-                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
-                    },
+                    id_=item.node_id, text=item.text, metadata=item.metadata_
                 )
             similarities.append(sim)
-            ids.append(item.doc_id)
+            ids.append(item.node_id)
             nodes.append(node)
 
         return VectorStoreQueryResult(
