@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
@@ -13,7 +13,10 @@ from llama_index.prompts.prompts import (
     RefinePrompt,
     SimpleInputPrompt,
 )
-from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT, DEFAULT_SIMPLE_INPUT_PROMPT
+from llama_index.prompts.default_prompts import (
+    DEFAULT_TEXT_QA_PROMPT,
+    DEFAULT_SIMPLE_INPUT_PROMPT,
+)
 from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 
 
@@ -66,7 +69,7 @@ class ResponseContext(BaseModel):
     )
     use_async: bool = Field(default=False, description="Whether to use async.")
     verbose: bool = Field(default=False, description="Whether to print verbose output.")
-    
+
     # ignore pydantic's type-checking for arbitrary types
     class Config:
         arbitrary_types_allowed = True
