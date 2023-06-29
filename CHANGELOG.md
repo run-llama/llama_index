@@ -6,6 +6,9 @@
 - Redis support for index stores and docstores (#6575)
 
 ### Bug Fixes / Nits
+- More robust JSON parsing from LLM for `SelectionOutputParser` (#6610)
+
+### Bug Fixes / Nits
 - Fix metadata column name in postgres vector store (#6622)
 
 ## [v0.6.35] - 2023-06-28
