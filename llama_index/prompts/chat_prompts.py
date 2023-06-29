@@ -10,18 +10,18 @@ from llama_index.prompts.prompts import RefinePrompt, RefineTableContextPrompt
 
 # Refine Prompt
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
-    HumanMessagePromptTemplate.from_template("{query_str}"),
-    AIMessagePromptTemplate.from_template("{existing_answer}"),
     HumanMessagePromptTemplate.from_template(
-        "You have the opportunity to refine the above answer "
-        "with additional context or provide more specific information "
-        "to help me generate a better response.\n"
+        "We have the opportunity to refine the above answer "
+        "(only if needed) with some more context below.\n"
         "------------\n"
-        "Context: {context_msg}\n"
+        "{context_msg}\n"
         "------------\n"
-        "Please refine the original answer based on the new context, "
-        "or if the context is not useful, repeat the original answer:\n"
-        "{existing_answer}"
+        "Given the new context, refine the original answer to better "
+        "answer the question: {query_str}. "
+        "If the context isn't useful, output the original answer again.\n"
+        "------------\n"
+        "{existing_answer}\n"
+        "------------"
     ),
 ]
 
