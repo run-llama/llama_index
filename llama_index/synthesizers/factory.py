@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
@@ -24,16 +25,19 @@ from llama_index.synthesizers.type import ResponseMode
 
 
 def get_response_synthesizer(
-    service_context: ServiceContext,
+    service_context: Optional[ServiceContext] = None,
     text_qa_template: Optional[QuestionAnswerPrompt] = DEFAULT_TEXT_QA_PROMPT,
     refine_template: Optional[RefinePrompt] = DEFAULT_REFINE_PROMPT_SEL,
     simple_template: Optional[SimpleInputPrompt] = DEFAULT_SIMPLE_INPUT_PROMPT,
     mode: ResponseMode = ResponseMode.COMPACT,
     node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+    callback_manager: Optional[CallbackManager] = None,
     use_async: bool = False,
     streaming: bool = False,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
+
+    service_context = service_context or ServiceContext.from_defaults(callback_manager=callback_manager)
 
     if mode == ResponseMode.REFINE:
         return Refine(
