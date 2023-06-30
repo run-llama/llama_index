@@ -1,21 +1,15 @@
 import logging
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Dict, List, Type
 
 from llama_index.experimental.evaporate.base import EvaporateExtractor
 from llama_index.program.base_program import BasePydanticProgram
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.program.predefined.df import (
-    DEFAULT_ROWS_DF_PARSER_TMPL,
-    DataFrameRowsOnly,
-)
-from llama_index.prompts.prompts import Prompt
+from llama_index.program.predefined.df import DataFrameRow
 from llama_index.schema import BaseNode
 
 logger = logging.getLogger(__name__)
 
 
-class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
+class EvaporateProgram(BasePydanticProgram[DataFrameRow]):
     """Evaporate program. You should provide the fields you want to extract.
     Then when you call the program you should pass in a list of training_data nodes
     and a list of infer_data nodes. The program will call the EvaporateExtractor
@@ -25,40 +19,17 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
 
     def __init__(
         self,
-        pydantic_program_cls: Type[BaseLLMFunctionProgram],
         fields_to_extract: List[str],
-        df_parser_template_str: str = DEFAULT_ROWS_DF_PARSER_TMPL,
         training_key: str = "training_data",
         infer_key: str = "infer_data",
         **program_kwargs: Any,
     ) -> None:
         """Init params."""
-        # partial format df parser template string with column schema
-        # NOTE: hack where we use prompt class to partial format
-        orig_prompt = Prompt(df_parser_template_str)
-        column_schema = ",".join(fields_to_extract)
-        new_prompt = Prompt.from_prompt(
-            orig_prompt.partial_format(
-                column_schema=column_schema,
-            )
-        )
-
-        pydantic_program = pydantic_program_cls.from_defaults(
-            DataFrameRowsOnly, new_prompt.original_template, **program_kwargs
-        )
-        self._validate_program(pydantic_program)
-        self._pydantic_program = pydantic_program
         self._extractor = EvaporateExtractor()
         self._field_fns: Dict[str, str] = {}
         self._fields = fields_to_extract
         self._training_key = training_key
         self._infer_key = infer_key
-
-    def _validate_program(self, pydantic_program: BasePydanticProgram) -> None:
-        if pydantic_program.output_cls != DataFrameRowsOnly:
-            raise ValueError(
-                "Output class of pydantic program must be `DataFramRowsOnly`."
-            )
 
     def _fit(self, nodes: List[BaseNode], field: str) -> str:
         """Given the input Nodes and fields, synthesize the python code."""
@@ -76,36 +47,29 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
     def from_defaults(
         cls,
         fields_to_extract: List[str],
-        pydantic_program_cls: Optional[Type[BaseLLMFunctionProgram]] = None,
-        df_parser_template_str: str = DEFAULT_ROWS_DF_PARSER_TMPL,
         **kwargs: Any,
     ) -> "EvaporateProgram":
-        """Rows DF output parser."""
-        pydantic_program_cls = pydantic_program_cls or OpenAIPydanticProgram
+        """Evaporate program."""
 
         return cls(
-            pydantic_program_cls,
             fields_to_extract,
-            df_parser_template_str=df_parser_template_str,
             **kwargs,
         )
 
     @property
-    def output_cls(self) -> Type[DataFrameRowsOnly]:
+    def output_cls(self) -> Type[DataFrameRow]:
         """Output class."""
-        return DataFrameRowsOnly
+        return DataFrameRow
 
-    def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
+    def __call__(self, *args: Any, **kwds: Any) -> DataFrameRow:
         """Call evaporate on training and inference data. Inputs should be two
         lists of nodes, using the keys `training_data` and `infer_data`."""
         for field in self._fields:
             self._field_fns[field] = self._fit(kwds[self._training_key], field)
-        infer_dict = {}
+        infer_vals = []
         for field in self._fields:
-            infer_dict[field] = self._inference(
-                kwds[self._infer_key], self._field_fns[field], field
+            infer_vals.append(
+                self._inference(kwds[self._infer_key], self._field_fns[field], field)
             )
-        infer_results = str(infer_dict)
-        result = self._pydantic_program(**{"input_str": infer_results})
-        result = cast(DataFrameRowsOnly, result)
+        result = DataFrameRow(row_values=infer_vals)
         return result
