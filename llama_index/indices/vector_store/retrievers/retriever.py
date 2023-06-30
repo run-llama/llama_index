@@ -106,7 +106,8 @@ class VectorIndexRetriever(BaseRetriever):
                     source_node is not None and source_node.node_type != ObjectType.TEXT
                 ):
                     node_id = query_result.nodes[i].node_id
-                    if node_id in self._docstore.docs:
+                    docstore_node_ids = self._docstore.docs.keys()
+                    if node_id in docstore_node_ids:
                         query_result.nodes[
                             i
                         ] = self._docstore.get_node(  # type: ignore[index]
@@ -115,7 +116,7 @@ class VectorIndexRetriever(BaseRetriever):
                     # Fix metadata for nodes that have source node in the docstore
                     elif (
                         source_node is not None
-                        and source_node.node_id in self._docstore.docs
+                        and source_node.node_id in docstore_node_ids
                     ):
                         query_result.nodes[
                             i
