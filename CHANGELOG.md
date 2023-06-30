@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [v0.6.37] - 2023-06-30
+
+### New Features
+- add context augmented openai agent (#6655)
+
 ## [v0.6.36] - 2023-06-29
 
 ### New Features
