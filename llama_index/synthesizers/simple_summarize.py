@@ -1,20 +1,27 @@
-from typing import Any, Generator, Sequence, cast
+from typing import Any, Generator, List, Optional, Sequence, cast
 
-from llama_index.indices.response.base_builder import BaseResponseBuilder
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from llama_index.prompts.default_prompts import (
+    DEFAULT_SIMPLE_INPUT_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
 from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.synthesizers.base import BaseSynthesizer
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
-class SimpleSummarize(BaseResponseBuilder):
+class SimpleSummarize(BaseSynthesizer):
     def __init__(
         self,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
+        text_qa_template: QuestionAnswerPrompt = DEFAULT_TEXT_QA_PROMPT,
+        service_context: Optional[ServiceContext] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         streaming: bool = False,
     ) -> None:
-        super().__init__(service_context, streaming)
+        super().__init__(service_context=service_context, streaming=streaming, node_postprocessors=node_postprocessors)
         self._text_qa_template = text_qa_template
 
     @llm_token_counter("aget_response")

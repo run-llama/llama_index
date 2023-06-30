@@ -2,16 +2,17 @@ import asyncio
 from typing import Any, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.indices.response.base_builder import BaseResponseBuilder
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt
+from llama_index.synthesizers.base import BaseSynthesizer
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
-class TreeSummarize(BaseResponseBuilder):
+class TreeSummarize(BaseSynthesizer):
     """
     Tree summarize response builder.
 
@@ -26,17 +27,15 @@ class TreeSummarize(BaseResponseBuilder):
 
     def __init__(
         self,
+        text_qa_template: Optional[QuestionAnswerPrompt] = DEFAULT_TEXT_QA_PROMPT,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        streaming: bool = False,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        streaming: bool = False, 
         use_async: bool = False,
         verbose: bool = False,
     ) -> None:
-        super().__init__(
-            service_context=service_context,
-            streaming=streaming,
-        )
-        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        super().__init__(service_context=service_context, streaming=streaming, node_postprocessors=node_postprocessors)
+        self._text_qa_template = text_qa_template
         self._use_async = use_async
         self._verbose = verbose
 

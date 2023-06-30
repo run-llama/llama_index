@@ -6,9 +6,10 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.response.type import ResponseMode
+from llama_index.synthesizers.base import BaseSynthesize
+from llama_index.synthesizers.factory import get_response_synthesizer
+from llama_index.synthesizers.type import ResponseMode
 from llama_index.langchain_helpers.text_splitter import (
     SentenceSplitter,
     TokenTextSplitter,
@@ -96,7 +97,7 @@ class CitationQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         retriever: BaseRetriever,
-        response_synthesizer: Optional[ResponseSynthesizer] = None,
+        response_synthesizer: Optional[BaseSynthesize] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
         text_splitter: Optional[TextSplitterType] = None,

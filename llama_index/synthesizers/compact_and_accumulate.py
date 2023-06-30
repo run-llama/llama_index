@@ -1,6 +1,7 @@
-from typing import Any, Sequence
+from typing import Any, List, Sequence, Optional
 
-from llama_index.indices.response.accumulate import Accumulate
+from llama_index.synthesizers import Accumulate
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -8,20 +9,7 @@ from llama_index.utils import temp_set_attrs
 
 
 class CompactAndAccumulate(Accumulate):
-    def __init__(
-        self,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
-        streaming: bool = False,
-        use_async: bool = False,
-    ) -> None:
-        super().__init__(
-            service_context=service_context,
-            text_qa_template=text_qa_template,
-            streaming=streaming,
-            use_async=use_async,
-        )
-        self.text_qa_template = text_qa_template
+    """Accumulate responses across compact text chunks."""
 
     async def aget_response(
         self,
