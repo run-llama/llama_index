@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
-    """Evaporate program. Given some fields you want to extract
-    and some example text, synthesizes a python program to extract
-    those values from the text.
-
-    Requires
+    """Evaporate program. You should provide the fields you want to extract.
+    Then when you call the program you should pass in a list of training_data nodes
+    and a list of infer_data nodes. The program will call the EvaporateExtractor
+    to synthesize a python function from the training data and then apply the function
+    to the infer_data.
     """
 
     def __init__(
