@@ -62,6 +62,7 @@ class RedisVectorStore(VectorStore):
         Args:
             index_name (str): Name of the index.
             index_prefix (str): Prefix for the index. Defaults to "llama_index".
+                The actual prefix used by Redis will be "{index_prefix}/vector".
             index_args (Dict[str, Any]): Arguments for the index. Defaults to None.
             metadata_fields (List[str]): List of metadata fields to store in the index
                 (only supports TAG fields).
@@ -103,7 +104,7 @@ class RedisVectorStore(VectorStore):
             raise ValueError(f"Redis failed to connect: {e}")
 
         # index identifiers
-        self._prefix = index_prefix
+        self._prefix = index_prefix + "/vector"
         self._index_name = index_name
         self._index_args = index_args if index_args is not None else {}
         self._metadata_fields = metadata_fields if metadata_fields is not None else []
