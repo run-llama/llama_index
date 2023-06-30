@@ -2,12 +2,33 @@
 
 ## Unreleased
 
+### Bug Fixes/ Nits
+- Improved chat refine template (#6645)
+
+## [v0.6.37] - 2023-06-30
+
+### New Features
+- add context augmented openai agent (#6655)
+
+## [v0.6.36] - 2023-06-29
+
 ### New Features
 - Redis support for index stores and docstores (#6575)
+- DuckDB + SQL query engine notebook (#6628)
+- add notebook showcasing deplot data loader (#6638)
 
 ### Bug Fixes / Nits
+- More robust JSON parsing from LLM for `SelectionOutputParser` (#6610)
+- bring our loaders back in line with llama-hub (#6630)
+- Remove usage of SQLStructStoreIndex in notebooks (#6585)
+- MD reader: remove html tags and leave linebreaks alone (#6618)
+- bump min langchain version to latest version (#6632)
 - Fix metadata column name in postgres vector store (#6622)
-- Improved chat refine template (#6645)
+- Postgres metadata fixes (#6626, #6634)
+- fixed links to dataloaders in contribution.md (#6636)
+- fix: typo in docs in creating custom_llm huggingface example (#6639)
+- Updated SelectionOutputParser to handle JSON objects and arrays (#6610)
+- Fixed docstring argument typo (#6652)
 
 ## [v0.6.35] - 2023-06-28
 - refactor structured output + pydantic programs (#6604)
