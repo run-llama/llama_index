@@ -13,7 +13,6 @@ from typing import Any, Dict, Optional, Sequence, Union, cast
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import Response
@@ -25,6 +24,8 @@ from llama_index.schema import (
     TextNode,
 )
 from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.synthesizers.base import BaseSynthesizer
+from llama_index.synthesizers.factory import get_response_synthesizer
 
 logger = logging.getLogger(__name__)
 
@@ -59,14 +60,14 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexDocumentSummary] = None,
         service_context: Optional[ServiceContext] = None,
-        response_synthesizer: Optional[ResponseSynthesizer] = None,
+        response_synthesizer: Optional[BaseSynthesizer] = None,
         summary_query: str = DEFAULT_SUMMARY_QUERY,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._response_synthesizer = (
             response_synthesizer
-            or ResponseSynthesizer.from_args(service_context=service_context)
+            or get_response_synthesizer(service_context=service_context)
         )
         self._summary_query = summary_query or "summarize:"
         super().__init__(

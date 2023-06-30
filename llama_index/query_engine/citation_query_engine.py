@@ -7,7 +7,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.synthesizers.base import BaseSynthesize
+from llama_index.synthesizers.base import BaseSynthesizer
 from llama_index.synthesizers.factory import get_response_synthesizer
 from llama_index.synthesizers.type import ResponseMode
 from llama_index.langchain_helpers.text_splitter import (
@@ -82,8 +82,7 @@ class CitationQueryEngine(BaseQueryEngine):
 
     Args:
         retriever (BaseRetriever): A retriever object.
-        response_synthesizer (Optional[ResponseSynthesizer]):
-            A ResponseSynthesizer object.
+        response_synthesizer (BaseSynthesizer): A BaseSynthesizer object.
         citation_chunk_size (int):
             Size of citation chunks, default=512. Useful for controlling
             granularity of sources.
@@ -97,7 +96,7 @@ class CitationQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         retriever: BaseRetriever,
-        response_synthesizer: Optional[BaseSynthesize] = None,
+        response_synthesizer: BaseSynthesizer,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
         text_splitter: Optional[TextSplitterType] = None,
@@ -107,10 +106,7 @@ class CitationQueryEngine(BaseQueryEngine):
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
         )
         self._retriever = retriever
-        self._response_synthesizer = (
-            response_synthesizer
-            or ResponseSynthesizer.from_args(callback_manager=callback_manager)
-        )
+        self._response_synthesizer = response_synthesizer
 
         super().__init__(callback_manager)
 
@@ -124,14 +120,13 @@ class CitationQueryEngine(BaseQueryEngine):
         citation_qa_template: Prompt = CITATION_QA_TEMPLATE,
         citation_refine_template: Prompt = CITATION_REFINE_TEMPLATE,
         retriever: Optional[BaseRetriever] = None,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        verbose: bool = False,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
-        response_kwargs: Optional[Dict] = None,
+        optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         use_async: bool = False,
         streaming: bool = False,
-        optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        verbose: bool = False,
         # class-specific args
         **kwargs: Any,
     ) -> "CitationQueryEngine":
@@ -163,12 +158,11 @@ class CitationQueryEngine(BaseQueryEngine):
         """
         retriever = retriever or index.as_retriever(**kwargs)
 
-        response_synthesizer = ResponseSynthesizer.from_args(
+        response_synthesizer = get_response_synthesizer(
             service_context=index.service_context,
             text_qa_template=citation_qa_template,
             refine_template=citation_refine_template,
-            response_mode=response_mode,
-            response_kwargs=response_kwargs,
+            mode=response_mode,
             use_async=use_async,
             streaming=streaming,
             optimizer=optimizer,
