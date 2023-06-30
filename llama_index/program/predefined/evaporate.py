@@ -64,14 +64,12 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
         """Given the input Nodes and fields, synthesize the python code."""
         fn = self._extractor.extract_fn_from_nodes(nodes, field)
         logger.debug(f"Extracted function: {fn}")
-        print(f"Extracted function: {fn}")
         return fn
 
     def _inference(self, nodes: List[BaseNode], fn_str: str, field_name: str) -> str:
         """Given the input, call the python code and return the result."""
         results = self._extractor.run_fn_on_nodes(nodes, fn_str, field_name)
         logger.debug(f"Results: {results}")
-        print(f"Results: {results}")
         return str(results)
 
     @classmethod
