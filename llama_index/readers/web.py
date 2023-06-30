@@ -132,7 +132,7 @@ class BeautifulSoupWebReader(BaseReader):
     Requires the `bs4` and `urllib` packages.
 
     Args:
-        file_extractor (Optional[Dict[str, Callable]]): A mapping of website
+        website_extractor (Optional[Dict[str, Callable]]): A mapping of website
             hostname (e.g. google.com) to a function that specifies how to
             extract text from the BeautifulSoup obj. See DEFAULT_WEBSITE_EXTRACTOR.
     """
