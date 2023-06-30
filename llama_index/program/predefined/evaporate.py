@@ -49,8 +49,8 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
         self._validate_program(pydantic_program)
         self._pydantic_program = pydantic_program
         self._extractor = EvaporateExtractor()
-        self.field_fns: Dict[str, str] = {}
-        self.fields = fields_to_extract
+        self._field_fns: Dict[str, str] = {}
+        self._fields = fields_to_extract
         self._training_key = training_key
         self._infer_key = infer_key
 
@@ -100,12 +100,12 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
     def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
         """Call evaporate on training and inference data. Inputs should be two
         lists of nodes, using the keys `training_data` and `infer_data`."""
-        for field in self.fields:
-            self.field_fns[field] = self._fit(kwds[self._training_key], field)
+        for field in self._fields:
+            self._field_fns[field] = self._fit(kwds[self._training_key], field)
         infer_dict = {}
-        for field in self.fields:
+        for field in self._fields:
             infer_dict[field] = self._inference(
-                kwds[self._infer_key], self.field_fns[field], field
+                kwds[self._infer_key], self._field_fns[field], field
             )
         infer_results = str(infer_dict)
         result = self._pydantic_program(**{"input_str": infer_results})
