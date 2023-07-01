@@ -302,12 +302,16 @@ class TextNode(BaseNode):
         return self.get_node_info()
 
 
+# TODO: legacy backport of old Node class
+Node = TextNode
+
+
 class ImageNode(TextNode):
     """Node with image."""
 
     # TODO: store reference instead of actual image
     # base64 encoded image str
-    image: str
+    image: Optional[str] = None
 
     @classmethod
     def get_type(cls) -> str:

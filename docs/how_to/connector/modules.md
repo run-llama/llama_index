@@ -26,5 +26,6 @@ maxdepth: 1
 ../../examples/data_connectors/TwitterDemo.ipynb
 ../../examples/data_connectors/WeaviateDemo.ipynb
 ../../examples/data_connectors/MakeDemo.ipynb
+../../examples/data_connectors/deplot/DeplotReader.ipynb
 ```
 

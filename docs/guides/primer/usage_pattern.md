@@ -10,7 +10,7 @@ The general usage pattern of LlamaIndex is as follows:
 ## 1. Load in Documents
 
 The first step is to load in data. This data is represented in the form of `Document` objects. 
-We provide a variety of [data loaders](/how_to/data_connectors.md) which will load in Documents
+We provide a variety of [data loaders](/how_to/examples/data_connectors.md) which will load in Documents
 through the `load_data` function, e.g.:
 
 ```python
@@ -25,7 +25,7 @@ You can also choose to construct documents manually. LlamaIndex exposes the `Doc
 from llama_index import Document
 
 text_list = [text1, text2, ...]
-documents = [Document(t) for t in text_list]
+documents = [Document(text=t) for t in text_list]
 ```
 
 A Document represents a lightweight container around the data source. You can now choose to proceed with one of the 
@@ -54,16 +54,21 @@ nodes = parser.get_nodes_from_documents(documents)
 You can also choose to construct Node objects manually and skip the first section. For instance,
 
 ```python
-from llama_index.schema import TextNode, NodeRelationship
+from llama_index.schema import TextNode, NodeRelationship, RelatedNodeInfo
 
 node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 # set relationships
-node1.relationships[NodeRelationship.NEXT] = node2.node_id
-node2.relationships[NodeRelationship.PREVIOUS] = node1.node_id
+node1.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=node2.node_id)
+node2.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=node1.node_id)
 nodes = [node1, node2]
 ```
 
+The `RelatedNodeInfo` class can also store additional `metadata` if needed:
+
+```python
+node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=node1.node_id, metadata={"key": "val"})
+```
 
 ## 3. Index Construction
 
@@ -132,7 +137,7 @@ index = VectorStoreIndex([])
 index.insert_nodes(nodes)
 ```
 
-See the [Document Management How-To](/how_to/index_structs/document_management.md) for more details on managing documents and an example notebook.
+See the [Document Management How-To](/how_to/index/document_management.md) for more details on managing documents and an example notebook.
 
 ### Customizing Documents
 
@@ -207,7 +212,7 @@ token usage through the outputs of these operations. When running operations,
 the token usage will be printed.
 
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
-See [Cost Predictor How-To](/docs/how_to/analysis/cost_analysis.md) for more details.
+See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
 
 
 ### [Optional] Save the index for future use
@@ -257,7 +262,7 @@ index = load_index_from_storage(
 
 You can build indices on top of other indices! 
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
-see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index_structs/composability.md).
+see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index/composability.md).
 
 ## 5. Query the index.
 

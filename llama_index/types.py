@@ -1,6 +1,8 @@
-from typing import Generator, Union
-from typing import Protocol, Any
+from typing import Generator, Union, Protocol, Any, TypeVar
 from abc import abstractmethod
+from pydantic import BaseModel
+
+Model = TypeVar("Model", bound=BaseModel)
 
 
 RESPONSE_TEXT_TYPE = Union[str, Generator]
