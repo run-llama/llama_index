@@ -24,15 +24,6 @@ class Refine(BaseResponseBuilder):
         self.text_qa_template = text_qa_template
         self._refine_template = refine_template
 
-    @llm_token_counter("aget_response")
-    async def aget_response(
-        self,
-        query_str: str,
-        text_chunks: Sequence[str],
-        **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
-        return self.get_response(query_str, text_chunks, **response_kwargs)
-
     @llm_token_counter("get_response")
     def get_response(
         self,
@@ -153,4 +144,117 @@ class Refine(BaseResponseBuilder):
             self._log_prompt_and_response(
                 formatted_prompt, response, log_prefix="Refined"
             )
+        return response
+
+    @llm_token_counter("aget_response")
+    async def aget_response(
+        self,
+        query_str: str,
+        text_chunks: Sequence[str],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        prev_response_obj = cast(
+            Optional[RESPONSE_TEXT_TYPE], response_kwargs.get("prev_response", None)
+        )
+        response: Optional[RESPONSE_TEXT_TYPE] = None
+        for text_chunk in text_chunks:
+            if prev_response_obj is None:
+                # if this is the first chunk, and text chunk already
+                # is an answer, then return it
+                response = await self._agive_response_single(
+                    query_str,
+                    text_chunk,
+                )
+            else:
+                response = await self._arefine_response_single(
+                    prev_response_obj, query_str, text_chunk
+                )
+            prev_response_obj = response
+        if isinstance(response, str):
+            response = response or "Empty Response"
+        else:
+            response = cast(Generator, response)
+        return response
+
+    async def _arefine_response_single(
+        self,
+        response: RESPONSE_TEXT_TYPE,
+        query_str: str,
+        text_chunk: str,
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        """Refine response."""
+        # TODO: consolidate with logic in response/schema.py
+        if isinstance(response, Generator):
+            response = get_response_text(response)
+
+        fmt_text_chunk = truncate_text(text_chunk, 50)
+        logger.debug(f"> Refine context: {fmt_text_chunk}")
+        # NOTE: partial format refine template with query_str and existing_answer here
+        refine_template = self._refine_template.partial_format(
+            query_str=query_str, existing_answer=response
+        )
+        text_chunks = self._service_context.prompt_helper.repack(
+            refine_template, text_chunks=[text_chunk]
+        )
+
+        for cur_text_chunk in text_chunks:
+            if not self._streaming:
+                (
+                    response,
+                    formatted_prompt,
+                ) = await self._service_context.llm_predictor.apredict(
+                    refine_template,
+                    context_msg=cur_text_chunk,
+                )
+            else:
+                raise ValueError("Streaming not supported for async")
+
+            refine_template = self._refine_template.partial_format(
+                query_str=query_str, existing_answer=response
+            )
+
+            self._log_prompt_and_response(
+                formatted_prompt, response, log_prefix="Refined"
+            )
+        return response
+
+    async def _agive_response_single(
+        self,
+        query_str: str,
+        text_chunk: str,
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        """Give response given a query and a corresponding text chunk."""
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        text_chunks = self._service_context.prompt_helper.repack(
+            text_qa_template, [text_chunk]
+        )
+
+        response: Optional[RESPONSE_TEXT_TYPE] = None
+        # TODO: consolidate with loop in get_response_default
+        for cur_text_chunk in text_chunks:
+            if response is None and not self._streaming:
+                (
+                    response,
+                    formatted_prompt,
+                ) = await self._service_context.llm_predictor.apredict(
+                    text_qa_template,
+                    context_str=cur_text_chunk,
+                )
+                self._log_prompt_and_response(
+                    formatted_prompt, response, log_prefix="Initial"
+                )
+            elif response is None and self._streaming:
+                raise ValueError("Streaming not supported for async")
+            else:
+                response = await self._arefine_response_single(
+                    cast(RESPONSE_TEXT_TYPE, response),
+                    query_str,
+                    cur_text_chunk,
+                )
+        if isinstance(response, str):
+            response = response or "Empty Response"
+        else:
+            response = cast(Generator, response)
         return response

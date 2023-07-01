@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Fixed node vs. document filtering in vector stores (#6677)
+- Added async support for "compact" and "refine" response modes (#6590)
 
 ## [v0.6.37] - 2023-06-30
 
