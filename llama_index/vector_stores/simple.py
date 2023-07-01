@@ -42,7 +42,7 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
     Args:
         embedding_dict (Optional[dict]): dict mapping node_ids to embeddings.
-        text_id_to_ref_doc_id (Optional[dict]): 
+        text_id_to_ref_doc_id (Optional[dict]):
             dict mapping text_ids/node_ids to ref_doc_ids.
 
     """
