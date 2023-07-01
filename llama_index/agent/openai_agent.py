@@ -58,11 +58,14 @@ class StreamingChatResponse:
         self.response = ""
 
     def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
-        final_message = ChatMessage(content="", role="assistant")
+        final_message = None
         for chat in self.chat_stream:
             final_message = chat.message
             self.queue.put_nowait(chat.delta)
-        chat_history.append(final_message)
+
+        if final_message is not None:
+            chat_history.append(final_message)
+
         self.is_done = True
 
     @property
@@ -143,8 +146,8 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         tools = self._get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
 
-        def _stream_response(
-            message: str, chat_history: List[ChatMessage]
+        def _stream_chat(
+            chat_history: List[ChatMessage],
         ) -> Generator[StreamingChatResponse, None, None]:
             # TODO: Support forced function call
             chat_stream_response = StreamingChatResponse(
@@ -193,7 +196,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                     "function_call", None
                 )
 
-        return _stream_response(message, chat_history)
+        return _stream_chat(chat_history)
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -237,8 +240,8 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         tools = self._get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
 
-        async def _stream_response(
-            message: str, chat_history: List[ChatMessage]
+        async def _astream_chat(
+            chat_history: List[ChatMessage],
         ) -> AsyncGenerator[StreamingChatResponse, None]:
             # TODO: Support forced function call
             chat_stream_response = StreamingChatResponse(
@@ -287,7 +290,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                     "function_call", None
                 )
 
-        return _stream_response(message, chat_history)
+        return _astream_chat(chat_history)
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
