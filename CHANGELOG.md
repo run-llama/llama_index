@@ -1,5 +1,8 @@
 # ChangeLog
 
+## Unreleased
+- Added async support for "compact" and "refine" response modes (#6590)
+
 ## [v0.6.37] - 2023-06-30
 
 ### New Features
