@@ -24,7 +24,10 @@ def generate_vectors(
     ]
 
 
-def bench_simple_vector_store(num_vectors: List[int] = [10, 50, 100, 500]) -> None:
+def bench_simple_vector_store(
+    num_vectors: List[int] = [10, 50, 100, 500, 1000]
+) -> None:
+    print("Benchmarking SimpleVectorStore\n---------------------------")
     """Benchmark simple vector store."""
     for num_vector in num_vectors:
         vectors = generate_vectors(num_vectors=num_vector)
@@ -34,9 +37,7 @@ def bench_simple_vector_store(num_vectors: List[int] = [10, 50, 100, 500]) -> No
         time1 = time.time()
         vector_store.add(embedding_results=vectors)
         time2 = time.time()
-        print(
-            f"Adding {num_vector} vectors to `SimpleVectorStore` took {time2 - time1} seconds"
-        )
+        print(f"Adding {num_vector} vectors took {time2 - time1} seconds")
 
         for mode in [
             VectorStoreQueryMode.DEFAULT,
@@ -50,8 +51,8 @@ def bench_simple_vector_store(num_vectors: List[int] = [10, 50, 100, 500]) -> No
             vector_store.query(query=query)
             time2 = time.time()
             print(
-                f"""Querying `SimpleVectorStore` containing {num_vector} vectors with 
-                {mode} mode took {time2 - time1} seconds"""
+                f"""Querying store of {num_vector} \
+vectors with {mode} mode took {time2 - time1} seconds"""
             )
 
 
