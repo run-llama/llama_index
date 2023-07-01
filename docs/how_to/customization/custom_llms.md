@@ -136,7 +136,7 @@ response = query_engine.query("What did the author do after his time at Y Combin
 
 ## Example: Using a HuggingFace LLM
 
-LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](./embeddings.md#custom-embeddings)).
+LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
 
 Many open-source models from HuggingFace require either some preamble before before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
 
@@ -197,7 +197,7 @@ Several example notebooks are also listed below:
 
 To use a custom LLM model, you only need to implement the `LLM` class [from Langchain](https://python.langchain.com/en/latest/modules/models/llms/examples/custom_llm.html). You will be responsible for passing the text to the model and returning the newly generated tokens.
 
-Note that for a completely private experience, also setup a local embedding model (example [here](./embeddings.md#custom-embeddings)).
+Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
 
 Here is a small example using locally running facebook/OPT model and Huggingface's pipeline abstraction:
 
