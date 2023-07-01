@@ -93,7 +93,7 @@ FN_GENERATION_PROMPT_TMPL = f"""Here is a sample of text:
 
 Question: {{query_str:}}
 
-Return the result as a list.
+Return the result as a single value (string, int, float), and not a list.
 
 import re
 

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Type, Optional
 
-from llama_index.experimental.evaporate.base import EvaporateExtractor
+from llama_index.program.predefined.evaporate.base import EvaporateExtractor
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.program.predefined.df import DataFrameRowsOnly, DataFrameRow
 from llama_index.schema import BaseNode
@@ -13,6 +13,7 @@ from llama_index.program.predefined.evaporate.prompts import (
     SchemaIDPrompt,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
 )
+import pandas as pd
 
 
 logger = logging.getLogger(__name__)
@@ -108,11 +109,13 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
             self._field_fns[field] = fn
         return fn
 
-    def _inference(self, nodes: List[BaseNode], fn_str: str, field_name: str) -> str:
+    def _inference(
+        self, nodes: List[BaseNode], fn_str: str, field_name: str
+    ) -> List[Any]:
         """Given the input, call the python code and return the result."""
         results = self._extractor.run_fn_on_nodes(nodes, fn_str, field_name)
         logger.debug(f"Results: {results}")
-        return str(results)
+        return results
 
     @property
     def output_cls(self) -> Type[DataFrameRowsOnly]:
@@ -122,11 +125,20 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
     def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
         """Call evaporate on inference data."""
 
-        infer_vals = []
+        col_dict = {}
         for field in self._fields:
-            infer_vals.append(
-                self._inference(kwds[self._infer_key], self._field_fns[field], field)
+            col_dict[field] = self._inference(
+                kwds[self._infer_key], self._field_fns[field], field
             )
-        data_frame_row = DataFrameRow(row_values=infer_vals)
-        result = DataFrameRowsOnly(rows=[data_frame_row])
-        return result
+
+        df = pd.DataFrame(col_dict, columns=self._fields)
+
+        # convert pd.DataFrame to DataFrameRowsOnly
+        df_row_objs = []
+        for row_arr in df.values:
+            df_row_objs.append(DataFrameRow(row_values=list(row_arr)))
+        return DataFrameRowsOnly(rows=df_row_objs)
+
+        # data_frame_row = DataFrameRow(row_values=infer_vals)
+        # result = DataFrameRowsOnly(rows=[data_frame_row])
+        # return result

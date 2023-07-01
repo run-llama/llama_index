@@ -151,6 +151,9 @@ class EvaporateExtractor:
         )
         qa_prompt = QuestionAnswerPrompt.from_prompt(new_prompt)
 
+        print(qa_prompt)
+        raise Exception
+
         response_synthesizer = ResponseSynthesizer.from_args(
             text_qa_template=qa_prompt, response_mode="compact"
         )
