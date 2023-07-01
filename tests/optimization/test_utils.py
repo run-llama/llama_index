@@ -2,7 +2,7 @@
 
 from typing import Any, List
 from unittest.mock import patch
-
+import pytest
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.optimization.optimizer import SentenceEmbeddingOptimizer
@@ -10,6 +10,11 @@ from llama_index.optimization.utils import (
     get_large_chinese_tokenizer_fn,
     get_transformer_tokenizer_fin,
 )
+
+try:
+    from transformers import AutoTokenizer
+except ImportError:
+    AutoTokenizer = None  # type: ignore
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -40,6 +45,7 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 @patch.object(
     OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
+@pytest.mark.skipif(AutoTokenizer is None, reason="transformers not installed")
 def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
     """Test optimizer."""
     optimizer = SentenceEmbeddingOptimizer(
