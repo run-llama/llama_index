@@ -1,6 +1,8 @@
 import json
 from abc import abstractmethod
-from typing import Callable, List, Optional
+from queue import Queue
+from threading import Thread
+from typing import AsyncGenerator, Callable, Generator, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
@@ -8,7 +10,7 @@ from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.base import ChatMessage, ChatResponseGen
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools import BaseTool
@@ -44,6 +46,35 @@ def call_function(
         print(f"Got output: {output}")
         print("========================")
     return ChatMessage(content=str(output), name=function_call["name"], role="function")
+
+
+class StreamingChatResponse:
+    """Streaming chat response to user and writing to chat history."""
+
+    def __init__(self, chat_stream: ChatResponseGen) -> None:
+        self.chat_stream = chat_stream
+        self.queue: Queue = Queue()
+        self.is_done = False
+        self.response = ""
+
+    def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+        final_message = ChatMessage(content="", role="assistant")
+        for chat in self.chat_stream:
+            final_message = chat.message
+            self.queue.put_nowait(chat.delta)
+        chat_history.append(final_message)
+        self.is_done = True
+
+    @property
+    def response_gen(self) -> Generator[str, None, None]:
+        while not self.is_done or not self.queue.empty():
+            try:
+                delta = self.queue.get(block=False)
+                self.response += delta
+                yield delta
+            except Exception:
+                # Queue is empty, but we're not done yet
+                continue
 
 
 class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
@@ -104,6 +135,66 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
         return Response(ai_message.content)
 
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> Generator[StreamingChatResponse, None, None]:
+        chat_history = chat_history or self._chat_history
+        chat_history.append(ChatMessage(content=message, role="user"))
+        tools = self._get_tools(message)
+        functions = [tool.metadata.to_openai_function() for tool in tools]
+
+        def _stream_response(
+            message: str, chat_history: List[ChatMessage]
+        ) -> Generator[StreamingChatResponse, None, None]:
+            # TODO: Support forced function call
+            chat_stream_response = StreamingChatResponse(
+                self._llm.stream_chat(chat_history, functions=functions)
+            )
+
+            # Get the response in a separate thread so we can yield the response
+            thread = Thread(
+                target=chat_stream_response.write_response_to_history,
+                args=(chat_history,),
+            )
+            thread.start()
+            yield chat_stream_response
+            thread.join()
+
+            n_function_calls = 0
+            function_call = chat_history[-1].additional_kwargs.get(
+                "function_call", None
+            )
+            while function_call is not None:
+                if n_function_calls >= self._max_function_calls:
+                    print(f"Exceeded max function calls: {self._max_function_calls}.")
+                    break
+
+                function_message = call_function(
+                    tools, function_call, verbose=self._verbose
+                )
+                chat_history.append(function_message)
+                n_function_calls += 1
+
+                # send function call & output back to get another response
+                chat_stream_response = StreamingChatResponse(
+                    self._llm.stream_chat(chat_history, functions=functions)
+                )
+
+                # Get the response in a separate thread so we can yield the response
+                thread = Thread(
+                    target=chat_stream_response.write_response_to_history,
+                    args=(chat_history,),
+                )
+                thread.start()
+                yield chat_stream_response
+                thread.join()
+
+                function_call = chat_history[-1].additional_kwargs.get(
+                    "function_call", None
+                )
+
+        return _stream_response(message, chat_history)
+
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
@@ -137,6 +228,66 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             function_call = ai_message.additional_kwargs.get("function_call", None)
 
         return Response(ai_message.content)
+
+    def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> AsyncGenerator[StreamingChatResponse, None]:
+        chat_history = chat_history or self._chat_history
+        chat_history.append(ChatMessage(content=message, role="user"))
+        tools = self._get_tools(message)
+        functions = [tool.metadata.to_openai_function() for tool in tools]
+
+        async def _stream_response(
+            message: str, chat_history: List[ChatMessage]
+        ) -> AsyncGenerator[StreamingChatResponse, None]:
+            # TODO: Support forced function call
+            chat_stream_response = StreamingChatResponse(
+                await self._llm.astream_chat(chat_history, functions=functions)
+            )
+
+            # Get the response in a separate thread so we can yield the response
+            thread = Thread(
+                target=chat_stream_response.write_response_to_history,
+                args=(chat_history,),
+            )
+            thread.start()
+            yield chat_stream_response
+            thread.join()
+
+            n_function_calls = 0
+            function_call = chat_history[-1].additional_kwargs.get(
+                "function_call", None
+            )
+            while function_call is not None:
+                if n_function_calls >= self._max_function_calls:
+                    print(f"Exceeded max function calls: {self._max_function_calls}.")
+                    break
+
+                function_message = call_function(
+                    tools, function_call, verbose=self._verbose
+                )
+                chat_history.append(function_message)
+                n_function_calls += 1
+
+                # send function call & output back to get another response
+                chat_stream_response = StreamingChatResponse(
+                    await self._llm.astream_chat(chat_history, functions=functions)
+                )
+
+                # Get the response in a separate thread so we can yield the response
+                thread = Thread(
+                    target=chat_stream_response.write_response_to_history,
+                    args=(chat_history,),
+                )
+                thread.start()
+                yield chat_stream_response
+                thread.join()
+
+                function_call = chat_history[-1].additional_kwargs.get(
+                    "function_call", None
+                )
+
+        return _stream_response(message, chat_history)
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
