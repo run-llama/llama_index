@@ -4,7 +4,6 @@
 from typing import Any, List
 
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
-
 from llama_index.embeddings.base import BaseEmbedding
 
 
@@ -24,6 +23,10 @@ class LangchainEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return self._langchain_embedding.embed_query(query)
+
+    # TODO: use proper async methods
+    async def _aget_text_embedding(self, query: str) -> List[float]:
+        return self._get_query_embedding(query)
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""

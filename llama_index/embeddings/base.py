@@ -71,6 +71,10 @@ class BaseEmbedding:
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
 
+    @abstractmethod
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding asynchronously."""
+
     def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
@@ -83,11 +87,6 @@ class BaseEmbedding:
             event_id=event_id,
         )
         return query_embedding
-
-    # @abstractmethod
-    async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding asynchronously."""
-        ...
 
     async def aget_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
