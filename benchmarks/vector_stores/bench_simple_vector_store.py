@@ -34,7 +34,9 @@ def bench_simple_vector_store(num_vectors: List[int] = [10, 50, 100, 500]) -> No
         time1 = time.time()
         vector_store.add(embedding_results=vectors)
         time2 = time.time()
-        print(f"Adding {num_vector} vectors to index took {time2 - time1} seconds")
+        print(
+            f"Adding {num_vector} vectors to `SimpleVectorStore` took {time2 - time1} seconds"
+        )
 
         for mode in [
             VectorStoreQueryMode.DEFAULT,
@@ -48,7 +50,8 @@ def bench_simple_vector_store(num_vectors: List[int] = [10, 50, 100, 500]) -> No
             vector_store.query(query=query)
             time2 = time.time()
             print(
-                f"Querying index of {num_vector} vectors with {mode} took {time2 - time1} seconds"
+                f"""Querying `SimpleVectorStore` containing {num_vector} vectors with 
+                {mode} mode took {time2 - time1} seconds"""
             )
 
 
