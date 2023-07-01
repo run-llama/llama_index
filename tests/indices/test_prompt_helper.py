@@ -3,11 +3,11 @@ from typing import cast
 
 from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
 
-from llama_index.data_structs.node import Node
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.prompts.utils import get_biggest_prompt, get_empty_prompt_txt
 from llama_index.prompts.base import Prompt
+from llama_index.schema import TextNode
 from tests.mock_utils.mock_utils import mock_tokenizer
 
 
@@ -145,8 +145,8 @@ def test_get_numbered_text_from_nodes() -> None:
     prompt_helper = PromptHelper(
         max_input_size=17, num_output=0, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
-    node1 = Node(text="This is a test foo bar")
-    node2 = Node(text="Hello world bar foo")
+    node1 = TextNode(text="This is a test foo bar")
+    node2 = TextNode(text="Hello world bar foo")
 
     text_splitter = prompt_helper.get_text_splitter_given_prompt(
         prompt=test_prompt,

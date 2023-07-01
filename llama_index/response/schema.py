@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, Generator, List, Optional, Union
 
-from llama_index.data_structs.node import NodeWithScore
+from llama_index.schema import NodeWithScore
 from llama_index.utils import truncate_text
 
 
@@ -20,7 +20,7 @@ class Response:
 
     response: Optional[str]
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-    extra_info: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
 
     def __str__(self) -> str:
         """Convert to string representation."""
@@ -30,8 +30,8 @@ class Response:
         """Get formatted sources text."""
         texts = []
         for source_node in self.source_nodes:
-            fmt_text_chunk = truncate_text(source_node.node.get_text(), length)
-            doc_id = source_node.node.doc_id or "None"
+            fmt_text_chunk = truncate_text(source_node.node.get_content(), length)
+            doc_id = source_node.node.node_id or "None"
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)
@@ -50,7 +50,7 @@ class StreamingResponse:
 
     response_gen: Optional[Generator]
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-    extra_info: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
 
     def __str__(self) -> str:
@@ -69,7 +69,7 @@ class StreamingResponse:
             for text in self.response_gen:
                 response_txt += text
             self.response_txt = response_txt
-        return Response(self.response_txt, self.source_nodes, self.extra_info)
+        return Response(self.response_txt, self.source_nodes, self.metadata)
 
     def print_response_stream(self) -> None:
         """Print the response stream."""
@@ -86,9 +86,9 @@ class StreamingResponse:
         """Get formatted sources text."""
         texts = []
         for source_node in self.source_nodes:
-            fmt_text_chunk = truncate_text(source_node.source_text, length)
-            doc_id = source_node.doc_id or "None"
-            source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
+            fmt_text_chunk = truncate_text(source_node.node.get_content(), length)
+            node_id = source_node.node.node_id or "None"
+            source_text = f"> Source (Node id: {node_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)
 

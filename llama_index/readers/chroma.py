@@ -3,7 +3,7 @@
 from typing import Any, List, Optional, Union
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class ChromaReader(BaseReader):
@@ -21,6 +21,8 @@ class ChromaReader(BaseReader):
         self,
         collection_name: str,
         persist_directory: Optional[str] = None,
+        chroma_api_impl: str = "rest",
+        chroma_db_impl: Optional[str] = None,
         host: str = "localhost",
         port: int = 8000,
     ) -> None:
@@ -39,7 +41,8 @@ class ChromaReader(BaseReader):
 
         self._client = chromadb.Client(
             Settings(
-                chroma_api_impl="rest",
+                chroma_api_impl=chroma_api_impl,
+                chroma_db_impl=chroma_db_impl or "chromadb.db.duckdb.DuckDB",
                 chroma_server_host=host,
                 chroma_server_http_port=port,
                 persist_directory=persist_directory
@@ -67,10 +70,10 @@ class ChromaReader(BaseReader):
             results["metadatas"],
         ):
             document = Document(
-                doc_id=result[0][0],
+                id_=result[0][0],
                 text=result[1][0],
                 embedding=result[2][0],
-                extra_info=result[3][0],
+                metadata=result[3][0],
             )
             documents.append(document)
 

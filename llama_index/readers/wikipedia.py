@@ -2,7 +2,7 @@
 from typing import Any, List
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class WikipediaReader(BaseReader):
@@ -33,5 +33,5 @@ class WikipediaReader(BaseReader):
         results = []
         for page in pages:
             page_content = wikipedia.page(page, **load_kwargs).content
-            results.append(Document(page_content))
+            results.append(Document(text=page_content))
         return results

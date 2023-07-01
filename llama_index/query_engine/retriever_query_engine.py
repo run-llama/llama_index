@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
@@ -17,6 +16,7 @@ from llama_index.prompts.prompts import (
     SimpleInputPrompt,
 )
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import NodeWithScore
 
 
 class RetrieverQueryEngine(BaseQueryEngine):

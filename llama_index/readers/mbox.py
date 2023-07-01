@@ -5,7 +5,7 @@ from typing import Any, List
 
 from llama_index.readers.base import BaseReader
 from llama_index.readers.file.mbox_reader import MboxReader as MboxFileReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class MboxReader(BaseReader):

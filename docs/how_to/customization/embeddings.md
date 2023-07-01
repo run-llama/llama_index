@@ -16,7 +16,6 @@ Simply specify the `embedding` field when creating a Document:
 
 ## Using a Vector Store as an Underlying Index
 
-<!-- Please see the corresponding section in our [Vector Stores](/how_to/vector_stores.md#loading-data-from-vector-stores-using-data-connector) -->
 Please see the corresponding section in our [Vector Stores](/how_to/integrations/vector_stores.md)
 guide for more details.
 

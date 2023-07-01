@@ -15,7 +15,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 install_requires = [
     "dataclasses_json",
-    "langchain>=0.0.154",
+    "langchain>=0.0.218",
     "sqlalchemy>=2.0.15",
     "numpy",
     "tenacity>=8.2.0,<9.0.0",
@@ -25,7 +25,7 @@ install_requires = [
     "fsspec>=2023.5.0",
     "typing-inspect==0.8.0",
     "typing_extensions==4.5.0",
-    "bs4",  # hotfix for langchain 0.0.212 bug
+    "beautifulsoup4",  # hotfix for langchain 0.0.212 bug
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken

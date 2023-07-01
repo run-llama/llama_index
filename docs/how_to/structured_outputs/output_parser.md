@@ -1,8 +1,4 @@
-# 🔢 Output Parsing
-
-LLM output/validation capabilities are crucial to LlamaIndex in the following areas:
-- **Document retrieval**: Many data structures within LlamaIndex rely on LLM calls with a specific schema for Document retrieval. For instance, the tree index expects LLM calls to be in the format "ANSWER: (number)".
-- **Response synthesis**: Users may expect that the final response contains some degree of structure (e.g. a JSON output, a formatted SQL query, etc.)
+# Output Parsing
 
 LlamaIndex supports integrations with output parsing modules offered
 by other frameworks. These output parsing modules can be used in the following ways:
@@ -157,4 +153,5 @@ maxdepth: 1
 ../examples/output_parsing/guidance_pydantic_program.ipynb
 ../examples/output_parsing/guidance_sub_question.ipynb
 ../examples/output_parsing/openai_pydantic_program.ipynb
+../examples/output_parsing/df_output_parser.ipynb
 ```

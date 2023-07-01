@@ -4,7 +4,6 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import (
@@ -18,6 +17,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KeywordExtractPrompt, QueryKeywordExtractPrompt
+from llama_index.schema import NodeWithScore
 from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -100,9 +100,9 @@ class BaseKeywordTableRetriever(BaseRetriever):
             for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
                 logger.debug(
                     f"> Querying with idx: {chunk_idx}: "
-                    f"{truncate_text(node.get_text(), 50)}"
+                    f"{truncate_text(node.get_content(), 50)}"
                 )
-        sorted_nodes_with_scores = [NodeWithScore(node) for node in sorted_nodes]
+        sorted_nodes_with_scores = [NodeWithScore(node=node) for node in sorted_nodes]
 
         return sorted_nodes_with_scores
 

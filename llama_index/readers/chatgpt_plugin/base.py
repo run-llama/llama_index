@@ -7,7 +7,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class ChatGPTRetrievalPluginReader(BaseReader):
@@ -50,7 +50,7 @@ class ChatGPTRetrievalPluginReader(BaseReader):
                 result_embedding = result["embedding"]
                 document = Document(
                     text=result_txt,
-                    doc_id=result_id,
+                    id_=result_id,
                     embedding=result_embedding,
                 )
                 documents.append(document)
@@ -59,7 +59,7 @@ class ChatGPTRetrievalPluginReader(BaseReader):
             break
 
         if not separate_documents:
-            text_list = [doc.get_text() for doc in documents]
+            text_list = [doc.get_content() for doc in documents]
             text = "\n\n".join(text_list)
             documents = [Document(text=text)]
 
