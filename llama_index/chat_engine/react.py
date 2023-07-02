@@ -70,7 +70,7 @@ class ReActChatEngine(BaseChatEngine):
             raise ValueError("Cannot specify both memory and chat_history.")
 
         if memory is None:
-            lc_messages = to_lc_messages(chat_history)
+            lc_messages = to_lc_messages(chat_history or [])
             lc_history = ChatMessageHistory(messages=lc_messages)
 
             memory = ConversationBufferMemory(
@@ -140,7 +140,14 @@ class ReActChatEngine(BaseChatEngine):
         response = self._agent.run(input=message)
         return Response(response=response)
 
-    async def achat(self, message: str) -> RESPONSE_TYPE:
+    async def achat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
+        if chat_history is not None:
+            raise NotImplementedError(
+                "chat_history argument is not supported for ReActChatEngine."
+            )
+
         response = await self._agent.arun(input=message)
         return Response(response=response)
 

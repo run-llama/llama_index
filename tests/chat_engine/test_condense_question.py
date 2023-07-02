@@ -1,7 +1,9 @@
 from unittest.mock import Mock
+
 from llama_index.chat_engine.condense_question import CondenseQuestionChatEngine
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
+from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.response.schema import Response
 
 
@@ -38,7 +40,10 @@ def test_condense_question_chat_engine_with_init_history(
     engine = CondenseQuestionChatEngine.from_defaults(
         query_engine=query_engine,
         service_context=mock_service_context,
-        chat_history=[("test human message", "test ai message")],
+        chat_history=[
+            ChatMessage(role=MessageRole.USER, text="test human message"),
+            ChatMessage(role=MessageRole.ASSISTANT, text="test ai message"),
+        ],
     )
 
     response = engine.chat("new human message")

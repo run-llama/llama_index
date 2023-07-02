@@ -45,7 +45,7 @@ class BaseChatEngine(ABC):
 
     @property
     @abstractmethod
-    def chat_history() -> List[ChatMessage]:
+    def chat_history(self) -> List[ChatMessage]:
         pass
 
 
