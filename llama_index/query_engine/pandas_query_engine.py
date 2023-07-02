@@ -52,6 +52,7 @@ def default_output_processor(
         exec(ast.unparse(module), {}, local_vars)  # type: ignore
         module_end = ast.Module(tree.body[-1:], type_ignores=[])
         module_end_str = ast.unparse(module_end)  # type: ignore
+        print(module_end_str)
         try:
             return str(eval(module_end_str, {}, local_vars))
         except Exception as e:
