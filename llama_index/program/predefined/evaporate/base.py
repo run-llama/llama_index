@@ -225,15 +225,6 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[DataFrameValuesPerColumn])
             verbose=verbose,
         )
 
-    # @classmethod
-    # def from_defaults(
-    #     cls, fn_generate_prompt: Optional[FnGeneratePrompt] = None, **kwargs: Any
-    # ) -> "BaseEvaporateProgram":
-    #     """Evaporate program."""
-    #     # modify the default function generate prompt to return a list
-    #     fn_generate_prompt = fn_generate_prompt or FN_GENERATION_LIST_PROMPT
-    #     return super().from_defaults(fn_generate_prompt=fn_generate_prompt, **kwargs)
-
     def fit(
         self,
         nodes: List[BaseNode],
