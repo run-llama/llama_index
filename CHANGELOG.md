@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Introduce `llama_index.llms` module, with new `LLM` interface, and `OpenAI`, `HuggingFaceLLM`, `LangChainLLM` implementations. 
+
 ### Bug Fixes / Nits
 - Fix serialization for OpenSearch vector stores (#6612)
 
