@@ -1,9 +1,10 @@
-from typing import Any, Dict, Generic, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from llama_index.bridge.langchain import ChatOpenAI, HumanMessage
 
-from llama_index.program.base_program import BasePydanticProgram, Model
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import Prompt
+from pydantic import BaseModel
 
 SUPPORTED_MODEL_NAMES = [
     "gpt-3.5-turbo-0613",
@@ -11,7 +12,7 @@ SUPPORTED_MODEL_NAMES = [
 ]
 
 
-def _openai_function(output_cls: Type[Model]) -> Dict[str, Any]:
+def _openai_function(output_cls: Type[BaseModel]) -> Dict[str, Any]:
     """Convert pydantic class to OpenAI function."""
     schema = output_cls.schema()
     return {
@@ -21,7 +22,7 @@ def _openai_function(output_cls: Type[Model]) -> Dict[str, Any]:
     }
 
 
-def _openai_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
+def _openai_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
     """Default OpenAI function to call."""
     schema = output_cls.schema()
     return {
@@ -29,7 +30,7 @@ def _openai_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
     }
 
 
-class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
+class OpenAIPydanticProgram(BaseLLMFunctionProgram[ChatOpenAI]):
     """
     An OpenAI-based function that returns a pydantic model.
 
@@ -38,12 +39,13 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
 
     def __init__(
         self,
-        output_cls: Type[Model],
+        output_cls: Type[BaseModel],
         llm: ChatOpenAI,
         prompt: Prompt,
         function_call: Union[str, Dict[str, Any]],
         verbose: bool = False,
     ) -> None:
+        """Init params."""
         self._output_cls = output_cls
         self._llm = llm
         self._prompt = prompt
@@ -53,12 +55,13 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
     @classmethod
     def from_defaults(
         cls,
-        output_cls: Type[Model],
+        output_cls: Type[BaseModel],
         prompt_template_str: str,
         llm: Optional[ChatOpenAI] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
-    ) -> "OpenAIPydanticProgram":
+        **kwargs: Any,
+    ) -> "BaseLLMFunctionProgram":
         llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
         if not isinstance(llm, ChatOpenAI):
             raise ValueError("llm must be a ChatOpenAI instance")
@@ -69,7 +72,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
         prompt = Prompt(prompt_template_str)
-        function_call = function_call or "auto"
+        function_call = function_call or {"name": output_cls.schema()["title"]}
         return cls(
             output_cls=output_cls,
             llm=llm,
@@ -79,14 +82,14 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         )
 
     @property
-    def output_cls(self) -> Type[Model]:
+    def output_cls(self) -> Type[BaseModel]:
         return self._output_cls
 
     def __call__(
         self,
         *args: Any,
         **kwargs: Any,
-    ) -> Model:
+    ) -> BaseModel:
         formatted_prompt = self._prompt.format(**kwargs)
 
         openai_fn_spec = _openai_function(self._output_cls)

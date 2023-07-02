@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import requests
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class SimpleWebPageReader(BaseReader):
 
                 response = html2text.html2text(response)
 
-            documents.append(Document(response))
+            documents.append(Document(text=response))
 
         return documents
 
@@ -104,20 +104,20 @@ class TrafilaturaWebReader(BaseReader):
                 if self.error_on_missing:
                     raise ValueError(f"Trafilatura fails to parse page: {url}")
                 continue
-            documents.append(Document(response))
+            documents.append(Document(text=response))
 
         return documents
 
 
 def _substack_reader(soup: Any) -> Tuple[str, Dict[str, Any]]:
     """Extract text from Substack blog post."""
-    extra_info = {
+    metadata = {
         "Title of this Substack post": soup.select_one("h1.post-title").getText(),
         "Subtitle": soup.select_one("h3.subtitle").getText(),
         "Author": soup.select_one("span.byline-names").getText(),
     }
     text = soup.select_one("div.available-content").getText()
-    return text, extra_info
+    return text, metadata
 
 
 DEFAULT_WEBSITE_EXTRACTOR: Dict[str, Callable[[Any], Tuple[str, Dict[str, Any]]]] = {
@@ -132,7 +132,7 @@ class BeautifulSoupWebReader(BaseReader):
     Requires the `bs4` and `urllib` packages.
 
     Args:
-        file_extractor (Optional[Dict[str, Callable]]): A mapping of website
+        website_extractor (Optional[Dict[str, Callable]]): A mapping of website
             hostname (e.g. google.com) to a function that specifies how to
             extract text from the BeautifulSoup obj. See DEFAULT_WEBSITE_EXTRACTOR.
     """
@@ -186,14 +186,14 @@ class BeautifulSoupWebReader(BaseReader):
             soup = BeautifulSoup(page.content, "html.parser")
 
             data = ""
-            extra_info = {"URL": url}
+            metadata = {"URL": url}
             if hostname in self.website_extractor:
                 data, metadata = self.website_extractor[hostname](soup)
-                extra_info.update(metadata)
+                metadata.update(metadata)
             else:
                 data = soup.getText()
 
-            documents.append(Document(data, extra_info=extra_info))
+            documents.append(Document(text=data, metadata=metadata))
 
         return documents
 
@@ -259,8 +259,8 @@ class RssReader(BaseReader):
 
                     data = html2text.html2text(data)
 
-                extra_info = {"title": entry.title, "link": entry.link}
-                documents.append(Document(data, extra_info=extra_info))
+                metadata = {"title": entry.title, "link": entry.link}
+                documents.append(Document(text=data, metadata=metadata))
 
         return documents
 

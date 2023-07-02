@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class MarkdownReader(BaseReader):
@@ -65,7 +65,7 @@ class MarkdownReader(BaseReader):
             ]
         else:
             markdown_tups = [
-                (key, re.sub("\n", "", value)) for key, value in markdown_tups
+                (key, re.sub("<.*?>", "", value)) for key, value in markdown_tups
             ]
 
         return markdown_tups
@@ -108,9 +108,9 @@ class MarkdownReader(BaseReader):
         # TODO: don't include headers right now
         for header, value in tups:
             if header is None:
-                results.append(Document(value, extra_info=extra_info))
+                results.append(Document(text=value, metadata=extra_info or {}))
             else:
                 results.append(
-                    Document(f"\n\n{header}\n{value}", extra_info=extra_info)
+                    Document(text=f"\n\n{header}\n{value}", metadata=extra_info or {})
                 )
         return results

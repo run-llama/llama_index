@@ -1,9 +1,9 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, List, Tuple, cast
+from typing import Any, List, cast
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import TextNode, MetadataMode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -12,7 +12,11 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +27,6 @@ def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
     for filter in standard_filters.filters:
         filters[filter.key] = filter.value
     return filters
-
-
-def _legacy_metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
-    extra_info = metadata
-    node_info: dict = {}
-    relationships = {
-        DocumentRelationship.SOURCE: metadata["document_id"],
-    }
-    return extra_info, node_info, relationships
 
 
 class ChromaVectorStore(VectorStore):
@@ -49,6 +44,7 @@ class ChromaVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    flat_metadata: bool = True
 
     def __init__(self, chroma_collection: Any, **kwargs: Any) -> None:
         """Init params."""
@@ -79,9 +75,15 @@ class ChromaVectorStore(VectorStore):
         documents = []
         for result in embedding_results:
             embeddings.append(result.embedding)
-            metadatas.append(node_to_metadata_dict(result.node))
+            metadatas.append(
+                node_to_metadata_dict(
+                    result.node, remove_text=True, flat_metadata=self.flat_metadata
+                )
+            )
             ids.append(result.id)
-            documents.append(result.node.text or "")
+            documents.append(
+                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+            )
 
         self._collection.add(
             embeddings=embeddings,
@@ -143,20 +145,23 @@ class ChromaVectorStore(VectorStore):
             results["distances"][0],
         ):
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(metadata)
+                node = metadata_dict_to_node(metadata)
+                node.set_content(text)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     metadata
                 )
 
-            node = Node(
-                doc_id=node_id,
-                text=text,
-                extra_info=extra_info,
-                node_info=node_info,
-                relationships=relationships,
-            )
+                node = TextNode(
+                    text=text,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
             nodes.append(node)
 
             similarity_score = 1.0 - math.exp(-distance)

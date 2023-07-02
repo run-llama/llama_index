@@ -11,7 +11,7 @@ import os
 from typing import List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +140,7 @@ class DiscordReader(BaseReader):
                 channel_id, limit=limit, oldest_first=oldest_first
             )
             results.append(
-                Document(channel_content, extra_info={"channel": channel_id})
+                Document(text=channel_content, metadata={"channel": channel_id})
             )
         return results
 

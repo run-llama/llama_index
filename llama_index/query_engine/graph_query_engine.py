@@ -1,11 +1,11 @@
 from typing import Dict, List, Optional, Tuple
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.data_structs.node import IndexNode, Node, NodeWithScore
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import TextNode, IndexNode, NodeWithScore
 
 
 class ComposableGraphQueryEngine(BaseQueryEngine):
@@ -109,7 +109,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
             # recursive call
             response = self._query_index(query_bundle, index_node.index_id, level + 1)
 
-            new_node = Node(text=str(response))
+            new_node = TextNode(text=str(response))
             new_node_with_score = NodeWithScore(
                 node=new_node, score=node_with_score.score
             )

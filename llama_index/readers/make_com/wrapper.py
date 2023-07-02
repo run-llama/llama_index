@@ -4,14 +4,13 @@ Currently cannot load documents.
 
 """
 
+import requests
 from typing import Any, List, Optional
 
-import requests
-from llama_index.data_structs.node import Node, NodeWithScore
-
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.response.schema import Response
+from llama_index.schema import NodeWithScore, TextNode
 
 
 class MakeWrapper(BaseReader):
@@ -37,7 +36,7 @@ class MakeWrapper(BaseReader):
 
         """
         response_text = response.response
-        source_nodes = [n.to_dict() for n in response.source_nodes]
+        source_nodes = [n.dict() for n in response.source_nodes]
         json_dict = {
             "response": response_text,
             "source_nodes": source_nodes,
@@ -51,7 +50,7 @@ if __name__ == "__main__":
     wrapper = MakeWrapper()
     test_response = Response(
         response="test response",
-        source_nodes=[NodeWithScore(node=Node(text="test source", doc_id="test id"))],
+        source_nodes=[NodeWithScore(node=TextNode(text="test source", id_="test id"))],
     )
     wrapper.pass_response_to_webhook(
         "https://hook.us1.make.com/asdfadsfasdfasdfd",

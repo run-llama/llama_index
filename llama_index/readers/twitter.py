@@ -2,7 +2,7 @@
 from typing import Any, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class TwitterTweetReader(BaseReader):
@@ -54,5 +54,5 @@ class TwitterTweetReader(BaseReader):
             response = " "
             for tweet in tweets.data:
                 response = response + tweet.text + "\n"
-            results.append(Document(response))
+            results.append(Document(text=response))
         return results

@@ -35,7 +35,7 @@ from llama_index.readers.obsidian import ObsidianReader
 from llama_index.readers.pinecone import PineconeReader
 from llama_index.readers.psychic import PsychicReader
 from llama_index.readers.qdrant import QdrantReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.readers.slack import SlackReader
 from llama_index.readers.steamship.file_reader import SteamshipFileReader
 from llama_index.readers.string_iterable import StringIterableReader

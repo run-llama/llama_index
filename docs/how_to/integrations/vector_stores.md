@@ -219,7 +219,7 @@ vector_store = ChromaVectorStore(
 
 **Milvus**
 
-- Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include extra_info.
+- Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include metadata.
 
 ```python
 import pymilvus

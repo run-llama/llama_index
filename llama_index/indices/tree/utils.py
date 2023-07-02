@@ -1,11 +1,11 @@
 from typing import List, Optional
 
-from llama_index.data_structs.node import Node
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.schema import BaseNode
 
 
 def get_numbered_text_from_nodes(
-    node_list: List[Node],
+    node_list: List[BaseNode],
     text_splitter: Optional[TokenTextSplitter] = None,
 ) -> str:
     """Get text from nodes in the format of a numbered list.
@@ -16,7 +16,7 @@ def get_numbered_text_from_nodes(
     results = []
     number = 1
     for node in node_list:
-        node_text = " ".join(node.get_text().splitlines())
+        node_text = " ".join(node.get_content().splitlines())
         if text_splitter is not None:
             node_text = text_splitter.truncate_text(node_text)
         text = f"({number}) {node_text}"
