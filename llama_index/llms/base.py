@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Any, Generator, Literal, Optional, Sequence
 
 from pydantic import BaseModel, Field
@@ -6,15 +7,22 @@ from pydantic import BaseModel, Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 
+class MessageRole(str, Enum):
+    SYSTEM = "system"
+    USER = "user"
+    ASSISTANT = "assistant"
+    FUNCTION = "function"
+
+
 # ===== Generic Model Input - Chat =====
 class ChatMessage(BaseModel):
-    role: Literal["system", "user", "assistant", "function"] = "user"
+    role: MessageRole = MessageRole.USER
     content: Optional[str] = ""
     additional_kwargs: dict = Field(default_factory=dict)
     name: Optional[str] = None
 
     def __str__(self) -> str:
-        return f"{self.role}: {self.content}"
+        return f"{self.role.value}: {self.content}"
 
 
 # ===== Generic Model Output - Chat =====
