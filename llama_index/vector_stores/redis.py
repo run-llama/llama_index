@@ -22,7 +22,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
 _logger = logging.getLogger(__name__)
 
@@ -215,7 +215,14 @@ class RedisVectorStore(VectorStore):
         from redis.exceptions import RedisError
         from redis.exceptions import TimeoutError as RedisTimeoutError
 
-        return_fields = ["id", "doc_id", "text", self._vector_key, "vector_score"]
+        return_fields = [
+            "id",
+            "doc_id",
+            "text",
+            self._vector_key,
+            "vector_score",
+            "_node_content",
+        ]
 
         filters = _to_redis_filters(query.filters) if query.filters is not None else "*"
 
@@ -259,15 +266,19 @@ class RedisVectorStore(VectorStore):
         nodes = []
         scores = []
         for doc in results.docs:
-            # TODO: properly retrieve metadata
-            node = TextNode(
-                text=doc.text,
-                id_=doc.id,
-                embedding=None,
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc.doc_id)
-                },
-            )
+            try:
+                node = metadata_dict_to_node({"_node_content": doc._node_content})
+                node.text = doc.text
+            except Exception:
+                # TODO: Legacy support for old metadata format
+                node = TextNode(
+                    text=doc.text,
+                    id_=doc.id,
+                    embedding=None,
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc.doc_id)
+                    },
+                )
             ids.append(doc.id)
             nodes.append(node)
             scores.append(1 - float(doc.vector_score))
