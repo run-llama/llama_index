@@ -1,7 +1,6 @@
 from typing import Any, Optional
 
 from llama_index.bridge.langchain import BaseChatModel, ChatGeneration
-
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
 from llama_index.chat_engine.utils import (
     is_chat_model,
@@ -78,7 +77,7 @@ class SimpleChatEngine(BaseChatEngine):
             response = generation.message.content
         else:
             history_buffer = to_chat_buffer(self._chat_history)
-            response, _ = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 self._prompt,
                 history=history_buffer,
                 message=message,
@@ -102,7 +101,7 @@ class SimpleChatEngine(BaseChatEngine):
             response = generation.message.content
         else:
             history_buffer = to_chat_buffer(self._chat_history)
-            response, _ = await self._service_context.llm_predictor.apredict(
+            response = await self._service_context.llm_predictor.apredict(
                 self._prompt,
                 history=history_buffer,
                 message=message,
