@@ -93,14 +93,57 @@ FN_GENERATION_PROMPT_TMPL = f"""Here is a sample of text:
 
 Question: {{query_str:}}
 
-Return the result as a list.
+Given the function signature, write Python code to extract the 
+"{{attribute:}}" field from the text.
+Return the result as a single value (string, int, float), and not a list.
+Make sure there is a return statement in the code. Do not leave out a return statement.
+{{expected_output_str:}}
 
 import re
 
 def get_{{function_field:}}_field(text: str):
     \"""
-    Function to extract the "{{attribute:}} field".
+    Function to extract the "{{attribute:}} field", and return the result 
+    as a single value.
     \"""
     """  # noqa: E501, F541
 
 FN_GENERATION_PROMPT = Prompt(FN_GENERATION_PROMPT_TMPL)
+
+
+FN_GENERATION_LIST_PROMPT_TMPL = f"""Here is a sample of text:
+
+{{context_str:}}
+
+
+Question: {{query_str:}}
+
+Given the function signature, write Python code to extract the 
+"{{attribute:}}" field from the text.
+Return the result as a list of values (if there is just one item, return a single \
+element list).
+Make sure there is a return statement in the code. Do not leave out a return statement.
+{{expected_output_str:}}
+
+import re
+
+def get_{{function_field:}}_field(text: str) -> List:
+    \"""
+    Function to extract the "{{attribute:}} field", and return the result 
+    as a single value.
+    \"""
+    """  # noqa: E501, F541
+
+FN_GENERATION_LIST_PROMPT = Prompt(FN_GENERATION_LIST_PROMPT_TMPL)
+
+DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL = (
+    "Here is the expected output on the text after running the function. "
+    "Please do not write a function that would return a different output. "
+    "Expected output: "
+)
+
+
+DEFAULT_FIELD_EXTRACT_QUERY_TMPL = (
+    'Write a python function to extract the entire "{field}" field from text, '
+    "but not any other metadata. Return the result as a list."
+)
