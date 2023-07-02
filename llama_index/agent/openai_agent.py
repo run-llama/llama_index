@@ -2,18 +2,19 @@ import json
 from abc import abstractmethod
 from typing import Callable, List, Optional
 
-from llama_index.bridge.langchain import FunctionMessage, ChatMessageHistory, ChatOpenAI
-
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
-from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
+DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 SUPPORTED_MODEL_NAMES = [
     "gpt-3.5-turbo-0613",
     "gpt-4-0613",
@@ -30,7 +31,7 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 def call_function(
     tools: List[BaseTool], function_call: dict, verbose: bool = False
-) -> FunctionMessage:
+) -> ChatMessage:
     """Call a function and return the output as a string."""
     name = function_call["name"]
     arguments_str = function_call["arguments"]
@@ -43,7 +44,13 @@ def call_function(
     if verbose:
         print(f"Got output: {output}")
         print("========================")
-    return FunctionMessage(content=str(output), name=function_call["name"])
+    return ChatMessage(
+        content=str(output),
+        role=MessageRole.FUNCTION,
+        additional_kwargs={
+            "name": function_call["name"],
+        },
+    )
 
 
 class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
@@ -51,8 +58,8 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
     def __init__(
         self,
-        llm: ChatOpenAI,
-        chat_history: ChatMessageHistory,
+        llm: OpenAI,
+        chat_history: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -71,18 +78,17 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         """Get tools."""
 
     def chat(
-        self, message: str, chat_history: Optional[ChatMessageHistory] = None
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
-        chat_history.add_user_message(message)
+        chat_history.append(ChatMessage(content=message, role="user"))
         tools = self._get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
 
         # TODO: Support forced function call
-        ai_message = self._llm.predict_messages(
-            chat_history.messages, functions=functions
-        )
-        chat_history.add_message(ai_message)
+        chat_response = self._llm.chat(chat_history, functions=functions)
+        ai_message = chat_response.message
+        chat_history.append(ai_message)
 
         n_function_calls = 0
         function_call = ai_message.additional_kwargs.get("function_call", None)
@@ -94,31 +100,29 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             function_message = call_function(
                 tools, function_call, verbose=self._verbose
             )
-            chat_history.add_message(function_message)
+            chat_history.append(function_message)
             n_function_calls += 1
 
             # send function call & output back to get another response
-            ai_message = self._llm.predict_messages(
-                chat_history.messages, functions=functions
-            )
-            chat_history.add_message(ai_message)
+            chat_response = self._llm.chat(chat_history, functions=functions)
+            ai_message = chat_response.message
+            chat_history.append(ai_message)
             function_call = ai_message.additional_kwargs.get("function_call", None)
 
         return Response(ai_message.content)
 
     async def achat(
-        self, message: str, chat_history: Optional[ChatMessageHistory] = None
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
-        chat_history.add_user_message(message)
+        chat_history.append(ChatMessage(content=message, role="user"))
         tools = self._get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
 
         # TODO: Support forced function call
-        ai_message = await self._llm.apredict_messages(
-            chat_history.messages, functions=functions
-        )
-        chat_history.add_message(ai_message)
+        chat_response = await self._llm.achat(chat_history, functions=functions)
+        ai_message = chat_response.message
+        chat_history.append(ai_message)
 
         n_function_calls = 0
         function_call = ai_message.additional_kwargs.get("function_call", None)
@@ -130,14 +134,13 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             function_message = call_function(
                 tools, function_call, verbose=self._verbose
             )
-            chat_history.add_message(function_message)
+            chat_history.append(function_message)
             n_function_calls += 1
 
             # send function call & output back to get another response
-            ai_message = await self._llm.apredict_messages(
-                chat_history.messages, functions=functions
-            )
-            chat_history.add_message(ai_message)
+            response = await self._llm.achat(chat_history, functions=functions)
+            ai_message = response.message
+            chat_history.append(ai_message)
             function_call = ai_message.additional_kwargs.get("function_call", None)
 
         return Response(ai_message.content)
@@ -146,13 +149,13 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self.chat(
             query_bundle.query_str,
-            chat_history=ChatMessageHistory(),
+            chat_history=[],
         )
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return await self.achat(
             query_bundle.query_str,
-            chat_history=ChatMessageHistory(),
+            chat_history=[],
         )
 
 
@@ -160,8 +163,8 @@ class OpenAIAgent(BaseOpenAIAgent):
     def __init__(
         self,
         tools: List[BaseTool],
-        llm: ChatOpenAI,
-        chat_history: ChatMessageHistory,
+        llm: OpenAI,
+        chat_history: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -179,28 +182,28 @@ class OpenAIAgent(BaseOpenAIAgent):
     def from_tools(
         cls,
         tools: Optional[List[BaseTool]] = None,
-        llm: Optional[ChatOpenAI] = None,
-        chat_history: Optional[ChatMessageHistory] = None,
+        llm: Optional[OpenAI] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
     ) -> "OpenAIAgent":
         tools = tools or []
-        lc_chat_history = chat_history or ChatMessageHistory()
-        llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
-        if not isinstance(llm, ChatOpenAI):
-            raise ValueError("llm must be a ChatOpenAI instance")
+        chat_history = chat_history or []
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        if not isinstance(llm, OpenAI):
+            raise ValueError("llm must be a OpenAI instance")
 
-        if llm.model_name not in SUPPORTED_MODEL_NAMES:
+        if llm.model not in SUPPORTED_MODEL_NAMES:
             raise ValueError(
-                f"Model name {llm.model_name} not supported. "
+                f"Model name {llm.model} not supported. "
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
 
         return cls(
             tools=tools,
             llm=llm,
-            chat_history=lc_chat_history,
+            chat_history=chat_history,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
@@ -229,8 +232,8 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         self,
         retriever: BaseRetriever,
         node_to_tool_fn: Callable[[BaseNode], BaseTool],
-        llm: ChatOpenAI,
-        chat_history: ChatMessageHistory,
+        llm: OpenAI,
+        chat_history: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -250,20 +253,20 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         cls,
         retriever: BaseRetriever,
         node_to_tool_fn: Callable[[BaseNode], BaseTool],
-        llm: Optional[ChatOpenAI] = None,
-        chat_history: Optional[ChatMessageHistory] = None,
+        llm: Optional[OpenAI] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
     ) -> "RetrieverOpenAIAgent":
-        lc_chat_history = chat_history or ChatMessageHistory()
-        llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
-        if not isinstance(llm, ChatOpenAI):
-            raise ValueError("llm must be a ChatOpenAI instance")
+        lc_chat_history = chat_history or []
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        if not isinstance(llm, OpenAI):
+            raise ValueError("llm must be a OpenAI instance")
 
-        if llm.model_name not in SUPPORTED_MODEL_NAMES:
+        if llm.model not in SUPPORTED_MODEL_NAMES:
             raise ValueError(
-                f"Model name {llm.model_name} not supported. "
+                f"Model name {llm.model} not supported. "
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
 
