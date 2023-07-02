@@ -188,9 +188,9 @@ def to_openai_message_dict(message: ChatMessage) -> dict:
         "content": message.content,
     }
 
-    # NOTE: openai messages can have additional arguments:
-    # - function messages can have `name`
-    # - assistant messages can have `function_call`
+    # NOTE: openai messages have additional arguments:
+    # - function messages have `name`
+    # - assistant messages have optional `function_call`
     message_dict.update(message.additional_kwargs)
 
     return message_dict
