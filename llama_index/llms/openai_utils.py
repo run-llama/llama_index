@@ -2,15 +2,10 @@ import logging
 from typing import Any, Callable, Dict, List, Sequence, Type, Union
 
 import openai
-from openai import Completion, ChatCompletion
+from openai import ChatCompletion, Completion
 from pydantic import BaseModel
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import (before_sleep_log, retry, retry_if_exception_type,
+                      stop_after_attempt, wait_exponential)
 
 from llama_index.llms.base import ChatMessage
 
@@ -188,9 +183,10 @@ def to_openai_message_dict(message: ChatMessage) -> dict:
         "content": message.content,
     }
 
-    # NOTE: openai function message has name as additional argument
-    if message.name is not None:
-        message_dict["name"] = message.name
+    # NOTE: openai messages can have additional arguments:
+    # - function messages can have `name`
+    # - assistant messages can have `function_call`
+    message_dict.update(message.additional_kwargs)
 
     return message_dict
 
@@ -203,7 +199,7 @@ def to_openai_message_dicts(messages: Sequence[ChatMessage]) -> List[dict]:
 def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
-    content = message_dict["content"] or ""
+    content = message_dict["content"]
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")

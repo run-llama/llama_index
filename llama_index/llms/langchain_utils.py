@@ -1,18 +1,10 @@
 from typing import List, Sequence
 
-from llama_index.bridge.langchain import (
-    BaseLanguageModel,
-    ChatOpenAI,
-    BaseChatModel,
-    Cohere,
-    AI21,
-    OpenAI,
-    BaseMessage as LCMessage,
-    HumanMessage,
-    AIMessage,
-    FunctionMessage,
-)
-
+from llama_index.bridge.langchain import (AI21, AIMessage, BaseChatModel,
+                                          BaseLanguageModel)
+from llama_index.bridge.langchain import BaseMessage as LCMessage
+from llama_index.bridge.langchain import (ChatOpenAI, Cohere, FunctionMessage,
+                                          HumanMessage, OpenAI)
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
 from llama_index.llms.base import ChatMessage, LLMMetadata
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
@@ -38,13 +30,14 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LCMessage]:
                 )
             )
         elif message.role == "function":
-            if message.name is None:
+            if "name" not in message.additional_kwargs:
                 raise ValueError("name cannot be None for function message.")
+            name = message.additional_kwargs.pop("name")
             lc_messages.append(
                 FunctionMessage(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
-                    name=message.name,
+                    name=name,
                 )
             )
         else:
