@@ -23,6 +23,7 @@ from llama_index.readers.github_readers.github_repository_reader import (
     GithubRepositoryReader,
 )
 from llama_index.readers.google_readers.gdocs import GoogleDocsReader
+from llama_index.readers.dictionary import DictReader
 from llama_index.readers.json import JSONReader
 from llama_index.readers.make_com.wrapper import MakeWrapper
 from llama_index.readers.mbox import MboxReader
@@ -54,6 +55,7 @@ __all__ = [
     "WikipediaReader",
     "YoutubeTranscriptReader",
     "SimpleDirectoryReader",
+    "DictReader",
     "JSONReader",
     "SimpleMongoReader",
     "NotionPageReader",
