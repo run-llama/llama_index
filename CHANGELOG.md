@@ -4,6 +4,10 @@
 
 ### Breaking/Deprecated API Changes
 - Change `BaseOpenAIAgent` to use `llama_index.llms.OpenAI`. Adjust `chat_history` to use `List[ChatMessage]]` as type.
+- Remove (previously deprecated) `llama_index.langchain_helpers.chain_wrapper` module. 
+- Remove (previously deprecated) `llama_index.token_counter.token_counter` module. See [migration guide](/how_to/callbacks/token_counting_migration.html) for more details on new callback based token counting.
+- Remove `ChatGPTLLMPredictor` and `HuggingFaceLLMPredictor`. See [migration guide](/how_to/customization/llms_migration_guide.html) for more details on replacements.
+- Remove support for setting `cache` via `LLMPredictor` constructor.
 
 ## [v0.6.38] - 2023-07-02
 

@@ -10,7 +10,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.tree_summarize import TreeSummarize
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
 from llama_index.selectors.types import BaseSelector
 from llama_index.schema import BaseNode
@@ -33,7 +33,10 @@ def combine_responses(
 
     summary = summarizer.get_response(query_bundle.query_str, response_strs)
 
-    return summary
+    if isinstance(summary, str):
+        return Response(response=summary)
+    else:
+        return StreamingResponse(response_gen=summary)
 
 
 async def acombine_responses(
@@ -48,7 +51,10 @@ async def acombine_responses(
 
     summary = await summarizer.aget_response(query_bundle.query_str, response_strs)
 
-    return summary
+    if isinstance(summary, str):
+        return Response(response=summary)
+    else:
+        return StreamingResponse(response_gen=summary)
 
 
 class RouterQueryEngine(BaseQueryEngine):

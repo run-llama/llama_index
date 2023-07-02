@@ -6,7 +6,6 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.response.utils import get_response_text
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,6 @@ class Refine(BaseResponseBuilder):
         self.text_qa_template = text_qa_template
         self._refine_template = refine_template
 
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -71,23 +69,14 @@ class Refine(BaseResponseBuilder):
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                (
-                    response,
-                    formatted_prompt,
-                ) = self._service_context.llm_predictor.predict(
+                response = self._service_context.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
-                )
-                self._log_prompt_and_response(
-                    formatted_prompt, response, log_prefix="Initial"
                 )
             elif response is None and self._streaming:
-                response, formatted_prompt = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
-                )
-                self._log_prompt_and_response(
-                    formatted_prompt, response, log_prefix="Initial"
                 )
             else:
                 response = self._refine_response_single(
@@ -125,15 +114,12 @@ class Refine(BaseResponseBuilder):
 
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                (
-                    response,
-                    formatted_prompt,
-                ) = self._service_context.llm_predictor.predict(
+                response = self._service_context.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
             else:
-                response, formatted_prompt = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
@@ -141,12 +127,8 @@ class Refine(BaseResponseBuilder):
                 query_str=query_str, existing_answer=response
             )
 
-            self._log_prompt_and_response(
-                formatted_prompt, response, log_prefix="Refined"
-            )
         return response
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -200,10 +182,7 @@ class Refine(BaseResponseBuilder):
 
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                (
-                    response,
-                    formatted_prompt,
-                ) = await self._service_context.llm_predictor.apredict(
+                response = await self._service_context.llm_predictor.apredict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
@@ -214,9 +193,6 @@ class Refine(BaseResponseBuilder):
                 query_str=query_str, existing_answer=response
             )
 
-            self._log_prompt_and_response(
-                formatted_prompt, response, log_prefix="Refined"
-            )
         return response
 
     async def _agive_response_single(
@@ -235,15 +211,9 @@ class Refine(BaseResponseBuilder):
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                (
-                    response,
-                    formatted_prompt,
-                ) = await self._service_context.llm_predictor.apredict(
+                response = await self._service_context.llm_predictor.apredict(
                     text_qa_template,
                     context_str=cur_text_chunk,
-                )
-                self._log_prompt_and_response(
-                    formatted_prompt, response, log_prefix="Initial"
                 )
             elif response is None and self._streaming:
                 raise ValueError("Streaming not supported for async")

@@ -9,6 +9,7 @@ from llama_index.bridge.langchain import (
     BaseChatModel,
     ChatOpenAI,
 )
+from llama_index.llms.langchain import LangChainLLM
 
 from llama_index.prompts.base import Prompt
 
@@ -73,7 +74,7 @@ def test_from_langchain_prompt_selector() -> None:
         default_prompt=prompt, conditionals=[(is_test, prompt_2)]
     )
 
-    test_llm = MagicMock(spec=TestLanguageModel)
+    test_llm = LangChainLLM(llm=MagicMock(spec=TestLanguageModel))
 
     prompt_new = Prompt.from_langchain_prompt_selector(test_prompt_selector)
     assert isinstance(prompt_new, Prompt)

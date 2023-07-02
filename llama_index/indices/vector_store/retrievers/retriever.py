@@ -10,7 +10,6 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import NodeWithScore, ObjectType
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
@@ -61,7 +60,6 @@ class VectorIndexRetriever(BaseRetriever):
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
 
-    @llm_token_counter("retrieve")
     def _retrieve(
         self,
         query_bundle: QueryBundle,

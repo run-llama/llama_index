@@ -14,7 +14,6 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import BaseNode, ImageNode, IndexNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 
 
@@ -214,7 +213,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             self._add_nodes_to_index(index_struct, nodes)
         return index_struct
 
-    @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
         """Build the index from nodes.
 
@@ -228,7 +226,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Insert a document."""
         self._add_nodes_to_index(self._index_struct, nodes)
 
-    @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes.
 

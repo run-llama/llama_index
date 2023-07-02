@@ -198,3 +198,8 @@ def concat_dirs(dir1: str, dir2: str) -> str:
     """
     dir1 += "/" if dir1[-1] != "/" else ""
     return os.path.join(dir1, dir2)
+
+
+def count_tokens(text: str) -> int:
+    tokens = globals_helper.tokenizer(text)
+    return len(tokens)
