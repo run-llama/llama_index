@@ -1,9 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Optional
+from typing import List, Tuple, Union
 
-from llama_index.llms.base import ChatMessage
 from llama_index.response.schema import RESPONSE_TYPE
 
 logger = logging.getLogger(__name__)
@@ -18,16 +17,12 @@ class BaseChatEngine(ABC):
         pass
 
     @abstractmethod
-    def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    def chat(self, message: str) -> RESPONSE_TYPE:
         """Main chat interface."""
         pass
 
     @abstractmethod
-    async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    async def achat(self, message: str) -> RESPONSE_TYPE:
         """Async version of main chat interface."""
         pass
 
@@ -42,11 +37,6 @@ class BaseChatEngine(ABC):
             response = self.chat(message)
             print(f"Assistant: {response}\n")
             message = input("Human: ")
-
-    @property
-    @abstractmethod
-    def chat_history(self) -> List[ChatMessage]:
-        pass
 
 
 class ChatMode(str, Enum):
@@ -69,3 +59,9 @@ class ChatMode(str, Enum):
     Use a ReAct agent loop with query engine tools. 
     Implemented via LangChain agent.
     """
+
+
+"""
+Chat history is a list of (human_message, assistant_message) tuples.
+"""
+ChatHistoryType = List[Tuple[str, Union[str, RESPONSE_TYPE]]]
