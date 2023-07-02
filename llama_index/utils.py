@@ -38,33 +38,15 @@ class GlobalsHelper:
     def tokenizer(self) -> Callable[[str], List]:
         """Get tokenizer."""
         if self._tokenizer is None:
-            # if python version >= 3.9, then use tiktoken
-            # else use GPT2TokenizerFast
-            if sys.version_info >= (3, 9):
-                tiktoken_import_err = (
-                    "`tiktoken` package not found, please run `pip install tiktoken`"
-                )
-                try:
-                    import tiktoken
-                except ImportError:
-                    raise ImportError(tiktoken_import_err)
-                enc = tiktoken.get_encoding("gpt2")
-                self._tokenizer = cast(Callable[[str], List], enc.encode)
-            else:
-                try:
-                    import transformers
-                except ImportError:
-                    raise ImportError(
-                        "`transformers` package not found, "
-                        "please run `pip install transformers`"
-                    )
-
-                tokenizer = transformers.GPT2TokenizerFast.from_pretrained("gpt2")
-
-                def tokenizer_fn(text: str) -> List:
-                    return tokenizer(text)["input_ids"]
-
-                self._tokenizer = tokenizer_fn
+            tiktoken_import_err = (
+                "`tiktoken` package not found, please run `pip install tiktoken`"
+            )
+            try:
+                import tiktoken
+            except ImportError:
+                raise ImportError(tiktoken_import_err)
+            enc = tiktoken.get_encoding("gpt2")
+            self._tokenizer = cast(Callable[[str], List], enc.encode)
         return self._tokenizer
 
     @property

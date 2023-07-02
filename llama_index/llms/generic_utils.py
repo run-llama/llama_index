@@ -6,6 +6,7 @@ from llama_index.llms.base import (
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
+    MessageRole,
 )
 
 
@@ -22,13 +23,13 @@ def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
             string_message += f"\n{addtional_kwargs}"
         string_messages.append(string_message)
 
-    string_messages.append("assistant: ")
+    string_messages.append(f"{MessageRole.ASSISTANT}: ")
     return "\n".join(string_messages)
 
 
 def prompt_to_messages(prompt: str) -> Sequence[ChatMessage]:
     """Convert a string prompt to a sequence of messages."""
-    return [ChatMessage(role="user", content=prompt)]
+    return [ChatMessage(role=MessageRole.USER, content=prompt)]
 
 
 def completion_response_to_chat_response(
@@ -37,7 +38,7 @@ def completion_response_to_chat_response(
     """Convert a completion response to a chat response."""
     return ChatResponse(
         message=ChatMessage(
-            role="assistant",
+            role=MessageRole.ASSISTANT,
             content=completion_response.text,
             additional_kwargs=completion_response.additional_kwargs,
         ),
@@ -54,7 +55,7 @@ def stream_completion_response_to_chat_response(
         for response in completion_response_gen:
             yield ChatResponse(
                 message=ChatMessage(
-                    role="assistant",
+                    role=MessageRole.ASSISTANT,
                     content=response.text,
                     additional_kwargs=response.additional_kwargs,
                 ),

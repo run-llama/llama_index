@@ -311,7 +311,7 @@ class ImageNode(TextNode):
 
     # TODO: store reference instead of actual image
     # base64 encoded image str
-    image: str
+    image: Optional[str] = None
 
     @classmethod
     def get_type(cls) -> str:

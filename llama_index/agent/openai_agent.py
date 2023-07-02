@@ -210,7 +210,12 @@ class OpenAIAgent(BaseOpenAIAgent):
 class RetrieverOpenAIAgent(BaseOpenAIAgent):
     """Retriever OpenAI Agent.
 
+    This agent specifically performs retrieval on top of functions
+    during query-time.
+
     NOTE: this is a beta feature, function interfaces might change.
+    NOTE: this is also a too generally named, a better name is
+        FunctionRetrieverOpenAIAgent
 
     TODO: add a native OpenAI Tool Index.
 

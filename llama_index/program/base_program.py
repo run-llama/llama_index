@@ -1,9 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Type, TypeVar
-
-from pydantic import BaseModel
-
-Model = TypeVar("Model", bound=BaseModel)
+from typing import Any, Generic, Type
+from llama_index.types import Model
 
 
 class BasePydanticProgram(ABC, Generic[Model]):
@@ -11,14 +8,6 @@ class BasePydanticProgram(ABC, Generic[Model]):
 
     Note: this interface is not yet stable.
     """
-
-    @classmethod
-    @abstractmethod
-    def from_defaults(
-        cls, output_cls: Type[Model], prompt_template_str: str, **kwargs: Any
-    ) -> "BasePydanticProgram":
-        """Create a default pydantic program."""
-        raise NotImplementedError
 
     @property
     @abstractmethod

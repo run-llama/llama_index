@@ -1,11 +1,13 @@
-from typing import Any, Dict, Generic, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai_utils import to_openai_function
+from llama_index.types import Model
 
-from llama_index.program.base_program import BasePydanticProgram, Model
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import Prompt
+from pydantic import BaseModel
 
 SUPPORTED_MODEL_NAMES = [
     "gpt-3.5-turbo-0613",
@@ -21,7 +23,7 @@ def _default_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
     }
 
 
-class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
+class OpenAIPydanticProgram(BaseLLMFunctionProgram):
     """
     An OpenAI-based function that returns a pydantic model.
 
@@ -36,6 +38,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         function_call: Union[str, Dict[str, Any]],
         verbose: bool = False,
     ) -> None:
+        """Init params."""
         self._output_cls = output_cls
         self._llm = llm
         self._prompt = prompt
@@ -45,7 +48,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
     @classmethod
     def from_defaults(
         cls,
-        output_cls: Type[Model],
+        output_cls: Type[BaseModel],
         prompt_template_str: str,
         llm: Optional[OpenAI] = None,
         verbose: bool = False,
@@ -72,14 +75,14 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         )
 
     @property
-    def output_cls(self) -> Type[Model]:
+    def output_cls(self) -> Type[BaseModel]:
         return self._output_cls
 
     def __call__(
         self,
         *args: Any,
         **kwargs: Any,
-    ) -> Model:
+    ) -> BaseModel:
         formatted_prompt = self._prompt.format(**kwargs)
 
         openai_fn_spec = to_openai_function(self._output_cls)

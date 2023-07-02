@@ -10,7 +10,7 @@ The general usage pattern of LlamaIndex is as follows:
 ## 1. Load in Documents
 
 The first step is to load in data. This data is represented in the form of `Document` objects. 
-We provide a variety of [data loaders](/how_to/data_connectors.md) which will load in Documents
+We provide a variety of [data loaders](/how_to/examples/data_connectors.md) which will load in Documents
 through the `load_data` function, e.g.:
 
 ```python
@@ -137,7 +137,7 @@ index = VectorStoreIndex([])
 index.insert_nodes(nodes)
 ```
 
-See the [Document Management How-To](/how_to/index_structs/document_management.md) for more details on managing documents and an example notebook.
+See the [Document Management How-To](/how_to/index/document_management.md) for more details on managing documents and an example notebook.
 
 ### Customizing Documents
 
@@ -212,7 +212,7 @@ token usage through the outputs of these operations. When running operations,
 the token usage will be printed.
 
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
-See [Cost Predictor How-To](/docs/how_to/analysis/cost_analysis.md) for more details.
+See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
 
 
 ### [Optional] Save the index for future use
@@ -262,7 +262,7 @@ index = load_index_from_storage(
 
 You can build indices on top of other indices! 
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
-see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index_structs/composability.md).
+see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index/composability.md).
 
 ## 5. Query the index.
 

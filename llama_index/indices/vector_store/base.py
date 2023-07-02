@@ -76,7 +76,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         return VectorIndexRetriever(
             self,
-            doc_ids=list(self.index_struct.nodes_dict.values()),
+            node_ids=list(self.index_struct.nodes_dict.values()),
             **kwargs,
         )
 

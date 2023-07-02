@@ -4,6 +4,7 @@
 ## Unreleased
 
 ### New Features
+- Added async support for "compact" and "refine" response modes (#6590)
 - Introduce `llama_index.llms` module, with new `LLM` interface, and `OpenAI`, `HuggingFaceLLM`, `LangChainLLM` implementations.
 
 ### Breaking/Deprecated API Changes
@@ -12,7 +13,44 @@
 - Remove `ChatGPTLLMPredictor` and `HuggingFaceLLMPredictor`. See [migration guide](/how_to/customization/llms_migration_guide.html) for more details on replacements.
 
 ### Bug Fixes / Nits
+- Improve metadata/node storage and retrieval for RedisVectorStore (#6678)
+- Fixed node vs. document filtering in vector stores (#6677)
+
+## [v0.6.37] - 2023-06-30
+
+### New Features
+- add context augmented openai agent (#6655)
+
+## [v0.6.36] - 2023-06-29
+
+### New Features
+- Redis support for index stores and docstores (#6575)
+- DuckDB + SQL query engine notebook (#6628)
+- add notebook showcasing deplot data loader (#6638)
+
+### Bug Fixes / Nits
+- More robust JSON parsing from LLM for `SelectionOutputParser` (#6610)
+- bring our loaders back in line with llama-hub (#6630)
+- Remove usage of SQLStructStoreIndex in notebooks (#6585)
+- MD reader: remove html tags and leave linebreaks alone (#6618)
+- bump min langchain version to latest version (#6632)
+- Fix metadata column name in postgres vector store (#6622)
+- Postgres metadata fixes (#6626, #6634)
+- fixed links to dataloaders in contribution.md (#6636)
+- fix: typo in docs in creating custom_llm huggingface example (#6639)
+- Updated SelectionOutputParser to handle JSON objects and arrays (#6610)
+- Fixed docstring argument typo (#6652)
+
+## [v0.6.35] - 2023-06-28
+- refactor structured output + pydantic programs (#6604)
+
+### Bug Fixes / Nits
 - Fix serialization for OpenSearch vector stores (#6612)
+- patch docs relationships (#6606)
+- Bug fix for ignoring directories while parsing git repo (#4196)
+- updated Chroma notebook (#6572)
+- Backport old node name (#6614)
+- Add the ability to change chroma implementation (#6601)
 
 ## [v0.6.34] - 2023-06-26
 
