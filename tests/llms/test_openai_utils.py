@@ -3,8 +3,10 @@ from typing import List
 import pytest
 
 from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.llms.openai_utils import (from_openai_message_dicts,
-                                           to_openai_message_dicts)
+from llama_index.llms.openai_utils import (
+    from_openai_message_dicts,
+    to_openai_message_dicts,
+)
 
 
 @pytest.fixture
@@ -45,7 +47,8 @@ def openi_message_dicts_with_function_calling() -> List[dict]:
         },
         {
             "role": "function",
-            "content": '{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
+            "content": '{"temperature": "22", "unit": "celsius", '
+            '"description": "Sunny"}',
             "name": "get_current_weather",
         },
     ]

@@ -1,10 +1,19 @@
 from typing import List, Sequence
 
-from llama_index.bridge.langchain import (AI21, AIMessage, BaseChatModel,
-                                          BaseLanguageModel)
+from llama_index.bridge.langchain import (
+    AI21,
+    AIMessage,
+    BaseChatModel,
+    BaseLanguageModel,
+)
 from llama_index.bridge.langchain import BaseMessage as LCMessage
-from llama_index.bridge.langchain import (ChatOpenAI, Cohere, FunctionMessage,
-                                          HumanMessage, OpenAI)
+from llama_index.bridge.langchain import (
+    ChatOpenAI,
+    Cohere,
+    FunctionMessage,
+    HumanMessage,
+    OpenAI,
+)
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
 from llama_index.llms.base import ChatMessage, LLMMetadata
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
