@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from llama_index.agent.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
+    DEFAULT_MODEL_NAME,
     SUPPORTED_MODEL_NAMES,
     BaseOpenAIAgent,
 )
@@ -102,7 +103,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         """
         qa_prompt = qa_prompt or DEFAULT_QA_PROMPT
         chat_history = chat_history or []
-        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
