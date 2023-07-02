@@ -49,7 +49,7 @@ class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
         callback_manager: Optional[CallbackManager] = None,
     ) -> "FnRetrieverOpenAIAgent":
         chat_history = chat_history or []
-        llm = llm or OpenAI()
+        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 

@@ -5,6 +5,8 @@ from typing import List, Optional
 from llama_index.bridge.langchain import ChatMessageHistory, ChatOpenAI, print_text
 
 from llama_index.callbacks.base import CallbackManager
+from llama_index.llms.base import ChatMessage
+from llama_index.llms.openai import OpenAI
 from llama_index.schema import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.response.schema import RESPONSE_TYPE
@@ -54,8 +56,8 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         retriever: BaseRetriever,
         qa_prompt: QuestionAnswerPrompt,
         context_separator: str,
-        llm: ChatOpenAI,
-        chat_history: ChatMessageHistory,
+        llm: OpenAI,
+        chat_history: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -79,8 +81,8 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         retriever: BaseRetriever,
         qa_prompt: Optional[QuestionAnswerPrompt] = None,
         context_separator: str = "\n",
-        llm: Optional[ChatOpenAI] = None,
-        chat_history: Optional[ChatMessageHistory] = None,
+        llm: Optional[OpenAI] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -100,13 +102,13 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         """
         qa_prompt = qa_prompt or DEFAULT_QA_PROMPT
         lc_chat_history = chat_history or ChatMessageHistory()
-        llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
-        if not isinstance(llm, ChatOpenAI):
-            raise ValueError("llm must be a ChatOpenAI instance")
+        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
+        if not isinstance(llm, OpenAI):
+            raise ValueError("llm must be a OpenAI instance")
 
-        if llm.model_name not in SUPPORTED_MODEL_NAMES:
+        if llm.model not in SUPPORTED_MODEL_NAMES:
             raise ValueError(
-                f"Model name {llm.model_name} not supported. "
+                f"Model name {llm.model} not supported. "
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
 
@@ -127,7 +129,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         return self._tools
 
     def chat(
-        self, message: str, chat_history: Optional[ChatMessageHistory] = None
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
         """Chat."""
         # augment user message
