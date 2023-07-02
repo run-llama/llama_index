@@ -1,8 +1,13 @@
 from typing import Any, Callable, Sequence
 
-from llama_index.llms.base import (ChatMessage, ChatResponse, ChatResponseGen,
-                                   CompletionResponse, CompletionResponseGen,
-                                   MessageRole)
+from llama_index.llms.base import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
+    MessageRole,
+)
 
 
 def messages_to_history_str(messages: Sequence[ChatMessage]) -> str:
