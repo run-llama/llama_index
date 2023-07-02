@@ -1,7 +1,12 @@
 # ChangeLog
 
 ## Unreleased
+
+### New Features
 - Added async support for "compact" and "refine" response modes (#6590)
+
+### Bug Fixes / Nits
+- Improve metadata/node storage and retrieval for RedisVectorStore (#6678)
 
 ## [v0.6.37] - 2023-06-30
 
