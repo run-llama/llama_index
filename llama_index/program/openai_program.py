@@ -15,7 +15,7 @@ SUPPORTED_MODEL_NAMES = [
 ]
 
 
-def _default_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
+def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
     """Default OpenAI function to call."""
     schema = output_cls.schema()
     return {
@@ -23,7 +23,7 @@ def _default_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
     }
 
 
-class OpenAIPydanticProgram(BaseLLMFunctionProgram):
+class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
     """
     An OpenAI-based function that returns a pydantic model.
 
@@ -48,7 +48,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram):
     @classmethod
     def from_defaults(
         cls,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt_template_str: str,
         llm: Optional[OpenAI] = None,
         verbose: bool = False,

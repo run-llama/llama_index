@@ -23,14 +23,6 @@ class Refine(BaseResponseBuilder):
         self.text_qa_template = text_qa_template
         self._refine_template = refine_template
 
-    async def aget_response(
-        self,
-        query_str: str,
-        text_chunks: Sequence[str],
-        **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
-        return self.get_response(query_str, text_chunks, **response_kwargs)
-
     def get_response(
         self,
         query_str: str,
@@ -137,7 +129,6 @@ class Refine(BaseResponseBuilder):
 
         return response
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -191,10 +182,7 @@ class Refine(BaseResponseBuilder):
 
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                (
-                    response,
-                    formatted_prompt,
-                ) = await self._service_context.llm_predictor.apredict(
+                response = await self._service_context.llm_predictor.apredict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
@@ -205,9 +193,6 @@ class Refine(BaseResponseBuilder):
                 query_str=query_str, existing_answer=response
             )
 
-            self._log_prompt_and_response(
-                formatted_prompt, response, log_prefix="Refined"
-            )
         return response
 
     async def _agive_response_single(
@@ -226,15 +211,9 @@ class Refine(BaseResponseBuilder):
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                (
-                    response,
-                    formatted_prompt,
-                ) = await self._service_context.llm_predictor.apredict(
+                response = await self._service_context.llm_predictor.apredict(
                     text_qa_template,
                     context_str=cur_text_chunk,
-                )
-                self._log_prompt_and_response(
-                    formatted_prompt, response, log_prefix="Initial"
                 )
             elif response is None and self._streaming:
                 raise ValueError("Streaming not supported for async")
