@@ -19,7 +19,6 @@ class ChatMessage(BaseModel):
     role: MessageRole = MessageRole.USER
     content: Optional[str] = ""
     additional_kwargs: dict = Field(default_factory=dict)
-    name: Optional[str] = None
 
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"
