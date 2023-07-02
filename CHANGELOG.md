@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Breaking/Deprecated API Changes
+- Change `BaseOpenAIAgent` to use `llama_index.llms.OpenAI`. Adjust `chat_history` to use `List[ChatMessage]]` as type.
+
 ## [v0.6.38] - 2023-07-02
 
 ### New Features
