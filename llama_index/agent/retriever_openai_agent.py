@@ -2,9 +2,12 @@
 
 from typing import List, Optional
 
-from llama_index.agent.openai_agent import (DEFAULT_MAX_FUNCTION_CALLS, DEFAULT_MODEL_NAME,
-                                            SUPPORTED_MODEL_NAMES,
-                                            BaseOpenAIAgent)
+from llama_index.agent.openai_agent import (
+    DEFAULT_MAX_FUNCTION_CALLS,
+    DEFAULT_MODEL_NAME,
+    SUPPORTED_MODEL_NAMES,
+    BaseOpenAIAgent,
+)
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
