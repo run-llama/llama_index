@@ -7,7 +7,7 @@ from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
@@ -43,7 +43,13 @@ def call_function(
     if verbose:
         print(f"Got output: {output}")
         print("========================")
-    return ChatMessage(content=str(output), name=function_call["name"], role="function")
+    return ChatMessage(
+        content=str(output),
+        role=MessageRole.FUNCTION,
+        additional_kwargs={
+            "name": function_call["name"],
+        },
+    )
 
 
 class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
