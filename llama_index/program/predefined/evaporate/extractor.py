@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
+from llama_index.indices.response import ResponseMode
 from collections import defaultdict
 import signal
 import re
@@ -17,6 +18,7 @@ from llama_index.program.predefined.evaporate.prompts import (
     FnGeneratePrompt,
     SchemaIDPrompt,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
+    DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
 )
 
 
@@ -105,6 +107,8 @@ class EvaporateExtractor:
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
         field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
+        expected_output_prefix_tmpl: str = DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
+        verbose: bool = False,
     ) -> None:
         """Initialize params."""
         # TODO: take in an entire index instead of forming a response builder
@@ -112,6 +116,8 @@ class EvaporateExtractor:
         self._schema_id_prompt = schema_id_prompt or SCHEMA_ID_PROMPT
         self._fn_generate_prompt = fn_generate_prompt or FN_GENERATION_PROMPT
         self._field_extract_query_tmpl = field_extract_query_tmpl
+        self._expected_output_prefix_tmpl = expected_output_prefix_tmpl
+        self._verbose = verbose
 
     def identify_fields(
         self, nodes: List[BaseNode], topic: str, fields_top_k: int = 5
@@ -159,7 +165,9 @@ class EvaporateExtractor:
         # TODO: replace with new response synthesis module
 
         if expected_output is not None:
-            expected_output_str = f"Expected function output: {str(expected_output)}\n"
+            expected_output_str = (
+                f"{self._expected_output_prefix_tmpl}{str(expected_output)}\n"
+            )
         else:
             expected_output_str = ""
 
@@ -170,10 +178,8 @@ class EvaporateExtractor:
         )
         qa_prompt = QuestionAnswerPrompt.from_prompt(new_prompt)
 
-        print(qa_prompt.original_template)
-
         response_synthesizer = ResponseSynthesizer.from_args(
-            text_qa_template=qa_prompt, response_mode="tree_summarize"
+            text_qa_template=qa_prompt, response_mode=ResponseMode.TREE_SUMMARIZE
         )
 
         # ignore refine prompt for now
@@ -222,16 +228,16 @@ class EvaporateExtractor:
         for node in nodes:
             global result
             global node_text
-            node_text = node.get_content()
+            node_text = node.get_content()  # type: ignore[name-defined]
             # this is temporary
-            result = []
+            result = []  # type: ignore[name-defined]
             try:
                 with time_limit(1):
                     exec(fn_str, globals())
                     exec(f"result = get_{function_field}_field(node_text)", globals())
             except TimeoutException as e:
                 raise e
-            results.append(result)
+            results.append(result)  # type: ignore[name-defined]
         return results
 
     def extract_datapoints_with_fn(

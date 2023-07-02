@@ -4,7 +4,11 @@ from abc import abstractmethod
 
 from llama_index.program.predefined.evaporate.extractor import EvaporateExtractor
 from llama_index.program.base_program import BasePydanticProgram
-from llama_index.program.predefined.df import DataFrameRowsOnly, DataFrameRow
+from llama_index.program.predefined.df import (
+    DataFrameRowsOnly,
+    DataFrameRow,
+    DataFrameValuesPerColumn,
+)
 from llama_index.schema import BaseNode, TextNode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.program.predefined.evaporate.prompts import (
@@ -15,6 +19,7 @@ from llama_index.program.predefined.evaporate.prompts import (
 )
 import pandas as pd
 from llama_index.types import Model
+from llama_index.bridge.langchain import print_text
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +41,7 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
         fields_to_extract: Optional[List[str]] = None,
         fields_context: Optional[Dict[str, Any]] = None,
         nodes_to_fit: Optional[List[BaseNode]] = None,
+        verbose: bool = False,
     ) -> None:
         """Init params."""
         self._extractor = extractor
@@ -43,6 +49,7 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
         self._fields_context = fields_context or {}
         # NOTE: this will change with each call to `fit`
         self._field_fns: Dict[str, str] = {}
+        self._verbose = verbose
 
         # if nodes_to_fit is not None, then fit extractor
         if nodes_to_fit is not None:
@@ -58,6 +65,7 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
         field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
         nodes_to_fit: Optional[List[BaseNode]] = None,
+        verbose: bool = False,
     ) -> "BaseEvaporateProgram":
         """Evaporate program."""
         extractor = EvaporateExtractor(
@@ -71,6 +79,7 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
             fields_to_extract=fields_to_extract,
             fields_context=fields_context,
             nodes_to_fit=nodes_to_fit,
+            verbose=verbose,
         )
 
     @property
@@ -113,37 +122,6 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
         inplace: bool = True,
     ) -> str:
         """Given the input Nodes and fields, synthesize the python code."""
-
-    # TODO: this is dependent on the specific class
-    # @abstractmethod
-    # def _inference(
-    #     self, nodes: List[BaseNode], fn_str: str, field_name: str
-    # ) -> List[Any]:
-    #     """Given the input, call the python code and return the result."""
-
-    # TODO: set output_cls
-    # @property
-    # def output_cls(self) -> Type[DataFrameRowsOnly]:
-    #     """Output class."""
-    #     return DataFrameRowsOnly
-
-    # TODO: set call
-    # def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
-    #     """Call evaporate on inference data."""
-
-    #     col_dict = {}
-    #     for field in self._fields:
-    #         col_dict[field] = self._inference(
-    #             kwds[self._infer_key], self._field_fns[field], field
-    #         )
-
-    #     df = pd.DataFrame(col_dict, columns=self._fields)
-
-    #     # convert pd.DataFrame to DataFrameRowsOnly
-    #     df_row_objs = []
-    #     for row_arr in df.values:
-    #         df_row_objs.append(DataFrameRow(row_values=list(row_arr)))
-    #     return DataFrameRowsOnly(rows=df_row_objs)
 
 
 class DFEvaporateProgram(BaseEvaporateProgram[DataFrameRowsOnly]):
@@ -207,7 +185,7 @@ class DFEvaporateProgram(BaseEvaporateProgram[DataFrameRowsOnly]):
         return DataFrameRowsOnly(rows=df_row_objs)
 
 
-class MultiValueEvaporateProgram(BaseEvaporateProgram[List[DataFrameRow]]):
+class MultiValueEvaporateProgram(BaseEvaporateProgram[DataFrameValuesPerColumn]):
     """Multi-Value Evaporate program.
 
     Given a set of fields, and texts extracts a list of `DataFrameRow` objects across
@@ -224,12 +202,37 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[List[DataFrameRow]]):
 
     @classmethod
     def from_defaults(
-        cls, fn_generate_prompt: Optional[FnGeneratePrompt] = None, **kwargs: Any
+        cls,
+        fields_to_extract: Optional[List[str]] = None,
+        fields_context: Optional[Dict[str, Any]] = None,
+        service_context: Optional[ServiceContext] = None,
+        schema_id_prompt: Optional[SchemaIDPrompt] = None,
+        fn_generate_prompt: Optional[FnGeneratePrompt] = None,
+        field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
+        nodes_to_fit: Optional[List[BaseNode]] = None,
+        verbose: bool = False,
     ) -> "BaseEvaporateProgram":
-        """Evaporate program."""
         # modify the default function generate prompt to return a list
         fn_generate_prompt = fn_generate_prompt or FN_GENERATION_LIST_PROMPT
-        return super().from_defaults(fn_generate_prompt=fn_generate_prompt, **kwargs)
+        return super().from_defaults(
+            fields_to_extract=fields_to_extract,
+            fields_context=fields_context,
+            service_context=service_context,
+            schema_id_prompt=schema_id_prompt,
+            fn_generate_prompt=fn_generate_prompt,
+            field_extract_query_tmpl=field_extract_query_tmpl,
+            nodes_to_fit=nodes_to_fit,
+            verbose=verbose,
+        )
+
+    # @classmethod
+    # def from_defaults(
+    #     cls, fn_generate_prompt: Optional[FnGeneratePrompt] = None, **kwargs: Any
+    # ) -> "BaseEvaporateProgram":
+    #     """Evaporate program."""
+    #     # modify the default function generate prompt to return a list
+    #     fn_generate_prompt = fn_generate_prompt or FN_GENERATION_LIST_PROMPT
+    #     return super().from_defaults(fn_generate_prompt=fn_generate_prompt, **kwargs)
 
     def fit(
         self,
@@ -244,14 +247,16 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[List[DataFrameRow]]):
             nodes, field, expected_output=expected_output
         )
         logger.debug(f"Extracted function: {fn}")
+        if self._verbose:
+            print_text(f"Extracted function: {fn}\n", color="blue")
         if inplace:
             self._field_fns[field] = fn
         return fn
 
     @property
-    def output_cls(self) -> Type[List[DataFrameRow]]:
+    def output_cls(self) -> Type[DataFrameValuesPerColumn]:
         """Output class."""
-        return List[DataFrameRow]
+        return DataFrameValuesPerColumn
 
     def _inference(
         self, nodes: List[BaseNode], fn_str: str, field_name: str
@@ -261,7 +266,7 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[List[DataFrameRow]]):
         # flatten results
         return [r for results in results_by_node for r in results]
 
-    def __call__(self, *args: Any, **kwds: Any) -> List[DataFrameRow]:
+    def __call__(self, *args: Any, **kwds: Any) -> DataFrameValuesPerColumn:
         """Call evaporate on inference data."""
 
         # TODO: either specify `nodes` or `texts` in kwds
@@ -281,4 +286,4 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[List[DataFrameRow]]):
         for field in self._fields:
             df_row_objs.append(DataFrameRow(row_values=col_dict[field]))
 
-        return df_row_objs
+        return DataFrameValuesPerColumn(columns=df_row_objs)
