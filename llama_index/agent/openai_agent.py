@@ -4,16 +4,17 @@ from typing import Callable, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
-from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
+DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 SUPPORTED_MODEL_NAMES = [
     "gpt-3.5-turbo-0613",
     "gpt-4-0613",
@@ -43,7 +44,13 @@ def call_function(
     if verbose:
         print(f"Got output: {output}")
         print("========================")
-    return ChatMessage(content=str(output), name=function_call["name"], role="function")
+    return ChatMessage(
+        content=str(output),
+        role=MessageRole.FUNCTION,
+        additional_kwargs={
+            "name": function_call["name"],
+        },
+    )
 
 
 class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
@@ -183,7 +190,7 @@ class OpenAIAgent(BaseOpenAIAgent):
     ) -> "OpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
-        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
@@ -253,7 +260,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         callback_manager: Optional[CallbackManager] = None,
     ) -> "RetrieverOpenAIAgent":
         lc_chat_history = chat_history or []
-        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 

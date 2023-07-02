@@ -2,10 +2,8 @@ from typing import Any, Optional, Sequence
 
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.openai import OpenAI
-from llama_index.program.openai_program import (
-    OpenAIPydanticProgram,
-)
 from llama_index.program.base_program import BasePydanticProgram
+from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.selectors.llm_selectors import _build_choices_text
 from llama_index.selectors.prompts import (
     DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
@@ -13,8 +11,8 @@ from llama_index.selectors.prompts import (
 )
 from llama_index.selectors.types import (
     BaseSelector,
-    SelectorResult,
     MultiSelection,
+    SelectorResult,
     SingleSelection,
 )
 from llama_index.tools.types import ToolMetadata

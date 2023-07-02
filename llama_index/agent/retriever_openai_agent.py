@@ -1,16 +1,18 @@
 """Retriever OpenAI agent."""
 
-from llama_index.agent.openai_agent import BaseOpenAIAgent
+from typing import List, Optional
+
+from llama_index.agent.openai_agent import (
+    DEFAULT_MAX_FUNCTION_CALLS,
+    DEFAULT_MODEL_NAME,
+    SUPPORTED_MODEL_NAMES,
+    BaseOpenAIAgent,
+)
+from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools.types import BaseTool
-from typing import Optional, List
-from llama_index.callbacks.base import CallbackManager
-from llama_index.agent.openai_agent import (
-    SUPPORTED_MODEL_NAMES,
-    DEFAULT_MAX_FUNCTION_CALLS,
-)
 
 
 class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
@@ -49,7 +51,7 @@ class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
         callback_manager: Optional[CallbackManager] = None,
     ) -> "FnRetrieverOpenAIAgent":
         chat_history = chat_history or []
-        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 

@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional, Type, Union
 
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai_utils import to_openai_function
 from llama_index.types import Model
 
@@ -88,7 +88,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
         openai_fn_spec = to_openai_function(self._output_cls)
 
         chat_response = self._llm.chat(
-            messages=[ChatMessage(role="user", content=formatted_prompt)],
+            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
             functions=[openai_fn_spec],
             function_call=self._function_call,
         )
