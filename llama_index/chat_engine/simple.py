@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
+from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
@@ -22,7 +22,6 @@ class SimpleChatEngine(BaseChatEngine):
         chat_history: List[ChatMessage],
     ) -> None:
         self._llm = llm
-        print(self._llm)
         self._chat_history = chat_history
 
     @classmethod
@@ -70,6 +69,6 @@ class SimpleChatEngine(BaseChatEngine):
         self._chat_history = []
 
     @property
-    def chat_history(self) -> ChatHistoryType:
+    def chat_history(self) -> List[ChatMessage]:
         """Get chat history as human and ai message pairs."""
-        return [(str(human), str(ai)) for human, ai in self._chat_history]
+        return self._chat_history

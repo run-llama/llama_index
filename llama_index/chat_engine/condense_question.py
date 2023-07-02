@@ -1,10 +1,11 @@
 import logging
-from typing import Any, Optional
+from typing import Any, List, Optional
 
-from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
-from llama_index.chat_engine.utils import to_chat_buffer
+from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
+from llama_index.llms.base import ChatMessage
+from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import RESPONSE_TYPE
 
@@ -39,7 +40,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         self,
         query_engine: BaseQueryEngine,
         condense_question_prompt: Prompt,
-        chat_history: ChatHistoryType,
+        chat_history: List[ChatMessage],
         service_context: ServiceContext,
         verbose: bool = False,
     ) -> None:
@@ -54,7 +55,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         cls,
         query_engine: BaseQueryEngine,
         condense_question_prompt: Optional[Prompt] = None,
-        chat_history: Optional[ChatHistoryType] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -73,13 +74,13 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
 
     def _condense_question(
-        self, chat_history: ChatHistoryType, last_message: str
+        self, chat_history: List[ChatMessage], last_message: str
     ) -> str:
         """
         Generate standalone question from conversation context and last message.
         """
 
-        chat_history_str = to_chat_buffer(chat_history)
+        chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
         response = self._service_context.llm_predictor.predict(
@@ -90,13 +91,13 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         return response
 
     async def _acondense_question(
-        self, chat_history: ChatHistoryType, last_message: str
+        self, chat_history: List[ChatMessage], last_message: str
     ) -> str:
         """
         Generate standalone question from conversation context and last message.
         """
 
-        chat_history_str = to_chat_buffer(chat_history)
+        chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
         response = await self._service_context.llm_predictor.apredict(
@@ -143,6 +144,6 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         self._chat_history = []
 
     @property
-    def chat_history(self) -> ChatHistoryType:
+    def chat_history(self) -> List[ChatMessage]:
         """Get chat history as human and ai message pairs."""
-        return [(str(human), str(ai)) for human, ai in self._chat_history]
+        return self._chat_history
