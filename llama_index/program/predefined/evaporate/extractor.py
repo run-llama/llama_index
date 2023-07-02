@@ -1,6 +1,6 @@
 from typing import Optional, List, Any, Set, Tuple, Dict
 from contextlib import contextmanager
-from llama_index.schema import BaseNode, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from collections import defaultdict
@@ -116,7 +116,17 @@ class EvaporateExtractor:
     def identify_fields(
         self, nodes: List[BaseNode], topic: str, fields_top_k: int = 5
     ) -> List:
-        """Identify fields from nodes."""
+        """Identify fields from nodes.
+
+        Will extract fields independently per node, and then
+        return the top k fields.
+
+        Args:
+            nodes (List[BaseNode]): List of nodes to extract fields from.
+            topic (str): Topic to use for extraction.
+            fields_top_k (int): Number of fields to return.
+
+        """
         field2count: dict = defaultdict(int)
         for node in nodes:
             llm_predictor = self._service_context.llm_predictor
@@ -141,21 +151,29 @@ class EvaporateExtractor:
 
         return sorted_fields
 
-    def extract_fn_from_nodes(self, nodes: List[BaseNode], field: str) -> str:
+    def extract_fn_from_nodes(
+        self, nodes: List[BaseNode], field: str, expected_output: Optional[Any] = None
+    ) -> str:
         """Extract function from nodes."""
         function_field = get_function_field_from_attribute(field)
         # TODO: replace with new response synthesis module
 
+        if expected_output is not None:
+            expected_output_str = f"Expected function output: {str(expected_output)}\n"
+        else:
+            expected_output_str = ""
+
         new_prompt = self._fn_generate_prompt.partial_format(
-            attribute=field, function_field=function_field
+            attribute=field,
+            function_field=function_field,
+            expected_output_str=expected_output_str,
         )
         qa_prompt = QuestionAnswerPrompt.from_prompt(new_prompt)
 
-        print(qa_prompt)
-        raise Exception
+        print(qa_prompt.original_template)
 
         response_synthesizer = ResponseSynthesizer.from_args(
-            text_qa_template=qa_prompt, response_mode="compact"
+            text_qa_template=qa_prompt, response_mode="tree_summarize"
         )
 
         # ignore refine prompt for now
@@ -163,7 +181,7 @@ class EvaporateExtractor:
         query_bundle = QueryBundle(query_str=query_str)
         response = response_synthesizer.synthesize(
             query_bundle,
-            nodes,
+            [NodeWithScore(node=n, score=1.0) for n in nodes],
         )
         fn_str = f"""def get_{function_field}_field(text: str):
     \"""

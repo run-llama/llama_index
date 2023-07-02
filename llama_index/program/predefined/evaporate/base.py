@@ -1,26 +1,27 @@
 import logging
-from typing import Any, Dict, List, Type, Optional
+from typing import Any, Dict, List, Type, Optional, Generic
+from abc import abstractmethod
 
-from llama_index.program.predefined.evaporate.base import EvaporateExtractor
+from llama_index.program.predefined.evaporate.extractor import EvaporateExtractor
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.program.predefined.df import DataFrameRowsOnly, DataFrameRow
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, TextNode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.program.predefined.evaporate.prompts import (
-    FN_GENERATION_PROMPT,
-    SCHEMA_ID_PROMPT,
     FnGeneratePrompt,
+    FN_GENERATION_LIST_PROMPT,
     SchemaIDPrompt,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
 )
 import pandas as pd
+from llama_index.types import Model
 
 
 logger = logging.getLogger(__name__)
 
 
-class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
-    """Evaporate program.
+class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
+    """BaseEvaporate program.
 
     You should provide the fields you want to extract.
     Then when you call the program you should pass in a list of training_data nodes
@@ -33,16 +34,15 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
         self,
         extractor: EvaporateExtractor,
         fields_to_extract: Optional[List[str]] = None,
+        fields_context: Optional[Dict[str, Any]] = None,
         nodes_to_fit: Optional[List[BaseNode]] = None,
-        infer_key: str = "infer_data",
-        **program_kwargs: Any,
     ) -> None:
         """Init params."""
         self._extractor = extractor
         self._fields = fields_to_extract or []
+        self._fields_context = fields_context or {}
         # NOTE: this will change with each call to `fit`
         self._field_fns: Dict[str, str] = {}
-        self._infer_key = infer_key
 
         # if nodes_to_fit is not None, then fit extractor
         if nodes_to_fit is not None:
@@ -52,26 +52,25 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
     def from_defaults(
         cls,
         fields_to_extract: Optional[List[str]] = None,
+        fields_context: Optional[Dict[str, Any]] = None,
         service_context: Optional[ServiceContext] = None,
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
         field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
         nodes_to_fit: Optional[List[BaseNode]] = None,
-        inference_key: str = "input_str",
-        **program_kwargs: Any,
-    ) -> "EvaporateProgram":
+    ) -> "BaseEvaporateProgram":
         """Evaporate program."""
         extractor = EvaporateExtractor(
             service_context=service_context,
             schema_id_prompt=schema_id_prompt,
             fn_generate_prompt=fn_generate_prompt,
+            field_extract_query_tmpl=field_extract_query_tmpl,
         )
         return cls(
             extractor,
             fields_to_extract=fields_to_extract,
+            fields_context=fields_context,
             nodes_to_fit=nodes_to_fit,
-            inference_key=inference_key,
-            **program_kwargs,
         )
 
     @property
@@ -92,16 +91,78 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
         nodes: List[BaseNode],
         inplace: bool = True,
     ) -> Dict[str, str]:
-        """Fit on a set of fields."""
+        """Fit on all fields."""
         if len(self._fields) == 0:
             raise ValueError("Must provide at least one field to extract.")
 
         field_fns = {}
         for field in self._fields:
-            field_fns[field] = self.fit(nodes, field, inplace=inplace)
+            field_context = self._fields_context.get(field, None)
+            field_fns[field] = self.fit(
+                nodes, field, field_context=field_context, inplace=inplace
+            )
         return field_fns
 
-    def fit(self, nodes: List[BaseNode], field: str, inplace: bool = True) -> str:
+    @abstractmethod
+    def fit(
+        self,
+        nodes: List[BaseNode],
+        field: str,
+        field_context: Optional[Any] = None,
+        expected_output: Optional[Any] = None,
+        inplace: bool = True,
+    ) -> str:
+        """Given the input Nodes and fields, synthesize the python code."""
+
+    # TODO: this is dependent on the specific class
+    # @abstractmethod
+    # def _inference(
+    #     self, nodes: List[BaseNode], fn_str: str, field_name: str
+    # ) -> List[Any]:
+    #     """Given the input, call the python code and return the result."""
+
+    # TODO: set output_cls
+    # @property
+    # def output_cls(self) -> Type[DataFrameRowsOnly]:
+    #     """Output class."""
+    #     return DataFrameRowsOnly
+
+    # TODO: set call
+    # def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
+    #     """Call evaporate on inference data."""
+
+    #     col_dict = {}
+    #     for field in self._fields:
+    #         col_dict[field] = self._inference(
+    #             kwds[self._infer_key], self._field_fns[field], field
+    #         )
+
+    #     df = pd.DataFrame(col_dict, columns=self._fields)
+
+    #     # convert pd.DataFrame to DataFrameRowsOnly
+    #     df_row_objs = []
+    #     for row_arr in df.values:
+    #         df_row_objs.append(DataFrameRow(row_values=list(row_arr)))
+    #     return DataFrameRowsOnly(rows=df_row_objs)
+
+
+class DFEvaporateProgram(BaseEvaporateProgram[DataFrameRowsOnly]):
+    """Evaporate DF program.
+
+    Given a set of fields, extracts a dataframe from a set of nodes.
+    Each node corresponds to a row in the dataframe - each value in the row
+    corresponds to a field value.
+
+    """
+
+    def fit(
+        self,
+        nodes: List[BaseNode],
+        field: str,
+        field_context: Optional[Any] = None,
+        expected_output: Optional[Any] = None,
+        inplace: bool = True,
+    ) -> str:
         """Given the input Nodes and fields, synthesize the python code."""
         fn = self._extractor.extract_fn_from_nodes(nodes, field)
         logger.debug(f"Extracted function: {fn}")
@@ -125,11 +186,17 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
     def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
         """Call evaporate on inference data."""
 
+        # TODO: either specify `nodes` or `texts` in kwds
+        if "nodes" in kwds:
+            nodes = kwds["nodes"]
+        elif "texts" in kwds:
+            nodes = [TextNode(text=t) for t in kwds["texts"]]
+        else:
+            raise ValueError("Must provide either `nodes` or `texts`.")
+
         col_dict = {}
         for field in self._fields:
-            col_dict[field] = self._inference(
-                kwds[self._infer_key], self._field_fns[field], field
-            )
+            col_dict[field] = self._inference(nodes, self._field_fns[field], field)
 
         df = pd.DataFrame(col_dict, columns=self._fields)
 
@@ -139,6 +206,79 @@ class EvaporateProgram(BasePydanticProgram[DataFrameRowsOnly]):
             df_row_objs.append(DataFrameRow(row_values=list(row_arr)))
         return DataFrameRowsOnly(rows=df_row_objs)
 
-        # data_frame_row = DataFrameRow(row_values=infer_vals)
-        # result = DataFrameRowsOnly(rows=[data_frame_row])
-        # return result
+
+class MultiValueEvaporateProgram(BaseEvaporateProgram[List[DataFrameRow]]):
+    """Multi-Value Evaporate program.
+
+    Given a set of fields, and texts extracts a list of `DataFrameRow` objects across
+    that texts.
+    Each DataFrameRow corresponds to a field, and each value in the row corresponds to
+    a value for the field.
+
+    Difference with DFEvaporateProgram is that 1) each DataFrameRow
+    is column-oriented (instead of row-oriented), and 2)
+    each DataFrameRow can be variable length (not guaranteed to have 1 value per
+    node).
+
+    """
+
+    @classmethod
+    def from_defaults(
+        cls, fn_generate_prompt: Optional[FnGeneratePrompt] = None, **kwargs: Any
+    ) -> "BaseEvaporateProgram":
+        """Evaporate program."""
+        # modify the default function generate prompt to return a list
+        fn_generate_prompt = fn_generate_prompt or FN_GENERATION_LIST_PROMPT
+        return super().from_defaults(fn_generate_prompt=fn_generate_prompt, **kwargs)
+
+    def fit(
+        self,
+        nodes: List[BaseNode],
+        field: str,
+        field_context: Optional[Any] = None,
+        expected_output: Optional[Any] = None,
+        inplace: bool = True,
+    ) -> str:
+        """Given the input Nodes and fields, synthesize the python code."""
+        fn = self._extractor.extract_fn_from_nodes(
+            nodes, field, expected_output=expected_output
+        )
+        logger.debug(f"Extracted function: {fn}")
+        if inplace:
+            self._field_fns[field] = fn
+        return fn
+
+    @property
+    def output_cls(self) -> Type[List[DataFrameRow]]:
+        """Output class."""
+        return List[DataFrameRow]
+
+    def _inference(
+        self, nodes: List[BaseNode], fn_str: str, field_name: str
+    ) -> List[Any]:
+        """Given the input, call the python code and return the result."""
+        results_by_node = self._extractor.run_fn_on_nodes(nodes, fn_str, field_name)
+        # flatten results
+        return [r for results in results_by_node for r in results]
+
+    def __call__(self, *args: Any, **kwds: Any) -> List[DataFrameRow]:
+        """Call evaporate on inference data."""
+
+        # TODO: either specify `nodes` or `texts` in kwds
+        if "nodes" in kwds:
+            nodes = kwds["nodes"]
+        elif "texts" in kwds:
+            nodes = [TextNode(text=t) for t in kwds["texts"]]
+        else:
+            raise ValueError("Must provide either `nodes` or `texts`.")
+
+        col_dict = {}
+        for field in self._fields:
+            col_dict[field] = self._inference(nodes, self._field_fns[field], field)
+
+        # convert col_dict to list of DataFrameRow objects
+        df_row_objs = []
+        for field in self._fields:
+            df_row_objs.append(DataFrameRow(row_values=col_dict[field]))
+
+        return df_row_objs
