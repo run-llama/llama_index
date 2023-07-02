@@ -89,7 +89,7 @@ query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
- 
+
 ## Example: Explicitly configure `context_window` and `num_output`
 
 If you are using other LLM classes from langchain, you may need to explicitly configure the `context_window` and `num_output` via the `ServiceContext` since the information is not available by default.
@@ -114,13 +114,13 @@ num_output = 256
 
 # define LLM
 llm_predictor = LLMPredictor(llm=OpenAI(
-    temperature=0, 
-    model_name="text-davinci-002", 
+    temperature=0,
+    model_name="text-davinci-002",
     max_tokens=num_output)
 )
 
 service_context = ServiceContext.from_defaults(
-    llm_predictor=llm_predictor, 
+    llm_predictor=llm_predictor,
     context_window=context_window,
     num_output=num_output,
 )
@@ -136,7 +136,7 @@ response = query_engine.query("What did the author do after his time at Y Combin
 
 ## Example: Using a HuggingFace LLM
 
-LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](./embeddings.md#custom-embeddings)).
+LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
 
 Many open-source models from HuggingFace require either some preamble before before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
 
@@ -150,7 +150,7 @@ system_prompt = """<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM is excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
 - StableLM is more than just an information source, StableLM is also able to write poetry, short stories, and make jokes.
 - StableLM will refuse to participate in anything that could harm a human.
-""" 
+"""
 
 # This will wrap the default prompts that are internal to llama-index
 query_wrapper_prompt = SimpleInputPrompt("<|USER|>{query_str}<|ASSISTANT|>")
@@ -158,9 +158,9 @@ query_wrapper_prompt = SimpleInputPrompt("<|USER|>{query_str}<|ASSISTANT|>")
 import torch
 from llama_index.llm_predictor import HuggingFaceLLMPredictor
 stablelm_predictor = HuggingFaceLLMPredictor(
-    max_input_size=4096, 
+    max_input_size=4096,
     max_new_tokens=256,
-    generate_kwargs={"temperature": 0.7, "do_sample": False}
+    generate_kwargs={"temperature": 0.7, "do_sample": False},
     system_prompt=system_prompt,
     query_wrapper_prompt=query_wrapper_prompt,
     tokenizer_name="StabilityAI/stablelm-tuned-alpha-3b",
@@ -172,7 +172,7 @@ stablelm_predictor = HuggingFaceLLMPredictor(
     # model_kwargs={"torch_dtype": torch.float16}
 )
 service_context = ServiceContext.from_defaults(
-    chunk_size=1024, 
+    chunk_size=1024,
     llm_predictor=stablelm_predictor
 )
 ```
@@ -183,7 +183,7 @@ Some models will raise errors if all the keys from the tokenizer are passed to t
 HuggingFaceLLMPredictor(
     ...
     tokenizer_outputs_to_remove=["token_type_ids"]
-) 
+)
 ```
 
 A full API reference can be found [here](../../reference/llm_predictor.rst).
@@ -193,12 +193,11 @@ Several example notebooks are also listed below:
 - [StableLM](../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
 - [Camel](../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
 
-
 ## Example: Using a Custom LLM Model - Advanced
 
 To use a custom LLM model, you only need to implement the `LLM` class [from Langchain](https://python.langchain.com/en/latest/modules/models/llms/examples/custom_llm.html). You will be responsible for passing the text to the model and returning the newly generated tokens.
 
-Note that for a completely private experience, also setup a local embedding model (example [here](./embeddings.md#custom-embeddings)).
+Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
 
 Here is a small example using locally running facebook/OPT model and Huggingface's pipeline abstraction:
 
@@ -221,7 +220,7 @@ model_name = "facebook/opt-iml-max-30b"
 pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
 
 class CustomLLM(LLM):
-    
+
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         prompt_length = len(prompt)
         response = pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
@@ -241,8 +240,8 @@ class CustomLLM(LLM):
 llm_predictor = LLMPredictor(llm=CustomLLM())
 
 service_context = ServiceContext.from_defaults(
-    llm_predictor=llm_predictor, 
-    context_window=context_window, 
+    llm_predictor=llm_predictor,
+    context_window=context_window,
     num_output=num_output
 )
 
@@ -273,4 +272,3 @@ maxdepth: 1
 ../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
 ../../examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
 ```
-
