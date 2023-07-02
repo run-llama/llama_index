@@ -4,13 +4,13 @@ from typing import Callable, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
-from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool
 
 DEFAULT_MAX_FUNCTION_CALLS = 5

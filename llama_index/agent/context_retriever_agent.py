@@ -2,21 +2,20 @@
 
 from typing import List, Optional
 
-from llama_index.bridge.langchain import print_text
-
-from llama_index.callbacks.base import CallbackManager
-from llama_index.llms.base import ChatMessage
-from llama_index.llms.openai import OpenAI
-from llama_index.schema import NodeWithScore
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.tools import BaseTool
-from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.agent.openai_agent import (
-    BaseOpenAIAgent,
     DEFAULT_MAX_FUNCTION_CALLS,
     SUPPORTED_MODEL_NAMES,
+    BaseOpenAIAgent,
 )
+from llama_index.bridge.langchain import print_text
+from llama_index.callbacks.base import CallbackManager
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.llms.base import ChatMessage
+from llama_index.llms.openai import OpenAI
+from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import NodeWithScore
+from llama_index.tools import BaseTool
 
 # inspired by DEFAULT_QA_PROMPT_TMPL from llama_index/prompts/default_prompts.py
 DEFAULT_QA_PROMPT_TMPL = (
@@ -39,11 +38,12 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
     NOTE: this is a beta feature, function interfaces might change.
 
     Args:
+        tools (List[BaseTool]): A list of tools.
         retriever (BaseRetriever): A retriever.
         qa_prompt (Optional[QuestionAnswerPrompt]): A QA prompt.
         context_separator (str): A context separator.
-        llm (Optional[ChatOpenAI]): An LLM.
-        chat_history (Optional[ChatMessageHistory]): A chat history.
+        llm (Optional[OpenAI]): An LLM.
+        chat_history (Optional[List[ChatMessage]]): A chat history.
         verbose (bool): Whether to print debug statements.
         max_function_calls (int): Maximum number of function calls.
         callback_manager (Optional[CallbackManager]): A callback manager.

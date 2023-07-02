@@ -1,16 +1,15 @@
 """Retriever OpenAI agent."""
 
-from llama_index.agent.openai_agent import BaseOpenAIAgent
+from typing import List, Optional
+
+from llama_index.agent.openai_agent import (DEFAULT_MAX_FUNCTION_CALLS,
+                                            SUPPORTED_MODEL_NAMES,
+                                            BaseOpenAIAgent)
+from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools.types import BaseTool
-from typing import Optional, List
-from llama_index.callbacks.base import CallbackManager
-from llama_index.agent.openai_agent import (
-    SUPPORTED_MODEL_NAMES,
-    DEFAULT_MAX_FUNCTION_CALLS,
-)
 
 
 class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
