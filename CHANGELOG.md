@@ -7,6 +7,7 @@
 - [feature]add transformer tokenize functionalities for optimizer (chinese) (#6659)
 - Add simple benchmark for vector store (#6670)
 - Introduce `llama_index.llms` module, with new `LLM` interface, and `OpenAI`, `HuggingFaceLLM`, `LangChainLLM` implementations. (#6615)
+- Evaporate pydantic program (#6666)
 
 ### Bug Fixes / Nits
 - Improve metadata/node storage and retrieval for RedisVectorStore (#6678)
