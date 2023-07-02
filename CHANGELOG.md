@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fixed node vs. document filtering in vector stores (#6677)
+
 ## [v0.6.37] - 2023-06-30
 
 ### New Features
