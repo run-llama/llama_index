@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-from llama_index.bridge.langchain import ChatMessageHistory, ChatOpenAI, print_text
+from llama_index.bridge.langchain import print_text
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.base import ChatMessage
@@ -101,7 +101,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
 
         """
         qa_prompt = qa_prompt or DEFAULT_QA_PROMPT
-        lc_chat_history = chat_history or ChatMessageHistory()
+        chat_history = chat_history or []
         llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
@@ -118,7 +118,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
             qa_prompt=qa_prompt,
             context_separator=context_separator,
             llm=llm,
-            chat_history=lc_chat_history,
+            chat_history=chat_history,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
