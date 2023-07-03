@@ -10,11 +10,9 @@ def test_simple_chat_engine(
 
     engine.reset()
     response = engine.chat("Test message 1")
-    print("1 response: ", response)
     assert str(response) == "user: Test message 1\nassistant: "
 
     response = engine.chat("Test message 2")
-    print("2 response: ", response)
     assert (
         str(response)
         == "user: Test message 1\nassistant: user: Test message 1\nassistant: \n"

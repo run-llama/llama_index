@@ -2,10 +2,13 @@
 import logging
 import re
 from typing import Dict, List, Optional, Set, Tuple
+import numpy as np
 
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
+from langchain.docstore.base import Docstore
+from llama_index.embeddings.base import BaseEmbedding
 
 _logger = logging.getLogger(__name__)
 
@@ -14,6 +17,51 @@ def get_sorted_node_list(node_dict: Dict[int, BaseNode]) -> List[BaseNode]:
     """Get sorted node list. Used by tree-strutured indices."""
     sorted_indices = sorted(node_dict.keys())
     return [node_dict[index] for index in sorted_indices]
+
+
+def get_node_ids_from_doc_ids(
+    doc_ids: List[str], docstore: Docstore
+) -> List[List[str]]:
+    """Get nodes ids from doc ids."""
+    node_ids_for_docs: List[List[str]] = []
+    for doc_id in doc_ids:
+        doc_info = docstore.get_ref_doc_info(doc_id)
+        if doc_info is not None and doc_info.node_ids is not None:
+            node_ids_for_docs.append(doc_info.node_ids)
+        else:
+            node_ids_for_docs.append([])
+    return node_ids_for_docs
+
+
+def get_mean_document_embeddings(
+    doc_ids: List[str], docstore: Docstore, embed_model: BaseEmbedding
+):
+    """Get document embeddings."""
+
+    sorted_node_ids_for_docs = get_node_ids_from_doc_ids(doc_ids, docstore)
+
+    # get the embeddings for each node in each retrieved document
+    for node_ids in sorted_node_ids_for_docs:
+        for node_id in node_ids:
+            _node = docstore.get_document(node_id)
+            if _node is not None:
+                embed_model.queue_text_for_embedding(
+                    _node.node_id,
+                    _node.get_content(metadata_mode=MetadataMode.EMBED),
+                )
+
+    # get the embeddings for each doc by averaging the doc node embeddings
+    _, text_embeddings = embed_model.get_queued_text_embeddings()
+
+    idx_offset = 0
+    doc_embeddings = []
+    for node_ids in sorted_node_ids_for_docs:
+        doc_embedding = np.mean(
+            text_embeddings[idx_offset : idx_offset + len(node_ids)], axis=0
+        )
+        doc_embeddings.append(doc_embedding)
+        idx_offset += len(node_ids)
+    return doc_embeddings
 
 
 def extract_numbers_given_response(response: str, n: int = 1) -> Optional[List[int]]:

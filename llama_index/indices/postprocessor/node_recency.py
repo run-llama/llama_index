@@ -14,6 +14,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import NodeWithScore, MetadataMode, NodeRelationship
 from llama_index.embeddings.base import similarity
+from llama_index.indices.utils import get_mean_document_embeddings
 
 
 # NOTE: currently not being used
@@ -175,45 +176,19 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
             sorted_doc_ids = list(
                 dict.fromkeys(
                     [
-                        node.node.relationships[NodeRelationship.SOURCE].node_id
+                        node.node.source_node.node_id
                         for node in sorted_nodes
                         if node.node.relationships[NodeRelationship.SOURCE] is not None
-                        and node.node.relationships[NodeRelationship.SOURCE].node_id
-                        is not None
+                        and node.node.source_node.node_id is not None
                     ]
                 )
             )
 
-            sorted_node_ids_for_docs: List[List[str]] = []
-            for doc_id in sorted_doc_ids:
-                doc_info = self.storage_context.docstore.get_ref_doc_info(doc_id)
-                if doc_info is not None and doc_info.node_ids is not None:
-                    sorted_node_ids_for_docs.append(doc_info.node_ids)
-                else:
-                    sorted_node_ids_for_docs.append([])
-
-            # get the embeddings for each node in each retrieved document
-            embed_model = self.service_context.embed_model
-            for node_ids in sorted_node_ids_for_docs:
-                for node_id in node_ids:
-                    _node = self.storage_context.docstore.get_document(node_id)
-                    if _node is not None:
-                        embed_model.queue_text_for_embedding(
-                            _node.node_id,
-                            _node.get_content(metadata_mode=MetadataMode.EMBED),
-                        )
-
-            # get the embeddings for each doc by averaging the doc node embeddings
-            _, text_embeddings = embed_model.get_queued_text_embeddings()
-
-            idx_offset = 0
-            sorted_doc_embeddings = []
-            for node_ids in sorted_node_ids_for_docs:
-                doc_embedding = np.mean(
-                    text_embeddings[idx_offset : idx_offset + len(node_ids)], axis=0
-                )
-                sorted_doc_embeddings.append(doc_embedding)
-                idx_offset += len(node_ids)
+            sorted_doc_embeddings = get_mean_document_embeddings(
+                sorted_doc_ids,
+                docstore=self.storage_context.docstore,
+                embed_model=self.service_context.embed_model,
+            )
 
             # calculate cosine similarity for each pair of document embeddings
             doc_ids_to_skip: Set[str] = set()
