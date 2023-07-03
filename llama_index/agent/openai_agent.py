@@ -133,6 +133,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
+        chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
@@ -164,6 +165,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> Generator[StreamingChatResponse, None, None]:
+        chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 
         def _stream_chat(
@@ -217,6 +219,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
+        chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
@@ -248,6 +251,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AsyncGenerator[StreamingChatResponse, None]:
+        chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 
         async def _astream_chat(
