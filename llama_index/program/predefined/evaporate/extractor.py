@@ -1,22 +1,25 @@
-"""Evaporate wrapper."""
-
-import random
-import re
-import signal
-from collections import defaultdict
+from typing import Optional, List, Any, Set, Tuple, Dict
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Set, Tuple
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.query.response_synthesis import ResponseSynthesizer
+from llama_index.indices.response import ResponseMode
+from collections import defaultdict
+import signal
+import re
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts.prompts import QuestionAnswerPrompt
+import random
 
-from llama_index.schema import BaseNode, MetadataMode
-from llama_index.experimental.evaporate.prompts import (
+
+from llama_index.program.predefined.evaporate.prompts import (
     FN_GENERATION_PROMPT,
     SCHEMA_ID_PROMPT,
     FnGeneratePrompt,
     SchemaIDPrompt,
+    DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
+    DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
 )
-from llama_index.indices.list.base import ListIndex
-from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import QuestionAnswerPrompt
 
 
 class TimeoutException(Exception):
@@ -83,10 +86,6 @@ def extract_field_dicts(result: str, text_chunk: str) -> Set:
     return existing_fields
 
 
-node_text: str
-result: List
-
-
 # since we define globals below
 class EvaporateExtractor:
     """Wrapper around Evaporate.
@@ -107,21 +106,37 @@ class EvaporateExtractor:
         service_context: Optional[ServiceContext] = None,
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
+        field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
+        expected_output_prefix_tmpl: str = DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
+        verbose: bool = False,
     ) -> None:
         """Initialize params."""
         # TODO: take in an entire index instead of forming a response builder
         self._service_context = service_context or ServiceContext.from_defaults()
         self._schema_id_prompt = schema_id_prompt or SCHEMA_ID_PROMPT
         self._fn_generate_prompt = fn_generate_prompt or FN_GENERATION_PROMPT
+        self._field_extract_query_tmpl = field_extract_query_tmpl
+        self._expected_output_prefix_tmpl = expected_output_prefix_tmpl
+        self._verbose = verbose
 
     def identify_fields(
         self, nodes: List[BaseNode], topic: str, fields_top_k: int = 5
     ) -> List:
-        """Identify fields from nodes."""
+        """Identify fields from nodes.
+
+        Will extract fields independently per node, and then
+        return the top k fields.
+
+        Args:
+            nodes (List[BaseNode]): List of nodes to extract fields from.
+            topic (str): Topic to use for extraction.
+            fields_top_k (int): Number of fields to return.
+
+        """
         field2count: dict = defaultdict(int)
         for node in nodes:
             llm_predictor = self._service_context.llm_predictor
-            result, _ = llm_predictor.predict(
+            result = llm_predictor.predict(
                 self._schema_id_prompt,
                 topic=topic,
                 chunk=node.get_content(metadata_mode=MetadataMode.LLM),
@@ -142,23 +157,38 @@ class EvaporateExtractor:
 
         return sorted_fields
 
-    def extract_fn_from_nodes(self, nodes: List[BaseNode], field: str) -> str:
+    def extract_fn_from_nodes(
+        self, nodes: List[BaseNode], field: str, expected_output: Optional[Any] = None
+    ) -> str:
         """Extract function from nodes."""
         function_field = get_function_field_from_attribute(field)
-        index = ListIndex(nodes)
+        # TODO: replace with new response synthesis module
+
+        if expected_output is not None:
+            expected_output_str = (
+                f"{self._expected_output_prefix_tmpl}{str(expected_output)}\n"
+            )
+        else:
+            expected_output_str = ""
+
         new_prompt = self._fn_generate_prompt.partial_format(
-            attribute=field, function_field=function_field
+            attribute=field,
+            function_field=function_field,
+            expected_output_str=expected_output_str,
         )
         qa_prompt = QuestionAnswerPrompt.from_prompt(new_prompt)
+
+        response_synthesizer = ResponseSynthesizer.from_args(
+            text_qa_template=qa_prompt, response_mode=ResponseMode.TREE_SUMMARIZE
+        )
+
         # ignore refine prompt for now
-        query_str = (
-            f'Write a python function to extract the entire "{field}" field from text, '
-            "but not any other metadata. Return the result as a list."
+        query_str = self._field_extract_query_tmpl.format(field=function_field)
+        query_bundle = QueryBundle(query_str=query_str)
+        response = response_synthesizer.synthesize(
+            query_bundle,
+            [NodeWithScore(node=n, score=1.0) for n in nodes],
         )
-        query_engine = index.as_query_engine(
-            response_mode="compact", text_qa_template=qa_prompt
-        )
-        response = query_engine.query(query_str)
         fn_str = f"""def get_{function_field}_field(text: str):
     \"""
     Function to extract {field}. 
@@ -198,16 +228,16 @@ class EvaporateExtractor:
         for node in nodes:
             global result
             global node_text
-            node_text = node.get_content()
+            node_text = node.get_content()  # type: ignore[name-defined]
             # this is temporary
-            result = []
+            result = []  # type: ignore[name-defined]
             try:
                 with time_limit(1):
                     exec(fn_str, globals())
                     exec(f"result = get_{function_field}_field(node_text)", globals())
             except TimeoutException as e:
                 raise e
-            results.append(result)
+            results.append(result)  # type: ignore[name-defined]
         return results
 
     def extract_datapoints_with_fn(

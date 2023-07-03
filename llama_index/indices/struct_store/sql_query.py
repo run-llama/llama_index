@@ -17,7 +17,6 @@ from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.objects.base import ObjectRetriever
 
@@ -154,13 +153,12 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
         return tables_desc_str
 
-    @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -175,7 +173,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         metadata["sql_query"] = sql_query_str
 
         if self._synthesize_response:
-            response_str, _ = self._service_context.llm_predictor.predict(
+            response_str = self._service_context.llm_predictor.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query=sql_query_str,
@@ -187,16 +185,12 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         response = Response(response=response_str, metadata=metadata)
         return response
 
-    @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        (
-            response_str,
-            formatted_prompt,
-        ) = await self._service_context.llm_predictor.apredict(
+        response_str = await self._service_context.llm_predictor.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -254,13 +248,12 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         """
 
-    @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -275,7 +268,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         metadata["sql_query"] = sql_query_str
 
         if self._synthesize_response:
-            response_str, _ = self._service_context.llm_predictor.predict(
+            response_str = self._service_context.llm_predictor.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query=sql_query_str,
@@ -287,16 +280,12 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         response = Response(response=response_str, metadata=metadata)
         return response
 
-    @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        (
-            response_str,
-            formatted_prompt,
-        ) = await self._service_context.llm_predictor.apredict(
+        response_str = await self._service_context.llm_predictor.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,

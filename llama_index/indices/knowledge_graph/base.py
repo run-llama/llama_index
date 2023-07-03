@@ -109,7 +109,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
-        response, _ = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm_predictor.predict(
             self.kg_triple_extract_template,
             text=text,
         )

@@ -5,7 +5,6 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
@@ -24,25 +23,21 @@ class Accumulate(BaseResponseBuilder):
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
         return list(item for sublist in md_array for item in sublist)
 
-    def format_response(self, outputs: List[Any], separator: str) -> str:
+    def _format_response(self, outputs: List[Any], separator: str) -> str:
         responses: List[str] = []
-        for response, formatted_prompt in outputs:
-            self._log_prompt_and_response(
-                formatted_prompt, response, log_prefix="Initial"
-            )
+        for response in outputs:
             responses.append(response or "Empty Response")
 
         return separator.join(
             [f"Response {index + 1}: {item}" for index, item in enumerate(responses)]
         )
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
         text_chunks: Sequence[str],
         separator: str = "\n---------------------\n",
-        **kwargs: Any,
+        **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Apply the same prompt to text chunks and return async responses"""
 
@@ -57,14 +52,14 @@ class Accumulate(BaseResponseBuilder):
         flattened_tasks = self.flatten_list(tasks)
         outputs = await asyncio.gather(*flattened_tasks)
 
-        return self.format_response(outputs, separator)
+        return self._format_response(outputs, separator)
 
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
         text_chunks: Sequence[str],
         separator: str = "\n---------------------\n",
+        **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Apply the same prompt to text chunks and return responses"""
 
@@ -81,7 +76,7 @@ class Accumulate(BaseResponseBuilder):
         if self._use_async:
             outputs = run_async_tasks(outputs)
 
-        return self.format_response(outputs, separator)
+        return self._format_response(outputs, separator)
 
     def _give_responses(
         self, query_str: str, text_chunk: str, use_async: bool = False
