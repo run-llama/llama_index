@@ -27,8 +27,8 @@ def mock_json_service_ctx(
     mock_service_context: ServiceContext,
 ) -> Generator[ServiceContext, None, None]:
     with patch.object(mock_service_context, "llm_predictor") as mock_llm_predictor:
-        mock_llm_predictor.apredict = AsyncMock(return_value=(TEST_LLM_OUTPUT, ""))
-        mock_llm_predictor.predict = MagicMock(return_value=(TEST_LLM_OUTPUT, ""))
+        mock_llm_predictor.apredict = AsyncMock(return_value=TEST_LLM_OUTPUT)
+        mock_llm_predictor.predict = MagicMock(return_value=TEST_LLM_OUTPUT)
         yield mock_service_context
 
 

@@ -12,7 +12,7 @@ from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.prompts.base import Prompt
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 import logging
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.callbacks.base import CallbackManager
 
@@ -115,7 +115,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         query_str = query_bundle.query_str
         sql_query = metadata["sql_query"]
         sql_query_response = metadata["sql_query_response"]
-        new_query_str, formatted_prompt = self._llm_predictor.predict(
+        new_query_str = self._llm_predictor.predict(
             self._sql_augment_transform_prompt,
             query_str=query_str,
             sql_query_str=sql_query,
@@ -229,7 +229,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._sql_join_synthesis_prompt,
             query_str=query_bundle.query_str,
             sql_query_str=sql_query,

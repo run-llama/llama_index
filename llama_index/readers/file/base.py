@@ -192,7 +192,7 @@ class SimpleDirectoryReader(BaseReader):
                     reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
-                docs = reader.load_data(input_file, metadata=metadata or {})
+                docs = reader.load_data(input_file, extra_info=metadata)
 
                 # iterate over docs if needed
                 if self.filename_as_id:

@@ -6,18 +6,9 @@ answer.
 Depending on the [type of index](/reference/indices.rst) being used,
 LLMs may also be used during index construction, insertion, and query traversal.
 
-LlamaIndex uses Langchain's [LLM](https://python.langchain.com/en/latest/modules/models/llms.html)
-and [LLMChain](https://langchain.readthedocs.io/en/latest/modules/chains.html) module to define
-the underlying abstraction. We introduce a wrapper class,
-[`LLMPredictor`](/reference/service_context/llm_predictor.rst), for integration into LlamaIndex.
-
-We also introduce a [`PromptHelper` class](/reference/service_context/prompt_helper.rst), to
-allow the user to explicitly set certain constraint parameters, such as
-context window (default is 4096 for davinci models), number of generated output
-tokens, and more.
-
 By default, we use OpenAI's `text-davinci-003` model. But you may choose to customize
 the underlying LLM being used.
+We support a growing collection of integrations, as well as LangChain's [LLM](https://python.langchain.com/en/latest/modules/models/llms.html) modules.
 
 Below we show a few examples of LLM customization. This includes
 
@@ -28,8 +19,10 @@ Below we show a few examples of LLM customization. This includes
 ## Example: Changing the underlying LLM
 
 An example snippet of customizing the LLM being used is shown below.
-In this example, we use `text-davinci-002` instead of `text-davinci-003`. Available models include `text-davinci-003`,`text-curie-001`,`text-babbage-001`,`text-ada-001`, `code-davinci-002`,`code-cushman-001`. Note that
-you may plug in any LLM shown on Langchain's
+In this example, we use `text-davinci-002` instead of `text-davinci-003`. Available models include `text-davinci-003`,`text-curie-001`,`text-babbage-001`,`text-ada-001`, `code-davinci-002`,`code-cushman-001`. 
+
+Note that
+you may also plug in any LLM shown on Langchain's
 [LLM](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) page.
 
 ```python
@@ -40,13 +33,15 @@ from llama_index import (
     LLMPredictor,
     ServiceContext
 )
-from langchain import OpenAI
+from llama_index.llms import OpenAI
+# alternatively
+# from langchain.llms import ...
 
 documents = SimpleDirectoryReader('data').load_data()
 
 # define LLM
-llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002"))
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+llm = OpenAI(temperature=0, model_name="text-davinci-002")
+service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
 index = KeywordTableIndex.from_documents(documents, service_context=service_context)
@@ -70,26 +65,18 @@ For OpenAI, Cohere, AI21, you just need to set the `max_tokens` parameter
 from llama_index import (
     KeywordTableIndex,
     SimpleDirectoryReader,
-    LLMPredictor,
     ServiceContext
 )
-from langchain import OpenAI
+from llama_index.llms import OpenAI
 
 documents = SimpleDirectoryReader('data').load_data()
 
 # define LLM
-llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=512))
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
-
-# build index
-index = KeywordTableIndex.from_documents(documents, service_context=service_context)
-
-# get response from query
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do after his time at Y Combinator?")
+llm = OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=512)
+service_context = ServiceContext.from_defaults(llm=llm)
 
 ```
- 
+
 ## Example: Explicitly configure `context_window` and `num_output`
 
 If you are using other LLM classes from langchain, you may need to explicitly configure the `context_window` and `num_output` via the `ServiceContext` since the information is not available by default.
@@ -99,10 +86,11 @@ If you are using other LLM classes from langchain, you may need to explicitly co
 from llama_index import (
     KeywordTableIndex,
     SimpleDirectoryReader,
-    LLMPredictor,
     ServiceContext
 )
-from langchain import OpenAI
+from llama_index.llms import OpenAI
+# alternatively
+# from langchain.llms import ...
 
 documents = SimpleDirectoryReader('data').load_data()
 
@@ -113,30 +101,23 @@ context_window = 4096
 num_output = 256
 
 # define LLM
-llm_predictor = LLMPredictor(llm=OpenAI(
+llm = OpenAI(
     temperature=0, 
     model_name="text-davinci-002", 
-    max_tokens=num_output)
+    max_tokens=num_output,
 )
 
 service_context = ServiceContext.from_defaults(
-    llm_predictor=llm_predictor, 
+    llm=llm,
     context_window=context_window,
     num_output=num_output,
 )
-
-# build index
-index = KeywordTableIndex.from_documents(documents, service_context=service_context)
-
-# get response from query
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
 
 ## Example: Using a HuggingFace LLM
 
-LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](./embeddings.md#custom-embeddings)).
+LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
 
 Many open-source models from HuggingFace require either some preamble before before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
 
@@ -150,17 +131,17 @@ system_prompt = """<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM is excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
 - StableLM is more than just an information source, StableLM is also able to write poetry, short stories, and make jokes.
 - StableLM will refuse to participate in anything that could harm a human.
-""" 
+"""
 
 # This will wrap the default prompts that are internal to llama-index
 query_wrapper_prompt = SimpleInputPrompt("<|USER|>{query_str}<|ASSISTANT|>")
 
 import torch
-from llama_index.llm_predictor import HuggingFaceLLMPredictor
-stablelm_predictor = HuggingFaceLLMPredictor(
+from llama_index.llms import HuggingFaceLLM
+llm = HuggingFaceLLM(
     max_input_size=4096, 
     max_new_tokens=256,
-    generate_kwargs={"temperature": 0.7, "do_sample": False}
+    generate_kwargs={"temperature": 0.7, "do_sample": False},
     system_prompt=system_prompt,
     query_wrapper_prompt=query_wrapper_prompt,
     tokenizer_name="StabilityAI/stablelm-tuned-alpha-3b",
@@ -173,17 +154,17 @@ stablelm_predictor = HuggingFaceLLMPredictor(
 )
 service_context = ServiceContext.from_defaults(
     chunk_size=1024, 
-    llm_predictor=stablelm_predictor
+    llm=llm,
 )
 ```
 
 Some models will raise errors if all the keys from the tokenizer are passed to the model. A common tokenizer output that causes issues is `token_type_ids`. Below is an example of configuring the predictor to remove this before passing the inputs to the model:
 
 ```python
-HuggingFaceLLMPredictor(
+HuggingFaceLLM(
     ...
     tokenizer_outputs_to_remove=["token_type_ids"]
-) 
+)
 ```
 
 A full API reference can be found [here](../../reference/llm_predictor.rst).
@@ -193,22 +174,27 @@ Several example notebooks are also listed below:
 - [StableLM](../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
 - [Camel](../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
 
-
 ## Example: Using a Custom LLM Model - Advanced
 
-To use a custom LLM model, you only need to implement the `LLM` class [from Langchain](https://python.langchain.com/en/latest/modules/models/llms/examples/custom_llm.html). You will be responsible for passing the text to the model and returning the newly generated tokens.
+To use a custom LLM model, you only need to implement the `LLM` class (or `CustomLLM` for a simpler interface)
+You will be responsible for passing the text to the model and returning the newly generated tokens.
 
-Note that for a completely private experience, also setup a local embedding model (example [here](./embeddings.md#custom-embeddings)).
+Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
 
 Here is a small example using locally running facebook/OPT model and Huggingface's pipeline abstraction:
 
 ```python
 import torch
-from langchain.llms.base import LLM
-from llama_index import SimpleDirectoryReader, LangchainEmbedding, ListIndex
-from llama_index import LLMPredictor, ServiceContext
 from transformers import pipeline
 from typing import Optional, List, Mapping, Any
+
+from llama_index import (
+    ServiceContext, 
+    SimpleDirectoryReader, 
+    LangchainEmbedding, 
+    ListIndex
+)
+from llama_index.llms import CustomLLM, CompletionResponse, LLMMetadata
 
 
 # set context window size
@@ -220,28 +206,31 @@ num_output = 256
 model_name = "facebook/opt-iml-max-30b"
 pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
 
-class CustomLLM(LLM):
-    
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+class OurLLM(CustomLLM):
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        """Get LLM metadata."""
+        return LLMMetadata(
+            context_window=context_window, num_output=num_output
+        )
+
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         prompt_length = len(prompt)
         response = pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
 
         # only return newly generated tokens
-        return response[prompt_length:]
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        return {"name_of_model": model_name}
-
-    @property
-    def _llm_type(self) -> str:
-        return "custom"
+        text = response[prompt_length:]
+        return CompletionResponse(text=text)
+    
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        raise NotImplementedError()
 
 # define our LLM
-llm_predictor = LLMPredictor(llm=CustomLLM())
+llm = OurLLM()
 
 service_context = ServiceContext.from_defaults(
-    llm_predictor=llm_predictor, 
+    llm=llm, 
     context_window=context_window, 
     num_output=num_output
 )
@@ -273,4 +262,3 @@ maxdepth: 1
 ../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
 ../../examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
 ```
-

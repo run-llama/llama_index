@@ -145,7 +145,7 @@ def insert_terms(terms_to_definition):
 
 @st.cache_resource
 def initialize_index(llm_name, model_temperature, api_key):
-    """Create the SQLStructStoreIndex object."""
+    """Create the VectorStoreIndex object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
@@ -270,7 +270,7 @@ After inserting, remove the line of code we used to save the index to disk. With
 ```python
 @st.cache_resource
 def initialize_index(llm_name, model_temperature, api_key):
-    """Create the SQLStructStoreIndex object."""
+    """Load the Index object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))

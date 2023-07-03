@@ -125,7 +125,7 @@ def test_faiss_check_ids(
     assert nodes[0].node.node_id == "node3"
 
 
-def test_query_and_count_tokens(mock_service_context: ServiceContext) -> None:
+def test_query(mock_service_context: ServiceContext) -> None:
     """Test embedding query."""
     doc_text = (
         "Hello world.\n"
@@ -137,10 +137,8 @@ def test_query_and_count_tokens(mock_service_context: ServiceContext) -> None:
     index = VectorStoreIndex.from_documents(
         [document], service_context=mock_service_context
     )
-    assert index.service_context.embed_model.total_tokens_used == 20
 
     # test embedding query
     query_str = "What is?"
     retriever = index.as_retriever()
     _ = retriever.retrieve(QueryBundle(query_str))
-    assert index.service_context.embed_model.last_token_usage == 3
