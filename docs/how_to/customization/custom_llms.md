@@ -40,7 +40,7 @@ from llama_index.llms import OpenAI
 documents = SimpleDirectoryReader('data').load_data()
 
 # define LLM
-llm = OpenAI(temperature=0, model_name="text-davinci-002")
+llm = OpenAI(temperature=0, model="text-davinci-002")
 service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
@@ -72,7 +72,7 @@ from llama_index.llms import OpenAI
 documents = SimpleDirectoryReader('data').load_data()
 
 # define LLM
-llm = OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=512)
+llm = OpenAI(temperature=0, model="text-davinci-002", max_tokens=512)
 service_context = ServiceContext.from_defaults(llm=llm)
 
 ```
@@ -103,7 +103,7 @@ num_output = 256
 # define LLM
 llm = OpenAI(
     temperature=0, 
-    model_name="text-davinci-002", 
+    model="text-davinci-002", 
     max_tokens=num_output,
 )
 

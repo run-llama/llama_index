@@ -7,3 +7,4 @@ myst-parser
 myst-nb
 sphinx-autobuild
 sphinx_rtd_theme
+autodoc_pydantic
