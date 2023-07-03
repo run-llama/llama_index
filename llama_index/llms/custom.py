@@ -8,7 +8,6 @@ from llama_index.llms.base import (
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseAsyncGen,
-    CompletionResponseGen,
 )
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
