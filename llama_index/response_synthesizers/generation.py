@@ -1,10 +1,9 @@
-from typing import Any, List, Optional, Sequence
+from typing import Any, Optional, Sequence
 
-from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
-from llama_index.synthesizers.base import BaseSynthesizer
+from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -12,13 +11,12 @@ from llama_index.types import RESPONSE_TEXT_TYPE
 class Generation(BaseSynthesizer):
     def __init__(
         self,
-        simple_template: Optional[SimpleInputPrompt] = DEFAULT_SIMPLE_INPUT_PROMPT,
+        simple_template: Optional[SimpleInputPrompt] = None,
         service_context: Optional[ServiceContext] = None,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         streaming: bool = False,
     ) -> None:
-        super().__init__(service_context=service_context, streaming=streaming, node_postprocessors=node_postprocessors)
-        self._input_prompt = simple_template
+        super().__init__(service_context=service_context, streaming=streaming)
+        self._input_prompt = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
     @llm_token_counter("aget_response")
     async def aget_response(

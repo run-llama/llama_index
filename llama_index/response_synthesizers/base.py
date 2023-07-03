@@ -11,9 +11,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
-from llama_index.indices.service_context import ServiceContext
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
@@ -32,11 +30,9 @@ class BaseSynthesizer(ABC):
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self._node_postprocessors = node_postprocessors or []
         self._service_context = service_context or ServiceContext.from_defaults()
         self._callback_manager = self._service_context.callback_manager
         self._streaming = streaming
@@ -82,7 +78,7 @@ class BaseSynthesizer(ABC):
         self._service_context.llama_logger.add_log(
             {f"{log_prefix.lower()}_response": response or "Empty Response"}
         )
-    
+
     def _get_metadata_for_response(
         self,
         nodes: List[BaseNode],
@@ -128,9 +124,6 @@ class BaseSynthesizer(ABC):
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
 
-        for node_processor in self._node_postprocessors:
-            nodes = node_processor.postprocess_nodes(nodes, query)
-
         response_str = self.get_response(
             query_str=query.query_str,
             text_chunks=[
@@ -162,9 +155,6 @@ class BaseSynthesizer(ABC):
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
 
-        for node_processor in self._node_postprocessors:
-            nodes = node_processor.postprocess_nodes(nodes, query)
-
         response_str = await self.aget_response(
             query_str=query.query_str,
             text_chunks=[
@@ -176,7 +166,7 @@ class BaseSynthesizer(ABC):
         source_nodes = list(nodes) + list(additional_source_nodes)
 
         response = self._prepare_response_output(response_str, source_nodes)
-        
+
         self._callback_manager.on_event_end(
             CBEventType.SYNTHESIZE,
             payload={EventPayload.RESPONSE: response},

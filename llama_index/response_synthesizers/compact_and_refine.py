@@ -1,10 +1,7 @@
-from typing import Any, List, Sequence
+from typing import Any, Sequence
 
-from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.postprocessor.types import BaseNodePostprocessor
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.prompts.utils import get_biggest_prompt
-from llama_index.synthesizers.refine import Refine
+from llama_index.response_synthesizers.refine import Refine
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
