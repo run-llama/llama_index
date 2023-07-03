@@ -111,6 +111,7 @@ to fit their needs.
    reference/query.rst
    reference/node.rst
    reference/llm_predictor.rst
+   reference/llms.rst
    reference/node_postprocessor.rst
    reference/storage.rst
    reference/composability.rst
