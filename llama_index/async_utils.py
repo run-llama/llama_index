@@ -2,6 +2,7 @@
 import asyncio
 from typing import Any, Coroutine, List
 
+
 def run_async_tasks(
     tasks: List[Coroutine],
     show_progress: bool = False,
