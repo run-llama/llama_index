@@ -2,7 +2,8 @@
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.langchain import BasePromptTemplate as BaseLangchainPrompt
+from llama_index.bridge.langchain import \
+    BasePromptTemplate as BaseLangchainPrompt
 from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.langchain_utils import from_lc_messages
@@ -152,7 +153,7 @@ class Prompt:
         return self.prompt_selector.select(llm=llm)
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
-        """Format the prompt."""
+        """Format the prompt into a string."""
         kwargs.update(self.partial_dict)
         lc_prompt = self.get_langchain_prompt(llm=llm)
         return lc_prompt.format(**kwargs)
@@ -160,7 +161,7 @@ class Prompt:
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
-        """Format the prompt."""
+        """Format the prompt into a list of chat messages."""
         kwargs.update(self.partial_dict)
         lc_template = self.get_langchain_prompt(llm=llm)
         lc_value = lc_template.format_prompt(**kwargs)
