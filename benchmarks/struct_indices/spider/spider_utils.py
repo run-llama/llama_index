@@ -2,13 +2,12 @@
 
 import json
 import os
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
-from llama_index.bridge.langchain import OpenAI
-from llama_index.bridge.langchain import ChatOpenAI
 from sqlalchemy import create_engine, text
 
 from llama_index import SQLStructStoreIndex, LLMPredictor, SQLDatabase
+from llama_index.llms.openai import OpenAI
 
 
 def load_examples(spider_dir: str) -> Tuple[list, list]:
@@ -23,7 +22,7 @@ def load_examples(spider_dir: str) -> Tuple[list, list]:
 
 
 def create_indexes(
-    spider_dir: str, llm: Union[ChatOpenAI, OpenAI]
+    spider_dir: str, llm: OpenAI
 ) -> Dict[str, SQLStructStoreIndex]:
     """Create indexes for all databases."""
     # Create all necessary SQL database objects.

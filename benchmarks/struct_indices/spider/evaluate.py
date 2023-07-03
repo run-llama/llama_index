@@ -5,9 +5,9 @@ import json
 import logging
 import os
 from typing import Dict, List, Optional
+from llama_index.llms.base import ChatMessage, MessageRole
 
-from llama_index.bridge.langchain import ChatOpenAI
-from llama_index.bridge.langchain import HumanMessage
+from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import Response
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
@@ -45,29 +45,29 @@ HypothesisAnswerCorrect: """
 
 
 def _answer(
-    llm: ChatOpenAI, question: str, sql_query: str, sql_result: Optional[str]
+    llm: OpenAI, question: str, sql_query: str, sql_result: Optional[str]
 ) -> str:
     prompt = answer_template.format(
         question=question, sql_query=sql_query, sql_result=sql_result
     )
-    response = llm([HumanMessage(content=prompt)])
-    return response.content
+    response = llm.chat([ChatMessage(role=MessageRole.USER, content=prompt)])
+    return response.message.content
 
 
 def _match(
-    llm: ChatOpenAI, question: str, reference_answer: str, hypothesis_answer: str
+    llm: OpenAI, question: str, reference_answer: str, hypothesis_answer: str
 ) -> bool:
     prompt = match_template.format(
         question=question,
         reference_answer=reference_answer,
         hypothesis_answer=hypothesis_answer,
     )
-    response = llm([HumanMessage(content=prompt)])
-    return "true" in response.content.lower()
+    response = llm.chat([ChatMessage(role=MessageRole.USER, content=prompt)])
+    return "true" in response.message.content.lower()
 
 
 def _get_answers(
-    llm: ChatOpenAI,
+    llm: OpenAI,
     indexes: Dict[str, SQLStructStoreIndex],
     db_names: List[str],
     sql_queries: List[str],
@@ -112,7 +112,7 @@ def _get_answers(
 
 
 def _match_answers(
-    llm: ChatOpenAI,
+    llm: OpenAI,
     gold_results: List[dict],
     pred_results: List[dict],
     examples: List[dict],
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Create the LlamaIndexes for all databases.
-    llm = ChatOpenAI(model=args.model, temperature=0)
+    llm = OpenAI(model=args.model, temperature=0)
 
     # Load all examples.
     train, dev = load_examples(args.spider_dir)
