@@ -140,7 +140,7 @@ class VellumPredictor(BaseLLMPredictor):
 
     async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
         async def gen() -> TokenAsyncGen:
-            async for token in self.stream(prompt, **prompt_args):
+            for token in self.stream(prompt, **prompt_args):
                 yield token
 
         # NOTE: convert generator to async generator
