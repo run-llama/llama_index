@@ -7,7 +7,9 @@ from typing import Any, Optional, Protocol, runtime_checkable
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.utils import (
-    stream_chat_response_to_tokens, stream_completion_response_to_tokens)
+    stream_chat_response_to_tokens,
+    stream_completion_response_to_tokens,
+)
 from llama_index.llms.base import LLM, LLMMetadata
 from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
