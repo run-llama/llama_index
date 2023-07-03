@@ -1,7 +1,6 @@
 """Async utils."""
 import asyncio
 from typing import Any, Coroutine, List
-import nest_asyncio
 
 
 def run_async_tasks(
@@ -11,9 +10,6 @@ def run_async_tasks(
 ) -> List[Any]:
     """Run a list of async tasks."""
 
-    # jupyter notebooks already have an event loop running
-    # we need to reuse it instead of creating a new one
-    nest_asyncio.apply()
     loop = asyncio.get_event_loop()
 
     tasks_to_execute: List[Any] = tasks
