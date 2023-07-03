@@ -1,9 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Type, TypeVar
-
-from pydantic import BaseModel
-
-Model = TypeVar("Model", bound=BaseModel)
+from typing import Any, Generic, Type
+from llama_index.types import Model
 
 
 class BasePydanticProgram(ABC, Generic[Model]):

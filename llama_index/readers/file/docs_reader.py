@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class PDFReader(BaseReader):
@@ -41,7 +41,7 @@ class PDFReader(BaseReader):
                 if extra_info is not None:
                     metadata.update(extra_info)
 
-                docs.append(Document(page_text, extra_info=metadata))
+                docs.append(Document(text=page_text, metadata=metadata))
             return docs
 
 
@@ -65,4 +65,4 @@ class DocxReader(BaseReader):
         if extra_info is not None:
             metadata.update(extra_info)
 
-        return [Document(text, extra_info=extra_info)]
+        return [Document(text=text, metadata=metadata or {})]

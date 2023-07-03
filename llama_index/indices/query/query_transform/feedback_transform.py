@@ -4,7 +4,7 @@ from typing import Dict, Optional
 from llama_index.evaluation.base import Evaluation
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import Response
@@ -47,12 +47,12 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         self.should_resynthesize_query = resynthesize_query
         self.resynthesis_prompt = resynthesis_prompt or DEFAULT_RESYNTHESIS_PROMPT
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         orig_query_str = query_bundle.query_str
-        if extra_info.get("evaluation") and isinstance(
-            extra_info.get("evaluation"), Evaluation
+        if metadata.get("evaluation") and isinstance(
+            metadata.get("evaluation"), Evaluation
         ):
-            self.evaluation = extra_info.get("evaluation")
+            self.evaluation = metadata.get("evaluation")
         if self.evaluation is None or not isinstance(self.evaluation, Evaluation):
             raise ValueError("Evaluation is not set.")
         if self.evaluation.feedback == "YES" or self.evaluation.feedback == "NO":
@@ -94,7 +94,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         if feedback is None:
             return query_str
         else:
-            new_query_str, _ = self.llm_predictor.predict(
+            new_query_str = self.llm_predictor.predict(
                 self.resynthesis_prompt,
                 query_str=query_str,
                 response=response.response,

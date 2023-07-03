@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document, ImageDocument
+from llama_index.schema import Document, ImageDocument
 
 
 class ImageVisionLLMReader(BaseReader):
@@ -87,6 +87,6 @@ class ImageVisionLLMReader(BaseReader):
             ImageDocument(
                 text=text_str,
                 image=image_str,
-                extra_info=extra_info,
+                metadata=extra_info or {},
             )
         ]

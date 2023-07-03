@@ -3,12 +3,12 @@
 import re
 from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 
-from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import BaseStructTable
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from llama_index.prompts.prompts import SchemaExtractPrompt
+from llama_index.schema import BaseNode
 from llama_index.storage.docstore.types import RefDocInfo
 
 BST = TypeVar("BST", bound=BaseStructTable)
@@ -41,7 +41,7 @@ class BaseStructStoreIndex(BaseIndex[BST], Generic[BST]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[BST] = None,
         service_context: Optional[ServiceContext] = None,
         schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
@@ -60,7 +60,7 @@ class BaseStructStoreIndex(BaseIndex[BST], Generic[BST]):
             **kwargs,
         )
 
-    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         raise NotImplementedError("Delete not implemented for Struct Store Index.")
 

@@ -3,9 +3,8 @@ from typing import Generator, List
 import pytest
 from pytest import MonkeyPatch
 
-from llama_index.data_structs.node import Node
-from llama_index.readers.schema.base import Document
-from llama_index.schema import BaseDocument
+from llama_index.schema import Document
+from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore.dynamodb_docstore import DynamoDBDocumentStore
 from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
 
@@ -20,7 +19,7 @@ except ImportError:
 
 @pytest.fixture()
 def documents() -> List[Document]:
-    return [Document("doc_1"), Document("doc_2")]
+    return [Document(text="doc_1"), Document(text="doc_2")]
 
 
 @pytest.fixture()
@@ -56,8 +55,8 @@ def ddb_docstore(kvstore_from_mocked_table: DynamoDBKVStore) -> DynamoDBDocument
 @pytest.mark.skipif(not has_boto_libs, reason="boto3 and/or moto not installed")
 def test_docstore(ddb_docstore: DynamoDBDocumentStore) -> None:
     """Test docstore."""
-    doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
-    node = Node("my node", doc_id="d2", node_info={"node": "info"})
+    doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
+    node = TextNode(text="my node", id_="d2", metadata={"node": "info"})
 
     # test get document
     docstore = ddb_docstore
@@ -78,7 +77,7 @@ def test_dynamodb_docstore(
     # test adding documents
     ds.add_documents(documents)
     assert len(ds.docs) == 2
-    assert all(isinstance(doc, BaseDocument) for doc in ds.docs.values())
+    assert all(isinstance(doc, BaseNode) for doc in ds.docs.values())
 
     # test updating documents
     ds.add_documents(documents)
@@ -88,7 +87,7 @@ def test_dynamodb_docstore(
     # test getting documents
     doc0 = ds.get_document(documents[0].get_doc_id())
     assert doc0 is not None
-    assert documents[0].text == doc0.text
+    assert documents[0].get_content() == doc0.get_content()
 
     # test deleting documents
     ds.delete_document(documents[0].get_doc_id())

@@ -37,7 +37,8 @@ def similarity(
 ) -> float:
     """Get embedding similarity."""
     if mode == SimilarityMode.EUCLIDEAN:
-        return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
+        # Using -euclidean distance as similarity to achieve same ranking order
+        return -float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
     elif mode == SimilarityMode.DOT_PRODUCT:
         product = np.dot(embedding1, embedding2)
         return product

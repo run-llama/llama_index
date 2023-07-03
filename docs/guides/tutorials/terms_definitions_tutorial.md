@@ -110,7 +110,7 @@ with upload_tab:
     document_text = st.text_area("Or enter raw text")
     if st.button("Extract Terms and Definitions") and document_text:
         with st.spinner("Extracting..."):
-            extracted_terms = extract_terms([Document(document_text)],
+            extracted_terms = extract_terms([Document(text=document_text)],
                                             term_extract_str, llm_name,
                                             model_temperature, api_key)
         st.write(extracted_terms)
@@ -140,12 +140,12 @@ if 'all_terms' not in st.session_state:
 
 def insert_terms(terms_to_definition):
     for term, definition in terms_to_definition.items():
-        doc = Document(f"Term: {term}\nDefinition: {definition}")
+        doc = Document(text=f"Term: {term}\nDefinition: {definition}")
         st.session_state['llama_index'].insert(doc)
 
 @st.cache_resource
 def initialize_index(llm_name, model_temperature, api_key):
-    """Create the SQLStructStoreIndex object."""
+    """Create the VectorStoreIndex object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
@@ -169,7 +169,7 @@ with upload_tab:
             st.session_state['terms'] = {}
             terms_docs = {}
             with st.spinner("Extracting..."):
-                terms_docs.update(extract_terms([Document(document_text)], term_extract_str, llm_name, model_temperature, api_key))
+                terms_docs.update(extract_terms([Document(text=document_text)], term_extract_str, llm_name, model_temperature, api_key))
             st.session_state['terms'].update(terms_docs)
 
         if "terms" in st.session_state and st.session_state["terms"]::
@@ -255,7 +255,7 @@ With our base app working, it might feel like a lot of work to build up a useful
 ```python
 def insert_terms(terms_to_definition):
     for term, definition in terms_to_definition.items():
-        doc = Document(f"Term: {term}\nDefinition: {definition}")
+        doc = Document(text=f"Term: {term}\nDefinition: {definition}")
         st.session_state['llama_index'].insert(doc)
     # TEMPORARY - save to disk
     st.session_state['llama_index'].storage_context.persist()
@@ -270,7 +270,7 @@ After inserting, remove the line of code we used to save the index to disk. With
 ```python
 @st.cache_resource
 def initialize_index(llm_name, model_temperature, api_key):
-    """Create the SQLStructStoreIndex object."""
+    """Load the Index object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
@@ -436,7 +436,7 @@ with upload_tab:
                 if document_text:
                     terms_docs.update(
                         extract_terms(
-                            [Document(document_text)],
+                            [Document(text=document_text)],
                             term_extract_str,
                             llm_name,
                             model_temperature,

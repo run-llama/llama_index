@@ -15,7 +15,6 @@ from llama_index.utils import get_tqdm_iterable
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import KeywordTable
-from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
@@ -25,6 +24,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KeywordExtractPrompt
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -61,7 +61,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[KeywordTable] = None,
         service_context: Optional[ServiceContext] = None,
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
@@ -124,7 +124,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     def _add_nodes_to_index(
         self,
         index_struct: KeywordTable,
-        nodes: Sequence[Node],
+        nodes: Sequence[BaseNode],
         show_progress: bool = False,
     ) -> None:
         """Add document to index."""
@@ -132,25 +132,28 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
             nodes, show_progress, "Extracting keywords from nodes"
         )
         for n in nodes_with_progress:
-            keywords = self._extract_keywords(n.get_text())
+            keywords = self._extract_keywords(
+                n.get_content(metadata_mode=MetadataMode.LLM)
+            )
             index_struct.add_node(list(keywords), n)
 
     async def _async_add_nodes_to_index(
         self,
         index_struct: KeywordTable,
-        nodes: Sequence[Node],
+        nodes: Sequence[BaseNode],
         show_progress: bool = False,
     ) -> None:
         """Add document to index."""
         nodes_with_progress = get_tqdm_iterable(
             nodes, show_progress, "Extracting keywords from nodes"
         )
-
         for n in nodes_with_progress:
-            keywords = await self._async_extract_keywords(n.get_text())
+            keywords = await self._async_extract_keywords(
+                n.get_content(metadata_mode=MetadataMode.LLM)
+            )
             index_struct.add_node(list(keywords), n)
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KeywordTable:
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> KeywordTable:
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = KeywordTable(table={})
@@ -164,20 +167,22 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
 
         return index_struct
 
-    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes."""
         for n in nodes:
-            keywords = self._extract_keywords(n.get_text())
+            keywords = self._extract_keywords(
+                n.get_content(metadata_mode=MetadataMode.LLM)
+            )
             self._index_struct.add_node(list(keywords), n)
 
-    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         # delete node from the keyword table
         keywords_to_delete = set()
-        for keyword, node_ids in self._index_struct.table.items():
-            if doc_id in node_ids:
-                node_ids.remove(doc_id)
-                if len(node_ids) == 0:
+        for keyword, existing_node_ids in self._index_struct.table.items():
+            if node_id in existing_node_ids:
+                existing_node_ids.remove(node_id)
+                if len(existing_node_ids) == 0:
                     keywords_to_delete.add(keyword)
 
         # delete keywords that have zero nodes
@@ -193,15 +198,15 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
 
         all_ref_doc_info = {}
         for node in nodes:
-            ref_doc_id = node.ref_doc_id
-            if not ref_doc_id:
+            ref_node = node.source_node
+            if not ref_node:
                 continue
 
-            ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+            ref_doc_info = self.docstore.get_ref_doc_info(ref_node.node_id)
             if not ref_doc_info:
                 continue
 
-            all_ref_doc_info[ref_doc_id] = ref_doc_info
+            all_ref_doc_info[ref_node.node_id] = ref_doc_info
         return all_ref_doc_info
 
 
@@ -214,7 +219,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response, formatted_prompt = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm_predictor.predict(
             self.keyword_extract_template,
             text=text,
         )
@@ -223,7 +228,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response, formatted_prompt = await self._service_context.llm_predictor.apredict(
+        response = await self._service_context.llm_predictor.apredict(
             self.keyword_extract_template,
             text=text,
         )

@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from langchain.output_parsers import PydanticOutputParser
+from llama_index.bridge.langchain import PydanticOutputParser
 from pydantic import BaseModel, Field
 
 from llama_index.evaluation.base import BaseEvaluator, Evaluation
@@ -44,7 +44,7 @@ class GuidelineEvaluator(BaseEvaluator):
         logger.debug("response: %s", response_str)
         logger.debug("guidelines: %s", self.guidelines)
         logger.debug("format_instructions: %s", format_instructions)
-        (eval_response, _) = self.service_context.llm_predictor.predict(
+        eval_response = self.service_context.llm_predictor.predict(
             prompt,
             query=query,
             response=response_str,

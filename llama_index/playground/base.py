@@ -5,13 +5,13 @@ import time
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pandas as pd
-from langchain.input import get_color_mapping, print_text
+from llama_index.bridge.langchain import get_color_mapping, print_text
 
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.list.base import ListIndex, ListRetrieverMode
 from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
 from llama_index.indices.vector_store import VectorStoreIndex
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 DEFAULT_INDEX_CLASSES: List[Type[BaseIndex]] = [
     VectorStoreIndex,
@@ -154,17 +154,12 @@ class Playground:
 
                 duration = time.time() - start_time
 
-                llm_token_usage = index.service_context.llm_predictor.last_token_usage
-                embed_token_usage = index.service_context.embed_model.last_token_usage
-
                 result.append(
                     {
                         "Index": index_name,
                         "Retriever Mode": retriever_mode,
                         "Output": str(output),
                         "Duration": duration,
-                        "LLM Tokens": llm_token_usage,
-                        "Embedding Tokens": embed_token_usage,
                     }
                 )
         print(f"\nRan {len(result)} combinations in total.")

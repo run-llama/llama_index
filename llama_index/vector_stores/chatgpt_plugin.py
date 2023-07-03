@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -25,25 +25,25 @@ def convert_docs_to_json(embedding_results: List[NodeWithEmbedding]) -> List[Dic
         # https://rb.gy/nmac9u
         doc_dict = {
             "id": embedding_result.id,
-            "text": embedding_result.node.get_text(),
+            "text": embedding_result.node.get_content(metadata_mode=MetadataMode.NONE),
             # NOTE: this is the doc_id to reference document
             "source_id": embedding_result.ref_doc_id,
             # "url": "...",
             # "created_at": ...,
             # "author": "..."",
         }
-        extra_info = embedding_result.node.extra_info
-        if extra_info is not None:
-            if "source" in extra_info:
-                doc_dict["source"] = extra_info["source"]
-            if "source_id" in extra_info:
-                doc_dict["source_id"] = extra_info["source_id"]
-            if "url" in extra_info:
-                doc_dict["url"] = extra_info["url"]
-            if "created_at" in extra_info:
-                doc_dict["created_at"] = extra_info["created_at"]
-            if "author" in extra_info:
-                doc_dict["author"] = extra_info["author"]
+        metadata = embedding_result.node.metadata
+        if metadata is not None:
+            if "source" in metadata:
+                doc_dict["source"] = metadata["source"]
+            if "source_id" in metadata:
+                doc_dict["source_id"] = metadata["source_id"]
+            if "url" in metadata:
+                doc_dict["url"] = metadata["url"]
+            if "created_at" in metadata:
+                doc_dict["created_at"] = metadata["created_at"]
+            if "author" in metadata:
+                doc_dict["author"] = metadata["author"]
 
         docs.append(doc_dict)
     return docs
@@ -151,10 +151,14 @@ class ChatGPTRetrievalPluginClient(VectorStore):
                 result_txt = result["text"]
                 result_score = result["score"]
                 result_ref_doc_id = result["source_id"]
-                node = Node(
-                    doc_id=result_id,
+                node = TextNode(
+                    id_=result_id,
                     text=result_txt,
-                    relationships={DocumentRelationship.SOURCE: result_ref_doc_id},
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(
+                            node_id=result_ref_doc_id
+                        )
+                    },
                 )
                 nodes.append(node)
                 similarities.append(result_score)

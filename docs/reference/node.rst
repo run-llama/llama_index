@@ -3,7 +3,7 @@
 Node
 =================
 
-.. automodule:: llama_index.data_structs.node
+.. automodule:: llama_index.schema
    :members:
    :inherited-members:
-   :exclude-members: NodeType, ImageNode, IndexNode
+   :exclude-members: NodeType, ImageNode, IndexNode, TextNode

@@ -22,9 +22,9 @@ def test_load_data() -> None:
         documents = reader.load_data("my_db", "my_collection")
 
         assert len(documents) == 3
-        assert documents[0].text == "one"
-        assert documents[1].text == "two"
-        assert documents[2].text == "three"
+        assert documents[0].get_content() == "one"
+        assert documents[1].get_content() == "two"
+        assert documents[2].get_content() == "three"
 
 
 @pytest.mark.skipif(MongoClient is None, reason="pymongo not installed")
@@ -45,6 +45,6 @@ def test_load_data_with_field_name() -> None:
         )
 
         assert len(documents) == 3
-        assert documents[0].text == "first1second1third1"
-        assert documents[1].text == "first2second2third2"
-        assert documents[2].text == "first3second3third3"
+        assert documents[0].get_content() == "first1second1third1"
+        assert documents[1].get_content() == "first2second2third2"
+        assert documents[2].get_content() == "first3second3third3"

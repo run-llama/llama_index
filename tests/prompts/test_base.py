@@ -3,10 +3,13 @@
 from unittest.mock import MagicMock
 
 import pytest
-from langchain import PromptTemplate
-from langchain.chains.prompt_selector import ConditionalPromptSelector
-from langchain.chat_models.base import BaseChatModel
-from langchain.chat_models.openai import ChatOpenAI
+from llama_index.bridge.langchain import (
+    PromptTemplate,
+    ConditionalPromptSelector,
+    BaseChatModel,
+    ChatOpenAI,
+)
+from llama_index.llms.langchain import LangChainLLM
 
 from llama_index.prompts.base import Prompt
 
@@ -71,7 +74,7 @@ def test_from_langchain_prompt_selector() -> None:
         default_prompt=prompt, conditionals=[(is_test, prompt_2)]
     )
 
-    test_llm = MagicMock(spec=TestLanguageModel)
+    test_llm = LangChainLLM(llm=MagicMock(spec=TestLanguageModel))
 
     prompt_new = Prompt.from_langchain_prompt_selector(test_prompt_selector)
     assert isinstance(prompt_new, Prompt)

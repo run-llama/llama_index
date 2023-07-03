@@ -3,7 +3,8 @@ from typing import Any, List, Optional, Sequence, cast
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
+from llama_index.output_parsers.base import StructuredOutput
+from llama_index.types import BaseOutputParser
 from llama_index.output_parsers.selection import Answer, SelectionOutputParser
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.selectors.prompts import (
@@ -90,7 +91,7 @@ class LLMSingleSelector(BaseSelector):
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction, _ = self._llm_predictor.predict(
+        prediction = self._llm_predictor.predict(
             prompt=self._prompt,
             num_choices=len(choices),
             context_list=choices_text,
@@ -109,7 +110,7 @@ class LLMSingleSelector(BaseSelector):
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction, _ = await self._llm_predictor.apredict(
+        prediction = await self._llm_predictor.apredict(
             prompt=self._prompt,
             num_choices=len(choices),
             context_list=choices_text,
@@ -176,7 +177,7 @@ class LLMMultiSelector(BaseSelector):
         context_list = _build_choices_text(choices)
         max_outputs = self._max_outputs or len(choices)
 
-        prediction, _ = self._llm_predictor.predict(
+        prediction = self._llm_predictor.predict(
             prompt=self._prompt,
             num_choices=len(choices),
             max_outputs=max_outputs,
@@ -195,7 +196,7 @@ class LLMMultiSelector(BaseSelector):
         context_list = _build_choices_text(choices)
         max_outputs = self._max_outputs or len(choices)
 
-        prediction, _ = await self._llm_predictor.apredict(
+        prediction = await self._llm_predictor.apredict(
             prompt=self._prompt,
             num_choices=len(choices),
             max_outputs=max_outputs,

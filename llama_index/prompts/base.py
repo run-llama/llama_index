@@ -2,12 +2,13 @@
 from copy import deepcopy
 from typing import Any, Dict, Optional
 
-from langchain import BasePromptTemplate as BaseLangchainPrompt
-from langchain import PromptTemplate as LangchainPrompt
-from langchain.base_language import BaseLanguageModel
-from langchain.chains.prompt_selector import ConditionalPromptSelector
+from llama_index.bridge.langchain import BasePromptTemplate as BaseLangchainPrompt
+from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
+from llama_index.bridge.langchain import ConditionalPromptSelector
+from llama_index.llms.base import LLM
+from llama_index.llms.langchain import LangChainLLM
 
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.types import BaseOutputParser
 from llama_index.prompts.prompt_type import PromptType
 
 
@@ -121,7 +122,7 @@ class Prompt:
     def from_prompt(
         cls,
         prompt: "Prompt",
-        llm: Optional[BaseLanguageModel] = None,
+        llm: Optional[LLM] = None,
         prompt_type: Optional[PromptType] = None,
     ) -> "Prompt":
         """Create a prompt from an existing prompt.
@@ -147,15 +148,14 @@ class Prompt:
         )
         return cls_obj
 
-    def get_langchain_prompt(
-        self, llm: Optional[BaseLanguageModel] = None
-    ) -> BaseLangchainPrompt:
+    def get_langchain_prompt(self, llm: Optional[LLM] = None) -> BaseLangchainPrompt:
         """Get langchain prompt."""
-        if llm is None:
+        if isinstance(llm, LangChainLLM):
+            return self.prompt_selector.get_prompt(llm=llm.llm)
+        else:
             return self.prompt_selector.default_prompt
-        return self.prompt_selector.get_prompt(llm=llm)
 
-    def format(self, llm: Optional[BaseLanguageModel] = None, **kwargs: Any) -> str:
+    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt."""
         kwargs.update(self.partial_dict)
         lc_prompt = self.get_langchain_prompt(llm=llm)

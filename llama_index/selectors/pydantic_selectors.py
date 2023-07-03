@@ -1,11 +1,9 @@
-from langchain.chat_models import ChatOpenAI
 from typing import Any, Optional, Sequence
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.program.openai_program import (
-    OpenAIPydanticProgram,
-    BasePydanticProgram,
-)
+from llama_index.llms.openai import OpenAI
+from llama_index.program.base_program import BasePydanticProgram
+from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.selectors.llm_selectors import _build_choices_text
 from llama_index.selectors.prompts import (
     DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
@@ -13,8 +11,8 @@ from llama_index.selectors.prompts import (
 )
 from llama_index.selectors.types import (
     BaseSelector,
-    SelectorResult,
     MultiSelection,
+    SelectorResult,
     SingleSelection,
 )
 from llama_index.tools.types import ToolMetadata
@@ -44,11 +42,10 @@ class PydanticSingleSelector(BaseSelector):
     def from_defaults(
         cls,
         program: Optional[BasePydanticProgram] = None,
-        llm: Optional[ChatOpenAI] = None,
+        llm: Optional[OpenAI] = None,
         prompt_template_str: str = DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
         verbose: bool = False,
     ) -> "PydanticSingleSelector":
-
         if program is None:
             program = OpenAIPydanticProgram.from_defaults(
                 output_cls=SingleSelection,
@@ -94,12 +91,11 @@ class PydanticMultiSelector(BaseSelector):
     def from_defaults(
         cls,
         program: Optional[BasePydanticProgram] = None,
-        llm: Optional[ChatOpenAI] = None,
+        llm: Optional[OpenAI] = None,
         prompt_template_str: str = DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
         max_outputs: Optional[int] = None,
         verbose: bool = False,
     ) -> "PydanticMultiSelector":
-
         if program is None:
             program = OpenAIPydanticProgram.from_defaults(
                 output_cls=MultiSelection,
