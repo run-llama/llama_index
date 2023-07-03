@@ -75,7 +75,7 @@ class TreeIndexInserter:
             )
             text_chunk1 = "\n".join(truncated_chunks)
 
-            summary1, _ = self._service_context.llm_predictor.predict(
+            summary1 = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk1
             )
             node1 = TextNode(text=summary1)
@@ -88,7 +88,7 @@ class TreeIndexInserter:
                 ],
             )
             text_chunk2 = "\n".join(truncated_chunks)
-            summary2, _ = self._service_context.llm_predictor.predict(
+            summary2 = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk2
             )
             node2 = TextNode(text=summary2)
@@ -134,7 +134,7 @@ class TreeIndexInserter:
             numbered_text = get_numbered_text_from_nodes(
                 cur_graph_node_list, text_splitter=text_splitter
             )
-            response, _ = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 self.insert_prompt,
                 new_chunk_text=node.get_content(metadata_mode=MetadataMode.LLM),
                 num_chunks=len(cur_graph_node_list),
@@ -166,7 +166,7 @@ class TreeIndexInserter:
                 ],
             )
             text_chunk = "\n".join(truncated_chunks)
-            new_summary, _ = self._service_context.llm_predictor.predict(
+            new_summary = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk
             )
 

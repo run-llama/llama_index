@@ -158,7 +158,7 @@ class GPTTreeIndexBuilder:
             summaries = [
                 self._service_context.llm_predictor.predict(
                     self.summary_prompt, context_str=text_chunk
-                )[0]
+                )
                 for text_chunk in text_chunks
             ]
         self._service_context.llama_logger.add_log(

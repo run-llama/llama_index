@@ -10,7 +10,6 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import NodeWithScore, ObjectType
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
@@ -42,6 +41,7 @@ class VectorIndexRetriever(BaseRetriever):
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
         filters: Optional[MetadataFilters] = None,
         alpha: Optional[float] = None,
+        node_ids: Optional[List[str]] = None,
         doc_ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -54,12 +54,12 @@ class VectorIndexRetriever(BaseRetriever):
         self._similarity_top_k = similarity_top_k
         self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
         self._alpha = alpha
+        self._node_ids = node_ids
         self._doc_ids = doc_ids
         self._filters = filters
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
 
-    @llm_token_counter("retrieve")
     def _retrieve(
         self,
         query_bundle: QueryBundle,
@@ -75,6 +75,7 @@ class VectorIndexRetriever(BaseRetriever):
         query = VectorStoreQuery(
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
+            node_ids=self._node_ids,
             doc_ids=self._doc_ids,
             query_str=query_bundle.query_str,
             mode=self._vector_store_query_mode,
