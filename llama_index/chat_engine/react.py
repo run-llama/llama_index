@@ -1,8 +1,11 @@
-from typing import Any, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
-from llama_index.bridge.langchain import BaseChatMemory, ConversationBufferMemory
-from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
-from llama_index.chat_engine.utils import to_langchain_chat_history
+from llama_index.bridge.langchain import (
+    BaseChatMemory,
+    ChatMessageHistory,
+    ConversationBufferMemory,
+)
+from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.agents.agents import (
@@ -11,8 +14,13 @@ from llama_index.langchain_helpers.agents.agents import (
     initialize_agent,
 )
 from llama_index.llm_predictor.base import LLMPredictor
+from llama_index.llms.base import ChatMessage
 from llama_index.llms.langchain import LangChainLLM
-from llama_index.llms.langchain_utils import is_chat_model
+from llama_index.llms.langchain_utils import (
+    from_lc_messages,
+    is_chat_model,
+    to_lc_messages,
+)
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 
@@ -43,12 +51,13 @@ class ReActChatEngine(BaseChatEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         service_context: Optional[ServiceContext] = None,
         memory: Optional[BaseChatMemory] = None,
-        chat_history: Optional[ChatHistoryType] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActChatEngine":
         """Initialize a ReActChatEngine from default parameters."""
         del kwargs  # Unused
+
         service_context = service_context or ServiceContext.from_defaults()
         if not isinstance(service_context.llm_predictor, LLMPredictor):
             raise ValueError("Currently only supports LLMPredictor.")
@@ -61,11 +70,12 @@ class ReActChatEngine(BaseChatEngine):
             raise ValueError("Cannot specify both memory and chat_history.")
 
         if memory is None:
-            history = to_langchain_chat_history(chat_history)
+            lc_messages = to_lc_messages(chat_history or [])
+            lc_history = ChatMessageHistory(messages=lc_messages)
 
             memory = ConversationBufferMemory(
                 memory_key="chat_history",
-                chat_memory=history,
+                chat_memory=lc_history,
                 return_messages=is_chat_model(lc_llm),
             )
         return cls(
@@ -83,7 +93,7 @@ class ReActChatEngine(BaseChatEngine):
         description: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,
         memory: Optional[BaseChatMemory] = None,
-        chat_history: Optional[ChatHistoryType] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActChatEngine":
@@ -114,11 +124,30 @@ class ReActChatEngine(BaseChatEngine):
             verbose=self._verbose,
         )
 
-    def chat(self, message: str) -> RESPONSE_TYPE:
+    @property
+    def chat_history(self) -> List[ChatMessage]:
+        assert isinstance(self._memory, ConversationBufferMemory)
+        return from_lc_messages(self._memory.chat_memory.messages)
+
+    def chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
+        if chat_history is not None:
+            raise NotImplementedError(
+                "chat_history argument is not supported for ReActChatEngine."
+            )
+
         response = self._agent.run(input=message)
         return Response(response=response)
 
-    async def achat(self, message: str) -> RESPONSE_TYPE:
+    async def achat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
+        if chat_history is not None:
+            raise NotImplementedError(
+                "chat_history argument is not supported for ReActChatEngine."
+            )
+
         response = await self._agent.arun(input=message)
         return Response(response=response)
 

@@ -70,6 +70,10 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         self._max_function_calls = max_function_calls
         self.callback_manager = callback_manager or CallbackManager([])
 
+    @property
+    def chat_history(self) -> List[ChatMessage]:
+        return self._chat_history
+
     def reset(self) -> None:
         self._chat_history.clear()
 
