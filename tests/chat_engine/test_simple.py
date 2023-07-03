@@ -1,6 +1,6 @@
 from llama_index.chat_engine.simple import SimpleChatEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.base import ChatMessage, MessageRole
 
 
 def test_simple_chat_engine(
@@ -30,8 +30,8 @@ def test_simple_chat_engine_with_init_history(
     engine = SimpleChatEngine.from_defaults(
         service_context=mock_service_context,
         chat_history=[
-            ChatMessage(role="user", content="test human message"),
-            ChatMessage(role="assistant", content="test ai message"),
+            ChatMessage(role=MessageRole.USER, content="test human message"),
+            ChatMessage(role=MessageRole.ASSISTANT, content="test ai message"),
         ],
     )
 
