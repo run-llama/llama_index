@@ -2,32 +2,21 @@ from typing import Any, Dict, Optional, Sequence
 
 from pydantic import BaseModel, Field
 
-from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseGen,
-    LLMMetadata,
-)
+from llama_index.llms.base import (LLM, ChatMessage, ChatResponse,
+                                   ChatResponseGen, CompletionResponse,
+                                   CompletionResponseGen, LLMMetadata)
 from llama_index.llms.generic_utils import (
-    chat_to_completion_decorator,
-    completion_to_chat_decorator,
-    stream_chat_to_completion_decorator,
-    stream_completion_to_chat_decorator,
-)
-from llama_index.llms.openai_utils import (
-    completion_with_retry,
-    from_openai_message_dict,
-    is_chat_model,
-    openai_modelname_to_contextsize,
-    to_openai_message_dicts,
-)
+    chat_to_completion_decorator, completion_to_chat_decorator,
+    stream_chat_to_completion_decorator, stream_completion_to_chat_decorator)
+from llama_index.llms.openai_utils import (completion_with_retry,
+                                           from_openai_message_dict,
+                                           is_chat_model,
+                                           openai_modelname_to_contextsize,
+                                           to_openai_message_dicts)
 
 
 class OpenAI(LLM, BaseModel):
-    model: str = Field("text-davinci-003")
+    model: str = Field("text-davinci-003", alias="model_name")
     temperature: float = 0.0
     max_tokens: Optional[int] = None
     additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
