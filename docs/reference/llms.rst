@@ -18,8 +18,23 @@ LLM Implementations
    llms/huggingface.rst
    llms/langchain.rst
 
-LLM Interface and Types
+LLM Interface
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: llama_index.llms.base
+.. autoclass:: llama_index.llms.base.LLM
    :members:
    :inherited-members:
+
+Schemas
+^^^^^^^
+
+.. autoclass:: llama_index.llms.base.MessageRole
+   :members:
+   :inherited-members:
+
+.. autopydantic_model:: llama_index.llms.base.ChatMessage
+
+.. autopydantic_model:: llama_index.llms.base.ChatResponse
+
+.. autopydantic_model:: llama_index.llms.base.CompletionResponse
+
+.. autopydantic_model:: llama_index.llms.base.LLMMetadata
