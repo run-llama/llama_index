@@ -3,8 +3,10 @@ from typing import Any, Awaitable, Callable, Sequence
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
 )
@@ -203,32 +205,69 @@ def achat_to_completion_decorator(
 
 
 def astream_completion_to_chat_decorator(
-    func: Callable[..., Awaitable[CompletionResponseGen]]
-) -> Callable[..., Awaitable[ChatResponseGen]]:
+    func: Callable[..., Awaitable[CompletionResponseAsyncGen]]
+) -> Callable[..., Awaitable[ChatResponseAsyncGen]]:
     """Convert a completion function to a chat function."""
 
     async def wrapper(
         messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    ) -> ChatResponseAsyncGen:
         # normalize input
         prompt = messages_to_prompt(messages)
         completion_response = await func(prompt, **kwargs)
         # normalize output
-        return stream_completion_response_to_chat_response(completion_response)
+        return astream_completion_response_to_chat_response(completion_response)
 
     return wrapper
 
 
 def astream_chat_to_completion_decorator(
-    func: Callable[..., Awaitable[ChatResponseGen]]
-) -> Callable[..., Awaitable[CompletionResponseGen]]:
+    func: Callable[..., Awaitable[ChatResponseAsyncGen]]
+) -> Callable[..., Awaitable[CompletionResponseAsyncGen]]:
     """Convert a chat function to a completion function."""
 
-    async def wrapper(prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    async def wrapper(prompt: str, **kwargs: Any) -> CompletionResponseAsyncGen:
         # normalize input
         messages = prompt_to_messages(prompt)
         chat_response = await func(messages, **kwargs)
         # normalize output
-        return stream_chat_response_to_completion_response(chat_response)
+        return astream_chat_response_to_completion_response(chat_response)
 
     return wrapper
+
+
+def astream_completion_response_to_chat_response(
+    completion_response_gen: CompletionResponseAsyncGen,
+) -> ChatResponseAsyncGen:
+    """Convert a stream completion response to a stream chat response."""
+
+    async def gen() -> ChatResponseAsyncGen:
+        async for response in completion_response_gen:
+            yield ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content=response.text,
+                    additional_kwargs=response.additional_kwargs,
+                ),
+                delta=response.delta,
+                raw=response.raw,
+            )
+
+    return gen()
+
+
+def astream_chat_response_to_completion_response(
+    chat_response_gen: ChatResponseAsyncGen,
+) -> CompletionResponseAsyncGen:
+    """Convert a stream chat response to a completion response."""
+
+    async def gen() -> CompletionResponseAsyncGen:
+        async for response in chat_response_gen:
+            yield CompletionResponse(
+                text=response.message.content or "",
+                additional_kwargs=response.message.additional_kwargs,
+                delta=response.delta,
+                raw=response.raw,
+            )
+
+    return gen()

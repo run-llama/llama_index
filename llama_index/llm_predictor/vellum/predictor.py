@@ -12,7 +12,7 @@ from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
-from llama_index.types import TokenGen
+from llama_index.types import TokenAsyncGen, TokenGen
 
 
 class VellumPredictor(BaseLLMPredictor):
@@ -138,8 +138,13 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
-        return self.stream(prompt, **prompt_args)
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+        async def gen() -> TokenAsyncGen:
+            async for token in self.stream(prompt, **prompt_args):
+                yield token
+
+        # NOTE: convert generator to async generator
+        return gen()
 
     def _prepare_generate_call(
         self, prompt: Prompt, **prompt_args: Any

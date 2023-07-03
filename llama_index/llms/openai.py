@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -238,6 +238,7 @@ class OpenAI(LLM, BaseModel):
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
+        achat_fn: Callable[..., Awaitable[ChatResponse]]
         if self._is_chat_model:
             achat_fn = self._achat
         else:
@@ -249,6 +250,7 @@ class OpenAI(LLM, BaseModel):
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
+        astream_chat_fn: Callable[..., Awaitable[ChatResponseAsyncGen]]
         if self._is_chat_model:
             astream_chat_fn = self._astream_chat
         else:

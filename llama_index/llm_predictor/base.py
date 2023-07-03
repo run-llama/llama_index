@@ -46,7 +46,7 @@ class BaseLLMPredictor(Protocol):
         """Async predict the answer to a query."""
 
     @abstractmethod
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
         """Async predict the answer to a query."""
 
 
