@@ -339,6 +339,8 @@ class NebulaGraphStore(GraphStore):
         subjs_param = prepare_subjs_param(subjs)
         logger.debug(f"get_flat_rel_map() subjs_param: {subjs}, query: {query}")
         result = self.execute(query, subjs_param)
+        if result is None:
+            return rel_map
 
         # get raw data
         subjs_ = result.column_values("subj") or []
