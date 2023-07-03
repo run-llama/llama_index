@@ -72,7 +72,7 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
 async def mock_async_completion_stream(
     *args: Any, **kwargs: Any
 ) -> AsyncGenerator[dict, None]:
-    async def gen():
+    async def gen() -> AsyncGenerator[dict, None]:
         for response in mock_completion_stream(*args, **kwargs):
             yield response
 
@@ -207,7 +207,7 @@ async def test_completion_model_async(monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.mark.asyncio
-async def test_completion_model_streaming(monkeypatch: MonkeyPatch) -> None:
+async def test_completion_model_async_streaming(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.llms.openai.acompletion_with_retry", mock_async_completion_stream
     )
