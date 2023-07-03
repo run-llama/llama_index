@@ -17,7 +17,7 @@ class CompactAndAccumulate(Accumulate):
     ) -> RESPONSE_TEXT_TYPE:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
-        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
 
         with temp_set_attrs(self._service_context.prompt_helper):
             new_texts = self._service_context.prompt_helper.repack(
