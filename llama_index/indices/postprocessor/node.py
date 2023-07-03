@@ -9,10 +9,9 @@ from pydantic import BaseModel, Field, validator
 
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.response import get_response_builder
-from llama_index.indices.response.type import ResponseMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.response_synthesizers import ResponseMode, get_response_synthesizer
 from llama_index.schema import NodeRelationship, NodeWithScore
 from llama_index.storage.docstore import BaseDocumentStore
 
@@ -321,7 +320,7 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             all_nodes[node.node.node_id] = node
             # use response builder instead of llm_predictor directly
             # to be more robust to handling long context
-            response_builder = get_response_builder(
+            response_builder = get_response_synthesizer(
                 service_context=self.service_context,
                 text_qa_template=infer_prev_next_prompt,
                 refine_template=refine_infer_prev_next_prompt,

@@ -16,7 +16,6 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
-from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,6 @@ class BaseSynthesizer(ABC):
         return self._service_context
 
     @abstractmethod
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -53,7 +51,6 @@ class BaseSynthesizer(ABC):
         ...
 
     @abstractmethod
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,

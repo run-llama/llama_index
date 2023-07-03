@@ -60,7 +60,7 @@ from llama_index.indices.loading import (
 from llama_index.indices.prompt_helper import PromptHelper
 
 # Response Synthesizer
-from llama_index.synthesizers.factory import get_response_synthesizer
+from llama_index.response_synthesizers.factory import get_response_synthesizer
 
 # QueryBundle
 from llama_index.indices.query.schema import QueryBundle
