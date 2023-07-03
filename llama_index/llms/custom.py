@@ -4,9 +4,10 @@ from llama_index.llms.base import (
     LLM,
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
-    CompletionResponseGen,
+    CompletionResponseAsyncGen,
 )
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
@@ -42,13 +43,23 @@ class CustomLLM(LLM):
         self,
         messages: Sequence[ChatMessage],
         **kwargs: Any,
-    ) -> ChatResponseGen:
-        return self.stream_chat(messages, **kwargs)
+    ) -> ChatResponseAsyncGen:
+        async def gen() -> ChatResponseAsyncGen:
+            for message in self.stream_chat(messages, **kwargs):
+                yield message
+
+        # NOTE: convert generator to async generator
+        return gen()
 
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         return self.complete(prompt, **kwargs)
 
     async def astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> CompletionResponseGen:
-        return self.stream_complete(prompt, **kwargs)
+    ) -> CompletionResponseAsyncGen:
+        async def gen() -> CompletionResponseAsyncGen:
+            for message in self.stream_complete(prompt, **kwargs):
+                yield message
+
+        # NOTE: convert generator to async generator
+        return gen()

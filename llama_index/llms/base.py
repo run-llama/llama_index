@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Generator, Optional, Sequence
+from typing import Any, AsyncGenerator, Generator, Optional, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -41,6 +41,7 @@ class ChatResponse(BaseModel):
 
 
 ChatResponseGen = Generator[ChatResponse, None, None]
+ChatResponseAsyncGen = AsyncGenerator[ChatResponse, None]
 
 # ===== Generic Model Output - Completion =====
 class CompletionResponse(BaseModel):
@@ -56,6 +57,7 @@ class CompletionResponse(BaseModel):
 
 
 CompletionResponseGen = Generator[CompletionResponse, None, None]
+CompletionResponseAsyncGen = AsyncGenerator[CompletionResponse, None]
 
 
 class LLMMetadata(BaseModel):
@@ -113,13 +115,13 @@ class LLM(ABC):
     @abstractmethod
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    ) -> ChatResponseAsyncGen:
         """Async streaming chat endpoint for LLM."""
         pass
 
     @abstractmethod
     async def astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> CompletionResponseGen:
+    ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
         pass
