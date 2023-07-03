@@ -41,7 +41,7 @@ The full API reference can be found [here](/reference/node_postprocessor.rst).
 
 ## Example Usage
 
-The postprocessor can be used as part of a `ResponseSynthesizer` in a `QueryEngine`, or on its own.
+The postprocessor can be used as part of a `QueryEngine`, or on its own.
 
 #### Index querying
 

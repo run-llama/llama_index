@@ -28,9 +28,10 @@ query_engine = index.as_query_engine(
 ```
 
 If you are using the low-level API to compose the query engine,
-pass `streaming=True` when constructing the `ResponseSynthesizer`:
+pass `streaming=True` when constructing the `Response Synthesizer`:
 ```python
-synth = ResponseSynthesizer.from_args(streaming=True, ...)
+from llama_index import get_response_synthesizer
+synth = get_response_synthesizer(streaming=True, ...)
 query_engine = RetrieverQueryEngine(response_synthesizer=synth, ...)
 ```
 
