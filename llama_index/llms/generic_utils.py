@@ -1,4 +1,4 @@
-from typing import Any, Callable, Sequence
+from typing import Any, Awaitable, Callable, Sequence
 
 from llama_index.llms.base import (
     ChatMessage,
@@ -173,8 +173,8 @@ def stream_chat_to_completion_decorator(
 
 
 def acompletion_to_chat_decorator(
-    func: Callable[..., CompletionResponse]
-) -> Callable[..., ChatResponse]:
+    func: Callable[..., Awaitable[CompletionResponse]]
+) -> Callable[..., Awaitable[ChatResponse]]:
     """Convert a completion function to a chat function."""
 
     async def wrapper(messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -188,8 +188,8 @@ def acompletion_to_chat_decorator(
 
 
 def achat_to_completion_decorator(
-    func: Callable[..., ChatResponse]
-) -> Callable[..., CompletionResponse]:
+    func: Callable[..., Awaitable[ChatResponse]]
+) -> Callable[..., Awaitable[CompletionResponse]]:
     """Convert a chat function to a completion function."""
 
     async def wrapper(prompt: str, **kwargs: Any) -> CompletionResponse:
@@ -203,8 +203,8 @@ def achat_to_completion_decorator(
 
 
 def astream_completion_to_chat_decorator(
-    func: Callable[..., CompletionResponseGen]
-) -> Callable[..., ChatResponseGen]:
+    func: Callable[..., Awaitable[CompletionResponseGen]]
+) -> Callable[..., Awaitable[ChatResponseGen]]:
     """Convert a completion function to a chat function."""
 
     async def wrapper(
@@ -220,8 +220,8 @@ def astream_completion_to_chat_decorator(
 
 
 def astream_chat_to_completion_decorator(
-    func: Callable[..., ChatResponseGen]
-) -> Callable[..., CompletionResponseGen]:
+    func: Callable[..., Awaitable[ChatResponseGen]]
+) -> Callable[..., Awaitable[CompletionResponseGen]]:
     """Convert a chat function to a completion function."""
 
     async def wrapper(prompt: str, **kwargs: Any) -> CompletionResponseGen:

@@ -6,8 +6,10 @@ from llama_index.llms.base import (
     LLM,
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
 )
@@ -246,7 +248,7 @@ class OpenAI(LLM, BaseModel):
         self,
         messages: Sequence[ChatMessage],
         **kwargs: Any,
-    ) -> ChatResponseGen:
+    ) -> ChatResponseAsyncGen:
         if self._is_chat_model:
             astream_chat_fn = self._astream_chat
         else:
@@ -260,11 +262,11 @@ class OpenAI(LLM, BaseModel):
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:
             acomplete_fn = self._acomplete
-        return acomplete_fn(prompt, **kwargs)
+        return await acomplete_fn(prompt, **kwargs)
 
     async def astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> CompletionResponseGen:
+    ) -> CompletionResponseAsyncGen:
         if self._is_chat_model:
             astream_complete_fn = astream_chat_to_completion_decorator(
                 self._astream_chat
@@ -295,17 +297,17 @@ class OpenAI(LLM, BaseModel):
 
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    ) -> ChatResponseAsyncGen:
         if not self._is_chat_model:
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        async def gen() -> ChatResponseGen:
+        async def gen() -> ChatResponseAsyncGen:
             content = ""
             function_call: Optional[dict] = None
-            async for response in completion_with_retry(
+            async for response in await acompletion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
                 messages=message_dicts,
@@ -334,7 +336,7 @@ class OpenAI(LLM, BaseModel):
                     raw=response,
                 )
 
-        return await gen()
+        return gen()
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         if self._is_chat_model:
@@ -361,7 +363,7 @@ class OpenAI(LLM, BaseModel):
 
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> CompletionResponseGen:
+    ) -> CompletionResponseAsyncGen:
         if self._is_chat_model:
             raise ValueError("This model is a chat model.")
 
@@ -371,9 +373,9 @@ class OpenAI(LLM, BaseModel):
             max_tokens = self._get_max_token_for_prompt(prompt)
             all_kwargs["max_tokens"] = max_tokens
 
-        async def gen() -> CompletionResponseGen:
+        async def gen() -> CompletionResponseAsyncGen:
             text = ""
-            async for response in acompletion_with_retry(
+            async for response in await acompletion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
                 prompt=prompt,
@@ -388,4 +390,4 @@ class OpenAI(LLM, BaseModel):
                     raw=response,
                 )
 
-        return await gen()
+        return gen()
