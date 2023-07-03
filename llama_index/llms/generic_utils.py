@@ -167,3 +167,68 @@ def stream_chat_to_completion_decorator(
         return stream_chat_response_to_completion_response(chat_response)
 
     return wrapper
+
+
+# ===== Async =====
+
+
+def acompletion_to_chat_decorator(
+    func: Callable[..., CompletionResponse]
+) -> Callable[..., ChatResponse]:
+    """Convert a completion function to a chat function."""
+
+    async def wrapper(messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        # normalize input
+        prompt = messages_to_prompt(messages)
+        completion_response = await func(prompt, **kwargs)
+        # normalize output
+        return completion_response_to_chat_response(completion_response)
+
+    return wrapper
+
+
+def achat_to_completion_decorator(
+    func: Callable[..., ChatResponse]
+) -> Callable[..., CompletionResponse]:
+    """Convert a chat function to a completion function."""
+
+    async def wrapper(prompt: str, **kwargs: Any) -> CompletionResponse:
+        # normalize input
+        messages = prompt_to_messages(prompt)
+        chat_response = await func(messages, **kwargs)
+        # normalize output
+        return chat_response_to_completion_response(chat_response)
+
+    return wrapper
+
+
+def astream_completion_to_chat_decorator(
+    func: Callable[..., CompletionResponseGen]
+) -> Callable[..., ChatResponseGen]:
+    """Convert a completion function to a chat function."""
+
+    async def wrapper(
+        messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        # normalize input
+        prompt = messages_to_prompt(messages)
+        completion_response = await func(prompt, **kwargs)
+        # normalize output
+        return stream_completion_response_to_chat_response(completion_response)
+
+    return wrapper
+
+
+def astream_chat_to_completion_decorator(
+    func: Callable[..., ChatResponseGen]
+) -> Callable[..., CompletionResponseGen]:
+    """Convert a chat function to a completion function."""
+
+    async def wrapper(prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        # normalize input
+        messages = prompt_to_messages(prompt)
+        chat_response = await func(messages, **kwargs)
+        # normalize output
+        return stream_chat_response_to_completion_response(chat_response)
+
+    return wrapper
