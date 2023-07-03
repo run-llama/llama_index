@@ -2,8 +2,7 @@
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.langchain import \
-    BasePromptTemplate as BaseLangchainPrompt
+from llama_index.bridge.langchain import BasePromptTemplate as BaseLangchainPrompt
 from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.langchain_utils import from_lc_messages
