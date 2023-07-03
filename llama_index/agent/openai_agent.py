@@ -2,7 +2,7 @@ import json
 from abc import abstractmethod
 from queue import Queue
 from threading import Thread
-from typing import AsyncGenerator, Callable, Generator, List, Optional
+from typing import AsyncGenerator, Callable, Generator, List, Tuple, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
@@ -115,13 +115,25 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def _get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
 
-    def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
-        chat_history = chat_history or self._chat_history
+    def _get_latest_function_call(
+        self, chat_history: List[ChatMessage]
+    ) -> Optional[dict]:
+        """Get latest function call from chat history."""
+        return chat_history[-1].additional_kwargs.get("function_call", None)
+
+    def _init_chat(
+        self, chat_history: List[ChatMessage], message: str
+    ) -> Tuple[List[BaseTool], List[dict]]:
+        """Add user message to chat history and get tools and functions."""
         chat_history.append(ChatMessage(content=message, role="user"))
         tools = self._get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
+        return tools, functions
+
+    def chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
+        tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
         chat_response = self._llm.chat(chat_history, functions=functions)
@@ -129,7 +141,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         chat_history.append(ai_message)
 
         n_function_calls = 0
-        function_call = ai_message.additional_kwargs.get("function_call", None)
+        function_call = self._get_latest_function_call(chat_history)
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -145,17 +157,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             chat_response = self._llm.chat(chat_history, functions=functions)
             ai_message = chat_response.message
             chat_history.append(ai_message)
-            function_call = ai_message.additional_kwargs.get("function_call", None)
+            function_call = self._get_latest_function_call(chat_history)
 
         return Response(ai_message.content)
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> Generator[StreamingChatResponse, None, None]:
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
-        tools = self._get_tools(message)
-        functions = [tool.metadata.to_openai_function() for tool in tools]
+        tools, functions = self._init_chat(chat_history, message)
 
         def _stream_chat(
             chat_history: List[ChatMessage],
@@ -175,9 +184,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             thread.join()
 
             n_function_calls = 0
-            function_call = chat_history[-1].additional_kwargs.get(
-                "function_call", None
-            )
+            function_call = self._get_latest_function_call(chat_history)
             while function_call is not None:
                 if n_function_calls >= self._max_function_calls:
                     print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -203,19 +210,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 yield chat_stream_response
                 thread.join()
 
-                function_call = chat_history[-1].additional_kwargs.get(
-                    "function_call", None
-                )
+                function_call = self._get_latest_function_call(chat_history)
 
         return _stream_chat(chat_history)
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
-        tools = self._get_tools(message)
-        functions = [tool.metadata.to_openai_function() for tool in tools]
+        tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
         chat_response = await self._llm.achat(chat_history, functions=functions)
@@ -223,7 +225,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         chat_history.append(ai_message)
 
         n_function_calls = 0
-        function_call = ai_message.additional_kwargs.get("function_call", None)
+        function_call = self._get_latest_function_call(chat_history)
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -239,17 +241,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             response = await self._llm.achat(chat_history, functions=functions)
             ai_message = response.message
             chat_history.append(ai_message)
-            function_call = ai_message.additional_kwargs.get("function_call", None)
+            function_call = self._get_latest_function_call(chat_history)
 
         return Response(ai_message.content)
 
     def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AsyncGenerator[StreamingChatResponse, None]:
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
-        tools = self._get_tools(message)
-        functions = [tool.metadata.to_openai_function() for tool in tools]
+        tools, functions = self._init_chat(chat_history, message)
 
         async def _astream_chat(
             chat_history: List[ChatMessage],
@@ -269,9 +268,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             thread.join()
 
             n_function_calls = 0
-            function_call = chat_history[-1].additional_kwargs.get(
-                "function_call", None
-            )
+            function_call = self._get_latest_function_call(chat_history)
             while function_call is not None:
                 if n_function_calls >= self._max_function_calls:
                     print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -297,9 +294,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 yield chat_stream_response
                 thread.join()
 
-                function_call = chat_history[-1].additional_kwargs.get(
-                    "function_call", None
-                )
+                function_call = self._get_latest_function_call(chat_history)
 
         return _astream_chat(chat_history)
 
