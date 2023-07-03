@@ -21,9 +21,7 @@ def load_examples(spider_dir: str) -> Tuple[list, list]:
     return train_spider + train_others, dev
 
 
-def create_indexes(
-    spider_dir: str, llm: OpenAI
-) -> Dict[str, SQLStructStoreIndex]:
+def create_indexes(spider_dir: str, llm: OpenAI) -> Dict[str, SQLStructStoreIndex]:
     """Create indexes for all databases."""
     # Create all necessary SQL database objects.
     databases = {}

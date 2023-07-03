@@ -51,7 +51,7 @@ def _answer(
         question=question, sql_query=sql_query, sql_result=sql_result
     )
     response = llm.chat([ChatMessage(role=MessageRole.USER, content=prompt)])
-    return response.message.content
+    return response.message.content or ""
 
 
 def _match(
@@ -63,7 +63,8 @@ def _match(
         hypothesis_answer=hypothesis_answer,
     )
     response = llm.chat([ChatMessage(role=MessageRole.USER, content=prompt)])
-    return "true" in response.message.content.lower()
+    content = response.message.content or ""
+    return "true" in content.lower()
 
 
 def _get_answers(
