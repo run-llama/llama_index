@@ -27,7 +27,7 @@ from llama_index.llms.openai_utils import (
 
 
 class OpenAI(LLM, BaseModel):
-    model: str = Field("text-davinci-003", alias="model_name")
+    model: str = Field("text-davinci-003")
     temperature: float = 0.0
     max_tokens: Optional[int] = None
     additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
