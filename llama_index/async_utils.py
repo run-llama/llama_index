@@ -2,7 +2,6 @@
 import asyncio
 from typing import Any, Coroutine, List
 
-
 def run_async_tasks(
     tasks: List[Coroutine],
     show_progress: bool = False,
@@ -10,12 +9,16 @@ def run_async_tasks(
 ) -> List[Any]:
     """Run a list of async tasks."""
 
-    loop = asyncio.get_event_loop()
-
     tasks_to_execute: List[Any] = tasks
     if show_progress:
         try:
             from tqdm.asyncio import tqdm
+            import nest_asyncio
+
+            # jupyter notebooks already have an event loop running
+            # we need to reuse it instead of creating a new one
+            nest_asyncio.apply()
+            loop = asyncio.get_event_loop()
 
             async def _tqdm_gather() -> List[Any]:
                 return await tqdm.gather(*tasks_to_execute, desc=progress_bar_desc)
@@ -31,5 +34,5 @@ def run_async_tasks(
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)
 
-    outputs: List[Any] = loop.run_until_complete(_gather())
+    outputs: List[Any] = asyncio.run(_gather())
     return outputs
