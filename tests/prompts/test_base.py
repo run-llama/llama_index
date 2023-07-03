@@ -4,21 +4,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from llama_index.bridge.langchain import (
-    BaseChatModel,
-    ChatOpenAI,
-    ConditionalPromptSelector,
-    PromptTemplate,
-)
+from llama_index.bridge.langchain import PromptTemplate
 from llama_index.llms.base import LLM
-from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_selector import PromptSelector
-
-
-class TestLanguageModel(ChatOpenAI):
-    """Test language model."""
 
 
 def is_openai(llm: LLM) -> bool:
@@ -101,7 +91,7 @@ def test_from_langchain_prompt_selector() -> None:
             input_variables=["text", "foo", "tmp"], template=prompt_txt_2
         )
 
-        test_prompt_selector = ConditionalPromptSelector(
+        test_prompt_selector = PromptSelector(
             prompt=prompt, conditionals=([is_openai], [prompt_2])
         )
         prompt_new = Prompt.from_langchain_prompt_selector(test_prompt_selector)

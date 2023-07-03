@@ -20,10 +20,12 @@ class Refine(BaseResponseBuilder):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         streaming: bool = False,
+        verbose: bool = False,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
+        self._verbose = verbose
 
     def get_response(
         self,
@@ -62,7 +64,7 @@ class Refine(BaseResponseBuilder):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response given a query and a corresponding text chunk."""
-        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         text_chunks = self._service_context.prompt_helper.repack(
             text_qa_template, [text_chunk]
         )
@@ -106,6 +108,8 @@ class Refine(BaseResponseBuilder):
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
         logger.debug(f"> Refine context: {fmt_text_chunk}")
+        if self._verbose:
+            print(f"> Refine context: {fmt_text_chunk}")
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self._refine_template.partial_format(
             query_str=query_str, existing_answer=response
@@ -204,7 +208,7 @@ class Refine(BaseResponseBuilder):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response given a query and a corresponding text chunk."""
-        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         text_chunks = self._service_context.prompt_helper.repack(
             text_qa_template, [text_chunk]
         )
