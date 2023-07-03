@@ -17,6 +17,7 @@ from llama_index.indices.vector_store.retrievers import (
     VectorIndexRetriever,
 )
 from llama_index.retrievers.transform_retriever import TransformRetriever
+from llama_index.retrievers.recursive_retriever import RecursiveRetriever
 
 __all__ = [
     "VectorIndexRetriever",
@@ -32,4 +33,5 @@ __all__ = [
     "TransformRetriever",
     "KeywordTableSimpleRetriever",
     "BaseRetriever",
+    "RecursiveRetriever",
 ]
