@@ -118,7 +118,6 @@ to fit their needs.
    reference/readers.rst
    reference/prompts.rst
    reference/service_context.rst
-   reference/optimizers.rst
    reference/callbacks.rst
    reference/struct_store.rst
    reference/response.rst
