@@ -5,19 +5,10 @@ This allows you to start printing or processing the beginning of the response be
 This can drastically reduce the perceived latency of queries.
 
 ### Setup
-To enable streaming, you need to configure two things:
-1. Use an LLM that supports streaming, and set `streaming=True`.
-```python
-llm_predictor = LLMPredictor(
-    llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo", streaming=True)
-)
-service_context = ServiceContext.from_defaults(
-    llm_predictor=llm_predictor
-)
-```
-Right now, streaming is supported by OpenAI and HuggingFace LLMs.
+To enable streaming, you need to use an LLM that supports streaming.
+Right now, streaming is supported by `OpenAI`, `HuggingFaceLLM`, and most LangChain LLMs (via `LangChainLLM`).
 
-2. Configure query engine to use streaming  
+Configure query engine to use streaming:
 
 If you are using the high-level API, set `streaming=True` when building a query engine.
 ```python
