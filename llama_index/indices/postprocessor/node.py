@@ -324,7 +324,7 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
                 service_context=self.service_context,
                 text_qa_template=infer_prev_next_prompt,
                 refine_template=refine_infer_prev_next_prompt,
-                mode=ResponseMode.TREE_SUMMARIZE,
+                response_mode=ResponseMode.TREE_SUMMARIZE,
             )
             raw_pred = response_builder.get_response(
                 text_chunks=[node.node.get_content()],

@@ -30,7 +30,7 @@ def get_response_synthesizer(
     text_qa_template: Optional[QuestionAnswerPrompt] = None,
     refine_template: Optional[RefinePrompt] = None,
     simple_template: Optional[SimpleInputPrompt] = None,
-    mode: ResponseMode = ResponseMode.COMPACT,
+    response_mode: ResponseMode = ResponseMode.COMPACT,
     callback_manager: Optional[CallbackManager] = None,
     use_async: bool = False,
     streaming: bool = False,
@@ -45,47 +45,47 @@ def get_response_synthesizer(
         callback_manager=callback_manager
     )
 
-    if mode == ResponseMode.REFINE:
+    if response_mode == ResponseMode.REFINE:
         return Refine(
             service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             streaming=streaming,
         )
-    elif mode == ResponseMode.COMPACT:
+    elif response_mode == ResponseMode.COMPACT:
         return CompactAndRefine(
             service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             streaming=streaming,
         )
-    elif mode == ResponseMode.TREE_SUMMARIZE:
+    elif response_mode == ResponseMode.TREE_SUMMARIZE:
         return TreeSummarize(
             service_context=service_context,
             text_qa_template=text_qa_template,
             streaming=streaming,
             use_async=use_async,
         )
-    elif mode == ResponseMode.SIMPLE_SUMMARIZE:
+    elif response_mode == ResponseMode.SIMPLE_SUMMARIZE:
         return SimpleSummarize(
             service_context=service_context,
             text_qa_template=text_qa_template,
             streaming=streaming,
         )
-    elif mode == ResponseMode.GENERATION:
+    elif response_mode == ResponseMode.GENERATION:
         return Generation(
             service_context=service_context,
             simple_template=simple_template,
             streaming=streaming,
         )
-    elif mode == ResponseMode.ACCUMULATE:
+    elif response_mode == ResponseMode.ACCUMULATE:
         return Accumulate(
             service_context=service_context,
             text_qa_template=text_qa_template,
             streaming=streaming,
             use_async=use_async,
         )
-    elif mode == ResponseMode.COMPACT_ACCUMULATE:
+    elif response_mode == ResponseMode.COMPACT_ACCUMULATE:
         return CompactAndAccumulate(
             service_context=service_context,
             text_qa_template=text_qa_template,
@@ -93,4 +93,4 @@ def get_response_synthesizer(
             use_async=use_async,
         )
     else:
-        raise ValueError(f"Unknown mode: {mode}")
+        raise ValueError(f"Unknown mode: {response_mode}")

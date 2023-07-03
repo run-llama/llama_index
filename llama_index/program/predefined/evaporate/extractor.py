@@ -187,7 +187,7 @@ class EvaporateExtractor:
         response_synthesizer = get_response_synthesizer(
             service_context=self._service_context,
             text_qa_template=qa_prompt,
-            mode=ResponseMode.TREE_SUMMARIZE,
+            response_mode=ResponseMode.TREE_SUMMARIZE,
         )
 
         # ignore refine prompt for now

@@ -166,7 +166,7 @@ class CitationQueryEngine(BaseQueryEngine):
             service_context=index.service_context,
             text_qa_template=citation_qa_template,
             refine_template=citation_refine_template,
-            mode=response_mode,
+            response_mode=response_mode,
             use_async=use_async,
             streaming=streaming,
         )

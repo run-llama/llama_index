@@ -37,7 +37,7 @@ def test_give_response(
 
     # test single line
     builder = get_response_synthesizer(
-        mode=ResponseMode.REFINE,
+        response_mode=ResponseMode.REFINE,
         service_context=service_context,
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,
@@ -98,7 +98,7 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
         refine_template=mock_refine_prompt,
-        mode=ResponseMode.COMPACT,
+        response_mode=ResponseMode.COMPACT,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)
@@ -142,7 +142,7 @@ def test_accumulate_response(
     builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
-        mode=ResponseMode.ACCUMULATE,
+        response_mode=ResponseMode.ACCUMULATE,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)
@@ -199,7 +199,7 @@ def test_accumulate_response_async(
     builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
-        mode=ResponseMode.ACCUMULATE,
+        response_mode=ResponseMode.ACCUMULATE,
         use_async=True,
     )
 
@@ -257,7 +257,7 @@ def test_accumulate_response_aget(
     builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
-        mode=ResponseMode.ACCUMULATE,
+        response_mode=ResponseMode.ACCUMULATE,
     )
 
     response = asyncio.run(
@@ -324,7 +324,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
-        mode=ResponseMode.COMPACT_ACCUMULATE,
+        response_mode=ResponseMode.COMPACT_ACCUMULATE,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)

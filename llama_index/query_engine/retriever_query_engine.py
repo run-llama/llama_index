@@ -87,7 +87,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             simple_template=simple_template,
-            mode=response_mode,
+            response_mode=response_mode,
             use_async=use_async,
             streaming=streaming,
         )
