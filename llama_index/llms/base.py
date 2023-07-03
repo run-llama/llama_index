@@ -55,6 +55,7 @@ class LLMMetadata(BaseModel):
 
     context_window: int = DEFAULT_CONTEXT_WINDOW
     num_output: int = DEFAULT_NUM_OUTPUTS
+    is_chat_model: bool = False
 
 
 class LLM(ABC):

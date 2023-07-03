@@ -4,6 +4,8 @@ from typing import Any, Generator, Optional, Sequence, cast
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
+from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.response.utils import get_response_text
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -14,14 +16,14 @@ logger = logging.getLogger(__name__)
 class Refine(BaseResponseBuilder):
     def __init__(
         self,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
-        refine_template: RefinePrompt,
+        service_context: Optional[ServiceContext] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         streaming: bool = False,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
-        self.text_qa_template = text_qa_template
-        self._refine_template = refine_template
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
 
     def get_response(
         self,
