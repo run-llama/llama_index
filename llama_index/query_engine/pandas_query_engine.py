@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Optional
 
 import pandas as pd
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
@@ -122,7 +122,7 @@ class PandasQueryEngine(BaseQueryEngine):
         """Answer a query."""
         context = self._get_table_context()
 
-        (pandas_response_str, _,) = self._service_context.llm_predictor.predict(
+        pandas_response_str = self._service_context.llm_predictor.predict(
             self._pandas_prompt,
             df_str=context,
             query_str=query_bundle.query_str,
@@ -139,11 +139,11 @@ class PandasQueryEngine(BaseQueryEngine):
         if self._verbose:
             print_text(f"> Pandas Output: {pandas_output}\n")
 
-        response_extra_info = {
+        response_metadata = {
             "pandas_instruction_str": pandas_response_str,
         }
 
-        return Response(response=pandas_output, extra_info=response_extra_info)
+        return Response(response=pandas_output, metadata=response_metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         return self._query(query_bundle)

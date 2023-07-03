@@ -27,8 +27,8 @@ def mock_json_service_ctx(
     mock_service_context: ServiceContext,
 ) -> Generator[ServiceContext, None, None]:
     with patch.object(mock_service_context, "llm_predictor") as mock_llm_predictor:
-        mock_llm_predictor.apredict = AsyncMock(return_value=(TEST_LLM_OUTPUT, ""))
-        mock_llm_predictor.predict = MagicMock(return_value=(TEST_LLM_OUTPUT, ""))
+        mock_llm_predictor.apredict = AsyncMock(return_value=TEST_LLM_OUTPUT)
+        mock_llm_predictor.predict = MagicMock(return_value=TEST_LLM_OUTPUT)
         yield mock_service_context
 
 
@@ -71,5 +71,5 @@ def test_json_query_engine(
     else:
         assert response.response == json.dumps([test_json_return_value])
 
-    extra_info = cast(Dict[str, Any], response.extra_info)
-    assert extra_info["json_path_response_str"] == TEST_LLM_OUTPUT
+    metadata = cast(Dict[str, Any], response.metadata)
+    assert metadata["json_path_response_str"] == TEST_LLM_OUTPUT

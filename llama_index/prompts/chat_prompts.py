@@ -1,6 +1,6 @@
 """Prompts for ChatGPT."""
 
-from langchain.prompts.chat import (
+from llama_index.bridge.langchain import (
     AIMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -10,8 +10,6 @@ from llama_index.prompts.prompts import RefinePrompt, RefineTableContextPrompt
 
 # Refine Prompt
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
-    HumanMessagePromptTemplate.from_template("{query_str}"),
-    AIMessagePromptTemplate.from_template("{existing_answer}"),
     HumanMessagePromptTemplate.from_template(
         "We have the opportunity to refine the above answer "
         "(only if needed) with some more context below.\n"
@@ -19,8 +17,9 @@ CHAT_REFINE_PROMPT_TMPL_MSGS = [
         "{context_msg}\n"
         "------------\n"
         "Given the new context, refine the original answer to better "
-        "answer the question. "
-        "If the context isn't useful, output the original answer again.",
+        "answer the question: {query_str}. "
+        "If the context isn't useful, output the original answer again.\n"
+        "Original Answer: {existing_answer}"
     ),
 ]
 

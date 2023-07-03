@@ -8,7 +8,7 @@ try:
 except ImportError:
     Tair = None  # type: ignore
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import TairVectorStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
@@ -23,29 +23,35 @@ def node_embeddings() -> List[NodeWithEmbedding]:
     return [
         NodeWithEmbedding(
             embedding=[1.0, 0.0],
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="AF3BE6C4-5F43-4D74-B075-6B0E07900DE8",
-                relationships={DocumentRelationship.SOURCE: "test-0"},
-                extra_info={"weight": 1.0, "rank": "a"},
+                id_="AF3BE6C4-5F43-4D74-B075-6B0E07900DE8",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
+                },
+                metadata={"weight": 1.0, "rank": "a"},
             ),
         ),
         NodeWithEmbedding(
             embedding=[0.0, 1.0],
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="7D9CD555-846C-445C-A9DD-F8924A01411D",
-                relationships={DocumentRelationship.SOURCE: "test-1"},
-                extra_info={"weight": 2.0, "rank": "c"},
+                id_="7D9CD555-846C-445C-A9DD-F8924A01411D",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
+                },
+                metadata={"weight": 2.0, "rank": "c"},
             ),
         ),
         NodeWithEmbedding(
             embedding=[1.0, 1.0],
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="452D24AB-F185-414C-A352-590B4B9EE51B",
-                relationships={DocumentRelationship.SOURCE: "test-1"},
-                extra_info={"weight": 3.0, "rank": "b"},
+                id_="452D24AB-F185-414C-A352-590B4B9EE51B",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")
+                },
+                metadata={"weight": 3.0, "rank": "b"},
             ),
         ),
     ]

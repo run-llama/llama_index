@@ -3,7 +3,8 @@ from typing import List, Optional, Sequence, cast
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
+from llama_index.output_parsers.base import StructuredOutput
+from llama_index.types import BaseOutputParser
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.question_gen.output_parser import SubQuestionOutputParser
@@ -52,7 +53,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        prediction, _ = self._llm_predictor.predict(
+        prediction = self._llm_predictor.predict(
             prompt=self._prompt,
             tools_str=tools_str,
             query_str=query_str,
@@ -68,7 +69,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        prediction, _ = await self._llm_predictor.apredict(
+        prediction = await self._llm_predictor.apredict(
             prompt=self._prompt,
             tools_str=tools_str,
             query_str=query_str,

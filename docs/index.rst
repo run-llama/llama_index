@@ -95,7 +95,7 @@ to fit their needs.
    how_to/chat_engine/root.md
    how_to/customization.rst
    how_to/analysis.rst
-   how_to/output_parsing.md
+   how_to/structured_outputs/root.md
    how_to/evaluation/evaluation.md
    how_to/integrations.rst
    how_to/callbacks.rst
@@ -111,6 +111,7 @@ to fit their needs.
    reference/query.rst
    reference/node.rst
    reference/llm_predictor.rst
+   reference/llms.rst
    reference/node_postprocessor.rst
    reference/storage.rst
    reference/composability.rst

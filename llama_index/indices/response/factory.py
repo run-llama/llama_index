@@ -52,7 +52,6 @@ def get_response_builder(
         return TreeSummarize(
             service_context=service_context,
             text_qa_template=text_qa_template,
-            refine_template=refine_template,
             streaming=streaming,
             use_async=use_async,
         )

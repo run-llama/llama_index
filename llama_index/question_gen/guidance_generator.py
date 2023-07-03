@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence, cast
 
 from pydantic import BaseModel
 
@@ -45,7 +45,7 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
         guidance_llm: Optional["GuidanceLLM"] = None,
         verbose: bool = False,
     ) -> "GuidanceQuestionGenerator":
-        program = GuidancePydanticProgram[SubQuestionList](
+        program = GuidancePydanticProgram(
             output_cls=SubQuestionList,
             guidance_llm=guidance_llm,
             prompt_template_str=prompt_template_str,
@@ -63,6 +63,7 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
             tools_str=tools_str,
             query_str=query_str,
         )
+        question_list = cast(SubQuestionList, question_list)
         return question_list.items
 
     async def agenerate(

@@ -3,9 +3,8 @@
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response import get_response_builder
@@ -28,23 +27,23 @@ from llama_index.prompts.prompts import (
     TreeSelectPrompt,
 )
 from llama_index.response.schema import Response
-from llama_index.token_counter.token_counter import llm_token_counter
+from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
 
 
 def get_text_from_node(
-    node: Node,
+    node: BaseNode,
     level: Optional[int] = None,
     verbose: bool = False,
 ) -> str:
     """Get text from node."""
     level_str = "" if level is None else f"[Level {level}]"
-    fmt_text_chunk = truncate_text(node.get_text(), 50)
+    fmt_text_chunk = truncate_text(node.get_content(metadata_mode=MetadataMode.LLM), 50)
     logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
-    response_txt = node.get_text()
+    response_txt = node.get_content(metadata_mode=MetadataMode.LLM)
     fmt_response = truncate_text(response_txt, 200)
     if verbose:
         print_text(f">{level_str} Got node text: {fmt_response}\n", color="blue")
@@ -97,7 +96,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
 
     def _query_with_selected_node(
         self,
-        selected_node: Node,
+        selected_node: BaseNode,
         query_bundle: QueryBundle,
         prev_response: Optional[str] = None,
         level: int = 0,
@@ -133,18 +132,14 @@ class TreeSelectLeafRetriever(BaseRetriever):
         if prev_response is None:
             return cur_response
         else:
-            context_msg = selected_node.get_text()
-            (
-                cur_response,
-                formatted_refine_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            context_msg = selected_node.get_content(metadata_mode=MetadataMode.LLM)
+            cur_response = self._service_context.llm_predictor.predict(
                 self._refine_template,
                 query_str=query_str,
                 existing_answer=prev_response,
                 context_msg=context_msg,
             )
 
-            logger.debug(f">[Level {level}] Refine prompt: {formatted_refine_prompt}")
             logger.debug(f">[Level {level}] Current refined response: {cur_response} ")
             return cur_response
 
@@ -181,10 +176,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            (
-                response,
-                formatted_query_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -205,20 +197,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            (
-                response,
-                formatted_query_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )
 
-        logger.debug(
-            f">[Level {level}] current prompt template: {formatted_query_prompt}"
-        )
-        self._service_context.llama_logger.add_log(
-            {"formatted_prompt_template": formatted_query_prompt, "level": level}
-        )
         debug_str = f">[Level {level}] Current response: {response}"
         logger.debug(debug_str)
         if self._verbose:
@@ -254,11 +237,13 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.info(info_str)
             if self._verbose:
                 print_text(info_str, end="\n")
-            debug_str = " ".join(selected_node.get_text().splitlines())
+            debug_str = " ".join(
+                selected_node.get_content(metadata_mode=MetadataMode.LLM).splitlines()
+            )
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ selected_node.get_text() }"
+                f"{ selected_node.get_content(metadata_mode=MetadataMode.LLM) }"
             )
             logger.debug(full_debug_str)
             if self._verbose:
@@ -289,10 +274,10 @@ class TreeSelectLeafRetriever(BaseRetriever):
 
     def _select_nodes(
         self,
-        cur_node_list: List[Node],
+        cur_node_list: List[BaseNode],
         query_bundle: QueryBundle,
         level: int = 0,
-    ) -> List[Node]:
+    ) -> List[BaseNode]:
         query_str = query_bundle.query_str
 
         if self.child_branch_factor == 1:
@@ -309,10 +294,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            (
-                response,
-                formatted_query_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -333,20 +315,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            (
-                response,
-                formatted_query_prompt,
-            ) = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm_predictor.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )
 
-        logger.debug(
-            f">[Level {level}] current prompt template: {formatted_query_prompt}"
-        )
-        self._service_context.llama_logger.add_log(
-            {"formatted_prompt_template": formatted_query_prompt, "level": level}
-        )
         debug_str = f">[Level {level}] Current response: {response}"
         logger.debug(debug_str)
         if self._verbose:
@@ -383,11 +356,13 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.info(info_str)
             if self._verbose:
                 print_text(info_str, end="\n")
-            debug_str = " ".join(selected_node.get_text().splitlines())
+            debug_str = " ".join(
+                selected_node.get_content(metadata_mode=MetadataMode.LLM).splitlines()
+            )
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ selected_node.get_text() }"
+                f"{ selected_node.get_content(metadata_mode=MetadataMode.LLM) }"
             )
             logger.debug(full_debug_str)
             if self._verbose:
@@ -401,7 +376,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         cur_node_ids: Dict[int, str],
         query_bundle: QueryBundle,
         level: int = 0,
-    ) -> List[Node]:
+    ) -> List[BaseNode]:
         """Answer a query recursively."""
         cur_nodes = {
             index: self._docstore.get_node(node_id)
@@ -429,7 +404,6 @@ class TreeSelectLeafRetriever(BaseRetriever):
         else:
             return self._retrieve_level(children_nodes, query_bundle, level + 1)
 
-    @llm_token_counter("retrieve")
     def _retrieve(
         self,
         query_bundle: QueryBundle,
@@ -440,4 +414,4 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_bundle,
             level=0,
         )
-        return [NodeWithScore(node) for node in nodes]
+        return [NodeWithScore(node=node) for node in nodes]

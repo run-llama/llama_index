@@ -8,7 +8,7 @@ This only uses the basic search api, so it will work with Elasticsearch and Open
 from typing import List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 
 
 class ElasticsearchReader(BaseReader):
@@ -64,6 +64,6 @@ class ElasticsearchReader(BaseReader):
             value = hit["_source"][field]
             embedding = hit["_source"].get(embedding_field or "", None)
             documents.append(
-                Document(text=value, extra_info=hit["_source"], embedding=embedding)
+                Document(text=value, metadata=hit["_source"], embedding=embedding)
             )
         return documents

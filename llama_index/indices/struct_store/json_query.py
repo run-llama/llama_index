@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
@@ -11,7 +11,6 @@ from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
-from llama_index.token_counter.token_counter import llm_token_counter
 
 logger = logging.getLogger(__name__)
 IMPORT_ERROR_MSG = (
@@ -97,22 +96,17 @@ class JSONQueryEngine(BaseQueryEngine):
         """Get JSON schema context."""
         return json.dumps(self._json_schema)
 
-    @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         schema = self._get_schema_context()
 
-        (
-            json_path_response_str,
-            formatted_prompt,
-        ) = self._service_context.llm_predictor.predict(
+        json_path_response_str = self._service_context.llm_predictor.predict(
             self._json_path_prompt,
             schema=schema,
             query_str=query_bundle.query_str,
         )
 
         if self._verbose:
-            print_text(f"> JSONPath Prompt: {formatted_prompt}\n")
             print_text(
                 f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
             )
@@ -127,7 +121,7 @@ class JSONQueryEngine(BaseQueryEngine):
             print_text(f"> JSONPath Output: {json_path_output}\n")
 
         if self._synthesize_response:
-            response_str, _ = self._service_context.llm_predictor.predict(
+            response_str = self._service_context.llm_predictor.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 json_schema=self._json_schema,
@@ -137,27 +131,22 @@ class JSONQueryEngine(BaseQueryEngine):
         else:
             response_str = json.dumps(json_path_output)
 
-        response_extra_info = {
+        response_metadata = {
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(response=response_str, extra_info=response_extra_info)
+        return Response(response=response_str, metadata=response_metadata)
 
-    @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         schema = self._get_schema_context()
 
-        (
-            json_path_response_str,
-            formatted_prompt,
-        ) = await self._service_context.llm_predictor.apredict(
+        json_path_response_str = await self._service_context.llm_predictor.apredict(
             self._json_path_prompt,
             schema=schema,
             query_str=query_bundle.query_str,
         )
 
         if self._verbose:
-            print_text(f"> JSONPath Prompt: {formatted_prompt}\n")
             print_text(
                 f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
             )
@@ -172,7 +161,7 @@ class JSONQueryEngine(BaseQueryEngine):
             print_text(f"> JSONPath Output: {json_path_output}\n")
 
         if self._synthesize_response:
-            response_str, _ = await self._service_context.llm_predictor.apredict(
+            response_str = await self._service_context.llm_predictor.apredict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 json_schema=self._json_schema,
@@ -182,8 +171,8 @@ class JSONQueryEngine(BaseQueryEngine):
         else:
             response_str = json.dumps(json_path_output)
 
-        response_extra_info = {
+        response_metadata = {
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(response=response_str, extra_info=response_extra_info)
+        return Response(response=response_str, metadata=response_metadata)

@@ -2,8 +2,8 @@ import os
 from configparser import ConfigParser, SectionProxy
 from typing import Any, Type
 from llama_index.embeddings.openai import OpenAIEmbedding
-from langchain import OpenAI
-from langchain.base_language import BaseLanguageModel
+from llama_index.bridge.langchain import OpenAI
+from llama_index.bridge.langchain import BaseLanguageModel
 from llama_index.indices.base import BaseIndex
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index import (

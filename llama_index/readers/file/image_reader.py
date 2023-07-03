@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document, ImageDocument
+from llama_index.schema import Document, ImageDocument
 
 
 class ImageReader(BaseReader):
@@ -109,4 +109,6 @@ class ImageReader(BaseReader):
             # remove first task start token
             text_str = re.sub(r"<.*?>", "", sequence, count=1).strip()
 
-        return [ImageDocument(text=text_str, image=image_str, extra_info=extra_info)]
+        return [
+            ImageDocument(text=text_str, image=image_str, metadata=extra_info or {})
+        ]

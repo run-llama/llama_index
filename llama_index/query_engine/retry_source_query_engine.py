@@ -7,7 +7,7 @@ from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.readers.schema.base import Document
+from llama_index.schema import Document
 from llama_index.response.schema import RESPONSE_TYPE, Response
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
             new_docs = []
             for node, eval_result in zip(orig_nodes, source_evals):
                 if eval_result:
-                    new_docs.append(Document(node.node.get_text()))
+                    new_docs.append(Document(text=node.node.get_content()))
             if len(new_docs) == 0:
                 raise ValueError("No source nodes passed evaluation.")
             new_index = ListIndex.from_documents(new_docs)

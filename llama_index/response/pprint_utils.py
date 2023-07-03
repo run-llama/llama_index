@@ -3,22 +3,24 @@ import textwrap
 from pprint import pprint
 from typing import Any, Dict
 
-from llama_index.data_structs.node import NodeWithScore
 from llama_index.response.schema import Response
+from llama_index.schema import NodeWithScore
 from llama_index.utils import truncate_text
 
 
-def pprint_extra_info(extra_info: Dict[str, Any]) -> None:
-    """Display extra info for jupyter notebook."""
-    pprint(extra_info)
+def pprint_metadata(metadata: Dict[str, Any]) -> None:
+    """Display metadata for jupyter notebook."""
+    pprint(metadata)
 
 
 def pprint_source_node(
     source_node: NodeWithScore, source_length: int = 350, wrap_width: int = 70
 ) -> None:
     """Display source node for jupyter notebook."""
-    source_text_fmt = truncate_text(source_node.node.get_text().strip(), source_length)
-    print(f"Document ID: {source_node.node.doc_id}")
+    source_text_fmt = truncate_text(
+        source_node.node.get_content().strip(), source_length
+    )
+    print(f"Node ID: {source_node.node.node_id}")
     print(f"Similarity: {source_node.score}")
     print(textwrap.fill(f"Text: {source_text_fmt}\n", width=wrap_width))
 

@@ -2,8 +2,125 @@
 
 ## Unreleased
 
+### Bug Fixes/ Nits
+- Improved chat refine template (#6645)
+
+### Breaking/Deprecated API Changes
+- Change `BaseOpenAIAgent` to use `llama_index.llms.OpenAI`. Adjust `chat_history` to use `List[ChatMessage]]` as type.
+- Remove (previously deprecated) `llama_index.langchain_helpers.chain_wrapper` module. 
+- Remove (previously deprecated) `llama_index.token_counter.token_counter` module. See [migration guide](/how_to/callbacks/token_counting_migration.html) for more details on new callback based token counting.
+- Remove `ChatGPTLLMPredictor` and `HuggingFaceLLMPredictor`. See [migration guide](/how_to/customization/llms_migration_guide.html) for more details on replacements.
+- Remove support for setting `cache` via `LLMPredictor` constructor.
+- Update `BaseChatEngine` interface: 
+  - adjust `chat_history` to use `List[ChatMessage]]` as type
+  - expose `chat_history` state as a property
+  - support overriding `chat_history` in `chat` and `achat` endpoints
+
+## [v0.6.38] - 2023-07-02
+
+### New Features
+- Added async support for "compact" and "refine" response modes (#6590)
+- [feature]add transformer tokenize functionalities for optimizer (chinese) (#6659)
+- Add simple benchmark for vector store (#6670)
+- Introduce `llama_index.llms` module, with new `LLM` interface, and `OpenAI`, `HuggingFaceLLM`, `LangChainLLM` implementations. (#6615)
+- Evaporate pydantic program (#6666)
+
+### Bug Fixes / Nits
+- Improve metadata/node storage and retrieval for RedisVectorStore (#6678)
+- Fixed node vs. document filtering in vector stores (#6677)
+- add context retrieval agent notebook link to docs (#6660)
+- Allow null values for the 'image' property in the ImageNode class and se… (#6661)
+- Fix broken links in docs (#6669)
+- update milvus to store node content (#6667)
+
+## [v0.6.37] - 2023-06-30
+
+### New Features
+- add context augmented openai agent (#6655)
+
+## [v0.6.36] - 2023-06-29
+
+### New Features
+- Redis support for index stores and docstores (#6575)
+- DuckDB + SQL query engine notebook (#6628)
+- add notebook showcasing deplot data loader (#6638)
+
+### Bug Fixes / Nits
+- More robust JSON parsing from LLM for `SelectionOutputParser` (#6610)
+- bring our loaders back in line with llama-hub (#6630)
+- Remove usage of SQLStructStoreIndex in notebooks (#6585)
+- MD reader: remove html tags and leave linebreaks alone (#6618)
+- bump min langchain version to latest version (#6632)
+- Fix metadata column name in postgres vector store (#6622)
+- Postgres metadata fixes (#6626, #6634)
+- fixed links to dataloaders in contribution.md (#6636)
+- fix: typo in docs in creating custom_llm huggingface example (#6639)
+- Updated SelectionOutputParser to handle JSON objects and arrays (#6610)
+- Fixed docstring argument typo (#6652)
+
+## [v0.6.35] - 2023-06-28
+- refactor structured output + pydantic programs (#6604)
+
+### Bug Fixes / Nits
+- Fix serialization for OpenSearch vector stores (#6612)
+- patch docs relationships (#6606)
+- Bug fix for ignoring directories while parsing git repo (#4196)
+- updated Chroma notebook (#6572)
+- Backport old node name (#6614)
+- Add the ability to change chroma implementation (#6601)
+
+## [v0.6.34] - 2023-06-26
+
+### Patch Update (v0.6.34.post1)
+- Patch imports for Document obj for backwards compatibility (#6597)
+
+### New Features
+- New `TextNode`/`Document` object classes based on pydantic (#6586)
+- `TextNode`/`Document` objects support metadata customization (metadata templates, exclude metadata from LLM or embeddings) (#6586)
+- Nodes no longer require flat metadata dictionaries, unless the vector store you use requires it (#6586)
+
+### Bug Fixes / Nits
+- use `NLTK_DATA` env var to control NLTK download location (#6579)
+- [discord] save author as metadata in group_conversations.py (#6592)
+- bs4 -> beautifulsoup4 in requirements (#6582)
+- negate euclidean distance (#6564)
+- add df output parser notebook link to docs (#6581)
+
+### Breaking/Deprecated API Changes
+- `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
+- `TextNode` and `Document` must be instansiated with kwargs: `Document(text=text)` (#6586)
+- `TextNode` (fka `Node`) has a `id_` or `node_id` property, rather than `doc_id` (#6586)
+- `TextNode` and `Document` have a metadata property, which replaces the extra_info property (#6586)
+- `TextNode` no longer has a `node_info` property (start/end indexes are accessed directly with `start/end_char_idx` attributes) (#6586)
+
+## [v0.6.33] - 2023-06-25
+
+### New Features
+- Add typesense vector store (#6561)
+- add df output parser (#6576)
+
+### Bug Fixes / Nits
+- Track langchain dependency via bridge module. (#6573)
+
+## [v0.6.32] - 2023-06-23
+
+### New Features
+- add object index  (#6548)
+- add SQL Schema Node Mapping + SQLTableRetrieverQueryEngine + obj index fixes (#6569)
+- sql refactor (NLSQLTableQueryEngine) (#6529)
+
+### Bug Fixes / Nits
+- Update vector_stores.md (#6562)
+- Minor `BaseResponseBuilder` interface cleanup (#6557)
+- Refactor TreeSummarize (#6550)
+
+
+## [v0.6.31] - 2023-06-22
+
 ### Bug Fixes / Nits
 - properly convert weaviate distance to score (#6545)
+- refactor tree summarize and fix bug to not truncate context (#6550)
+- fix custom KG retrieval notebook nits (#6551)
 
 ## [v0.6.30] - 2023-06-21
 

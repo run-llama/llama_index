@@ -3,21 +3,17 @@
 from unittest.mock import MagicMock
 
 import pytest
-from langchain import PromptTemplate
-from langchain.chains.prompt_selector import ConditionalPromptSelector
-from langchain.chat_models.base import BaseChatModel
-from langchain.chat_models.openai import ChatOpenAI
 
+from llama_index.bridge.langchain import PromptTemplate
+from llama_index.llms.base import LLM
+from llama_index.llms.openai import OpenAI
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompt_selector import PromptSelector
 
 
-class TestLanguageModel(ChatOpenAI):
-    """Test language model."""
-
-
-def is_test(llm: BaseChatModel) -> bool:
+def is_openai(llm: LLM) -> bool:
     """Test condition."""
-    return isinstance(llm, TestLanguageModel)
+    return isinstance(llm, OpenAI)
 
 
 def test_partial_format() -> None:
@@ -67,11 +63,11 @@ def test_from_langchain_prompt_selector() -> None:
     prompt = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt)
     prompt_2 = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt_2)
 
-    test_prompt_selector = ConditionalPromptSelector(
-        default_prompt=prompt, conditionals=[(is_test, prompt_2)]
+    test_prompt_selector = PromptSelector(
+        default_prompt=prompt, conditionals=[(is_openai, prompt_2)]
     )
 
-    test_llm = MagicMock(spec=TestLanguageModel)
+    test_llm = MagicMock(spec=OpenAI)
 
     prompt_new = Prompt.from_langchain_prompt_selector(test_prompt_selector)
     assert isinstance(prompt_new, Prompt)
@@ -95,7 +91,7 @@ def test_from_langchain_prompt_selector() -> None:
             input_variables=["text", "foo", "tmp"], template=prompt_txt_2
         )
 
-        test_prompt_selector = ConditionalPromptSelector(
-            prompt=prompt, conditionals=([is_test], [prompt_2])
+        test_prompt_selector = PromptSelector(
+            prompt=prompt, conditionals=([is_openai], [prompt_2])
         )
         prompt_new = Prompt.from_langchain_prompt_selector(test_prompt_selector)

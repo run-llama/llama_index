@@ -71,7 +71,7 @@ from llama_index.indices.service_context import (
 )
 
 # langchain helper
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 
@@ -89,12 +89,12 @@ from llama_index.prompts.prompts import (
 )
 
 # readers
+from llama_index.schema import Document
 from llama_index.readers import (
     BeautifulSoupWebReader,
     ChromaReader,
     DeepLakeReader,
     DiscordReader,
-    Document,
     FaissReader,
     GithubRepositoryReader,
     GoogleDocsReader,
@@ -126,7 +126,7 @@ from llama_index.response.schema import Response
 from llama_index.storage.storage_context import StorageContext
 
 # token predictor
-from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
+from llama_index.llm_predictor.mock import MockLLMPredictor
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
 # vellum

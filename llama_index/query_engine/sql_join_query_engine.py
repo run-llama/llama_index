@@ -1,6 +1,6 @@
 """SQL Join query engine."""
 
-from langchain.input import print_text
+from llama_index.bridge.langchain import print_text
 from typing import Optional, cast, Dict, Callable
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
@@ -12,7 +12,7 @@ from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.prompts.base import Prompt
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 import logging
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.callbacks.base import CallbackManager
 
@@ -110,12 +110,12 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         )
         self._check_stop_parser = check_stop_parser or _default_check_stop
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+    def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
         query_str = query_bundle.query_str
-        sql_query = extra_info["sql_query"]
-        sql_query_response = extra_info["sql_query_response"]
-        new_query_str, formatted_prompt = self._llm_predictor.predict(
+        sql_query = metadata["sql_query"]
+        sql_query_response = metadata["sql_query_response"]
+        new_query_str = self._llm_predictor.predict(
             self._sql_augment_transform_prompt,
             query_str=query_str,
             sql_query_str=sql_query,
@@ -200,7 +200,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             return sql_response
 
         sql_query = (
-            sql_response.extra_info["sql_query"] if sql_response.extra_info else None
+            sql_response.metadata["sql_query"] if sql_response.metadata else None
         )
         if self._verbose:
             print_text(f"SQL query: {sql_query}\n", color="yellow")
@@ -209,7 +209,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         # given SQL db, transform query into new query
         new_query = self._sql_augment_query_transform(
             query_bundle.query_str,
-            extra_info={
+            metadata={
                 "sql_query": _format_sql_query(sql_query),
                 "sql_query_response": str(sql_response),
             },
@@ -229,7 +229,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._sql_join_synthesis_prompt,
             query_str=query_bundle.query_str,
             sql_query_str=sql_query,
@@ -239,14 +239,14 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         )
         if self._verbose:
             print_text(f"Final response: {response_str}\n", color="green")
-        response_extra_info = {
-            **(sql_response.extra_info or {}),
-            **(other_response.extra_info or {}),
+        response_metadata = {
+            **(sql_response.metadata or {}),
+            **(other_response.metadata or {}),
         }
         source_nodes = other_response.source_nodes
         return Response(
             response_str,
-            extra_info=response_extra_info,
+            metadata=response_metadata,
             source_nodes=source_nodes,
         )
 

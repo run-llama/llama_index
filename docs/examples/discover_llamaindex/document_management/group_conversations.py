@@ -54,7 +54,11 @@ convo_docs = []
 for msg in messages.values():
     # only check top-level messages
     if msg.parent_message is None:
-        metadata = {"timestamp": msg.timestamp, "id": msg.message_id}
+        metadata = {
+            "timestamp": msg.timestamp,
+            "id": msg.message_id,
+            "author": msg.author,
+        }
         convo = ""
         convo += msg.author + ":\n"
         convo += msg.message_text + "\n"
