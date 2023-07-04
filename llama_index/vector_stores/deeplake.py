@@ -74,6 +74,9 @@ class DeepLakeVectorStore(VectorStore):
         ingestion_batch_size: int = 1024,
         ingestion_num_workers: int = 4,
         overwrite: bool = False,
+        exec_option: str = "python",
+        verbose: bool = True,
+        **kwargs,
     ):
         """Initialize with Deep Lake client."""
         self.ingestion_batch_size = ingestion_batch_size
@@ -83,64 +86,29 @@ class DeepLakeVectorStore(VectorStore):
         self.dataset_path = dataset_path
 
         try:
-            import deeplake
-            from deeplake.constants import MB
+            from deeplake.core.vectorstore import VectorStore
         except ImportError:
             raise ValueError(
                 "Could not import deeplake python package. "
                 "Please install it with `pip install deeplake`."
             )
-        self._deeplake = deeplake
 
-        if deeplake.exists(dataset_path, token=token) and not overwrite:
-            self.ds = deeplake.load(dataset_path, token=token, read_only=read_only)
-            logger.warning(
-                f"Deep Lake Dataset in {dataset_path} already exists, "
-                f"loading from the storage"
-            )
-            self.ds.summary()
-        else:
-            self.ds = deeplake.empty(dataset_path, token=token, overwrite=True)
-
-            with self.ds:
-                self.ds.create_tensor(
-                    "text",
-                    htype="text",
-                    create_id_tensor=False,
-                    create_sample_info_tensor=False,
-                    create_shape_tensor=False,
-                    chunk_compression="lz4",
-                )
-                self.ds.create_tensor(
-                    "metadata",
-                    htype="json",
-                    create_id_tensor=False,
-                    create_sample_info_tensor=False,
-                    create_shape_tensor=False,
-                    chunk_compression="lz4",
-                )
-                self.ds.create_tensor(
-                    "embedding",
-                    htype="generic",
-                    dtype=np.float64,
-                    create_id_tensor=False,
-                    create_sample_info_tensor=False,
-                    max_chunk_size=64 * MB,
-                    create_shape_tensor=True,
-                )
-                self.ds.create_tensor(
-                    "ids",
-                    htype="text",
-                    create_id_tensor=False,
-                    create_sample_info_tensor=False,
-                    create_shape_tensor=False,
-                    chunk_compression="lz4",
-                )
+        self.vectorstore = VectorStore(
+            path=dataset_path,
+            ingestion_batch_size=ingestion_batch_size,
+            num_workers=ingestion_num_workers,
+            token=token,
+            read_only=read_only,
+            exec_option=exec_option,
+            overwrite=overwrite,
+            verbose=verbose,
+            **kwargs,
+        )
 
     @property
     def client(self) -> None:
         """Get client."""
-        return self.ds
+        return self.vectorstore.dataset
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
@@ -159,49 +127,25 @@ class DeepLakeVectorStore(VectorStore):
         Returns:
             List[str]: List of ids inserted.
         """
-        data_to_injest = []
-        ids = []
+        embedding = []
+        metadata = []
+        id = []
+        text = []
 
         for result in embedding_results:
-            embedding = result.embedding
-            metadata = result.node.metadata or {}
-            metadata = {**metadata, **{"document_id": result.ref_doc_id}}
-            id = result.id
-            text = result.node.get_content(metadata_mode=MetadataMode.NONE)
+            embedding.append(result.embedding)
+            _metadata = result.node.metadata or {}
+            metadata.append({**_metadata, **{"document_id": result.ref_doc_id}})
+            id.append(result.id)
+            text.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
 
-            data_to_injest.append(
-                {
-                    "text": text,
-                    "metadata": metadata,
-                    "ids": id,
-                    "embedding": embedding,
-                }
-            )
-            ids.append(id)
-
-        @self._deeplake.compute
-        def ingest(sample_in: List[Dict], sample_out: Any) -> None:
-            for item in sample_in:
-                sample_out.text.append(item["text"])
-                sample_out.metadata.append(item["metadata"])
-                sample_out.embedding.append(item["embedding"])
-                sample_out.ids.append(item["ids"])
-
-        batch_size = min(self.ingestion_batch_size, len(data_to_injest))
-        batched = [
-            data_to_injest[i : i + batch_size]
-            for i in range(0, len(data_to_injest), batch_size)
-        ]
-
-        ingest().eval(
-            batched,
-            self.ds,
-            num_workers=min(self.num_workers, len(batched) // self.num_workers),
+        return self.vectorstore.add(
+            embedding=embedding,
+            metadata=metadata,
+            id=id,
+            text=text,
+            return_ids=True,
         )
-
-        self.ds.commit(allow_empty=True)
-        self.ds.summary()
-        return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -211,17 +155,7 @@ class DeepLakeVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        view = None
-        if ref_doc_id:
-            view = self.ds.filter(lambda x: x["ids"].numpy().tolist() == [ref_doc_id])
-            ids = list(view.sample_indices)
-
-        with self.ds:
-            for id in sorted(ids)[::-1]:
-                self.ds.pop(id)
-
-            self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
-            self.ds.summary()
+        self.vectorstore.delete(ids=[ref_doc_id])
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -234,15 +168,12 @@ class DeepLakeVectorStore(VectorStore):
             raise ValueError("Metadata filters not implemented for DeepLake yet.")
 
         query_embedding = cast(List[float], query.query_embedding)
-        embeddings = self.ds.embedding.numpy(fetch_chunks=True)
-        embedding_ids = self.ds.ids.numpy(fetch_chunks=True)
-        embedding_ids = [str(embedding_id[0]) for embedding_id in embedding_ids]
-
-        top_similarities, top_ids = get_top_k_embeddings(
-            query_embedding,
-            embeddings,
-            similarity_top_k=query.similarity_top_k,
-            embedding_ids=embedding_ids,
+        exec_option = kwargs.get("exec_option", "python")
+        data = self.vectorstore.search(
+            embedding=query_embedding,
+            exec_option=exec_option,
         )
 
-        return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
+        similarities = data["score"]
+        ids = data["id"]
+        return VectorStoreQueryResult(similarities=similarities, ids=ids)
