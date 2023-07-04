@@ -1,23 +1,31 @@
 import asyncio
-from typing import Any, List, Sequence
+from typing import Any, List, Sequence, Optional
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.default_prompts import (
+    DEFAULT_TEXT_QA_PROMPT,
+)
 from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
-class Accumulate(BaseResponseBuilder):
+class Accumulate(BaseSynthesizer):
+    """Accumulate responses from multiple text chunks."""
+
     def __init__(
         self,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
         use_async: bool = False,
     ) -> None:
-        super().__init__(service_context=service_context, streaming=streaming)
-        self.text_qa_template = text_qa_template
+        super().__init__(
+            service_context=service_context,
+            streaming=streaming,
+        )
+        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
 
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
@@ -82,7 +90,7 @@ class Accumulate(BaseResponseBuilder):
         self, query_str: str, text_chunk: str, use_async: bool = False
     ) -> List[Any]:
         """Give responses given a query and a corresponding text chunk."""
-        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
 
         text_chunks = self._service_context.prompt_helper.repack(
             text_qa_template, [text_chunk]
