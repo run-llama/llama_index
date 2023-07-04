@@ -43,7 +43,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         retriever (BaseRetriever): A retriever.
         qa_prompt (Optional[QuestionAnswerPrompt]): A QA prompt.
         context_separator (str): A context separator.
-        llm (Optional[OpenAI]): An LLM.
+        llm (Optional[OpenAI]): An OpenAI LLM.
         chat_history (Optional[List[ChatMessage]]): A chat history.
         verbose (bool): Whether to print debug statements.
         max_function_calls (int): Maximum number of function calls.
@@ -94,7 +94,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
             retriever (BaseRetriever): A retriever.
             qa_prompt (Optional[QuestionAnswerPrompt]): A QA prompt.
             context_separator (str): A context separator.
-            llm (Optional[ChatOpenAI]): An LLM.
+            llm (Optional[OpenAI]): An OpenAI LLM.
             chat_history (Optional[ChatMessageHistory]): A chat history.
             verbose (bool): Whether to print debug statements.
             max_function_calls (int): Maximum number of function calls.

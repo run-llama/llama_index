@@ -5,13 +5,13 @@ import logging
 import os
 import re
 
-from llama_index.bridge.langchain import ChatOpenAI, OpenAI
-from llama_index.bridge.langchain import BaseLanguageModel
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
 from llama_index import SQLStructStoreIndex, LLMPredictor, SQLDatabase
 from typing import Any, cast
+
+from llama_index.llms.openai import OpenAI
 
 logging.getLogger("root").setLevel(logging.WARNING)
 
@@ -105,10 +105,7 @@ if __name__ == "__main__":
         databases[db_name] = (SQLDatabase(engine=engine), engine)
 
     # Create the LlamaIndexes for all databases.
-    if args.model in ["gpt-3.5-turbo", "gpt-4"]:
-        llm: BaseLanguageModel = ChatOpenAI(model=args.model, temperature=0)
-    else:
-        llm = OpenAI(model=args.model, temperature=0)
+    llm = OpenAI(model=args.model, temperature=0)
     llm_predictor = LLMPredictor(llm=llm)
     llm_indexes = {}
     for db_name, (db, engine) in databases.items():
