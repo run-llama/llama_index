@@ -174,7 +174,7 @@ class PromptHelper:
         """Repack text chunks to fit available context window.
 
         This will combine text chunks into consolidated chunks
-        that more fully "pack" the prompt template given the max_input_size.
+        that more fully "pack" the prompt template given the context_window.
 
         """
         text_splitter = self.get_text_splitter_given_prompt(prompt, padding=padding)

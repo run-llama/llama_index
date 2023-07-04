@@ -16,21 +16,21 @@ def test_get_chunk_size() -> None:
     # test with 1 chunk
     prompt = Prompt("This is the prompt")
     prompt_helper = PromptHelper(
-        max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
+        context_window=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
     chunk_size = prompt_helper._get_available_chunk_size(prompt, 1, padding=0)
     assert chunk_size == 6
 
     # test having 2 chunks
     prompt_helper = PromptHelper(
-        max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
+        context_window=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
     chunk_size = prompt_helper._get_available_chunk_size(prompt, 2, padding=0)
     assert chunk_size == 3
 
     # test with 2 chunks, and with chunk_size_limit
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=1,
         max_chunk_overlap=0,
         tokenizer=mock_tokenizer,
@@ -41,7 +41,7 @@ def test_get_chunk_size() -> None:
 
     # test padding
     prompt_helper = PromptHelper(
-        max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
+        context_window=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
     chunk_size = prompt_helper._get_available_chunk_size(prompt, 2, padding=1)
     assert chunk_size == 2
@@ -52,7 +52,7 @@ def test_get_text_splitter() -> None:
     test_prompt_text = "This is the prompt{text}"
     test_prompt = Prompt(test_prompt_text)
     prompt_helper = PromptHelper(
-        max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
+        context_window=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
     text_splitter = prompt_helper.get_text_splitter_given_prompt(
         test_prompt, 2, padding=1
@@ -66,7 +66,7 @@ def test_get_text_splitter() -> None:
 
     # test with chunk_size_limit
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=1,
         max_chunk_overlap=0,
         tokenizer=mock_tokenizer,
@@ -86,7 +86,7 @@ def test_get_text_splitter_partial() -> None:
     test_prompt_text = "This is the {foo} prompt{text}"
     test_prompt = Prompt(test_prompt_text)
     prompt_helper = PromptHelper(
-        max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
+        context_window=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
     text_splitter = prompt_helper.get_text_splitter_given_prompt(
         test_prompt, 2, padding=1
@@ -101,7 +101,7 @@ def test_get_text_splitter_partial() -> None:
     test_prompt = Prompt(test_prompt_text)
     test_prompt = test_prompt.partial_format(foo="bar")
     prompt_helper = PromptHelper(
-        max_input_size=12, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
+        context_window=12, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
     assert get_empty_prompt_txt(test_prompt) == "This is the bar prompt"
     text_splitter = prompt_helper.get_text_splitter_given_prompt(
@@ -119,10 +119,10 @@ def test_truncate() -> None:
     # test prompt uses up one token
     test_prompt_txt = "test{text}"
     test_prompt = Prompt(test_prompt_txt)
-    # set max_input_size=19
+    # set context_window=19
     # For each text chunk, there's 4 tokens for text + 5 for the padding
     prompt_helper = PromptHelper(
-        max_input_size=19, num_output=0, max_chunk_overlap=0, tokenizer=mock_tokenizer
+        context_window=19, num_output=0, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
     text_chunks = ["This is a test foo bar", "Hello world bar foo"]
 
@@ -140,10 +140,10 @@ def test_get_numbered_text_from_nodes() -> None:
     # test prompt uses up one token
     test_prompt_txt = "test{text}"
     test_prompt = Prompt(test_prompt_txt)
-    # set max_input_size=17
+    # set context_window=17
     # For each text chunk, there's 3 for text, 5 for padding (including number)
     prompt_helper = PromptHelper(
-        max_input_size=17, num_output=0, max_chunk_overlap=0, tokenizer=mock_tokenizer
+        context_window=17, num_output=0, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
     node1 = TextNode(text="This is a test foo bar")
     node2 = TextNode(text="Hello world bar foo")
@@ -161,7 +161,7 @@ def test_repack() -> None:
     test_prompt_text = "This is the prompt{text}"
     test_prompt = Prompt(test_prompt_text)
     prompt_helper = PromptHelper(
-        max_input_size=13,
+        context_window=13,
         num_output=1,
         max_chunk_overlap=0,
         tokenizer=mock_tokenizer,
