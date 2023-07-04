@@ -73,9 +73,9 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -118,9 +118,9 @@ def test_accumulate_response(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -175,9 +175,9 @@ def test_accumulate_response_async(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -233,9 +233,9 @@ def test_accumulate_response_aget(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -293,9 +293,9 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
