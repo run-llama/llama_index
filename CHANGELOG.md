@@ -1,8 +1,13 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Streaming support for OpenAI agents (#6694)
+
 ## [v0.7.0] - 2023-07-04
 
-## New Features
+### New Features
 - Index creation progress bars (#6583)
 
 ### Bug Fixes/ Nits

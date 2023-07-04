@@ -1,13 +1,30 @@
+import asyncio
 import json
+import queue
+import time
 from abc import abstractmethod
-from typing import Callable, List, Optional
+from threading import Thread
+from typing import (
+    AsyncGenerator,
+    Callable,
+    Generator,
+    List,
+    Tuple,
+    Optional,
+    Union,
+)
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.base import (
+    ChatMessage,
+    MessageRole,
+    ChatResponseGen,
+    ChatResponseAsyncGen,
+)
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
@@ -53,6 +70,71 @@ def call_function(
     )
 
 
+class StreamingChatResponse:
+    """Streaming chat response to user and writing to chat history."""
+
+    def __init__(
+        self, chat_stream: Union[ChatResponseGen, ChatResponseAsyncGen]
+    ) -> None:
+        self._chat_stream = chat_stream
+        self._queue: queue.Queue = queue.Queue()
+        self._is_done = False
+        self._is_function: Optional[bool] = None
+        self.response_str = ""
+
+    def __str__(self) -> str:
+        return self.response_str
+
+    def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+        if isinstance(self._chat_stream, AsyncGenerator):
+            raise ValueError(
+                "Cannot write to history with async generator in sync function."
+            )
+
+        final_message = None
+        for chat in self._chat_stream:
+            final_message = chat.message
+            self._is_function = (
+                final_message.additional_kwargs.get("function_call", None) is not None
+            )
+            self._queue.put_nowait(chat.delta)
+
+        if final_message is not None:
+            chat_history.append(final_message)
+
+        self._is_done = True
+
+    async def awrite_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+        if isinstance(self._chat_stream, Generator):
+            raise ValueError(
+                "Cannot write to history with sync generator in async function."
+            )
+
+        final_message = None
+        async for chat in self._chat_stream:
+            final_message = chat.message
+            self._is_function = (
+                final_message.additional_kwargs.get("function_call", None) is not None
+            )
+            self._queue.put_nowait(chat.delta)
+
+        if final_message is not None:
+            chat_history.append(final_message)
+
+        self._is_done = True
+
+    @property
+    def response_gen(self) -> Generator[str, None, None]:
+        while not self._is_done or not self._queue.empty():
+            try:
+                delta = self._queue.get(block=False)
+                self.response_str += delta
+                yield delta
+            except queue.Empty:
+                # Queue is empty, but we're not done yet
+                continue
+
+
 class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     """Base OpenAI Agent."""
 
@@ -81,13 +163,26 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def _get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
 
+    def _get_latest_function_call(
+        self, chat_history: List[ChatMessage]
+    ) -> Optional[dict]:
+        """Get latest function call from chat history."""
+        return chat_history[-1].additional_kwargs.get("function_call", None)
+
+    def _init_chat(
+        self, chat_history: List[ChatMessage], message: str
+    ) -> Tuple[List[BaseTool], List[dict]]:
+        """Add user message to chat history and get tools and functions."""
+        chat_history.append(ChatMessage(content=message, role=MessageRole.USER))
+        tools = self._get_tools(message)
+        functions = [tool.metadata.to_openai_function() for tool in tools]
+        return tools, functions
+
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
-        tools = self._get_tools(message)
-        functions = [tool.metadata.to_openai_function() for tool in tools]
+        tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
         chat_response = self._llm.chat(chat_history, functions=functions)
@@ -95,7 +190,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         chat_history.append(ai_message)
 
         n_function_calls = 0
-        function_call = ai_message.additional_kwargs.get("function_call", None)
+        function_call = self._get_latest_function_call(chat_history)
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -111,17 +206,82 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             chat_response = self._llm.chat(chat_history, functions=functions)
             ai_message = chat_response.message
             chat_history.append(ai_message)
-            function_call = ai_message.additional_kwargs.get("function_call", None)
+            function_call = self._get_latest_function_call(chat_history)
 
         return Response(ai_message.content)
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> Generator[StreamingChatResponse, None, None]:
+        chat_history = chat_history or self._chat_history
+        tools, functions = self._init_chat(chat_history, message)
+
+        def gen(
+            chat_history: List[ChatMessage],
+        ) -> Generator[StreamingChatResponse, None, None]:
+            # TODO: Support forced function call
+            chat_stream_response = StreamingChatResponse(
+                self._llm.stream_chat(chat_history, functions=functions)
+            )
+
+            # Get the response in a separate thread so we can yield the response
+            thread = Thread(
+                target=chat_stream_response.write_response_to_history,
+                args=(chat_history,),
+            )
+            thread.start()
+            yield chat_stream_response
+
+            while chat_stream_response._is_function is None:
+                # Wait until we know if the response is a function call or not
+                time.sleep(0.05)
+                if chat_stream_response._is_function is False:
+                    return
+
+            thread.join()
+
+            n_function_calls = 0
+            function_call = self._get_latest_function_call(chat_history)
+            while function_call is not None:
+                if n_function_calls >= self._max_function_calls:
+                    print(f"Exceeded max function calls: {self._max_function_calls}.")
+                    break
+
+                function_message = call_function(
+                    tools, function_call, verbose=self._verbose
+                )
+                chat_history.append(function_message)
+                n_function_calls += 1
+
+                # send function call & output back to get another response
+                chat_stream_response = StreamingChatResponse(
+                    self._llm.stream_chat(chat_history, functions=functions)
+                )
+
+                # Get the response in a separate thread so we can yield the response
+                thread = Thread(
+                    target=chat_stream_response.write_response_to_history,
+                    args=(chat_history,),
+                )
+                thread.start()
+                yield chat_stream_response
+
+                while chat_stream_response._is_function is None:
+                    # Wait until we know if the response is a function call or not
+                    time.sleep(0.05)
+                    if chat_stream_response._is_function is False:
+                        return
+
+                thread.join()
+                function_call = self._get_latest_function_call(chat_history)
+
+        return gen(chat_history)
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
-        tools = self._get_tools(message)
-        functions = [tool.metadata.to_openai_function() for tool in tools]
+        tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
         chat_response = await self._llm.achat(chat_history, functions=functions)
@@ -129,7 +289,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         chat_history.append(ai_message)
 
         n_function_calls = 0
-        function_call = ai_message.additional_kwargs.get("function_call", None)
+        function_call = self._get_latest_function_call(chat_history)
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -145,9 +305,80 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             response = await self._llm.achat(chat_history, functions=functions)
             ai_message = response.message
             chat_history.append(ai_message)
-            function_call = ai_message.additional_kwargs.get("function_call", None)
+            function_call = self._get_latest_function_call(chat_history)
 
         return Response(ai_message.content)
+
+    def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> AsyncGenerator[StreamingChatResponse, None]:
+        chat_history = chat_history or self._chat_history
+        tools, functions = self._init_chat(chat_history, message)
+
+        async def gen(
+            chat_history: List[ChatMessage],
+        ) -> AsyncGenerator[StreamingChatResponse, None]:
+            # TODO: Support forced function call
+            chat_stream_response = StreamingChatResponse(
+                await self._llm.astream_chat(chat_history, functions=functions)
+            )
+
+            # Get the response in a separate thread so we can yield the response
+            thread = Thread(
+                target=lambda x: asyncio.run(
+                    chat_stream_response.awrite_response_to_history(x)
+                ),
+                args=(chat_history,),
+            )
+            thread.start()
+            yield chat_stream_response
+
+            while chat_stream_response._is_function is None:
+                # Wait until we know if the response is a function call or not
+                time.sleep(0.05)
+                if chat_stream_response._is_function is False:
+                    return
+
+            thread.join()
+
+            n_function_calls = 0
+            function_call = self._get_latest_function_call(chat_history)
+            while function_call is not None:
+                if n_function_calls >= self._max_function_calls:
+                    print(f"Exceeded max function calls: {self._max_function_calls}.")
+                    break
+
+                function_message = call_function(
+                    tools, function_call, verbose=self._verbose
+                )
+                chat_history.append(function_message)
+                n_function_calls += 1
+
+                # send function call & output back to get another response
+                chat_stream_response = StreamingChatResponse(
+                    await self._llm.astream_chat(chat_history, functions=functions)
+                )
+
+                # Get the response in a separate thread so we can yield the response
+                thread = Thread(
+                    target=lambda x: asyncio.run(
+                        chat_stream_response.awrite_response_to_history(x)
+                    ),
+                    args=(chat_history,),
+                )
+                thread.start()
+                yield chat_stream_response
+
+                while chat_stream_response._is_function is None:
+                    # Wait until we know if the response is a function call or not
+                    time.sleep(0.05)
+                    if chat_stream_response._is_function is False:
+                        return
+
+                thread.join()
+                function_call = self._get_latest_function_call(chat_history)
+
+        return gen(chat_history)
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
