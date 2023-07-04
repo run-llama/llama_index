@@ -172,6 +172,7 @@ class DeepLakeVectorStore(VectorStore):
         data = self.vectorstore.search(
             embedding=query_embedding,
             exec_option=exec_option,
+            k=query.similarity_top_k,
         )
 
         similarities = data["score"]
