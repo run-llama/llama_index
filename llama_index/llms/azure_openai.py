@@ -33,5 +33,4 @@ class AzureOpenAI(OpenAI):
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         openai_kwargs = super()._model_kwargs
-        openai_kwargs.pop("model")
         openai_kwargs["engine"] = self.engine
