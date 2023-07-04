@@ -8,8 +8,7 @@ from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 
@@ -324,7 +323,8 @@ class BaseIndex(Generic[IS], ABC):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+        from llama_index.query_engine.retriever_query_engine import \
+            RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
 
@@ -341,9 +341,10 @@ class BaseIndex(Generic[IS], ABC):
             from llama_index.chat_engine import CondenseQuestionChatEngine
 
             query_engine = self.as_query_engine(**kwargs)
+            if "service_context" not in kwargs:
+                kwargs["service_context"] = self._service_context
             return CondenseQuestionChatEngine.from_defaults(
                 query_engine=query_engine,
-                service_context=self.service_context,
                 **kwargs,
             )
         elif chat_mode == ChatMode.REACT:
@@ -351,9 +352,10 @@ class BaseIndex(Generic[IS], ABC):
             from llama_index.chat_engine import ReActChatEngine
 
             query_engine = self.as_query_engine(**kwargs)
+            if "service_context" not in kwargs:
+                kwargs["service_context"] = self._service_context
             return ReActChatEngine.from_query_engine(
                 query_engine=query_engine,
-                service_context=self.service_context,
                 **kwargs,
             )
         else:
