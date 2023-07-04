@@ -7,6 +7,8 @@ from typing import Any, Optional, Protocol, runtime_checkable
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.utils import (
+    astream_chat_response_to_tokens,
+    astream_completion_response_to_tokens,
     stream_chat_response_to_tokens,
     stream_completion_response_to_tokens,
 )
@@ -14,7 +16,7 @@ from llama_index.llms.base import LLM, LLMMetadata
 from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import Prompt
-from llama_index.types import TokenGen
+from llama_index.types import TokenAsyncGen, TokenGen
 from llama_index.utils import count_tokens
 
 logger = logging.getLogger(__name__)
@@ -44,7 +46,7 @@ class BaseLLMPredictor(Protocol):
         """Async predict the answer to a query."""
 
     @abstractmethod
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
         """Async predict the answer to a query."""
 
 
@@ -158,14 +160,14 @@ class LLMPredictor(BaseLLMPredictor):
         self._log_end(event_id, output, formatted_prompt)
         return output
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
         """Async stream."""
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             chat_response = await self._llm.astream_chat(messages=messages)
-            stream_tokens = stream_chat_response_to_tokens(chat_response)
+            stream_tokens = await astream_chat_response_to_tokens(chat_response)
         else:
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             stream_response = await self._llm.astream_complete(formatted_prompt)
-            stream_tokens = stream_completion_response_to_tokens(stream_response)
+            stream_tokens = await astream_completion_response_to_tokens(stream_response)
         return stream_tokens

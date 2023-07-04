@@ -1,27 +1,12 @@
 from typing import Any, Sequence
 
-from llama_index.indices.response.accumulate import Accumulate
-from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.response_synthesizers import Accumulate
 from llama_index.types import RESPONSE_TEXT_TYPE
 from llama_index.utils import temp_set_attrs
 
 
 class CompactAndAccumulate(Accumulate):
-    def __init__(
-        self,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
-        streaming: bool = False,
-        use_async: bool = False,
-    ) -> None:
-        super().__init__(
-            service_context=service_context,
-            text_qa_template=text_qa_template,
-            streaming=streaming,
-            use_async=use_async,
-        )
-        self.text_qa_template = text_qa_template
+    """Accumulate responses across compact text chunks."""
 
     async def aget_response(
         self,
@@ -32,7 +17,7 @@ class CompactAndAccumulate(Accumulate):
     ) -> RESPONSE_TEXT_TYPE:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
-        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
 
         with temp_set_attrs(self._service_context.prompt_helper):
             new_texts = self._service_context.prompt_helper.repack(
@@ -53,7 +38,7 @@ class CompactAndAccumulate(Accumulate):
     ) -> RESPONSE_TEXT_TYPE:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
-        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
 
         with temp_set_attrs(self._service_context.prompt_helper):
             new_texts = self._service_context.prompt_helper.repack(

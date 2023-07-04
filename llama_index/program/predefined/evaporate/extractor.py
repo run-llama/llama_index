@@ -1,15 +1,21 @@
-from typing import Optional, List, Any, Set, Tuple, Dict
-from contextlib import contextmanager
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
-from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
-from llama_index.indices.response import ResponseMode
-from collections import defaultdict
-import signal
+import random
 import re
+import signal
+
+from collections import defaultdict
+from contextlib import contextmanager
+from typing import Optional, List, Any, Set, Tuple, Dict
+
+from llama_index.indices.service_context import ServiceContext
+from llama_index.response_synthesizers import (
+    ResponseMode,
+    get_response_synthesizer,
+)
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+
+
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.prompts import QuestionAnswerPrompt
-import random
 
 
 from llama_index.program.predefined.evaporate.prompts import (
@@ -178,8 +184,10 @@ class EvaporateExtractor:
         )
         qa_prompt = QuestionAnswerPrompt.from_prompt(new_prompt)
 
-        response_synthesizer = ResponseSynthesizer.from_args(
-            text_qa_template=qa_prompt, response_mode=ResponseMode.TREE_SUMMARIZE
+        response_synthesizer = get_response_synthesizer(
+            service_context=self._service_context,
+            text_qa_template=qa_prompt,
+            response_mode=ResponseMode.TREE_SUMMARIZE,
         )
 
         # ignore refine prompt for now

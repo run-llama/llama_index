@@ -139,7 +139,7 @@ query_wrapper_prompt = SimpleInputPrompt("<|USER|>{query_str}<|ASSISTANT|>")
 import torch
 from llama_index.llms import HuggingFaceLLM
 llm = HuggingFaceLLM(
-    max_input_size=4096, 
+    context_window=4096, 
     max_new_tokens=256,
     generate_kwargs={"temperature": 0.7, "do_sample": False},
     system_prompt=system_prompt,
