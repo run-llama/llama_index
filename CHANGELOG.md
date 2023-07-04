@@ -1,6 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.0] - 2023-07-04
+
+## New Features
+- Index creation progress bars (#6583)
 
 ### Bug Fixes/ Nits
 - Improved chat refine template (#6645)
@@ -17,6 +20,7 @@
   - expose `chat_history` state as a property
   - support overriding `chat_history` in `chat` and `achat` endpoints
 - Remove deprecated arguments for `PromptHelper`: `max_input_size`, `embedding_limit`, `max_chunk_overlap`
+- Update all notebooks to use native openai integration (#6696)
 
 ## [v0.6.38] - 2023-07-02
 
