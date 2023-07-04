@@ -7,7 +7,10 @@ class AzureOpenAI(OpenAI):
     """
     Azure OpenAI
 
-    Args:
+    To use this, you must first deploy a model on Azure OpenAI.
+    Unlike OpenAI, you need to specify a `engine` parameter to identify
+    your deployment (called "model deployment name" in Azure portal).
+
     - model: Name of the model (e.g. `text-davinci-003`)
         This in only used to decide completion vs. chat endpoint.
     - engine: This will correspond to the custom name you chose
@@ -25,7 +28,7 @@ class AzureOpenAI(OpenAI):
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
     """
 
-    engine: str  # deployment name
+    engine: str  # model deployment name
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
