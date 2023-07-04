@@ -4,8 +4,7 @@ from llama_index.bridge.langchain import print_text
 from pydantic import BaseModel, Field
 from typing import Dict, List, Any, Optional
 
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
-from llama_index.indices.query.schema import QueryBundle
+from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.tools.types import BaseTool
 from llama_index.tools.types import ToolMetadata
@@ -89,7 +88,7 @@ class QueryPlanTool(BaseTool):
     def __init__(
         self,
         query_engine_tools: List[BaseTool],
-        response_synthesizer: ResponseSynthesizer,
+        response_synthesizer: BaseSynthesizer,
         name: str,
         description_prefix: str,
     ) -> None:
@@ -103,15 +102,15 @@ class QueryPlanTool(BaseTool):
     def from_defaults(
         cls,
         query_engine_tools: List[BaseTool],
-        response_synthesizer: Optional[ResponseSynthesizer] = None,
+        response_synthesizer: Optional[BaseSynthesizer] = None,
         name: Optional[str] = None,
         description_prefix: Optional[str] = None,
     ) -> "QueryPlanTool":
         """Initialize from defaults."""
         name = name or DEFAULT_NAME
         description_prefix = description_prefix or DEFAULT_DESCRIPTION_PREFIX
-        if response_synthesizer is None:
-            response_synthesizer = ResponseSynthesizer.from_args()
+        response_synthesizer = response_synthesizer or get_response_synthesizer()
+
         return cls(
             query_engine_tools=query_engine_tools,
             response_synthesizer=response_synthesizer,
@@ -163,12 +162,12 @@ class QueryPlanTool(BaseTool):
                 )
                 child_node = TextNode(text=node_text)
                 child_nodes.append(child_node)
-            # use ResponseSynthesizer to combine results
+            # use response synthesizer to combine results
             child_nodes_with_scores = [
                 NodeWithScore(node=n, score=1.0) for n in child_nodes
             ]
             response_obj = self._response_synthesizer.synthesize(
-                query_bundle=QueryBundle(node.query_str),
+                query=node.query_str,
                 nodes=child_nodes_with_scores,
             )
             response = str(response_obj)

@@ -11,9 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceLLM(CustomLLM):
+    """HuggingFace LLM."""
+
     def __init__(
         self,
-        max_input_size: int = 4096,
+        context_window: int = 4096,
         max_new_tokens: int = 256,
         system_prompt: str = "",
         query_wrapper_prompt: SimpleInputPrompt = DEFAULT_SIMPLE_INPUT_PROMPT,
@@ -42,28 +44,28 @@ class HuggingFaceLLM(CustomLLM):
             model_name, device_map=device_map, **model_kwargs
         )
 
-        # check max_input_size
+        # check context_window
         config_dict = self.model.config.to_dict()
-        model_max_input_size = int(
-            config_dict.get("max_position_embeddings", max_input_size)
+        model_context_window = int(
+            config_dict.get("max_position_embeddings", context_window)
         )
-        if model_max_input_size and model_max_input_size < max_input_size:
+        if model_context_window and model_context_window < context_window:
             logger.warning(
-                f"Supplied max_input_size {max_input_size} is greater "
-                "than the model's max input size {model_max_input_size}. "
-                "Disable this warning by setting a lower max_input_size."
+                f"Supplied context_window {context_window} is greater "
+                "than the model's max input size {model_context_window}. "
+                "Disable this warning by setting a lower context_window."
             )
-            max_input_size = model_max_input_size
+            context_window = model_context_window
 
         tokenizer_kwargs = tokenizer_kwargs or {}
         if "max_length" not in tokenizer_kwargs:
-            tokenizer_kwargs["max_length"] = max_input_size
+            tokenizer_kwargs["max_length"] = context_window
 
         self.tokenizer = tokenizer or AutoTokenizer.from_pretrained(
             tokenizer_name, **tokenizer_kwargs
         )
 
-        self._max_input_size = max_input_size
+        self._context_window = context_window
         self._max_new_tokens = max_new_tokens
 
         self._generate_kwargs = generate_kwargs or {}
@@ -93,21 +95,13 @@ class HuggingFaceLLM(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        """Get LLM metadata."""
+        """LLM metadata."""
         return LLMMetadata(
-            context_window=self._max_input_size, num_output=self._max_new_tokens
+            context_window=self._context_window, num_output=self._max_new_tokens
         )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        """Predict the answer to a query.
-
-        Args:
-            prompt (Prompt): Prompt to use for prediction.
-
-        Returns:
-            Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
-
-        """
+        """Completion endpoint."""
 
         full_prompt = self._query_wrapper_prompt.format(query_str=prompt)
         if self._system_prompt:
@@ -134,18 +128,7 @@ class HuggingFaceLLM(CustomLLM):
         return CompletionResponse(text=completion, raw=tokens)
 
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        """Stream the answer to a query.
-
-        NOTE: this is a beta feature. Will try to build or use
-        better abstractions about response handling.
-
-        Args:
-            prompt (Prompt): Prompt to use for prediction.
-
-        Returns:
-            str: The predicted answer.
-
-        """
+        """Streaming completion endpoint."""
         from transformers import TextIteratorStreamer
 
         full_prompt = self._query_wrapper_prompt.format(query_str=prompt)

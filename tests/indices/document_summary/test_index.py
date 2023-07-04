@@ -2,7 +2,7 @@
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.schema import Document
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
+from llama_index.response_synthesizers import get_response_synthesizer
 from tests.mock_utils.mock_prompts import MOCK_TEXT_QA_PROMPT, MOCK_REFINE_PROMPT
 
 from typing import List
@@ -20,7 +20,7 @@ def test_build_index(
         Document(text="Hello world.", id_="doc_4"),
     ]
 
-    response_synthesizer = ResponseSynthesizer.from_args(
+    response_synthesizer = get_response_synthesizer(
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,
         callback_manager=mock_service_context.callback_manager,

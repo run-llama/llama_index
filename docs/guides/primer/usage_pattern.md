@@ -287,7 +287,7 @@ Below we highlight a few of the possible customizations.
 ```python
 from llama_index import (
     VectorStoreIndex,
-    ResponseSynthesizer,
+    get_response_synthesizer,
 )
 from llama_index.retrievers import VectorIndexRetriever
 from llama_index.query_engine import RetrieverQueryEngine
@@ -303,16 +303,16 @@ retriever = VectorIndexRetriever(
 )
 
 # configure response synthesizer
-response_synthesizer = ResponseSynthesizer.from_args(
-    node_postprocessors=[
-        SimilarityPostprocessor(similarity_cutoff=0.7)
-    ]
-)
+response_synthesizer = get_response_synthesizer()
 
 # assemble query engine
 query_engine = RetrieverQueryEngine(
     retriever=retriever,
     response_synthesizer=response_synthesizer,
+    node_postprocessors=[
+        SimilarityPostprocessor(similarity_cutoff=0.7)
+    ]
+
 )
 
 # query
@@ -349,7 +349,7 @@ The full list of retrievers for each index (and their shorthand) is documented i
 
 (setting-response-mode)=
 ### Configuring response synthesis
-After a retriever fetches relevant nodes, a `ResponseSynthesizer` synthesizes the final response by combining the information.
+After a retriever fetches relevant nodes, a `BaseSynthesizer` synthesizes the final response by combining the information.
 
 You can configure it via
 ```python

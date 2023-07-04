@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Bug Fixes/ Nits
+- Improved chat refine template (#6645)
+
 ### Breaking/Deprecated API Changes
 - Change `BaseOpenAIAgent` to use `llama_index.llms.OpenAI`. Adjust `chat_history` to use `List[ChatMessage]]` as type.
 - Remove (previously deprecated) `llama_index.langchain_helpers.chain_wrapper` module. 
@@ -12,6 +15,7 @@
   - adjust `chat_history` to use `List[ChatMessage]]` as type
   - expose `chat_history` state as a property
   - support overriding `chat_history` in `chat` and `achat` endpoints
+- Remove deprecated arguments for `PromptHelper`: `max_input_size`, `embedding_limit`, `max_chunk_overlap`
 
 ## [v0.6.38] - 2023-07-02
 

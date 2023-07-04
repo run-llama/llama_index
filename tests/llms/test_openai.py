@@ -1,5 +1,7 @@
 from pytest import MonkeyPatch
-from typing import Any, Generator
+from typing import Any, AsyncGenerator, Generator
+
+import pytest
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
 
@@ -21,6 +23,10 @@ def mock_completion(*args: Any, **kwargs: Any) -> dict:
         ],
         "usage": {"prompt_tokens": 5, "completion_tokens": 7, "total_tokens": 12},
     }
+
+
+async def mock_async_completion(*args: Any, **kwargs: Any) -> dict:
+    return mock_completion(*args, **kwargs)
 
 
 def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
@@ -61,6 +67,16 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
     ]
     for response in responses:
         yield response
+
+
+async def mock_async_completion_stream(
+    *args: Any, **kwargs: Any
+) -> AsyncGenerator[dict, None]:
+    async def gen() -> AsyncGenerator[dict, None]:
+        for response in mock_completion_stream(*args, **kwargs):
+            yield response
+
+    return gen()
 
 
 def mock_chat_completion_stream(
@@ -171,3 +187,38 @@ def test_chat_model_streaming(monkeypatch: MonkeyPatch) -> None:
     chat_responses = list(chat_response_gen)
     assert chat_responses[-1].message.content == "\n\n2"
     assert chat_responses[-1].message.role == "assistant"
+
+
+@pytest.mark.asyncio
+async def test_completion_model_async(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "llama_index.llms.openai.acompletion_with_retry", mock_async_completion
+    )
+
+    llm = OpenAI(model="text-davinci-003")
+    prompt = "test prompt"
+    message = ChatMessage(role="user", content="test message")
+
+    response = await llm.acomplete(prompt)
+    assert response.text == "\n\nThis is indeed a test"
+
+    chat_response = await llm.achat([message])
+    assert chat_response.message.content == "\n\nThis is indeed a test"
+
+
+@pytest.mark.asyncio
+async def test_completion_model_async_streaming(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "llama_index.llms.openai.acompletion_with_retry", mock_async_completion_stream
+    )
+
+    llm = OpenAI(model="text-davinci-003")
+    prompt = "test prompt"
+    message = ChatMessage(role="user", content="test message")
+
+    response_gen = await llm.astream_complete(prompt)
+    responses = [item async for item in response_gen]
+    assert responses[-1].text == "12"
+    chat_response_gen = await llm.astream_chat([message])
+    chat_responses = [item async for item in chat_response_gen]
+    assert chat_responses[-1].message.content == "12"
