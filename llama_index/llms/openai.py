@@ -151,7 +151,7 @@ class OpenAI(LLM, BaseModel):
                     message=ChatMessage(
                         role=role,
                         content=content,
-                        additional_kwargs=additional_kwargs or {},
+                        additional_kwargs=function_call,
                     ),
                     delta=content_delta,
                     raw=response,
