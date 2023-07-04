@@ -323,8 +323,7 @@ class BaseIndex(Generic[IS], ABC):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.query_engine.retriever_query_engine import \
-            RetrieverQueryEngine
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
 
