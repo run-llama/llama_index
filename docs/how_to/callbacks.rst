@@ -21,6 +21,7 @@ While each callback may not leverage each event type, the following events are a
 - RETRIEVE -> Logs for the nodes retrieved for a query.
 - SYNTHESIZE -> Logs for the result for synthesize calls.
 - TREE -> Logs for the summary and level of summaries generated.
+- SUB_QUESTION -> Logs for the sub question and answer generated.
 
 You can implement your own callback to track and trace these events, or use an existing callback.
 
