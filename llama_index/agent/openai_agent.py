@@ -1,8 +1,8 @@
 import asyncio
 import json
 import queue
+import time
 from abc import abstractmethod
-from asyncio import Event
 from threading import Thread
 from typing import (
     AsyncGenerator,
@@ -78,7 +78,8 @@ class StreamingChatResponse:
     ) -> None:
         self.chat_stream = chat_stream
         self.queue: queue.Queue = queue.Queue()
-        self.is_done = Event()
+        self.is_done = False
+        self.is_function: Optional[bool] = None
         self.response = ""
 
     def __str__(self) -> str:
@@ -92,14 +93,16 @@ class StreamingChatResponse:
 
         final_message = None
         for chat in self.chat_stream:
-            # print(chat.json(), flush=True)
             final_message = chat.message
+            self.is_function = (
+                final_message.additional_kwargs.get("function_call", None) is not None
+            )
             self.queue.put_nowait(chat.delta)
 
         if final_message is not None:
             chat_history.append(final_message)
 
-        self.is_done.set()
+        self.is_done = True
 
     async def awrite_response_to_history(self, chat_history: List[ChatMessage]) -> None:
         if isinstance(self.chat_stream, Generator):
@@ -110,18 +113,21 @@ class StreamingChatResponse:
         final_message = None
         async for chat in self.chat_stream:
             final_message = chat.message
+            self.is_function = (
+                final_message.additional_kwargs.get("function_call", None) is not None
+            )
             self.queue.put_nowait(chat.delta)
 
         if final_message is not None:
             chat_history.append(final_message)
 
-        self.is_done.set()
+        self.is_done = True
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
         while not self.is_done or not self.queue.empty():
             try:
-                delta = self.queue.get_nowait()
+                delta = self.queue.get(block=False)
                 self.response += delta
                 yield delta
             except queue.Empty:
@@ -225,6 +231,13 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             )
             thread.start()
             yield chat_stream_response
+
+            while chat_stream_response.is_function is None:
+                # Wait until we know if the response is a function call or not
+                time.sleep(0.05)
+                if chat_stream_response.is_function is False:
+                    return
+
             thread.join()
 
             n_function_calls = 0
@@ -252,8 +265,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 )
                 thread.start()
                 yield chat_stream_response
-                thread.join()
 
+                while chat_stream_response.is_function is None:
+                    # Wait until we know if the response is a function call or not
+                    time.sleep(0.05)
+                    if chat_stream_response.is_function is False:
+                        return
+
+                thread.join()
                 function_call = self._get_latest_function_call(chat_history)
 
         return gen(chat_history)
@@ -313,6 +332,13 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             )
             thread.start()
             yield chat_stream_response
+
+            while chat_stream_response.is_function is None:
+                # Wait until we know if the response is a function call or not
+                time.sleep(0.05)
+                if chat_stream_response.is_function is False:
+                    return
+
             thread.join()
 
             n_function_calls = 0
@@ -342,8 +368,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 )
                 thread.start()
                 yield chat_stream_response
-                thread.join()
 
+                while chat_stream_response.is_function is None:
+                    # Wait until we know if the response is a function call or not
+                    time.sleep(0.05)
+                    if chat_stream_response.is_function is False:
+                        return
+
+                thread.join()
                 function_call = self._get_latest_function_call(chat_history)
 
         return gen(chat_history)
