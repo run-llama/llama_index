@@ -71,7 +71,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         use_async: bool = True,
     ) -> "SubQuestionQueryEngine":
         callback_manager = None
-        if len(query_engine_tools) > 0:
+        if service_context.callback_manager is not None:
+            callback_manager = service_context.callback_manager
+        elif len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
 
         question_gen = question_gen or LLMQuestionGenerator.from_defaults(
@@ -157,13 +159,13 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
 
-            event_start_payload = {EventPayload.QUERY_STR: question}
+            event_start_payload = {EventPayload.QUERY_STR.value: question}
             event_id = self.callback_manager.on_event_start(CBEventType.SUB_QUESTION, payload=event_start_payload)
 
             response = await query_engine.aquery(question)
             response_text = str(response)
 
-            event_end_payload = {EventPayload.QUERY_STR: question, EventPayload.RESPONSE: response_text}
+            event_end_payload = {EventPayload.QUERY_STR.value: question, EventPayload.RESPONSE.value: response_text}
             self.callback_manager.on_event_end(CBEventType.SUB_QUESTION, payload=event_end_payload, event_id=event_id)
 
             node_text = f"Sub question: {question}\nResponse: {response_text}"
@@ -193,7 +195,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             response_text = str(response)
 
             event_end_payload = {EventPayload.QUERY_STR: question, EventPayload.RESPONSE: response_text}
-            self.callback_manager.on_event_end(CBEventType.SUB_QUESTION, payload=event_end_payload, event_id=event_id)
+            self.callback_manager.on_event_end(CBEventType.SUB_QUESTION, payload=event_end_payload, event_id=event_id)            
 
             node_text = f"Sub question: {question}\nResponse: {response_text}"
 
