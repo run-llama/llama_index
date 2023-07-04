@@ -1,15 +1,30 @@
+import asyncio
 import json
+import queue
 from abc import abstractmethod
-from queue import Queue
+from asyncio import Event
 from threading import Thread
-from typing import AsyncGenerator, Callable, Generator, List, Tuple, Optional
+from typing import (
+    AsyncGenerator,
+    Callable,
+    Generator,
+    List,
+    Tuple,
+    Optional,
+    Union,
+)
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import ChatMessage, MessageRole, ChatResponseGen
+from llama_index.llms.base import (
+    ChatMessage,
+    MessageRole,
+    ChatResponseGen,
+    ChatResponseAsyncGen,
+)
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
@@ -58,31 +73,58 @@ def call_function(
 class StreamingChatResponse:
     """Streaming chat response to user and writing to chat history."""
 
-    def __init__(self, chat_stream: ChatResponseGen) -> None:
+    def __init__(
+        self, chat_stream: Union[ChatResponseGen, ChatResponseAsyncGen]
+    ) -> None:
         self.chat_stream = chat_stream
-        self.queue: Queue = Queue()
-        self.is_done = False
+        self.queue: queue.Queue = queue.Queue()
+        self.is_done = Event()
         self.response = ""
 
+    def __str__(self) -> str:
+        return self.response
+
     def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+        if isinstance(self.chat_stream, AsyncGenerator):
+            raise ValueError(
+                "Cannot write to history with async generator in sync function."
+            )
+
         final_message = None
         for chat in self.chat_stream:
+            # print(chat.json(), flush=True)
             final_message = chat.message
             self.queue.put_nowait(chat.delta)
 
         if final_message is not None:
             chat_history.append(final_message)
 
-        self.is_done = True
+        self.is_done.set()
+
+    async def awrite_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+        if isinstance(self.chat_stream, Generator):
+            raise ValueError(
+                "Cannot write to history with sync generator in async function."
+            )
+
+        final_message = None
+        async for chat in self.chat_stream:
+            final_message = chat.message
+            self.queue.put_nowait(chat.delta)
+
+        if final_message is not None:
+            chat_history.append(final_message)
+
+        self.is_done.set()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
         while not self.is_done or not self.queue.empty():
             try:
-                delta = self.queue.get(block=False)
+                delta = self.queue.get_nowait()
                 self.response += delta
                 yield delta
-            except Exception:
+            except queue.Empty:
                 # Queue is empty, but we're not done yet
                 continue
 
@@ -125,7 +167,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         self, chat_history: List[ChatMessage], message: str
     ) -> Tuple[List[BaseTool], List[dict]]:
         """Add user message to chat history and get tools and functions."""
-        chat_history.append(ChatMessage(content=message, role="user"))
+        chat_history.append(ChatMessage(content=message, role=MessageRole.USER))
         tools = self._get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
         return tools, functions
@@ -168,7 +210,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 
-        def _stream_chat(
+        def gen(
             chat_history: List[ChatMessage],
         ) -> Generator[StreamingChatResponse, None, None]:
             # TODO: Support forced function call
@@ -214,7 +256,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
                 function_call = self._get_latest_function_call(chat_history)
 
-        return _stream_chat(chat_history)
+        return gen(chat_history)
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -254,7 +296,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 
-        async def _astream_chat(
+        async def gen(
             chat_history: List[ChatMessage],
         ) -> AsyncGenerator[StreamingChatResponse, None]:
             # TODO: Support forced function call
@@ -264,7 +306,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
             # Get the response in a separate thread so we can yield the response
             thread = Thread(
-                target=chat_stream_response.write_response_to_history,
+                target=lambda x: asyncio.run(
+                    chat_stream_response.awrite_response_to_history(x)
+                ),
                 args=(chat_history,),
             )
             thread.start()
@@ -291,7 +335,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
                 # Get the response in a separate thread so we can yield the response
                 thread = Thread(
-                    target=chat_stream_response.write_response_to_history,
+                    target=lambda x: asyncio.run(
+                        chat_stream_response.awrite_response_to_history(x)
+                    ),
                     args=(chat_history,),
                 )
                 thread.start()
@@ -300,7 +346,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
                 function_call = self._get_latest_function_call(chat_history)
 
-        return _astream_chat(chat_history)
+        return gen(chat_history)
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
