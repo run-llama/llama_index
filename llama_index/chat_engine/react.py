@@ -151,6 +151,18 @@ class ReActChatEngine(BaseChatEngine):
         response = await self._agent.arun(input=message)
         return Response(response=response)
 
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
+        raise NotImplementedError("stream_chat() is not supported for ReActChatEngine.")
+
+    def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
+        raise NotImplementedError(
+            "astream_chat() is not supported for ReActChatEngine."
+        )
+
     def reset(self) -> None:
         self._memory.clear()
         self._agent = self._create_agent()

@@ -7,7 +7,8 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.prompts.base import Prompt
-from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.types import TokenGen
 
 logger = logging.getLogger(__name__)
 
@@ -124,12 +125,62 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         response = self._query_engine.query(condensed_question)
 
         # Record response
-        chat_history.extend(
-            [
-                ChatMessage(role=MessageRole.USER, content=message),
-                ChatMessage(role=MessageRole.ASSISTANT, content=str(response)),
-            ]
-        )
+        if isinstance(response, StreamingResponse):
+            raise ValueError("Streaming is enabled. Please use stream_chat() instead.")
+        else:
+            chat_history.extend(
+                [
+                    ChatMessage(role=MessageRole.USER, content=message),
+                    ChatMessage(role=MessageRole.ASSISTANT, content=str(response)),
+                ]
+            )
+        return response
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
+        chat_history = chat_history or self._chat_history
+
+        # Generate standalone question from conversation context and last message
+        condensed_question = self._condense_question(chat_history, message)
+
+        log_str = f"Querying with: {condensed_question}"
+        logger.info(log_str)
+        if self._verbose:
+            print(log_str)
+
+        # Query with standalone question
+        response = self._query_engine.query(condensed_question)
+
+        # Record response
+        if (
+            isinstance(response, StreamingResponse)
+            and response.response_gen is not None
+        ):
+
+            def gen(
+                chat_history: List[ChatMessage], response_gen: TokenGen
+            ) -> TokenGen:
+                response_str = ""
+                for token in response_gen:
+                    response_str += token
+                    yield token
+
+                chat_history.extend(
+                    [
+                        ChatMessage(role=MessageRole.USER, content=message),
+                        ChatMessage(role=MessageRole.ASSISTANT, content=response_str),
+                    ]
+                )
+
+            # override the generator to include writing to chat history
+            response = StreamingResponse(
+                gen(chat_history, response.response_gen),
+                source_nodes=response.source_nodes,
+                metadata=response.metadata,
+            )
+        else:
+            raise ValueError("Streaming is not enabled. Please use chat() instead.")
         return response
 
     async def achat(
@@ -149,12 +200,62 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         response = await self._query_engine.aquery(condensed_question)
 
         # Record response
-        chat_history.extend(
-            [
-                ChatMessage(role=MessageRole.USER, content=message),
-                ChatMessage(role=MessageRole.ASSISTANT, content=str(response)),
-            ]
-        )
+        if isinstance(response, StreamingResponse):
+            raise ValueError("Streaming is enabled. Please use astream_chat() instead.")
+        else:
+            chat_history.extend(
+                [
+                    ChatMessage(role=MessageRole.USER, content=message),
+                    ChatMessage(role=MessageRole.ASSISTANT, content=str(response)),
+                ]
+            )
+        return response
+
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> RESPONSE_TYPE:
+        chat_history = chat_history or self._chat_history
+
+        # Generate standalone question from conversation context and last message
+        condensed_question = await self._acondense_question(chat_history, message)
+
+        log_str = f"Querying with: {condensed_question}"
+        logger.info(log_str)
+        if self._verbose:
+            print(log_str)
+
+        # Query with standalone question
+        response = await self._query_engine.aquery(condensed_question)
+
+        # Record response
+        if (
+            isinstance(response, StreamingResponse)
+            and response.response_gen is not None
+        ):
+
+            def gen(
+                chat_history: List[ChatMessage], response_gen: TokenGen
+            ) -> TokenGen:
+                response_str = ""
+                for token in response_gen:
+                    response_str += token
+                    yield token
+
+                chat_history.extend(
+                    [
+                        ChatMessage(role=MessageRole.USER, content=message),
+                        ChatMessage(role=MessageRole.ASSISTANT, content=response_str),
+                    ]
+                )
+
+            # override the generator to include writing to chat history
+            response = StreamingResponse(
+                gen(chat_history, response.response_gen),
+                source_nodes=response.source_nodes,
+                metadata=response.metadata,
+            )
+        else:
+            raise ValueError("Streaming is not enabled. Please use achat() instead.")
         return response
 
     def reset(self) -> None:
