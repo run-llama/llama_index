@@ -18,7 +18,7 @@ def messages_to_history_str(messages: Sequence[ChatMessage]) -> str:
     for message in messages:
         role = message.role
         content = message.content
-        string_message = f"{role}: {content}"
+        string_message = f"{role.value}: {content}"
 
         addtional_kwargs = message.additional_kwargs
         if addtional_kwargs:
@@ -33,14 +33,14 @@ def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
     for message in messages:
         role = message.role
         content = message.content
-        string_message = f"{role}: {content}"
+        string_message = f"{role.value}: {content}"
 
         addtional_kwargs = message.additional_kwargs
         if addtional_kwargs:
             string_message += f"\n{addtional_kwargs}"
         string_messages.append(string_message)
 
-    string_messages.append(f"{MessageRole.ASSISTANT}: ")
+    string_messages.append(f"{MessageRole.ASSISTANT.value}: ")
     return "\n".join(string_messages)
 
 

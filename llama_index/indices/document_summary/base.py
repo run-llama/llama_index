@@ -9,6 +9,7 @@ import logging
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union, cast
+from llama_index.utils import get_tqdm_iterable
 
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
@@ -48,6 +49,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     Args:
         summary_template (Optional[SummaryPrompt]): A Summary Prompt
             (see :ref:`Prompt-Templates`).
+        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
 
     """
 
@@ -60,6 +62,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         service_context: Optional[ServiceContext] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         summary_query: str = DEFAULT_SUMMARY_QUERY,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -71,6 +74,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
+            show_progress=show_progress,
             **kwargs,
         )
 
@@ -113,7 +117,10 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         return self.docstore.get_node(summary_id).get_content()
 
     def _add_nodes_to_index(
-        self, index_struct: IndexDocumentSummary, nodes: Sequence[BaseNode]
+        self,
+        index_struct: IndexDocumentSummary,
+        nodes: Sequence[BaseNode],
+        show_progress: bool = False,
     ) -> None:
         """Add nodes to index."""
         doc_id_to_nodes = defaultdict(list)
@@ -126,7 +133,12 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             doc_id_to_nodes[node.ref_doc_id].append(node)
 
         summary_node_dict = {}
-        for doc_id, nodes in doc_id_to_nodes.items():
+        items = doc_id_to_nodes.items()
+        iterable_with_progress = get_tqdm_iterable(
+            items, show_progress, "Summarizing documents"
+        )
+
+        for doc_id, nodes in iterable_with_progress:
             print(f"current doc id: {doc_id}")
             nodes_with_scores = [NodeWithScore(node=n) for n in nodes]
             # get the summary for each doc_id
@@ -156,7 +168,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         # first get doc_id to nodes_dict, generate a summary for each doc_id,
         # then build the index struct
         index_struct = IndexDocumentSummary()
-        self._add_nodes_to_index(index_struct, nodes)
+        self._add_nodes_to_index(index_struct, nodes, self._show_progress)
         return index_struct
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
