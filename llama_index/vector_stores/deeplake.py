@@ -76,7 +76,7 @@ class DeepLakeVectorStore(VectorStore):
         overwrite: bool = False,
         exec_option: str = "python",
         verbose: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ):
         """Initialize with Deep Lake client."""
         self.ingestion_batch_size = ingestion_batch_size
