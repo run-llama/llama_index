@@ -139,6 +139,10 @@ class OpenAI(LLM, BaseModel):
                 if function_call_delta is not None:
                     if function_call is None:
                         function_call = function_call_delta
+
+                        # ensure we do not add a blank function call
+                        if function_call.get("function_name", "") is None:
+                            del function_call["function_name"]
                     else:
                         function_call["arguments"] += function_call_delta["arguments"]
 
@@ -146,7 +150,7 @@ class OpenAI(LLM, BaseModel):
                     message=ChatMessage(
                         role=role,
                         content=content,
-                        additional_kwargs={"function_call": function_call},
+                        additional_kwargs=additional_kwargs or {},
                     ),
                     delta=content_delta,
                     raw=response,
