@@ -1,6 +1,7 @@
 # LlamaIndex Usage Pattern
 
 The general usage pattern of LlamaIndex is as follows:
+
 1. Load in documents (either manually, or through a data loader)
 2. Parse the Documents into Nodes
 3. Construct Index (from Nodes or Documents)
@@ -9,7 +10,7 @@ The general usage pattern of LlamaIndex is as follows:
 
 ## 1. Load in Documents
 
-The first step is to load in data. This data is represented in the form of `Document` objects. 
+The first step is to load in data. This data is represented in the form of `Document` objects.
 We provide a variety of [data loaders](/how_to/examples/data_connectors.md) which will load in Documents
 through the `load_data` function, e.g.:
 
@@ -28,8 +29,9 @@ text_list = [text1, text2, ...]
 documents = [Document(text=t) for t in text_list]
 ```
 
-A Document represents a lightweight container around the data source. You can now choose to proceed with one of the 
+A Document represents a lightweight container around the data source. You can now choose to proceed with one of the
 following steps:
+
 1. Feed the Document object directly into the index (see section 3).
 2. First convert the Document into Node objects (see section 2).
 
@@ -74,6 +76,8 @@ node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=node1.nod
 
 We can now build an index over these Document objects. The simplest high-level abstraction is to load-in the Document objects during index initialization (this is relevant if you came directly from step 1 and skipped step 2).
 
+`from_documents` also takes an optional argument `show_progress`. Set it to `True` to display a progress bar during index construction.
+
 ```python
 from llama_index import VectorStoreIndex
 
@@ -93,8 +97,8 @@ Depending on which index you use, LlamaIndex may make LLM calls in order to buil
 ### Reusing Nodes across Index Structures
 
 If you have multiple Node objects defined, and wish to share these Node
-objects across multiple index structures, you can do that. 
-Simply instantiate a StorageContext object, 
+objects across multiple index structures, you can do that.
+Simply instantiate a StorageContext object,
 add the Node objects to the underlying DocumentStore,
 and pass the StorageContext around.
 
@@ -112,11 +116,10 @@ index2 = ListIndex(nodes, storage_context=storage_context)
 created for each index during index construction. You can access the docstore
 associated with a given index through `index.storage_context`.
 
-
 ### Inserting Documents or Nodes
 
 You can also take advantage of the `insert` capability of indices to insert Document objects
-one at a time instead of during index construction. 
+one at a time instead of during index construction.
 
 ```python
 from llama_index import VectorStoreIndex
@@ -145,9 +148,9 @@ When creating documents, you can also attach useful metadata. Any metadata added
 
 ```python
 document = Document(
-    text='text', 
+    text='text',
     metadata={
-        'filename': '<doc_file_name>', 
+        'filename': '<doc_file_name>',
         'category': '<category>'
     }
 )
@@ -198,22 +201,19 @@ For more details on the service context, including how to create a global servic
 Depending on the index used, we used default prompt templates for constructing the index (and also insertion/querying).
 See [Custom Prompts How-To](/how_to/customization/custom_prompts.md) for more details on how to customize your prompt.
 
-
 ### Customizing embeddings
 
-For embedding-based indices, you can choose to pass in a custom embedding model. See 
+For embedding-based indices, you can choose to pass in a custom embedding model. See
 [Custom Embeddings How-To](custom-embeddings) for more details.
-
 
 ### Cost Predictor
 
-Creating an index, inserting to an index, and querying an index may use tokens. We can track 
-token usage through the outputs of these operations. When running operations, 
+Creating an index, inserting to an index, and querying an index may use tokens. We can track
+token usage through the outputs of these operations. When running operations,
 the token usage will be printed.
 
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
 See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
-
 
 ### [Optional] Save the index for future use
 
@@ -223,9 +223,11 @@ To persist to disk:
 ```python
 index.storage_context.persist(persist_dir="<persist_dir>")
 ```
+
 You may omit persist_dir to persist to `./storage` by default.
 
 To reload from disk:
+
 ```python
 from llama_index import StorageContext, load_index_from_storage
 
@@ -236,7 +238,7 @@ storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
 index = load_index_from_storage(storage_context)
 ```
 
-**NOTE**: If you had initialized the index with a custom 
+**NOTE**: If you had initialized the index with a custom
 `ServiceContext` object, you will also need to pass in the same
 ServiceContext during `load_index_from_storage`.
 
@@ -253,23 +255,24 @@ index = VectorStoreIndex.from_documents(
 
 # when loading the index from disk
 index = load_index_from_storage(
-    service_context=service_context,    
+    service_context=service_context,
 )
 
 ```
 
 ## 4. [Optional, Advanced] Building indices on top of other indices
 
-You can build indices on top of other indices! 
+You can build indices on top of other indices!
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
 see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index/composability.md).
 
 ## 5. Query the index.
 
-After building the index, you can now query it with a `QueryEngine`. Note that a "query" is simply an input to an LLM - 
-this means that you can use the index for question-answering, but you can also do more than that! 
+After building the index, you can now query it with a `QueryEngine`. Note that a "query" is simply an input to an LLM -
+this means that you can use the index for question-answering, but you can also do more than that!
 
 ### High-level API
+
 To start, you can query an index with the default `QueryEngine` (i.e., using default configs), as follows:
 
 ```python
@@ -282,8 +285,10 @@ print(response)
 ```
 
 ### Low-level API
+
 We also support a low-level composition API that gives you more granular control over the query logic.
 Below we highlight a few of the possible customizations.
+
 ```python
 from llama_index import (
     VectorStoreIndex,
@@ -298,7 +303,7 @@ index = VectorStoreIndex.from_documents(documents)
 
 # configure retriever
 retriever = VectorIndexRetriever(
-    index=index, 
+    index=index,
     similarity_top_k=2,
 )
 
@@ -319,12 +324,15 @@ query_engine = RetrieverQueryEngine(
 response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
+
 You may also add your own retrieval, response synthesis, and overall query logic, by implementing the corresponding interfaces.
 
 For a full list of implemented components and the supported configurations, please see the detailed [reference docs](/reference/query.rst).
 
 In the following, we discuss some commonly used configurations in detail.
+
 ### Configuring retriever
+
 An index can have a variety of index-specific retrieval modes.
 For instance, a list index supports the default `ListIndexRetriever` that retrieves all nodes, and
 `ListIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
@@ -348,30 +356,33 @@ response = query_engine.query("What did the author do growing up?")
 The full list of retrievers for each index (and their shorthand) is documented in the [Query Reference](/reference/query.rst).
 
 (setting-response-mode)=
+
 ### Configuring response synthesis
 After a retriever fetches relevant nodes, a `BaseSynthesizer` synthesizes the final response by combining the information.
 
 You can configure it via
+
 ```python
 query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=<response_mode>)
 ```
 
 Right now, we support the following options:
-- `default`: "create and refine" an answer by sequentially going through each retrieved `Node`; 
-    This makes a separate LLM call per Node. Good for more detailed answers.
-- `compact`: "compact" the prompt during each LLM call by stuffing as 
-    many `Node` text chunks that can fit within the maximum prompt size. If there are 
-    too many chunks to stuff in one prompt, "create and refine" an answer by going through
-    multiple prompts.
-- `tree_summarize`: Given a set of `Node` objects and the query, recursively construct a tree 
-    and return the root node as the response. Good for summarization purposes.
-- `no_text`: Only runs the retriever to fetch the nodes that would have been sent to the LLM, 
-    without actually sending them. Then can be inspected by checking `response.source_nodes`.
-    The response object is covered in more detail in Section 5.
+
+- `default`: "create and refine" an answer by sequentially going through each retrieved `Node`;
+  This makes a separate LLM call per Node. Good for more detailed answers.
+- `compact`: "compact" the prompt during each LLM call by stuffing as
+  many `Node` text chunks that can fit within the maximum prompt size. If there are
+  too many chunks to stuff in one prompt, "create and refine" an answer by going through
+  multiple prompts.
+- `tree_summarize`: Given a set of `Node` objects and the query, recursively construct a tree
+  and return the root node as the response. Good for summarization purposes.
+- `no_text`: Only runs the retriever to fetch the nodes that would have been sent to the LLM,
+  without actually sending them. Then can be inspected by checking `response.source_nodes`.
+  The response object is covered in more detail in Section 5.
 - `accumulate`: Given a set of `Node` objects and the query, apply the query to each `Node` text
-    chunk while accumulating the responses into an array. Returns a concatenated string of all
-    responses. Good for when you need to run the same query separately against each text
-    chunk.
+  chunk while accumulating the responses into an array. Returns a concatenated string of all
+  responses. Good for when you need to run the same query separately against each text
+  chunk.
 
 ```python
 index = ListIndex.from_documents(documents)
@@ -394,15 +405,16 @@ query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='no_text'
 response = query_engine.query("What did the author do growing up?")
 ```
 
-
 ### Configuring node postprocessors (i.e. filtering and augmentation)
+
 We also support advanced `Node` filtering and augmentation that can further improve the relevancy of the retrieved `Node` objects.
 This can help reduce the time/number of LLM calls/cost or improve response quality.
 
 For example:
-* `KeywordNodePostprocessor`: filters nodes by `required_keywords` and `exclude_keywords`.
-* `SimilarityPostprocessor`: filters nodes by setting a threshold on the similarity score (thus only supported by embedding-based retrievers)
-* `PrevNextNodePostprocessor`: augments retrieved `Node` objects with additional relevant context based on `Node` relationships.
+
+- `KeywordNodePostprocessor`: filters nodes by `required_keywords` and `exclude_keywords`.
+- `SimilarityPostprocessor`: filters nodes by setting a threshold on the similarity score (thus only supported by embedding-based retrievers)
+- `PrevNextNodePostprocessor`: augments retrieved `Node` objects with additional relevant context based on `Node` relationships.
 
 The full list of node postprocessors is documented in the [Node Postprocessor Reference](/reference/node_postprocessor.rst).
 
@@ -411,7 +423,7 @@ To configure the desired node postprocessors:
 ```python
 node_postprocessors = [
     KeywordNodePostprocessor(
-        required_keywords=["Combinator"], 
+        required_keywords=["Combinator"],
         exclude_keywords=["Italy"]
     )
 ]
@@ -420,8 +432,6 @@ query_engine = RetrieverQueryEngine.from_args(
 )
 response = query_engine.query("What did the author do growing up?")
 ```
-
-
 
 ## 5. Parsing the response
 
@@ -441,8 +451,5 @@ response.source_nodes
 response.get_formatted_sources()
 ```
 
-An example is shown below. 
+An example is shown below.
 ![](/_static/response/response_1.jpeg)
-
-
-

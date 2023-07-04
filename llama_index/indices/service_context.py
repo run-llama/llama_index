@@ -3,8 +3,6 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from llama_index.bridge.langchain import BaseLanguageModel
-
 import llama_index
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
@@ -12,6 +10,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
+from llama_index.llms.base import LLM
 from llama_index.llms.utils import LLMType
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
@@ -166,7 +165,7 @@ class ServiceContext:
         cls,
         service_context: "ServiceContext",
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        llm: Optional[BaseLanguageModel] = None,
+        llm: Optional[LLM] = None,
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[BaseEmbedding] = None,
         node_parser: Optional[NodeParser] = None,

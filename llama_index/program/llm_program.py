@@ -1,13 +1,11 @@
 from typing import Any, Dict, Optional, Type, Union
 
-from llama_index.bridge.langchain import ChatOpenAI
 
 from pydantic import BaseModel
+from llama_index.llms.base import LLM
+from llama_index.llms.openai import OpenAI
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.prompts.base import Prompt
-from llama_index.bridge.langchain import (
-    BaseLanguageModel,
-)
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 
@@ -23,7 +21,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         self,
         output_parser: PydanticOutputParser,
         prompt: Prompt,
-        llm: BaseLanguageModel,
+        llm: LLM,
         function_call: Union[str, Dict[str, Any]],
         verbose: bool = False,
     ) -> None:
@@ -38,12 +36,12 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         cls,
         output_parser: PydanticOutputParser,
         prompt_template_str: str,
-        llm: Optional[BaseLanguageModel] = None,
+        llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
-        llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
+        llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
         prompt = Prompt(prompt_template_str)
         function_call = function_call or {
             "name": output_parser.output_cls.schema()["title"]
@@ -72,6 +70,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
 
         formatted_prompt = prompt_with_parse_instrs.format(**kwargs)
 
-        raw_output = self._llm.predict(formatted_prompt)
+        response = self._llm.complete(formatted_prompt)
+        raw_output = response.text
         model_output = self._output_parser.parse(raw_output)
         return model_output

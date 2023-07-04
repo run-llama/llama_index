@@ -22,6 +22,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
     Args:
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
+        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         store_nodes_override (bool): set to True to always store Node objects in index
             store and document store even if vector store keeps text. Defaults to False
     """
@@ -36,6 +37,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         storage_context: Optional[StorageContext] = None,
         use_async: bool = False,
         store_nodes_override: bool = False,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -46,6 +48,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             index_struct=index_struct,
             service_context=service_context,
             storage_context=storage_context,
+            show_progress=show_progress,
             **kwargs,
         )
 
@@ -81,7 +84,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         )
 
     def _get_node_embedding_results(
-        self, nodes: Sequence[BaseNode]
+        self,
+        nodes: Sequence[BaseNode],
+        show_progress: bool = False,
     ) -> List[NodeWithEmbedding]:
         """Get tuples of id, node, and embedding.
 
@@ -103,7 +108,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         (
             result_ids,
             result_embeddings,
-        ) = self._service_context.embed_model.get_queued_text_embeddings()
+        ) = self._service_context.embed_model.get_queued_text_embeddings(show_progress)
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
@@ -117,6 +122,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     async def _aget_node_embedding_results(
         self,
         nodes: Sequence[BaseNode],
+        show_progress: bool = False,
     ) -> List[NodeWithEmbedding]:
         """Asynchronously get tuples of id, node, and embedding.
 
@@ -140,7 +146,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             result_ids,
             result_embeddings,
         ) = await self._service_context.embed_model.aget_queued_text_embeddings(
-            text_queue
+            text_queue, show_progress
         )
 
         for new_id, text_embedding in zip(result_ids, result_embeddings):
@@ -154,13 +160,18 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         return results
 
     async def _async_add_nodes_to_index(
-        self, index_struct: IndexDict, nodes: Sequence[BaseNode]
+        self,
+        index_struct: IndexDict,
+        nodes: Sequence[BaseNode],
+        show_progress: bool = False,
     ) -> None:
         """Asynchronously add nodes to index."""
         if not nodes:
             return
 
-        embedding_results = await self._aget_node_embedding_results(nodes)
+        embedding_results = await self._aget_node_embedding_results(
+            nodes, show_progress
+        )
         new_ids = self._vector_store.add(embedding_results)
 
         # if the vector store doesn't store text, we need to add the nodes to the
@@ -181,12 +192,13 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self,
         index_struct: IndexDict,
         nodes: Sequence[BaseNode],
+        show_progress: bool = False,
     ) -> None:
         """Add document to index."""
         if not nodes:
             return
 
-        embedding_results = self._get_node_embedding_results(nodes)
+        embedding_results = self._get_node_embedding_results(nodes, show_progress)
         new_ids = self._vector_store.add(embedding_results)
 
         if not self._vector_store.stores_text or self._store_nodes_override:
@@ -207,10 +219,16 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Build index from nodes."""
         index_struct = self.index_struct_cls()
         if self._use_async:
-            tasks = [self._async_add_nodes_to_index(index_struct, nodes)]
+            tasks = [
+                self._async_add_nodes_to_index(
+                    index_struct, nodes, show_progress=self._show_progress
+                )
+            ]
             run_async_tasks(tasks)
         else:
-            self._add_nodes_to_index(index_struct, nodes)
+            self._add_nodes_to_index(
+                index_struct, nodes, show_progress=self._show_progress
+            )
         return index_struct
 
     def build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
