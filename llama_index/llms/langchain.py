@@ -21,6 +21,8 @@ from llama_index.llms.langchain_utils import (
 
 
 class LangChainLLM(LLM):
+    """Adapter for a LangChain LLM."""
+
     def __init__(self, llm: BaseLanguageModel) -> None:
         self._llm = llm
 

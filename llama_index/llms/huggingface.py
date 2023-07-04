@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceLLM(CustomLLM):
+    """HuggingFace LLM."""
+
     def __init__(
         self,
         max_input_size: int = 4096,
@@ -93,21 +95,13 @@ class HuggingFaceLLM(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        """Get LLM metadata."""
+        """LLM metadata."""
         return LLMMetadata(
             context_window=self._max_input_size, num_output=self._max_new_tokens
         )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        """Predict the answer to a query.
-
-        Args:
-            prompt (Prompt): Prompt to use for prediction.
-
-        Returns:
-            Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
-
-        """
+        """Completion endpoint."""
 
         full_prompt = self._query_wrapper_prompt.format(query_str=prompt)
         if self._system_prompt:
@@ -134,18 +128,7 @@ class HuggingFaceLLM(CustomLLM):
         return CompletionResponse(text=completion, raw=tokens)
 
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        """Stream the answer to a query.
-
-        NOTE: this is a beta feature. Will try to build or use
-        better abstractions about response handling.
-
-        Args:
-            prompt (Prompt): Prompt to use for prediction.
-
-        Returns:
-            str: The predicted answer.
-
-        """
+        """Streaming completion endpoint."""
         from transformers import TextIteratorStreamer
 
         full_prompt = self._query_wrapper_prompt.format(query_str=prompt)

@@ -53,7 +53,7 @@ class CompactAndRefine(Refine):
     def _make_compact_text_chunks(
         self, query_str: str, text_chunks: Sequence[str]
     ) -> List[str]:
-        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         refine_template = self._refine_template.partial_format(query_str=query_str)
 
         max_prompt = get_biggest_prompt([text_qa_template, refine_template])
