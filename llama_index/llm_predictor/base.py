@@ -6,11 +6,17 @@ from typing import Any, Optional, Protocol, runtime_checkable
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llm_predictor.utils import stream_completion_response_to_tokens
+from llama_index.llm_predictor.utils import (
+    astream_chat_response_to_tokens,
+    astream_completion_response_to_tokens,
+    stream_chat_response_to_tokens,
+    stream_completion_response_to_tokens,
+)
 from llama_index.llms.base import LLM, LLMMetadata
+from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import Prompt
-from llama_index.types import TokenGen
+from llama_index.types import TokenAsyncGen, TokenGen
 from llama_index.utils import count_tokens
 
 logger = logging.getLogger(__name__)
@@ -40,7 +46,7 @@ class BaseLLMPredictor(Protocol):
         """Async predict the answer to a query."""
 
     @abstractmethod
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
         """Async predict the answer to a query."""
 
 
@@ -106,8 +112,16 @@ class LLMPredictor(BaseLLMPredictor):
         """Predict."""
         event_id = self._log_start(prompt, prompt_args)
 
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-        output = self._llm.complete(formatted_prompt).text
+        if self._llm.metadata.is_chat_model:
+            messages = prompt.format_messages(llm=self._llm, **prompt_args)
+            chat_response = self._llm.chat(messages=messages)
+            output = chat_response.message.content or ""
+            # NOTE: this is an approximation, only for token counting
+            formatted_prompt = messages_to_prompt(messages)
+        else:
+            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+            response = self._llm.complete(formatted_prompt)
+            output = response.text
 
         logger.debug(output)
         self._log_end(event_id, output, formatted_prompt)
@@ -116,25 +130,44 @@ class LLMPredictor(BaseLLMPredictor):
 
     def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
         """Stream."""
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-        stream_response = self._llm.stream_complete(formatted_prompt)
-        stream_tokens = stream_completion_response_to_tokens(stream_response)
+        if self._llm.metadata.is_chat_model:
+            messages = prompt.format_messages(llm=self._llm, **prompt_args)
+            chat_response = self._llm.stream_chat(messages=messages)
+            stream_tokens = stream_chat_response_to_tokens(chat_response)
+        else:
+            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+            stream_response = self._llm.stream_complete(formatted_prompt)
+            stream_tokens = stream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Async predict."""
         event_id = self._log_start(prompt, prompt_args)
 
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-        output = (await self._llm.acomplete(formatted_prompt)).text
+        if self._llm.metadata.is_chat_model:
+            messages = prompt.format_messages(llm=self._llm, **prompt_args)
+            chat_response = await self._llm.achat(messages=messages)
+            output = chat_response.message.content or ""
+            # NOTE: this is an approximation, only for token counting
+            formatted_prompt = messages_to_prompt(messages)
+        else:
+            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+            response = await self._llm.acomplete(formatted_prompt)
+            output = response.text
+
         logger.debug(output)
 
         self._log_end(event_id, output, formatted_prompt)
         return output
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
         """Async stream."""
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-        stream_response = await self._llm.astream_complete(formatted_prompt)
-        stream_tokens = stream_completion_response_to_tokens(stream_response)
+        if self._llm.metadata.is_chat_model:
+            messages = prompt.format_messages(llm=self._llm, **prompt_args)
+            chat_response = await self._llm.astream_chat(messages=messages)
+            stream_tokens = await astream_chat_response_to_tokens(chat_response)
+        else:
+            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+            stream_response = await self._llm.astream_complete(formatted_prompt)
+            stream_tokens = await astream_completion_response_to_tokens(stream_response)
         return stream_tokens

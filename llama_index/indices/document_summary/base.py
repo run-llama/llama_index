@@ -14,10 +14,9 @@ from llama_index.utils import get_tqdm_iterable
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import Response
+from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import (
     BaseNode,
     NodeWithScore,
@@ -61,15 +60,14 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexDocumentSummary] = None,
         service_context: Optional[ServiceContext] = None,
-        response_synthesizer: Optional[ResponseSynthesizer] = None,
+        response_synthesizer: Optional[BaseSynthesizer] = None,
         summary_query: str = DEFAULT_SUMMARY_QUERY,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._response_synthesizer = (
-            response_synthesizer
-            or ResponseSynthesizer.from_args(service_context=service_context)
+        self._response_synthesizer = response_synthesizer or get_response_synthesizer(
+            service_context=service_context,
         )
         self._summary_query = summary_query or "summarize:"
         super().__init__(
@@ -145,7 +143,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             nodes_with_scores = [NodeWithScore(node=n) for n in nodes]
             # get the summary for each doc_id
             summary_response = self._response_synthesizer.synthesize(
-                query_bundle=QueryBundle(self._summary_query),
+                query=self._summary_query,
                 nodes=nodes_with_scores,
             )
             summary_response = cast(Response, summary_response)

@@ -4,8 +4,8 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
 
 
@@ -31,7 +31,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         query_engine (BaseQueryEngine): A BaseQueryEngine object.
         query_transform (StepDecomposeQueryTransform): A StepDecomposeQueryTransform
             object.
-        response_synthesizer (Optional[ResponseSynthesizer]): A ResponseSynthesizer
+        response_synthesizer (Optional[BaseSynthesizer]): A BaseSynthesizer
             object.
         num_steps (Optional[int]): Number of steps to run the multi-step query.
         early_stopping (bool): Whether to stop early if the stop function returns True.
@@ -45,7 +45,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         self,
         query_engine: BaseQueryEngine,
         query_transform: StepDecomposeQueryTransform,
-        response_synthesizer: Optional[ResponseSynthesizer] = None,
+        response_synthesizer: Optional[BaseSynthesizer] = None,
         num_steps: Optional[int] = 3,
         early_stopping: bool = True,
         index_summary: str = "None",
@@ -53,11 +53,8 @@ class MultiStepQueryEngine(BaseQueryEngine):
     ) -> None:
         self._query_engine = query_engine
         self._query_transform = query_transform
-        self._response_synthesizer = (
-            response_synthesizer
-            or ResponseSynthesizer.from_args(
-                callback_manager=self._query_engine.callback_manager
-            )
+        self._response_synthesizer = response_synthesizer or get_response_synthesizer(
+            callback_manager=self._query_engine.callback_manager
         )
 
         self._index_summary = index_summary
@@ -79,7 +76,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         nodes, source_nodes, metadata = self._query_multistep(query_bundle)
 
         final_response = self._response_synthesizer.synthesize(
-            query_bundle=query_bundle,
+            query=query_bundle,
             nodes=nodes,
             additional_source_nodes=source_nodes,
         )
@@ -99,7 +96,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         nodes, source_nodes, metadata = self._query_multistep(query_bundle)
 
         final_response = await self._response_synthesizer.asynthesize(
-            query_bundle=query_bundle,
+            query=query_bundle,
             nodes=nodes,
             additional_source_nodes=source_nodes,
         )

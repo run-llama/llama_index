@@ -1,20 +1,23 @@
-from typing import Any, Generator, Sequence, cast
+from typing import Any, Generator, Optional, Sequence, cast
 
-from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.default_prompts import (
+    DEFAULT_TEXT_QA_PROMPT,
+)
 from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
-class SimpleSummarize(BaseResponseBuilder):
+class SimpleSummarize(BaseSynthesizer):
     def __init__(
         self,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
     ) -> None:
-        super().__init__(service_context, streaming)
-        self._text_qa_template = text_qa_template
+        super().__init__(service_context=service_context, streaming=streaming)
+        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
 
     async def aget_response(
         self,

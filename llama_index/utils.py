@@ -218,3 +218,24 @@ def get_tqdm_iterable(items: Iterable, show_progress: bool, desc: str) -> Iterab
 def count_tokens(text: str) -> int:
     tokens = globals_helper.tokenizer(text)
     return len(tokens)
+
+
+def get_transformer_tokenizer_fin(model_name: str) -> Callable[[str], List[str]]:
+    """
+    Args:
+        model_name(str): the model name of the tokenizer.
+                        For instance, fxmarty/tiny-llama-fast-tokenizer
+    """
+    try:
+        from transformers import AutoTokenizer
+    except ImportError:
+        raise ValueError(
+            "`transformers` package not found, please run `pip install transformers`"
+        )
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    return tokenizer.tokenize
+
+
+def get_large_chinese_tokenizer_fn() -> Callable[[str], List[str]]:
+    # Here gives an example of large-chinese-tokenizer
+    return get_transformer_tokenizer_fin("GanymedeNil/text2vec-large-chinese")

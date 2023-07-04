@@ -8,8 +8,10 @@ from llama_index.llms.base import (
     LLM,
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
 )
@@ -21,6 +23,8 @@ from llama_index.llms.langchain_utils import (
 
 
 class LangChainLLM(LLM):
+    """Adapter for a LangChain LLM."""
+
     def __init__(self, llm: BaseLanguageModel) -> None:
         self._llm = llm
 
@@ -107,12 +111,22 @@ class LangChainLLM(LLM):
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    ) -> ChatResponseAsyncGen:
         # TODO: Implement async stream_chat
-        return self.stream_chat(messages, **kwargs)
+
+        async def gen() -> ChatResponseAsyncGen:
+            for message in self.stream_chat(messages, **kwargs):
+                yield message
+
+        return gen()
 
     async def astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> CompletionResponseGen:
+    ) -> CompletionResponseAsyncGen:
         # TODO: Implement async stream_complete
-        return self.stream_complete(prompt, **kwargs)
+
+        async def gen() -> CompletionResponseAsyncGen:
+            for response in self.stream_complete(prompt, **kwargs):
+                yield response
+
+        return gen()
