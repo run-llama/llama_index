@@ -6,6 +6,7 @@ from llama_index.bridge.langchain import get_color_mapping, print_text
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -156,8 +157,15 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
 
+            event_start_payload = {EventPayload.QUERY_STR: question}
+            event_id = self.callback_manager.on_event_start(CBEventType.SUB_QUESTION, payload=event_start_payload)
+
             response = await query_engine.aquery(question)
             response_text = str(response)
+
+            event_end_payload = {EventPayload.QUERY_STR: question, EventPayload.RESPONSE: response_text}
+            self.callback_manager.on_event_end(CBEventType.SUB_QUESTION, payload=event_end_payload, event_id=event_id)
+
             node_text = f"Sub question: {question}\nResponse: {response_text}"
 
             if self._verbose:
@@ -178,8 +186,15 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
 
+            event_start_payload = {EventPayload.QUERY_STR: question}
+            event_id = self.callback_manager.on_event_start(CBEventType.SUB_QUESTION, payload=event_start_payload)
+
             response = query_engine.query(question)
             response_text = str(response)
+
+            event_end_payload = {EventPayload.QUERY_STR: question, EventPayload.RESPONSE: response_text}
+            self.callback_manager.on_event_end(CBEventType.SUB_QUESTION, payload=event_end_payload, event_id=event_id)
+
             node_text = f"Sub question: {question}\nResponse: {response_text}"
 
             if self._verbose:

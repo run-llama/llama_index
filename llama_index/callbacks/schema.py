@@ -24,6 +24,7 @@ class CBEventType(str, Enum):
         RETRIEVE: Logs for the nodes retrieved for a query.
         SYNTHESIZE: Logs for the result for synthesize calls.
         TREE: Logs for the summary and level of summaries generated.
+        SUB_QUESTION: Logs for the sub question and answer generated.
     """
 
     CHUNKING = "chunking"
@@ -34,6 +35,7 @@ class CBEventType(str, Enum):
     RETRIEVE = "retrieve"
     SYNTHESIZE = "synthesize"
     TREE = "tree"
+    SUB_QUESTION = "sub_question"
 
 
 class EventPayload(str, Enum):
