@@ -75,7 +75,7 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
     prompt_helper = PromptHelper(
         context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -120,7 +120,7 @@ def test_accumulate_response(
     prompt_helper = PromptHelper(
         context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -177,7 +177,7 @@ def test_accumulate_response_async(
     prompt_helper = PromptHelper(
         context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -235,7 +235,7 @@ def test_accumulate_response_aget(
     prompt_helper = PromptHelper(
         context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -295,7 +295,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     prompt_helper = PromptHelper(
         context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
