@@ -30,5 +30,6 @@ maxdepth: 1
 ---
 maxdepth: 1
 ---
-/examples/output_parsing/df_output_parser.ipynb
+/examples/output_parsing/df_program.ipynb
+/examples/output_parsing/evaporate_program.ipynb
 ```

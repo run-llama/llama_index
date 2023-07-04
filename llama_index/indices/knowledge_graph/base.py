@@ -10,6 +10,7 @@ existing keywords in the table.
 
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from llama_index.utils import get_tqdm_iterable
 
 from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.data_structs.data_structs import KG
@@ -45,6 +46,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             extracting triplets.
         max_triplets_per_chunk (int): The maximum number of triplets to extract.
         graph_store (Optional[GraphStore]): The graph store to use.
+        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
 
     """
 
@@ -59,6 +61,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
         include_embeddings: bool = False,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -80,6 +83,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             index_struct=index_struct,
             service_context=service_context,
             storage_context=storage_context,
+            show_progress=show_progress,
             **kwargs,
         )
 
@@ -109,7 +113,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
-        response, _ = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm_predictor.predict(
             self.kg_triple_extract_template,
             text=text,
         )
@@ -134,7 +138,10 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = self.index_struct_cls()
-        for n in nodes:
+        nodes_with_progress = get_tqdm_iterable(
+            nodes, self._show_progress, "Processing nodes"
+        )
+        for n in nodes_with_progress:
             triplets = self._extract_triplets(
                 n.get_content(metadata_mode=MetadataMode.LLM)
             )
@@ -151,7 +158,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                     )
 
                 embed_outputs = (
-                    self._service_context.embed_model.get_queued_text_embeddings()
+                    self._service_context.embed_model.get_queued_text_embeddings(
+                        self._show_progress
+                    )
                 )
                 for rel_text, rel_embed in zip(*embed_outputs):
                     index_struct.add_to_embedding_dict(rel_text, rel_embed)

@@ -41,7 +41,7 @@ The full API reference can be found [here](/reference/node_postprocessor.rst).
 
 ## Example Usage
 
-The postprocessor can be used as part of a `ResponseSynthesizer` in a `QueryEngine`, or on its own.
+The postprocessor can be used as part of a `QueryEngine`, or on its own.
 
 #### Index querying
 
@@ -152,6 +152,55 @@ are outdated and overlap with more recent context.
 The recency score is added to any score that the node already contains.
 
 
+# Token Optimizer PostProcessor
+
+Our **`SentenceEmbeddingOptimizer`** is a postprocessor that will optimize for token usage. It does this by removing words and sentences that are not relevant to the query.
+
+Here is a sample code snippet on comparing the outputs without optimization and with.
+
+```python
+from llama_index import VectorStoreIndex
+from llama_index.indices.postprocessor import SentenceEmbeddingOptimizer
+print("Without optimization")
+start_time = time.time()
+query_engine = index.as_query_engine()
+res = query_engine.query("What is the population of Berlin?")
+end_time = time.time()
+print("Total time elapsed: {}".format(end_time - start_time))
+print("Answer: {}".format(res))
+
+print("With optimization")
+start_time = time.time()
+query_engine = index.as_query_engine(
+    node_postprocessors=[SentenceEmbeddingOptimizer(percentile_cutoff=0.5)]
+)
+res = query_engine.query("What is the population of Berlin?")
+end_time = time.time()
+print("Total time elapsed: {}".format(end_time - start_time))
+print("Answer: {}".format(res))
+
+```
+
+Output:
+```text
+Without optimization
+INFO:root:> [query] Total LLM token usage: 3545 tokens
+INFO:root:> [query] Total embedding token usage: 7 tokens
+Total time elapsed: 2.8928110599517822
+Answer: 
+The population of Berlin in 1949 was approximately 2.2 million inhabitants. After the fall of the Berlin Wall in 1989, the population of Berlin increased to approximately 3.7 million inhabitants.
+
+With optimization
+INFO:root:> [optimize] Total embedding token usage: 7 tokens
+INFO:root:> [query] Total LLM token usage: 1779 tokens
+INFO:root:> [query] Total embedding token usage: 7 tokens
+Total time elapsed: 2.346346139907837
+Answer: 
+The population of Berlin is around 4.5 million.
+```
+
+Full [example notebook here](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/node_postprocessor/OptimizerDemo.ipynb).
+
 ```{toctree}
 ---
 caption: Examples
@@ -163,4 +212,5 @@ maxdepth: 1
 /examples/node_postprocessor/PII.ipynb
 /examples/node_postprocessor/CohereRerank.ipynb
 /examples/node_postprocessor/LLMReranker-Gatsby.ipynb
+/examples/node_postprocessor/OptimizerDemo.ipynb
 ```

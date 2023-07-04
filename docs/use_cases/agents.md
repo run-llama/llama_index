@@ -92,4 +92,5 @@ maxdepth: 1
 /examples/agent/openai_agent_retrieval.ipynb
 /examples/agent/openai_agent_query_cookbook.ipynb
 /examples/agent/openai_agent_query_plan.ipynb
+/examples/agent/openai_agent_context_retrieval.ipynb
 ```

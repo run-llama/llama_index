@@ -7,6 +7,7 @@ in sequence in order to answer a given query.
 
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union
+from llama_index.utils import get_tqdm_iterable
 
 from llama_index.data_structs.data_structs import IndexList
 from llama_index.indices.base import BaseIndex
@@ -37,6 +38,7 @@ class ListIndex(BaseIndex[IndexList]):
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
             NOTE: this is a deprecated field.
+        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
 
     """
 
@@ -47,6 +49,7 @@ class ListIndex(BaseIndex[IndexList]):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexList] = None,
         service_context: Optional[ServiceContext] = None,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -54,6 +57,7 @@ class ListIndex(BaseIndex[IndexList]):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
+            show_progress=show_progress,
             **kwargs,
         )
 
@@ -77,7 +81,9 @@ class ListIndex(BaseIndex[IndexList]):
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexList:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], show_progress: bool = False
+    ) -> IndexList:
         """Build the index from documents.
 
         Args:
@@ -87,7 +93,10 @@ class ListIndex(BaseIndex[IndexList]):
             IndexList: The created list index.
         """
         index_struct = IndexList()
-        for n in nodes:
+        nodes_with_progress = get_tqdm_iterable(
+            nodes, show_progress, "Processing nodes"
+        )
+        for n in nodes_with_progress:
             index_struct.add_node(n)
         return index_struct
 
