@@ -55,8 +55,8 @@ class DeepLakeVectorStore(VectorStoreBase):
             stored. Defaults to "llama_index".
             overwrite (bool, optional): Whether to overwrite existing dataset with same
                 name. Defaults to False.
-            token (str, optional): the deeplake token that allows you to access the dataset
-                with proper access. Defaults to None.
+            token (str, optional): the deeplake token that allows you to access the
+                dataset with proper access. Defaults to None.
             read_only (bool, optional): Whether to open the dataset with read only mode.
             ingestion_batch_size (int): used for controlling batched data
                 injestion to deeplake dataset. Defaults to 1024.
@@ -64,21 +64,22 @@ class DeepLakeVectorStore(VectorStoreBase):
                 Defaults to 4.
             overwrite (bool): Whether to overwrite existing dataset with the
                 new dataset with the same name.
-            exec_option (str): Default method for search execution. It could be either It
-                could be either ``"python"``, ``"compute_engine"`` or ``"tensor_db"``.
-                Defaults to ``"python"``.
-                - ``python`` - Pure-python implementation that runs on the client and can
-                    be used for data stored anywhere. WARNING: using this option with big
-                    datasets is discouraged because it can lead to memory issues.
+            exec_option (str): Default method for search execution. It could be either
+                It could be either ``"python"``, ``"compute_engine"`` or
+                ``"tensor_db"``. Defaults to ``"python"``.
+                - ``python`` - Pure-python implementation that runs on the client and
+                    can be used for data stored anywhere. WARNING: using this option
+                    with big datasets is discouraged because it can lead to memory
+                    issues.
                 - ``compute_engine`` - Performant C++ implementation of the Deep Lake
                     Compute Engine that runs on the client and can be used for any data
-                    stored in or connected to Deep Lake. It cannot be used with in-memory
-                    or local datasets.
-                - ``tensor_db`` - Performant and fully-hosted Managed Tensor Database that
-                    is responsible for storage and query execution. Only available for data
-                    stored in the Deep Lake Managed Database. Store datasets in this
-                    database by specifying runtime = {"tensor_db": True} during dataset
-                    creation.
+                    stored in or connected to Deep Lake. It cannot be used with
+                    in-memory or local datasets.
+                - ``tensor_db`` - Performant and fully-hosted Managed Tensor Database
+                    that is responsible for storage and query execution. Only available
+                    for data stored in the Deep Lake Managed Database. Store datasets in
+                    this database by specifying runtime = {"tensor_db": True} during
+                    dataset creation.
             verbose (bool): Specify if verbose output is enabled. Default is True.
             **kwargs (Any): Additional keyword arguments.
 
@@ -162,7 +163,8 @@ class DeepLakeVectorStore(VectorStoreBase):
         """Query index for top k most similar nodes.
 
         Args:
-            query (VectorStoreQuery): VectorStoreQuery class input, it has the following attributes:
+            query (VectorStoreQuery): VectorStoreQuery class input, it has
+                the following attributes:
                 1. query_embedding (List[float]): query embedding
                 2. similarity_top_k (int): top k most similar nodes
 
