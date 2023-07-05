@@ -64,7 +64,7 @@ class SQLDocumentContextBuilder:
             raise ValueError("sql_database must be provided.")
         self._sql_database = sql_database
         self._text_splitter = text_splitter
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
         self._table_context_prompt = (
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )

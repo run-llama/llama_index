@@ -55,7 +55,7 @@ class ComposableGraph:
         **kwargs: Any,
     ) -> "ComposableGraph":  # type: ignore
         """Create composable graph using this index class as the root."""
-        service_context = service_context or ServiceContext.from_defaults()
+        service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
         with service_context.callback_manager.as_trace("graph_construction"):
             if index_summaries is None:
                 for index in children_indices:

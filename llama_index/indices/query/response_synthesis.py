@@ -94,7 +94,7 @@ class ResponseSynthesizer:
             verbose (bool): Whether to print debug statements.
 
         """
-        service_context = service_context or ServiceContext.from_defaults(
+        service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults(
             callback_manager=callback_manager
         )
 

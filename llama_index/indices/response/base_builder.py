@@ -26,7 +26,7 @@ class BaseResponseBuilder(ABC):
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
         self._streaming = streaming
 
     @property

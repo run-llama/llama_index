@@ -63,7 +63,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """Initialize a CondenseQuestionChatEngine from default parameters."""
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
         chat_history = chat_history or []
-        service_context = service_context or ServiceContext.from_defaults()
+        service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
 
         return cls(
             query_engine,

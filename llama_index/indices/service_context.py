@@ -45,7 +45,6 @@ def _get_default_prompt_helper(
         llm_metadata = dataclasses.replace(llm_metadata, num_output=num_output)
     return PromptHelper.from_llm_metadata(llm_metadata=llm_metadata)
 
-
 @dataclass
 class ServiceContext:
     """Service Context container.
@@ -86,6 +85,7 @@ class ServiceContext:
         num_output: Optional[int] = None,
         # deprecated kwargs
         chunk_size_limit: Optional[int] = None,
+        local  = False,
     ) -> "ServiceContext":
         """Create a ServiceContext from defaults.
         If an argument is specified, then use the argument value provided for that
@@ -227,7 +227,22 @@ class ServiceContext:
             callback_manager=callback_manager,
         )
 
+    def set_global(self) -> "ServiceContext":
+        """Sets this context as the default service context for all downstream services except 
+        when explicitly passed a service context.
+        Changes made to this service context will affect all downstream services that depend upon it."""
+        llama_index.global_service_context = self
+        return self
 
-def set_global_service_context(service_context: Optional[ServiceContext]) -> None:
-    """Helper function to set the global service context."""
-    llama_index.global_service_context = service_context
+    @classmethod
+    def get_global() -> Optional["ServiceContext"]:
+        """Get the global service context. Changes made to the global service context that is
+         returned will affect all downstream services  that depend upon it. 
+         The global service context is by default initialized to `ServiceContext.from_defaults()`."""
+        return llama_index.global_service_context
+
+    @classmethod
+    def set_global_to_none():
+        """Set the global service context. Newly created services (which are not passed an explicit context)
+        will not utilize the global context, but instead instantiate a local service context via `from_defaults`."""
+        llama_index.global_service_context = None

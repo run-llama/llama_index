@@ -80,7 +80,7 @@ class RouterQueryEngine(BaseQueryEngine):
         service_context: Optional[ServiceContext] = None,
         summarizer: Optional[TreeSummarize] = None,
     ) -> None:
-        self.service_context = service_context or ServiceContext.from_defaults()
+        self.service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
         self._selector = selector
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
@@ -270,7 +270,7 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         service_context: Optional[ServiceContext] = None,
         summarizer: Optional[TreeSummarize] = None,
     ) -> None:
-        self.service_context = service_context or ServiceContext.from_defaults()
+        self.service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
         self._summarizer = summarizer or TreeSummarize(
             service_context=self.service_context,
             text_qa_template=DEFAULT_TEXT_QA_PROMPT,

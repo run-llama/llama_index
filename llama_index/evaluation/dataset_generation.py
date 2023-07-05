@@ -29,7 +29,7 @@ def _get_default_service_context() -> ServiceContext:
     llm_predictor = LLMPredictor(
         llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
     )
-    service_context = ServiceContext.from_defaults(
+    service_context = ServiceContext.get_global() or ServiceContext.from_defaults(
         llm_predictor=llm_predictor, chunk_size_limit=3000
     )
     return service_context

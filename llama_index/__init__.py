@@ -67,7 +67,6 @@ from llama_index.indices.query.schema import QueryBundle
 
 from llama_index.indices.service_context import (
     ServiceContext,
-    set_global_service_context,
 )
 
 # langchain helper
@@ -220,11 +219,17 @@ __all__ = [
     "load_indices_from_storage",
     "QueryBundle",
     "ResponseSynthesizer",
-    "set_global_service_context",
 ]
 
 # NOTE: keep for backwards compatibility
 SQLContextBuilder = SQLDocumentContextBuilder
 
-# global service context for ServiceContext.from_defaults()
-global_service_context: Optional[ServiceContext] = None
+# global service/storage context. all downstream services without explicitly
+# passed service context will use this one. Overrides any default service context
+# Changes made to this context will directly affect downstream services
+global_service_context: Optional[ServiceContext] = ServiceContext.from_default()
+global_storage_context: Optional[StorageContext] = StorageContext.from_default()
+
+# default service/storage context. to inherit from when calling `from_defaults` 
+default_service_context: Optional[ServiceContext] = None 
+default_storage_context: Optional[StorageContext] = None
