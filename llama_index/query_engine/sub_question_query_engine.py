@@ -135,7 +135,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             ]
 
         # filter out sub questions that failed
-        qa_pairs: List[SubQuestionAnswerPair]  = list(filter(None, qa_pairs_all))
+        qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
 
         end_event_payload = {EventPayload.SUB_QUESTIONS.value: qa_pairs}
         self.callback_manager.on_event_end(
