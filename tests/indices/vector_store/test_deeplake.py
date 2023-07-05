@@ -1,7 +1,6 @@
 """Test deeplake indexes."""
 
 import os
-import shutil
 from typing import List
 
 import pytest
@@ -12,7 +11,6 @@ from llama_index.vector_stores import DeepLakeVectorStore
 from llama_index.schema import Document
 from llama_index.schema import TextNode
 from llama_index.storage.storage_context import StorageContext
-from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 @pytest.fixture
