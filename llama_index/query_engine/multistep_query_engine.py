@@ -53,9 +53,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
     ) -> None:
         self._query_engine = query_engine
         self._query_transform = query_transform
-        self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            callback_manager=self._query_engine.callback_manager
-        )
+        self._response_synthesizer = response_synthesizer or get_response_synthesizer()
 
         self._index_summary = index_summary
         self._num_steps = num_steps

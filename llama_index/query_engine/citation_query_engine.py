@@ -109,9 +109,7 @@ class CitationQueryEngine(BaseQueryEngine):
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
         )
         self._retriever = retriever
-        self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            callback_manager=callback_manager
-        )
+        self._response_synthesizer = response_synthesizer or get_response_synthesizer()
         self._node_postprocessors = node_postprocessors or []
 
         super().__init__(callback_manager)

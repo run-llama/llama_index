@@ -23,7 +23,6 @@ def test_build_index(
     response_synthesizer = get_response_synthesizer(
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,
-        callback_manager=mock_service_context.callback_manager,
     )
     index = DocumentSummaryIndex.from_documents(
         docs,

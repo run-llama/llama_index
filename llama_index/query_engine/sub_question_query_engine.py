@@ -77,7 +77,6 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             service_context=service_context
         )
         synth = response_synthesizer or get_response_synthesizer(
-            callback_manager=callback_manager,
             service_context=service_context,
             use_async=use_async,
         )
