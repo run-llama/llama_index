@@ -127,8 +127,8 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 def test_optimizer_chinese(_mock_embeds: Any, _mock_embed: Any) -> None:
     """Test optimizer."""
     optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=get_transformer_tokenizer_fn("GanymedeNil/text2vec-large-chinese"), 
-        percentile_cutoff=0.5
+        tokenizer_fn=get_transformer_tokenizer_fn("GanymedeNil/text2vec-large-chinese"),
+        percentile_cutoff=0.5,
     )
     query = QueryBundle(query_str="你好 世界", embedding=[1, 0, 0, 0, 0])
     orig_node = TextNode(text="你好 世界")
