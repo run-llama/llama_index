@@ -240,6 +240,7 @@ def get_large_chinese_tokenizer_fn() -> Callable[[str], List[str]]:
     # Here gives an example of large-chinese-tokenizer
     return get_transformer_tokenizer_fn("GanymedeNil/text2vec-large-chinese")
 
+
 # Sample text from llama_index's readme
 SAMPLE_TEXT = """
 Context
