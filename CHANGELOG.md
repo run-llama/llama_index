@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+- Agents now keep track of function outputs in `response.metadata['sources']` (#6745)
+- Sub question query engine returns source nodes of sub questions in `response.metadata['sources']` (#6745)
+
 ### Bug Fixes / Nits
 - Fix HF LLM output error (#6737)
 - Add system message support for langchain message templates (#6743)
