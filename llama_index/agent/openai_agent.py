@@ -199,9 +199,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
             # send function call & output back to get another response
             all_messages = self._prefix_messages + chat_history
-            chat_response = self._llm.chat(
-                all_messages, functions=functions
-            )
+            chat_response = self._llm.chat(all_messages, functions=functions)
             ai_message = chat_response.message
             chat_history.append(ai_message)
             function_call = self._get_latest_function_call(chat_history)
@@ -285,9 +283,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
         # TODO: Support forced function call
         all_messages = self._prefix_messages + chat_history
-        chat_response = await self._llm.achat(
-            all_messages, functions=functions
-        )
+        chat_response = await self._llm.achat(all_messages, functions=functions)
         ai_message = chat_response.message
         chat_history.append(ai_message)
 
