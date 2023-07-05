@@ -8,12 +8,15 @@ def test_global_service_context() -> None:
 
     # Test setting
     global_ctx = ServiceContext.from_defaults().set_global()
-    assert ServiceContext.get_global() is not None
-    assert ServiceContext.get_global().llm_predictor is not None
+    get_global = ServiceContext.get_global()
+    assert get_global is not None
+    assert get_global.llm_predictor is not None
 
     # Test mutation
-    global_ctx.llm_predictor = None
-    assert ServiceContext.get_global().llm_predictor is None
+    global_ctx.llm_predictor = None # type: ignore
+    get_global = ServiceContext.get_global()
+    assert get_global is not None
+    assert get_global.llm_predictor is None
 
     # Test setting to none
     ServiceContext.set_global_to_none()

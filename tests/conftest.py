@@ -30,7 +30,7 @@ from tests.mock_utils.mock_text_splitter import (
 
 
 @pytest.fixture(scope="session", autouse=True)
-def disable_global_storage_ctx(request: Any):
+def disable_global_storage_ctx(request: Any) -> None:
     # do not share storage context between tests
     StorageContext.set_global_to_none()
 

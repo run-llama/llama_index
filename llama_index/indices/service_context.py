@@ -255,7 +255,7 @@ class ServiceContext:
         return global_service_context
 
     @classmethod
-    def set_global_to_none(cls):
+    def set_global_to_none(cls) -> None:
         """Set the global service context. When new services are created without an explicit context, it will not
         will not utilize a global context, but instead instantiate a local service context via `from_defaults`."""
         global global_service_context
