@@ -5,6 +5,7 @@
 ### Bug Fixes / Nits
 - Fix HF LLM output error (#6737)
 - Only consider metadata intended for LLM when splitting text (#6744)
+- Add system message support for langchain message templates (#6743)
 
 ## [v0.7.1] - 2023-07-05
 
