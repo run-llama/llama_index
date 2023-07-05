@@ -13,6 +13,11 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.types import VectorStore as VectorStoreBase
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 try:
     from deeplake.core.vectorstore import VectorStore
@@ -34,8 +39,8 @@ class DeepLakeVectorStore(VectorStoreBase):
     exist or if `overwrite` is set to True.
     """
 
-    stores_text: bool = False
-    flat_metadata: bool = False
+    stores_text: bool = True
+    flat_metadata: bool = True
 
     def __init__(
         self,
@@ -136,8 +141,11 @@ class DeepLakeVectorStore(VectorStoreBase):
 
         for result in embedding_results:
             embedding.append(result.embedding)
-            _metadata = result.node.metadata or {}
-            metadata.append({**_metadata, **{"document_id": result.ref_doc_id}})
+            metadata.append(
+                node_to_metadata_dict(
+                    result.node, remove_text=False, flat_metadata=self.flat_metadata
+                )
+            )
             id_.append(result.id)
             text.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
 
@@ -182,4 +190,9 @@ class DeepLakeVectorStore(VectorStoreBase):
 
         similarities = data["score"]
         ids = data["id"]
-        return VectorStoreQueryResult(similarities=similarities, ids=ids)
+        metadatas = data["metadata"]
+        nodes = []
+        for metadata in metadatas:
+            nodes.append(metadata_dict_to_node(metadata))
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
