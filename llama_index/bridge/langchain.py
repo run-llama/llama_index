@@ -39,7 +39,13 @@ from langchain.input import print_text, get_color_mapping
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 
 # schema
-from langchain.schema import AIMessage, FunctionMessage, BaseMessage, HumanMessage
+from langchain.schema import (
+    AIMessage,
+    FunctionMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain.schema import BaseMemory
 from langchain.schema import BaseOutputParser, LLMResult
 from langchain.schema import ChatGeneration
@@ -89,6 +95,7 @@ __all__ = [
     "FunctionMessage",
     "BaseMessage",
     "HumanMessage",
+    "SystemMessage",
     "BaseMemory",
     "BaseOutputParser",
     "HumanMessage",
