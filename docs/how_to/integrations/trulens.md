@@ -11,10 +11,10 @@ As you iterate new versions of your LLM application, you can compare their perfo
 
 ## Try it out!
 
-[llama_index_quickstart.ipynb](https://github.com/truera/trulens/blob/releases/rc-trulens-eval-0.4.0/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb).
+[llama_index_quickstart.ipynb](https://github.com/truera/trulens/blob/releases/rc-trulens-eval-0.4.0/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/truera/trulens/blob/google-colab/trulens_eval/examples/colab/quickstarts/llama_index_quickstart_colab.ipynb)
 
-### Read more
+## Read more
 
 * [Build and Evaluate LLM Apps with LlamaIndex and TruLens](https://medium.com/llamaindex-blog/build-and-evaluate-llm-apps-with-llamaindex-and-trulens-6749e030d83c)
 
