@@ -380,6 +380,17 @@ class Document(TextNode):
     def from_langchain_format(cls, doc: LCDocument) -> "Document":
         """Convert struct from LangChain document format."""
         return cls(text=doc.page_content, metadata=doc.metadata)
+    
+    @classmethod
+    def for_test() -> "Document":
+        document = Document(
+            text='example text', 
+            metadata={
+                'filename': 'example.pdf', 
+                'category': 'example'
+            }
+        )
+        return document
 
 
 class ImageDocument(Document):
