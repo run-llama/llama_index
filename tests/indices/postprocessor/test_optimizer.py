@@ -9,8 +9,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.postprocessor.optimizer import SentenceEmbeddingOptimizer
 from llama_index.schema import TextNode, NodeWithScore
 from llama_index.utils import (
-    get_large_chinese_tokenizer_fn,
-    get_transformer_tokenizer_fin,
+    get_transformer_tokenizer_fn,
 )
 
 try:
@@ -128,7 +127,8 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 def test_optimizer_chinese(_mock_embeds: Any, _mock_embed: Any) -> None:
     """Test optimizer."""
     optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=get_large_chinese_tokenizer_fn(), percentile_cutoff=0.5
+        tokenizer_fn=get_transformer_tokenizer_fn("GanymedeNil/text2vec-large-chinese"), 
+        percentile_cutoff=0.5
     )
     query = QueryBundle(query_str="你好 世界", embedding=[1, 0, 0, 0, 0])
     orig_node = TextNode(text="你好 世界")
