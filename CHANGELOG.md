@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added streaming support to simple and condense chat engines (#6717)
+
 ### Bug Fixes / Nits
 - Fix HF LLM output error (#6737)
 
