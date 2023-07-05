@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added `CBEventType.SUB_QUESTIONS` event type for tracking sub question queries/responses (#6716)
+
 ### Bug Fixes / Nits
 - Fix HF LLM output error (#6737)
 - Add system message support for langchain message templates (#6743)
