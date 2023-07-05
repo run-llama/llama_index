@@ -179,9 +179,8 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
-        chat_response = self._llm.chat(
-            self._prefix_messages + chat_history, functions=functions
-        )
+        all_messages = self._prefix_messages + chat_history
+        chat_response = self._llm.chat(all_messages, functions=functions)
         ai_message = chat_response.message
         chat_history.append(ai_message)
 
@@ -199,8 +198,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             n_function_calls += 1
 
             # send function call & output back to get another response
+            all_messages = self._prefix_messages + chat_history
             chat_response = self._llm.chat(
-                self._prefix_messages + chat_history, functions=functions
+                all_messages, functions=functions
             )
             ai_message = chat_response.message
             chat_history.append(ai_message)
@@ -218,8 +218,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             chat_history: List[ChatMessage],
         ) -> Generator[StreamingChatResponse, None, None]:
             # TODO: Support forced function call
+            all_messages = self._prefix_messages + chat_history
             chat_stream_response = StreamingChatResponse(
-                self._llm.stream_chat(chat_history, functions=functions)
+                self._llm.stream_chat(all_messages, functions=functions)
             )
 
             # Get the response in a separate thread so we can yield the response
@@ -251,9 +252,10 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 chat_history.append(function_message)
                 n_function_calls += 1
 
+                all_messages = self._prefix_messages + chat_history
                 # send function call & output back to get another response
                 chat_stream_response = StreamingChatResponse(
-                    self._llm.stream_chat(chat_history, functions=functions)
+                    self._llm.stream_chat(all_messages, functions=functions)
                 )
 
                 # Get the response in a separate thread so we can yield the response
@@ -282,8 +284,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
+        all_messages = self._prefix_messages + chat_history
         chat_response = await self._llm.achat(
-            self._prefix_messages + chat_history, functions=functions
+            all_messages, functions=functions
         )
         ai_message = chat_response.message
         chat_history.append(ai_message)
@@ -320,9 +323,10 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         async def gen(
             chat_history: List[ChatMessage],
         ) -> AsyncGenerator[StreamingChatResponse, None]:
+            all_messages = self._prefix_messages + chat_history
             # TODO: Support forced function call
             chat_stream_response = StreamingChatResponse(
-                await self._llm.astream_chat(chat_history, functions=functions)
+                await self._llm.astream_chat(all_messages, functions=functions)
             )
 
             # Get the response in a separate thread so we can yield the response
@@ -357,8 +361,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 n_function_calls += 1
 
                 # send function call & output back to get another response
+                all_messages = self._prefix_messages + chat_history
                 chat_stream_response = StreamingChatResponse(
-                    await self._llm.astream_chat(chat_history, functions=functions)
+                    await self._llm.astream_chat(all_messages, functions=functions)
                 )
 
                 # Get the response in a separate thread so we can yield the response
