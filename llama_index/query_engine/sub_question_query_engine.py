@@ -111,13 +111,13 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         if self._verbose:
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
-        start_event_payload = {
-            EventPayload.SUB_QUESTIONS.value: [
-                SubQuestionAnswerPair(sub_q=sub_q) for sub_q in sub_questions
-            ]
-        }
         event_id = self.callback_manager.on_event_start(
-            CBEventType.SUB_QUESTIONS, payload=start_event_payload
+            CBEventType.SUB_QUESTIONS,
+            payload={
+                EventPayload.SUB_QUESTIONS: [
+                    SubQuestionAnswerPair(sub_q=sub_q) for sub_q in sub_questions
+                ]
+            },
         )
 
         if self._use_async:
@@ -137,9 +137,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         # filter out sub questions that failed
         qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
 
-        end_event_payload = {EventPayload.SUB_QUESTIONS.value: qa_pairs}
         self.callback_manager.on_event_end(
-            CBEventType.SUB_QUESTIONS, payload=end_event_payload, event_id=event_id
+            CBEventType.SUB_QUESTIONS,
+            payload={EventPayload.SUB_QUESTIONS: qa_pairs},
+            event_id=event_id,
         )
 
         nodes = [self._construct_node(pair) for pair in qa_pairs]
@@ -158,13 +159,13 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         if self._verbose:
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
-        start_event_payload = {
-            EventPayload.SUB_QUESTIONS.value: [
-                SubQuestionAnswerPair(sub_q=sub_q) for sub_q in sub_questions
-            ]
-        }
         event_id = self.callback_manager.on_event_start(
-            CBEventType.SUB_QUESTIONS, payload=start_event_payload
+            CBEventType.SUB_QUESTIONS,
+            payload={
+                EventPayload.SUB_QUESTIONS: [
+                    SubQuestionAnswerPair(sub_q=sub_q) for sub_q in sub_questions
+                ]
+            },
         )
 
         tasks = [
@@ -177,9 +178,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         # filter out sub questions that failed
         qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
 
-        end_event_payload = {EventPayload.SUB_QUESTIONS.value: qa_pairs}
         self.callback_manager.on_event_end(
-            CBEventType.SUB_QUESTIONS, payload=end_event_payload, event_id=event_id
+            CBEventType.SUB_QUESTIONS,
+            payload={EventPayload.SUB_QUESTIONS: qa_pairs},
+            event_id=event_id,
         )
 
         nodes = [self._construct_node(pair) for pair in qa_pairs]
