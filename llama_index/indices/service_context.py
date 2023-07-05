@@ -1,3 +1,4 @@
+from copy import deepcopy
 import dataclasses
 import logging
 from dataclasses import dataclass
@@ -19,6 +20,13 @@ from llama_index.node_parser.simple import SimpleNodeParser
 
 logger = logging.getLogger(__name__)
 
+# default service context. Inherited from when calling `from_defaults`.
+default_service_context: Optional["ServiceContext"] = None
+
+# global service context. All newly created services without explicitly
+# passed service context will use this one. Overrides any default service context.
+# Changes made to this context will directly affect downstream services.
+global_service_context: Optional["ServiceContext"] = None
 
 def _get_default_node_parser(
     chunk_size: Optional[int] = None,
@@ -114,19 +122,20 @@ class ServiceContext:
             )
             chunk_size = chunk_size_limit
 
-        # # Inherit from the global `default_service_context`
-        # if llama_index.default_service_context is not None:
-        #     return cls.from_service_context(
-        #         llama_index.default_service_context,
-        #         llm_predictor=llm_predictor,
-        #         prompt_helper=prompt_helper,
-        #         embed_model=embed_model,
-        #         node_parser=node_parser,
-        #         llama_logger=llama_logger,
-        #         callback_manager=callback_manager,
-        #         chunk_size=chunk_size,
-        #         chunk_size_limit=chunk_size_limit,
-        #     )
+        global default_service_context
+        # Inherit from the global `default_service_context`
+        if default_service_context is not None:
+            return cls.from_service_context(
+                default_service_context,
+                llm_predictor=llm_predictor,
+                prompt_helper=prompt_helper,
+                embed_model=embed_model,
+                node_parser=node_parser,
+                llama_logger=llama_logger,
+                callback_manager=callback_manager,
+                chunk_size=chunk_size,
+                chunk_size_limit=chunk_size_limit,
+            )
 
         callback_manager = callback_manager or CallbackManager([])
         if llm is not None:
@@ -233,7 +242,8 @@ class ServiceContext:
         """Sets this context as the default service context for all downstream services except
         when explicitly passed a service context.
         Changes made to this service context will affect all downstream services that depend upon it."""
-        llama_index.global_service_context = self
+        global global_service_context
+        global_service_context = self
         return self
 
     @classmethod
@@ -241,14 +251,21 @@ class ServiceContext:
         """Get the global service context. Changes made to the global service context that is
         returned will affect all downstream services that depend upon it.
         The global service context is by default initialized to `ServiceContext.from_defaults()`."""
-        return llama_index.global_service_context
+        global global_service_context
+        return global_service_context
 
     @classmethod
     def set_global_to_none(cls):
         """Set the global service context. When new services are created without an explicit context, it will not
         will not utilize a global context, but instead instantiate a local service context via `from_defaults`."""
-        llama_index.global_service_context = None
+        global global_service_context
+        global_service_context = None
 
+    def set_to_global_default(self) -> "ServiceContext":
+        """All calls to from_defaults will inherit from this service context, which is frozen."""
+        global default_service_context
+        default_service_context = deepcopy(self)
+        return self
 
 # Set the default service context as the global service context
 ServiceContext.from_defaults().set_global()

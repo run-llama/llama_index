@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 from llama_index.indices.service_context import ServiceContext
+from llama_index.storage.storage_context import StorageContext
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLMMetadata
@@ -20,7 +21,6 @@ from tests.mock_utils.mock_text_splitter import (
     patch_token_splitter_newline_with_overlaps,
 )
 
-
 # @pytest.fixture(autouse=True)
 # def no_networking(monkeypatch: pytest.MonkeyPatch) -> None:
 #     def deny_network(*args: Any, **kwargs: Any) -> None:
@@ -28,6 +28,15 @@ from tests.mock_utils.mock_text_splitter import (
 
 #     monkeypatch.setattr(socket, "socket", deny_network)
 
+@pytest.fixture(scope="session", autouse=True)
+def disable_global_storage_ctx(request: Any):
+    # do not share storage context between tests
+    StorageContext.set_global_to_none() 
+
+@pytest.fixture(scope="session", autouse=True)
+def mock_default_service_ctx(request: Any):
+    # do not share storage context between tests
+    ServiceContext.from_defaults(embed_model=MockEmbedding()).set_to_global_default()
 
 @pytest.fixture
 def allow_networking(monkeypatch: pytest.MonkeyPatch) -> None:

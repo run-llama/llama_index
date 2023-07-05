@@ -224,12 +224,3 @@ __all__ = [
 # NOTE: keep for backwards compatibility
 SQLContextBuilder = SQLDocumentContextBuilder
 
-# global service/storage context. All newly created services without explicitly
-# passed service context will use this one. Overrides any default service context.
-# Changes made to this context will directly affect downstream services.
-global_service_context: Optional[ServiceContext] = None
-global_storage_context: Optional[StorageContext] = None
-
-# default service/storage context. Inherited from when calling `from_defaults.
-default_service_context: Optional[ServiceContext] = None
-default_storage_context: Optional[StorageContext] = None

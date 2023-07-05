@@ -29,6 +29,13 @@ from llama_index.utils import concat_dirs
 
 DEFAULT_PERSIST_DIR = "./storage"
 
+# default storage context. Inherited from when calling `from_defaults`.
+default_service_context: Optional["StorageContext"] = None
+
+# global storage context. All newly created services without explicitly
+# passed storage context will use this one. Overrides any default storage context.
+# Changes made to this context will directly affect downstream services.
+global_service_context: Optional["StorageContext"] = None
 
 @dataclass
 class StorageContext:
@@ -161,7 +168,8 @@ class StorageContext:
         """Sets this context as the default storage context for all downstream services except
         when explicitly passed a storage context.
         Changes made to this storage context will affect all downstream services that depend upon it."""
-        llama_index.global_service_context = self
+        global global_storage_context
+        global_storage_context = self
         return self
 
     @classmethod
@@ -169,13 +177,15 @@ class StorageContext:
         """Get the global storage context. Changes made to this global storage context will affect
         all downstream services that depend upon it. The global storage context is by default
         initialized to `StorageContext.from_defaults()`."""
-        return llama_index.global_service_context
+        global global_storage_context
+        return global_storage_context
 
     @classmethod
     def set_global_to_none(cls):
         """Set the global storage context. When new services are created without an explicit context, it will not
         will not utilize a global context, but instead instantiate a local storage context via `from_defaults`."""
-        llama_index.global_storage_context = None
+        global global_storage_context
+        global_storage_context = None
 
 
 # Set the default storage context as the global storage context
