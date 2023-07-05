@@ -4,9 +4,11 @@
 
 ### New Features
 - Added streaming support to simple and condense chat engines (#6717)
+- Added `CBEventType.SUB_QUESTIONS` event type for tracking sub question queries/responses (#6716)
 
 ### Bug Fixes / Nits
 - Fix HF LLM output error (#6737)
+- Add system message support for langchain message templates (#6743)
 
 ## [v0.7.1] - 2023-07-05
 
