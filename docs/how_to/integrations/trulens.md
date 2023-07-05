@@ -9,6 +9,19 @@ TruLens is an [opensource](https://github.com/truera/trulens) package that provi
 
 As you iterate new versions of your LLM application, you can compare their performance across all of the different quality metrics you've set up. You'll also be able to view evaluations at a record level, and explore the chain metadata for each record.
 
+### Installation and Setup
+
+Adding TruLens is simple, just install it from pypi!
+
+```sh
+pip install trulens-eval
+```
+
+```python
+from trulens_eval import TruLlama, Feedback, Tru, feedback
+
+```
+
 ## Try it out!
 
 [llama_index_quickstart.ipynb](https://github.com/truera/trulens/blob/releases/rc-trulens-eval-0.4.0/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb)
