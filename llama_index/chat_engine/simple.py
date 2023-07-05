@@ -18,7 +18,7 @@ class SimpleChatEngine(BaseChatEngine):
         self,
         llm: LLM,
         chat_history: List[ChatMessage],
-        prefix_messages: Optional[List[ChatMessage]],
+        prefix_messages: List[ChatMessage],
     ) -> None:
         self._llm = llm
         self._chat_history = chat_history

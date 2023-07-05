@@ -134,7 +134,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         self,
         llm: OpenAI,
         chat_history: List[ChatMessage],
-        prefix_messages: Optional[List[ChatMessage]],
+        prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
