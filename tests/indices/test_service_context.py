@@ -13,7 +13,7 @@ def test_global_service_context() -> None:
     assert get_global.llm_predictor is not None
 
     # Test mutation
-    global_ctx.llm_predictor = None # type: ignore
+    global_ctx.llm_predictor = None  # type: ignore
     get_global = ServiceContext.get_global()
     assert get_global is not None
     assert get_global.llm_predictor is None

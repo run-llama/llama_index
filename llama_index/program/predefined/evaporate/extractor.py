@@ -118,7 +118,11 @@ class EvaporateExtractor:
     ) -> None:
         """Initialize params."""
         # TODO: take in an entire index instead of forming a response builder
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         self._schema_id_prompt = schema_id_prompt or SCHEMA_ID_PROMPT
         self._fn_generate_prompt = fn_generate_prompt or FN_GENERATION_PROMPT
         self._field_extract_query_tmpl = field_extract_query_tmpl

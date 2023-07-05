@@ -32,7 +32,11 @@ class BaseSynthesizer(ABC):
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         self._callback_manager = self._service_context.callback_manager
         self._streaming = streaming
 

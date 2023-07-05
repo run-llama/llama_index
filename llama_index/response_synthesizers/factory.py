@@ -31,7 +31,6 @@ def get_response_synthesizer(
     refine_template: Optional[RefinePrompt] = None,
     simple_template: Optional[SimpleInputPrompt] = None,
     response_mode: ResponseMode = ResponseMode.COMPACT,
-    callback_manager: Optional[CallbackManager] = None,
     use_async: bool = False,
     streaming: bool = False,
 ) -> BaseSynthesizer:
@@ -41,8 +40,8 @@ def get_response_synthesizer(
     refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
     simple_template = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
-    service_context = service_context or ServiceContext.from_defaults(
-        callback_manager=callback_manager
+    service_context = (
+        service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
     )
 
     if response_mode == ResponseMode.REFINE:
