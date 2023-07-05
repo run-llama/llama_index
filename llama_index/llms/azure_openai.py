@@ -32,5 +32,7 @@ class AzureOpenAI(OpenAI):
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
-        openai_kwargs = super()._model_kwargs
-        openai_kwargs["engine"] = self.engine
+        model_kwargs = super()._model_kwargs
+        model_kwargs.pop("model")
+        model_kwargs["engine"] = self.engine
+        return model_kwargs

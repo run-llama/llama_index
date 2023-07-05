@@ -15,6 +15,7 @@ LLM Implementations
    :caption: LLM Implementations
 
    llms/openai.rst
+   llms/azure_openai.rst
    llms/huggingface.rst
    llms/langchain.rst
 
