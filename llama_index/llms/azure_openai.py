@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from pydantic import root_validator
+
 from llama_index.llms.openai import OpenAI
 
 
@@ -29,6 +31,31 @@ class AzureOpenAI(OpenAI):
     """
 
     engine: str  # model deployment name
+
+    @root_validator()
+    def validate_env(cls, values: Dict) -> Dict:
+        """Validate necessary environment variables are set."""
+        try:
+            import openai
+
+            if openai.api_base == "https://api.openai.com/v1":
+                raise ValueError(
+                    "You must set OPENAI_API_BASE to your Azure endpoint. "
+                    "It should look like https://YOUR_RESOURCE_NAME.openai.azure.com/"
+                )
+            if openai.api_type != "azure":
+                raise ValueError(
+                    "You must set OPENAI_API_TYPE to `azure` for Azure OpenAI."
+                )
+            if openai.api_version != "2023-05-15":
+                raise ValueError(
+                    "You must set OPENAI_API_VERSION to `2023-05-15` for Azure OpenAI."
+                )
+        except ImportError:
+            raise ImportError(
+                "You must install the `openai` package to use Azure OpenAI."
+            )
+        return values
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
