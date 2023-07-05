@@ -1,8 +1,7 @@
 """Base index classes."""
 import logging
 from abc import ABC, abstractmethod
-from typing import (Any, Dict, Generic, List, Optional, Sequence, Type,
-                    TypeVar, cast)
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.data_structs.data_structs import IndexStruct
@@ -332,8 +331,7 @@ class BaseIndex(Generic[IS], ABC):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.query_engine.retriever_query_engine import \
-            RetrieverQueryEngine
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
 
@@ -343,7 +341,7 @@ class BaseIndex(Generic[IS], ABC):
         return RetrieverQueryEngine.from_args(**kwargs)
 
     def as_chat_engine(
-        self, chat_mode: ChatMode = ChatMode.CONDENSE_QUESTION, **kwargs: Any
+        self, chat_mode: ChatMode = ChatMode.OPENAI_AGENT, **kwargs: Any
     ) -> BaseChatEngine:
         query_engine = self.as_query_engine(**kwargs)
         if "service_context" not in kwargs:
