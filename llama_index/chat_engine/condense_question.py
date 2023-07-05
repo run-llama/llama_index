@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Optional
 
-from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.chat_engine.types import BaseChatEngine, STREAMING_CHAT_RESPONSE_TYPE
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llms.base import ChatMessage, MessageRole
@@ -125,20 +125,17 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         response = self._query_engine.query(condensed_question)
 
         # Record response
-        if isinstance(response, StreamingResponse):
-            raise ValueError("Streaming is enabled. Please use stream_chat() instead.")
-        else:
-            chat_history.extend(
-                [
-                    ChatMessage(role=MessageRole.USER, content=message),
-                    ChatMessage(role=MessageRole.ASSISTANT, content=str(response)),
-                ]
-            )
+        chat_history.extend(
+            [
+                ChatMessage(role=MessageRole.USER, content=message),
+                ChatMessage(role=MessageRole.ASSISTANT, content=str(response)),
+            ]
+        )
         return response
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
 
         # Generate standalone question from conversation context and last message
@@ -200,20 +197,18 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         response = await self._query_engine.aquery(condensed_question)
 
         # Record response
-        if isinstance(response, StreamingResponse):
-            raise ValueError("Streaming is enabled. Please use astream_chat() instead.")
-        else:
-            chat_history.extend(
-                [
-                    ChatMessage(role=MessageRole.USER, content=message),
-                    ChatMessage(role=MessageRole.ASSISTANT, content=str(response)),
-                ]
-            )
+        chat_history.extend(
+            [
+                ChatMessage(role=MessageRole.USER, content=message),
+                ChatMessage(role=MessageRole.ASSISTANT, content=str(response)),
+            ]
+        )
+
         return response
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
 
         # Generate standalone question from conversation context and last message

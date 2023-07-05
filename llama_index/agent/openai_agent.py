@@ -13,7 +13,11 @@ from typing import (
 )
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import BaseChatEngine, StreamingChatResponse
+from llama_index.chat_engine.types import (
+    BaseChatEngine,
+    StreamingChatResponse,
+    STREAMING_CHAT_RESPONSE_TYPE,
+)
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
@@ -143,7 +147,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> Generator[StreamingChatResponse, None, None]:
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 
@@ -240,9 +244,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
         return Response(ai_message.content)
 
-    def astream_chat(
+    async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AsyncGenerator[StreamingChatResponse, None]:
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 

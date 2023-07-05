@@ -1,7 +1,7 @@
 """Response schema."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Protocol, Union
 
 from llama_index.schema import NodeWithScore
 from llama_index.types import TokenGen
@@ -38,8 +38,21 @@ class Response:
         return "\n\n".join(texts)
 
 
+class StreamingResponseProtocol(Protocol):
+    """Protocol for streaming response type."""
+
+    @property
+    def response_gen(
+        self,
+    ) -> Union[Generator[str, None, None], AsyncGenerator[str, None]]:
+        pass
+
+    def __str__(self) -> str:
+        pass
+
+
 @dataclass
-class StreamingResponse:
+class StreamingResponse(StreamingResponseProtocol):
     """StreamingResponse object.
 
     Returned if streaming=True.
@@ -49,7 +62,7 @@ class StreamingResponse:
 
     """
 
-    response_gen: Optional[TokenGen]
+    response_gen: TokenGen
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
