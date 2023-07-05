@@ -195,7 +195,16 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return NodeWithScore(node=TextNode(text=node_text)), response.source_nodes
+            return (
+                NodeWithScore(
+                    node=TextNode(
+                        text=node_text,
+                        metadata={"question": sub_q.sub_question},
+                        excluded_llm_metadata_keys=["question"],
+                    )
+                ),
+                response.source_nodes,
+            )
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
@@ -221,7 +230,16 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return NodeWithScore(node=TextNode(text=node_text)), response.source_nodes
+            return (
+                NodeWithScore(
+                    node=TextNode(
+                        text=node_text,
+                        metadata={"question": sub_q.sub_question},
+                        excluded_llm_metadata_keys=["question"],
+                    )
+                ),
+                response.source_nodes,
+            )
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
