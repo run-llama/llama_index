@@ -223,4 +223,3 @@ __all__ = [
 
 # NOTE: keep for backwards compatibility
 SQLContextBuilder = SQLDocumentContextBuilder
-

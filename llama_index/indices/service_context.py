@@ -28,6 +28,7 @@ default_service_context: Optional["ServiceContext"] = None
 # Changes made to this context will directly affect downstream services.
 global_service_context: Optional["ServiceContext"] = None
 
+
 def _get_default_node_parser(
     chunk_size: Optional[int] = None,
     chunk_overlap: Optional[int] = None,
@@ -266,6 +267,7 @@ class ServiceContext:
         global default_service_context
         default_service_context = deepcopy(self)
         return self
+
 
 # Set the default service context as the global service context
 ServiceContext.from_defaults().set_global()

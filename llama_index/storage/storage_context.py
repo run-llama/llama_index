@@ -37,6 +37,7 @@ default_service_context: Optional["StorageContext"] = None
 # Changes made to this context will directly affect downstream services.
 global_service_context: Optional["StorageContext"] = None
 
+
 @dataclass
 class StorageContext:
     """Storage context.
