@@ -133,7 +133,11 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         """Init params."""
         super().__init__(callback_manager=callback_manager)
         self._query_engine = query_engine
-        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         self._instruct_prompt = instruct_prompt or DEFAULT_INSTRUCT_PROMPT
         self._lookahead_answer_inserter = lookahead_answer_inserter or (
             LLMLookaheadAnswerInserter(service_context=self._service_context)

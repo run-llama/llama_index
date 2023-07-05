@@ -27,7 +27,11 @@ class GuidelineEvaluator(BaseEvaluator):
         guidelines: Optional[str] = None,
         eval_template: Optional[str] = None,
     ) -> None:
-        self.service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self.service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         self.guidelines = guidelines or DEFAULT_GUIDELINES
         self.eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 

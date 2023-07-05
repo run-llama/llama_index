@@ -45,8 +45,16 @@ class QASummaryQueryEngineBuilder:
         qa_text: str = DEFAULT_QA_TEXT,
     ) -> None:
         """Init params."""
-        self._storage_context = storage_context or StorageContext.get_global() or StorageContext.from_defaults()
-        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self._storage_context = (
+            storage_context
+            or StorageContext.get_global()
+            or StorageContext.from_defaults()
+        )
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         self._summary_text = summary_text
         self._qa_text = qa_text
 

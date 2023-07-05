@@ -36,7 +36,11 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
         output_parser: Optional[BaseOutputParser] = None,
     ) -> "LLMQuestionGenerator":
         # optionally initialize defaults
-        service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         prompt_template_str = prompt_template_str or DEFAULT_SUB_QUESTION_PROMPT_TMPL
         output_parser = output_parser or SubQuestionOutputParser()
 

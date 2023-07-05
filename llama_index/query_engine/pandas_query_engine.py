@@ -102,7 +102,11 @@ class PandasQueryEngine(BaseQueryEngine):
         self._output_processor = output_processor or default_output_processor
         self._output_kwargs = output_kwargs or {}
         self._verbose = verbose
-        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
 
         super().__init__(self._service_context.callback_manager)
 

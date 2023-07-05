@@ -55,8 +55,16 @@ class BaseIndex(Generic[IS], ABC):
             else:
                 raise ValueError("nodes must be a list of Node objects.")
 
-        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
-        self._storage_context = storage_context or StorageContext.get_global() or StorageContext.from_defaults()
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
+        self._storage_context = (
+            storage_context
+            or StorageContext.get_global()
+            or StorageContext.from_defaults()
+        )
         self._docstore = self._storage_context.docstore
         self._vector_store = self._storage_context.vector_store
         self._graph_store = self._storage_context.graph_store
@@ -83,8 +91,16 @@ class BaseIndex(Generic[IS], ABC):
                 build the index from.
 
         """
-        storage_context = storage_context or StorageContext.get_global() or StorageContext.from_defaults()
-        service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        storage_context = (
+            storage_context
+            or StorageContext.get_global()
+            or StorageContext.from_defaults()
+        )
+        service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         docstore = storage_context.docstore
 
         with service_context.callback_manager.as_trace("index_construction"):

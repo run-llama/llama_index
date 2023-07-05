@@ -158,21 +158,25 @@ class StorageContext:
         )
 
     def set_global(self) -> "StorageContext":
-        """Sets this context as the default storage context for all downstream services except 
+        """Sets this context as the default storage context for all downstream services except
         when explicitly passed a storage context.
         Changes made to this storage context will affect all downstream services that depend upon it."""
         llama_index.global_service_context = self
         return self
 
     @classmethod
-    def get_global() -> Optional["StorageContext"]:
-        """Get the global storage context. Changes made to this global storage context will affect 
+    def get_global(cls) -> Optional["StorageContext"]:
+        """Get the global storage context. Changes made to this global storage context will affect
         all downstream services that depend upon it. The global storage context is by default
         initialized to `StorageContext.from_defaults()`."""
         return llama_index.global_service_context
 
     @classmethod
-    def set_global_to_none():
-        """Set the global storage context. Newly created services (which are not passed an explicit context)
-        will not utilize the global context, but instead instantiate a local storage context via `from_defaults`."""
+    def set_global_to_none(cls):
+        """Set the global storage context. When new services are created without an explicit context, it will not
+        will not utilize a global context, but instead instantiate a local storage context via `from_defaults`."""
         llama_index.global_storage_context = None
+
+
+# Set the default storage context as the global storage context
+StorageContext.from_defaults().set_global()

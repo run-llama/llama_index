@@ -220,7 +220,11 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     ) -> None:
         """Initialize params."""
         self._sql_database = sql_database
-        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
 
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._response_synthesis_prompt = (

@@ -35,7 +35,11 @@ class LLMRerank(BaseNodePostprocessor):
         self._parse_choice_select_answer_fn = (
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
-        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         self._top_n = top_n
 
     def postprocess_nodes(

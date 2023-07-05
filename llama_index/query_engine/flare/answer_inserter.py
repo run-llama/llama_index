@@ -137,7 +137,11 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
         answer_insert_prompt: Optional[Prompt] = None,
     ) -> None:
         """Init params."""
-        self._service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self._service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         self._answer_insert_prompt = (
             answer_insert_prompt or DEFAULT_ANSWER_INSERT_PROMPT
         )

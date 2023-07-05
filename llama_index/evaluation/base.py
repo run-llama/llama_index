@@ -23,7 +23,11 @@ class Evaluation:
 class BaseEvaluator(ABC):
     def __init__(self, service_context: Optional[ServiceContext] = None) -> None:
         """Base class for evaluating responses"""
-        self.service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self.service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
 
     @abstractmethod
     def evaluate_response(self, query: str, response: Response) -> Evaluation:
@@ -117,7 +121,11 @@ class ResponseEvaluator:
         raise_error: bool = False,
     ) -> None:
         """Init params."""
-        self.service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        self.service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         self.raise_error = raise_error
 
     def get_context(self, response: Response) -> List[Document]:

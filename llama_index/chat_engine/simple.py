@@ -32,7 +32,11 @@ class SimpleChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
-        service_context = service_context or ServiceContext.get_global() or ServiceContext.from_defaults()
+        service_context = (
+            service_context
+            or ServiceContext.get_global()
+            or ServiceContext.from_defaults()
+        )
         if not isinstance(service_context.llm_predictor, LLMPredictor):
             raise ValueError("llm_predictor must be a LLMPredictor instance")
         llm = service_context.llm_predictor.llm

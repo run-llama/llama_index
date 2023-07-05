@@ -45,6 +45,7 @@ def _get_default_prompt_helper(
         llm_metadata = dataclasses.replace(llm_metadata, num_output=num_output)
     return PromptHelper.from_llm_metadata(llm_metadata=llm_metadata)
 
+
 @dataclass
 class ServiceContext:
     """Service Context container.
@@ -85,7 +86,7 @@ class ServiceContext:
         num_output: Optional[int] = None,
         # deprecated kwargs
         chunk_size_limit: Optional[int] = None,
-        local  = False,
+        local=False,
     ) -> "ServiceContext":
         """Create a ServiceContext from defaults.
         If an argument is specified, then use the argument value provided for that
@@ -113,18 +114,19 @@ class ServiceContext:
             )
             chunk_size = chunk_size_limit
 
-        if llama_index.global_service_context is not None:
-            return cls.from_service_context(
-                llama_index.global_service_context,
-                llm_predictor=llm_predictor,
-                prompt_helper=prompt_helper,
-                embed_model=embed_model,
-                node_parser=node_parser,
-                llama_logger=llama_logger,
-                callback_manager=callback_manager,
-                chunk_size=chunk_size,
-                chunk_size_limit=chunk_size_limit,
-            )
+        # # Inherit from the global `default_service_context`
+        # if llama_index.default_service_context is not None:
+        #     return cls.from_service_context(
+        #         llama_index.default_service_context,
+        #         llm_predictor=llm_predictor,
+        #         prompt_helper=prompt_helper,
+        #         embed_model=embed_model,
+        #         node_parser=node_parser,
+        #         llama_logger=llama_logger,
+        #         callback_manager=callback_manager,
+        #         chunk_size=chunk_size,
+        #         chunk_size_limit=chunk_size_limit,
+        #     )
 
         callback_manager = callback_manager or CallbackManager([])
         if llm is not None:
@@ -228,21 +230,25 @@ class ServiceContext:
         )
 
     def set_global(self) -> "ServiceContext":
-        """Sets this context as the default service context for all downstream services except 
+        """Sets this context as the default service context for all downstream services except
         when explicitly passed a service context.
         Changes made to this service context will affect all downstream services that depend upon it."""
         llama_index.global_service_context = self
         return self
 
     @classmethod
-    def get_global() -> Optional["ServiceContext"]:
+    def get_global(cls) -> Optional["ServiceContext"]:
         """Get the global service context. Changes made to the global service context that is
-         returned will affect all downstream services  that depend upon it. 
-         The global service context is by default initialized to `ServiceContext.from_defaults()`."""
+        returned will affect all downstream services that depend upon it.
+        The global service context is by default initialized to `ServiceContext.from_defaults()`."""
         return llama_index.global_service_context
 
     @classmethod
-    def set_global_to_none():
-        """Set the global service context. Newly created services (which are not passed an explicit context)
-        will not utilize the global context, but instead instantiate a local service context via `from_defaults`."""
+    def set_global_to_none(cls):
+        """Set the global service context. When new services are created without an explicit context, it will not
+        will not utilize a global context, but instead instantiate a local service context via `from_defaults`."""
         llama_index.global_service_context = None
+
+
+# Set the default service context as the global service context
+ServiceContext.from_defaults().set_global()
