@@ -79,5 +79,5 @@ service_context.set_global()
 Advanced: If you want all subsequent service contexts you create to inherit from this service context, you can do:
 
 ```python
-service_context.set_as_default()
+service_context.set_as_inherited_default()
 ```
