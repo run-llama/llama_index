@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix HF LLM output error (#6737)
+
 ## [v0.7.1] - 2023-07-05
 
 ### New Features
