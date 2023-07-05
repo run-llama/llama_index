@@ -10,7 +10,7 @@ from llama_index.indices.postprocessor.optimizer import SentenceEmbeddingOptimiz
 from llama_index.schema import TextNode, NodeWithScore
 from llama_index.utils import (
     get_large_chinese_tokenizer_fn,
-    get_transformer_tokenizer_fin,
+    get_transformer_tokenizer_fn,
 )
 
 try:
@@ -138,7 +138,7 @@ def test_optimizer_chinese(_mock_embeds: Any, _mock_embed: Any) -> None:
     assert len(optimized_node.node.get_content()) < len(orig_node.get_content())
 
     optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=get_transformer_tokenizer_fin("fxmarty/tiny-llama-fast-tokenizer"),
+        tokenizer_fn=get_transformer_tokenizer_fn("fxmarty/tiny-llama-fast-tokenizer"),
         percentile_cutoff=0.5,
     )
     query = QueryBundle(query_str="hello", embedding=[1, 0, 0, 0, 0])
