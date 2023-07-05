@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Fix HF LLM output error (#6737)
+- Only consider metadata intended for LLM when splitting text (#6744)
 
 ## [v0.7.1] - 2023-07-05
 
