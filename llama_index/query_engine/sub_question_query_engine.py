@@ -125,15 +125,15 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             nodes.append(node)
             sources[sub_questions[i].sub_question] = source_nodes
 
-        response = self._response_synthesizer.synthesize(
+        final_response = self._response_synthesizer.synthesize(
             query=query_bundle,
             nodes=nodes,
         )
 
         # add additional sources
-        response.metadata = sources
+        final_response.metadata = sources
 
-        return response
+        return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         sub_questions = await self._question_gen.agenerate(
@@ -164,15 +164,15 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             nodes.append(node)
             sources[sub_questions[i].sub_question] = source_nodes
 
-        response = await self._response_synthesizer.asynthesize(
+        final_response = await self._response_synthesizer.asynthesize(
             query=query_bundle,
             nodes=nodes,
         )
 
         # add additional sources
-        response.metadata = sources
+        final_response.metadata = sources
 
-        return response
+        return final_response
 
     async def _aquery_subq(
         self, sub_q: SubQuestion, color: Optional[str] = None

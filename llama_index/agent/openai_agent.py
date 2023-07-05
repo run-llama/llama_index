@@ -77,14 +77,16 @@ class StreamingChatResponse:
     """Streaming chat response to user and writing to chat history."""
 
     def __init__(
-        self, chat_stream: Union[ChatResponseGen, ChatResponseAsyncGen]
+        self,
+        chat_stream: Union[ChatResponseGen, ChatResponseAsyncGen],
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._chat_stream = chat_stream
         self._queue: queue.Queue = queue.Queue()
         self._is_done = False
         self._is_function: Optional[bool] = None
         self.response_str = ""
-        self.metadata: Optional[Dict[str, Any]] = None
+        self.metadata = metadata
 
     def __str__(self) -> str:
         return self.response_str
