@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, root_validator
 from typing import Any, Dict, List, Optional, Union
 
 from llama_index.bridge.langchain import Document as LCDocument
-
+from llama_index.utils import SAMPLE_TEXT
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
@@ -382,10 +382,10 @@ class Document(TextNode):
         return cls(text=doc.page_content, metadata=doc.metadata)
 
     @classmethod
-    def for_test(cls) -> "Document":
+    def example(cls) -> "Document":
         document = Document(
-            text="example text",
-            metadata={"filename": "example.pdf", "category": "example"},
+            text=SAMPLE_TEXT,
+            metadata={"filename": "README.md", "category": "codebase"},
         )
         return document
 
