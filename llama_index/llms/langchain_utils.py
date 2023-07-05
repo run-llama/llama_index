@@ -13,6 +13,7 @@ from llama_index.bridge.langchain import (
     FunctionMessage,
     HumanMessage,
     OpenAI,
+    SystemMessage,
 )
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
 from llama_index.llms.base import ChatMessage, LLMMetadata
@@ -47,6 +48,12 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LCMessage]:
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
                     name=name,
+                )
+            )
+        elif message.role == "system":
+            lc_messages.append(
+                SystemMessage(
+                    content=message.content, additional_kwargs=message.additional_kwargs
                 )
             )
         else:

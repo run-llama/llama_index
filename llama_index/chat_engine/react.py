@@ -36,11 +36,13 @@ class ReActChatEngine(BaseChatEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         llm: LangChainLLM,
         memory: BaseChatMemory,
+        prefix_messages: List[ChatMessage],
         verbose: bool = False,
     ) -> None:
         self._query_engine_tools = query_engine_tools
         self._llm = llm
         self._memory = memory
+        self._prefix_messages = prefix_messages
         self._verbose = verbose
 
         self._agent = self._create_agent()
@@ -53,6 +55,8 @@ class ReActChatEngine(BaseChatEngine):
         memory: Optional[BaseChatMemory] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "ReActChatEngine":
         """Initialize a ReActChatEngine from default parameters."""
@@ -78,10 +82,21 @@ class ReActChatEngine(BaseChatEngine):
                 chat_memory=lc_history,
                 return_messages=is_chat_model(lc_llm),
             )
+
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
         return cls(
             query_engine_tools=query_engine_tools,
             llm=llm,
             memory=memory,
+            prefix_messages=prefix_messages,
             verbose=verbose,
         )
 
@@ -116,12 +131,20 @@ class ReActChatEngine(BaseChatEngine):
         else:
             agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
 
+        lc_prefix_messages = to_lc_messages(self._prefix_messages)
+
+        agent_kwargs = {
+            "system_message": None,
+            "extra_prompt_messages": lc_prefix_messages,
+        }
+
         return initialize_agent(
             tools=tools,
             llm=self._llm.llm,
             agent=agent_type,
             memory=self._memory,
             verbose=self._verbose,
+            agent_kwargs=agent_kwargs,
         )
 
     @property
