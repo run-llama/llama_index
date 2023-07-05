@@ -4,7 +4,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool
 from llama_index.tools.types import BaseTool, ToolMetadata
 
-DEFAULT_NAME = "Query Engine Tool"
+DEFAULT_NAME = "query_engine_tool"
 DEFAULT_DESCRIPTION = """Useful for running a natural language query
 against a knowledge base and get back a natural language response.
 """
