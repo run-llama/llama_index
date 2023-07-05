@@ -4,8 +4,13 @@ from typing import Any, Callable, Dict, List, Sequence, Type, Union
 import openai
 from openai import ChatCompletion, Completion
 from pydantic import BaseModel
-from tenacity import (before_sleep_log, retry, retry_if_exception_type,
-                      stop_after_attempt, wait_exponential)
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from llama_index.llms.base import ChatMessage
 
@@ -36,7 +41,6 @@ TURBO_MODELS = {
     "gpt-3.5-turbo": 4096,
     # resolves to gpt-3.5-turbo-16k-0613
     "gpt-3.5-turbo-16k": 16384,
-    "gpt-35-turbo-16k": 16384,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-3.5-turbo-0613": 4096,

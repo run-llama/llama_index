@@ -30,6 +30,7 @@ class AzureOpenAI(OpenAI):
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
     """
 
+    model: str  # override default specified in OpenAI
     engine: str  # model deployment name
 
     @root_validator()
