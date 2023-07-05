@@ -4,7 +4,6 @@ from typing import Optional
 
 import fsspec
 
-import llama_index
 from llama_index.constants import (
     DOC_STORE_KEY,
     GRAPH_STORE_KEY,
@@ -166,25 +165,27 @@ class StorageContext:
         )
 
     def set_global(self) -> "StorageContext":
-        """Sets this context as the default storage context for all downstream services except
-        when explicitly passed a storage context.
-        Changes made to this storage context will affect all downstream services that depend upon it."""
+        """Sets this context as the default storage context for all downstream 
+        services except when explicitly passed a storage context. Changes made to 
+        this storage context will affect all downstream services that depend upon it."""
         global global_storage_context
         global_storage_context = self
         return self
 
     @classmethod
     def get_global(cls) -> Optional["StorageContext"]:
-        """Get the global storage context. Changes made to this global storage context will affect
-        all downstream services that depend upon it. The global storage context is by default
-        initialized to `StorageContext.from_defaults()`."""
+        """Get the global storage context. Changes made to this global storage 
+        context will affect all downstream services that depend upon it. The 
+        global storage context is by default initialized to 
+        `StorageContext.from_defaults()`."""
         global global_storage_context
         return global_storage_context
 
     @classmethod
     def set_global_to_none(cls) -> None:
-        """Set the global storage context. When new services are created without an explicit context, it will not
-        will not utilize a global context, but instead instantiate a local storage context via `from_defaults`."""
+        """Set the global storage context. When new services are created without 
+        an explicit context, it will not will not utilize a global context, but instead 
+        instantiate a local storage context via `from_defaults`."""
         global global_storage_context
         global_storage_context = None
 

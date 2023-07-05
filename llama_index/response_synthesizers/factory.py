@@ -1,6 +1,5 @@
 from typing import Optional
 
-from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from llama_index.prompts.default_prompts import (
