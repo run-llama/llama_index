@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Optional, Sequence, cast
+from typing import List, Optional, Tuple, Sequence, cast
 
 from llama_index.bridge.langchain import get_color_mapping, print_text
 
@@ -105,21 +105,35 @@ class SubQuestionQueryEngine(BaseQueryEngine):
                 for ind, sub_q in enumerate(sub_questions)
             ]
 
-            nodes_all = run_async_tasks(tasks)
-            nodes_all = cast(List[Optional[NodeWithScore]], nodes_all)
+            responses = run_async_tasks(tasks)
+            responses = cast(
+                List[Optional[Tuple[NodeWithScore, List[NodeWithScore]]]], responses
+            )
         else:
-            nodes_all = [
+            responses = [
                 self._query_subq(sub_q, color=colors[str(ind)])
                 for ind, sub_q in enumerate(sub_questions)
             ]
 
         # filter out sub questions that failed
-        nodes: List[NodeWithScore] = list(filter(None, nodes_all))
+        nodes = []
+        sources = {}
+        for i, response in enumerate(responses):
+            if response is None:
+                continue
+            node, source_nodes = response
+            nodes.append(node)
+            sources[sub_questions[i].sub_question] = source_nodes
 
-        return self._response_synthesizer.synthesize(
+        response = self._response_synthesizer.synthesize(
             query=query_bundle,
             nodes=nodes,
         )
+
+        # add additional sources
+        response.metadata = sources
+
+        return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         sub_questions = await self._question_gen.agenerate(
@@ -135,20 +149,38 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             self._aquery_subq(sub_q, color=colors[str(ind)])
             for ind, sub_q in enumerate(sub_questions)
         ]
-        nodes_all = await asyncio.gather(*tasks)
-        nodes_all = cast(List[Optional[NodeWithScore]], nodes_all)
+        responses = await asyncio.gather(*tasks)
+        responses = cast(
+            List[Optional[Tuple[NodeWithScore, List[NodeWithScore]]]], responses
+        )
 
         # filter out sub questions that failed
-        nodes: List[NodeWithScore] = list(filter(None, nodes_all))
+        nodes = []
+        sources = {}
+        for i, response in enumerate(responses):
+            if response is None:
+                continue
+            node, source_nodes = response
+            nodes.append(node)
+            sources[sub_questions[i].sub_question] = source_nodes
 
-        return await self._response_synthesizer.asynthesize(
+        response = await self._response_synthesizer.asynthesize(
             query=query_bundle,
             nodes=nodes,
         )
 
+        # add additional sources
+        response.metadata = sources
+
+        return response
+
     async def _aquery_subq(
         self, sub_q: SubQuestion, color: Optional[str] = None
-    ) -> Optional[NodeWithScore]:
+    ) -> Optional[Tuple[NodeWithScore, List[NodeWithScore]]]:
+        """
+        Query a sub question asynchronously and return the
+        response as a tuple of response node and source nodes.
+        """
         try:
             question = sub_q.sub_question
             query_engine = self._query_engines[sub_q.tool_name]
@@ -163,14 +195,18 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return NodeWithScore(node=TextNode(text=node_text))
+            return NodeWithScore(node=TextNode(text=node_text)), response.source_nodes
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
 
     def _query_subq(
         self, sub_q: SubQuestion, color: Optional[str] = None
-    ) -> Optional[NodeWithScore]:
+    ) -> Optional[Tuple[NodeWithScore, List[NodeWithScore]]]:
+        """
+        Query a sub question and return the response as a
+        tuple of response node and source nodes.
+        """
         try:
             question = sub_q.sub_question
             query_engine = self._query_engines[sub_q.tool_name]
@@ -185,7 +221,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return NodeWithScore(node=TextNode(text=node_text))
+            return NodeWithScore(node=TextNode(text=node_text)), response.source_nodes
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
