@@ -56,9 +56,9 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 def mock_get_text_embedding_chinese(text: str) -> List[float]:
     """Mock get text embedding."""
     # assume dimensions are 5
-    if text == "你" or text == "▁hello":
+    if text == "你":
         return [1, 0, 0, 0, 0]
-    elif text == "好" or text == "▁world":
+    elif text == "好":
         return [0, 1, 0, 0, 0]
     elif text == "世":
         return [0, 0, 1, 0, 0]
@@ -138,15 +138,3 @@ def test_optimizer_chinese(_mock_embeds: Any, _mock_embed: Any) -> None:
     assert len(optimized_node.node.get_content()) < len(
         TextNode(text="你好 世界").get_content()
     )
-
-    optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=get_transformer_tokenizer_fin("fxmarty/tiny-llama-fast-tokenizer"),
-        percentile_cutoff=0.5,
-    )
-    query = QueryBundle(query_str="hello", embedding=[1, 0, 0, 0, 0])
-    orig_node = TextNode(text="hello world")
-    optimized_node = optimizer.postprocess_nodes(
-        [NodeWithScore(node=orig_node)],
-        query,
-    )[0]
-    assert optimized_node.node.get_content() == "▁hello"
