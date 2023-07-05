@@ -2,11 +2,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.schema import TextNode, IndexNode, NodeWithScore
 from llama_index.bridge.langchain import print_text
 from llama_index.indices.base_retriever import BaseRetriever
@@ -65,7 +62,7 @@ class RecursiveRetriever(BaseRetriever):
 
     def _query_retrieved_nodes(
         self, query_bundle: QueryBundle, node_with_score: NodeWithScore
-    ) -> Tuple[NodeWithScore, List[NodeWithScore]]:
+    ) -> Tuple[List[NodeWithScore], List[NodeWithScore]]:
         """Query for retrieved nodes.
 
         If node is an IndexNode, then recursively query the retriever/query engine.
@@ -96,8 +93,15 @@ class RecursiveRetriever(BaseRetriever):
 
     def _fetch_retriever_or_query_engine(self, query_id: str) -> R_AND_Q_TYPE:
         """Fetch retriever or query engine."""
-        return self._retriever_dict.get(query_id) or self._query_engine_dict.get(
-            query_id
+        retriever = self._retriever_dict.get(query_id, None)
+        if retriever is not None:
+            return retriever
+        query_engine = self._query_engine_dict.get(query_id, None)
+        if query_engine is not None:
+            return query_engine
+        raise ValueError(
+            f"Query id {query_id} not found in either `retriever_dict` "
+            "or `query_engine_dict`."
         )
 
     def _retrieve_rec(
