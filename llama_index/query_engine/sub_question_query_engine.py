@@ -112,7 +112,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
         start_event_payload = {
-            EventPayload.SUB_QUESTIONS: [
+            EventPayload.SUB_QUESTIONS.value: [
                 SubQuestionAnswerPair(sub_q=sub_q) for sub_q in sub_questions
             ]
         }
@@ -135,9 +135,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             ]
 
         # filter out sub questions that failed
-        qa_pairs = list(filter(None, qa_pairs_all))
+        qa_pairs: List[SubQuestionAnswerPair]  = list(filter(None, qa_pairs_all))
 
-        end_event_payload = {EventPayload.SUB_QUESTIONS: qa_pairs}
+        end_event_payload = {EventPayload.SUB_QUESTIONS.value: qa_pairs}
         self.callback_manager.on_event_end(
             CBEventType.SUB_QUESTIONS, payload=end_event_payload, event_id=event_id
         )
@@ -159,7 +159,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
         start_event_payload = {
-            EventPayload.SUB_QUESTIONS: [
+            EventPayload.SUB_QUESTIONS.value: [
                 SubQuestionAnswerPair(sub_q=sub_q) for sub_q in sub_questions
             ]
         }
@@ -177,7 +177,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         # filter out sub questions that failed
         qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
 
-        end_event_payload = {EventPayload.SUB_QUESTIONS: qa_pairs}
+        end_event_payload = {EventPayload.SUB_QUESTIONS.value: qa_pairs}
         self.callback_manager.on_event_end(
             CBEventType.SUB_QUESTIONS, payload=end_event_payload, event_id=event_id
         )
