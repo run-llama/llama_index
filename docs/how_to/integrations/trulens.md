@@ -1,6 +1,6 @@
 # Evaluating and Tracking with TruLens
 
-This page covers how to use [TruLens](https://trulens.org) to evaluate and track LLM apps built on Llamma-Index.
+This page covers how to use [TruLens](https://trulens.org) to evaluate and track LLM apps built on Llama-Index.
 
 ## What is TruLens?
 
