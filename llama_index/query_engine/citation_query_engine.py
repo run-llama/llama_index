@@ -18,7 +18,7 @@ from llama_index.response_synthesizers import (
     ResponseMode,
     get_response_synthesizer,
 )
-from llama_index.schema import NodeWithScore, TextNode
+from llama_index.schema import NodeWithScore, TextNode, MetadataMode
 
 
 CITATION_QA_TEMPLATE = Prompt(
@@ -186,7 +186,7 @@ class CitationQueryEngine(BaseQueryEngine):
         new_nodes: List[NodeWithScore] = []
         for node in nodes:
             splits = self.text_splitter.split_text_with_overlaps(
-                node.node.get_content()
+                node.node.get_content(metadata_mode=MetadataMode.LLM)
             )
 
             start_offset = 0
