@@ -28,3 +28,18 @@ def test_storage_context_dict() -> None:
         storage_context.index_store.get_index_struct(index_struct.index_id)
         == index_struct
     )
+
+
+def test_global_storage_context() -> None:
+    # Test setting
+    global_ctx = StorageContext.from_defaults().set_global()
+    assert StorageContext.get_global() is not None
+    assert StorageContext.get_global().index_store is not None
+
+    # Test mutation
+    global_ctx.index_store = None
+    assert StorageContext.get_global().index_store is None
+
+    # Test setting to none
+    StorageContext.set_global_to_none()
+    assert StorageContext.get_global() is None

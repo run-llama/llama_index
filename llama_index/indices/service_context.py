@@ -95,7 +95,6 @@ class ServiceContext:
         num_output: Optional[int] = None,
         # deprecated kwargs
         chunk_size_limit: Optional[int] = None,
-        local=False,
     ) -> "ServiceContext":
         """Create a ServiceContext from defaults.
         If an argument is specified, then use the argument value provided for that
@@ -265,7 +264,9 @@ class ServiceContext:
     def set_to_global_default(self) -> "ServiceContext":
         """All calls to from_defaults will inherit from this service context, which is frozen."""
         global default_service_context
-        default_service_context = deepcopy(self)
+        default_service_context = self.from_service_context(
+            self
+        )  # clone this service context to freeze
         return self
 
 
