@@ -179,7 +179,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
-        chat_response = self._llm.chat(chat_history, functions=functions)
+        chat_response = self._llm.chat(
+            self._prefix_messages + chat_history, functions=functions
+        )
         ai_message = chat_response.message
         chat_history.append(ai_message)
 
@@ -197,7 +199,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             n_function_calls += 1
 
             # send function call & output back to get another response
-            chat_response = self._llm.chat(chat_history, functions=functions)
+            chat_response = self._llm.chat(
+                self._prefix_messages + chat_history, functions=functions
+            )
             ai_message = chat_response.message
             chat_history.append(ai_message)
             function_call = self._get_latest_function_call(chat_history)
@@ -278,7 +282,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
-        chat_response = await self._llm.achat(chat_history, functions=functions)
+        chat_response = await self._llm.achat(
+            self._prefix_messages + chat_history, functions=functions
+        )
         ai_message = chat_response.message
         chat_history.append(ai_message)
 
@@ -296,7 +302,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             n_function_calls += 1
 
             # send function call & output back to get another response
-            response = await self._llm.achat(chat_history, functions=functions)
+            response = await self._llm.achat(
+                self._prefix_messages + chat_history, functions=functions
+            )
             ai_message = response.message
             chat_history.append(ai_message)
             function_call = self._get_latest_function_call(chat_history)

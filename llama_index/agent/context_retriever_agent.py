@@ -2,10 +2,12 @@
 
 from typing import List, Optional
 
-from llama_index.agent.openai_agent import (DEFAULT_MAX_FUNCTION_CALLS,
-                                            DEFAULT_MODEL_NAME,
-                                            SUPPORTED_MODEL_NAMES,
-                                            BaseOpenAIAgent)
+from llama_index.agent.openai_agent import (
+    DEFAULT_MAX_FUNCTION_CALLS,
+    DEFAULT_MODEL_NAME,
+    SUPPORTED_MODEL_NAMES,
+    BaseOpenAIAgent,
+)
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.base_retriever import BaseRetriever
@@ -43,6 +45,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         context_separator (str): A context separator.
         llm (Optional[OpenAI]): An OpenAI LLM.
         chat_history (Optional[List[ChatMessage]]): A chat history.
+        prefix_messages: List[ChatMessage]: A list of prefix messages.
         verbose (bool): Whether to print debug statements.
         max_function_calls (int): Maximum number of function calls.
         callback_manager (Optional[CallbackManager]): A callback manager.
