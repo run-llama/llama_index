@@ -47,10 +47,8 @@ class AzureOpenAI(OpenAI):
                 raise ValueError(
                     "You must set OPENAI_API_TYPE to `azure` for Azure OpenAI."
                 )
-            if openai.api_version != "2023-05-15":
-                raise ValueError(
-                    "You must set OPENAI_API_VERSION to `2023-05-15` for Azure OpenAI."
-                )
+            if openai.api_version is None:
+                raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
         except ImportError:
             raise ImportError(
                 "You must install the `openai` package to use Azure OpenAI."
