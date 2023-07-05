@@ -4,15 +4,14 @@ from __future__ import annotations
 import re
 from typing import List, Optional
 
-from llama_index.bridge.langchain import ChatOpenAI
 
 from llama_index import (
     Document,
     ListIndex,
-    LLMPredictor,
     QuestionAnswerPrompt,
     ServiceContext,
 )
+from llama_index.llms.openai import OpenAI
 from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 
@@ -26,12 +25,8 @@ DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
 
 def _get_default_service_context() -> ServiceContext:
     """Get default service context."""
-    llm_predictor = LLMPredictor(
-        llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
-    )
-    service_context = ServiceContext.get_global() or ServiceContext.from_defaults(
-        llm_predictor=llm_predictor, chunk_size_limit=3000
-    )
+    llm = OpenAI(temperature=0, model="gpt-3.5-turbo")
+    service_context = ServiceContext.from_defaults(llm=llm, chunk_size_limit=3000)
     return service_context
 
 

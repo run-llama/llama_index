@@ -1,26 +1,12 @@
 from typing import Any, List, Sequence
 
-from llama_index.indices.response.refine import Refine
-from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.prompts.utils import get_biggest_prompt
+from llama_index.response_synthesizers.refine import Refine
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
 class CompactAndRefine(Refine):
-    def __init__(
-        self,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
-        refine_template: RefinePrompt,
-        streaming: bool = False,
-    ) -> None:
-        super().__init__(
-            service_context=service_context,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
-            streaming=streaming,
-        )
+    """Refine responses across compact text chunks."""
 
     async def aget_response(
         self,
@@ -30,7 +16,7 @@ class CompactAndRefine(Refine):
     ) -> RESPONSE_TEXT_TYPE:
         compact_texts = self._make_compact_text_chunks(query_str, text_chunks)
         response = await super().aget_response(
-            query_str, compact_texts, **response_kwargs
+            query_str=query_str, text_chunks=compact_texts, **response_kwargs
         )
         return response
 

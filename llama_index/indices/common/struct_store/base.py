@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.table import StructDatapoint
-from llama_index.indices.response import get_response_builder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.langchain_helpers.text_splitter import TextSplitter
@@ -26,6 +25,7 @@ from llama_index.prompts.prompts import (
     SchemaExtractPrompt,
     TableContextPrompt,
 )
+from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import truncate_text
 
@@ -111,10 +111,10 @@ class SQLDocumentContextBuilder:
             )
         )
         # we use the ResponseBuilder to iteratively go through all texts
-        response_builder = get_response_builder(
-            self._service_context,
-            prompt_with_schema,
-            refine_prompt_with_schema,
+        response_builder = get_response_synthesizer(
+            service_context=self._service_context,
+            text_qa_template=prompt_with_schema,
+            refine_template=refine_prompt_with_schema,
         )
         event_id = self._service_context.callback_manager.on_event_start(
             CBEventType.CHUNKING, payload={EventPayload.DOCUMENTS: documents}

@@ -7,12 +7,12 @@ from llama_index.bridge.langchain import get_color_mapping, print_text
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.tools.query_engine import QueryEngineTool
 
@@ -30,7 +30,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
     Args:
         question_gen (BaseQuestionGenerator): A module for generating sub questions
             given a complex question and tools.
-        response_synthesizer (ResponseSynthesizer): A response synthesizer for
+        response_synthesizer (BaseSynthesizer): A response synthesizer for
             generating the final response
         query_engine_tools (Sequence[QueryEngineTool]): Tools to answer the
             sub questions.
@@ -43,7 +43,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         question_gen: BaseQuestionGenerator,
-        response_synthesizer: ResponseSynthesizer,
+        response_synthesizer: BaseSynthesizer,
         query_engine_tools: Sequence[QueryEngineTool],
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = True,
@@ -64,7 +64,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         cls,
         query_engine_tools: Sequence[QueryEngineTool],
         question_gen: Optional[BaseQuestionGenerator] = None,
-        response_synthesizer: Optional[ResponseSynthesizer] = None,
+        response_synthesizer: Optional[BaseSynthesizer] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = True,
         use_async: bool = True,
@@ -76,9 +76,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         question_gen = question_gen or LLMQuestionGenerator.from_defaults(
             service_context=service_context
         )
-        synth = response_synthesizer or ResponseSynthesizer.from_args(
+        synth = response_synthesizer or get_response_synthesizer(
             callback_manager=callback_manager,
             service_context=service_context,
+            use_async=use_async,
         )
 
         return cls(
@@ -116,7 +117,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         nodes: List[NodeWithScore] = list(filter(None, nodes_all))
 
         return self._response_synthesizer.synthesize(
-            query_bundle=query_bundle,
+            query=query_bundle,
             nodes=nodes,
         )
 
@@ -141,7 +142,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         nodes: List[NodeWithScore] = list(filter(None, nodes_all))
 
         return await self._response_synthesizer.asynthesize(
-            query_bundle=query_bundle,
+            query=query_bundle,
             nodes=nodes,
         )
 

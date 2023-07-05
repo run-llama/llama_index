@@ -1,20 +1,20 @@
 from typing import Any, Optional, Sequence
 
-from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
+from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
-class Generation(BaseResponseBuilder):
+class Generation(BaseSynthesizer):
     def __init__(
         self,
-        service_context: ServiceContext,
         simple_template: Optional[SimpleInputPrompt] = None,
+        service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
     ) -> None:
-        super().__init__(service_context, streaming)
+        super().__init__(service_context=service_context, streaming=streaming)
         self._input_prompt = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
     async def aget_response(

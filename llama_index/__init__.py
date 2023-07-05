@@ -60,7 +60,7 @@ from llama_index.indices.loading import (
 from llama_index.indices.prompt_helper import PromptHelper
 
 # Response Synthesizer
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
+from llama_index.response_synthesizers.factory import get_response_synthesizer
 
 # QueryBundle
 from llama_index.indices.query.schema import QueryBundle
@@ -218,7 +218,7 @@ __all__ = [
     "load_index_from_storage",
     "load_indices_from_storage",
     "QueryBundle",
-    "ResponseSynthesizer",
+    "get_response_synthesizer",
 ]
 
 # NOTE: keep for backwards compatibility

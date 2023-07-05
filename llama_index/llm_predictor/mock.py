@@ -13,7 +13,7 @@ from llama_index.token_counter.utils import (
     mock_extract_keywords_response,
     mock_extract_kg_triplets_response,
 )
-from llama_index.types import TokenGen
+from llama_index.types import TokenAsyncGen, TokenGen
 from llama_index.utils import count_tokens, globals_helper
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py
@@ -164,5 +164,5 @@ class MockLLMPredictor(BaseLLMPredictor):
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         return self.predict(prompt, **prompt_args)
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
         raise NotImplementedError
