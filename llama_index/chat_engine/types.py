@@ -69,3 +69,9 @@ class ChatMode(str, Enum):
     Use a ReAct agent loop with query engine tools. 
     Implemented via LangChain agent.
     """
+    OPENAI_AGENT = "openai_agent"
+    """Corresponds to `OpenAIAgent`.
+
+    Use an OpenAI agent loop with query engine tools. 
+    This requires the latest OpenAI models that support function calling API.
+    """

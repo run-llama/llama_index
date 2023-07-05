@@ -1,26 +1,18 @@
 from typing import Any, List, Optional, Sequence
 
-from llama_index.bridge.langchain import (
-    BaseChatMemory,
-    ChatMessageHistory,
-    ConversationBufferMemory,
-)
+from llama_index.bridge.langchain import (BaseChatMemory, ChatMessageHistory,
+                                          ConversationBufferMemory)
 from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.langchain_helpers.agents.agents import (
-    AgentExecutor,
-    AgentType,
-    initialize_agent,
-)
+from llama_index.langchain_helpers.agents.agents import (AgentExecutor,
+                                                         AgentType,
+                                                         initialize_agent)
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.langchain import LangChainLLM
-from llama_index.llms.langchain_utils import (
-    from_lc_messages,
-    is_chat_model,
-    to_lc_messages,
-)
+from llama_index.llms.langchain_utils import (from_lc_messages, is_chat_model,
+                                              to_lc_messages)
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 

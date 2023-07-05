@@ -4,31 +4,21 @@ import queue
 import time
 from abc import abstractmethod
 from threading import Thread
-from typing import (
-    AsyncGenerator,
-    Callable,
-    Generator,
-    List,
-    Tuple,
-    Optional,
-    Union,
-)
+from typing import (AsyncGenerator, Callable, Generator, List, Optional, Tuple,
+                    Union)
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import (
-    ChatMessage,
-    MessageRole,
-    ChatResponseGen,
-    ChatResponseAsyncGen,
-)
+from llama_index.llms.base import (ChatMessage, ChatResponseAsyncGen,
+                                   ChatResponseGen, MessageRole)
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool
+from llama_index.tools.query_engine import QueryEngineTool
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -437,6 +427,30 @@ class OpenAIAgent(BaseOpenAIAgent):
 
         return cls(
             tools=tools,
+            llm=llm,
+            chat_history=chat_history,
+            verbose=verbose,
+            max_function_calls=max_function_calls,
+            callback_manager=callback_manager,
+        )
+
+    @classmethod
+    def from_query_engine(
+        cls,
+        query_engine: BaseQueryEngine, 
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        llm: Optional[OpenAI] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> "OpenAIAgent":
+        query_engine_tool = QueryEngineTool.from_defaults(
+            query_engine=query_engine, name=name, description=description
+        )
+        return cls.from_tools(
+            tools=[query_engine_tool],
             llm=llm,
             chat_history=chat_history,
             verbose=verbose,
