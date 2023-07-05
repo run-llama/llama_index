@@ -71,7 +71,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         use_async: bool = True,
     ) -> "SubQuestionQueryEngine":
         callback_manager = None
-        if service_context is not None and service_context.callback_manager is not None:
+        if service_context is not None:
             callback_manager = service_context.callback_manager
         elif len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
