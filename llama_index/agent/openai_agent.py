@@ -12,6 +12,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool
+from llama_index.agent.types import BaseAgent
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -53,7 +54,7 @@ def call_function(
     )
 
 
-class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
+class BaseOpenAIAgent(BaseAgent):
     """Base OpenAI Agent."""
 
     def __init__(
