@@ -261,7 +261,7 @@ class ServiceContext:
         global global_service_context
         global_service_context = None
 
-    def set_as_inheritable_default(self) -> "ServiceContext":
+    def set_as_default(self) -> "ServiceContext":
         """All calls to from_defaults will inherit from this service context,
         which is frozen."""
         global default_service_context
