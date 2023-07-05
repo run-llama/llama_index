@@ -16,7 +16,6 @@ from llama_index.vector_stores.types import VectorStore as VectorStoreBase
 from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 try:
