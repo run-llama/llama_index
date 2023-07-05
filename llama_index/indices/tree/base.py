@@ -51,6 +51,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
             (see :ref:`Prompt-Templates`).
         num_children (int): The number of children each node should have.
         build_tree (bool): Whether to build the tree during index construction.
+        show_progress (bool): Whether to show progress bars. Defaults to False.
 
     """
 
@@ -66,6 +67,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
         num_children: int = 10,
         build_tree: bool = True,
         use_async: bool = False,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -79,6 +81,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
+            show_progress=show_progress,
             **kwargs,
         )
 
@@ -125,6 +128,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
             self.summary_template,
             service_context=self._service_context,
             use_async=self._use_async,
+            show_progress=self._show_progress,
             docstore=self._docstore,
         )
         index_graph = index_builder.build_from_nodes(nodes, build_tree=self.build_tree)

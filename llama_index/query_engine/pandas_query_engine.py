@@ -123,7 +123,7 @@ class PandasQueryEngine(BaseQueryEngine):
         """Answer a query."""
         context = self._get_table_context()
 
-        (pandas_response_str, _,) = self._service_context.llm_predictor.predict(
+        pandas_response_str = self._service_context.llm_predictor.predict(
             self._pandas_prompt,
             df_str=context,
             query_str=query_bundle.query_str,

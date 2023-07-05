@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import pytest
 
 from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.indices.response.tree_summarize import TreeSummarize
+from llama_index.response_synthesizers import TreeSummarize
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType

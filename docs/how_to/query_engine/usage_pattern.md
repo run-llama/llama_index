@@ -46,7 +46,7 @@ Concretely speaking, you would explicitly construct a `QueryEngine` object inste
 ```python
 from llama_index import (
     VectorStoreIndex,
-    ResponseSynthesizer,
+    get_response_synthesizer,
 )
 from llama_index.retrievers import VectorIndexRetriever
 from llama_index.query_engine import RetrieverQueryEngine
@@ -61,9 +61,8 @@ retriever = VectorIndexRetriever(
 )
 
 # configure response synthesizer
-response_synthesizer = ResponseSynthesizer.from_args(
+response_synthesizer = get_response_synthesizer(
     response_mode="tree_summarize",
-    verbose=True,
 )
 
 # assemble query engine

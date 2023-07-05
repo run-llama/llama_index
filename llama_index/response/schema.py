@@ -1,9 +1,10 @@
 """Response schema."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from llama_index.schema import NodeWithScore
+from llama_index.types import TokenGen
 from llama_index.utils import truncate_text
 
 
@@ -48,7 +49,7 @@ class StreamingResponse:
 
     """
 
-    response_gen: Optional[Generator]
+    response_gen: Optional[TokenGen]
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None

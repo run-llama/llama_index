@@ -6,9 +6,11 @@ import pytest
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.llm_predictor.base import LLMPredictor
+from llama_index.llms.base import LLMMetadata
 
 
 from tests.indices.vector_store.mock_services import MockEmbedding
+from llama_index.llms.mock import MockLLM
 from tests.mock_utils.mock_predict import (
     patch_llmpredictor_apredict,
     patch_llmpredictor_predict,
@@ -46,11 +48,6 @@ def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> None:
 def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         LLMPredictor,
-        "total_tokens_used",
-        0,
-    )
-    monkeypatch.setattr(
-        LLMPredictor,
         "predict",
         patch_llmpredictor_predict,
     )
@@ -61,8 +58,18 @@ def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     monkeypatch.setattr(
         LLMPredictor,
+        "llm",
+        MockLLM(),
+    )
+    monkeypatch.setattr(
+        LLMPredictor,
         "__init__",
         lambda x: None,
+    )
+    monkeypatch.setattr(
+        LLMPredictor,
+        "metadata",
+        LLMMetadata(),
     )
 
 
