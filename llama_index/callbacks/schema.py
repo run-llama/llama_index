@@ -24,7 +24,7 @@ class CBEventType(str, Enum):
         RETRIEVE: Logs for the nodes retrieved for a query.
         SYNTHESIZE: Logs for the result for synthesize calls.
         TREE: Logs for the summary and level of summaries generated.
-        SUB_QUESTION: Logs for the sub question and answer generated.
+        SUB_QUESTIONS: Logs for the sub questions and answers generated.
     """
 
     CHUNKING = "chunking"
@@ -35,7 +35,7 @@ class CBEventType(str, Enum):
     RETRIEVE = "retrieve"
     SYNTHESIZE = "synthesize"
     TREE = "tree"
-    SUB_QUESTION = "sub_question"
+    SUB_QUESTIONS = "sub_questions"
 
 
 class EventPayload(str, Enum):
@@ -46,6 +46,7 @@ class EventPayload(str, Enum):
     RESPONSE = "response"  # response from LLM
     TEMPLATE = "template"  # template used in LLM call
     QUERY_STR = "query_str"  # query used for query engine
+    SUB_QUESTIONS = "sub_questions"  # list of sub question & answer pairs
 
 
 # events that will never have children events
