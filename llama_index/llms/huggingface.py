@@ -163,7 +163,9 @@ class HuggingFaceLLM(CustomLLM):
 
         # create generator based off of streamer
         def gen() -> CompletionResponseGen:
+            text = ""
             for x in streamer:
-                yield x
+                text += x
+                yield CompletionResponse(text=text, delta=x)
 
         return gen()
