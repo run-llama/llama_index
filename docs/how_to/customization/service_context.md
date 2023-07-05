@@ -70,9 +70,14 @@ llm_predictor = LLMPredictor(llm=llm)
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, chunk_size=512, callback_manager=callback_manager)
 ```
 
-Then, set the global service context object
+Then, set the shared global service context object
 
 ```python
-from llama_index import set_global_service_context
-set_global_service_context(service_context)
+service_context.set_global()
+```
+
+Advanced: If you want all subsequent service contexts you create to inherit from this service context, you can do:
+
+```python
+service_context.set_to_global_default()
 ```
