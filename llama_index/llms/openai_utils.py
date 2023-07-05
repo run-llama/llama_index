@@ -29,6 +29,11 @@ GPT4_MODELS = {
     "gpt-4-32k-0314": 32768,
 }
 
+AZURE_TURBO_MODELS = {
+    "gpt-35-turbo-16k": 16384,
+    "gpt-35-turbo": 4096,
+}
+
 TURBO_MODELS = {
     # stable model names:
     #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
@@ -69,6 +74,7 @@ ALL_AVAILABLE_MODELS = {
 CHAT_MODELS = {
     **GPT4_MODELS,
     **TURBO_MODELS,
+    **AZURE_TURBO_MODELS,
 }
 
 

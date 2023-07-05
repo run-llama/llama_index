@@ -94,6 +94,7 @@ __all__ = [
     "FunctionMessage",
     "BaseMessage",
     "HumanMessage",
+    "SystemMessage",
     "BaseMemory",
     "BaseOutputParser",
     "HumanMessage",
