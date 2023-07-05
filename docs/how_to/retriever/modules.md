@@ -44,3 +44,9 @@ Custom Retriever (KG Index and Vector Store Index) </examples/index_structs/know
 
 ## Composed Retrievers
 * TransformRetriever
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/query_engine/pdf_tables/recursive_retriever.ipynb
+```
