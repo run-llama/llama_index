@@ -18,5 +18,4 @@ As you iterate new versions of your LLM application, you can compare their perfo
 
 * [Build and Evaluate LLM Apps with LlamaIndex and TruLens](https://medium.com/llamaindex-blog/build-and-evaluate-llm-apps-with-llamaindex-and-trulens-6749e030d83c)
 
-
-For more information on TruLens, visit [trulens.org](https://www.trulens.org/)
+* [trulens.org](https://www.trulens.org/)
