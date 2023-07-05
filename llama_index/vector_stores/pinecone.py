@@ -11,20 +11,15 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.schema import MetadataMode, TextNode
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-    VectorStoreQueryResult,
-)
-from llama_index.vector_stores.utils import (
-    DEFAULT_TEXT_KEY,
-    metadata_dict_to_node,
-    node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
-)
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryMode,
+                                             VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (DEFAULT_TEXT_KEY,
+                                             legacy_metadata_dict_to_node,
+                                             metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 ID_KEY = "id"
 VECTOR_KEY = "values"
@@ -125,7 +120,6 @@ class PineconeVectorStore(VectorStore):
         pinecone_index: Optional[Any] = None,
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
-        namespace: Optional[str] = None,
         insert_kwargs: Optional[Dict] = None,
         add_sparse_vector: bool = False,
         tokenizer: Optional[Callable] = None,
@@ -144,7 +138,6 @@ class PineconeVectorStore(VectorStore):
 
         self._index_name = index_name
         self._environment = environment
-        self._namespace = namespace
         if pinecone_index is not None:
             self._pinecone_index = cast(pinecone.Index, pinecone_index)
         else:
@@ -207,7 +200,6 @@ class PineconeVectorStore(VectorStore):
             entries.append(entry)
         self._pinecone_index.upsert(
             entries,
-            namespace=self._namespace,
             batch_size=self._batch_size,
             **self._insert_kwargs,
         )
@@ -221,10 +213,8 @@ class PineconeVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        # delete by filtering on the doc_id metadata
         self._pinecone_index.delete(
-            filter={"doc_id": {"$eq": ref_doc_id}},
-            namespace=self._namespace,
+            ids=[ref_doc_id],
             **delete_kwargs,
         )
 
@@ -279,7 +269,6 @@ class PineconeVectorStore(VectorStore):
             top_k=query.similarity_top_k,
             include_values=True,
             include_metadata=True,
-            namespace=self._namespace,
             filter=filter,
             **kwargs,
         )
