@@ -36,13 +36,13 @@ class ReActChatEngine(BaseChatEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         llm: LangChainLLM,
         memory: BaseChatMemory,
-        prefix_messages: List[ChatMessage],
+        system_prompt: Optional[str] = None,
         verbose: bool = False,
     ) -> None:
         self._query_engine_tools = query_engine_tools
         self._llm = llm
         self._memory = memory
-        self._prefix_messages = prefix_messages
+        self._system_prompt = system_prompt
         self._verbose = verbose
 
         self._agent = self._create_agent()
@@ -83,20 +83,16 @@ class ReActChatEngine(BaseChatEngine):
                 return_messages=is_chat_model(lc_llm),
             )
 
-        if system_prompt is not None:
-            if prefix_messages is not None:
-                raise ValueError(
-                    "Cannot specify both system_prompt and prefix_messages"
-                )
-            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
-
-        prefix_messages = prefix_messages or []
+        if prefix_messages is not None:
+            raise NotImplementedError(
+                "prefix_messages is not supported for ReActChatEngine."
+            )
 
         return cls(
             query_engine_tools=query_engine_tools,
             llm=llm,
             memory=memory,
-            prefix_messages=prefix_messages,
+            system_prompt=system_prompt,
             verbose=verbose,
         )
 
@@ -126,17 +122,15 @@ class ReActChatEngine(BaseChatEngine):
 
     def _create_agent(self) -> AgentExecutor:
         tools = [qe_tool.as_langchain_tool() for qe_tool in self._query_engine_tools]
+        agent_kwargs = {}
         if is_chat_model(self._llm.llm):
             agent_type = AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION
+            if self._system_prompt is not None:
+                agent_kwargs["system_message"] = self._system_prompt
         else:
             agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
-
-        lc_prefix_messages = to_lc_messages(self._prefix_messages)
-
-        agent_kwargs = {
-            "system_message": None,
-            "extra_prompt_messages": lc_prefix_messages,
-        }
+            if self._system_prompt is not None:
+                agent_kwargs["prefix"] = self._system_prompt
 
         return initialize_agent(
             tools=tools,
