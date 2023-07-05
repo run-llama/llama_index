@@ -13,9 +13,10 @@ from llama_index.bridge.langchain import (
     FunctionMessage,
     HumanMessage,
     OpenAI,
+    SystemMessage,
 )
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
-from llama_index.llms.base import ChatMessage, LLMMetadata
+from llama_index.llms.base import ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
 
 
@@ -49,6 +50,12 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LCMessage]:
                     name=name,
                 )
             )
+        elif message.role == "system":
+            lc_messages.append(
+                SystemMessage(
+                    content=message.content, additional_kwargs=message.additional_kwargs
+                )
+            )
         else:
             raise ValueError(f"Invalid role: {message.role}")
     return lc_messages
@@ -62,7 +69,7 @@ def from_lc_messages(lc_messages: Sequence[LCMessage]) -> List[ChatMessage]:
                 ChatMessage(
                     content=lc_message.content,
                     additional_kwargs=lc_message.additional_kwargs,
-                    role="user",
+                    role=MessageRole.USER,
                 )
             )
         elif isinstance(lc_message, AIMessage):
@@ -70,7 +77,7 @@ def from_lc_messages(lc_messages: Sequence[LCMessage]) -> List[ChatMessage]:
                 ChatMessage(
                     content=lc_message.content,
                     additional_kwargs=lc_message.additional_kwargs,
-                    role="assistant",
+                    role=MessageRole.ASSISTANT,
                 )
             )
         elif isinstance(lc_message, FunctionMessage):
@@ -79,7 +86,15 @@ def from_lc_messages(lc_messages: Sequence[LCMessage]) -> List[ChatMessage]:
                     content=lc_message.content,
                     additional_kwargs=lc_message.additional_kwargs,
                     name=lc_message.name,
-                    role="function",
+                    role=MessageRole.FUNCTION,
+                )
+            )
+        elif isinstance(lc_message, SystemMessage):
+            messages.append(
+                ChatMessage(
+                    content=lc_message.content,
+                    additional_kwargs=lc_message.additional_kwargs,
+                    role=MessageRole.SYSTEM,
                 )
             )
         else:
