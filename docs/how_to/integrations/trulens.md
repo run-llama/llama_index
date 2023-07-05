@@ -18,7 +18,7 @@ pip install trulens-eval
 ```
 
 ```python
-from trulens_eval import TruLlama, Feedback, Tru, feedback
+from trulens_eval import TruLlama
 
 ```
 
