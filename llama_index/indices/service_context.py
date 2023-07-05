@@ -236,9 +236,9 @@ class ServiceContext:
         )
 
     def set_global(self) -> "ServiceContext":
-        """Sets this context as the default service context for all downstream 
-        services except when explicitly passed a service context. Changes made 
-        to this service context will affect all downstream services that depend 
+        """Sets this context as the default service context for all downstream
+        services except when explicitly passed a service context. Changes made
+        to this service context will affect all downstream services that depend
         upon it."""
         global global_service_context
         global_service_context = self
@@ -246,23 +246,23 @@ class ServiceContext:
 
     @classmethod
     def get_global(cls) -> Optional["ServiceContext"]:
-        """Get the global service context. Changes made to the global service 
-        context that isreturned will affect all downstream services that depend 
-        upon it.The global service context is by default initialized to 
+        """Get the global service context. Changes made to the global service
+        context that isreturned will affect all downstream services that depend
+        upon it.The global service context is by default initialized to
         `ServiceContext.from_defaults()`."""
         global global_service_context
         return global_service_context
 
     @classmethod
     def set_global_to_none(cls) -> None:
-        """Set the global service context. When new services are created without 
-        an explicit context, it will not will not utilize a global context, but 
+        """Set the global service context. When new services are created without
+        an explicit context, it will not will not utilize a global context, but
         instead instantiate a local service context via `from_defaults`."""
         global global_service_context
         global_service_context = None
 
     def set_as_inheritable_default(self) -> "ServiceContext":
-        """All calls to from_defaults will inherit from this service context, 
+        """All calls to from_defaults will inherit from this service context,
         which is frozen."""
         global default_service_context
         default_service_context = self.from_service_context(
