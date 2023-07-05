@@ -31,6 +31,9 @@ def test_storage_context_dict() -> None:
 
 
 def test_global_storage_context() -> None:
+    # Should be `None` in the test setting
+    assert StorageContext.get_global() is None
+
     # Test setting
     global_ctx = StorageContext.from_defaults().set_global()
     get_global = StorageContext.get_global()
@@ -41,7 +44,7 @@ def test_global_storage_context() -> None:
     global_ctx.index_store = None  # type: ignore
     get_global = StorageContext.get_global()
     assert get_global is not None
-    assert get_global.index_store is not None
+    assert get_global.index_store is None
 
     # Test setting to none
     StorageContext.set_global_to_none()
