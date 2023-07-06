@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Added streaming support to simple and condense chat engines (#6717)
+- fixed `response_mode="no_text"` response synthesizer (#6755)
 
 ## [v0.7.2] - 2023-07-06
 
