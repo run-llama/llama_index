@@ -1,6 +1,6 @@
 """Tool utilies."""
 from inspect import signature
-from typing import Any, Callable, List, Optional, Tuple, Type
+from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast
 
 from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
@@ -9,7 +9,9 @@ from pydantic.fields import FieldInfo
 def create_schema_from_function(
     name: str,
     func: Callable[..., Any],
-    additional_fields: Optional[List[Tuple[str, Type, Any]]] = None,
+    additional_fields: Optional[
+        List[Union[Tuple[str, Type, Any], Tuple[str, Type]]]
+    ] = None,
 ) -> Type[BaseModel]:
     """Create schema from function."""
     # NOTE: adapted from langchain.tools.base
@@ -23,6 +25,7 @@ def create_schema_from_function(
             param_type = Any
 
         if param_default is params[param_name].empty:
+            # Required field
             fields[param_name] = (param_type, FieldInfo())
         else:
             fields[param_name] = (param_type, FieldInfo(default=param_default))
@@ -30,9 +33,12 @@ def create_schema_from_function(
     additional_fields = additional_fields or []
     for field_info in additional_fields:
         if len(field_info) == 3:
+            field_info = cast(Tuple[str, Type, Any], field_info)
             field_name, field_type, field_default = field_info
             fields[field_name] = (field_type, FieldInfo(default=field_default))
         elif len(field_info) == 2:
+            # Required field has no default value
+            field_info = cast(Tuple[str, Type], field_info)
             field_name, field_type = field_info
             fields[field_name] = (field_type, FieldInfo())
         else:
