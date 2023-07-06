@@ -30,6 +30,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.openai import OpenAI
 
 from llama_index.agent.react.output_parser import ReActOutputParser
+from llama_index.bridge.langchain import print_text
 
 # from langchain.agents.conversational import ConversationalAgent
 
@@ -123,6 +124,7 @@ class ReActAgent(BaseAgent):
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
     ) -> None:
         self._llm = llm
         self._tools = tools
@@ -134,6 +136,7 @@ class ReActAgent(BaseAgent):
         )
         self._output_parser = output_parser or ReActOutputParser()
         self.callback_manager = callback_manager or CallbackManager([])
+        self._verbose = verbose
 
     def reset(self) -> None:
         self._chat_history.clear()
@@ -148,6 +151,7 @@ class ReActAgent(BaseAgent):
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
     ) -> "ReActAgent":
         tools = tools or []
         chat_history = chat_history or []
@@ -164,36 +168,12 @@ class ReActAgent(BaseAgent):
             react_chat_formatter=react_chat_formatter,
             output_parser=output_parser,
             callback_manager=callback_manager,
+            verbose=verbose,
         )
 
     def chat_history(self) -> CHAT_HISTORY_TYPE:
         """Chat history."""
         return self._chat_history
-
-    # def _get_inputs(
-    #     self,
-    #     message: str,
-    #     chat_history: Optional[List[ChatMessage]],
-    #     current_reasoning: Optional[List[BaseReasoningStep]] = None,
-    # ) -> str:
-    #     """Get inputs."""
-    #     current_reasoning = current_reasoning or []
-    #     current_reasoning_str = "\n".join(r for r in current_reasoning)
-    #     chat_history_str = "\n".join(
-    #         [f"> {chat_message.content}" for chat_message in chat_history]
-    #     )
-    #     return self._react_prompt.format(
-    #         tool_desc="\n".join(
-    #             [
-    #                 f"> {tool.metadata.name}: {tool.metadata.description}"
-    #                 for tool in self._tools
-    #             ]
-    #         ),
-    #         tool_names=", ".join([tool.metadata.name for tool in self._tools]),
-    #         chat_history_str=chat_history_str,
-    #         new_message=message,
-    #         current_reasoning=current_reasoning_str,
-    #     )
 
     def _process_actions(
         self, output: ChatResponse
@@ -201,7 +181,8 @@ class ReActAgent(BaseAgent):
         """Process outputs (and execute tools)."""
         ai_message = output.message
         # parse output
-        print(ai_message.content)
+        if self._verbose:
+            print_text(ai_message.content + "\n", color="blue")
         current_reasoning = []
         reasoning_step = self._output_parser.parse(ai_message.content)
         current_reasoning.append(reasoning_step)
@@ -274,9 +255,7 @@ class ReActAgent(BaseAgent):
             # send prompt
             chat_response = await self._llm.achat(input_chat)
             # given react prompt outputs, call tools or return response
-            reasoning_steps, is_done = self._process_actions(
-                output=chat_response, current_reasoning=current_reasoning
-            )
+            reasoning_steps, is_done = self._process_actions(output=chat_response)
             current_reasoning.extend(reasoning_steps)
             if is_done:
                 break
