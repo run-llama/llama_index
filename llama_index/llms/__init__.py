@@ -14,4 +14,5 @@ __all__ = [
     "ChatResponse",
     "ChatResponseGen",
     "PaLM",
+    "CustomLLM",
 ]
