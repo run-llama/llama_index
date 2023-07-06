@@ -10,7 +10,6 @@ from typing import (
     List,
     Tuple,
     Optional,
-    Union,
 )
 
 from llama_index.callbacks.base import CallbackManager
@@ -24,8 +23,6 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import (
     ChatMessage,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
     MessageRole,
 )
 from llama_index.llms.openai import OpenAI
