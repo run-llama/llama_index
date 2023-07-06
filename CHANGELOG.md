@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- fixed `response_mode="no_text"` response synthesizer (#6755)
+
 ## [v0.7.2] - 2023-07-06
 
 ### New Features
