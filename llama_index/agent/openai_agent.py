@@ -238,7 +238,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             sources = []
 
             all_messages = self._prefix_messages + chat_history
-            
+
             # TODO: Support forced function call
             chat_stream_response = StreamingChatResponse(
                 self._llm.stream_chat(all_messages, functions=functions)
@@ -355,9 +355,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             chat_history: List[ChatMessage],
         ) -> AsyncGenerator[StreamingChatResponse, None]:
             sources = []
-            
+
             all_messages = self._prefix_messages + chat_history
-            
+
             # TODO: Support forced function call
             chat_stream_response = StreamingChatResponse(
                 await self._llm.astream_chat(all_messages, functions=functions)

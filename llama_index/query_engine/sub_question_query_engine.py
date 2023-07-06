@@ -153,7 +153,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
         # add additional sources
         final_response.metadata = {
-          qa_pair.sub_q.sub_question: qa_pair.sources for qa_pair in qa_pairs
+            qa_pair.sub_q.sub_question: qa_pair.sources for qa_pair in qa_pairs
         }
 
         return final_response
@@ -181,7 +181,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             self._aquery_subq(sub_q, color=colors[str(ind)])
             for ind, sub_q in enumerate(sub_questions)
         ]
-        
+
         qa_pairs_all = await asyncio.gather(*tasks)
         qa_pairs_all = cast(List[Optional[SubQuestionAnswerPair]], qa_pairs_all)
 
@@ -203,7 +203,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
         # add additional sources
         final_response.metadata = {
-          qa_pair.sub_q.sub_question: qa_pair.sources for qa_pair in qa_pairs
+            qa_pair.sub_q.sub_question: qa_pair.sources for qa_pair in qa_pairs
         }
 
         return final_response
@@ -213,11 +213,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             f"Sub question: {qa_pair.sub_q.sub_question}\nResponse: {qa_pair.answer}"
         )
         return NodeWithScore(
-          node=TextNode(
-            text=node_text, 
-            metadata={"question": qa_pair.sub_q.sub_question}, 
-            excluded_llm_metadata_keys=["question"],
-          )
+            node=TextNode(
+                text=node_text,
+                metadata={"question": qa_pair.sub_q.sub_question},
+                excluded_llm_metadata_keys=["question"],
+            )
         )
 
     async def _aquery_subq(
@@ -236,7 +236,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return SubQuestionAnswerPair(sub_q=sub_q, answer=response_text, sources=response.source_nodes)
+            return SubQuestionAnswerPair(
+                sub_q=sub_q, answer=response_text, sources=response.source_nodes
+            )
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
@@ -257,7 +259,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return SubQuestionAnswerPair(sub_q=sub_q, answer=response_text, sources=response.source_nodes), 
+            return (
+                SubQuestionAnswerPair(
+                    sub_q=sub_q, answer=response_text, sources=response.source_nodes
+                ),
+            )
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
