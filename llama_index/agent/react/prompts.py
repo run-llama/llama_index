@@ -46,6 +46,7 @@ from llama_index.prompts.prompts import Prompt
 
 
 # ReAct chat prompt
+# TODO: have formatting instructions be a part of react output parser
 
 REACT_CHAT_SYSTEM_HEADER = """\
 
@@ -63,7 +64,7 @@ You have access to the following tools:
 To answer the question, please use the following format.
 ```
 Thought: I need to use a tool to help me answer the question.
-Action: you must pick the name of a tool that's provided above (one of {tool_names})
+Action: tool name (one of {tool_names})
 Action Input: the input to the tool, in a JSON format representing the kwargs (e.g. {{"text": "hello world", "num_beams": 5}})
 Observation: the result of the action
 ```

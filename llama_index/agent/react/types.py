@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 from abc import abstractmethod
+from typing import Dict
 
 
 class BaseReasoningStep(BaseModel):
@@ -22,7 +23,7 @@ class QuestionReasoningStep(BaseModel):
 
     def get_content(self) -> str:
         """Get content."""
-        return self.question
+        return f"Question: {self.question}\n"
 
     @property
     def is_done(self) -> bool:
@@ -33,12 +34,13 @@ class QuestionReasoningStep(BaseModel):
 class ActionReasoningStep(BaseModel):
     """Action Reasoning step."""
 
+    thought: str
     action: str
-    action_input: str
+    action_input: Dict
 
     def get_content(self) -> str:
         """Get content."""
-        return f"Action: {self.action}\nAction Input: {self.action_input}"
+        return f"Thought: {self.thought}\nAction: {self.action}\nAction Input: {self.action_input}"
 
     @property
     def is_done(self) -> bool:
@@ -53,24 +55,7 @@ class ObservationReasoningStep(BaseModel):
 
     def get_content(self) -> str:
         """Get content."""
-        return self.observation
-
-    @property
-    def is_done(self) -> bool:
-        """Is the reasoning step the last one."""
-        return False
-
-
-class ObservationReasoningStep(BaseModel):
-    """Action Reasoning step."""
-
-    action: str
-    action_input: str
-    observation: str
-
-    def get_content(self) -> str:
-        """Get content."""
-        return self.observation
+        return f"Observation: {self.observation}"
 
     @property
     def is_done(self) -> bool:
@@ -81,11 +66,12 @@ class ObservationReasoningStep(BaseModel):
 class ResponseReasoningStep(BaseModel):
     """Response reasoning step."""
 
+    thought: str
     response: str
 
     def get_content(self) -> str:
         """Get content."""
-        return self.response
+        return f"Response: {self.response}"
 
     @property
     def is_done(self) -> bool:

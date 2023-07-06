@@ -4,7 +4,7 @@ from llama_index.agent.openai_agent import OpenAIAgent
 from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.llms.base import LLM
-from typing import Sequence, cast
+from typing import Sequence, cast, Tuple
 from llama_index.tools import BaseTool
 from llama_index.agent.types import BaseAgent, CHAT_HISTORY_TYPE
 from abc import abstractmethod
@@ -31,7 +31,21 @@ from llama_index.llms.openai import OpenAI
 
 from llama_index.agent.react.output_parser import ReActOutputParser
 
-# from langchain.agents.conversational i
+# from langchain.agents.conversational import ConversationalAgent
+
+
+def get_react_tool_descriptions(tools: List[BaseTool]) -> List[str]:
+    """Tool"""
+    tool_descs = []
+    for tool in tools:
+        tool_desc = (
+            f"> Tool Name: {tool.metadata.name}\n"
+            f"Tool Description: {tool.metadata.description}\n"
+            f"Tool Args: {tool.metadata.fn_schema_str}\n"
+        )
+        tool_descs.append(tool_desc)
+    return tool_descs
+
 
 # TODO: come up with better name
 # TODO: move into module
@@ -66,16 +80,15 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         """Format chat history into list of ChatMessage."""
         current_reasoning = current_reasoning or []
         current_reasoning_str = (
-            "\n".join(r for r in current_reasoning) if current_reasoning else "None"
+            "\n".join(r.get_content() for r in current_reasoning)
+            if current_reasoning
+            else "None"
         )
 
+        tool_descs_str = "\n".join(get_react_tool_descriptions(self.tools))
+
         fmt_sys_header = self.system_header.format(
-            tool_desc="\n".join(
-                [
-                    f"> {tool.metadata.name}: {tool.metadata.description}"
-                    for tool in self.tools
-                ]
-            ),
+            tool_desc=tool_descs_str,
             tool_names=", ".join([tool.metadata.name for tool in self.tools]),
         )
         prev_chat_history = chat_history[:-1]
@@ -182,23 +195,18 @@ class ReActAgent(BaseAgent):
     #         current_reasoning=current_reasoning_str,
     #     )
 
-    def _parse_output(self, output_message: ChatMessage) -> BaseReasoningStep:
-        """Parse output."""
-        content = output_message.content
-        # check if observation
-        print(content)
-        raise Exception
-
     def _process_actions(
-        self, output: ChatResponse, current_reasoning: List[BaseReasoningStep]
-    ) -> List[BaseReasoningStep]:
+        self, output: ChatResponse
+    ) -> Tuple[List[BaseReasoningStep], bool]:
         """Process outputs (and execute tools)."""
         ai_message = output.message
         # parse output
-        reasoning_step = self._parse_output(ai_message)
+        print(ai_message.content)
+        current_reasoning = []
+        reasoning_step = self._output_parser.parse(ai_message.content)
         current_reasoning.append(reasoning_step)
         if reasoning_step.is_done:
-            return current_reasoning
+            return current_reasoning, True
 
         reasoning_step = cast(ActionReasoningStep, reasoning_step)
         if not isinstance(reasoning_step, ActionReasoningStep):
@@ -208,8 +216,8 @@ class ReActAgent(BaseAgent):
 
         output = tool(**reasoning_step.action_input)
 
-        current_reasoning.append(output.message.content)
-        return current_reasoning
+        current_reasoning.append(ObservationReasoningStep(observation=str(output)))
+        return current_reasoning, False
 
     def _get_response(
         self,
@@ -222,9 +230,9 @@ class ReActAgent(BaseAgent):
         elif len(current_reasoning) == self._max_iterations:
             raise ValueError("Reached max iterations.")
 
-        response_text = current_reasoning[-1].get_content()
+        response_step = cast(ResponseReasoningStep, current_reasoning[-1])
 
-        return Response(response=response_text)
+        return Response(response=response_step.response)
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -240,15 +248,13 @@ class ReActAgent(BaseAgent):
             input_chat = self._react_chat_formatter.format(
                 chat_history=chat_history, current_reasoning=current_reasoning
             )
-            # input_prompt = self._get_inputs(
-            #     message, chat_history, current_reasoning=current_reasoning
-            # )
             # send prompt
             chat_response = self._llm.chat(input_chat)
-            reasoning_steps = self._process_actions(
-                output=chat_response, current_reasoning=current_reasoning
-            )
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, is_done = self._process_actions(output=chat_response)
             current_reasoning.extend(reasoning_steps)
+            if is_done:
+                break
 
         return self._get_response(current_reasoning, chat_history)
 
@@ -262,17 +268,20 @@ class ReActAgent(BaseAgent):
         # start loop
         for _ in range(self._max_iterations):
             # prepare inputs
-            input_prompt = self._get_inputs(
-                message, chat_history, current_reasoning=current_reasoning
+            input_chat = self._react_chat_formatter.format(
+                chat_history=chat_history, current_reasoning=current_reasoning
             )
             # send prompt
-            chat_response = await self._llm.achat(input_prompt)
-            reasoning_steps = self._process_actions(
+            chat_response = await self._llm.achat(input_chat)
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, is_done = self._process_actions(
                 output=chat_response, current_reasoning=current_reasoning
             )
             current_reasoning.extend(reasoning_steps)
+            if is_done:
+                break
 
-        return self._get_response(current_reasoning)
+        return self._get_response(current_reasoning, chat_history)
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
