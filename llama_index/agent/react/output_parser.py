@@ -10,7 +10,8 @@ class ReActOutputParser(BaseOutputParser):
 
     def parse(self, output: str) -> Any:
         """Parse, validate, and correct errors programmatically."""
-        return self._output_parser.parse(output)
+        # TODO: write parse
+        return output
 
     def format(self, output: str) -> str:
         """Format a query with structured output formatting instructions."""
