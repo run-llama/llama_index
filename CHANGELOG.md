@@ -11,6 +11,7 @@
 - Fix HF LLM output error (#6737)
 - Add system message support for langchain message templates (#6743)
 - Fixed applying node-postprocessors (#6749)
+- Add missing `CustomLLM` import under `llama_index.llms`
 
 ## [v0.7.1] - 2023-07-05
 
