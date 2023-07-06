@@ -58,12 +58,23 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         chat_history: Optional[List[ChatMessage]] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "CondenseQuestionChatEngine":
         """Initialize a CondenseQuestionChatEngine from default parameters."""
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
         chat_history = chat_history or []
         service_context = service_context or ServiceContext.from_defaults()
+
+        if system_prompt is not None:
+            raise NotImplementedError(
+                "system_prompt is not supported for CondenseQuestionChatEngine."
+            )
+        if prefix_messages is not None:
+            raise NotImplementedError(
+                "prefix_messages is not supported for CondenseQuestionChatEngine."
+            )
 
         return cls(
             query_engine,

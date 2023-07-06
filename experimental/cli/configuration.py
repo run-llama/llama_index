@@ -2,8 +2,6 @@ import os
 from configparser import ConfigParser, SectionProxy
 from typing import Any, Type
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.bridge.langchain import OpenAI
-from llama_index.bridge.langchain import BaseLanguageModel
 from llama_index.indices.base import BaseIndex
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index import (
@@ -14,6 +12,8 @@ from llama_index import (
 )
 from llama_index.indices.loading import load_index_from_storage
 from llama_index.llm_predictor import StructuredLLMPredictor
+from llama_index.llms.base import LLM
+from llama_index.llms.openai import OpenAI
 from llama_index.storage.storage_context import StorageContext
 
 
@@ -102,7 +102,7 @@ def _load_llm_predictor(config: ConfigParser) -> LLMPredictor:
         raise KeyError("llm_predictor.type")
 
 
-def _load_llm(section: SectionProxy) -> BaseLanguageModel:
+def _load_llm(section: SectionProxy) -> LLM:
     if "engine" in section:
         return OpenAI(engine=section["engine"])
     else:
