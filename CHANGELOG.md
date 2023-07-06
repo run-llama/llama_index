@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+- Support Azure OpenAI (#6718)
+- Support prefix messages (e.g. system prompt) in chat engine and OpenAI agent (#6723)
+
 ### Bug Fixes / Nits
 - Fix HF LLM output error (#6737)
 - Add system message support for langchain message templates (#6743)
