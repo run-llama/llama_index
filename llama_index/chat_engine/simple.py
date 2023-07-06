@@ -18,23 +18,25 @@ class SimpleChatEngine(BaseChatEngine):
 
     Have a conversation with the LLM.
     This does not make use of a knowledge base.
-
-    # TODO: add back ability to configure prompt/system message
     """
 
     def __init__(
         self,
         llm: LLM,
         chat_history: List[ChatMessage],
+        prefix_messages: List[ChatMessage],
     ) -> None:
         self._llm = llm
         self._chat_history = chat_history
+        self._prefix_messages = prefix_messages
 
     @classmethod
     def from_defaults(
         cls,
         service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
@@ -44,15 +46,26 @@ class SimpleChatEngine(BaseChatEngine):
         llm = service_context.llm_predictor.llm
 
         chat_history = chat_history or []
-        return cls(llm=llm, chat_history=chat_history)
+
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
+        return cls(llm=llm, chat_history=chat_history, prefix_messages=prefix_messages)
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
         chat_history.append(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + chat_history
 
-        chat_response = self._llm.chat(chat_history)
+        chat_response = self._llm.chat(all_messages)
         ai_message = chat_response.message
         chat_history.append(ai_message)
 
@@ -75,11 +88,11 @@ class SimpleChatEngine(BaseChatEngine):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
-
         chat_history = chat_history or self._chat_history
         chat_history.append(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + chat_history
 
-        chat_response = await self._llm.achat(chat_history)
+        chat_response = await self._llm.achat(all_messages)
         ai_message = chat_response.message
         chat_history.append(ai_message)
 

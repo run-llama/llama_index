@@ -45,6 +45,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         context_separator (str): A context separator.
         llm (Optional[OpenAI]): An OpenAI LLM.
         chat_history (Optional[List[ChatMessage]]): A chat history.
+        prefix_messages: List[ChatMessage]: A list of prefix messages.
         verbose (bool): Whether to print debug statements.
         max_function_calls (int): Maximum number of function calls.
         callback_manager (Optional[CallbackManager]): A callback manager.
@@ -59,6 +60,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         context_separator: str,
         llm: OpenAI,
         chat_history: List[ChatMessage],
+        prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -66,6 +68,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         super().__init__(
             llm=llm,
             chat_history=chat_history,
+            prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
@@ -87,6 +90,8 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
     ) -> "ContextRetrieverOpenAIAgent":
         """Create a ContextRetrieverOpenAIAgent from a retriever.
 
@@ -112,6 +117,14 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
                 f"Model name {llm.model} not supported. "
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
 
         return cls(
             tools=tools,
@@ -120,6 +133,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
             context_separator=context_separator,
             llm=llm,
             chat_history=chat_history,
+            prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,

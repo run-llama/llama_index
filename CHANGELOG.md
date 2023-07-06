@@ -2,13 +2,24 @@
 
 ## Unreleased
 
-### New Features
+### Bug Fixes / Nits
 - Added streaming support to simple and condense chat engines (#6717)
+
+## [v0.7.2] - 2023-07-06
+
+### New Features
+- Support Azure OpenAI (#6718)
+- Support prefix messages (e.g. system prompt) in chat engine and OpenAI agent (#6723)
 - Added `CBEventType.SUB_QUESTIONS` event type for tracking sub question queries/responses (#6716)
 
 ### Bug Fixes / Nits
 - Fix HF LLM output error (#6737)
 - Add system message support for langchain message templates (#6743)
+- Fixed applying node-postprocessors (#6749)
+- Add missing `CustomLLM` import under `llama_index.llms` (#6752)
+- fix(typo): `get_transformer_tokenizer_fn` (#6729)
+- feat(formatting): `black[jupyter]` (#6732)
+- fix(test): `test_optimizer_chinese` (#6730)
 
 ## [v0.7.1] - 2023-07-05
 
