@@ -234,8 +234,3 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
         )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     return tokenizer.tokenize
-
-
-def get_large_chinese_tokenizer_fn() -> Callable[[str], List[str]]:
-    # Here gives an example of large-chinese-tokenizer
-    return get_transformer_tokenizer_fn("GanymedeNil/text2vec-large-chinese")
