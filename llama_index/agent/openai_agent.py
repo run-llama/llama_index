@@ -4,15 +4,7 @@ import queue
 import time
 from abc import abstractmethod
 from threading import Thread
-from typing import (
-    AsyncGenerator,
-    Callable,
-    Generator,
-    List,
-    Tuple,
-    Optional,
-    Union,
-)
+from typing import AsyncGenerator, Callable, Generator, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine
@@ -21,9 +13,9 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import (
     ChatMessage,
-    MessageRole,
-    ChatResponseGen,
     ChatResponseAsyncGen,
+    ChatResponseGen,
+    MessageRole,
 )
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
@@ -142,12 +134,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         self,
         llm: OpenAI,
         chat_history: List[ChatMessage],
+        prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._llm = llm
         self._chat_history = chat_history
+        self._prefix_messages = prefix_messages
         self._verbose = verbose
         self._max_function_calls = max_function_calls
         self.callback_manager = callback_manager or CallbackManager([])
@@ -185,7 +179,8 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
-        chat_response = self._llm.chat(chat_history, functions=functions)
+        all_messages = self._prefix_messages + chat_history
+        chat_response = self._llm.chat(all_messages, functions=functions)
         ai_message = chat_response.message
         chat_history.append(ai_message)
 
@@ -203,7 +198,8 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             n_function_calls += 1
 
             # send function call & output back to get another response
-            chat_response = self._llm.chat(chat_history, functions=functions)
+            all_messages = self._prefix_messages + chat_history
+            chat_response = self._llm.chat(all_messages, functions=functions)
             ai_message = chat_response.message
             chat_history.append(ai_message)
             function_call = self._get_latest_function_call(chat_history)
@@ -220,8 +216,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             chat_history: List[ChatMessage],
         ) -> Generator[StreamingChatResponse, None, None]:
             # TODO: Support forced function call
+            all_messages = self._prefix_messages + chat_history
             chat_stream_response = StreamingChatResponse(
-                self._llm.stream_chat(chat_history, functions=functions)
+                self._llm.stream_chat(all_messages, functions=functions)
             )
 
             # Get the response in a separate thread so we can yield the response
@@ -253,9 +250,10 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 chat_history.append(function_message)
                 n_function_calls += 1
 
+                all_messages = self._prefix_messages + chat_history
                 # send function call & output back to get another response
                 chat_stream_response = StreamingChatResponse(
-                    self._llm.stream_chat(chat_history, functions=functions)
+                    self._llm.stream_chat(all_messages, functions=functions)
                 )
 
                 # Get the response in a separate thread so we can yield the response
@@ -284,7 +282,8 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         tools, functions = self._init_chat(chat_history, message)
 
         # TODO: Support forced function call
-        chat_response = await self._llm.achat(chat_history, functions=functions)
+        all_messages = self._prefix_messages + chat_history
+        chat_response = await self._llm.achat(all_messages, functions=functions)
         ai_message = chat_response.message
         chat_history.append(ai_message)
 
@@ -302,7 +301,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             n_function_calls += 1
 
             # send function call & output back to get another response
-            response = await self._llm.achat(chat_history, functions=functions)
+            response = await self._llm.achat(
+                self._prefix_messages + chat_history, functions=functions
+            )
             ai_message = response.message
             chat_history.append(ai_message)
             function_call = self._get_latest_function_call(chat_history)
@@ -318,9 +319,10 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         async def gen(
             chat_history: List[ChatMessage],
         ) -> AsyncGenerator[StreamingChatResponse, None]:
+            all_messages = self._prefix_messages + chat_history
             # TODO: Support forced function call
             chat_stream_response = StreamingChatResponse(
-                await self._llm.astream_chat(chat_history, functions=functions)
+                await self._llm.astream_chat(all_messages, functions=functions)
             )
 
             # Get the response in a separate thread so we can yield the response
@@ -355,8 +357,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 n_function_calls += 1
 
                 # send function call & output back to get another response
+                all_messages = self._prefix_messages + chat_history
                 chat_stream_response = StreamingChatResponse(
-                    await self._llm.astream_chat(chat_history, functions=functions)
+                    await self._llm.astream_chat(all_messages, functions=functions)
                 )
 
                 # Get the response in a separate thread so we can yield the response
@@ -400,6 +403,7 @@ class OpenAIAgent(BaseOpenAIAgent):
         tools: List[BaseTool],
         llm: OpenAI,
         chat_history: List[ChatMessage],
+        prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -407,6 +411,7 @@ class OpenAIAgent(BaseOpenAIAgent):
         super().__init__(
             llm=llm,
             chat_history=chat_history,
+            prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
@@ -422,6 +427,8 @@ class OpenAIAgent(BaseOpenAIAgent):
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
     ) -> "OpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
@@ -435,10 +442,20 @@ class OpenAIAgent(BaseOpenAIAgent):
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
 
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
         return cls(
             tools=tools,
             llm=llm,
             chat_history=chat_history,
+            prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
@@ -469,6 +486,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         node_to_tool_fn: Callable[[BaseNode], BaseTool],
         llm: OpenAI,
         chat_history: List[ChatMessage],
+        prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -476,6 +494,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         super().__init__(
             llm=llm,
             chat_history=chat_history,
+            prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
@@ -493,6 +512,8 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
     ) -> "RetrieverOpenAIAgent":
         lc_chat_history = chat_history or []
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
@@ -505,11 +526,21 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
 
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
         return cls(
             retriever=retriever,
             node_to_tool_fn=node_to_tool_fn,
             llm=llm,
             chat_history=lc_chat_history,
+            prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,

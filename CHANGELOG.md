@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### New Features
+- Support Azure OpenAI (#6718)
+- Support prefix messages (e.g. system prompt) in chat engine and OpenAI agent (#6723)
 - Added `CBEventType.SUB_QUESTIONS` event type for tracking sub question queries/responses (#6716)
 
 ### Bug Fixes / Nits
