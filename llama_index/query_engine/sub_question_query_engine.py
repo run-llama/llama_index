@@ -259,10 +259,8 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return (
-                SubQuestionAnswerPair(
-                    sub_q=sub_q, answer=response_text, sources=response.source_nodes
-                ),
+            return SubQuestionAnswerPair(
+                sub_q=sub_q, answer=response_text, sources=response.source_nodes
             )
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
