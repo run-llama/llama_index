@@ -12,6 +12,7 @@
 - Add system message support for langchain message templates (#6743)
 - Fixed applying node-postprocessors (#6749)
 - Add missing `CustomLLM` import under `llama_index.llms`
+- fixed `response_mode="no_text"` response synthesizer (#6755)
 
 ## [v0.7.1] - 2023-07-05
 
