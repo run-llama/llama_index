@@ -5,10 +5,8 @@ import time
 from abc import abstractmethod
 from threading import Thread
 from typing import (
-    Any,
     AsyncGenerator,
     Callable,
-    Dict,
     Generator,
     List,
     Tuple,
@@ -28,7 +26,7 @@ from llama_index.llms.base import (
     MessageRole,
 )
 from llama_index.llms.openai import OpenAI
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool
 
@@ -50,7 +48,7 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 def call_function(
     tools: List[BaseTool], function_call: dict, verbose: bool = False
-) -> ChatMessage:
+) -> Response:
     """Call a function and return the output as a string."""
     name = function_call["name"]
     arguments_str = function_call["arguments"]
@@ -61,14 +59,31 @@ def call_function(
     argument_dict = json.loads(arguments_str)
     output = tool(**argument_dict)
     if verbose:
-        print(f"Got output: {output}")
+        print(f"Got output: {str(output)}")
         print("========================")
+
+    if isinstance(output, (StreamingResponse)):
+        output.get_response()
+
+    if isinstance(output, Response):
+        return Response(
+            response=str(output),
+            source_responses=output.source_responses,
+        )
+
+    return Response(
+        response=str(output),
+    )
+
+
+def function_response_to_message(
+    function_response: Response, function_name: str
+) -> ChatMessage:
     return ChatMessage(
-        content=str(output),
+        content=str(function_response),
         role=MessageRole.FUNCTION,
         additional_kwargs={
-            "name": function_call["name"],
-            "raw_output": output,
+            "name": function_name,
         },
     )
 
@@ -79,17 +94,33 @@ class StreamingChatResponse:
     def __init__(
         self,
         chat_stream: Union[ChatResponseGen, ChatResponseAsyncGen],
-        metadata: Optional[Dict[str, Any]] = None,
+        source_responses: Optional[List[Response]] = None,
     ) -> None:
         self._chat_stream = chat_stream
         self._queue: queue.Queue = queue.Queue()
         self._is_done = False
         self._is_function: Optional[bool] = None
         self.response_str = ""
-        self.metadata = metadata
+        self.source_responses = source_responses
 
     def __str__(self) -> str:
         return self.response_str
+
+    def get_formatted_sources(self, length: int = 100) -> str:
+        texts = []
+        source_responses = self.source_responses or []
+        for response in source_responses:
+            texts.append(response.get_formatted_sources(length=length).strip())
+
+        return "\n\n".join(texts)
+
+    def get_source_response_sources(self) -> List[NodeWithScore]:
+        """Get source response sources."""
+        sources: List[NodeWithScore] = []
+        source_responses = self.source_responses or []
+        for response in source_responses:
+            sources.extend(response.get_source_response_sources())
+        return sources
 
     def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
         if isinstance(self._chat_stream, AsyncGenerator):
@@ -191,7 +222,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
-        sources = []
+        sources: List[Response] = []
 
         # TODO: Support forced function call
         all_messages = self._prefix_messages + chat_history
@@ -206,15 +237,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 break
 
-            function_message = call_function(
+            function_response = call_function(
                 tools, function_call, verbose=self._verbose
             )
+            sources.append(function_response)
 
-            source = function_message.additional_kwargs.pop("raw_output", None)
-            if source is not None:
-                sources.append(source)
-
-            chat_history.append(function_message)
+            chat_history.append(
+                function_response_to_message(function_response, function_call["name"])
+            )
             n_function_calls += 1
 
             # send function call & output back to get another response
@@ -235,7 +265,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         def gen(
             chat_history: List[ChatMessage],
         ) -> Generator[StreamingChatResponse, None, None]:
-            sources = []
+            sources: List[Response] = []
 
             all_messages = self._prefix_messages + chat_history
 
@@ -267,22 +297,23 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                     print(f"Exceeded max function calls: {self._max_function_calls}.")
                     break
 
-                function_message = call_function(
+                function_response = call_function(
                     tools, function_call, verbose=self._verbose
                 )
+                sources.append(function_response)
 
-                source = function_message.additional_kwargs.pop("raw_output", None)
-                if source is not None:
-                    sources.append(source)
-
-                chat_history.append(function_message)
+                chat_history.append(
+                    function_response_to_message(
+                        function_response, function_call["name"]
+                    )
+                )
                 n_function_calls += 1
 
                 all_messages = self._prefix_messages + chat_history
                 # send function call & output back to get another response
                 chat_stream_response = StreamingChatResponse(
                     self._llm.stream_chat(all_messages, functions=functions),
-                    metadata={"sources": sources},
+                    source_responses=sources,
                 )
 
                 # Get the response in a separate thread so we can yield the response
@@ -309,7 +340,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
-        sources = []
+        sources: List[Response] = []
 
         # TODO: Support forced function call
         all_messages = self._prefix_messages + chat_history
@@ -324,15 +355,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 continue
 
-            function_message = call_function(
+            function_response = call_function(
                 tools, function_call, verbose=self._verbose
             )
+            sources.append(function_response)
 
-            source = function_message.additional_kwargs.pop("raw_output", None)
-            if source is not None:
-                sources.append(source)
-
-            chat_history.append(function_message)
+            chat_history.append(
+                function_response_to_message(function_response, function_call["name"])
+            )
             n_function_calls += 1
 
             # send function call & output back to get another response
@@ -343,7 +373,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             chat_history.append(ai_message)
             function_call = self._get_latest_function_call(chat_history)
 
-        return Response(ai_message.content)
+        return Response(ai_message.content, source_responses=sources)
 
     def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -354,7 +384,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         async def gen(
             chat_history: List[ChatMessage],
         ) -> AsyncGenerator[StreamingChatResponse, None]:
-            sources = []
+            sources: List[Response] = []
 
             all_messages = self._prefix_messages + chat_history
 
@@ -388,22 +418,23 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                     print(f"Exceeded max function calls: {self._max_function_calls}.")
                     break
 
-                function_message = call_function(
+                function_response = call_function(
                     tools, function_call, verbose=self._verbose
                 )
+                sources.append(function_response)
 
-                source = function_message.additional_kwargs.pop("raw_output", None)
-                if source is not None:
-                    sources.append(source)
-
-                chat_history.append(function_message)
+                chat_history.append(
+                    function_response_to_message(
+                        function_response, function_call["name"]
+                    )
+                )
                 n_function_calls += 1
 
                 # send function call & output back to get another response
                 all_messages = self._prefix_messages + chat_history
                 chat_stream_response = StreamingChatResponse(
                     await self._llm.astream_chat(all_messages, functions=functions),
-                    metadata={"sources": sources},
+                    source_responses=sources,
                 )
 
                 # Get the response in a separate thread so we can yield the response
