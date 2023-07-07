@@ -3,6 +3,7 @@
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.llms.base import LLM
 from typing import Sequence, cast, Tuple
+from llama_index.llms.openai import OpenAI
 from llama_index.tools import BaseTool
 from llama_index.agent.types import BaseAgent
 from typing import List, Optional
@@ -16,7 +17,6 @@ from llama_index.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.callbacks.base import CallbackManager
-from llama_index.llms.openai import OpenAI
 
 from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.bridge.langchain import print_text
@@ -73,9 +73,6 @@ class ReActAgent(BaseAgent):
         tools = tools or []
         chat_history = chat_history or []
         llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
-
-        if not isinstance(llm, OpenAI):
-            raise ValueError(f"Expected OpenAI, got {llm}")
 
         return cls(
             tools=tools,
