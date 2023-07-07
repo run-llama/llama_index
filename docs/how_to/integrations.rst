@@ -14,3 +14,4 @@ Some of these integrations are provided in more detailed guides below.
    integrations/using_with_langchain.md
    integrations/graphsignal.md
    integrations/guidance.md
+   integrations/trulens.md

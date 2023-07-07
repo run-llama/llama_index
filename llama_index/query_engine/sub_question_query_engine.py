@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import List, Optional, Sequence, cast
 from pydantic import BaseModel
+
 from llama_index.bridge.langchain import get_color_mapping, print_text
 
 from llama_index.async_utils import run_async_tasks
@@ -27,6 +28,7 @@ class SubQuestionAnswerPair(BaseModel):
 
     sub_q: SubQuestion
     answer: Optional[str]
+    sources: Optional[List[NodeWithScore]]
 
 
 class SubQuestionQueryEngine(BaseQueryEngine):
@@ -172,6 +174,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             self._aquery_subq(sub_q, color=colors[str(ind)])
             for ind, sub_q in enumerate(sub_questions)
         ]
+
         qa_pairs_all = await asyncio.gather(*tasks)
         qa_pairs_all = cast(List[Optional[SubQuestionAnswerPair]], qa_pairs_all)
 
@@ -213,7 +216,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return SubQuestionAnswerPair(sub_q=sub_q, answer=response_text)
+            return SubQuestionAnswerPair(
+                sub_q=sub_q, answer=response_text, sources=response.source_nodes
+            )
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
@@ -234,7 +239,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return SubQuestionAnswerPair(sub_q=sub_q, answer=response_text)
+            return SubQuestionAnswerPair(
+                sub_q=sub_q, answer=response_text, sources=response.source_nodes
+            )
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None

@@ -1,18 +1,26 @@
 import asyncio
 import json
-import queue
 import time
 from abc import abstractmethod
 from threading import Thread
-from typing import AsyncGenerator, Callable, Generator, List, Optional, Tuple, Union
+from typing import (
+    AsyncGenerator,
+    Callable,
+    Generator,
+    List,
+    Tuple,
+    Optional,
+)
 
 from llama_index.callbacks.base import CallbackManager
+from llama_index.chat_engine.types import (
+    StreamingChatResponse,
+    STREAMING_CHAT_RESPONSE_TYPE,
+)
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import (
     ChatMessage,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
     MessageRole,
 )
 from llama_index.llms.openai import OpenAI
@@ -59,71 +67,6 @@ def call_function(
             "name": function_call["name"],
         },
     )
-
-
-class StreamingChatResponse:
-    """Streaming chat response to user and writing to chat history."""
-
-    def __init__(
-        self, chat_stream: Union[ChatResponseGen, ChatResponseAsyncGen]
-    ) -> None:
-        self._chat_stream = chat_stream
-        self._queue: queue.Queue = queue.Queue()
-        self._is_done = False
-        self._is_function: Optional[bool] = None
-        self.response_str = ""
-
-    def __str__(self) -> str:
-        return self.response_str
-
-    def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
-        if isinstance(self._chat_stream, AsyncGenerator):
-            raise ValueError(
-                "Cannot write to history with async generator in sync function."
-            )
-
-        final_message = None
-        for chat in self._chat_stream:
-            final_message = chat.message
-            self._is_function = (
-                final_message.additional_kwargs.get("function_call", None) is not None
-            )
-            self._queue.put_nowait(chat.delta)
-
-        if final_message is not None:
-            chat_history.append(final_message)
-
-        self._is_done = True
-
-    async def awrite_response_to_history(self, chat_history: List[ChatMessage]) -> None:
-        if isinstance(self._chat_stream, Generator):
-            raise ValueError(
-                "Cannot write to history with sync generator in async function."
-            )
-
-        final_message = None
-        async for chat in self._chat_stream:
-            final_message = chat.message
-            self._is_function = (
-                final_message.additional_kwargs.get("function_call", None) is not None
-            )
-            self._queue.put_nowait(chat.delta)
-
-        if final_message is not None:
-            chat_history.append(final_message)
-
-        self._is_done = True
-
-    @property
-    def response_gen(self) -> Generator[str, None, None]:
-        while not self._is_done or not self._queue.empty():
-            try:
-                delta = self._queue.get(block=False)
-                self.response_str += delta
-                yield delta
-            except queue.Empty:
-                # Queue is empty, but we're not done yet
-                continue
 
 
 class BaseOpenAIAgent(BaseAgent):
@@ -207,7 +150,7 @@ class BaseOpenAIAgent(BaseAgent):
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> Generator[StreamingChatResponse, None, None]:
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 
@@ -309,9 +252,9 @@ class BaseOpenAIAgent(BaseAgent):
 
         return Response(ai_message.content)
 
-    def astream_chat(
+    async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AsyncGenerator[StreamingChatResponse, None]:
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
         chat_history = chat_history or self._chat_history
         tools, functions = self._init_chat(chat_history, message)
 

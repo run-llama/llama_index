@@ -5,7 +5,7 @@ from llama_index.bridge.langchain import (
     ChatMessageHistory,
     ConversationBufferMemory,
 )
-from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.chat_engine.types import BaseChatEngine, STREAMING_CHAT_RESPONSE_TYPE
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.agents.agents import (
@@ -167,6 +167,18 @@ class ReActChatEngine(BaseChatEngine):
 
         response = await self._agent.arun(input=message)
         return Response(response=response)
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+        raise NotImplementedError("stream_chat() is not supported for ReActChatEngine.")
+
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+        raise NotImplementedError(
+            "astream_chat() is not supported for ReActChatEngine."
+        )
 
     def reset(self) -> None:
         self._memory.clear()
