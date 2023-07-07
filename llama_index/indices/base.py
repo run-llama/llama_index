@@ -1,7 +1,7 @@
 """Base index classes."""
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.data_structs.data_structs import IndexStruct
@@ -11,6 +11,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
+from llama_index.tools.query_engine import QueryEngineTool
 
 IS = TypeVar("IS", bound=IndexStruct)
 IndexType = TypeVar("IndexType", bound="BaseIndex")
@@ -340,28 +341,36 @@ class BaseIndex(Generic[IS], ABC):
         return RetrieverQueryEngine.from_args(**kwargs)
 
     def as_chat_engine(
-        self, chat_mode: ChatMode = ChatMode.CONDENSE_QUESTION, **kwargs: Any
+        self, chat_mode: ChatMode = ChatMode.REACT, **kwargs: Any
     ) -> BaseChatEngine:
+        query_engine = self.as_query_engine(**kwargs)
+        if "service_context" not in kwargs:
+            kwargs["service_context"] = self._service_context
+
         if chat_mode == ChatMode.CONDENSE_QUESTION:
             # NOTE: lazy import
             from llama_index.chat_engine import CondenseQuestionChatEngine
 
-            query_engine = self.as_query_engine(**kwargs)
-            if "service_context" not in kwargs:
-                kwargs["service_context"] = self._service_context
             return CondenseQuestionChatEngine.from_defaults(
                 query_engine=query_engine,
                 **kwargs,
             )
         elif chat_mode == ChatMode.REACT:
             # NOTE: lazy import
-            from llama_index.chat_engine import ReActChatEngine
+            from llama_index.agent import ReActAgent
 
-            query_engine = self.as_query_engine(**kwargs)
-            if "service_context" not in kwargs:
-                kwargs["service_context"] = self._service_context
-            return ReActChatEngine.from_query_engine(
-                query_engine=query_engine,
+            name = kwargs.pop("name", None)
+            description = kwargs.pop("description", None)
+            query_engine_tool = QueryEngineTool.from_defaults(
+                query_engine=query_engine, name=name, description=description
+            )
+
+            service_context = cast(ServiceContext, kwargs.pop("service_context"))
+            llm = service_context.llm
+
+            return ReActAgent.from_tools(
+                tools=[query_engine_tool],
+                llm=llm,
                 **kwargs,
             )
         else:

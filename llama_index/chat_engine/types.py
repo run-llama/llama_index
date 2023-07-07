@@ -155,8 +155,7 @@ class ChatMode(str, Enum):
     then query the query engine for a response.
     """
     REACT = "react"
-    """Corresponds to `ReActChatEngine`.
+    """Corresponds to `ReActAgent`.
     
     Use a ReAct agent loop with query engine tools. 
-    Implemented via LangChain agent.
     """

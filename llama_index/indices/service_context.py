@@ -224,6 +224,12 @@ class ServiceContext:
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
         )
+    
+    @property
+    def llm(self) -> LLM:
+        if not isinstance(self.llm_predictor, LLMPredictor):
+            raise ValueError("llm_predictor must be an instance of LLMPredictor")
+        return self.llm_predictor.llm
 
 
 def set_global_service_context(service_context: Optional[ServiceContext]) -> None:
