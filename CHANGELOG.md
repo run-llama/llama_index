@@ -3,9 +3,10 @@
 ## Unreleased
 
 ### New Features
-- Sub question query engine returns source nodes of sub questions in `response.metadata['sources']` (#6745)
+- Sub question query engine returns source nodes of sub questions in the callback manager (#6745)
 
 ### Bug Fixes / Nits
+- Added/Fixed streaming support to simple and condense chat engines (#6717)
 - fixed `response_mode="no_text"` response synthesizer (#6755)
 - fixed error setting `num_output` and `context_window` in service context (#6766)
 
