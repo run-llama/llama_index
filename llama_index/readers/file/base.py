@@ -1,6 +1,7 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
 from pathlib import Path
+import os
 from typing import Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.readers.base import BaseReader
@@ -83,6 +84,15 @@ class SimpleDirectoryReader(BaseReader):
             raise ValueError("Must provide either `input_dir` or `input_files`.")
 
         self.errors = errors
+
+       # Path validation
+        if input_dir and not os.path.isdir(input_dir):
+            raise ValueError(f"input_dir {input_dir} does not exist or is not a directory.")
+        if input_files:
+            for file in input_files:
+                if not os.path.isfile(file):
+                    raise ValueError(f"File {file} does not exist or is not a file.")
+
 
         self.exclude = exclude
         self.recursive = recursive
