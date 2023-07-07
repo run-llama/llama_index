@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - fixed `response_mode="no_text"` response synthesizer (#6755)
+- fixed error setting `num_output` and `context_window` in service context (#6766)
 
 ## [v0.7.2] - 2023-07-06
 
