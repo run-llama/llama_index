@@ -13,7 +13,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
-from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.tools.query_engine import QueryEngineTool
@@ -152,9 +152,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         )
 
         # add additional sources
-        final_response.metadata = {
-            qa_pair.sub_q.sub_question: qa_pair.sources for qa_pair in qa_pairs
-        }
+        final_response.source_responses = [
+            Response(response=qa_pair.answer, source_nodes=qa_pair.sources or [])
+            for qa_pair in qa_pairs
+        ]
 
         return final_response
 
@@ -202,9 +203,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         )
 
         # add additional sources
-        final_response.metadata = {
-            qa_pair.sub_q.sub_question: qa_pair.sources for qa_pair in qa_pairs
-        }
+        final_response.source_responses = [
+            Response(response=qa_pair.answer, source_nodes=qa_pair.sources or [])
+            for qa_pair in qa_pairs
+        ]
 
         return final_response
 
