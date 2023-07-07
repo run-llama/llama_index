@@ -13,7 +13,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.tools.query_engine import QueryEngineTool
@@ -146,18 +146,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         )
 
         nodes = [self._construct_node(pair) for pair in qa_pairs]
-        final_response = self._response_synthesizer.synthesize(
+        return self._response_synthesizer.synthesize(
             query=query_bundle,
             nodes=nodes,
         )
-
-        # add additional sources
-        final_response.source_responses = [
-            Response(response=qa_pair.answer, source_nodes=qa_pair.sources or [])
-            for qa_pair in qa_pairs
-        ]
-
-        return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         sub_questions = await self._question_gen.agenerate(
@@ -197,30 +189,16 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
         nodes = [self._construct_node(pair) for pair in qa_pairs]
 
-        final_response = await self._response_synthesizer.asynthesize(
+        return await self._response_synthesizer.asynthesize(
             query=query_bundle,
             nodes=nodes,
         )
-
-        # add additional sources
-        final_response.source_responses = [
-            Response(response=qa_pair.answer, source_nodes=qa_pair.sources or [])
-            for qa_pair in qa_pairs
-        ]
-
-        return final_response
 
     def _construct_node(self, qa_pair: SubQuestionAnswerPair) -> NodeWithScore:
         node_text = (
             f"Sub question: {qa_pair.sub_q.sub_question}\nResponse: {qa_pair.answer}"
         )
-        return NodeWithScore(
-            node=TextNode(
-                text=node_text,
-                metadata={"question": qa_pair.sub_q.sub_question},
-                excluded_llm_metadata_keys=["question"],
-            )
-        )
+        return NodeWithScore(node=TextNode(text=node_text))
 
     async def _aquery_subq(
         self, sub_q: SubQuestion, color: Optional[str] = None

@@ -51,7 +51,7 @@ class QueryEngineTool(BaseTool):
     def __call__(self, input: Any) -> Any:
         query_str = cast(str, input)
         response = self._query_engine.query(query_str)
-        return response
+        return str(response)
 
     def as_langchain_tool(self) -> LlamaIndexTool:
         tool_config = IndexToolConfig(

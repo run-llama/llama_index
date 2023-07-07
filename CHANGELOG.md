@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Sub question query engine returns source nodes of sub questions in `response.metadata['sources']` (#6745)
+
 ### Bug Fixes / Nits
 - fixed `response_mode="no_text"` response synthesizer (#6755)
 - fixed error setting `num_output` and `context_window` in service context (#6766)
@@ -9,8 +12,6 @@
 ## [v0.7.2] - 2023-07-06
 
 ### New Features
-- Agents now keep track of function outputs in `response.metadata['sources']` (#6745)
-- Sub question query engine returns source nodes of sub questions in `response.metadata['sources']` (#6745)
 - Support Azure OpenAI (#6718)
 - Support prefix messages (e.g. system prompt) in chat engine and OpenAI agent (#6723)
 - Added `CBEventType.SUB_QUESTIONS` event type for tracking sub question queries/responses (#6716)

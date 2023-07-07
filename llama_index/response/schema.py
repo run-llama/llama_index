@@ -21,7 +21,6 @@ class Response:
 
     response: Optional[str]
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-    source_responses: List["Response"] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
 
     def __str__(self) -> str:
@@ -36,19 +35,7 @@ class Response:
             doc_id = source_node.node.node_id or "None"
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)
-
-        for response in self.source_responses:
-            texts.append(response.get_formatted_sources(length=length))
-
         return "\n\n".join(texts)
-
-    def get_source_response_sources(self) -> List[NodeWithScore]:
-        """Get source response sources."""
-        source_nodes = []
-        for response in self.source_responses:
-            source_nodes.extend(response.source_nodes)
-            source_nodes.extend(response.get_source_response_sources())
-        return source_nodes
 
 
 @dataclass
@@ -64,7 +51,6 @@ class StreamingResponse:
 
     response_gen: Optional[TokenGen]
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-    source_responses: List[Response] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
 
@@ -84,12 +70,7 @@ class StreamingResponse:
             for text in self.response_gen:
                 response_txt += text
             self.response_txt = response_txt
-        return Response(
-            response=self.response_txt,
-            source_nodes=self.source_nodes,
-            source_responses=self.source_responses,
-            metadata=self.metadata,
-        )
+        return Response(self.response_txt, self.source_nodes, self.metadata)
 
     def print_response_stream(self) -> None:
         """Print the response stream."""
@@ -110,19 +91,7 @@ class StreamingResponse:
             node_id = source_node.node.node_id or "None"
             source_text = f"> Source (Node id: {node_id}): {fmt_text_chunk}"
             texts.append(source_text)
-
-        for response in self.source_responses:
-            texts.append(response.get_formatted_sources(length=length).strip())
-
         return "\n\n".join(texts)
-
-    def get_source_response_sources(self) -> List[NodeWithScore]:
-        """Get source response sources."""
-        source_nodes = []
-        for response in self.source_responses:
-            source_nodes.extend(response.source_nodes)
-            source_nodes.extend(response.get_source_response_sources())
-        return source_nodes
 
 
 RESPONSE_TYPE = Union[Response, StreamingResponse]
