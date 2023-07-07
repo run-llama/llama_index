@@ -58,7 +58,7 @@ class VectorIndexRetriever(BaseRetriever):
         self._doc_ids = doc_ids
         self._filters = filters
 
-        self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
+        self._kwargs: Dict[str, Any] = kwargs
 
     def _retrieve(
         self,
