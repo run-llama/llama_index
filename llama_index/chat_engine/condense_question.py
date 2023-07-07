@@ -2,13 +2,13 @@ import logging
 from typing import Any, List, Optional
 
 from llama_index.chat_engine.types import BaseChatEngine, STREAMING_CHAT_RESPONSE_TYPE
+from llama_index.chat_engine.utils import response_gen_with_chat_history
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
-from llama_index.types import TokenGen
 
 logger = logging.getLogger(__name__)
 
@@ -165,25 +165,11 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             isinstance(response, StreamingResponse)
             and response.response_gen is not None
         ):
-
-            def gen(
-                chat_history: List[ChatMessage], response_gen: TokenGen
-            ) -> TokenGen:
-                response_str = ""
-                for token in response_gen:
-                    response_str += token
-                    yield token
-
-                chat_history.extend(
-                    [
-                        ChatMessage(role=MessageRole.USER, content=message),
-                        ChatMessage(role=MessageRole.ASSISTANT, content=response_str),
-                    ]
-                )
-
             # override the generator to include writing to chat history
             response = StreamingResponse(
-                gen(chat_history, response.response_gen),
+                response_gen_with_chat_history(
+                    message, chat_history, response.response_gen
+                ),
                 source_nodes=response.source_nodes,
                 metadata=response.metadata,
             )
@@ -238,25 +224,11 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             isinstance(response, StreamingResponse)
             and response.response_gen is not None
         ):
-
-            def gen(
-                chat_history: List[ChatMessage], response_gen: TokenGen
-            ) -> TokenGen:
-                response_str = ""
-                for token in response_gen:
-                    response_str += token
-                    yield token
-
-                chat_history.extend(
-                    [
-                        ChatMessage(role=MessageRole.USER, content=message),
-                        ChatMessage(role=MessageRole.ASSISTANT, content=response_str),
-                    ]
-                )
-
             # override the generator to include writing to chat history
             response = StreamingResponse(
-                gen(chat_history, response.response_gen),
+                response_gen_with_chat_history(
+                    message, chat_history, response.response_gen
+                ),
                 source_nodes=response.source_nodes,
                 metadata=response.metadata,
             )
