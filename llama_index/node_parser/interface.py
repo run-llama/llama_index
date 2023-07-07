@@ -1,5 +1,5 @@
 """Node parser interface."""
-from typing import List, Sequence
+from typing import List, Sequence, Dict, Optional, Any
 
 from abc import ABC, abstractmethod
 
@@ -24,14 +24,14 @@ class NodeParser(ABC):
         """
 
 
-class NodeParserPostProcessor(ABC):
-    """Base interface for node parser post processor."""
+class BaseMetadataExtractor(ABC):
+    """Base interface for metadata extractor."""
 
     @abstractmethod
-    def post_process_nodes(
+    def extract_metadata(
         self,
         nodes: List[BaseNode],
-    ) -> None:
+    ) -> List[Dict]:
         """Post process nodes parsed from documents.
 
         Args:

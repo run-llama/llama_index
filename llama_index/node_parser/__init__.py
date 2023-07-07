@@ -2,9 +2,13 @@
 
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
-from llama_index.node_parser.postprocessors.metadata_extractors import (
+from llama_index.node_parser.extractors.metadata_extractors import (
     MetadataExtractor,
-    MetadataExtractorBase,
+    SummaryExtractor,
+    QuestionsAnsweredExtractor,
+    TitleExtractor,
+    KeywordExtractor,
+    MetadataFeatureExtractor,
 )
 
 __all__ = [
@@ -12,4 +16,9 @@ __all__ = [
     "NodeParser",
     "MetadataExtractor",
     "MetadataExtractorBase",
+    "SummaryExtractor",
+    "QuestionsAnsweredExtractor",
+    "TitleExtractor",
+    "KeywordExtractor",
+    "MetadataFeatureExtractor",
 ]
