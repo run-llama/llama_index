@@ -3,7 +3,6 @@
 
 from llama_index.output_parsers.utils import extract_json_str
 from llama_index.types import BaseOutputParser
-import re
 from llama_index.agent.react.types import (
     BaseReasoningStep,
     ResponseReasoningStep,

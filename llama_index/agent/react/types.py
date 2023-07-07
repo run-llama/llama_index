@@ -18,19 +18,6 @@ class BaseReasoningStep(BaseModel):
         """Is the reasoning step the last one."""
 
 
-class QuestionReasoningStep(BaseReasoningStep):
-    question: str
-
-    def get_content(self) -> str:
-        """Get content."""
-        return f"Question: {self.question}\n"
-
-    @property
-    def is_done(self) -> bool:
-        """Is the reasoning step the last one."""
-        return False
-
-
 class ActionReasoningStep(BaseReasoningStep):
     """Action Reasoning step."""
 
@@ -52,7 +39,7 @@ class ActionReasoningStep(BaseReasoningStep):
 
 
 class ObservationReasoningStep(BaseReasoningStep):
-    """Action Reasoning step."""
+    """Observation reasoning step."""
 
     observation: str
 

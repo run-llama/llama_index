@@ -1,18 +1,17 @@
 # ReAct agent formatter
 
-from typing import Sequence
-from llama_index.tools import BaseTool
 from abc import abstractmethod
-from typing import List, Optional
-from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.agent.react.prompts import (
-    REACT_CHAT_SYSTEM_HEADER,
-    REACT_CHAT_LAST_USER_MESSAGE,
-)
-from llama_index.agent.react.types import (
-    BaseReasoningStep,
-)
+from typing import List, Optional, Sequence
+
 from pydantic import BaseModel
+
+from llama_index.agent.react.prompts import (
+    REACT_CHAT_LAST_USER_MESSAGE,
+    REACT_CHAT_SYSTEM_HEADER,
+)
+from llama_index.agent.react.types import BaseReasoningStep
+from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.tools import BaseTool
 
 
 def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:

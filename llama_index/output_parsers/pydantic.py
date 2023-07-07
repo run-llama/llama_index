@@ -3,7 +3,6 @@
 from llama_index.output_parsers.utils import extract_json_str
 from llama_index.types import BaseOutputParser, Model
 from typing import Type, Optional, List, Any
-import re
 import json
 
 PYDANTIC_FORMAT_TMPL = """
