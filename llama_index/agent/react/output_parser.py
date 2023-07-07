@@ -1,6 +1,7 @@
 """ReAct output parser."""
 
 
+from llama_index.output_parsers.utils import extract_json_str
 from llama_index.types import BaseOutputParser
 import re
 from llama_index.agent.react.types import (
@@ -26,16 +27,7 @@ class ReActOutputParser(BaseOutputParser):
         # parse out action
         action_str = output_lines[1].split("Action:")[1].strip()
         raw_action_input_str = output_lines[2].split("Action Input:")[1].strip()
-        # NOTE: this is copied from llama_index.output_parsers.pydantic
-        # which is in turn taken from langchain.output_parsers.pydantic
-        match = re.search(
-            r"\{.*\}",
-            raw_action_input_str.strip(),
-            re.MULTILINE | re.IGNORECASE | re.DOTALL,
-        )
-        if match is None:
-            raise ValueError(f"Could not find JSON in {raw_action_input_str}")
-        json_str = match.group()
+        json_str = extract_json_str(raw_action_input_str)
 
         # NOTE: we found that json.loads does not reliably parse
         # json with single quotes, so we use ast instead
