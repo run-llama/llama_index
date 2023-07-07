@@ -44,6 +44,7 @@ class MetadataFeatureExtractor(BaseExtractor):
 
         """
 
+
 DEFAULT_NODE_TEXT_TEMPLATE = """\
 [Excerpt from document]\n{metadata_str}\n\
 Excerpt:\n-----\n{content}\n-----\n"""
@@ -130,7 +131,8 @@ class TitleExtractor(MetadataFeatureExtractor):
         combine_template (str): template for combining node-level clues into
             a document-level title
     """
-    is_text_node_only = False # can work for mixture of text and non-text nodes
+
+    is_text_node_only = False  # can work for mixture of text and non-text nodes
 
     def __init__(
         self,
@@ -181,7 +183,7 @@ class TitleExtractor(MetadataFeatureExtractor):
                 0
             ]  # if single node, just use the title from that node
 
-        metadata_list = [{"document_title": title.strip(' \t\n\r"')}  for node in nodes]
+        metadata_list = [{"document_title": title.strip(' \t\n\r"')} for node in nodes]
         return metadata_list
 
 
@@ -205,7 +207,7 @@ class KeywordExtractor(MetadataFeatureExtractor):
         self._keywords = keywords
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        metadata_list = []
+        metadata_list: List[Dict] = []
         for node in nodes:
             if self.is_text_node_only and not isinstance(node, TextNode):
                 metadata_list.append({})
@@ -249,7 +251,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         self._prompt_template = prompt_template
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        metadata_list = []
+        metadata_list: List[Dict] = []
         for node in nodes:
             if self.is_text_node_only and not isinstance(node, TextNode):
                 metadata_list.append({})
