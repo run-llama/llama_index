@@ -63,7 +63,7 @@ def call_function(
         print("========================")
 
     if isinstance(output, (StreamingResponse)):
-        output.get_response()
+        output = output.get_response()
 
     if isinstance(output, Response):
         return Response(
@@ -254,7 +254,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             chat_history.append(ai_message)
             function_call = self._get_latest_function_call(chat_history)
 
-        return Response(ai_message.content, metadata={"sources": sources})
+        return Response(ai_message.content, source_responses=sources)
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
