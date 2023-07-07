@@ -52,6 +52,7 @@ def default_output_processor(
         exec(ast.unparse(module), {}, local_vars)  # type: ignore
         module_end = ast.Module(tree.body[-1:], type_ignores=[])
         module_end_str = ast.unparse(module_end)  # type: ignore
+        print(module_end_str)
         try:
             return str(eval(module_end_str, {}, local_vars))
         except Exception as e:
@@ -122,7 +123,7 @@ class PandasQueryEngine(BaseQueryEngine):
         """Answer a query."""
         context = self._get_table_context()
 
-        (pandas_response_str, _,) = self._service_context.llm_predictor.predict(
+        pandas_response_str = self._service_context.llm_predictor.predict(
             self._pandas_prompt,
             df_str=context,
             query_str=query_bundle.query_str,

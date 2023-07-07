@@ -222,7 +222,7 @@ class GithubRepositoryReader(BaseReader):
                     "\t" * current_depth + f"recursing into {tree_obj.path}",
                 )
                 if self._ignore_directories is not None:
-                    if file_path in self._ignore_directories:
+                    if tree_obj.path in self._ignore_directories:
                         print_if_verbose(
                             self._verbose,
                             "\t" * current_depth
@@ -311,7 +311,7 @@ class GithubRepositoryReader(BaseReader):
             )
             document = Document(
                 text=decoded_text,
-                doc_id=blob_data.sha,
+                id_=blob_data.sha,
                 metadata={
                     "file_path": full_path,
                     "file_name": full_path.split("/")[-1],
@@ -380,7 +380,7 @@ class GithubRepositoryReader(BaseReader):
                     return None
                 return Document(
                     text=parsed_file,
-                    doc_id=tree_sha,
+                    id_=tree_sha,
                     metadata={
                         "file_path": file_path,
                         "file_name": tree_path,

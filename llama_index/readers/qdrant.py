@@ -177,7 +177,7 @@ class QdrantReader(BaseReader):
             except ValueError as e:
                 raise ValueError("Could not cast vector to List[float].") from e
             document = Document(
-                doc_id=payload.get("doc_id"),
+                id_=payload.get("doc_id"),
                 text=payload.get("text"),
                 metadata=payload.get("metadata"),
                 embedding=vector,

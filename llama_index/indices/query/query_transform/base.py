@@ -15,7 +15,7 @@ from llama_index.indices.query.query_transform.prompts import (
     StepDecomposeQueryTransformPrompt,
 )
 from llama_index.indices.query.schema import QueryBundle, QueryType
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
@@ -109,7 +109,7 @@ class HyDEQueryTransform(BaseQueryTransform):
         """Run query transform."""
         # TODO: support generating multiple hypothetical docs
         query_str = query_bundle.query_str
-        hypothetical_doc, _ = self._llm_predictor.predict(
+        hypothetical_doc = self._llm_predictor.predict(
             self._hyde_prompt, context_str=query_str
         )
         embedding_strs = [hypothetical_doc]
@@ -155,7 +155,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
         query_str = query_bundle.query_str
-        new_query_str, _ = self._llm_predictor.predict(
+        new_query_str = self._llm_predictor.predict(
             self._decompose_query_prompt,
             query_str=query_str,
             context_str=index_summary,
@@ -244,7 +244,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
         query_str = query_bundle.query_str
-        new_query_str, formatted_prompt = self._llm_predictor.predict(
+        new_query_str = self._llm_predictor.predict(
             self._step_decompose_query_prompt,
             prev_reasoning=fmt_prev_reasoning,
             query_str=query_str,
@@ -252,7 +252,6 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
         )
         if self.verbose:
             print_text(f"> Current query: {query_str}\n", color="yellow")
-            print_text(f"> Formatted prompt: {formatted_prompt}\n", color="pink")
             print_text(f"> New query: {new_query_str}\n", color="pink")
         return QueryBundle(
             query_str=new_query_str,

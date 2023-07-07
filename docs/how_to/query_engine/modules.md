@@ -31,10 +31,12 @@ maxdepth: 1
 /examples/query_engine/SQLRouterQueryEngine.ipynb
 /examples/query_engine/SQLAutoVectorQueryEngine.ipynb
 /examples/query_engine/SQLJoinQueryEngine.ipynb
+/examples/index_structs/struct_indices/duckdb_sql_query.ipynb
 Retry Query Engine </examples/evaluation/RetryQuery.ipynb>
 Retry Source Query Engine </examples/evaluation/RetryQuery.ipynb>
 Retry Guideline Query Engine </examples/evaluation/RetryQuery.ipynb>
 /examples/query_engine/citation_query_engine.ipynb
+/examples/query_engine/pdf_tables/recursive_retriever.ipynb
 ```
 
 ## Experimental

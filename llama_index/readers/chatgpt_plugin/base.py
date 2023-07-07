@@ -50,7 +50,7 @@ class ChatGPTRetrievalPluginReader(BaseReader):
                 result_embedding = result["embedding"]
                 document = Document(
                     text=result_txt,
-                    doc_id=result_id,
+                    id_=result_id,
                     embedding=result_embedding,
                 )
                 documents.append(document)

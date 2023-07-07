@@ -99,7 +99,7 @@ class MilvusReader(BaseReader):
         # TODO: In future append embedding when more efficient
         for hit in res[0]:
             document = Document(
-                doc_id=hit.entity.get("doc_id"),
+                id_=hit.entity.get("doc_id"),
                 text=hit.entity.get("text"),
             )
 

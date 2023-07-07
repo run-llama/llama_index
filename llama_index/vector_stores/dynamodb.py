@@ -120,8 +120,8 @@ class DynamoDBVectorStore(VectorStore):
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._kvstore.get_all(collection=self._collection_embedding).items()
 
-        if query.doc_ids:
-            available_ids = set(query.doc_ids)
+        if query.node_ids:
+            available_ids = set(query.node_ids)
 
             node_ids = [k for k, _ in items if k in available_ids]
             embeddings = [v[self._key_value] for k, v in items if k in available_ids]

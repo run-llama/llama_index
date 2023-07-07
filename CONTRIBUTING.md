@@ -37,9 +37,9 @@ A data loader ingests data of any format from anywhere into `Document` objects, 
 
 
 **Examples**:
-* [Google Sheets Loader](https://github.com/emptycrown/llama-hub/tree/main/loader_hub/google_sheets)
-* [Gmail Loader](https://github.com/emptycrown/llama-hub/tree/main/loader_hub/gmail)
-* [Github Repository Loader](https://github.com/emptycrown/llama-hub/tree/main/loader_hub/github_repo)
+* [Google Sheets Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/google_sheets)
+* [Gmail Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/gmail)
+* [Github Repository Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/github_repo)
 
 Contributing a data loader is easy and super impactful for the community.
 The preferred way to contribute is making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
@@ -133,7 +133,7 @@ types of data?
 
 Our query engine classes are lightweight classes that implement a `query` method; the query returns a response type.
 For instance, they may take in a retriever class as input; our `RetrieverQueryEngine` 
-takes in a `retriever` as input as well as a `ResponseSynthesizer` class, and
+takes in a `retriever` as input as well as a `BaseSynthesizer` class for response synthesis, and
 the `query` method performs retrieval and synthesis before returning the final result.
 They may take in other query engine classes in as input too.
 

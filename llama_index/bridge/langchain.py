@@ -19,9 +19,6 @@ from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
 )
 
-# chain
-from langchain import LLMChain
-
 # chat and memory
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory import ConversationBufferMemory, ChatMessageHistory
@@ -42,7 +39,13 @@ from langchain.input import print_text, get_color_mapping
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 
 # schema
-from langchain.schema import AIMessage, FunctionMessage, BaseMessage, HumanMessage
+from langchain.schema import (
+    AIMessage,
+    FunctionMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain.schema import BaseMemory
 from langchain.schema import BaseOutputParser, LLMResult
 from langchain.schema import ChatGeneration
@@ -71,7 +74,6 @@ __all__ = [
     "ChatPromptTemplate",
     "HumanMessagePromptTemplate",
     "BaseMessagePromptTemplate",
-    "LLMChain",
     "BaseChatMemory",
     "ConversationBufferMemory",
     "ChatMessageHistory",
@@ -93,6 +95,7 @@ __all__ = [
     "FunctionMessage",
     "BaseMessage",
     "HumanMessage",
+    "SystemMessage",
     "BaseMemory",
     "BaseOutputParser",
     "HumanMessage",

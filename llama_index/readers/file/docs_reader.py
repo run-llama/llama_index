@@ -13,7 +13,9 @@ from llama_index.schema import Document
 class PDFReader(BaseReader):
     """PDF parser."""
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         try:
             import pypdf
@@ -36,8 +38,8 @@ class PDFReader(BaseReader):
                 page_label = pdf.page_labels[page]
 
                 metadata = {"page_label": page_label, "file_name": file.name}
-                if metadata is not None:
-                    metadata.update(metadata)
+                if extra_info is not None:
+                    metadata.update(extra_info)
 
                 docs.append(Document(text=page_text, metadata=metadata))
             return docs
@@ -46,7 +48,9 @@ class PDFReader(BaseReader):
 class DocxReader(BaseReader):
     """Docx parser."""
 
-    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         try:
             import docx2txt
@@ -58,7 +62,7 @@ class DocxReader(BaseReader):
 
         text = docx2txt.process(file)
         metadata = {"file_name": file.name}
-        if metadata is not None:
-            metadata.update(metadata)
+        if extra_info is not None:
+            metadata.update(extra_info)
 
-        return [Document(text=text, metadata=metadata)]
+        return [Document(text=text, metadata=metadata or {})]
