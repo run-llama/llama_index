@@ -94,7 +94,6 @@ class ReActAgent(BaseAgent):
         self, output: ChatResponse
     ) -> Tuple[List[BaseReasoningStep], bool]:
         """Process outputs (and execute tools)."""
-        # TODO: remove Optional typing from message?
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
