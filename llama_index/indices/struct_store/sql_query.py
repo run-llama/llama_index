@@ -125,6 +125,15 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         """Get service context."""
         return self._service_context
 
+    def _parse_response_to_sql(self, response: str) -> str:
+        """Parse response to SQL."""
+        # Find and remove SQLResult part
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
+            response = response[:sql_result_start]
+        result_response = response.strip()
+        return result_response
+
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
         """Get table context.
 
