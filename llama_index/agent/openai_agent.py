@@ -66,10 +66,7 @@ def call_function(
         output = output.get_response()
 
     if isinstance(output, Response):
-        return Response(
-            response=str(output),
-            source_responses=output.source_responses,
-        )
+        return output
 
     return Response(
         response=str(output),
