@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+- fixed `response_mode="no_text"` response synthesizer (#6755)
+- fixed error setting `num_output` and `context_window` in service context (#6766)
+
+## [v0.7.2] - 2023-07-06
+
 ### New Features
 - Agents now keep track of function outputs in `response.metadata['sources']` (#6745)
 - Sub question query engine returns source nodes of sub questions in `response.metadata['sources']` (#6745)
@@ -13,7 +19,10 @@
 - Fix HF LLM output error (#6737)
 - Add system message support for langchain message templates (#6743)
 - Fixed applying node-postprocessors (#6749)
-- Add missing `CustomLLM` import under `llama_index.llms`
+- Add missing `CustomLLM` import under `llama_index.llms` (#6752)
+- fix(typo): `get_transformer_tokenizer_fn` (#6729)
+- feat(formatting): `black[jupyter]` (#6732)
+- fix(test): `test_optimizer_chinese` (#6730)
 
 ## [v0.7.1] - 2023-07-05
 
