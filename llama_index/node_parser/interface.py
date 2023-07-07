@@ -24,16 +24,16 @@ class NodeParser(ABC):
         """
 
 
-class BaseMetadataExtractor(ABC):
-    """Base interface for metadata extractor."""
+class BaseExtractor(ABC):
+    """Base interface for feature extractor."""
 
     @abstractmethod
-    def extract_metadata(
+    def extract(
         self,
         nodes: List[BaseNode],
     ) -> List[Dict]:
         """Post process nodes parsed from documents.
 
         Args:
-            nodes (List[BaseNode]): nodes to post-process
+            nodes (List[BaseNode]): nodes to extract from
         """

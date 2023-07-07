@@ -26,16 +26,20 @@ from typing import Any, Callable, List, Optional, Sequence, cast, Dict
 from functools import reduce
 
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
-from llama_index.node_parser.interface import BaseMetadataExtractor
+from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts.base import Prompt
 from llama_index.schema import BaseNode, TextNode
 
 
-class MetadataFeatureExtractor(ABC):
+class MetadataFeatureExtractor(BaseExtractor):
+    """
+    if `is_text_node_only` is True, then the list returned will omit
+
+    """
     is_text_node_only = True
 
     @abstractmethod
-    def __call__(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extracts metadata for a sequence of nodes and mutates the nodes in place.
 
         Args:
@@ -43,13 +47,12 @@ class MetadataFeatureExtractor(ABC):
 
         """
 
-
 DEFAULT_NODE_TEXT_TEMPLATE = """\
 [Excerpt from document]\n{metadata_str}\n\
 Excerpt:\n-----\n{content}\n-----\n"""
 
 
-class MetadataExtractor(BaseMetadataExtractor):
+class MetadataExtractor(BaseExtractor):
     """Metadata extractor."""
 
     def __init__(
@@ -62,20 +65,20 @@ class MetadataExtractor(BaseMetadataExtractor):
         self._node_text_template = node_text_template
         self._disable_template_rewrite = disable_template_rewrite
 
-    def extract_metadata(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract metadata from a document.
 
         Args:
             nodes (Sequence[BaseNode]): nodes to extract metadata from
 
         """
-        metadatas: List[Dict] = [{} for _ in nodes]
+        metadata_list: List[Dict] = [{} for _ in nodes]
         for extractor in self._extractors:
-            cur_metadatas = extractor(nodes)
-            for i, metadata in enumerate(metadatas):
-                metadata.update(cur_metadatas[i])
+            cur_metadata_list = extractor.extract(nodes)
+            for i, metadata in enumerate(metadata_list):
+                metadata.update(cur_metadata_list[i])
 
-        return metadatas
+        return metadata_list
 
     def process_nodes(
         self,
@@ -89,13 +92,15 @@ class MetadataExtractor(BaseMetadataExtractor):
 
         Args:
             nodes (List[BaseNode]): nodes to post-process
-            excluded_embed_metadata_keys (Optional[List[str]]): keys to exclude from embed metadata
-            excluded_llm_metadata_keys (Optional[List[str]]): keys to exclude from llm metadata
+            excluded_embed_metadata_keys (Optional[List[str]]):
+                keys to exclude from embed metadata
+            excluded_llm_metadata_keys (Optional[List[str]]):
+                keys to exclude from llm metadata
         """
         for extractor in self._extractors:
-            cur_metadatas = extractor(nodes)
+            cur_metadata_list = extractor.extract(nodes)
             for idx, node in enumerate(nodes):
-                node.metadata.update(cur_metadatas[idx])
+                node.metadata.update(cur_metadata_list[idx])
 
         for idx, node in enumerate(nodes):
             if excluded_embed_metadata_keys is not None:
@@ -122,15 +127,17 @@ class TitleExtractor(MetadataFeatureExtractor):
     """Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
     Args:
+        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         nodes (int): number of nodes from front to use for title extraction
         node_template (str): template for node-level title clues extraction
         combine_template (str): template for combining node-level clues into
             a document-level title
     """
+    is_text_node_only = False # can work for mixture of text and non-text nodes
 
     def __init__(
         self,
-        llm_predictor: BaseLLMPredictor,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
         combine_template: str = DEFAULT_TITLE_COMBINE_TEMPLATE,
@@ -141,9 +148,9 @@ class TitleExtractor(MetadataFeatureExtractor):
         self._nodes = nodes
         self._node_template = node_template
         self._combine_template = combine_template
-        self._llm_predictor = llm_predictor
+        self._llm_predictor = llm_predictor or LLMPredictor()
 
-    def __call__(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         nodes_to_extract_title: List[BaseNode] = []
         for node in nodes:
             if len(nodes_to_extract_title) >= self._nodes:
@@ -177,36 +184,34 @@ class TitleExtractor(MetadataFeatureExtractor):
                 0
             ]  # if single node, just use the title from that node
 
-        # for node in nodes:
-        #     node.metadata["document_title"] = title.strip(' \t\n\r"')
-
-        metadatas = [{"document_title": title.strip(' \t\n\r"')} for _ in nodes]
-        return metadatas
+        metadata_list = [{"document_title": title.strip(' \t\n\r"')}  for node in nodes]
+        return metadata_list
 
 
 class KeywordExtractor(MetadataFeatureExtractor):
     """Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
     Args:
-        llm_predictor (BaseLLMPredictor): LLM predictor
+        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         keywords (int): number of keywords to extract
     """
 
     def __init__(
         self,
-        llm_predictor: BaseLLMPredictor,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         keywords: int = 5,
     ) -> None:
         """Init params."""
-        self._llm_predictor = llm_predictor
+        self._llm_predictor = llm_predictor or LLMPredictor()
         if keywords < 1:
             raise ValueError("num_keywords must be >= 1")
         self._keywords = keywords
 
-    def __call__(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        metadatas = []
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        metadata_list = []
         for node in nodes:
             if self.is_text_node_only and not isinstance(node, TextNode):
+                metadata_list.append({})
                 continue
 
             # TODO: figure out a good way to allow users to customize keyword template
@@ -219,8 +224,8 @@ document. Format as comma separated. Keywords: """
                 context_str=cast(TextNode, node).text,
             )
             # node.metadata["excerpt_keywords"] = keywords
-            metadatas.append({"excerpt_keywords": keywords})
-        return metadatas
+            metadata_list.append({"excerpt_keywords": keywords})
+        return metadata_list
 
 
 class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
@@ -228,28 +233,29 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
     Questions answered extractor. Node-level extractor.
     Extracts `questions_this_excerpt_can_answer` metadata field.
     Args:
-        llm_predictor (BaseLLMPredictor): LLM predictor
+        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         questions (int): number of questions to extract
         prompt_template (str): template for question extraction
     """
 
     def __init__(
         self,
-        llm_predictor: BaseLLMPredictor,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         questions: int = 5,
         prompt_template: Optional[str] = None,
     ) -> None:
         """Init params."""
         if questions < 1:
             raise ValueError("questions must be >= 1")
-        self._llm_predictor = llm_predictor
+        self._llm_predictor = llm_predictor or LLMPredictor()
         self._questions = questions
         self._prompt_template = prompt_template
 
-    def __call__(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        metadatas = []
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        metadata_list = []
         for node in nodes:
             if self.is_text_node_only and not isinstance(node, TextNode):
+                metadata_list.append({})
                 continue
             # Extract the title from the first node
             # TODO: figure out a good way to allow users to customize template
@@ -260,7 +266,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
 {{context_str}}. Given the contextual information, \
 generate {self._questions} questions this document can provide \
 specific answers to which are unlikely to be found elsewhere: \
-                """
+"""
                 ),
                 context_str=f"""\
 metadata: {json.dumps(node.metadata)} \
@@ -269,8 +275,8 @@ content: {cast(TextNode, node).text}""",
             # node.metadata["questions_this_excerpt_can_answer"] = questions
             # # Only use this for the embedding
             # node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
-            metadatas.append({"questions_this_excerpt_can_answer": questions})
-        return metadatas
+            metadata_list.append({"questions_this_excerpt_can_answer": questions})
+        return metadata_list
 
 
 DEFAULT_SUMMARY_EXTRACT_TEMPLATE = """\
@@ -284,17 +290,17 @@ class SummaryExtractor(MetadataFeatureExtractor):
     Extracts `section_summary`, `prev_section_summary`, `next_section_summary`
     metadata fields
     Args:
-        llm_predictor (BaseLLMPredictor): LLM predictor
+        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
         prompt_template (str): template for summary extraction"""
 
     def __init__(
         self,
-        llm_predictor: BaseLLMPredictor,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
     ):
-        self._llm_predictor = llm_predictor
+        self._llm_predictor = llm_predictor or LLMPredictor()
         # validation
         if not all([s in ["self", "prev", "next"] for s in summaries]):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
@@ -303,7 +309,9 @@ class SummaryExtractor(MetadataFeatureExtractor):
         self._next_summary = "next" in summaries
         self._prompt_template = prompt_template
 
-    def __call__(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        if not all([isinstance(node, TextNode) for node in nodes]):
+            raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
         node_summaries = [
             self._llm_predictor.predict(
                 Prompt(template=self._prompt_template),
@@ -312,26 +320,14 @@ class SummaryExtractor(MetadataFeatureExtractor):
             for node in nodes
         ]
 
-        # if self._embedding_only:
-        #     excluded_llm_metadata_keys = []
-        #     if self._self_summary:
-        #         excluded_llm_metadata_keys.append("section_summary")
-        #     if self._prev_summary:
-        #         excluded_llm_metadata_keys.append("prev_section_summary")
-        #     if self._next_summary:
-        #         excluded_llm_metadata_keys.append("next_section_summary")
-
         # Extract node-level summary metadata
-        metadatas: List[Dict] = [{} for _ in nodes]
-        for i, metadata in enumerate(metadatas):
+        metadata_list: List[Dict] = [{} for _ in nodes]
+        for i, metadata in enumerate(metadata_list):
             if i > 0 and self._prev_summary:
-                # node.metadata["prev_section_summary"] = node_summaries[i - 1]
                 metadata["prev_section_summary"] = node_summaries[i - 1]
             if i < len(nodes) - 1 and self._next_summary:
                 metadata["next_section_summary"] = node_summaries[i + 1]
             if self._self_summary:
                 metadata["section_summary"] = node_summaries[i]
-            # if self._embedding_only:
-            #     node.excluded_llm_metadata_keys = excluded_llm_metadata_keys
 
-        return metadatas
+        return metadata_list
