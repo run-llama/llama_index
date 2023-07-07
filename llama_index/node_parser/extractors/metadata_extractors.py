@@ -32,15 +32,12 @@ from llama_index.schema import BaseNode, TextNode
 
 
 class MetadataFeatureExtractor(BaseExtractor):
-    """
-    if `is_text_node_only` is True, then the list returned will omit
-
-    """
     is_text_node_only = True
 
     @abstractmethod
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        """Extracts metadata for a sequence of nodes and mutates the nodes in place.
+        """Extracts metadata for a sequence of nodes, returning a list of
+        metadata dictionaries corresponding to each node.
 
         Args:
             nodes (Sequence[Document]): nodes to extract metadata from
