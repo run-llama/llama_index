@@ -2,14 +2,13 @@
 
 
 from llama_index.types import BaseOutputParser
-from typing import Any
 import re
-import json
 from llama_index.agent.react.types import (
     BaseReasoningStep,
     ResponseReasoningStep,
     ActionReasoningStep,
 )
+import ast
 
 
 class ReActOutputParser(BaseOutputParser):
@@ -34,8 +33,14 @@ class ReActOutputParser(BaseOutputParser):
             raw_action_input_str.strip(),
             re.MULTILINE | re.IGNORECASE | re.DOTALL,
         )
+        if match is None:
+            raise ValueError(f"Could not find JSON in {raw_action_input_str}")
         json_str = match.group()
-        action_input_dict = json.loads(json_str)
+
+        # NOTE: we found that json.loads does not reliably parse
+        # json with single quotes, so we use ast instead
+        # action_input_dict = json.loads(json_str)
+        action_input_dict = ast.literal_eval(json_str)
 
         return ActionReasoningStep(
             thought=thought, action=action_str, action_input=action_input_dict

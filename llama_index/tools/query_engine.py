@@ -3,7 +3,6 @@ from typing import Any, Optional, cast
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool
 from llama_index.tools.types import BaseTool, ToolMetadata
-from pydantic import BaseModel
 
 DEFAULT_NAME = "Query Engine Tool"
 DEFAULT_DESCRIPTION = """Useful for running a natural language query

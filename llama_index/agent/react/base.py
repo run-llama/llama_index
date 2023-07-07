@@ -1,21 +1,15 @@
 # ReAct agent
 
-from llama_index.agent.openai_agent import OpenAIAgent
-from llama_index.chat_engine.types import BaseChatEngine
-from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.llms.base import LLM
 from typing import Sequence, cast, Tuple
 from llama_index.tools import BaseTool
-from llama_index.agent.types import BaseAgent, CHAT_HISTORY_TYPE
+from llama_index.agent.types import BaseAgent
 from abc import abstractmethod
 from typing import List, Optional
 from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
 from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import Prompt
 from llama_index.response.schema import Response
 from llama_index.agent.react.prompts import (
-    # DEFAULT_REACT_PROMPT,
     REACT_CHAT_SYSTEM_HEADER,
     REACT_CHAT_LAST_USER_MESSAGE,
 )
@@ -32,10 +26,8 @@ from llama_index.llms.openai import OpenAI
 from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.bridge.langchain import print_text
 
-# from langchain.agents.conversational import ConversationalAgent
 
-
-def get_react_tool_descriptions(tools: List[BaseTool]) -> List[str]:
+def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:
     """Tool"""
     tool_descs = []
     for tool in tools:
@@ -90,7 +82,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
 
         fmt_sys_header = self.system_header.format(
             tool_desc=tool_descs_str,
-            tool_names=", ".join([tool.metadata.name for tool in self.tools]),
+            tool_names=", ".join([tool.metadata.get_name() for tool in self.tools]),
         )
         prev_chat_history = chat_history[:-1]
         last_chat = chat_history[-1]
@@ -111,7 +103,10 @@ class ReActChatFormatter(BaseAgentChatFormatter):
 class ReActAgent(BaseAgent):
     """ReAct agent.
 
-    Works for all non-completion prompt types.
+    Uses a ReAct prompt that can be used in both chat and text
+    completion endpoints.
+
+    Can take in a set of tools that require structured inputs.
 
     """
 
@@ -120,7 +115,7 @@ class ReActAgent(BaseAgent):
         tools: Sequence[BaseTool],
         llm: LLM,
         chat_history: List[ChatMessage],
-        max_iterations: Optional[int] = 10,
+        max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -147,7 +142,7 @@ class ReActAgent(BaseAgent):
         tools: Optional[List[BaseTool]] = None,
         llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
-        max_iterations: Optional[int] = 10,
+        max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -171,7 +166,8 @@ class ReActAgent(BaseAgent):
             verbose=verbose,
         )
 
-    def chat_history(self) -> CHAT_HISTORY_TYPE:
+    @property
+    def chat_history(self) -> List[ChatMessage]:
         """Chat history."""
         return self._chat_history
 
@@ -179,13 +175,15 @@ class ReActAgent(BaseAgent):
         self, output: ChatResponse
     ) -> Tuple[List[BaseReasoningStep], bool]:
         """Process outputs (and execute tools)."""
-        ai_message = output.message
-        # parse output
-        if self._verbose:
-            print_text(ai_message.content + "\n", color="blue")
+        # TODO: remove Optional typing from message?
+        message_content = cast(str, output.message.content)
+        # parse output into either an ActionReasoningStep or ResponseReasoningStep
         current_reasoning = []
-        reasoning_step = self._output_parser.parse(ai_message.content)
+        reasoning_step = self._output_parser.parse(message_content)
+        if self._verbose:
+            print_text(f"{reasoning_step.get_content()}\n", color="pink")
         current_reasoning.append(reasoning_step)
+        # is done if ResponseReasoningStep
         if reasoning_step.is_done:
             return current_reasoning, True
 
@@ -196,15 +194,16 @@ class ReActAgent(BaseAgent):
         tool = self._tools_dict[reasoning_step.action]
 
         output = tool(**reasoning_step.action_input)
-
-        current_reasoning.append(ObservationReasoningStep(observation=str(output)))
+        observation_step = ObservationReasoningStep(observation=str(output))
+        current_reasoning.append(observation_step)
+        if self._verbose:
+            print_text(f"{observation_step.get_content()}\n", color="blue")
         return current_reasoning, False
 
     def _get_response(
         self,
         current_reasoning: List[BaseReasoningStep],
-        chat_history: List[ChatMessage],
-    ) -> List[BaseReasoningStep]:
+    ) -> Response:
         """Get response from reasoning steps."""
         if len(current_reasoning) == 0:
             raise ValueError("No reasoning steps were taken.")
@@ -222,7 +221,7 @@ class ReActAgent(BaseAgent):
         chat_history = chat_history or self._chat_history
         chat_history.append(ChatMessage(content=message, role="user"))
 
-        current_reasoning = []
+        current_reasoning: List[BaseReasoningStep] = []
         # start loop
         for _ in range(self._max_iterations):
             # prepare inputs
@@ -237,7 +236,11 @@ class ReActAgent(BaseAgent):
             if is_done:
                 break
 
-        return self._get_response(current_reasoning, chat_history)
+        response = self._get_response(current_reasoning)
+        chat_history.append(
+            ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
+        )
+        return response
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -245,7 +248,7 @@ class ReActAgent(BaseAgent):
         chat_history = chat_history or self._chat_history
         chat_history.append(ChatMessage(content=message, role="user"))
 
-        current_reasoning = []
+        current_reasoning: List[BaseReasoningStep] = []
         # start loop
         for _ in range(self._max_iterations):
             # prepare inputs
@@ -260,17 +263,8 @@ class ReActAgent(BaseAgent):
             if is_done:
                 break
 
-        return self._get_response(current_reasoning, chat_history)
-
-    # ===== Query Engine Interface =====
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        return self.chat(
-            query_bundle.query_str,
-            chat_history=[],
+        response = self._get_response(current_reasoning)
+        chat_history.append(
+            ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
-
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        return await self.achat(
-            query_bundle.query_str,
-            chat_history=[],
-        )
+        return response

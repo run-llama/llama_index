@@ -18,7 +18,7 @@ class BaseReasoningStep(BaseModel):
         """Is the reasoning step the last one."""
 
 
-class QuestionReasoningStep(BaseModel):
+class QuestionReasoningStep(BaseReasoningStep):
     question: str
 
     def get_content(self) -> str:
@@ -31,7 +31,7 @@ class QuestionReasoningStep(BaseModel):
         return False
 
 
-class ActionReasoningStep(BaseModel):
+class ActionReasoningStep(BaseReasoningStep):
     """Action Reasoning step."""
 
     thought: str
@@ -40,7 +40,10 @@ class ActionReasoningStep(BaseModel):
 
     def get_content(self) -> str:
         """Get content."""
-        return f"Thought: {self.thought}\nAction: {self.action}\nAction Input: {self.action_input}"
+        return (
+            f"Thought: {self.thought}\nAction: {self.action}\n"
+            f"Action Input: {self.action_input}"
+        )
 
     @property
     def is_done(self) -> bool:
@@ -48,7 +51,7 @@ class ActionReasoningStep(BaseModel):
         return False
 
 
-class ObservationReasoningStep(BaseModel):
+class ObservationReasoningStep(BaseReasoningStep):
     """Action Reasoning step."""
 
     observation: str
@@ -63,7 +66,7 @@ class ObservationReasoningStep(BaseModel):
         return False
 
 
-class ResponseReasoningStep(BaseModel):
+class ResponseReasoningStep(BaseReasoningStep):
     """Response reasoning step."""
 
     thought: str

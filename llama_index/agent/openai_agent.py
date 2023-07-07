@@ -7,9 +7,7 @@ from threading import Thread
 from typing import AsyncGenerator, Callable, Generator, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import (
     ChatMessage,

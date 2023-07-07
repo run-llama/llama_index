@@ -25,6 +25,12 @@ class ToolMetadata:
             raise ValueError("fn_schema is None.")
         return self.fn_schema.schema()["properties"]
 
+    def get_name(self) -> str:
+        """Get name."""
+        if self.name is None:
+            raise ValueError("name is None.")
+        return self.name
+
     def to_openai_function(self) -> Dict[str, Any]:
         """To OpenAI function."""
         if self.fn_schema is None:
