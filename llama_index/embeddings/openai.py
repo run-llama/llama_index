@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import openai
-from tenacity import retry, stop_after_attempt, wait_random_exponential
+from tenacity import retry, stop_all, stop_after_delay, stop_after_attempt, wait_random_exponential
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
@@ -89,7 +89,7 @@ _TEXT_MODE_MODEL_DICT = {
 }
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_all(stop_after_attempt(6), stop_after_delay(60)))
 def get_embedding(
     text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
@@ -108,7 +108,7 @@ def get_embedding(
     ]
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_all(stop_after_attempt(6), stop_after_delay(60)))
 async def aget_embedding(
     text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
@@ -129,7 +129,7 @@ async def aget_embedding(
     ][0]["embedding"]
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_all(stop_after_attempt(6), stop_after_delay(60)))
 def get_embeddings(
     list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:
@@ -147,11 +147,14 @@ def get_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
+    import time
+    print('attempt', len(list_of_text), int(time.time()))
+
     data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_all(stop_after_attempt(6), stop_after_delay(60)))
 async def aget_embeddings(
     list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:
