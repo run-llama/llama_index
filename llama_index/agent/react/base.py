@@ -95,7 +95,9 @@ class ReActAgent(BaseAgent):
     ) -> Tuple[List[BaseReasoningStep], bool]:
         """Process outputs (and execute tools)."""
         # TODO: remove Optional typing from message?
-        message_content = cast(str, output.message.content)
+        if output.message.content is None:
+            raise ValueError("Got empty message.")
+        message_content = output.message.content
         # parse output into either an ActionReasoningStep or ResponseReasoningStep
         current_reasoning = []
         reasoning_step = self._output_parser.parse(message_content)
