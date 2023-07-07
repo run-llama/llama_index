@@ -41,7 +41,7 @@ Answer: 2
 """
 
 
-def test_basic(
+def test_chat_basic(
     add_tool: FunctionTool,
 ) -> None:
     mock_llm = MockChatLLM(
@@ -62,4 +62,29 @@ def test_basic(
         llm=mock_llm,
     )
     response = agent.chat("What is 1 + 1?")
+    assert response.response == "2"
+
+
+@pytest.mark.asyncio
+async def test_achat_basic(
+    add_tool: FunctionTool,
+) -> None:
+    mock_llm = MockChatLLM(
+        responses=[
+            ChatMessage(
+                content=MOCK_ACTION_RESPONSE,
+                role=MessageRole.ASSISTANT,
+            ),
+            ChatMessage(
+                content=MOCK_FINAL_RESPONSE,
+                role=MessageRole.ASSISTANT,
+            ),
+        ]
+    )
+
+    agent = ReActAgent.from_tools(
+        tools=[add_tool],
+        llm=mock_llm,
+    )
+    response = await agent.achat("What is 1 + 1?")
     assert response.response == "2"
