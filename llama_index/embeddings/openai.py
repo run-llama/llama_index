@@ -147,9 +147,6 @@ def get_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    import time
-    print('attempt', len(list_of_text), int(time.time()))
-
     data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
 
