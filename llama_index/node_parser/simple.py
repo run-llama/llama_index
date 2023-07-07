@@ -5,7 +5,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
-from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.interface import NodeParser, NodeParserPostProcessor
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.utils import get_tqdm_iterable
 from llama_index.schema import Document
@@ -30,6 +30,7 @@ class SimpleNodeParser(NodeParser):
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        post_processors: Optional[List[NodeParserPostProcessor]] = None,
     ) -> None:
         """Init params."""
         self.callback_manager = callback_manager or CallbackManager([])
@@ -38,6 +39,7 @@ class SimpleNodeParser(NodeParser):
         )
         self._include_metadata = include_metadata
         self._include_prev_next_rel = include_prev_next_rel
+        self._post_processors = post_processors or []
 
     @classmethod
     def from_defaults(
@@ -46,6 +48,7 @@ class SimpleNodeParser(NodeParser):
         chunk_overlap: Optional[int] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
+        post_processors: Optional[List[NodeParserPostProcessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> "SimpleNodeParser":
         callback_manager = callback_manager or CallbackManager([])
@@ -95,6 +98,10 @@ class SimpleNodeParser(NodeParser):
                 include_prev_next_rel=self._include_prev_next_rel,
             )
             all_nodes.extend(nodes)
+
+        for post_processor in self._post_processors:
+            post_processor.post_process_nodes(all_nodes)
+
         self.callback_manager.on_event_end(
             CBEventType.NODE_PARSING,
             payload={EventPayload.NODES: all_nodes},

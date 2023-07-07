@@ -22,3 +22,18 @@ class NodeParser(ABC):
             documents (Sequence[Document]): documents to parse
 
         """
+
+
+class NodeParserPostProcessor(ABC):
+    """Base interface for node parser post processor."""
+
+    @abstractmethod
+    def post_process_nodes(
+        self,
+        nodes: List[BaseNode],
+    ) -> None:
+        """Post process nodes parsed from documents.
+
+        Args:
+            nodes (List[BaseNode]): nodes to post-process
+        """
