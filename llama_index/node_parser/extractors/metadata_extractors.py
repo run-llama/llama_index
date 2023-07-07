@@ -85,14 +85,19 @@ class MetadataExtractor(BaseMetadataExtractor):
     ) -> List[BaseNode]:
         """Post process nodes parsed from documents.
 
+        Allows extractors to be chained.
+
         Args:
             nodes (List[BaseNode]): nodes to post-process
             excluded_embed_metadata_keys (Optional[List[str]]): keys to exclude from embed metadata
             excluded_llm_metadata_keys (Optional[List[str]]): keys to exclude from llm metadata
         """
-        metadatas = self.extract_metadata(nodes=nodes)
+        for extractor in self._extractors:
+            cur_metadatas = extractor(nodes)
+            for idx, node in enumerate(nodes):
+                node.metadata.update(cur_metadatas[idx])
+
         for idx, node in enumerate(nodes):
-            node.metadata.update(metadatas[idx])
             if excluded_embed_metadata_keys is not None:
                 node.excluded_embed_metadata_keys.extend(excluded_embed_metadata_keys)
             if excluded_llm_metadata_keys is not None:
