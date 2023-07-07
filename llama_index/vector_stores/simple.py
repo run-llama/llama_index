@@ -152,6 +152,7 @@ class SimpleVectorStore(VectorStore):
             top_similarities, top_ids = get_top_k_embeddings_learner(
                 query_embedding,
                 embeddings,
+                similarity_fn=kwargs.get("similarity_fn", None),
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=node_ids,
             )
@@ -160,6 +161,7 @@ class SimpleVectorStore(VectorStore):
             top_similarities, top_ids = get_top_k_mmr_embeddings(
                 query_embedding,
                 embeddings,
+                similarity_fn=kwargs.get("similarity_fn", None),
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=node_ids,
                 mmr_threshold=mmr_threshold,
@@ -168,6 +170,7 @@ class SimpleVectorStore(VectorStore):
             top_similarities, top_ids = get_top_k_embeddings(
                 query_embedding,
                 embeddings,
+                similarity_fn=kwargs.get("similarity_fn", None),
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=node_ids,
             )
