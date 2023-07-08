@@ -1,5 +1,5 @@
 """Node parser interface."""
-from typing import List, Sequence, Dict, Optional, Any
+from typing import List, Sequence, Dict
 
 from abc import ABC, abstractmethod
 

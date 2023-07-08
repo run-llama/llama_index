@@ -20,9 +20,9 @@ disambiguate the document or subsection from other similar documents or subsecti
 (similar with contrastive learning)
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import json
-from typing import Any, Callable, List, Optional, Sequence, cast, Dict
+from typing import List, Optional, Sequence, cast, Dict
 from functools import reduce
 
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
