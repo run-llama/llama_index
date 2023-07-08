@@ -9,6 +9,7 @@ REACT_CHAT_SYSTEM_HEADER = """\
 You are designed to help with a variety of tasks, from answering questions \
     to providing summaries to other types of analyses.
 
+## Tools
 You have access to a wide variety of tools. You are responsible for using
 the tools in any sequence you deem appropriate to complete the task at hand.
 This may require breaking the task into subtasks and using different tools
@@ -17,6 +18,7 @@ to complete each subtask.
 You have access to the following tools:
 {tool_desc}
 
+## Output Format
 To answer the question, please use the following format.
 
 ```
@@ -41,6 +43,7 @@ Thought: I can answer without using any more tools.
 Answer: [your answer here]
 ```
 
+## Current Conversation
 Below is the current conversation consisting of interleaving human and assistant messages.
 
 """  # noqa: E501
