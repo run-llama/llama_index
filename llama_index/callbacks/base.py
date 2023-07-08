@@ -135,15 +135,16 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         """Run when an overall trace is launched."""
-        if self._trace_id_stack is None:
-            self._reset_trace_events()
+        if trace_id is not None:
+            if self._trace_id_stack is None:
+                self._reset_trace_events()
 
-            for handler in self.handlers:
-                handler.start_trace(trace_id=trace_id)
+                for handler in self.handlers:
+                    handler.start_trace(trace_id=trace_id)
 
-            self._trace_id_stack = [trace_id]
-        else:
-            self._trace_id_stack.append(trace_id)
+                self._trace_id_stack = [trace_id]
+            else:
+                self._trace_id_stack.append(trace_id)
 
     def end_trace(
         self,
