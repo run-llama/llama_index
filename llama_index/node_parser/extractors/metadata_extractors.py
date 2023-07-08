@@ -234,7 +234,8 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
     Args:
         llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         questions (int): number of questions to extract
-        prompt_template (str): template for question extraction
+        prompt_template (str): template for question extraction,
+        embedding_only (bool): whether to use embedding only
     """
 
     def __init__(
@@ -242,6 +243,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         llm_predictor: Optional[BaseLLMPredictor] = None,
         questions: int = 5,
         prompt_template: Optional[str] = None,
+        embedding_only: bool = True,
     ) -> None:
         """Init params."""
         if questions < 1:
@@ -249,6 +251,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         self._llm_predictor = llm_predictor or LLMPredictor()
         self._questions = questions
         self._prompt_template = prompt_template
+        self._embedding_only = embedding_only
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
@@ -271,9 +274,8 @@ specific answers to which are unlikely to be found elsewhere: \
 metadata: {json.dumps(node.metadata)} \
 content: {cast(TextNode, node).text}""",
             )
-            # node.metadata["questions_this_excerpt_can_answer"] = questions
-            # # Only use this for the embedding
-            # node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
+            if self._embedding_only:
+                node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
             metadata_list.append({"questions_this_excerpt_can_answer": questions})
         return metadata_list
 

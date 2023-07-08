@@ -18,8 +18,6 @@ class SimpleChatEngine(BaseChatEngine):
 
     Have a conversation with the LLM.
     This does not make use of a knowledge base.
-
-    # TODO: add back ability to configure prompt/system message
     """
 
     def __init__(
