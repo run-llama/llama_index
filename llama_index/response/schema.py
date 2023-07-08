@@ -49,7 +49,7 @@ class StreamingResponse:
 
     """
 
-    response_gen: Optional[TokenGen]
+    response_gen: TokenGen
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None

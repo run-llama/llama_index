@@ -1,10 +1,16 @@
+import asyncio
+from threading import Thread
 from typing import Any, List, Optional
 
-from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.chat_engine.types import (
+    BaseChatEngine,
+    StreamingChatResponse,
+    STREAMING_CHAT_RESPONSE_TYPE,
+)
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -67,6 +73,20 @@ class SimpleChatEngine(BaseChatEngine):
 
         return Response(response=chat_response.message.content)
 
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+        chat_history = chat_history or self._chat_history
+        chat_history.append(ChatMessage(content=message, role="user"))
+
+        chat_response = StreamingChatResponse(self._llm.stream_chat(chat_history))
+        thread = Thread(
+            target=chat_response.write_response_to_history, args=(chat_history,)
+        )
+        thread.start()
+
+        return StreamingResponse(response_gen=chat_response.response_gen)
+
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> RESPONSE_TYPE:
@@ -79,6 +99,21 @@ class SimpleChatEngine(BaseChatEngine):
         chat_history.append(ai_message)
 
         return Response(response=chat_response.message.content)
+
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+        chat_history = chat_history or self._chat_history
+        chat_history.append(ChatMessage(content=message, role="user"))
+
+        chat_response = StreamingChatResponse(self._llm.stream_chat(chat_history))
+        thread = Thread(
+            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
+            args=(chat_history,),
+        )
+        thread.start()
+
+        return StreamingResponse(response_gen=chat_response.response_gen)
 
     def reset(self) -> None:
         self._chat_history = []
