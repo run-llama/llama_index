@@ -1,6 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.4] - 2023-07-08
+
+### New Features
+- `MetadataExtractor` - Documnent Metadata Augmentation via LLM-based feature extractors (#6764)
 
 ### Bug Fixes / Nits
 - fixed passing in query bundle to node postprocessors (#6780)
