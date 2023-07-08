@@ -32,6 +32,14 @@ class ToolMetadata:
         }
 
 
+class ToolOutput(BaseModel):
+    output: Any
+    sources: Optional[Any] = None
+
+    def __str__(self) -> str:
+        return str(self.output)
+
+
 class BaseTool:
     @property
     @abstractmethod
@@ -39,7 +47,7 @@ class BaseTool:
         pass
 
     @abstractmethod
-    def __call__(self, input: Any) -> Any:
+    def __call__(self, input: Any) -> ToolOutput:
         pass
 
     def _process_langchain_tool_kwargs(
@@ -64,7 +72,7 @@ class BaseTool:
             langchain_tool_kwargs
         )
         return Tool.from_function(
-            func=self.__call__,
+            func=lambda x: str(self.__call__(x)),
             **langchain_tool_kwargs,
         )
 
@@ -77,6 +85,6 @@ class BaseTool:
             langchain_tool_kwargs
         )
         return StructuredTool.from_function(
-            func=self.__call__,
+            func=lambda x: str(self.__call__(x)),
             **langchain_tool_kwargs,
         )
