@@ -1,14 +1,20 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.3] - 2023-07-07
 
 ### New Features
 - Sub question query engine returns source nodes of sub questions in the callback manager (#6745)
+- trulens integration (#6741)
+- Add sources to subquestion engine (#6745)
 
 ### Bug Fixes / Nits
 - Added/Fixed streaming support to simple and condense chat engines (#6717)
 - fixed `response_mode="no_text"` response synthesizer (#6755)
 - fixed error setting `num_output` and `context_window` in service context (#6766)
+- Fix missing as_query_engine() in tutorial (#6747)
+- Fixed variable sql_query_engine in the notebook (#6778)
+- fix required function fields (#6761)
+- Remove usage of stop token in Prompt, SQL gen (#6782)
 
 ## [v0.7.2] - 2023-07-06
 
