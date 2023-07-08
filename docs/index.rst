@@ -55,14 +55,36 @@ to fit their needs.
    getting_started/starter_example.md
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Development
+   :maxdepth: 1
+   :caption: Index/Data Modules
    :hidden:
 
-   development/contributing.rst
-   development/documentation.rst
-   development/privacy.md
-   development/changelog.rst
+   core_modules/data_modules/documents_and_nodes/root.md
+   core_modules/data_modules/connector/root.md
+   core_modules/data_modules/storage/root.md
+   core_modules/data_modules/index/root.md
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Query Modules
+   :hidden:
+
+   core_modules/query_modules/query_engine/root.md
+   core_modules/query_modules/retriever/root.md
+   core_modules/query_modules/node_postprocessors/root.md
+   core_modules/query_modules/response_synthesizers/root.md
+   core_modules/query_modules/output_parsing/root.md
+   core_modules/query_modules/chat_engines/root.md
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Service Modules
+   :hidden:
+
+   core_modules/service_modules/llms/root.md
+   core_modules/service_modules/embeddings/root.md
+   core_modules/service_modules/node_parsers/root.md
+   core_modules/service_modules/callbacks/root.md
 
 .. toctree::
    :maxdepth: 2
@@ -82,25 +104,15 @@ to fit their needs.
    use_cases/agents.md
    use_cases/apps.md
 
-
 .. toctree::
-   :maxdepth: 1
-   :caption: Key Components
+   :maxdepth: 2
+   :caption: Development
    :hidden:
 
-   how_to/connector/root.md
-   how_to/index/root.md
-   how_to/retriever/root.md
-   how_to/query_engine/root.md
-   how_to/chat_engine/root.md
-   how_to/customization.rst
-   how_to/analysis.rst
-   how_to/structured_outputs/root.md
-   how_to/evaluation/evaluation.md
-   how_to/integrations.rst
-   how_to/callbacks.rst
-   how_to/storage.rst
-
+   development/contributing.rst
+   development/documentation.rst
+   development/privacy.md
+   development/changelog.rst
 
 .. toctree::
    :maxdepth: 1

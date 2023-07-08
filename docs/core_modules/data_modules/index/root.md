@@ -1,4 +1,4 @@
-# 🗃️ Data Index
+# Indexes
 
 ## Concept
 An `Index` is a data structure that allows us to quickly retrieve relevant context for a user query.
