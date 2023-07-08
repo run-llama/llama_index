@@ -16,6 +16,11 @@ class ReActOutputParser(BaseOutputParser):
 
     def parse(self, output: str) -> BaseReasoningStep:
         """Parse, validate, and correct errors programmatically."""
+        if "Thought:" not in output:
+            return ResponseReasoningStep(
+                thought="I can answer without any tools.", response=output
+            )
+
         output_lines = output.strip().split("\n")
         thought = output_lines[0].split("Thought:")[1].strip()
 
