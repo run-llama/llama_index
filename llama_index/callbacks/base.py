@@ -77,7 +77,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         self.handlers = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
         self._trace_event_stack: List[str] = [BASE_TRACE_EVENT]
-        self._trace_id_stack: Optional[List[str]] = None
+        self._trace_id_stack: List[str] = []
 
     def on_event_start(
         self,
@@ -136,7 +136,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         """Run when an overall trace is launched."""
         if trace_id is not None:
-            if self._trace_id_stack is None:
+            if len(self._trace_id_stack) == 0:
                 self._reset_trace_events()
 
                 for handler in self.handlers:
@@ -152,12 +152,12 @@ class CallbackManager(BaseCallbackHandler, ABC):
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """Run when an overall trace is exited."""
-        if trace_id is not None and self._trace_id_stack is not None:
+        if trace_id is not None and len(self._trace_id_stack) > 0:
             self._trace_id_stack.pop()
             if len(self._trace_id_stack) == 0:
                 for handler in self.handlers:
                     handler.end_trace(trace_id=trace_id, trace_map=self._trace_map)
-                self._trace_id_stack = None
+                self._trace_id_stack = []
 
     def _reset_trace_events(self) -> None:
         """Helper function to reset the current trace."""
