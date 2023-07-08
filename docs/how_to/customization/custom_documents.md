@@ -131,3 +131,17 @@ document = Document(
 print("The LLM sees this: \n", document.get_content(metadata_mode=MetadataMode.LLM))
 print("The Embedding model sees this: \n", document.get_content(metadata_mode=MetadataMode.EMBED))
 ```
+
+
+## Advanced - Automatic Metadata Extraction
+
+We have initial examples of using LLMs themselves to perform metadata extraction.
+
+Take a look here! 
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/metadata_extraction/MetadataExtractionSEC.ipynb
+```
