@@ -239,7 +239,7 @@ if you are in windows, use the following to activate your virtual environment:
 .venv\scripts\activate
 ```
 
-Install the required dependencies (this will also install gpt-index through `pip install -e .` 
+Install the required dependencies (this will also install Llama Index through `pip install -e .` 
 so that you can start developing on it):
 
 ```bash
