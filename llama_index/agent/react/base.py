@@ -99,7 +99,10 @@ class ReActAgent(BaseAgent):
         message_content = output.message.content
         # parse output into either an ActionReasoningStep or ResponseReasoningStep
         current_reasoning = []
-        reasoning_step = self._output_parser.parse(message_content)
+        try:
+            reasoning_step = self._output_parser.parse(message_content)
+        except BaseException:
+            raise ValueError(f"Could not parse output: {message_content}")
         if self._verbose:
             print_text(f"{reasoning_step.get_content()}\n", color="pink")
         current_reasoning.append(reasoning_step)
