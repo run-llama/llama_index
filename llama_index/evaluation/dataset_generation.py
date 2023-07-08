@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 from typing import List, Optional
-
+import asyncio
 
 from llama_index import (
     Document,
@@ -31,16 +31,14 @@ def _get_default_service_context() -> ServiceContext:
 
 
 class DatasetGenerator:
-    """Generate dataset (question/ question-answer pairs) \
-    based on the given documents.
+    """Generate dataset (question/question-answer pairs) based on the given documents.
 
-    NOTE: this is a beta feature, subject to change!
+    NOTE: This is a beta feature, subject to change!
 
     Args:
         nodes (List[Node]): List of nodes. (Optional)
         service_context (ServiceContext): Service Context.
-        num_questions_per_chunk: number of question to be \
-        generated per chunk. Each document is chunked of size 512 words.
+        num_questions_per_chunk: Number of questions to be generated per chunk. Each document is chunked of size 512 words.
         text_question_template: Question generation template.
     """
 
@@ -54,7 +52,7 @@ class DatasetGenerator:
         required_keywords: Optional[List[str]] = None,
         exclude_keywords: Optional[List[str]] = None,
     ) -> None:
-        """Init params."""
+        """Initialize the parameters."""
         if service_context is None:
             service_context = _get_default_service_context()
         self.service_context = service_context
@@ -63,13 +61,16 @@ class DatasetGenerator:
         )
         self.question_gen_query = (
             question_gen_query
-            or f"You are a Teacher/ Professor. Your task is to setup \
-                        {num_questions_per_chunk} questions for an upcoming \
-                        quiz/examination. The questions should be diverse in nature \
-                            across the document. Restrict the questions to the \
-                                context information provided."
+            or f"You are a Teacher/ Professor. Your task is to setup "
+            f"{num_questions_per_chunk} questions for an upcoming "
+            "quiz/examination. The questions should be diverse in nature "
+            "across the document. Restrict the questions to the "
+            "context information provided."
         )
         self.nodes = nodes
+        self.num_questions_per_chunk = num_questions_per_chunk
+        self.required_keywords = required_keywords or []
+        self.exclude_keywords = exclude_keywords or []
 
     @classmethod
     def from_documents(
@@ -82,12 +83,12 @@ class DatasetGenerator:
         required_keywords: Optional[List[str]] = None,
         exclude_keywords: Optional[List[str]] = None,
     ) -> "DatasetGenerator":
-        """Generate dataset from documents."""
+        """Generate a dataset from documents."""
         if service_context is None:
             service_context = _get_default_service_context()
         nodes = service_context.node_parser.get_nodes_from_documents(documents)
 
-        # use node postprocessor to filter nodes
+        # Use node postprocessor to filter nodes
         required_keywords = required_keywords or []
         exclude_keywords = exclude_keywords or []
         node_postprocessor = KeywordNodePostprocessor(
@@ -105,47 +106,45 @@ class DatasetGenerator:
             num_questions_per_chunk=num_questions_per_chunk,
             text_question_template=text_question_template,
             question_gen_query=question_gen_query,
+            required_keywords=required_keywords,
+            exclude_keywords=exclude_keywords,
         )
 
-    def _node_question_generator(
-        self, nodes: List[BaseNode], num: Optional[int] = None
-    ) -> List[str]:
-        """Node question generator."""
-        questions: List[str] = []
-
-        for node in nodes:
-            if num is not None and len(questions) >= num:
-                break
-            index = ListIndex.from_documents(
-                [
-                    Document(
-                        text=node.get_content(metadata_mode=MetadataMode.NONE),
-                        metadata=node.metadata,
-                    )
-                ]
-            )
-
-            query_engine = index.as_query_engine(
-                service_context=self.service_context,
-                text_qa_template=self.text_question_template,
-                use_async=True,
-            )
-            response = query_engine.query(
-                self.question_gen_query,
-            )
-
-            result = str(response).strip().split("\n")
-            cleaned_questions = [
-                re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
+    async def _generate_questions_for_node(self, node: BaseNode) -> List[str]:
+        """Generate questions for a single node."""
+        index = ListIndex.from_documents(
+            [
+                Document(
+                    text=node.get_content(metadata_mode=MetadataMode.NONE),
+                    metadata=node.metadata,
+                )
             ]
-            questions.extend(cleaned_questions)
+        )
 
-        questions = [question for question in questions if question != ""]
+        query_engine = index.as_query_engine(
+            service_context=self.service_context,
+            text_qa_template=self.text_question_template,
+            use_async=True,
+        )
+        response = await query_engine.query(self.question_gen_query)
 
-        if num is not None:
-            questions = questions[:num]
-        return questions
+        result = str(response).strip().split("\n")
+        cleaned_questions = [
+            re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
+        ]
+        return [question for question in cleaned_questions if question]
 
-    def generate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
-        """Generates questions for each document."""
-        return self._node_question_generator(self.nodes, num)
+    async def generate_questions_from_nodes(self) -> List[str]:
+        """Generate questions for each document asynchronously."""
+        tasks = []
+        for node in self.nodes:
+            tasks.append(self._generate_questions_for_node(node))
+
+        generated_questions = await asyncio.gather(*tasks)
+        return [question for questions in generated_questions for question in questions]
+
+    def generate_questions_from_nodes_sync(self) -> List[str]:
+        """Generate questions for each document synchronously."""
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self.generate_questions_from_nodes())
+}
