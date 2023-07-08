@@ -81,5 +81,6 @@ Read more about how to deal with data sources that change over time with `Index`
 ---
 maxdepth: 1
 ---
+metadata_extraction.md
 document_management.md
 ```
