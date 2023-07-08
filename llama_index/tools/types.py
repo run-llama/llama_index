@@ -23,7 +23,7 @@ class ToolMetadata:
         """Get fn schema as string."""
         if self.fn_schema is None:
             raise ValueError("fn_schema is None.")
-        return self.fn_schema.schema()["properties"]
+        return self.fn_schema.schema()
 
     def get_name(self) -> str:
         """Get name."""
