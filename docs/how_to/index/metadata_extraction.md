@@ -33,7 +33,6 @@ metadata_extractor = MetadataExtractor(
 )
 
 node_parser = SimpleNodeParser(
-    text_splitter=text_splitter,
     metadata_extractor=metadata_extractor,
 )
 ```
