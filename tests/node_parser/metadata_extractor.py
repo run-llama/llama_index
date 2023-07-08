@@ -9,7 +9,8 @@ from llama_index.node_parser.extractors import (
 from llama_index.indices.service_context import ServiceContext
 from llama_index import Document
 
-def test_metadata_extractor(mock_service_context: ServiceContext):
+
+def test_metadata_extractor(mock_service_context: ServiceContext) -> None:
     metadata_extractor = MetadataExtractor(
         extractors=[
             TitleExtractor(nodes=5),
