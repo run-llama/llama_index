@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - fixed passing in query bundle to node postprocessors (#6780)
+- fixed error in callback manager with nested traces (#6791)
 
 ## [v0.7.3] - 2023-07-07
 
