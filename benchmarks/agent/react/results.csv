@@ -1,0 +1,4 @@
+,model,task,outcome
+0,text-davinci-003,What is 123 + 321 * 2?,True
+1,gpt-3.5-turbo,What is 123 + 321 * 2?,False
+2,gpt-4,What is 123 + 321 * 2?,True
