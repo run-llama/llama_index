@@ -43,4 +43,5 @@ maxdepth: 1
 /examples/callbacks/LlamaDebugHandler.ipynb
 /examples/callbacks/WandbCallbackHandler.ipynb
 /examples/callbacks/AimCallback.ipynb
-./callbacks/token_counting_migration.md
+token_counting_migration.md
+```
