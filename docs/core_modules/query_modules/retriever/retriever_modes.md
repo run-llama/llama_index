@@ -32,4 +32,4 @@ Specifying `retriever_mode` has no effect (silently ignored).
 
 ## Document Summary Index
 * `default`: DocumentSummaryIndexRetriever
-* `embedding`: DocumentSummaryIndexEmbeddingRetriever
+* `embedding`: DocumentSummaryIndexEmbeddingRetrievers

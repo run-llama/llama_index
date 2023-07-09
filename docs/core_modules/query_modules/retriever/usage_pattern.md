@@ -1,6 +1,5 @@
 # Usage Pattern
 
-
 ## Get Started
 Get a retriever from index:
 ```python
@@ -15,6 +14,7 @@ nodes = retriever.retrieve('Who is Paul Graham?')
 > Note: To learn how to build an index, see [Index](/how_to/index/root.md)
 
 ## High-Level API
+
 ### Selecting a Retriever
 
 You can select the index-specific retriever class via `retriever_mode`. 
