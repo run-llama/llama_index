@@ -1,6 +1,6 @@
-# 🔢 Output Parsing
+# Output Parsing
 
- The ability of LLMs to produce structured outputs are important for downstream applications that rely on reliably parsing output values. 
+The ability of LLMs to produce structured outputs are important for downstream applications that rely on reliably parsing output values. 
 LlamaIndex itself also relies on structured output in the following ways.
 - **Document retrieval**: Many data structures within LlamaIndex rely on LLM calls with a specific schema for Document retrieval. For instance, the tree index expects LLM calls to be in the format "ANSWER: (number)".
 - **Response synthesis**: Users may expect that the final response contains some degree of structure (e.g. a JSON output, a formatted SQL query, etc.)

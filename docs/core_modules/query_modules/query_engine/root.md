@@ -1,4 +1,4 @@
-# ❓ Query Engine
+# Query Engine
 
 ## Concept
 Query engine is a generic interface that allows you to ask question over your data.

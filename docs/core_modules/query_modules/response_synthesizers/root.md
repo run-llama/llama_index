@@ -1,4 +1,4 @@
-# 📨 Response Synthesizers
+# Response Synthesizer
 
 ## Concept
 A `Response Synthesizer` is what generates a response from an LLM, using a user query and a given set of text chunks. The output of a response synthesizer is a `Response` object.

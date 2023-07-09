@@ -1,4 +1,4 @@
-# 💬 Chat Engine
+# Chat Engine
 
 ## Concept
 Chat engine is a high-level interface for having a conversation with your data

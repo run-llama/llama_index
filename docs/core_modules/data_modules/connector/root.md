@@ -1,4 +1,4 @@
-# 🔌 Data Connectors (LlamaHub)
+# Data Connectors (LlamaHub)
 
 ## Concept
 A data connector (i.e. `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).

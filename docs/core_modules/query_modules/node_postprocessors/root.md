@@ -1,4 +1,4 @@
-# Node PostProcessors
+# Node PostProcessor
 
 ## Concept
 Node postprocessors are a set of modules that take a set of nodes, and apply some kind of transformation or filtering before returning them.
