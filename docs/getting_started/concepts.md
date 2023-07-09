@@ -1,64 +1,65 @@
 # High-Level Concepts
 
-Okay now that you've experienced the magic of asking question over your data (if not, you should start with [the quick start tutorial](/getting_started/starter_example.md)). you might be wondering: how does this all work?
+> If you haven't, [install](/getting_started/installation.md) and complete [starter tutorial](/getting_started/starter_example.md) before you read this. It will make a lot more sense!
 
-This guide give you:
-* high-level understanding of what's going on under the hood,
-* and explain the key concepts in LlamaIndex,
-* help you further configure the pipeline to get better performance.
+LlamaIndex helps you build LLM-powered applications (e.g. Q&A, chatbot, and agents) over custom data.
 
-At a high level, LlamaIndex help you prepare a knowledge base of data, and build question and answer, chatbot, and agents over that knowledge base.
+In this high-level concepts guide, you will learn:
+* the retrieval augmented generation (RAG) paradigm for combining LLM with custom data,
+* key concepts and modules in LlamaIndex for composing your own RAG pipeline.
 
 ## Retrieval Augmented Generation (RAG)
-LlamaIndex is a data framework that let you build retrieval-augmented generation (RAG) based LLM applications super easily.  
-**RAG** is a paradigm for augmenting LLM with your data.
-It involves 1) preparing a knowledge base, and 2) first retrieving data from some knowledge base, and then feed it to the LLM for generating an answer.
+Retrieval augmented generation (RAG) is a paradigm for augmenting LLM with custom data.
+It generally consists of two stages: 
+1) **indexing stage**: preparing a knowledge base, and
+2) **querying stage**: retrieving relevant context from the knowledge to assist the LLM in responding to a question
+
 ![](/_static/getting_started/rag.png)
 
-To setup this pipeline: there are two main challenges: 
-1) preparing the knowledge base to efficiently retrieve relevant context, and 
-2) defining the query engine that combines retrieved context and synthesizing a response/message with a LLM.
 
-LlamaIndex helps make both steps super easy.
-Let's explore each stage in detail and the associated LlamaIndex modules to make it super easy.
+LlamaIndex provides the essential toolkit for making both steps super easy.
+Let's explore each stage in detail.
 
-### Stage 1: Prepare the knowledge base 
-LlamaIndex help you prepare the knowledge with a suite of data connectors and indexes.
+### Indexing Stage
+LlamaIndex help you prepare the knowledge base with a suite of data connectors and indexes.
 ![](/_static/getting_started/indexing.png) 
 
-[**Data Loaders**](/core_modules/data_modules/connector/root.md):
+[**Data Connectors**](/core_modules/data_modules/connector/root.md):
 A data connector (i.e. `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
 
 [**Data Indexes**](/core_modules/data_modules/index/root.md): 
 Once you've ingested your data, LlamaIndex help you index data into a format that's easy to retrieve.
-Under the hood, we parse the raw documents into intermediate representations, calculating vector embeddings, properly specify the metadata, etc.
+Under the hood, LlamaIndex parse the raw documents into intermediate representations, calculate vector embeddings, and infer metadata, etc.
 
-### Stage 2: Query against knowledge base
-Now that we have an index over the documents, we can efficiently retrieve relevant information
-to a user question or in a conversation, or as part of a higher level agent.
+### Querying Stage
+In the querying stage, the RAG pipeline retrieves the most relevant context given a user query,
+and pass that to the LLM (along with the query) to synthesize a response.
+This gives the LLM up-to-date knowledge that is not in its original training data,
+(also reducing hallucination).
+The key challenge in the querying stage is retrieval, orchestration, and reasoning over (potentially many) knowledge bases.
 
-Conceptually, given a query, we first retrieve the most relevant context information from the knowledge (and in the context of an agent from other external APIs as well). Then, we synthesize a response a response using LLMs.
-
-LlamaIndex also provides the building blocks to operate over multiple knowledge bases, or compose query engines to more advanced query capabilities.
-
-They can also be composed to create chat engines (to have conversation instead of just question and answer) as well as agent applications (to have autonomous reasoning).
+LlamaIndex provides composable modules that help you build and integrate RAG pipelines for Q&A (query engine), chatbot (chat engine), or as part of an agent.
+These building blocks can be customized to reflect ranking preferences, as well as composed to reason over multiple knowledge bases in a structured way.
 
 ![](/_static/getting_started/querying.png)
 
-[**Retriever**](/core_modules//query_modules/retriever/root.md): 
-A retriever defines how to efficiently retrieve relevant context, given a query.
-The specific retrieval logic differs for difference indices, the most popular being vector similarity based retrieval.
+[**Retrievers**](/core_modules//query_modules/retriever/root.md): 
+A retriever defines how to efficiently retrieve relevant context from a knowledge base (i.e. index) when given a query.
+The specific retrieval logic differs for difference indices, the most popular being dense retrieval against a vector index.
 
 
-[**Query Engine**](/core_modules/query_modules/query_engine/root.md):
+[**Query Engines**](/core_modules/query_modules/query_engine/root.md):
 A query engine is an end-to-end pipeline that allow you to ask question over your data.
-It takes in a natural language query, and returns a response, along with citation data used for generating that query.
+It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
 
 
-[**Chat Engine**](/core_modules/query_modules/chat_engines/root.md): 
-Chat engine is a high-level interface for having a conversation with your data 
+[**Chat Engines**](/core_modules/query_modules/chat_engines/root.md): 
+A chat engine is an end-to-end pipeline for having a conversation with your data
 (multiple back-and-forth instead of a single question & answer).
 
-[**Agent**](/core_modules/query_modules/agent/root.md): 
-Agent is an automated decision maker (powered by an LLM). 
+[**Agents**](/core_modules/query_modules/agent/root.md): 
+An agent is an automated decision maker (powered by an LLM) that interacts with the world via a set of tools.
+Agent may be used in the same fashion as query engines or chat engines. 
+The main distinction is that an agent dynamically decides the best sequence of actions, instead of following a predetermined logic.
+This gives it additional flexibility to tackle more complex tasks.
