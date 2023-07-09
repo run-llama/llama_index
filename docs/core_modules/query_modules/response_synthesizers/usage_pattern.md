@@ -1,4 +1,4 @@
-# Usage Pattern
+# Response Synthesizer Usage
 
 ## Get Started
 
