@@ -96,11 +96,7 @@ to fit their needs.
 
    end_to_end_tutorials/usage_pattern.md
    end_to_end_tutorials/discover_llamaindex.md
-   end_to_end_tutorials/question_and_answer.md
-   end_to_end_tutorials/chatbots.md
-   end_to_end_tutorials/agents.md
-   end_to_end_tutorials/structured_data.md
-   end_to_end_tutorials/apps.md
+   end_to_end_tutorials/use_cases.md
 
 .. toctree::
    :maxdepth: 2
