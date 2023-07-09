@@ -87,6 +87,7 @@ index = load_index_from_storage(storage_context)
 ### Next Steps
 
 That's it! For more information on LlamaIndex features, please check out the numerous "Guides" to the left.
-If you are interested in further exploring how LlamaIndex works, check out our [Primer Guide](/guides/primer.rst).
+If you are interested in further exploring how LlamaIndex works, learn more about the [high-level concepts](/getting_started/concepts.md).
+After that, check out our [Primer Guide](/guides/primer.rst).
 
 Additionally, if you would like to play around with Example Notebooks, check out [this link](/reference/example_notebooks.rst).

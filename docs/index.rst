@@ -53,6 +53,7 @@ to fit their needs.
 
    getting_started/installation.md
    getting_started/starter_example.md
+   getting_started/concepts.md
 
 .. toctree::
    :maxdepth: 1
