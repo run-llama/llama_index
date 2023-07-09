@@ -24,7 +24,30 @@ We have confirmed support for the following storage backends:
 
 ## Usage Pattern
 
-To use these storage abstractions, you need to define a `StorageContext` object:
+Many vector stores (except FAISS) will store both the data as well as the index (embeddings). This means that you will not need to use a separate document store or index store. This *also* means that you will not need to explicitly persist this data - this happens automatically. Usage would look something like the following to build a new index / reload an existing one.
+
+```python
+
+## build a new index
+from llama_index import VectorStoreIndex, StorageContext
+from llama_index.vector_stores import DeepLakeVectorStore
+# construct vector store and customize storage context
+vector_store = DeepLakeVectorStore(dataset_path="<dataset_path>")
+storage_context = StorageContext.from_defaults(
+    vector_store = vector_store
+)
+# Load documents and build index
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+
+
+## reload an existing one
+index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
+```
+
+See our [Vector Store Module Guide](vector_stores.md) below for more details.
+
+
+Note that in general to use storage abstractions, you need to define a `StorageContext` object:
 
 ```python
 from llama_index.storage.docstore import SimpleDocumentStore
