@@ -2,8 +2,6 @@
 
 Detailed inputs/outputs for each response synthesizer are found below. 
 
-Related details are linked here for [streaming](), [async](), [prompts](), the [service context](), and [response objects]().
-
 ## API Example
 
 The following shows the setup for utilizing all kwargs.
