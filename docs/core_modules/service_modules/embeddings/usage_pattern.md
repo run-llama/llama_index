@@ -1,4 +1,4 @@
-# Embeddings Usage
+# Usage Pattern
 
 ## Getting Started
 
