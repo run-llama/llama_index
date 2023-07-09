@@ -72,11 +72,11 @@ to fit their needs.
    :caption: Query Modules
    :hidden:
 
-   core_modules/query_modules/query_engine/root.md
    core_modules/query_modules/retriever/root.md
    core_modules/query_modules/node_postprocessors/root.md
    core_modules/query_modules/response_synthesizers/root.md
    core_modules/query_modules/output_parsing/root.md
+   core_modules/query_modules/query_engine/root.md
    core_modules/query_modules/chat_engines/root.md
 
 .. toctree::
