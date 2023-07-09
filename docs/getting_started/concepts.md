@@ -46,10 +46,18 @@ These building blocks can be customized to reflect ranking preferences, as well 
 
 ![](/_static/getting_started/querying.png)
 
-[**Retrievers**](/core_modules//query_modules/retriever/root.md): 
+#### Building Blocks
+[**Retrievers**](/core_modules/query_modules/retriever/root.md): 
 A retriever defines how to efficiently retrieve relevant context from a knowledge base (i.e. index) when given a query.
 The specific retrieval logic differs for difference indices, the most popular being dense retrieval against a vector index.
 
+[**Node Postprocessors**](/core_modules/query_modules/node_postprocessors/root.md):
+A node postprocessor takes in a set of nodes, then apply transformation, filtering, or re-ranking logic to them. 
+
+[**Response Synthesizers**](/core_modules/query_modules/response_synthesizers/root.md):
+A response synthesizer generates a response from an LLM, using a user query and a given set of retrieved text chunks.  
+
+#### Pipelines
 
 [**Query Engines**](/core_modules/query_modules/query_engine/root.md):
 A query engine is an end-to-end pipeline that allow you to ask question over your data.
