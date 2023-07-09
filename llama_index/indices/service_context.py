@@ -96,12 +96,12 @@ class ServiceContext:
         Args:
             llm_predictor (Optional[BaseLLMPredictor]): LLMPredictor
             prompt_helper (Optional[PromptHelper]): PromptHelper
-            embed_model (Optional[BaseEmbedding]): BaseEmbedding or "local" (use local model)
+            embed_model (Optional[BaseEmbedding]): BaseEmbedding 
+                or "local" (use local model)
             node_parser (Optional[NodeParser]): NodeParser
             llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
             chunk_size (Optional[int]): chunk_size
             callback_manager (Optional[CallbackManager]): CallbackManager
-            local_embed (Optional[str]): whether to use local embed model (default: False)
 
         Deprecated Args:
             chunk_size_limit (Optional[int]): renamed to chunk_size
@@ -112,6 +112,21 @@ class ServiceContext:
                 "chunk_size_limit is deprecated, please specify chunk_size instead"
             )
             chunk_size = chunk_size_limit
+
+        if isinstance(embed_model, str):
+            if embed_model != "local":
+                raise ValueError(
+                    "embed_model must be str 'local' or of type BaseEmbedding"
+                )
+            try:
+                from langchain.embeddings import HuggingFaceEmbeddings
+            except ImportError as exc:
+                raise ImportError(
+                    "Could not import sentence_transformers or langchain package. "
+                    "Please install with `pip install sentence_transformers langchain`."
+                ) from exc
+
+            embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
 
         if llama_index.global_service_context is not None:
             return cls.from_service_context(
@@ -134,22 +149,7 @@ class ServiceContext:
         llm_predictor = llm_predictor or LLMPredictor()
         llm_predictor.callback_manager = callback_manager
 
-        # NOTE: the embed_model isn't used in all indices
-        if isinstance(embed_model, str):
-            if embed_model != "local":
-                raise ValueError("embed_model must be str 'local' or of type BaseEmbedding")
-            try:
-                import sentence_transformers 
-                from langchain.embeddings import HuggingFaceEmbeddings
-            except:
-                raise ImportError(
-                    "Could not import sentence_transformers or langchain python package. "
-                    "Please install them with `pip install sentence_transformers langchain`."
-                ) from exc
-
-            embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
-        else:
-            embed_model = embed_model or OpenAIEmbedding()
+        embed_model = embed_model or OpenAIEmbedding()
         embed_model.callback_manager = callback_manager
 
         prompt_helper = prompt_helper or _get_default_prompt_helper(
