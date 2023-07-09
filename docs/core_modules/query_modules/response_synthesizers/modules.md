@@ -1,10 +1,10 @@
-# Module Guides
+# Module Guide
 
 Detailed inputs/outputs for each response synthesizer are found below. 
 
 Related details are linked here for [streaming](), [async](), [prompts](), the [service context](), and [response objects]().
 
-## Module Example
+## API Example
 
 The following shows the setup for utilizing all kwargs.
 
@@ -51,13 +51,4 @@ response_str = response_synthesizer.get_response(
   "query string", 
   text_chunks=["text1", "text2", ...]
 )
-```
-
-Below, you can find the full API reference for all response synthesizers.
-
-```{toctree}
----
-maxdepth: 1
----
-/reference/response_synthesizers.rst
 ```

@@ -40,7 +40,7 @@ Below you can find detailed API information for each response synthesis module.
 
 ```{toctree}
 ---
-maxdepth: 2
+maxdepth: 1
 ---
 modules.md
 ```
