@@ -62,7 +62,7 @@ class GuardrailsOutputParser(BaseOutputParser):
             )
 
         return cls(Guard.from_rail_string(rail_string), llm=llm)
-    
+
     @classmethod
     def from_pydantic(
         cls,
@@ -85,14 +85,14 @@ class GuardrailsOutputParser(BaseOutputParser):
             args=args,
             kwargs=kwargs,
         )
-        
+
     def parse(
         self,
         output: str,
         llm: Optional[BaseLLM] = None,
         num_reasks: Optional[int] = 1,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """Parse, validate, and correct errors programmatically."""
         llm = llm or self.llm
