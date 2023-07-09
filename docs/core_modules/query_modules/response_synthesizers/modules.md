@@ -1,15 +1,63 @@
 # Module Guides
 
-We provide a few simple implementations to start, with more sophisticated modes coming soon!  
+Detailed inputs/outputs for each response synthesizer are found below. 
 
-More specifically, the `SimpleChatEngine` does not make use of a knowledge base, 
-whereas `CondenseQuestionChatEngine` and `ReActChatEngine` make use of a query engine over knowledge base.
+Related details are linked here for [streaming](), [async](), [prompts](), the [service context](), and [response objects]().
+
+## Module Example
+
+The following shows the setup for utilizing all kwargs.
+
+- `response_mode` specifies which response synthesizer to use
+- `service_context` defines the LLM and related settings for synthesis
+- `text_qa_template` and `refine_template` are the prompts used at various stages
+- `use_async` is used for only the `tree_summarize` response mode right now, to asynchronously build the summary tree
+- `streaming` configures whether to return a streaming response object or not
+
+In the `synthesize`/`asyntheszie` functions, you can optionally provide additional source nodes, which will be added to the `response.source_nodes` list.
+
+```python
+from llama_index.schema import Node, NodeWithScore
+from llama_index import get_response_synthesizer
+
+response_synthesizer = get_response_synthesizer(
+  response_mode="refine",
+  service_context=service_context,
+  text_qa_template=text_qa_template,
+  refine_template=refine_template,
+  use_async=False,
+  streaming=False
+)
+
+# synchronous
+response = response_synthesizer.synthesize(
+  "query string", 
+  nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
+  additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..], 
+)
+
+# asynchronous
+response = await response_synthesizer.asynthesize(
+  "query string", 
+  nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
+  additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..], 
+)
+```
+
+You can also directly return a string, using the lower-level `get_response` and `aget_response` functions
+
+```python
+response_str = response_synthesizer.get_response(
+  "query string", 
+  text_chunks=["text1", "text2", ...]
+)
+```
+
+Below, you can find the full API reference for all response synthesizers.
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-Simple Chat Engine <../../../examples/chat_engine/chat_engine_repl.ipynb>
-Condense Question Chat Engine <../../../examples/chat_engine/chat_engine_condense_question.ipynb>
-ReAct Chat Engine <../../../examples/chat_engine/chat_engine_react.ipynb>
+/reference/response_synthesizers.rst
 ```
