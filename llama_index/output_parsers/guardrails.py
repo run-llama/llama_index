@@ -62,7 +62,30 @@ class GuardrailsOutputParser(BaseOutputParser):
             )
 
         return cls(Guard.from_rail_string(rail_string), llm=llm)
-
+    
+    @classmethod
+    def from_pydantic(
+        cls,
+        output_class: Any,
+        num_reasks: int = 1,
+        api: Optional[Callable] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> "GuardrailsOutputParser":
+        try:
+            from guardrails import Guard
+        except ImportError:
+            raise ValueError(
+                "guardrails-ai package not installed. "
+                "Install it by running `pip install guardrails-ai`."
+            )
+        return cls(
+            guard=Guard.from_pydantic(output_class, "", num_reasks=num_reasks),
+            api=api,
+            args=args,
+            kwargs=kwargs,
+        )
+        
     def parse(
         self,
         output: str,
