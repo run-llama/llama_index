@@ -55,7 +55,7 @@ Take a look at our in-depth guides for more details on how to use Documents/Node
 
 ```{toctree}
 ---
-maxdepth: 2
+maxdepth: 1
 ---
 usage_documents.md
 usage_nodes.md

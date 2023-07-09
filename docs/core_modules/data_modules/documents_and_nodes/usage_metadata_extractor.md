@@ -29,6 +29,8 @@ node_parser = SimpleNodeParser(
     text_splitter=text_splitter,
     metadata_extractor=metadata_extractor,
 )
+# assume documents are defined -> extract nodes
+nodes = node_parser.get_nodes_from_documents(documents)
 ```
 
 
