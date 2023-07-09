@@ -252,8 +252,20 @@ caption: Examples
 maxdepth: 1
 ---
 
-../../examples/customization/llms/AzureOpenAI.ipynb
-../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
-../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
-../../examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
+/examples/customization/llms/AzureOpenAI.ipynb
+/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
+/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
+/examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
+```
+
+## Additional Guides
+
+```{toctree}
+---
+caption: Streaming
+maxdepth: 1
+---
+
+/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
+/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
 ```
