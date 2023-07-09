@@ -1,4 +1,4 @@
-# LlamaIndex Usage Pattern
+# Basic Usage Pattern
 
 The general usage pattern of LlamaIndex is as follows:
 

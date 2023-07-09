@@ -91,21 +91,16 @@ to fit their needs.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Guides
+   :caption: End-to-End Tutorials
    :hidden:
 
-   guides/primer.rst
-   guides/tutorials.rst
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Use Cases
-   :hidden:
-
-   use_cases/queries.md
-   use_cases/agents.md
-   use_cases/apps.md
+   end_to_end_tutorials/usage_pattern.md
+   end_to_end_tutorials/discover_llamaindex.md
+   end_to_end_tutorials/question_and_answer.md
+   end_to_end_tutorials/chatbots.md
+   end_to_end_tutorials/agents.md
+   end_to_end_tutorials/structured_data.md
+   end_to_end_tutorials/apps.md
 
 .. toctree::
    :maxdepth: 2
