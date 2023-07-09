@@ -31,6 +31,7 @@ A data connector (i.e. `Reader`) ingest data from different data sources and dat
 [**Data Indexes**](/core_modules/data_modules/index/root.md): 
 Once you've ingested your data, LlamaIndex help you index data into a format that's easy to retrieve.
 Under the hood, LlamaIndex parse the raw documents into intermediate representations, calculate vector embeddings, and infer metadata, etc.
+The most commonly used index is the [VectorStoreIndex](/core_modules/data_modules/index/vector_store_guide.ipynb)
 
 ### Querying Stage
 In the querying stage, the RAG pipeline retrieves the most relevant context given a user query,
