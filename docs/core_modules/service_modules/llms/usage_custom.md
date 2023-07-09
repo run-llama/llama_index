@@ -166,8 +166,8 @@ A full API reference can be found [here](../../reference/llm_predictor.rst).
 
 Several example notebooks are also listed below:
 
-- [StableLM](../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
-- [Camel](../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
+- [StableLM](/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
+- [Camel](/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
 
 ## Example: Using a Custom LLM Model - Advanced
 
@@ -246,26 +246,3 @@ Note that you may have to adjust the internal prompts to get good performance. E
 
 A list of all default internal prompts is available [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py). You can also implement your own custom prompts, as described [here](https://gpt-index.readthedocs.io/en/latest/how_to/customization/custom_prompts.html).
 
-```{toctree}
----
-caption: Examples
-maxdepth: 1
----
-
-/examples/customization/llms/AzureOpenAI.ipynb
-/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
-/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
-/examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
-```
-
-## Additional Guides
-
-```{toctree}
----
-caption: Streaming
-maxdepth: 1
----
-
-/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
-/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
-```

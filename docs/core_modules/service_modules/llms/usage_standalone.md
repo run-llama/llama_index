@@ -22,9 +22,13 @@ for delta in resp:
 ## Chat Example
 
 ```python
-from llama_index.llms import OpenAI
+from llama_index.llms import ChatMessage, OpenAI
 
-resp = OpenAI().complete('Paul Graham is ')
+messages = [
+    ChatMessage(role="system", content="You are a pirate with a colorful personality"),
+    ChatMessage(role="user", content="What is your name"),
+]
+resp = OpenAI().chat(messages)
 print(resp)
 ```
 
