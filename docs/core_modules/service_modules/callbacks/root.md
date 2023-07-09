@@ -44,8 +44,3 @@ maxdepth: 1
 /examples/callbacks/WandbCallbackHandler.ipynb
 /examples/callbacks/AimCallback.ipynb
 ./callbacks/token_counting_migration.md
-```
-.. toctree::
-   :maxdepth: 1
-   :caption: Callbacks
-   
