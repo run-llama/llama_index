@@ -6,7 +6,7 @@ Node parsers are a simple abstraction that take a list of documents, and chunk t
 
 A node parser can configure the chunk size (in tokens) as well as any overlap between chunked nodes. The chunking is done by using a `TokenTextSplitter`, which default to a chunk size of 1024 and a default chunk overlap of 20 tokens.
 
-# Usage Pattern
+## Usage Pattern
 
 ```python
 from llama_index.node_parser import SimpleNodeParser
