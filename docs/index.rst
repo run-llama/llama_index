@@ -62,8 +62,8 @@ to fit their needs.
    :caption: Index/Data Modules
    :hidden:
 
-   core_modules/data_modules/documents_and_nodes/root.md
    core_modules/data_modules/connector/root.md
+   core_modules/data_modules/documents_and_nodes/root.md
    core_modules/data_modules/storage/root.md
    core_modules/data_modules/index/root.md
 
