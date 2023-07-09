@@ -96,7 +96,7 @@ class ServiceContext:
         Args:
             llm_predictor (Optional[BaseLLMPredictor]): LLMPredictor
             prompt_helper (Optional[PromptHelper]): PromptHelper
-            embed_model (Optional[BaseEmbedding]): BaseEmbedding 
+            embed_model (Optional[BaseEmbedding]): BaseEmbedding
                 or "local" (use local model)
             node_parser (Optional[NodeParser]): NodeParser
             llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
