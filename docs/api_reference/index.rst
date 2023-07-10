@@ -1,7 +1,7 @@
 .. _Ref-API_Reference:
 
 API Reference
-=======
+=============
 
 API Reference for the ``llama-index`` package.
 
