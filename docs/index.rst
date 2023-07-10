@@ -54,7 +54,7 @@ to fit their needs.
    getting_started/installation.md
    getting_started/starter_example.md
    getting_started/concepts.md
-   getting_started/customization.md
+   getting_started/customization.rst
    getting_started/FAQ.md
 
 .. toctree::

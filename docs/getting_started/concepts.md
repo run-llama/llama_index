@@ -1,6 +1,8 @@
 # High-Level Concepts
 
-> If you haven't, [install](/getting_started/installation.md) and complete [starter tutorial](/getting_started/starter_example.md) before you read this. It will make a lot more sense!
+```{tip}
+If you haven't, [install](/getting_started/installation.md) and complete [starter tutorial](/getting_started/starter_example.md) before you read this. It will make a lot more sense!
+```
 
 LlamaIndex helps you build LLM-powered applications (e.g. Q&A, chatbot, and agents) over custom data.
 

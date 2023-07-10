@@ -1,6 +1,9 @@
 # Starter Tutorial
 
-Here is a starter example for using LlamaIndex. Make sure you've followed the [installation](installation.md) steps first.
+```{tip}
+Make sure you've followed the [installation](installation.md) steps first.
+```
+Here is a starter example for using LlamaIndex. 
 
 ### Download
 
