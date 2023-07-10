@@ -14,7 +14,7 @@ beir_datasets = [
 class BeirEvaluator:
     def __init__(self) -> None:
         try:
-            import beir
+            pass
         except ImportError:
             raise ImportError(
                 "Please install beir to use this feature: " "`pip install beir`",
