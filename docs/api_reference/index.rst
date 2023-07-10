@@ -7,7 +7,6 @@ API Reference for the ``llama-index`` package.
 
 .. toctree::
    :maxdepth: 1
-   :hidden:
 
    indices.rst
    query.rst
