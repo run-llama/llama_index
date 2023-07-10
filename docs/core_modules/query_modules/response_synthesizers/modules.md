@@ -50,3 +50,13 @@ response_str = response_synthesizer.get_response(
   text_chunks=["text1", "text2", ...]
 )
 ```
+
+## Example Notebooks
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/response_synthesizers/refine.ipynb
+/examples/response_synthesizers/tree_summarize.ipynb
+```
