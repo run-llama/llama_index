@@ -17,4 +17,4 @@ Right now, we support the following options:
     responses. Good for when you need to run the same query separately against each text
     chunk.
 
-See [Response Synthesis](/how_to/query_engine/advanced/response_synthesis.md) to learn more.
+See [Response Synthesizer](/core_modules/query_modules/response_synthesizers/root.md) to learn more.
