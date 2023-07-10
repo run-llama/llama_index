@@ -56,7 +56,7 @@ In this tutorial, we show the most common customizations with the `starter examp
 
 .. tip::
     `StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored.
-    Learn more `here <../how_to/storage/customization.html>`_.
+    Learn more `here <../core_modules/data_modules/storage/customization.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 4
@@ -101,7 +101,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     service_context = ServiceContext.from_defaults(llm=PaLM())
 
 .. tip::
-    Learn more about customizing LLMs `here <../how_to/customization/custom_llms.html>`_.
+    Learn more about customizing LLMs `here <../core_modules/service_modules/llms/usage_custom.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 5
@@ -131,7 +131,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     print(response)
 
 .. tip::
-    Learn more about query engine usage pattern `here <../how_to/query_engine/usage_pattern.html>`_ and available response modes `here <../how_to/query_engine/response_modes.html>`_.
+    Learn more about query engine usage pattern `here <../core_modules/query_modules/query_engine/usage_pattern.html>`_ and available response modes `here <../core_modules/query_modules/query_engine/response_modes.html>`_.
 
 -----------------
 
@@ -171,7 +171,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     print(response)
 
 .. tip::
-    Learn more about chat engine usage pattern `here <../how_to/chat_engine/usage_pattern.html>`_.
+    Learn more about chat engine usage pattern `here <../core_modules/query_modules/chat_engines/usage_pattern.html>`_.
 
 -----------------
 
