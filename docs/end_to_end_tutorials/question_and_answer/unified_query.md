@@ -1,6 +1,6 @@
 # A Guide to Creating a Unified Query Framework over your Indexes
 
-LlamaIndex offers a variety of different [query use cases](/use_cases/queries.md).
+LlamaIndex offers a variety of different [use cases](/end_to_end_tutorials/use_cases.md).
 
 For simple queries, we may want to use a single index data structure, such as a `VectorStoreIndex` for semantic search, or `ListIndex` for summarization.
 

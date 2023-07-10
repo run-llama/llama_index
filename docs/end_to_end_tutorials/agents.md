@@ -27,7 +27,7 @@ a more information + a detailed analysis.
 
 ### "Agent-like" Components within LlamaIndex 
 
-LlamaIndex provides core modules capable of automated reasoning for different use cases over your data. Please check out our [use cases doc](/use_cases/queries.md) for more details on high-level use cases that LlamaIndex can help fulfill.
+LlamaIndex provides core modules capable of automated reasoning for different use cases over your data. Please check out our [use cases doc](/end_to_end_tutorials/use_cases.md) for more details on high-level use cases that LlamaIndex can help fulfill.
 
 Some of these core modules are shown below along with example tutorials (not comprehensive, please click into the guides/how-tos for more details).
 

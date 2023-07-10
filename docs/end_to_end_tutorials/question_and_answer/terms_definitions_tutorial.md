@@ -1,6 +1,6 @@
 # A Guide to Extracting Terms and Definitions
 
-Llama Index has many use cases (semantic search, summarization, etc.) that are [well documented](https://gpt-index.readthedocs.io/en/latest/use_cases/queries.html). However, this doesn't mean we can't apply Llama Index to very specific use cases!
+Llama Index has many use cases (semantic search, summarization, etc.) that are [well documented](/end_to_end_tutorials/use_cases.md). However, this doesn't mean we can't apply Llama Index to very specific use cases!
 
 In this tutorial, we will go through the design process of using Llama Index to extract terms and definitions from text, while allowing users to query those terms later. Using [Streamlit](https://streamlit.io/), we can provide an easy way to build frontend for running and testing all of this, and quickly iterate with our design.
 
