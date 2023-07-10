@@ -193,9 +193,9 @@ postprocessor.postprocess_nodes(nodes)
 The same as PrevNextNodePostprocessor, but lets the LLM decide the mode (next, previous, or both).
 
 ```python
-from llama_index.indices.postprocessor import PrevNextNodePostprocessor
+from llama_index.indices.postprocessor import AutoPrevNextNodePostprocessor
 
-postprocessor = PrevNextNodePostprocessor(
+postprocessor = AutoPrevNextNodePostprocessor(
   docstore=index.docstore,
   service_context=service_context
   num_nodes=1,  # number of nodes to fetch when looking forawrds or backwards)
@@ -204,3 +204,19 @@ postprocessor.postprocess_nodes(nodes)
 ```
 
 A full example notebook is available [here](/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb).
+
+## All Notebooks
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/node_postprocessor/OptimizerDemo.ipynb
+/examples/node_postprocessor/CohereRerank.ipynb
+/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb
+/examples/node_postprocessor/LLMReranker-Gatsbhy.ipynb
+/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
+/examples/node_postprocessor/TimeWeightedPostprocessor.ipynb
+/examples/node_postprocessor/PII.ipynb
+/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
+```
