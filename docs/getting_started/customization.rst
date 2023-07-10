@@ -26,7 +26,7 @@ In this tutorial, we show the most common customizations with the `starter examp
 
 .. tip::
     `ServiceContext` is a bundle of services and configurations used across a LlamaIndex pipeline,
-    Learn more `here <../core_modules/service_modules/service_context.html>`_.
+    Learn more `here <../core_modules/supporting_modules/service_context.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 4
@@ -101,7 +101,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     service_context = ServiceContext.from_defaults(llm=PaLM())
 
 .. tip::
-    Learn more about customizing LLMs `here <../core_modules/service_modules/llms/usage_custom.html>`_.
+    Learn more about customizing LLMs `here <../core_modules/model_modules/llms/usage_custom.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 5

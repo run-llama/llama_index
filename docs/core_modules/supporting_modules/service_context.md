@@ -34,9 +34,9 @@ class ServiceContext:
 
 ```{tip}
 Learn how to configure specific modules:
-- [LLM](/core_modules/service_modules/llms/usage_custom.md)
-- [Embedding Model](/core_modules/service_modules/embeddings/usage_pattern.md)
-- [Node Parser](/core_modules/service_modules/node_parsers/usage_pattern.md)
+- [LLM](/core_modules/model_modules/llms/usage_custom.md)
+- [Embedding Model](/core_modules/model_modules/embeddings/usage_pattern.md)
+- [Node Parser](/core_modules/data_modules/node_parsers/usage_pattern.md)
 
 ```
 

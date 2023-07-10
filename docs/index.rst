@@ -72,6 +72,7 @@ to fit their needs.
 
    core_modules/data_modules/connector/root.md
    core_modules/data_modules/documents_and_nodes/root.md
+   core_modules/data_modules/node_parsers/root.md
    core_modules/data_modules/storage/root.md
    core_modules/data_modules/index/root.md
 
@@ -92,17 +93,16 @@ to fit their needs.
    :caption: Service Modules
    :hidden:
 
-   core_modules/service_modules/llms/root.md
-   core_modules/service_modules/embeddings/root.md
-   core_modules/service_modules/prompts.md
-   core_modules/service_modules/node_parsers/root.md
-   core_modules/service_modules/callbacks/root.md
-   core_modules/service_modules/service_context.md
+   core_modules/model_modules/llms/root.md
+   core_modules/model_modules/embeddings/root.md
+   core_modules/model_modules/prompts.md
+   core_modules/model_modules/callbacks/root.md
 
 .. toctree::
    :maxdepth: 1
    :caption: Supporting Modules
 
+   core_modules/supporting_modules/service_context.md
    core_modules/supporting_modules/evaluation/root.md
    core_modules/supporting_modules/cost_analysis/root.md
    core_modules/supporting_modules/playground/root.md

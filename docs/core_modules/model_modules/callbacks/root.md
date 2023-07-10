@@ -31,7 +31,7 @@ You can implement your own callback to track and trace these events, or use an e
 
 Currently supported callbacks are as follows:
 
-- [TokenCountingHandler](/examples/callbacks/TokenCountingHandler.ipynb) -> Flexible token counting for prompt, completion, and embedding token usage. See the migration details [here](/core_modules/service_modules/callbacks/token_counting_migration.md)
+- [TokenCountingHandler](/examples/callbacks/TokenCountingHandler.ipynb) -> Flexible token counting for prompt, completion, and embedding token usage. See the migration details [here](/core_modules/model_modules/callbacks/token_counting_migration.md)
 - [LlamaDebugHanlder](/examples/callbacks/LlamaDebugHandler.ipynb) -> Basic tracking and tracing for events. Example usage can be found in the notebook below.
 - [WandbCallbackHandler](/examples/callbacks/WandbCallbackHandler.ipynb) -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at [Wandb](https://docs.wandb.ai/guides/prompts/quickstart)
 - [AimCallback](/examples/callbacks/AimCallback.ipynb) -> Tracking of LLM inputs and outputs. Example usage can be found in the notebook below.
