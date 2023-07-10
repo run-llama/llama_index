@@ -90,7 +90,7 @@ to fit their needs.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Service Modules
+   :caption: Model Modules
    :hidden:
 
    core_modules/model_modules/llms/root.md
