@@ -1,16 +1,22 @@
-from llama_index.indices.base_retriever import BaseRetriever
+from typing import Optional, Dict, List, Any
 
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.indices.colbert.base import ColbertIndex
+from llama_index.schema import NodeWithScore
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.vector_stores.types import MetadataFilters
 
 class ColbertRetriever(BaseRetriever):
     """Vector index retriever.
 
     Args:
-        index (VectorStoreIndex): vector store index.
+        index (ColbertIndex): Colbert index.
         similarity_top_k (int): number of top k results to return.
         filters (Optional[MetadataFilters]): metadata filters, defaults to None
         doc_ids (Optional[List[str]]): list of documents to constrain search.
-        vector_store_kwargs (dict): Additional vector store specific kwargs to pass
-            through to the vector store at query time.
+        colbert_kwargs (dict): Additional colbert specific kwargs to pass
+            through to the colbert index at query time.
 
     """
 
@@ -25,7 +31,6 @@ class ColbertRetriever(BaseRetriever):
     ) -> None:
         """Initialize params."""
         self._index = index
-        self._vector_store = self._index.vector_store
         self._service_context = self._index.service_context
         self._docstore = self._index.docstore
 
@@ -40,4 +45,4 @@ class ColbertRetriever(BaseRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        return self._index.query(query, top_k=self._similarity_top_k, **self._kwargs)
+        return self._index.query(query_str=query_bundle.query_str, top_k=self._similarity_top_k, **self._kwargs)

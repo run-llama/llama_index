@@ -1,15 +1,12 @@
 import math
-from typing import Any, List, Optional, Sequence
-
-import pandas as pd
-from colbert import Indexer, Searcher
-from colbert.infra import ColBERTConfig, Run, RunConfig
+from typing import Any, List, Optional, Sequence, Dict
 
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.indices.base import BaseIndex
+from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.schema import BaseNode, NodeWithScore
 
 # Only implement __init__, _build_index_from_nodes,
@@ -53,9 +50,10 @@ class ColbertIndex(BaseIndex[IndexDict]):
         doc_maxlen=120,
         query_maxlen=60,
         kmeans_niters=4,
+        **kwargs: Any,
     ):
         self.model_name = model_name
-        self.index_path = index_path
+        self.index_path = "storage/colbert_index"
         self.nbits = nbits
         self.gpus = gpus
         self.ranks = ranks
@@ -63,7 +61,6 @@ class ColbertIndex(BaseIndex[IndexDict]):
         self.query_maxlen = query_maxlen
         self.kmeans_niters = kmeans_niters
         self._docs_pos_to_node_id = {}
-        self._index_struct = index_struct
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -80,22 +77,33 @@ class ColbertIndex(BaseIndex[IndexDict]):
         raise NotImplementedError("ColbertStoreIndex does not support deletion yet.")
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        from llama_index.indices.colbert.retriever import ColbertRetriever
+        return ColbertRetriever(index=self, **kwargs)
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
         raise NotImplementedError(
-            "ColbertStoreIndex does not support retriever conversion."
+            "ColbertStoreIndex does not support ref_doc_info."
         )
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
         """Generate a PLAID index from a given ColBERT checkpoint.
-
+`
         Given a checkpoint and a collection of documents, an Indexer object will be created.
         The index will then be generated, written to disk at `index_path` and finally it
         will be loaded.
         """
 
+        from colbert import Indexer, Searcher
+        from colbert.infra import ColBERTConfig, Run, RunConfig
+
+        index_struct = IndexDict()
+
         docs_list = []
         for i, node in enumerate(nodes):
             docs_list.append(node.get_content())
             self._docs_pos_to_node_id[i] = node.node_id
+            index_struct.add_node(node, text_id=str(i))
 
         with Run().context(
             RunConfig(index_root=self.index_path, nranks=self.ranks, gpus=self.gpus)
@@ -112,7 +120,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
                 index="", collection=docs_list, checkpoint=self.model_name
             )
 
-        return None
+        return index_struct
 
     # @staticmethod
     # def _normalize_scores(docs: List[Document]) -> None:
@@ -121,7 +129,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
     #     for doc in docs:
     #         doc.score = math.exp(doc.score) / Z
 
-    def query(self, query_str, top_k=10) -> List[NodeWithScore]:
+    def query(self, query_str: str, top_k=10) -> List[NodeWithScore]:
         """
         Query the Colbert v2 + Plaid store.
 
@@ -130,10 +138,12 @@ class ColbertIndex(BaseIndex[IndexDict]):
 
         doc_ids, _, scores = self.store.search(text=query_str, k=top_k)
 
-        node_doc_ids = list(doc_ids.map(self.docs_pos_to_node_id).values)
+        node_doc_ids = list(map(lambda id: self._docs_pos_to_node_id[id], doc_ids))
         nodes = self.docstore.get_nodes(node_doc_ids)
 
-        for nodes, score in zip(nodes, scores):
-            nodes.score = score
+        nodes_with_score = []
 
-        return documents
+        for node, score in zip(nodes, scores):
+            nodes_with_score.append(NodeWithScore(node=node, score=score))
+
+        return nodes_with_score
