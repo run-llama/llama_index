@@ -151,3 +151,22 @@ In this tutorial, we show the most common customizations with the `starter examp
 
 .. tip::
     Learn more about streaming `here <../how_to/customization/streaming.html>`_.
+
+
+**"I want a chatbot instead of Q&A"**
+
+.. code-block:: python
+    :emphasize-lines: 5, 6, 9
+
+    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+
+    documents = SimpleDirectoryReader('data').load_data()
+    index = VectorStoreIndex.from_documents(documents)
+    query_engine = index.as_chat_engine()
+    response = query_engine.chat("What did the author do growing up?")
+    print(response)
+
+    response = query_engine.chat("Oh interesting, tell me more.")
+    print(response)
+
+
