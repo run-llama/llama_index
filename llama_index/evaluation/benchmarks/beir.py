@@ -3,6 +3,7 @@ from llama_index.utils import get_cache_dir
 from llama_index.schema import Document
 from llama_index.indices.base_retriever import BaseRetriever
 import os
+import tqdm
 
 beir_datasets = [
     "trec-covid",
@@ -11,7 +12,7 @@ beir_datasets = [
 
 
 class BeirEvaluator:
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             import beir
         except ImportError:
@@ -63,10 +64,21 @@ class BeirEvaluator:
             print("Retriever created for: ", dataset)
 
             results = {}
-            for key, query in queries:
+            for key, query in tqdm.tqdm(queries.items()):
                 nodes_with_score = retriever.retrieve(query)
-                results[key] = {node.id: node.score for node in nodes_with_score}
+                results[key] = {
+                    node.node.node_id: node.score for node in nodes_with_score
+                }
 
-            ncdg, map_, recall, precision = EvaluateRetrieval.evaluate(
+            ndcg, map_, recall, precision = EvaluateRetrieval.evaluate(
                 qrels, results, [1, 10, 100]
             )
+            print("Results for:", dataset)
+            print(
+                {
+                    "NDCG@10": ndcg["NDCG@10"],
+                    "Recall@100": recall["Recall@100"],
+                    "precision": precision,
+                }
+            )
+            print("-------------------------------------")
