@@ -102,6 +102,7 @@ to fit their needs.
    :caption: Supporting Modules
 
    core_modules/supporting_modules/evaluation/root.md
+   core_modules/supporting_modules/cost_analysis/root.md
 
 .. toctree::
    :maxdepth: 2
