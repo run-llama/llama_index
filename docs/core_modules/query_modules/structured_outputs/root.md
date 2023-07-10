@@ -1,4 +1,4 @@
-# Output Parsing
+# Structured Outputs
 
 The ability of LLMs to produce structured outputs are important for downstream applications that rely on reliably parsing output values. 
 LlamaIndex itself also relies on structured output in the following ways.

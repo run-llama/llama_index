@@ -41,7 +41,7 @@ We support integrations with OpenAI, Hugging Face, PaLM, and more.
 
 ```{toctree}
 ---
-maxdepth: 1
+maxdepth: 2
 ---
 modules.md
 ```
