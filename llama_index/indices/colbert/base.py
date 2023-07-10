@@ -1,4 +1,3 @@
-import math
 from typing import Any, List, Optional, Sequence, Dict
 
 from llama_index.data_structs.data_structs import IndexDict
@@ -86,11 +85,9 @@ class ColbertIndex(BaseIndex[IndexDict]):
         raise NotImplementedError("ColbertStoreIndex does not support ref_doc_info.")
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
-        """Generate a PLAID index from a given ColBERT checkpoint.
-        `
-                Given a checkpoint and a collection of documents, an Indexer object will be created.
-                The index will then be generated, written to disk at `index_path` and finally it
-                will be loaded.
+        """Generate a PLAID index from the ColBERT checkpoint via its hugging face
+        model_name.
+
         """
 
         from colbert import Indexer, Searcher
