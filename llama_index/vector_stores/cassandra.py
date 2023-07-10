@@ -207,12 +207,12 @@ class CassandraVectorStore(VectorStore):
                     )
             prefetch_k = max(prefetch_k0, query.similarity_top_k)
             #
-            prefetch_matches = self.vector_table.search(
+            prefetch_matches = list(self.vector_table.search(
                 embedding_vector=query_embedding,
                 top_k=prefetch_k,
                 metric="cos",
                 metric_threshold=None,  # this is not `mmr_threshold`
-            )
+            ))
             #
             mmr_threshold = query.mmr_threshold or kwargs.get("mmr_threshold")
             if prefetch_matches:
