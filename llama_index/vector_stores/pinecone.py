@@ -11,15 +11,20 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.schema import MetadataMode, TextNode
-from llama_index.vector_stores.types import (MetadataFilters,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryMode,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (DEFAULT_TEXT_KEY,
-                                             legacy_metadata_dict_to_node,
-                                             metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import (
+    DEFAULT_TEXT_KEY,
+    legacy_metadata_dict_to_node,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
 
 ID_KEY = "id"
 VECTOR_KEY = "values"
