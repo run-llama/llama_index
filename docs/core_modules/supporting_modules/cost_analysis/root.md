@@ -51,7 +51,7 @@ Tokens are counted using the `TokenCountingHandler` callback. See the [example n
 
 ### Using MockLLM
 
-To predict token usage of LLM calls, import and instantiate the MockLLM as shown below. The `max_tokens` parameter is used as a "worst case" prediction, where each LLM response will contain that number of tokens.
+To predict token usage of LLM calls, import and instantiate the MockLLM as shown below. The `max_tokens` parameter is used as a "worst case" prediction, where each LLM response will contain exactly that number of tokens. If `max_tokens` is not specified, then it will simply predict back the prompt.
 
 ```python
 from llama_index import ServiceContext, set_global_service_context
