@@ -5,11 +5,11 @@ An `Index` is a data structure that allows us to quickly retrieve relevant conte
 For LlamaIndex, it's the core foundation for retrieval-augmented generation (RAG) use-cases.
 
 
-At a high-level, `Indices` are built from [Documents](/how_to/connector/root.md).
-They are used to build [Query Engines](/how_to/query_engine/root.md) and [Chat Engines](/how_to/chat_engine/root.md)
+At a high-level, `Indices` are built from [Documents](/core_modules/data_modules/documents_and_nodes/root.md).
+They are used to build [Query Engines](/core_modules/query_modules/query_engine/root.md) and [Chat Engines](/core_modules/query_modules/chat_engines/root.md)
 which enables question & answer and chat over your data.  
 
-Under the hood, `Indices` store data in `Node` objects (which represent chunks of the original documents), and expose an [Retriever](/how_to/retriever/root.md) interface that supports additional configuration and automation.
+Under the hood, `Indices` store data in `Node` objects (which represent chunks of the original documents), and expose an [Retriever](/core_modules/query_modules/retriever/root.md) interface that supports additional configuration and automation.
 
 For a more in-depth explanation, check out our guide below:
 ```{toctree}
