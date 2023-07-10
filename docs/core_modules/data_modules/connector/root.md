@@ -3,7 +3,10 @@
 ## Concept
 A data connector (i.e. `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
-Once you've ingested your data, you can build an [Index](/how_to/index/root.md) on top, ask questions using a [Query Engine](/how_to/query_engine/root.md), and have a conversation using a [Chat Engine](/how_to/chat_engine/root.md).
+```{tip}
+Once you've ingested your data, you can build an [Index](/core_modules/data_modules/index/root.md) on top, ask questions using a [Query Engine](/core_modules/query_modules/query_engine/root.md), and have a conversation using a [Chat Engine](/core_modules/query_modules/chat_engines/root.md).
+```
+
 ## LlamaHub
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙. 
 LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any LlamaIndex application.

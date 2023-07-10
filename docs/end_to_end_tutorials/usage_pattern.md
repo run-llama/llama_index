@@ -11,7 +11,7 @@ The general usage pattern of LlamaIndex is as follows:
 ## 1. Load in Documents
 
 The first step is to load in data. This data is represented in the form of `Document` objects.
-We provide a variety of [data loaders](/how_to/examples/data_connectors.md) which will load in Documents
+We provide a variety of [data loaders](/core_modules/data_modules/connector/root.md) which will load in Documents
 through the `load_data` function, e.g.:
 
 ```python
@@ -140,7 +140,7 @@ index = VectorStoreIndex([])
 index.insert_nodes(nodes)
 ```
 
-See the [Document Management How-To](/how_to/index/document_management.md) for more details on managing documents and an example notebook.
+See the [Document Management How-To](/core_modules/data_modules/index/document_management.md) for more details on managing documents and an example notebook.
 
 ### Customizing Documents
 
@@ -156,7 +156,7 @@ document = Document(
 )
 ```
 
-More information and approaches to this are discussed in the section [Customizing Documents](/how_to/customization/custom_documents.md).
+More information and approaches to this are discussed in the section [Customizing Documents](/core_modules/data_modules/documents_and_nodes/usage_documents.md).
 
 ### Customizing LLM's
 
@@ -181,7 +181,7 @@ index = VectorStoreIndex.from_documents(
 )
 ```
 
-See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more details.
+See the [Custom LLM's How-To](/core_modules/service_modules/llms/usage_custom.md) for more details.
 
 ### Global ServiceContext
 
@@ -194,7 +194,7 @@ set_global_service_context(service_context)
 
 This service context will always be used as the default if not specified as a keyword argument in LlamaIndex functions.
 
-For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/how_to/customization/service_context.md).
+For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/core_modules/service_modules/service_context.md).
 
 ### Customizing Prompts
 
@@ -204,16 +204,16 @@ See [Custom Prompts How-To](/how_to/customization/custom_prompts.md) for more de
 ### Customizing embeddings
 
 For embedding-based indices, you can choose to pass in a custom embedding model. See
-[Custom Embeddings How-To](custom-embeddings) for more details.
+[Custom Embeddings How-To](/core_modules/service_modules/embeddings/usage_pattern.md) for more details.
 
-### Cost Predictor
+### Cost Analysis 
 
 Creating an index, inserting to an index, and querying an index may use tokens. We can track
 token usage through the outputs of these operations. When running operations,
 the token usage will be printed.
 
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
-See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
+See [Cost Analysis How-To](/core_modules/supporting_modules/cost_analysis/usage_pattern.md) for more details.
 
 ### [Optional] Save the index for future use
 
@@ -264,7 +264,7 @@ index = load_index_from_storage(
 
 You can build indices on top of other indices!
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
-see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index/composability.md).
+see our [Query Use Cases](/end_to_end_tutorials/question_and_answer.md). For technical details and examples, see our [Composability How-To](/core_modules/data_modules/index/composability.md).
 
 ## 5. Query the index.
 
