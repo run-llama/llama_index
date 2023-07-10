@@ -110,27 +110,10 @@ to fit their needs.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Reference
+   :caption: API Reference
    :hidden:
 
-   reference/indices.rst
-   reference/query.rst
-   reference/node.rst
-   reference/llm_predictor.rst
-   reference/llms.rst
-   reference/node_postprocessor.rst
-   reference/storage.rst
-   reference/composability.rst
-   reference/readers.rst
-   reference/prompts.rst
-   reference/service_context.rst
-   reference/callbacks.rst
-   reference/struct_store.rst
-   reference/response.rst
-   reference/playground.rst
-   reference/node_parser.rst
-   reference/example_notebooks.rst
-   reference/langchain_integrations/base.rst
+   api_reference/index.rst
 
 
 .. toctree::
