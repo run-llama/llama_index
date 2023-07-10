@@ -16,6 +16,13 @@ query_engine = index.as_query_engine()
 response = query_engine.query("Who is Paul Graham.")
 ```
 
+To stream response:
+```python
+query_engine = index.as_query_engine(streaming=True)
+streaming_response = query_engine.query("Who is Paul Graham.")
+streaming_response.print_response_stream() 
+```
+
 ```{toctree}
 ---
 maxdepth: 2

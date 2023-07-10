@@ -85,3 +85,22 @@ chat_engine = CondenseQuestionChatEngine.from_defaults(
 )
 ```
 
+
+
+### Streaming
+To enable streaming, you simply need to call the `stream_chat` endpoint instead of the `chat` endpoint. 
+
+```{warning}
+This somewhat inconsistent with query engine (where you pass in a `streaming=True` flag). We are working on making the behavior more consistent! 
+```
+
+```python
+chat_engine = index.as_chat_engine()
+streaming_response = chat_engine.stream_chat("Tell me a joke.")
+streaming_response.print_response_stream() 
+```
+
+See an [end-to-end tutorial](/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb)
+
+
+

@@ -18,6 +18,14 @@ chat_engine = index.as_chat_engine()
 response = chat_engine.chat("Tell me a joke.")
 ```
 
+To stream response:
+```python
+chat_engine = index.as_chat_engine()
+streaming_response = chat_engine.stream_chat("Tell me a joke.")
+streaming_response.print_response_stream() 
+```
+
+
 ```{toctree}
 ---
 maxdepth: 2

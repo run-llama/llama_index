@@ -32,6 +32,7 @@ maxdepth: 1
 hidden:
 ---
 response_modes.md
+streaming.md
 ```
 
 
@@ -75,7 +76,7 @@ query_engine = RetrieverQueryEngine(
 response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
+### Streaming
+* Read the full [streaming guide](/core_modules/query_modules/query_engine/streaming.md)
+* See an [end-to-end example](/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
 
-## Advanced Configurations
-You can further configure the query engine with [advanced components](/how_to/query_engine/advanced/root.md)
-to reduce token cost, improve retrieval quality, etc. 
