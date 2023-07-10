@@ -7,6 +7,7 @@ from llama_index.schema import NodeWithScore
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.vector_stores.types import MetadataFilters
 
+
 class ColbertRetriever(BaseRetriever):
     """Vector index retriever.
 
@@ -45,4 +46,8 @@ class ColbertRetriever(BaseRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        return self._index.query(query_str=query_bundle.query_str, top_k=self._similarity_top_k, **self._kwargs)
+        return self._index.query(
+            query_str=query_bundle.query_str,
+            top_k=self._similarity_top_k,
+            **self._kwargs,
+        )

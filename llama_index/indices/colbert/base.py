@@ -44,14 +44,14 @@ class ColbertIndex(BaseIndex[IndexDict]):
         model_name: str = "colbert-ir/colbertv2.0",
         store_nodes_override: bool = False,
         show_progress: bool = False,
-        nbits=2,
-        gpus=0,
-        ranks=1,
-        doc_maxlen=120,
-        query_maxlen=60,
-        kmeans_niters=4,
+        nbits: int = 2,
+        gpus: int = 0,
+        ranks: int = 1,
+        doc_maxlen: int = 120,
+        query_maxlen: int = 60,
+        kmeans_niters: int = 4,
         **kwargs: Any,
-    ):
+    ) -> None:
         self.model_name = model_name
         self.index_path = "storage/colbert_index"
         self.nbits = nbits
@@ -60,7 +60,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
         self.doc_maxlen = doc_maxlen
         self.query_maxlen = query_maxlen
         self.kmeans_niters = kmeans_niters
-        self._docs_pos_to_node_id = {}
+        self._docs_pos_to_node_id: Dict[int, str] = {}
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -78,20 +78,19 @@ class ColbertIndex(BaseIndex[IndexDict]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         from llama_index.indices.colbert.retriever import ColbertRetriever
+
         return ColbertRetriever(index=self, **kwargs)
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
-        raise NotImplementedError(
-            "ColbertStoreIndex does not support ref_doc_info."
-        )
+        raise NotImplementedError("ColbertStoreIndex does not support ref_doc_info.")
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
         """Generate a PLAID index from a given ColBERT checkpoint.
-`
-        Given a checkpoint and a collection of documents, an Indexer object will be created.
-        The index will then be generated, written to disk at `index_path` and finally it
-        will be loaded.
+        `
+                Given a checkpoint and a collection of documents, an Indexer object will be created.
+                The index will then be generated, written to disk at `index_path` and finally it
+                will be loaded.
         """
 
         from colbert import Indexer, Searcher
@@ -129,7 +128,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
     #     for doc in docs:
     #         doc.score = math.exp(doc.score) / Z
 
-    def query(self, query_str: str, top_k=10) -> List[NodeWithScore]:
+    def query(self, query_str: str, top_k: int = 10) -> List[NodeWithScore]:
         """
         Query the Colbert v2 + Plaid store.
 
