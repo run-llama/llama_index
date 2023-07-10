@@ -83,7 +83,7 @@ to fit their needs.
    core_modules/query_modules/retriever/root.md
    core_modules/query_modules/node_postprocessors/root.md
    core_modules/query_modules/response_synthesizers/root.md
-   core_modules/query_modules/output_parsing/root.md
+   core_modules/query_modules/structured_outputs/root.md
    core_modules/query_modules/query_engine/root.md
    core_modules/query_modules/chat_engines/root.md
 

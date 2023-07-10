@@ -85,7 +85,7 @@ The default query engine for each index is called under the hood (i.e. `index.as
 Below we show an example that configure the tree index retrievers to use `child_branch_factor=2` (instead of the default `child_branch_factor=1`).
 
 
-More detail on how to configure `ComposableGraphQueryEngine` can be found [here](/reference/query/query_engines/graph_query_engine.rst).
+More detail on how to configure `ComposableGraphQueryEngine` can be found [here](/api_reference/query/query_engines/graph_query_engine.rst).
 
 
 ```python
