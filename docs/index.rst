@@ -118,15 +118,16 @@ to fit their needs.
    development/changelog.rst
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Community
+   :hidden:
+
+   community/integrations.md
+   community/app_showcase.md
+
+.. toctree::
    :maxdepth: 1
    :caption: API Reference
    :hidden:
 
    api_reference/index.rst
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Gallery
-   :hidden:
-
-   gallery/app_showcase.md

@@ -1,4 +1,4 @@
-# 😎 App Showcase
+# App Showcase
 
 Here is a sample of some of the incredible applications and tools built on top of LlamaIndex! 
 
