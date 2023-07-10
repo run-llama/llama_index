@@ -75,7 +75,3 @@ query_engine = RetrieverQueryEngine(
 response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
-
-## Advanced Configurations
-You can further configure the query engine with [advanced components](/how_to/query_engine/advanced/root.md)
-to reduce token cost, improve retrieval quality, etc. 
