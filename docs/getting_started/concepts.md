@@ -16,7 +16,7 @@ It generally consists of two stages:
 1) **indexing stage**: preparing a knowledge base, and
 2) **querying stage**: retrieving relevant context from the knowledge to assist the LLM in responding to a question
 
-![](/_static/getting_started/rag.png)
+![](/_static/getting_started/rag.jpg)
 
 
 LlamaIndex provides the essential toolkit for making both steps super easy.
@@ -24,7 +24,7 @@ Let's explore each stage in detail.
 
 ### Indexing Stage
 LlamaIndex help you prepare the knowledge base with a suite of data connectors and indexes.
-![](/_static/getting_started/indexing.png) 
+![](/_static/getting_started/indexing.jpg) 
 
 [**Data Connectors**](/core_modules/data_modules/connector/root.md):
 A data connector (i.e. `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
@@ -46,7 +46,7 @@ The key challenge in the querying stage is retrieval, orchestration, and reasoni
 LlamaIndex provides composable modules that help you build and integrate RAG pipelines for Q&A (query engine), chatbot (chat engine), or as part of an agent.
 These building blocks can be customized to reflect ranking preferences, as well as composed to reason over multiple knowledge bases in a structured way.
 
-![](/_static/getting_started/querying.png)
+![](/_static/getting_started/querying.jpg)
 
 #### Building Blocks
 [**Retrievers**](/core_modules/query_modules/retriever/root.md): 

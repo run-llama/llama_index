@@ -3,7 +3,7 @@ Customization Tutorial
 .. tip::
     If you haven't, `install <installation.html>`_, complete `starter tutorial <starter_example.html>`_, and learn the `high-level concepts <concepts.html>`_ before you read this. It will make a lot more sense!
 
-In this tutorial, we show the most common customizations with the `starter example <starter_example.md>`_:
+In this tutorial, we show the most common customizations with the `starter example <starter_example.html>`_:
 
 .. code-block:: python
 
