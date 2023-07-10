@@ -1,9 +1,9 @@
 Customization Tutorial
 ======================
-
+.. tip::
     If you haven't, `install <installation.html>`_, complete `starter tutorial <starter_example.html>`_, and learn the `high-level concepts <concepts.html>`_ before you read this. It will make a lot more sense!
 
-In this tutorial, we will show you how to customize the `starter example <starter_example.md>`_:
+In this tutorial, we show the most common customizations with the `starter example <starter_example.md>`_:
 
 .. code-block:: python
 
@@ -15,12 +15,18 @@ In this tutorial, we will show you how to customize the `starter example <starte
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
+-----------------
+
 **"I want to parse my documents into smaller chunks"**
 
 .. code-block:: python
 
     from llama_index import ServiceContext
     service_context = ServiceContext.from_defaults(chunk_size=1000)
+
+.. tip::
+    `ServiceContext` is a bundle of services and configurations used across a LlamaIndex pipeline,
+    Learn more `here <../how_to/customization/service_context.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 4
@@ -32,6 +38,8 @@ In this tutorial, we will show you how to customize the `starter example <starte
     query_engine = index.as_query_engine()
     response = query_engine.query("What did the author do growing up?")
     print(response)
+
+-----------------
 
 **"I want to use a different vector store"**
 
@@ -46,6 +54,10 @@ In this tutorial, we will show you how to customize the `starter example <starte
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
+.. tip::
+    `StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored.
+    Learn more `here <../how_to/storage/customization.html>`_.
+
 .. code-block:: python
     :emphasize-lines: 4
 
@@ -56,6 +68,8 @@ In this tutorial, we will show you how to customize the `starter example <starte
     query_engine = index.as_query_engine()
     response = query_engine.query("What did the author do growing up?")
     print(response)
+
+-----------------
 
 **"I want to retrieve more context when I query"**
 
@@ -69,6 +83,38 @@ In this tutorial, we will show you how to customize the `starter example <starte
     query_engine = index.as_query_engine(similarity_top_k=5)
     response = query_engine.query("What did the author do growing up?")
     print(response)
+
+.. tip::
+    `as_query_engine` builds a default retriever and query engine on top of the index.
+    You can configure the retriever and query engine by passing in keyword arguments.
+    Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2).
+    Learn more about vector index `here <../core_modules/data_modules/index/vector_store_guide.html>`_.
+
+-----------------
+
+**"I want to use a different LLM"**
+
+.. code-block:: python
+
+    from llama_index import ServiceContext
+    from llama_index.llms import PaLM
+    service_context = ServiceContext.from_defaults(llm=PaLM())
+
+.. tip::
+    Learn more about customizing LLMs `here <../how_to/customization/custom_llms.html>`_.
+
+.. code-block:: python
+    :emphasize-lines: 5
+
+    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+
+    documents = SimpleDirectoryReader('data').load_data()
+    index = VectorStoreIndex.from_documents(documents)
+    query_engine = index.as_query_engine(service_context=service_context)
+    response = query_engine.query("What did the author do growing up?")
+    print(response)
+
+-----------------
 
 **"I want to use a different response mode"**
 
@@ -84,6 +130,11 @@ In this tutorial, we will show you how to customize the `starter example <starte
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
+.. tip::
+    Learn more about query engine usage pattern `here <../how_to/query_engine/usage_pattern.html>`_ and available response modes `here <../how_to/query_engine/response_modes.html>`_.
+
+-----------------
+
 **"I want to stream the response back"**
 
 
@@ -97,3 +148,6 @@ In this tutorial, we will show you how to customize the `starter example <starte
     query_engine = index.as_query_engine(streaming=True)
     response = query_engine.query("What did the author do growing up?")
     response.print_response_stream()
+
+.. tip::
+    Learn more about streaming `here <../how_to/customization/streaming.html>`_.
