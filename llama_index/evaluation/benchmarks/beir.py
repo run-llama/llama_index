@@ -9,18 +9,19 @@ beir_datasets = [
     "hotpotqa",
 ]
 
+
 class BeirEvaluator:
     def __init__(self):
         try:
             import beir
         except ImportError:
             raise ImportError(
-                "Please install beir to use this feature: "
-                "`pip install beir`",
+                "Please install beir to use this feature: " "`pip install beir`",
             )
 
     def _download_datasets(self, datasets: List[str] = ["nfcorpus"]) -> Dict[str, str]:
         from beir import util
+
         cache_dir = get_cache_dir()
 
         dataset_paths = {}
@@ -33,12 +34,11 @@ class BeirEvaluator:
             dataset_paths[dataset] = os.path.join(dataset_full_path, dataset)
         return dataset_paths
 
-    def run_evaluation(
+    def run(
         self,
         create_retriever: Callable[[List[Document]], BaseRetriever],
-        top_k: int,
         datasets: List[str] = ["nfcorpus"],
-    ):
+    ) -> None:
         from beir.datasets.data_loader import GenericDataLoader
         from beir.retrieval.evaluation import EvaluateRetrieval
 
@@ -48,11 +48,15 @@ class BeirEvaluator:
             print("Evaluating on dataset:", dataset)
             print("-------------------------------------")
 
-            corpus, queries, qrels = GenericDataLoader(data_folder=dataset_path).load(split="test")
+            corpus, queries, qrels = GenericDataLoader(data_folder=dataset_path).load(
+                split="test"
+            )
 
             documents = []
-            for id,  val in corpus.items():
-                documents.append(Document(text=val["text"], metadata={"title": val["title"]}, id_=id))
+            for id, val in corpus.items():
+                documents.append(
+                    Document(text=val["text"], metadata={"title": val["title"]}, id_=id)
+                )
 
             retriever = create_retriever(documents)
 
@@ -63,4 +67,6 @@ class BeirEvaluator:
                 nodes_with_score = retriever.retrieve(query)
                 results[key] = {node.id: node.score for node in nodes_with_score}
 
-            ncdg, map_, recall, precision = EvaluateRetrieval.evaluate(qrels, results, [1, 10, 100])
+            ncdg, map_, recall, precision = EvaluateRetrieval.evaluate(
+                qrels, results, [1, 10, 100]
+            )
