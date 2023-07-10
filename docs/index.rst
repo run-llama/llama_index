@@ -104,6 +104,7 @@ to fit their needs.
 
    core_modules/supporting_modules/evaluation/root.md
    core_modules/supporting_modules/cost_analysis/root.md
+   core_modules/supporting_modules/playground/root.md
 
 .. toctree::
    :maxdepth: 2

@@ -70,7 +70,7 @@ query_engine = index.as_query_engine(
     service_context=ServiceContext.from_defaults(
         llm_predictor=llm_predictor
     ),
-    text_qa_temjlate=qa_prompt, 
+    text_qa_template=qa_prompt, 
     refine_template=refine_prompt, 
 )
 response = query_engine.query(
