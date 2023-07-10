@@ -8,7 +8,7 @@ In addition to logging data related to events, you can also track the duration a
 of each event. 
 
 Furthermore, a trace map of events is also recorded, and callbacks can use this data
-however they want. For example, the :code:`LlamaDebugHandler` will, by default, print the trace of events
+however they want. For example, the `LlamaDebugHandler` will, by default, print the trace of events
 after most operations.
 
 **Callback Event Types**  
