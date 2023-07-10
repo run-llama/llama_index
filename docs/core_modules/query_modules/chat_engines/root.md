@@ -9,7 +9,9 @@ Conceptually, it is a **stateful** analogy of a [Query Engine](/how_to/query_eng
 By keeping track of the conversation history, it can answer questions with past context in mind.  
 
 
-> If you want to ask standalone question over your data (i.e. without keeping track of conversation history), use [Query Engine](/how_to/query_engine/root.md) instead.  
+```{tip}
+If you want to ask standalone question over your data (i.e. without keeping track of conversation history), use [Query Engine](/how_to/query_engine/root.md) instead.  
+```
 
 ## Usage Pattern
 Get started with:
