@@ -33,7 +33,7 @@ They mainly differ in 2 aspects:
 ### Others
 * ChatGPTRetrievalPlugin
 
-For more details, see [Vector Store Integrations](/how_to/integrations/vector_stores.md).
+For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 
 ```{toctree}
 ---

@@ -10,7 +10,7 @@ of simplest (top-k semantic search), to more advanced capabilities.
 
 The most basic example usage of LlamaIndex is through semantic search. We provide
 a simple in-memory vector store for you to get started, but you can also choose
-to use any one of our [vector store integrations](/how_to/integrations/vector_stores.md):
+to use any one of our [vector store integrations](/community/integrations/vector_stores.md):
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader

@@ -64,7 +64,7 @@ We have deep integrations with LangChain.
 LlamaIndex query engines can be easily packaged as Tools to be used within a LangChain agent, and LlamaIndex can also be used as a memory module / retriever. Check out our guides/tutorials below!
 
 **Resources**
-- [LangChain integration guide](/how_to/integrations/using_with_langchain.md)
+- [LangChain integration guide](/community/integrations/using_with_langchain.md)
 - [Building a Chatbot Tutorial (LangChain + LlamaIndex)](/guides/tutorials/building_a_chatbot.md)
 - [OnDemandLoaderTool Tutorial](/examples/tools/OnDemandLoaderTool.ipynb)
 

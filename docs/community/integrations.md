@@ -4,7 +4,7 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 ```{toctree}
 ---
-maxdepth: 2
+maxdepth: 1
 ---
 integrations/graphsignal.md
 integrations/guidance.md
