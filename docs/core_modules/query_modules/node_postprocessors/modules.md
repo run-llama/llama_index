@@ -82,7 +82,7 @@ postprocessor = LLMRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/LLMReranker-Gatsbhy.ipynb) and [here for Lyft 10K documents](/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
+Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
 
 ## FixedRecencyPostprocessor
 
@@ -136,7 +136,7 @@ postprocessor = TimeWeightedPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide is available [here](/examples/node_postprocessor/TimeWeightedPostprocessor.ipynb).
+A full notebook guide is available [here](/examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb).
 
 ## (Beta) PIINodePostprocessor
 
