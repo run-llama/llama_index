@@ -55,9 +55,8 @@ class BeirEvaluator:
 
             documents = []
             for id, val in corpus.items():
-                documents.append(
-                    Document(text=val["text"], metadata={"title": val["title"]}, id_=id)
-                )
+                doc = Document(text=val["text"], metadata={"title": val["title"], "doc_id": id})
+                documents.append(doc)
 
             retriever = create_retriever(documents)
 
@@ -67,7 +66,7 @@ class BeirEvaluator:
             for key, query in tqdm.tqdm(queries.items()):
                 nodes_with_score = retriever.retrieve(query)
                 results[key] = {
-                    node.node.node_id: node.score for node in nodes_with_score
+                    node.node.metadata["doc_id"]: node.score for node in nodes_with_score
                 }
 
             ndcg, map_, recall, precision = EvaluateRetrieval.evaluate(
@@ -77,7 +76,7 @@ class BeirEvaluator:
             print(
                 {
                     "NDCG@10": ndcg["NDCG@10"],
-                    "Recall@100": recall["Recall@100"],
+                    "Recall@10": recall["Recall@10"],
                     "precision": precision,
                 }
             )
