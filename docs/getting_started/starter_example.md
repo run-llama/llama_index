@@ -87,10 +87,12 @@ storage_context = StorageContext.from_defaults(persist_dir="./storage")
 index = load_index_from_storage(storage_context)
 ```
 
-### Next Steps
 
-That's it! For more information on LlamaIndex features, please check out the numerous "Guides" to the left.
-If you are interested in further exploring how LlamaIndex works, learn more about the [high-level concepts](/getting_started/concepts.md).
-After that, check out our [Primer Guide](/guides/primer.rst).
 
-Additionally, if you would like to play around with Example Notebooks, check out [this link](/reference/example_notebooks.rst).
+```{admonition} Next Steps
+* learn more about the [high-level concepts](/getting_started/concepts.md).
+* tell me how to [customize things](/getting_started/customization.rst).
+* curious about a specific module? check out the guides 👈
+* have a use case in mind? check out the [end-to-end tutorials](/end_to_end_tutorials/use_cases.md)
+```
+

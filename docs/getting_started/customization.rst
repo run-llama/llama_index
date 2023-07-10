@@ -170,4 +170,12 @@ In this tutorial, we show the most common customizations with the `starter examp
     response = query_engine.chat("Oh interesting, tell me more.")
     print(response)
 
+.. tip::
+    Learn more about chat engine usage pattern `here <../how_to/chat_engine/usage_pattern.html>`_.
 
+-----------------
+
+.. admonition:: Next Steps
+
+    * want a thorough walkthrough of (almost) everything you can configure? Try the `end-to-end tutorial on basic usage pattern <../end_to_end_tutorials/usage_pattern.html>`_.
+    * want more in-depth understanding of specific modules? Check out the module guides 👈

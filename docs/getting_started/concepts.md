@@ -75,3 +75,9 @@ An agent is an automated decision maker (powered by an LLM) that interacts with 
 Agent may be used in the same fashion as query engines or chat engines. 
 The main distinction is that an agent dynamically decides the best sequence of actions, instead of following a predetermined logic.
 This gives it additional flexibility to tackle more complex tasks.
+
+```{admonition} Next Steps
+* tell me how to [customize things](/getting_started/customization.rst).
+* curious about a specific module? Check out the module guides 👈
+* have a use case in mind? Check out the [end-to-end tutorials](/end_to_end_tutorials/use_cases.md)
+```
