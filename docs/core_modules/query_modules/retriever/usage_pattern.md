@@ -24,7 +24,7 @@ retriever = list_index.as_retriever(
     retriever_mode='llm',
 )
 ```
-This creates a [ListIndexLLMRetriever](/reference/query/retrievers/list.rst) on top of the list index.
+This creates a [ListIndexLLMRetriever](/api_reference/query/retrievers/list.rst) on top of the list index.
 
 See [**Retriever Modes**](/core_modules/query_modules/retriever/retriever_modes.md) for a full list of (index-specific) retriever modes
 and the retriever classes they map to.

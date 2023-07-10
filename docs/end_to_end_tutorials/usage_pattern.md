@@ -327,7 +327,7 @@ print(response)
 
 You may also add your own retrieval, response synthesis, and overall query logic, by implementing the corresponding interfaces.
 
-For a full list of implemented components and the supported configurations, please see the detailed [reference docs](/reference/query.rst).
+For a full list of implemented components and the supported configurations, please see the detailed [reference docs](/api_reference/query.rst).
 
 In the following, we discuss some commonly used configurations in detail.
 
@@ -353,7 +353,7 @@ query_engine = RetrieverQueryEngine(retriever)
 response = query_engine.query("What did the author do growing up?")
 ```
 
-The full list of retrievers for each index (and their shorthand) is documented in the [Query Reference](/reference/query.rst).
+The full list of retrievers for each index (and their shorthand) is documented in the [Query Reference](/api_reference/query.rst).
 
 (setting-response-mode)=
 
@@ -416,7 +416,7 @@ For example:
 - `SimilarityPostprocessor`: filters nodes by setting a threshold on the similarity score (thus only supported by embedding-based retrievers)
 - `PrevNextNodePostprocessor`: augments retrieved `Node` objects with additional relevant context based on `Node` relationships.
 
-The full list of node postprocessors is documented in the [Node Postprocessor Reference](/reference/node_postprocessor.rst).
+The full list of node postprocessors is documented in the [Node Postprocessor Reference](/api_reference/node_postprocessor.rst).
 
 To configure the desired node postprocessors:
 
@@ -435,7 +435,7 @@ response = query_engine.query("What did the author do growing up?")
 
 ## 5. Parsing the response
 
-The object returned is a [`Response` object](/reference/response.rst).
+The object returned is a [`Response` object](/api_reference/response.rst).
 The object contains both the response text as well as the "sources" of the response:
 
 ```python

@@ -62,7 +62,7 @@ index = TreeIndex.from_documents(docs, summary_template=<custom_prompt>)
 ```
 
 For more details on which index uses which prompts, please visit
-[Index class references](/reference/indices.rst).
+[Index class references](/api_reference/indices.rst).
 
 #### Modify prompts used in query engine
 More commonly, prompts are used at query-time (i.e. for executing a query against an index and synthesizing the final response). 
@@ -91,9 +91,9 @@ The two approaches above are equivalent, where 1 is essentially syntactic sugar 
 
 
 For more details on which classes use which prompts, please visit
-[Query class references](/reference/query.rst).
+[Query class references](/api_reference/query.rst).
 
-Check out the [reference documentation](/reference/prompts.rst) for a full set of all prompts.
+Check out the [reference documentation](/api_reference/prompts.rst) for a full set of all prompts.
 
 ## Modules
 

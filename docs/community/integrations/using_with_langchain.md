@@ -2,7 +2,7 @@
 
 LlamaIndex provides both Tool abstractions for a Langchain agent as well as a memory module.
 
-The API reference of the Tool abstractions + memory modules are [here](/reference/langchain_integrations/base.rst).
+The API reference of the Tool abstractions + memory modules are [here](/api_reference/langchain_integrations/base.rst).
 
 ### Use any data loader as a Langchain Tool
 

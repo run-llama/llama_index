@@ -44,7 +44,7 @@ indices = load_indices_from_storage(storage_context, index_ids=[index_id1, ...])
 graph = load_graph_from_storage(storage_context, root_id="<root_id>") # loads graph with the specified root_id
 ```
 
-Here's the full [API Reference on saving and loading](/reference/storage/indices_save_load.rst).
+Here's the full [API Reference on saving and loading](/api_reference/storage/indices_save_load.rst).
 
 ## Using a remote backend
 
