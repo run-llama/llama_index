@@ -20,7 +20,7 @@ By default, we use the OpenAI GPT-3 `text-davinci-003` model. In order to use th
 You can register an API key by logging into [OpenAI's page and creating a new API token](https://beta.openai.com/account/api-keys).
 
 ```{tip}
-You can also [customize the underlying LLM](/core_modules/service_modules/llms/usage_custom.md). You may
+You can also [customize the underlying LLM](/core_modules/model_modules/llms/usage_custom.md). You may
 need additional environment keys + tokens setup depending on the LLM provider.
 ```
 

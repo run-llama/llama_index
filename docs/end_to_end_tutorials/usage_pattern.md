@@ -181,7 +181,7 @@ index = VectorStoreIndex.from_documents(
 )
 ```
 
-See the [Custom LLM's How-To](/core_modules/service_modules/llms/usage_custom.md) for more details.
+See the [Custom LLM's How-To](/core_modules/model_modules/llms/usage_custom.md) for more details.
 
 ### Global ServiceContext
 
@@ -194,7 +194,7 @@ set_global_service_context(service_context)
 
 This service context will always be used as the default if not specified as a keyword argument in LlamaIndex functions.
 
-For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/core_modules/service_modules/service_context.md).
+For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/core_modules/supporting_modules/service_context.md).
 
 ### Customizing Prompts
 
@@ -204,7 +204,7 @@ See [Custom Prompts How-To](/how_to/customization/custom_prompts.md) for more de
 ### Customizing embeddings
 
 For embedding-based indices, you can choose to pass in a custom embedding model. See
-[Custom Embeddings How-To](/core_modules/service_modules/embeddings/usage_pattern.md) for more details.
+[Custom Embeddings How-To](/core_modules/model_modules/embeddings/usage_pattern.md) for more details.
 
 ### Cost Analysis 
 
