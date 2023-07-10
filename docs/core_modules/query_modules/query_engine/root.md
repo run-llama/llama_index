@@ -31,3 +31,12 @@ maxdepth: 3
 ---
 modules.md
 ```
+
+
+## Supporting Modules
+```{toctree}
+---
+maxdepth: 2
+---
+supporting_modules.md
+```
