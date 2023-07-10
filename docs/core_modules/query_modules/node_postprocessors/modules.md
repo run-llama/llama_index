@@ -214,9 +214,9 @@ maxdepth: 1
 /examples/node_postprocessor/OptimizerDemo.ipynb
 /examples/node_postprocessor/CohereRerank.ipynb
 /examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb
-/examples/node_postprocessor/LLMReranker-Gatsbhy.ipynb
+/examples/node_postprocessor/LLMReranker-Gatsby.ipynb
 /examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
-/examples/node_postprocessor/TimeWeightedPostprocessor.ipynb
+/examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
 /examples/node_postprocessor/PII.ipynb
 /examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
 ```
