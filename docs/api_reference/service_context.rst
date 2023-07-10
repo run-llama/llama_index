@@ -17,9 +17,9 @@ the BaseEmbedding (for configuring the embedding model), and more.
    :caption: Service Context Classes
 
    service_context/embeddings.rst
-   service_context/llm_predictor.rst
+   service_context/node_parser.rst
    service_context/prompt_helper.rst
-   service_context/llama_logger.rst
+   llms.rst
 
 ------------
 

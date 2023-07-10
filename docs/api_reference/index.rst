@@ -23,6 +23,5 @@ API Reference for the ``llama-index`` package.
    struct_store.rst
    response.rst
    playground.rst
-   node_parser.rst
    example_notebooks.rst
    langchain_integrations/base.rst
