@@ -98,6 +98,12 @@ to fit their needs.
    core_modules/service_modules/callbacks/root.md
 
 .. toctree::
+   :maxdepth: 1
+   :caption: Supporting Modules
+
+   core_modules/supporting_modules/evaluation/root.md
+
+.. toctree::
    :maxdepth: 2
    :caption: Development
    :hidden:
