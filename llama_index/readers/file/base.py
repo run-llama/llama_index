@@ -2,6 +2,7 @@
 import logging
 from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
+import os
 
 from llama_index.readers.base import BaseReader
 from llama_index.readers.file.docs_reader import DocxReader, PDFReader
@@ -93,9 +94,13 @@ class SimpleDirectoryReader(BaseReader):
         if input_files:
             self.input_files = []
             for path in input_files:
+                if not os.path.isfile(path):
+                    raise ValueError(f"File {path} does not exist.")
                 input_file = Path(path)
                 self.input_files.append(input_file)
         elif input_dir:
+            if not os.path.isdir(input_dir):
+                raise ValueError(f"Directory {input_dir} does not exist.")
             self.input_dir = Path(input_dir)
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
