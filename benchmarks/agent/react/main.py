@@ -54,7 +54,7 @@ TASKS = [
 ]
 
 
-def evaluate(model: str, task: Task) -> bool:
+def evaluate(model: str, task: Task, verbose: bool = False) -> bool:
     print("=====")
     print(f"Evaluating {model} on {task.message}")
 
@@ -62,11 +62,15 @@ def evaluate(model: str, task: Task) -> bool:
     agent = ReActAgent.from_tools(
         tools=task.tools,
         llm=llm,
+        verbose=verbose,
     )
     try:
         actual_response = agent.chat(task.message).response
         outcome = task.eval_fn(actual_response, task.expected_response)
     except Exception as e:
+        if verbose:
+            print(e)
+
         actual_response = None
         outcome = False
 
@@ -77,11 +81,13 @@ def evaluate(model: str, task: Task) -> bool:
     return outcome
 
 
-def main(models: List[str] = MODELS, tasks: List[Task] = TASKS) -> None:
+def main(
+    models: List[str] = MODELS, tasks: List[Task] = TASKS, verbose: bool = False
+) -> None:
     data = []
     for model in models:
         for task in tasks:
-            outcome = evaluate(model, task)
+            outcome = evaluate(model, task, verbose)
             data.append(
                 {
                     "model": model,
