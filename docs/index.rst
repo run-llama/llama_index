@@ -57,6 +57,15 @@ to fit their needs.
    getting_started/customization.rst
 
 .. toctree::
+   :maxdepth: 2
+   :caption: End-to-End Tutorials
+   :hidden:
+
+   end_to_end_tutorials/usage_pattern.md
+   end_to_end_tutorials/discover_llamaindex.md
+   end_to_end_tutorials/use_cases.md
+   
+.. toctree::
    :maxdepth: 1
    :caption: Index/Data Modules
    :hidden:
@@ -90,15 +99,6 @@ to fit their needs.
 
 .. toctree::
    :maxdepth: 2
-   :caption: End-to-End Tutorials
-   :hidden:
-
-   end_to_end_tutorials/usage_pattern.md
-   end_to_end_tutorials/discover_llamaindex.md
-   end_to_end_tutorials/use_cases.md
-
-.. toctree::
-   :maxdepth: 2
    :caption: Development
    :hidden:
 
@@ -113,7 +113,6 @@ to fit their needs.
    :hidden:
 
    api_reference/index.rst
-
 
 .. toctree::
    :maxdepth: 1
