@@ -96,6 +96,7 @@ to fit their needs.
    core_modules/service_modules/embeddings/root.md
    core_modules/service_modules/node_parsers/root.md
    core_modules/service_modules/callbacks/root.md
+   core_modules/service_modules/service_context.md
 
 .. toctree::
    :maxdepth: 1
