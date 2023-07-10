@@ -10,7 +10,9 @@ from llama_index import VectorStoreIndex
 index = VectorStoreIndex.from_documents(docs)
 ```
 
-> Note: To learn how to load documents, see [Data Connectors](/how_to/connector/root.md)
+```{tip}
+To learn how to load documents, see [Data Connectors](/core_modules/data_modules/connector/root.md)
+```
 
 ### What is happening under the hood?
 
