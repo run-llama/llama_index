@@ -99,6 +99,8 @@ postprocessor = FixedRecencyPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
+![](/_static/node_postprocessors/recency.png)
+
 A full notebook guide is available [here](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
 
 ## EmbeddingRecencyPostprocessor
@@ -183,6 +185,8 @@ postprocessor = PrevNextNodePostprocessor(
 
 postprocessor.postprocess_nodes(nodes)
 ```
+
+![](/_static/node_postprocessors/prev_next.png)
 
 ## (Beta) AutoPrevNextNodePostprocessor
 
