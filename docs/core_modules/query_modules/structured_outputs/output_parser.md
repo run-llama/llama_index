@@ -148,10 +148,9 @@ caption: Examples
 maxdepth: 1
 ---
 
-../../../examples/output_parsing/GuardrailsDemo.ipynb
-../../../examples/output_parsing/LangchainOutputParserDemo.ipynb
-../../../examples/output_parsing/guidance_pydantic_program.ipynb
-../../../examples/output_parsing/guidance_sub_question.ipynb
-../../../examples/output_parsing/openai_pydantic_program.ipynb
-../../../examples/output_parsing/df_output_parser.ipynb
+/examples/output_parsing/GuardrailsDemo.ipynb
+/examples/output_parsing/LangchainOutputParserDemo.ipynb
+/examples/output_parsing/guidance_pydantic_program.ipynb
+/examples/output_parsing/guidance_sub_question.ipynb
+/examples/output_parsing/openai_pydantic_program.ipynb
 ```
