@@ -157,6 +157,9 @@ class SimpleDirectoryReader(BaseReader):
                 all_files.add(ref)
 
         new_input_files = sorted(list(all_files))
+        
+        if len(new_input_files) == 0:
+            raise ValueError(f"No files found in {input_dir}.")
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
             new_input_files = new_input_files[0 : self.num_files_limit]
