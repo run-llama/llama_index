@@ -11,6 +11,15 @@ which enables question & answer and chat over your data.
 
 Under the hood, `Indices` store data in `Node` objects (which represent chunks of the original documents), and expose an [Retriever](/how_to/retriever/root.md) interface that supports additional configuration and automation.
 
+For a more in-depth explanation, check out our guide below:
+```{toctree}
+---
+maxdepth: 1
+---
+index_guide.md
+```
+
+
 
 ## Usage Pattern
 Get started with:
