@@ -11,7 +11,7 @@ Retrieve relevant context for a question:
 nodes = retriever.retrieve('Who is Paul Graham?')
 ```
 
-> Note: To learn how to build an index, see [Index](/how_to/index/root.md)
+> Note: To learn how to build an index, see [Index](/core_modules/data_modules/index/root.md)
 
 ## High-Level API
 
@@ -26,7 +26,7 @@ retriever = list_index.as_retriever(
 ```
 This creates a [ListIndexLLMRetriever](/reference/query/retrievers/list.rst) on top of the list index.
 
-See [**Retriever Modes**](/how_to/retriever/retriever_modes.md) for a full list of (index-specific) retriever modes
+See [**Retriever Modes**](/core_modules/query_modules/retriever/retriever_modes.md) for a full list of (index-specific) retriever modes
 and the retriever classes they map to.
 
 ```{toctree}

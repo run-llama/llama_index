@@ -23,7 +23,9 @@ query_engine = index.as_query_engine(response_synthesizer=response_synthesizer)
 response = query_engine.query("query_text")
 ```
 
-> Note: To learn how to build an index, see [Index](/how_to/index/root.md)
+```{tip}
+To learn how to build an index, see [Index](/core_modules/data_modules/index/root.md)
+```
 
 ## Configuring the Response Mode
 Response synthesizers are typically specified through a `response_mode` kwarg setting.

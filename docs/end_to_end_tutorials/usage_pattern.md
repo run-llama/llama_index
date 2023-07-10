@@ -199,7 +199,7 @@ For more details on the service context, including how to create a global servic
 ### Customizing Prompts
 
 Depending on the index used, we used default prompt templates for constructing the index (and also insertion/querying).
-See [Custom Prompts How-To](/how_to/customization/custom_prompts.md) for more details on how to customize your prompt.
+See [Custom Prompts How-To](/core_modules/service_modules/prompts.md) for more details on how to customize your prompt.
 
 ### Customizing embeddings
 
