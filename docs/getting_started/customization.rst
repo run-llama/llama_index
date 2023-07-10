@@ -152,6 +152,7 @@ In this tutorial, we show the most common customizations with the `starter examp
 .. tip::
     Learn more about streaming `here <../how_to/customization/streaming.html>`_.
 
+-----------------
 
 **"I want a chatbot instead of Q&A"**
 
