@@ -77,6 +77,18 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 ### Streaming
+To enable streaming, you simply need to pass in a `streaming=True` flag
+
+```python
+query_engine = index.as_query_engine(
+    streaming=True,
+)
+streaming_response = query_engine.query(
+    "What did the author do growing up?", 
+)
+streaming_response.print_response_stream() 
+```
+
 * Read the full [streaming guide](/core_modules/query_modules/query_engine/streaming.md)
 * See an [end-to-end example](/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
 
