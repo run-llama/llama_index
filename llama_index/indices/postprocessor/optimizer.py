@@ -111,8 +111,8 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
 
             logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
             if logger.isEnabledFor(logging.DEBUG):
-                for i in range(len(top_idxs)):
-                    logger.debug(f"{i}. {top_sentences[i]} ({top_similarities[i]})")
+                for idx in range(len(top_idxs)):
+                    logger.debug(f"{i}. {top_sentences[idx]} ({top_similarities[idx]})")
 
             nodes[i].node.set_content(" ".join(top_sentences))
 
