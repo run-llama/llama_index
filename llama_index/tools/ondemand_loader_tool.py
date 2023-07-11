@@ -134,5 +134,8 @@ class OnDemandLoaderTool(BaseTool):
         query_engine = index.as_query_engine()
         response = query_engine.query(query_str)
         return ToolOutput(
-            content=str(response), tool_name=self.metadata.name, raw_output=response
+            content=str(response),
+            tool_name=self.metadata.name,
+            raw_input={"query": query_str},
+            raw_output=response,
         )

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
 from llama_index.bridge.langchain import StructuredTool, Tool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 @dataclass
@@ -37,6 +37,7 @@ class ToolOutput(BaseModel):
 
     content: str
     tool_name: str
+    raw_input: Dict[str, Any]
     raw_output: Any
 
     def __str__(self) -> str:

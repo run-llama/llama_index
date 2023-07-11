@@ -174,6 +174,7 @@ class QueryPlanTool(BaseTool):
             response = ToolOutput(
                 content=str(response_obj),
                 tool_name=node.query_str,
+                raw_input={"query": node.query_str},
                 raw_output=response_obj,
             )
 

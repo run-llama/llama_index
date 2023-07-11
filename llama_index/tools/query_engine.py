@@ -52,7 +52,10 @@ class QueryEngineTool(BaseTool):
         query_str = cast(str, input)
         response = self._query_engine.query(query_str)
         return ToolOutput(
-            content=str(response), tool_name=self.metadata.name, raw_output=response
+            content=str(response),
+            tool_name=self.metadata.name,
+            raw_input={"input": input},
+            raw_output=response,
         )
 
     def as_langchain_tool(self) -> LlamaIndexTool:

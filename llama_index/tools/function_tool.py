@@ -56,6 +56,7 @@ class FunctionTool(BaseTool):
         return ToolOutput(
             content=str(tool_output),
             tool_name=self.metadata.name,
+            raw_input={"args": args, "kwargs": kwargs},
             raw_output=tool_output,
         )
 
