@@ -150,7 +150,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     response.print_response_stream()
 
 .. tip::
-    Learn more about streaming `here <../how_to/customization/streaming.html>`_.
+    Learn more about streaming `here <../core_modules/query_modules/query_engine/streaming.html>`_.
 
 -----------------
 
