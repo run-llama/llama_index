@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- `SimpleDirectoryReader` now raises errors if no files are found (#6819)
+
 ## [v0.7.4] - 2023-07-08
 
 ### New Features
