@@ -63,6 +63,7 @@ class PGVectorStore(VectorStore):
         self._create_tables_if_not_exists()
 
     def __del__(self) -> None:
+        self._session.close_all()
         self._conn.close()
         self._engine.dispose()
 
@@ -166,8 +167,9 @@ class PGVectorStore(VectorStore):
 
         with self._session() as session:
             with session.begin():
-                stmt = sqlalchemy.delete(self.table_class).where(
-                    self.table_class.doc_id == ref_doc_id
+                stmt = sqlalchemy.text(
+                    f"DELETE FROM public.data_{self.table_name} where (metadata_->>'doc_id')::text = '{ref_doc_id}' "
                 )
+
                 session.execute(stmt)
                 session.commit()
