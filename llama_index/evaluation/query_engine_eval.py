@@ -9,7 +9,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 
 @dataclass
 class QueryEngineEvaluator:
-    # add a Callback manager here
+    # TODO: add a Callback manager here
     service_context: ServiceContext
 
     def evaluate(self, query_engine: BaseQueryEngine, questions: list[str]):
@@ -23,7 +23,7 @@ class QueryEngineEvaluator:
             from ragas.metrics import answer_relevancy, context_relevancy, faithfulness
         except ImportError:
             raise ImportError(
-                "Please install ragas via `pip install ragas` to use"
+                "Please install ragas via `pip install llama_index[eval]` to use"
                 " QueryEngineEvaluator"
             )
         # TODO: rate limit, error handling, retries
