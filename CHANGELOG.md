@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unrleased
+
+### Bug Fixes / Nits
+- Fix indexing error in `SentenceEmbeddingOptimizer` (#6850)
+
 ## [v0.7.4] - 2023-07-08
 
 ### New Features
