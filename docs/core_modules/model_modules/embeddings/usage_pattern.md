@@ -80,15 +80,15 @@ class InstructorEmbeddings(BaseEmbedding):
     super().__init__(**kwargs)
 
     def _get_query_embedding(self, query: str) -> List[float]:
-      embeddings = model.encode([[self._instruction, query]])
+      embeddings = self._model.encode([[self._instruction, query]])
       return embeddings[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
-      embeddings = model.encode([[self._instruction, text]])
+      embeddings = self._model.encode([[self._instruction, text]])
       return embeddings[0] 
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-      embeddings = model.encode([[self._instruction, text] for text in texts])
+      embeddings = self._model.encode([[self._instruction, text] for text in texts])
       return embeddings
 ```
 
