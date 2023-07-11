@@ -128,6 +128,16 @@ class SimpleGraphStore(GraphStore):
         with fs.open(persist_path, "w") as f:
             json.dump(self._data.to_dict(), f)
 
+    def get_schema(self, refresh: bool = False) -> str:
+        """Get the schema of the Simple Graph store."""
+        # not implemented
+        raise NotImplementedError
+
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+        """Query the Simple Graph store."""
+        # not implemented
+        raise NotImplementedError
+
     @classmethod
     def from_persist_path(
         cls, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None

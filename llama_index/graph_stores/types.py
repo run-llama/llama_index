@@ -22,7 +22,10 @@ class GraphStore(Protocol):
         delete: Callable[[str, str, str], None]: Delete a triplet.
         persist: Callable[[str, Optional[fsspec.AbstractFileSystem]], None]:
             Persist the graph store to a file.
+        get_schema: Callable[[bool], str]: Get the schema of the graph store.
     """
+
+    schema: str = ""
 
     @property
     def client(self) -> Any:
@@ -52,3 +55,11 @@ class GraphStore(Protocol):
     ) -> None:
         """Persist the graph store to a file."""
         return None
+
+    def get_schema(self, refresh: bool = False) -> str:
+        """Get the schema of the graph store."""
+        ...
+
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+        """Query the graph store with statement and parameters."""
+        ...

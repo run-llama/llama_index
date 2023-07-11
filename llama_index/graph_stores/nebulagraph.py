@@ -1,6 +1,7 @@
 """NebulaGraph graph store index."""
 import logging
 import os
+from string import Template
 from typing import Any, Dict, List, Optional
 
 from llama_index.graph_stores.types import GraphStore
@@ -9,6 +10,16 @@ QUOTE = '"'
 RETRY_TIMES = 3
 
 logger = logging.getLogger(__name__)
+
+
+rel_query = Template(
+    """
+MATCH ()-[e:`$edge_type`]->()
+  WITH e limit 1
+MATCH (m)-[:`$edge_type`]->(n) WHERE id(m) == src(e) AND id(n) == dst(e)
+RETURN "(:" + tags(m)[0] + ")-[:$edge_type]->(:" + tags(n)[0] + ")" AS rels
+"""
+)
 
 
 def hash_string_to_rank(string: str) -> int:
@@ -66,8 +77,8 @@ class NebulaGraphStore(GraphStore):
         self,
         session_pool: Optional[Any] = None,
         space_name: Optional[str] = None,
-        edge_types: Optional[List[str]] = ["rel"],
-        rel_prop_names: Optional[List[str]] = ["predicate"],
+        edge_types: Optional[List[str]] = ["relationship"],
+        rel_prop_names: Optional[List[str]] = ["relationship"],
         tags: Optional[List[str]] = ["entity"],
         session_pool_kwargs: Optional[Dict[str, Any]] = {},
         **kwargs: Any,
@@ -170,25 +181,36 @@ class NebulaGraphStore(GraphStore):
         while retry > 0:
             try:
                 result = self._session_pool.execute_parameter(query, param_map)
+                if result is None:
+                    raise ValueError(
+                        f"Query failed. Query: {query}, Param: {param_map}"
+                    )
                 if not result.is_succeeded():
                     raise ValueError(result.error_msg())
                 return result
             except (TTransportException, IOErrorException) as e:
                 # connection issue, try to recreate session pool
+                retry -= 2
                 if retry > 0:
-                    retry -= 2
                     # try to recreate session pool
                     self.init_session_pool()
                 else:
+                    logger.error(f"Query failed. Query: {query}, Param: {param_map}")
                     raise e
             except ValueError as e:
                 # query failed on db side
+                retry -= 1
                 if retry > 0:
-                    retry -= 1
                     continue
                 else:
+                    logger.error(f"Query failed. Query: {query}, Param: {param_map}")
                     raise e
             except Exception as e:
+                # other exceptions
+                retry -= 1
+                if retry > 0:
+                    continue
+                logger.error(f"Query failed. Query: {query}, Param: {param_map}")
                 raise e
 
     @classmethod
@@ -453,3 +475,56 @@ class NebulaGraphStore(GraphStore):
         assert (
             result and result.is_succeeded()
         ), f"Failed to delete isolated vertices: {isolated}, query: {dml_query}"
+
+    def refresh_schema(self) -> None:
+        """
+        Refreshes the NebulaGraph Store Schema.
+        """
+        tags_schema, edge_types_schema, relationships = [], [], []
+        for tag in self.execute("SHOW TAGS").column_values("Name"):
+            tag_name = tag.cast()
+            tag_schema = {"tag": tag_name, "properties": []}
+            r = self.execute(f"DESCRIBE TAG `{tag_name}`")
+            props, types = r.column_values("Field"), r.column_values("Type")
+            for i in range(r.row_size()):
+                tag_schema["properties"].append((props[i].cast(), types[i].cast()))
+            tags_schema.append(tag_schema)
+        for edge_type in self.execute("SHOW EDGES").column_values("Name"):
+            edge_type_name = edge_type.cast()
+            edge_schema = {"edge": edge_type_name, "properties": []}
+            r = self.execute(f"DESCRIBE EDGE `{edge_type_name}`")
+            props, types = r.column_values("Field"), r.column_values("Type")
+            for i in range(r.row_size()):
+                edge_schema["properties"].append((props[i].cast(), types[i].cast()))
+            edge_types_schema.append(edge_schema)
+
+            # build relationships types
+            r = self.execute(
+                rel_query.substitute(edge_type=edge_type_name)
+            ).column_values("rels")
+            if len(r) > 0:
+                relationships.append(r[0].cast())
+
+        self.schema = (
+            f"Node properties: {tags_schema}\n"
+            f"Edge properties: {edge_types_schema}\n"
+            f"Relationships: {relationships}\n"
+        )
+
+    def get_schema(self, refresh: bool = False) -> str:
+        """Get the schema of the NebulaGraph store."""
+        if self.schema and not refresh:
+            return self.schema
+        self.refresh_schema()
+        logger.debug(f"get_schema() schema:\n{self.schema}")
+        return self.schema
+
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+        result = self.execute(query, param_map)
+        columns = result.keys()
+        d: Dict[str, list] = {}
+        for col_num in range(result.col_size()):
+            col_name = columns[col_num]
+            col_list = result.column_values(col_name)
+            d[col_name] = [x.cast() for x in col_list]
+        return d
