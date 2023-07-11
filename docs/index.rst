@@ -4,47 +4,64 @@
    contain the root `toctree` directive.
 
 Welcome to LlamaIndex 🦙 !
-=====================================
+##########################
 
-LlamaIndex (GPT Index) is a data framework for your LLM application.
+LlamaIndex is a data framework for LLM applications to ingest, structure, and access private or domain-specific data.
+
+🚀 Why LlamaIndex?
+******************
+
+At their core, LLMs offer a natural language interface between humans and inferred data. Widely available models come pre-trained on huge amounts of publicly available data, from Wikipedia and mailing lists to textbooks and source code.
+
+Applications built on top of LLMs often require augmenting these models with private or domain-specific data. Unfortunately, that data can be distributed across siloed applications and data stores. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
+
+That's where **LlamaIndex** comes in.
+
+🦙 How can LlamaIndex help?
+***************************
+
+LlamaIndex provides the following tools:
+
+- **Data connectors** ingest your existing data from their native source and format. These could be APIs, PDFs, SQL, and (much) more.
+- **Data indexes** structure your data in intermediate representations that are easy and performant for LLMs to consume.
+- **Engines** provide natural language access to your data. For example:
+
+  - Query engines are powerful retrieval interfaces for knowledge-augmented output.
+  - Chat engines are conversational interfaces for multi-message, "back and forth" interactions with your data.
+- **Application integrations** tie LlamaIndex back into the rest of your ecosystem. This could be LangChain, Flask, Docker, ChatGPT, or… anything else!
+
+👨‍👩‍👧‍👦 Who is LlamaIndex for?
+*************************
+
+LlamaIndex provides tools for beginners, advanced users, and everyone in between.
+
+Our high-level API allows beginner users to use LlamaIndex to ingest and query their data in 5 lines of code.
+
+For more complex applications, our lower-level APIs allow advanced users to customize and extend any module—data connectors, indices, retrievers, query engines, reranking modules—to fit their needs.
+
+🗺️ Ecosystem
+************
+
+To download or contribute, find LlamaIndex on:
 
 - Github: https://github.com/jerryjliu/llama_index
 - PyPi:
-   - LlamaIndex: https://pypi.org/project/llama-index/.
-   - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
+
+  - LlamaIndex: https://pypi.org/project/llama-index/.
+  - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
+
+Community
+---------
+Need help? Have a feature suggestion? Join the LlamaIndex community:
+
 - Twitter: https://twitter.com/llama_index
 - Discord https://discord.gg/dGcwcsnxhU
 
-Ecosystem
-^^^^^^^^^
+Associated projects
+-------------------
 
-- 🏡 LlamaHub: https://llamahub.ai
-- 🧪 LlamaLab: https://github.com/run-llama/llama-lab
-
-
-🚀 Overview
------------
-
-Context
-^^^^^^^
-- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. They are pre-trained on large amounts of publicly available data.
-- How do we best augment LLMs with our own private data?
-
-We need a comprehensive toolkit to help perform this data augmentation for LLMs.
-
-
-Proposed Solution
-^^^^^^^^^^^^^^^^^
-That's where **LlamaIndex** comes in. LlamaIndex is a "data framework" to help you build LLM apps. It provides the following tools:
-
-- Offers **data connectors** to ingest your existing data sources and data formats (APIs, PDFs, docs, SQL, etc.)
-- Provides ways to **structure your data** (indices, graphs) so that this data can be easily used with LLMs.
-- Provides an **advanced retrieval/query interface over your data**: Feed in any LLM input prompt, get back retrieved context and knowledge-augmented output.
-- Allows easy integrations with your outer application framework (e.g. with LangChain, Flask, Docker, ChatGPT, anything else).
-
-LlamaIndex provides tools for both beginner users and advanced users. Our high-level API allows beginner users to use LlamaIndex to ingest and query their data in
-5 lines of code. Our lower-level APIs allow advanced users to customize and extend any module (data connectors, indices, retrievers, query engines, reranking modules),
-to fit their needs.
+- 🏡 LlamaHub: https://llamahub.ai | A large (and growing!) collection of custom data connectors
+- 🧪 LlamaLab: https://github.com/run-llama/llama-lab | Ambitious projects built on top of LlamaIndex
 
 .. toctree::
    :maxdepth: 1
