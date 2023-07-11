@@ -1,0 +1,14 @@
+/* Hide search button */
+.sidebar-search-container {
+    display: none;
+}
+
+/* Hide the search wrapper window when hitting Ctrl+K */
+.search-button__wrapper.show {
+    display: none !important;
+}
+
+/* Make sure Algolia's search container is always on top */
+.bd-article-container {
+    z-index: 10;
+}
