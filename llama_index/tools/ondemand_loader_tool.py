@@ -107,7 +107,7 @@ class OnDemandLoaderTool(BaseTool):
             )
         metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
         return cls(
-            loader=tool,
+            loader=tool._fn,
             index_cls=index_cls,
             index_kwargs=index_kwargs,
             use_query_str_in_loader=use_query_str_in_loader,
