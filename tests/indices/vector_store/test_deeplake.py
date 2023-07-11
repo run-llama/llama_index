@@ -3,6 +3,7 @@
 import os
 from typing import List
 
+import numpy as np
 import pytest
 
 from llama_index.indices.service_context import ServiceContext
@@ -83,4 +84,53 @@ def test_node_with_metadata(
     assert len(nodes) == 1
     assert nodes[0].node.get_content() == "test node text"
     assert nodes[0].node.metadata == {"key": "value"}
+    deeplake.delete(dataset_path)
+
+
+@pytest.mark.skipif("CI" in os.environ, reason="no DeepLake in CI")
+def test_backwards_compatibility():
+    import deeplake
+    from deeplake.core.vectorstore import utils
+
+    EMBEDDING_DIM = 100
+    NUMBER_OF_DATA = 10
+    # create data
+    texts, embeddings, ids, metadatas, images = utils.create_data(
+        number_of_data=NUMBER_OF_DATA, embedding_dim=EMBEDDING_DIM
+    )
+
+    class result:
+        embedding = np.ones(EMBEDDING_DIM, dtype=np.float32)
+        id = f"1"
+        node = TextNode(text="test node text", metadata={"key": "value"})
+
+    results = [result for i in range(10)]
+
+    dataset_path = "local_ds1"
+    ds = deeplake.empty(dataset_path)
+    ds.create_tensor("ids", htype="text")
+    ds.create_tensor("embedding", htype="embedding")
+    ds.create_tensor("text", htype="text")
+    ds.create_tensor("metadata", htype="json")
+
+    ds.extend(
+        {
+            "ids": ids,
+            "text": texts,
+            "metadata": metadatas,
+            "embedding": embeddings,
+        }
+    )
+
+    vectorstore = DeepLakeVectorStore(
+        dataset_path=dataset_path,
+        overwrite=False,
+        verbose=False,
+    )
+
+    vectorstore.add(results)
+    assert len(vectorstore.vectorstore) == 20
+
+    vectorstore.delete("1")
+    assert len(vectorstore.vectorstore) == 9
     deeplake.delete(dataset_path)

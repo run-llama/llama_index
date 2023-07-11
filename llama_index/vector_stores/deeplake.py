@@ -113,6 +113,7 @@ class DeepLakeVectorStore(VectorStoreBase):
             verbose=verbose,
             **kwargs,
         )
+        self._id_tensor_name = "ids" if "ids" in self.vectorstore.tensors() else "id"
 
     @property
     def client(self) -> Any:
@@ -148,12 +149,16 @@ class DeepLakeVectorStore(VectorStoreBase):
             id_.append(result.id)
             text.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
 
+        kwargs = {
+            "embedding": embedding,
+            "metadata": metadata,
+            self._id_tensor_name: id_,
+            "text": text,
+        }
+
         return self.vectorstore.add(
-            embedding=embedding,
-            metadata=metadata,
-            id=id_,
-            text=text,
             return_ids=True,
+            **kwargs,
         )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -188,7 +193,7 @@ class DeepLakeVectorStore(VectorStoreBase):
         )
 
         similarities = data["score"]
-        ids = data["id"]
+        ids = data[self._id_tensor_name]
         metadatas = data["metadata"]
         nodes = []
         for metadata in metadatas:
