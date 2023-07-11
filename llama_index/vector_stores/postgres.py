@@ -80,8 +80,8 @@ class PGVectorStore(VectorStore):
         return cls(connection_string=conn_str, table_name=table_name)
 
     def _connect(self) -> Any:
-        from sqlalchemy import create_engine, Connection, Engine
-        from sqlalchemy.orm import Session, sessionmaker
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
 
         self._engine = create_engine(self.connection_string)
         self._conn = self._engine.connect()
@@ -129,7 +129,8 @@ class PGVectorStore(VectorStore):
                 res = (
                     session.query(
                         self.table_class,
-                        self.table_class.embedding.l2_distance(embedding),  # type: ignore
+                        self.table_class.embedding.l2_distance(embedding),
+                        # type: ignore
                     )
                     .order_by(self.table_class.embedding.l2_distance(embedding))
                     .limit(limit)
