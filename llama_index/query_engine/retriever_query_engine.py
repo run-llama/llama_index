@@ -107,7 +107,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
         nodes = self._retriever.retrieve(query_bundle)
 
         for node_postprocessor in self._node_postprocessors:
-            nodes = node_postprocessor.postprocess_nodes(nodes)
+            nodes = node_postprocessor.postprocess_nodes(
+                nodes, query_bundle=query_bundle
+            )
 
         return nodes
 
