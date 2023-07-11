@@ -5,7 +5,7 @@ from llama_index.bridge.langchain import (
     ChatMessageHistory,
     ConversationBufferMemory,
 )
-from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.chat_engine.types import BaseChatEngine, STREAMING_CHAT_RESPONSE_TYPE
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.agents.agents import (
@@ -36,11 +36,13 @@ class ReActChatEngine(BaseChatEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         llm: LangChainLLM,
         memory: BaseChatMemory,
+        system_prompt: Optional[str] = None,
         verbose: bool = False,
     ) -> None:
         self._query_engine_tools = query_engine_tools
         self._llm = llm
         self._memory = memory
+        self._system_prompt = system_prompt
         self._verbose = verbose
 
         self._agent = self._create_agent()
@@ -53,6 +55,8 @@ class ReActChatEngine(BaseChatEngine):
         memory: Optional[BaseChatMemory] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "ReActChatEngine":
         """Initialize a ReActChatEngine from default parameters."""
@@ -78,10 +82,17 @@ class ReActChatEngine(BaseChatEngine):
                 chat_memory=lc_history,
                 return_messages=is_chat_model(lc_llm),
             )
+
+        if prefix_messages is not None:
+            raise NotImplementedError(
+                "prefix_messages is not supported for ReActChatEngine."
+            )
+
         return cls(
             query_engine_tools=query_engine_tools,
             llm=llm,
             memory=memory,
+            system_prompt=system_prompt,
             verbose=verbose,
         )
 
@@ -111,10 +122,15 @@ class ReActChatEngine(BaseChatEngine):
 
     def _create_agent(self) -> AgentExecutor:
         tools = [qe_tool.as_langchain_tool() for qe_tool in self._query_engine_tools]
+        agent_kwargs = {}
         if is_chat_model(self._llm.llm):
             agent_type = AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION
+            if self._system_prompt is not None:
+                agent_kwargs["system_message"] = self._system_prompt
         else:
             agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
+            if self._system_prompt is not None:
+                agent_kwargs["prefix"] = self._system_prompt
 
         return initialize_agent(
             tools=tools,
@@ -122,6 +138,7 @@ class ReActChatEngine(BaseChatEngine):
             agent=agent_type,
             memory=self._memory,
             verbose=self._verbose,
+            agent_kwargs=agent_kwargs,
         )
 
     @property
@@ -150,6 +167,18 @@ class ReActChatEngine(BaseChatEngine):
 
         response = await self._agent.arun(input=message)
         return Response(response=response)
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+        raise NotImplementedError("stream_chat() is not supported for ReActChatEngine.")
+
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+        raise NotImplementedError(
+            "astream_chat() is not supported for ReActChatEngine."
+        )
 
     def reset(self) -> None:
         self._memory.clear()

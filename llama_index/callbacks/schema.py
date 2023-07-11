@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 TIMESTAMP_FORMAT = "%m/%d/%Y, %H:%M:%S.%f"
 
 # base trace_id for the tracemap in callback_manager
-BASE_TRACE_ID = "root"
+BASE_TRACE_EVENT = "root"
 
 
 class CBEventType(str, Enum):
@@ -24,6 +24,7 @@ class CBEventType(str, Enum):
         RETRIEVE: Logs for the nodes retrieved for a query.
         SYNTHESIZE: Logs for the result for synthesize calls.
         TREE: Logs for the summary and level of summaries generated.
+        SUB_QUESTIONS: Logs for the sub questions and answers generated.
     """
 
     CHUNKING = "chunking"
@@ -34,6 +35,7 @@ class CBEventType(str, Enum):
     RETRIEVE = "retrieve"
     SYNTHESIZE = "synthesize"
     TREE = "tree"
+    SUB_QUESTIONS = "sub_questions"
 
 
 class EventPayload(str, Enum):
@@ -44,6 +46,7 @@ class EventPayload(str, Enum):
     RESPONSE = "response"  # response from LLM
     TEMPLATE = "template"  # template used in LLM call
     QUERY_STR = "query_str"  # query used for query engine
+    SUB_QUESTIONS = "sub_questions"  # list of sub question & answer pairs
 
 
 # events that will never have children events

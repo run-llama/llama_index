@@ -1,6 +1,57 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.4] - 2023-07-08
+
+### New Features
+- `MetadataExtractor` - Documnent Metadata Augmentation via LLM-based feature extractors (#6764)
+
+### Bug Fixes / Nits
+- fixed passing in query bundle to node postprocessors (#6780)
+- fixed error in callback manager with nested traces (#6791)
+
+## [v0.7.3] - 2023-07-07
+
+### New Features
+- Sub question query engine returns source nodes of sub questions in the callback manager (#6745)
+- trulens integration (#6741)
+- Add sources to subquestion engine (#6745)
+
+### Bug Fixes / Nits
+- Added/Fixed streaming support to simple and condense chat engines (#6717)
+- fixed `response_mode="no_text"` response synthesizer (#6755)
+- fixed error setting `num_output` and `context_window` in service context (#6766)
+- Fix missing as_query_engine() in tutorial (#6747)
+- Fixed variable sql_query_engine in the notebook (#6778)
+- fix required function fields (#6761)
+- Remove usage of stop token in Prompt, SQL gen (#6782)
+
+## [v0.7.2] - 2023-07-06
+
+### New Features
+- Support Azure OpenAI (#6718)
+- Support prefix messages (e.g. system prompt) in chat engine and OpenAI agent (#6723)
+- Added `CBEventType.SUB_QUESTIONS` event type for tracking sub question queries/responses (#6716)
+
+### Bug Fixes / Nits
+- Fix HF LLM output error (#6737)
+- Add system message support for langchain message templates (#6743)
+- Fixed applying node-postprocessors (#6749)
+- Add missing `CustomLLM` import under `llama_index.llms` (#6752)
+- fix(typo): `get_transformer_tokenizer_fn` (#6729)
+- feat(formatting): `black[jupyter]` (#6732)
+- fix(test): `test_optimizer_chinese` (#6730)
+
+## [v0.7.1] - 2023-07-05
+
+### New Features
+- Streaming support for OpenAI agents (#6694)
+- add recursive retriever + notebook example (#6682)
+
+
+## [v0.7.0] - 2023-07-04
+
+### New Features
+- Index creation progress bars (#6583)
 
 ### Bug Fixes/ Nits
 - Improved chat refine template (#6645)
@@ -17,6 +68,7 @@
   - expose `chat_history` state as a property
   - support overriding `chat_history` in `chat` and `achat` endpoints
 - Remove deprecated arguments for `PromptHelper`: `max_input_size`, `embedding_limit`, `max_chunk_overlap`
+- Update all notebooks to use native openai integration (#6696)
 
 ## [v0.6.38] - 2023-07-02
 

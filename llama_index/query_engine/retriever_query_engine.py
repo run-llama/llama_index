@@ -107,7 +107,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
         nodes = self._retriever.retrieve(query_bundle)
 
         for node_postprocessor in self._node_postprocessors:
-            nodes = node_postprocessor.postprocess_nodes(nodes)
+            nodes = node_postprocessor.postprocess_nodes(
+                nodes, query_bundle=query_bundle
+            )
 
         return nodes
 
@@ -142,7 +144,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self._retriever.retrieve(query_bundle)
+        nodes = self.retrieve(query_bundle)
         self.callback_manager.on_event_end(
             CBEventType.RETRIEVE,
             payload={EventPayload.NODES: nodes},
@@ -168,7 +170,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self._retriever.retrieve(query_bundle)
+        nodes = self.retrieve(query_bundle)
         self.callback_manager.on_event_end(
             CBEventType.RETRIEVE,
             payload={EventPayload.NODES: nodes},

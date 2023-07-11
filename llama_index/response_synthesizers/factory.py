@@ -23,6 +23,7 @@ from llama_index.response_synthesizers.refine import Refine
 from llama_index.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.response_synthesizers.tree_summarize import TreeSummarize
 from llama_index.response_synthesizers.type import ResponseMode
+from llama_index.response_synthesizers.no_text import NoText
 
 
 def get_response_synthesizer(
@@ -91,6 +92,11 @@ def get_response_synthesizer(
             text_qa_template=text_qa_template,
             streaming=streaming,
             use_async=use_async,
+        )
+    elif response_mode == ResponseMode.NO_TEXT:
+        return NoText(
+            service_context=service_context,
+            streaming=streaming,
         )
     else:
         raise ValueError(f"Unknown mode: {response_mode}")

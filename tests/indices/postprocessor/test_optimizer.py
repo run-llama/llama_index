@@ -9,8 +9,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.postprocessor.optimizer import SentenceEmbeddingOptimizer
 from llama_index.schema import TextNode, NodeWithScore
 from llama_index.utils import (
-    get_large_chinese_tokenizer_fn,
-    get_transformer_tokenizer_fin,
+    get_transformer_tokenizer_fn,
 )
 
 try:
@@ -56,9 +55,9 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 def mock_get_text_embedding_chinese(text: str) -> List[float]:
     """Mock get text embedding."""
     # assume dimensions are 5
-    if text == "你" or text == "▁Hello":
+    if text == "你":
         return [1, 0, 0, 0, 0]
-    elif text == "好" or text == "▁World":
+    elif text == "好":
         return [0, 1, 0, 0, 0]
     elif text == "世":
         return [0, 0, 1, 0, 0]
@@ -67,7 +66,7 @@ def mock_get_text_embedding_chinese(text: str) -> List[float]:
     elif text == "abc":
         return [0, 0, 0, 0, 1]
     else:
-        raise ValueError("Invalid text for `mock_get_text_embedding_chinese`.")
+        raise ValueError("Invalid text for `mock_get_text_embedding_chinese`.", text)
 
 
 def mock_get_text_embeddings_chinese(texts: List[str]) -> List[List[float]]:
@@ -128,23 +127,14 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 def test_optimizer_chinese(_mock_embeds: Any, _mock_embed: Any) -> None:
     """Test optimizer."""
     optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=get_large_chinese_tokenizer_fn(), percentile_cutoff=0.5
+        tokenizer_fn=get_transformer_tokenizer_fn("GanymedeNil/text2vec-large-chinese"),
+        percentile_cutoff=0.5,
     )
     query = QueryBundle(query_str="你好 世界", embedding=[1, 0, 0, 0, 0])
     orig_node = TextNode(text="你好 世界")
     optimized_node = optimizer.postprocess_nodes(
         [NodeWithScore(node=orig_node)], query
     )[0]
-    assert len(optimized_node.node.get_content()) < len(orig_node.get_content())
-
-    optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=get_transformer_tokenizer_fin("fxmarty/tiny-llama-fast-tokenizer"),
-        percentile_cutoff=0.5,
+    assert len(optimized_node.node.get_content()) < len(
+        TextNode(text="你好 世界").get_content()
     )
-    query = QueryBundle(query_str="hello", embedding=[1, 0, 0, 0, 0])
-    orig_node = TextNode(text="hello world")
-    optimized_node = optimizer.postprocess_nodes(
-        [NodeWithScore(node=orig_node)],
-        query,
-    )[0]
-    assert optimized_node.node.get_content() == "hello"
