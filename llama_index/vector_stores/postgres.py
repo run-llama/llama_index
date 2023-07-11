@@ -50,20 +50,21 @@ class PGVectorStore(VectorStore):
         self.connection_string = connection_string
         self.table_name: str = table_name.lower()
         self._conn: Any
+        self._session: Any
 
         # def __enter__(self):
         from sqlalchemy.orm import declarative_base
 
-        self._conn = self._connect()
         self._base = declarative_base()
         # sqlalchemy model
         self.table_class = get_data_model(self._base, self.table_name)
+        self._connect()
         self._create_extension()
         self._create_tables_if_not_exists()
 
     def __del__(self) -> None:
         self._conn.close()
-        self.engine.dispose()
+        self._engine.dispose()
 
     @classmethod
     def from_params(
@@ -80,60 +81,60 @@ class PGVectorStore(VectorStore):
         return cls(connection_string=conn_str, table_name=table_name)
 
     def _connect(self) -> Any:
-        import sqlalchemy
+        from sqlalchemy import create_engine, Connection, Engine
+        from sqlalchemy.orm import Session, sessionmaker
 
-        self.engine = sqlalchemy.create_engine(self.connection_string)
-        conn: sqlalchemy.engine.Connection = self.engine.connect()
-
-        return conn
+        self._engine: Engine = create_engine(self.connection_string)
+        self._conn: Connection = self._engine.connect()
+        self._session: Session = sessionmaker(self._engine)
 
     def _create_tables_if_not_exists(self) -> None:
         with self._conn.begin():
             self._base.metadata.create_all(self._conn)
 
     def _create_extension(self) -> None:
-        from sqlalchemy.orm import Session
         import sqlalchemy
 
-        with Session(self._conn) as session:
-            statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
-            session.execute(statement)
-            session.commit()
+        with self._session() as session:
+            with session.begin():
+                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+                session.execute(statement)
+                session.commit()
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        from sqlalchemy.orm import Session
-
         ids = []
-        with Session(self._conn) as session:
-            for result in embedding_results:
-                ids.append(result.id)
+        with self._session() as session:
+            with session.begin():
+                for result in embedding_results:
+                    ids.append(result.id)
 
-                item = self.table_class(
-                    node_id=result.id,
-                    embedding=result.embedding,
-                    text=result.node.get_content(metadata_mode=MetadataMode.NONE),
-                    metadata_=node_to_metadata_dict(
-                        result.node, remove_text=True, flat_metadata=self.flat_metadata
-                    ),
-                )
-                session.add(item)
-            session.commit()
+                    item = self.table_class(
+                        node_id=result.id,
+                        embedding=result.embedding,
+                        text=result.node.get_content(metadata_mode=MetadataMode.NONE),
+                        metadata_=node_to_metadata_dict(
+                            result.node,
+                            remove_text=True,
+                            flat_metadata=self.flat_metadata,
+                        ),
+                    )
+                    session.add(item)
+                session.commit()
         return ids
 
     def _query_with_score(
         self, embedding: Optional[List[float]], limit: int = 10
     ) -> List[Any]:
-        from sqlalchemy.orm import Session
-
-        with Session(self._conn) as session:
-            res = (
-                session.query(
-                    self.table_class,
-                    self.table_class.embedding.l2_distance(embedding),  # type: ignore
-                )
-                .order_by(self.table_class.embedding.l2_distance(embedding))
-                .limit(limit)
-            )  # type: ignore
+        with self._session() as session:
+            with session.begin():
+                res = (
+                    session.query(
+                        self.table_class,
+                        self.table_class.embedding.l2_distance(embedding),  # type: ignore
+                    )
+                    .order_by(self.table_class.embedding.l2_distance(embedding))
+                    .limit(limit)
+                )  # type: ignore
         return res.all()
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -161,12 +162,12 @@ class PGVectorStore(VectorStore):
         )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        from sqlalchemy.orm import Session
         import sqlalchemy
 
-        with Session(self._conn) as session:
-            stmt = sqlalchemy.delete(self.table_class).where(
-                self.table_class.doc_id == ref_doc_id
-            )
-            session.execute(stmt)
-            session.commit()
+        with self._session() as session:
+            with session.begin():
+                stmt = sqlalchemy.delete(self.table_class).where(
+                    self.table_class.doc_id == ref_doc_id
+                )
+                session.execute(stmt)
+                session.commit()
