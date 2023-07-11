@@ -49,8 +49,6 @@ class PGVectorStore(VectorStore):
 
         self.connection_string = connection_string
         self.table_name: str = table_name.lower()
-        self._conn: Any
-        self._session: Any
 
         # def __enter__(self):
         from sqlalchemy.orm import declarative_base
@@ -85,9 +83,9 @@ class PGVectorStore(VectorStore):
         from sqlalchemy import create_engine, Connection, Engine
         from sqlalchemy.orm import Session, sessionmaker
 
-        self._engine: Engine = create_engine(self.connection_string)
-        self._conn: Connection = self._engine.connect()
-        self._session: Session = sessionmaker(self._engine)
+        self._engine = create_engine(self.connection_string)
+        self._conn = self._engine.connect()
+        self._session = sessionmaker(self._engine)
 
     def _create_tables_if_not_exists(self) -> None:
         with self._conn.begin():
