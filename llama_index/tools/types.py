@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
 from llama_index.bridge.langchain import StructuredTool, Tool
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 @dataclass
@@ -32,6 +32,18 @@ class ToolMetadata:
         }
 
 
+class ToolOutput(BaseModel):
+    """Tool output."""
+
+    content: str
+    tool_name: str
+    raw_output: Any
+
+    def __str__(self) -> str:
+        """String."""
+        return str(self.content)
+
+
 class BaseTool:
     @property
     @abstractmethod
@@ -39,7 +51,7 @@ class BaseTool:
         pass
 
     @abstractmethod
-    def __call__(self, input: Any) -> Any:
+    def __call__(self, input: Any) -> ToolOutput:
         pass
 
     def _process_langchain_tool_kwargs(

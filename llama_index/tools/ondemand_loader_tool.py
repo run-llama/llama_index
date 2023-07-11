@@ -5,7 +5,7 @@ Tool that wraps any data loader, and is able to load data on-demand.
 """
 
 
-from llama_index.tools.types import BaseTool, ToolMetadata
+from llama_index.tools.types import BaseTool, ToolMetadata, ToolOutput
 from llama_index.readers.base import BaseReader
 from typing import Any, Optional, Dict, Type, Callable, List
 from llama_index.readers.schema.base import Document
@@ -115,7 +115,7 @@ class OnDemandLoaderTool(BaseTool):
             metadata=metadata,
         )
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Call."""
         if self._query_str_kwargs_key not in kwargs:
             raise ValueError(
@@ -133,4 +133,6 @@ class OnDemandLoaderTool(BaseTool):
         # TODO: add query kwargs
         query_engine = index.as_query_engine()
         response = query_engine.query(query_str)
-        return str(response)
+        return ToolOutput(
+            content=str(response), tool_name=self.metadata.name, raw_output=response
+        )

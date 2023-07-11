@@ -28,7 +28,7 @@ from llama_index.llms.base import (
 from llama_index.llms.openai import OpenAI
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
-from llama_index.tools import BaseTool
+from llama_index.tools import BaseTool, ToolOutput
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -48,7 +48,7 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 def call_function(
     tools: List[BaseTool], function_call: dict, verbose: bool = False
-) -> ChatMessage:
+) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     name = function_call["name"]
     arguments_str = function_call["arguments"]
@@ -59,14 +59,17 @@ def call_function(
     argument_dict = json.loads(arguments_str)
     output = tool(**argument_dict)
     if verbose:
-        print(f"Got output: {output}")
+        print(f"Got output: {str(output)}")
         print("========================")
-    return ChatMessage(
-        content=str(output),
-        role=MessageRole.FUNCTION,
-        additional_kwargs={
-            "name": function_call["name"],
-        },
+    return (
+        ChatMessage(
+            content=str(output),
+            role=MessageRole.FUNCTION,
+            additional_kwargs={
+                "name": function_call["name"],
+            },
+        ),
+        output,
     )
 
 

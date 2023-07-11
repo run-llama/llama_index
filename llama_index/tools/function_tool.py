@@ -1,7 +1,7 @@
 from typing import Any, Optional, Callable, Type
 
 from pydantic import BaseModel
-from llama_index.tools.types import BaseTool, ToolMetadata
+from llama_index.tools.types import BaseTool, ToolMetadata, ToolOutput
 from llama_index.bridge.langchain import Tool, StructuredTool
 from inspect import signature
 from llama_index.tools.utils import create_schema_from_function
@@ -50,9 +50,14 @@ class FunctionTool(BaseTool):
         """Function."""
         return self._fn
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Call."""
-        return self._fn(*args, **kwargs)
+        tool_output = self._fn(*args, **kwargs)
+        return ToolOutput(
+            content=str(tool_output),
+            tool_name=self.metadata.name,
+            raw_output=tool_output,
+        )
 
     def to_langchain_tool(
         self,
