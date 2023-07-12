@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 import pandas as pd
 from llama_index.bridge.langchain import get_color_mapping, print_text
 
+from llama_index.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.list.base import ListIndex, ListRetrieverMode
 from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
@@ -143,9 +144,18 @@ class Playground:
                     f"\033[1m{index_name}\033[0m, retriever mode = {retriever_mode}",
                     end="\n",
                 )
-                # TODO: refactor query mode
+
+                # insert token counter into service context
+                service_context = index.service_context
+                token_counter = TokenCountingHandler()
+                callback_manager = CallbackManager([token_counter])
+                service_context.llm_predictor.callback_manager = callback_manager
+                service_context.embed_model.callback_manager = callback_manager
+
                 try:
-                    query_engine = index.as_query_engine(retriever_mode=retriever_mode)
+                    query_engine = index.as_query_engine(
+                        retriever_mode=retriever_mode, service_context=service_context
+                    )
                 except ValueError:
                     continue
 
@@ -160,6 +170,9 @@ class Playground:
                         "Retriever Mode": retriever_mode,
                         "Output": str(output),
                         "Duration": duration,
+                        "Prompt Tokens": token_counter.prompt_llm_token_count,
+                        "Completion Tokens": token_counter.completion_llm_token_count,
+                        "Embed Tokens": token_counter.total_embedding_token_count,
                     }
                 )
         print(f"\nRan {len(result)} combinations in total.")

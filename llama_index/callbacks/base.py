@@ -4,7 +4,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Generator
 
-from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_ID
+from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_EVENT
 
 
 class BaseCallbackHandler(ABC):
@@ -76,8 +76,8 @@ class CallbackManager(BaseCallbackHandler, ABC):
         """Initialize the manager with a list of handlers."""
         self.handlers = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
-        self._trace_stack: List[str] = [BASE_TRACE_ID]
-        self._trace_id: Optional[str] = None
+        self._trace_event_stack: List[str] = [BASE_TRACE_EVENT]
+        self._trace_id_stack: List[str] = []
 
     def on_event_start(
         self,
@@ -88,13 +88,13 @@ class CallbackManager(BaseCallbackHandler, ABC):
     ) -> str:
         """Run handlers when an event starts and return id of event."""
         event_id = event_id or str(uuid.uuid4())
-        self._trace_map[self._trace_stack[-1]].append(event_id)
+        self._trace_map[self._trace_event_stack[-1]].append(event_id)
         for handler in self.handlers:
             if event_type not in handler.event_starts_to_ignore:
                 handler.on_event_start(event_type, payload, event_id=event_id, **kwargs)
 
         if event_type not in LEAF_EVENTS:
-            self._trace_stack.append(event_id)
+            self._trace_event_stack.append(event_id)
 
         return event_id
 
@@ -112,7 +112,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
                 handler.on_event_end(event_type, payload, event_id=event_id, **kwargs)
 
         if event_type not in LEAF_EVENTS:
-            self._trace_stack.pop()
+            self._trace_event_stack.pop()
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
@@ -135,13 +135,16 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         """Run when an overall trace is launched."""
-        if not self._trace_id:
-            self._reset_trace_events()
+        if trace_id is not None:
+            if len(self._trace_id_stack) == 0:
+                self._reset_trace_events()
 
-            for handler in self.handlers:
-                handler.start_trace(trace_id=trace_id)
+                for handler in self.handlers:
+                    handler.start_trace(trace_id=trace_id)
 
-            self._trace_id = trace_id
+                self._trace_id_stack = [trace_id]
+            else:
+                self._trace_id_stack.append(trace_id)
 
     def end_trace(
         self,
@@ -149,15 +152,17 @@ class CallbackManager(BaseCallbackHandler, ABC):
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """Run when an overall trace is exited."""
-        if trace_id is not None and trace_id == self._trace_id:
-            for handler in self.handlers:
-                handler.end_trace(trace_id=trace_id, trace_map=self._trace_map)
-            self._trace_id = None
+        if trace_id is not None and len(self._trace_id_stack) > 0:
+            self._trace_id_stack.pop()
+            if len(self._trace_id_stack) == 0:
+                for handler in self.handlers:
+                    handler.end_trace(trace_id=trace_id, trace_map=self._trace_map)
+                self._trace_id_stack = []
 
     def _reset_trace_events(self) -> None:
         """Helper function to reset the current trace."""
         self._trace_map = defaultdict(list)
-        self._trace_stack = [BASE_TRACE_ID]
+        self._trace_event_stack = [BASE_TRACE_EVENT]
 
     @property
     def trace_map(self) -> Dict[str, List[str]]:
