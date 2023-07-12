@@ -13,13 +13,13 @@ CLAUDE_MODELS = {
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
-    context_size = CLAUDE_MODELS.get(modelname, None)
-    if context_size is None:
+    if modelname not in CLAUDE_MODELS:
         raise ValueError(
             f"Unknown model: {modelname}. Please provide a valid Anthropic model name."
             "Known models are: " + ", ".join(CLAUDE_MODELS.keys())
         )
-    return context_size
+
+    return CLAUDE_MODELS[modelname]
 
 
 def _message_to_anthropic_prompt(message: ChatMessage) -> str:
