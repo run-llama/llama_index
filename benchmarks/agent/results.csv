@@ -1,4 +1,29 @@
-,model,task,outcome
-0,text-davinci-003,What is 123 + 321 * 2?,True
-1,gpt-3.5-turbo,What is 123 + 321 * 2?,False
-2,gpt-4,What is 123 + 321 * 2?,True
+,agent,model,task,outcome
+0,react,text-davinci-003,add_then_multiply,True
+1,react,text-davinci-003,power,False
+2,react,text-davinci-003,dial_then_enter,False
+3,react,text-davinci-003,search_then_dial,False
+4,react,gpt-3.5-turbo-0613,add_then_multiply,False
+5,react,gpt-3.5-turbo-0613,power,True
+6,react,gpt-3.5-turbo-0613,dial_then_enter,False
+7,react,gpt-3.5-turbo-0613,search_then_dial,False
+8,react,gpt-4-0613,add_then_multiply,True
+9,react,gpt-4-0613,power,True
+10,react,gpt-4-0613,dial_then_enter,True
+11,react,gpt-4-0613,search_then_dial,True
+12,react,claude-instant-1,add_then_multiply,False
+13,react,claude-instant-1,power,True
+14,react,claude-instant-1,dial_then_enter,False
+15,react,claude-instant-1,search_then_dial,False
+16,react,claude-2,add_then_multiply,True
+17,react,claude-2,power,False
+18,react,claude-2,dial_then_enter,True
+19,react,claude-2,search_then_dial,True
+20,openai,gpt-3.5-turbo-0613,add_then_multiply,False
+21,openai,gpt-3.5-turbo-0613,power,True
+22,openai,gpt-3.5-turbo-0613,dial_then_enter,True
+23,openai,gpt-3.5-turbo-0613,search_then_dial,False
+24,openai,gpt-4-0613,add_then_multiply,True
+25,openai,gpt-4-0613,power,True
+26,openai,gpt-4-0613,dial_then_enter,True
+27,openai,gpt-4-0613,search_then_dial,False
