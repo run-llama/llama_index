@@ -13,6 +13,7 @@ API Reference for the ``llama-index`` package.
    node.rst
    llm_predictor.rst
    llms.rst
+   memory.rst
    node_postprocessor.rst
    storage.rst
    composability.rst

@@ -35,9 +35,11 @@ def test_extract_final_response() -> None:
 Thought: I have enough information to answer the question without using any more tools.
 Answer: 2
 """
-    thought, answer = extract_final_response(mock_input_text)
-    assert (
-        thought
-        == "I have enough information to answer the question without using any more tools."
+
+    expected_thought = (
+        "I have enough information to answer the question "
+        "without using any more tools."
     )
+    thought, answer = extract_final_response(mock_input_text)
+    assert thought == expected_thought
     assert answer == "2"
