@@ -5,9 +5,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Generator, List, Optional
 
-from llama_index.tools import ToolOutput
-from llama_index.llms.base import ChatMessage, ChatResponseGen, ChatResponseAsyncGen
+from llama_index.llms.base import (ChatMessage, ChatResponseAsyncGen,
+                                   ChatResponseGen)
 from llama_index.memory import BaseMemory
+from llama_index.tools import ToolOutput
 
 logger = logging.getLogger(__name__)
 
@@ -154,14 +155,31 @@ class ChatMode(str, Enum):
     
     Chat with LLM, without making use of a knowledge base.
     """
+
     CONDENSE_QUESTION = "condense_question"
     """Corresponds to `CondenseQuestionChatEngine`.
     
     First generate a standalone question from conversation context and last message,
     then query the query engine for a response.
     """
+
     REACT = "react"
     """Corresponds to `ReActAgent`.
     
     Use a ReAct agent loop with query engine tools. 
+    """
+
+    OPENAI = "openai"
+    """Corresponds to `OpenAIAgent`.
+    
+    Use an OpenAI function calling agent loop.
+
+    NOTE: only works with OpenAI models that support function calling API.
+    """
+
+    BEST = "best"
+    """Select the best chat engine based on the current LLM.
+
+    Corresponds to `OpenAIAgent` if using an OpenAI model that supports 
+    function calling API, otherwise, corresponds to `ReActAgent`.
     """

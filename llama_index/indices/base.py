@@ -8,6 +8,8 @@ from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
@@ -341,11 +343,22 @@ class BaseIndex(Generic[IS], ABC):
         return RetrieverQueryEngine.from_args(**kwargs)
 
     def as_chat_engine(
-        self, chat_mode: ChatMode = ChatMode.REACT, **kwargs: Any
+        self, chat_mode: ChatMode = ChatMode.BEST, **kwargs: Any
     ) -> BaseChatEngine:
         query_engine = self.as_query_engine(**kwargs)
         if "service_context" not in kwargs:
             kwargs["service_context"] = self._service_context
+
+        # resolve chat mode
+        if chat_mode == ChatMode.BEST:
+            # get LLM
+            service_context = cast(ServiceContext, kwargs["service_context"])
+            llm = service_context.llm
+
+            if isinstance(llm, OpenAI) and is_function_calling_model(llm.model):
+                chat_mode = ChatMode.OPENAI
+            else:
+                chat_mode = ChatMode.REACT
 
         if chat_mode == ChatMode.CONDENSE_QUESTION:
             # NOTE: lazy import
@@ -355,24 +368,34 @@ class BaseIndex(Generic[IS], ABC):
                 query_engine=query_engine,
                 **kwargs,
             )
-        elif chat_mode == ChatMode.REACT:
-            # NOTE: lazy import
-            from llama_index.agent import ReActAgent
-
+        elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
+            # build query engine tool
             name = kwargs.pop("name", None)
             description = kwargs.pop("description", None)
             query_engine_tool = QueryEngineTool.from_defaults(
                 query_engine=query_engine, name=name, description=description
             )
 
+            # get LLM
             service_context = cast(ServiceContext, kwargs.pop("service_context"))
             llm = service_context.llm
 
-            return ReActAgent.from_tools(
-                tools=[query_engine_tool],
-                llm=llm,
-                **kwargs,
-            )
+            # NOTE: lazy import
+            from llama_index.agent import OpenAIAgent, ReActAgent
+
+            if chat_mode == ChatMode.REACT:
+                return ReActAgent.from_tools(
+                    tools=[query_engine_tool],
+                    llm=llm,
+                    **kwargs,
+                )
+            elif chat_mode == ChatMode.OPENAI:
+                return OpenAIAgent.from_tools(
+                    tools=[query_engine_tool],
+                    llm=llm,
+                    **kwargs,
+                )
+
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")
 
