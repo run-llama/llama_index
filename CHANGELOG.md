@@ -4,6 +4,7 @@
 
 ### New Features
 - Improved milvus consistency support and output fields support (#6452)
+- Added support for knowledge graph querying w/ cypyer+nebula (#6642)
 
 ## [v0.7.6] - 2023-07-12
 
