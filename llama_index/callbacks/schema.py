@@ -47,6 +47,7 @@ class EventPayload(str, Enum):
     TEMPLATE = "template"  # template used in LLM call
     QUERY_STR = "query_str"  # query used for query engine
     SUB_QUESTIONS = "sub_questions"  # list of sub question & answer pairs
+    EMBEDDINGS = "embeddings"  # list of embeddings
 
 
 # events that will never have children events
