@@ -16,8 +16,8 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    node_to_metadata_dict, 
-    metadata_dict_to_node
+    node_to_metadata_dict,
+    metadata_dict_to_node,
     DEFAULT_DOC_ID_KEY,
     DEFAULT_EMBEDDING_KEY,
     DEFAULT_TEXT_KEY,
@@ -428,7 +428,7 @@ class MilvusVectorStore(VectorStore):
             expr = f"{self.doc_id_field} in [{','.join(expr_list)}]"
 
         if query.output_fields is None:
-            output_fields = [self.doc_id_field, self.text_field, "node"]
+            output_fields = [self.doc_id_field, self.text_field]
 
         if query.embedding_field is None:
             embedding_field = self.embedding_field
@@ -439,7 +439,7 @@ class MilvusVectorStore(VectorStore):
                 embedding_field,
                 self.search_params,
                 limit=query.similarity_top_k,
-                output_fields=output_fields,
+                output_fields=output_fields + ["node"],
                 expr=expr,
             )
             logger.debug(
@@ -453,7 +453,7 @@ class MilvusVectorStore(VectorStore):
                 "embedding",
                 self.search_params,
                 limit=query.similarity_top_k,
-                output_fields=["doc_id", "text"],
+                output_fields=output_fields,
                 expr=expr,
             )
             logger.debug(
@@ -468,15 +468,15 @@ class MilvusVectorStore(VectorStore):
         for hit in res[0]:
             try:
                 node = metadata_dict_to_node({"_node_content": hit.entity.get("node")})
-                node.text = hit.entity.get("text")
+                node.text = hit.entity.get(self.text_field)
             except Exception:
                 # TODO: Legacy support for old nodes
                 node = TextNode(
-                    text=hit.entity.get("text"),
+                    text=hit.entity.get(self.text_field),
                     id_=hit.id,
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(
-                            node_id=hit.entity.get("doc_id")
+                            node_id=hit.entity.get(self.doc_id_field)
                         ),
                     },
                 )

@@ -8,6 +8,7 @@
 
 ### Bug Fixes / Nits
 - Fixed support for legacy vector store metadata (#6867)
+- Improved milvus consistency support and output fields support (#6452)
 
 ## [v0.7.5] - 2023-07-11
 
