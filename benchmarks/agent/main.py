@@ -1,29 +1,24 @@
 from typing import List
 
 import pandas as pd
-from fire import Fire
-from agent_utils import (
-    AGENTS,
-    ALL_MODELS,
-    get_model,
-    is_valid_combination,
-)
-import button_tasks
-import math_tasks
-from math_tasks import TASKS as MATH_TASKS
+from agent_utils import AGENTS, ALL_MODELS, get_model, is_valid_combination
 from button_tasks import TASKS as BUTTON_TASKS
-from task import Task
+from fire import Fire
+from math_tasks import TASKS as MATH_TASKS
 
-ALL_TASKS = MATH_TASKS + BUTTON_TASKS
+ALL_TASKS = list(MATH_TASKS.keys()) + list(BUTTON_TASKS.keys())
 
 
 def evaluate(agent: str, model: str, task_name: str, verbose: bool = False) -> bool:
     if task_name in MATH_TASKS:
-        task = math_tasks.get_tasks([task_name])[0]
+        task = MATH_TASKS[task_name]()
     elif task_name in BUTTON_TASKS:
-        task = button_tasks.get_tasks([task_name])[0]
+        task = BUTTON_TASKS[task_name]()
+    else:
+        raise ValueError(f"Unknown task {task_name}")
+
     print("=====")
-    print(f"| Evaluating | {agent} | {model} | {task.message} |")
+    print(f"Evaluating | {agent} | {model} | {task.message} |")
 
     llm = get_model(model)
     agent_cls = AGENTS[agent]
@@ -42,19 +37,22 @@ def evaluate(agent: str, model: str, task_name: str, verbose: bool = False) -> b
         actual_response = None
         outcome = False
 
-    print(f"Expected response: {task.expected_response}")
-    print(f"Actual response: {actual_response}")
+    if verbose:
+        print(f"Expected response: {task.expected_response}")
+        print(f"Actual response: {actual_response}")
     print(f"Outcome: {outcome}")
     print("=====")
     return outcome
 
 
-def main(
+def benchmark(
     agents: List[str] = list(AGENTS.keys()),
     models: List[str] = ALL_MODELS,
-    tasks: List[Task] = ALL_TASKS,
+    tasks: List[str] = ALL_TASKS,
     verbose: bool = False,
-) -> None:
+    output: str = "results.csv",
+    save: bool = True,
+) -> pd.DataFrame:
     data = []
     for agent in agents:
         for model in models:
@@ -71,8 +69,10 @@ def main(
                     }
                 )
     df = pd.DataFrame(data)
-    df.to_csv("results.csv")
+    if save:
+        df.to_csv(output)
+    return df
 
 
 if __name__ == "__main__":
-    Fire(main)
+    Fire(benchmark)

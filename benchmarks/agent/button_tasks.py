@@ -1,4 +1,4 @@
-from typing import List
+from typing import Callable, Dict, List
 
 from task import Task
 
@@ -38,4 +38,4 @@ def get_dial_then_enter() -> Task:
     return task
 
 
-TASKS = {"dial_then_enter": get_dial_then_enter}
+TASKS: Dict[str, Callable[..., Task]] = {"dial_then_enter": get_dial_then_enter}
