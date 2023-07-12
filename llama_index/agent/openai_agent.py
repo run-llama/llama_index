@@ -3,38 +3,23 @@ import json
 import time
 from abc import abstractmethod
 from threading import Thread
-from typing import (
-    Callable,
-    List,
-    Tuple,
-    Type,
-    Optional,
-)
+from typing import Callable, List, Optional, Tuple, Type
 
-from llama_index.chat_engine.types import (
-    AgentChatResponse,
-    StreamingAgentChatResponse,
-)
+from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
+from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import (
-    ChatMessage,
-    MessageRole,
-)
+from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
-from llama_index.agent.types import BaseAgent
 from llama_index.tools import BaseTool, ToolOutput
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
-SUPPORTED_MODEL_NAMES = [
-    "gpt-3.5-turbo-0613",
-    "gpt-4-0613",
-]
 
 
 def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
@@ -373,7 +358,7 @@ class OpenAIAgent(BaseOpenAIAgent):
     def from_tools(
         cls,
         tools: Optional[List[BaseTool]] = None,
-        llm: Optional[OpenAI] = None,
+        llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
@@ -390,10 +375,9 @@ class OpenAIAgent(BaseOpenAIAgent):
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
-        if llm.model not in SUPPORTED_MODEL_NAMES:
+        if not is_function_calling_model(llm.model):
             raise ValueError(
-                f"Model name {llm.model} not supported. "
-                f"Supported model names: {SUPPORTED_MODEL_NAMES}"
+                f"Model name {llm.model} does not support function calling API. "
             )
 
         if system_prompt is not None:
@@ -478,10 +462,9 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
-        if llm.model not in SUPPORTED_MODEL_NAMES:
+        if not is_function_calling_model(llm.model):
             raise ValueError(
-                f"Model name {llm.model} not supported. "
-                f"Supported model names: {SUPPORTED_MODEL_NAMES}"
+                f"Model name {llm.model} does not support function calling API. "
             )
 
         if system_prompt is not None:

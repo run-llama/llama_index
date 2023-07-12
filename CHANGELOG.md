@@ -3,12 +3,26 @@
 ## Unreleased
 
 ### New Features
+- Improved milvus consistency support and output fields support (#6452)
+
+## [v0.7.6] - 2023-07-12
+
+### New Features
 - Added sources to agent/chat engine responses (#6854)
 - Added basic chat buffer memory to agents / chat engines (#6857)
+- Adding load and search tool (#6871)
+- Add simple agent benchmark (#6869)
+- add agent docs  (#6866)
+- add react agent (#6865)
+
+### Breaking/Deprecated API Changes
+- Replace react chat engine with native react agent (#6870)
+- Set default chat mode to "best": use openai agent when possible, otherwise use react agent (#6870)
 
 ### Bug Fixes / Nits
 - Fixed support for legacy vector store metadata (#6867)
-- Improved milvus consistency support and output fields support (#6452)
+- fix chroma notebook in docs (#6872)
+- update LC embeddings docs (#6868)
 
 ## [v0.7.5] - 2023-07-11
 
