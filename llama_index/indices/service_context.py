@@ -224,7 +224,7 @@ class ServiceContext:
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
         )
-    
+
     @property
     def llm(self) -> LLM:
         if not isinstance(self.llm_predictor, LLMPredictor):

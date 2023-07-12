@@ -5,8 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Generator, List, Optional
 
-from llama_index.llms.base import (ChatMessage, ChatResponseAsyncGen,
-                                   ChatResponseGen)
+from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.tools import ToolOutput
 
