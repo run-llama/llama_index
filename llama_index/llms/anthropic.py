@@ -36,24 +36,26 @@ class Anthropic(LLM):
         additional_kwargs: Dict[str, Any] = {},
     ) -> None:
         try:
-            from anthropic import Anthropic, AsyncAnthropic
-        except ImportError:
+            import anthropic
+        except ImportError as e:
             raise ImportError(
                 "You must install the `anthropic` package to use Anthropic."
-            )
+                "Please `pip install anthropic`"
+            ) from e
 
         self._model = model
         self._temperature = temperature
         self._max_tokens = max_tokens
         self._additional_kwargs = additional_kwargs
 
-        self._client = Anthropic(
+        self._client = anthropic.Anthropic(
             base_url=base_url, timeout=timeout, max_retries=max_retries
         )
-        self._aclient = AsyncAnthropic(
+        self._aclient = anthropic.AsyncAnthropic(
             base_url=base_url, timeout=timeout, max_retries=max_retries
         )
 
+    @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
             context_window=anthropic_modelname_to_contextsize(self._model),

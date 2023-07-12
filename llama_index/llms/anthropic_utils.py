@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import Sequence
 
 from llama_index.llms.base import ChatMessage, MessageRole
 
@@ -30,7 +30,9 @@ def _message_to_anthropic_prompt(message: ChatMessage) -> str:
     elif message.role == MessageRole.SYSTEM:
         prompt = f"{HUMAN_PREFIX} <system>{message.content}</system>"
     elif message.role == MessageRole.FUNCTION:
-        raise ValueError(f"Message role {message.role} is not supported.")
+        raise ValueError(f"Message role {MessageRole.FUNCTION} is not supported.")
+    else:
+        raise ValueError(f"Unknown message role: {message.role}")
 
     return prompt
 
