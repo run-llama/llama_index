@@ -11,7 +11,7 @@ from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
@@ -86,7 +86,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         retriever: BaseRetriever,
         qa_prompt: Optional[QuestionAnswerPrompt] = None,
         context_separator: str = "\n",
-        llm: Optional[OpenAI] = None,
+        llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,

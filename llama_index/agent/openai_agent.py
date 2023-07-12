@@ -10,7 +10,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
@@ -358,7 +358,7 @@ class OpenAIAgent(BaseOpenAIAgent):
     def from_tools(
         cls,
         tools: Optional[List[BaseTool]] = None,
-        llm: Optional[OpenAI] = None,
+        llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
