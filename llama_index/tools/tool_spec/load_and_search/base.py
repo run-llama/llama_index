@@ -6,7 +6,7 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 
 from llama_index.tools.types import ToolMetadata
-from typing import Any, Optional, Dict, Type, Tuple, List
+from typing import Any, Optional, Dict, Type, List
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.tools.utils import create_schema_from_function
@@ -30,7 +30,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
         the corresponding read_{} function.
 
         {}
-    """
+    """  # noqa: E501
 
     # TODO, more general read prompt, not always natural language?
     reader_prompt = """
@@ -41,7 +41,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
 
         Args:
             query (str): The natural language query used to retreieve information from the index
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -50,7 +50,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
         index_kwargs: Dict,
         metadata: ToolMetadata,
         index: Optional[BaseIndex] = None,
-    ) -> Tuple[FunctionTool, FunctionTool]:
+    ) -> None:
         """Init params."""
         self._index_cls = index_cls
         self._index_kwargs = index_kwargs
@@ -58,6 +58,8 @@ class LoadAndSearchToolSpec(BaseToolSpec):
         self._metadata = metadata
         self._tool = tool
 
+        if self._metadata.name is None:
+            raise ValueError("Tool name cannot be None")
         self.spec_functions = [
             self._metadata.name,
             "read_{}".format(self._metadata.name),
@@ -111,12 +113,15 @@ class LoadAndSearchToolSpec(BaseToolSpec):
             metadata=metadata,
         )
 
-    def to_tool_list(self) -> List[FunctionTool]:
+    def to_tool_list(
+        self,
+        func_to_metadata_mapping: Optional[Dict[str, ToolMetadata]] = None,
+    ) -> List[FunctionTool]:
         return self._tool_list
 
     def load(self, *args: Any, **kwargs: Any) -> Any:
         # Call the wrapped tool and save the result in the index
-        docs = self._tool(*args, **kwargs)
+        docs = self._tool(*args, **kwargs).raw_output
         if self._index:
             for doc in docs:
                 self._index.insert(doc, **self._index_kwargs)
@@ -131,9 +136,11 @@ class LoadAndSearchToolSpec(BaseToolSpec):
     def read(self, query: str) -> Any:
         # Query the index for the result
         if not self._index:
-            return "Error: No content has been loaded into the index. You must call {} first".format(
-                self._metadata.name
-            )
+            err_msg = (
+                "Error: No content has been loaded into the index. "
+                "You must call {} first"
+            ).format(self._metadata.name)
+            return err_msg
         query_engine = self._index.as_query_engine()
         response = query_engine.query(query)
         return str(response)
