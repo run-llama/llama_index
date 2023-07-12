@@ -8,8 +8,6 @@ from llama_index.tools import BaseTool
 from llama_index.agent.types import BaseAgent
 from typing import List, Optional
 from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
-from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response.schema import Response
 from llama_index.agent.react.types import (
     BaseReasoningStep,
     ActionReasoningStep,
@@ -17,6 +15,9 @@ from llama_index.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.callbacks.base import CallbackManager
+from llama_index.chat_engine.types import (
+    AgentChatResponse,
+)
 
 from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.bridge.langchain import print_text
@@ -99,7 +100,10 @@ class ReActAgent(BaseAgent):
         message_content = output.message.content
         # parse output into either an ActionReasoningStep or ResponseReasoningStep
         current_reasoning = []
-        reasoning_step = self._output_parser.parse(message_content)
+        try:
+            reasoning_step = self._output_parser.parse(message_content)
+        except BaseException:
+            raise ValueError(f"Could not parse output: {message_content}")
         if self._verbose:
             print_text(f"{reasoning_step.get_content()}\n", color="pink")
         current_reasoning.append(reasoning_step)
@@ -113,8 +117,8 @@ class ReActAgent(BaseAgent):
         # call tool with input
         tool = self._tools_dict[reasoning_step.action]
 
-        output = tool(**reasoning_step.action_input)
-        observation_step = ObservationReasoningStep(observation=str(output))
+        tool_output = tool(**reasoning_step.action_input)
+        observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
@@ -123,7 +127,7 @@ class ReActAgent(BaseAgent):
     def _get_response(
         self,
         current_reasoning: List[BaseReasoningStep],
-    ) -> Response:
+    ) -> AgentChatResponse:
         """Get response from reasoning steps."""
         if len(current_reasoning) == 0:
             raise ValueError("No reasoning steps were taken.")
@@ -132,11 +136,12 @@ class ReActAgent(BaseAgent):
 
         response_step = cast(ResponseReasoningStep, current_reasoning[-1])
 
-        return Response(response=response_step.response)
+        # TODO: add sources from reasoning steps
+        return AgentChatResponse(response=response_step.response, sources=[])
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         """Chat."""
         chat_history = chat_history or self._chat_history
         chat_history.append(ChatMessage(content=message, role="user"))
@@ -164,7 +169,7 @@ class ReActAgent(BaseAgent):
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         chat_history = chat_history or self._chat_history
         chat_history.append(ChatMessage(content=message, role="user"))
 
