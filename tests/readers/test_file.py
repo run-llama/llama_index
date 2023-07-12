@@ -2,6 +2,7 @@
 
 from tempfile import TemporaryDirectory
 from typing import Any, Dict
+import pytest
 
 from llama_index.readers.file.base import SimpleDirectoryReader
 
@@ -304,3 +305,13 @@ def test_filename_as_doc_id() -> None:
         # check paths. Split handles path_part_X doc_ids from md and json files
         for doc in documents:
             assert str(doc.node_id).split("_part")[0] in doc_paths
+
+
+def test_error_if_not_dir_or_file() -> None:
+    with pytest.raises(ValueError, match="Directory"):
+        SimpleDirectoryReader("not_a_dir")
+    with pytest.raises(ValueError, match="File"):
+        SimpleDirectoryReader(input_files=["not_a_file"])
+    with TemporaryDirectory() as tmp_dir:
+        with pytest.raises(ValueError, match="No files"):
+            SimpleDirectoryReader(tmp_dir)

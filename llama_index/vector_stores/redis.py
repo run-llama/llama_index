@@ -86,7 +86,7 @@ class RedisVectorStore(VectorStore):
             >>> # Create a RedisVectorStore
             >>> vector_store = RedisVectorStore(
             >>>     index_name="my_index",
-            >>>     index_prefix="gpt_index",
+            >>>     index_prefix="llama_index",
             >>>     index_args={"algorithm": "HNSW", "m": 16, "ef_construction": 200,
                 "distance_metric": "cosine"},
             >>>     redis_url="redis://localhost:6379/",

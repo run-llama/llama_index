@@ -4,6 +4,9 @@ from llama_index.agent.react.base import ReActAgent
 from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.mock import MockLLM
 from llama_index.tools.function_tool import FunctionTool
+from llama_index.chat_engine.types import (
+    AgentChatResponse,
+)
 
 
 @pytest.fixture
@@ -62,7 +65,7 @@ def test_chat_basic(
         llm=mock_llm,
     )
     response = agent.chat("What is 1 + 1?")
-    assert isinstance(response, ChatResponse)
+    assert isinstance(response, AgentChatResponse)
     assert response.response == "2"
 
 
@@ -88,5 +91,5 @@ async def test_achat_basic(
         llm=mock_llm,
     )
     response = await agent.achat("What is 1 + 1?")
-    assert isinstance(response, ChatResponse)
+    assert isinstance(response, AgentChatResponse)
     assert response.response == "2"

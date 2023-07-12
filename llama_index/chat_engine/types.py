@@ -1,41 +1,54 @@
 import logging
 import queue
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import AsyncGenerator, Generator, List, Optional, Union
+from typing import Generator, List, Optional
 
+from llama_index.tools import ToolOutput
 from llama_index.llms.base import ChatMessage, ChatResponseGen, ChatResponseAsyncGen
-from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.memory import BaseMemory
 
 logger = logging.getLogger(__name__)
 
 
-class StreamingChatResponse:
+@dataclass
+class AgentChatResponse:
+    """Agent chat response."""
+
+    response: str = ""
+    sources: List[ToolOutput] = field(default_factory=list)
+
+    def __str__(self) -> str:
+        return self.response
+
+
+@dataclass
+class StreamingAgentChatResponse:
     """Streaming chat response to user and writing to chat history."""
 
-    def __init__(
-        self, chat_stream: Union[ChatResponseGen, ChatResponseAsyncGen]
-    ) -> None:
-        self._chat_stream = chat_stream
-        self._queue: queue.Queue = queue.Queue()
-        self._is_done = False
-        self._is_function: Optional[bool] = None
-        self.response_str = ""
+    response: str = ""
+    sources: List[ToolOutput] = field(default_factory=list)
+    chat_stream: Optional[ChatResponseGen] = None
+    achat_stream: Optional[ChatResponseAsyncGen] = None
+    _queue: queue.Queue = queue.Queue()
+    _is_done = False
+    _is_function: Optional[bool] = None
 
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
             for delta in self._queue.queue:
-                self.response_str += delta
-        return self.response_str
+                self.response += delta
+        return self.response
 
-    def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
-        if isinstance(self._chat_stream, AsyncGenerator):
+    def write_response_to_history(self, memory: BaseMemory) -> None:
+        if self.chat_stream is None:
             raise ValueError(
-                "Cannot write to history with async generator in sync function."
+                "chat_stream is None. Cannot write to history without chat_stream."
             )
 
         final_message = None
-        for chat in self._chat_stream:
+        for chat in self.chat_stream:
             final_message = chat.message
             self._is_function = (
                 final_message.additional_kwargs.get("function_call", None) is not None
@@ -43,18 +56,19 @@ class StreamingChatResponse:
             self._queue.put_nowait(chat.delta)
 
         if final_message is not None:
-            chat_history.append(final_message)
+            memory.put(final_message)
 
         self._is_done = True
 
-    async def awrite_response_to_history(self, chat_history: List[ChatMessage]) -> None:
-        if isinstance(self._chat_stream, Generator):
+    async def awrite_response_to_history(self, memory: BaseMemory) -> None:
+        if self.achat_stream is None:
             raise ValueError(
-                "Cannot write to history with sync generator in async function."
+                "achat_stream is None. Cannot asynchronously write to "
+                "history without achat_stream."
             )
 
         final_message = None
-        async for chat in self._chat_stream:
+        async for chat in self.achat_stream:
             final_message = chat.message
             self._is_function = (
                 final_message.additional_kwargs.get("function_call", None) is not None
@@ -62,7 +76,7 @@ class StreamingChatResponse:
             self._queue.put_nowait(chat.delta)
 
         if final_message is not None:
-            chat_history.append(final_message)
+            memory.put(final_message)
 
         self._is_done = True
 
@@ -71,19 +85,11 @@ class StreamingChatResponse:
         while not self._is_done or not self._queue.empty():
             try:
                 delta = self._queue.get(block=False)
-                self.response_str += delta
+                self.response += delta
                 yield delta
             except queue.Empty:
                 # Queue is empty, but we're not done yet
                 continue
-
-
-STREAMING_CHAT_RESPONSE_TYPE = Union[
-    StreamingResponse,
-    StreamingChatResponse,
-    Generator[StreamingChatResponse, None, None],
-    AsyncGenerator[StreamingChatResponse, None],
-]
 
 
 class BaseChatEngine(ABC):
@@ -97,28 +103,28 @@ class BaseChatEngine(ABC):
     @abstractmethod
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         """Main chat interface."""
         pass
 
     @abstractmethod
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+    ) -> StreamingAgentChatResponse:
         """Stream chat interface."""
         pass
 
     @abstractmethod
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         """Async version of main chat interface."""
         pass
 
     @abstractmethod
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+    ) -> StreamingAgentChatResponse:
         """Async version of main chat interface."""
         pass
 
