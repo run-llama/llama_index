@@ -168,7 +168,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             # Get the response in a separate thread so we can yield the response
             thread = Thread(
                 target=chat_stream_response.write_response_to_history,
-                args=(chat_history,),
+                args=(self._memory,),
             )
             thread.start()
             yield chat_stream_response
