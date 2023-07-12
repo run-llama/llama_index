@@ -9,7 +9,8 @@ whereas `CondenseQuestionChatEngine` and `ReActChatEngine` make use of a query e
 ---
 maxdepth: 1
 ---
-Simple Chat Engine <../../../examples/chat_engine/chat_engine_repl.ipynb>
-Condense Question Chat Engine <../../../examples/chat_engine/chat_engine_condense_question.ipynb>
-ReAct Chat Engine <../../../examples/chat_engine/chat_engine_react.ipynb>
+Simple Chat Engine </examples/chat_engine/chat_engine_repl.ipynb>
+ReAct Chat Engine </examples/chat_engine/chat_engine_react.ipynb>
+OpenAI Chat Engine </examples/chat_engine/chat_engine_openai_agent.ipynb>
+Condense Question Chat Engine </examples/chat_engine/chat_engine_condense_question.ipynb>
 ```
