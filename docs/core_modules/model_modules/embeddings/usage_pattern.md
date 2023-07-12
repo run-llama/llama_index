@@ -52,7 +52,7 @@ from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding, ServiceContext
 
 embed_model = LangchainEmbedding(
-  HuggingFaceEmbeddings("sentence-transformers/all-mpnet-base-v2")
+  HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 )
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 ```
