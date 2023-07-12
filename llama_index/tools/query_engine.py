@@ -37,6 +37,7 @@ class QueryEngineTool(BaseTool):
     ) -> "QueryEngineTool":
         name = name or DEFAULT_NAME
         description = description or DEFAULT_DESCRIPTION
+
         metadata = ToolMetadata(name=name, description=description)
         return cls(query_engine=query_engine, metadata=metadata)
 

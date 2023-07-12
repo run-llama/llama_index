@@ -12,13 +12,11 @@ from typing import (
 )
 
 from llama_index.chat_engine.types import (
-    BaseChatEngine,
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import (
     ChatMessage,
@@ -28,6 +26,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.agent.types import BaseAgent
 from llama_index.tools import BaseTool, ToolOutput
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
@@ -73,7 +72,7 @@ def call_function(
     )
 
 
-class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
+class BaseOpenAIAgent(BaseAgent):
     """Base OpenAI Agent."""
 
     def __init__(

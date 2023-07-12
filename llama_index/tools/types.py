@@ -6,11 +6,30 @@ from llama_index.bridge.langchain import StructuredTool, Tool
 from pydantic import BaseModel
 
 
+class DefaultToolFnSchema(BaseModel):
+    """Default tool function Schema."""
+
+    input: str
+
+
 @dataclass
 class ToolMetadata:
     description: str
     name: Optional[str] = None
-    fn_schema: Optional[Type[BaseModel]] = None
+    fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema
+
+    @property
+    def fn_schema_str(self) -> str:
+        """Get fn schema as string."""
+        if self.fn_schema is None:
+            raise ValueError("fn_schema is None.")
+        return str(self.fn_schema.schema())
+
+    def get_name(self) -> str:
+        """Get name."""
+        if self.name is None:
+            raise ValueError("name is None.")
+        return self.name
 
     def to_openai_function(self) -> Dict[str, Any]:
         """To OpenAI function."""
