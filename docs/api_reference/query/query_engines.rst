@@ -19,6 +19,7 @@ Below we show some general query engine classes.
    query_engines/sql_join_query_engine.rst
    query_engines/flare_query_engine.rst
    query_engines/citation_query_engine.rst
+   query_engines/knowledge_graph_query_engine.rst
 
 
 We also show query engine classes specific to our structured indices.
