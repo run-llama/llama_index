@@ -65,8 +65,36 @@ query_engine_tools = [
 ]
 
 # initialize ReAct agent
-agent = ReActAgent.from_tools([multiply_tool], llm=llm, verbose=True)
+agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 
+```
+
+## Use other agents as Tools
+
+A nifty feature of our agents is that since they inherit from `BaseQueryEngine`, you can easily define other agents as tools
+through our `QueryEngineTool`. 
+
+```python
+from llama_index.tools import QueryEngineTool
+
+query_engine_tools = [
+    QueryEngineTool(
+        query_engine=sql_agent,
+        metadata=ToolMetadata(
+            name="sql_agent",
+            description="Agent that can execute SQL queries."
+        ),
+    ),
+    QueryEngineTool(
+        query_engine=gmail_agent,
+        metadata=ToolMetadata(
+            name="gmail_agent",
+            description="Tool that can send emails on Gmail."
+        ),
+    ),
+]
+
+outer_agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
 ## Advanced Concepts (for `OpenAIAgent`, in beta)

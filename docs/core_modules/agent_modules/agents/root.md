@@ -22,7 +22,7 @@ The reasoning loop depends on the type of agent. We have support for the followi
 
 ### Tool Abstractions
 
-You can learn more about our Tool abstractions in this [blog post]().
+You can learn more about our Tool abstractions in our [Tools section](/core_modules/agent_modules/tools/root.md).
 
 ### Blog Post
 
@@ -58,7 +58,7 @@ usage_pattern.md
 
 Learn more about our different agent types in our module guides below.
 
-Also take a look at our [tools section]()!
+Also take a look at our [tools section](/core_modules/agent_modules/tools/root.md)!
 
 ```{toctree}
 ---

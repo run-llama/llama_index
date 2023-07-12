@@ -1,6 +1,8 @@
 # Usage Pattern
 
-Our Tool Specs and Tools can be imported from the `llama-hub` package. They can be plugged into our native agents, or LangChain agents.
+LlamaHub Tool Specs and Tools can be imported from the `llama-hub` package. They can be plugged into our native agents, or LangChain agents.
+
+## Using with our Agents
 
 To use with our OpenAIAgent,
 ```python
