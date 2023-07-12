@@ -1,35 +1,16 @@
-from typing import Any, Optional
+import asyncio
+from threading import Thread
+from typing import Any, List, Type, Optional
 
-from llama_index.bridge.langchain import BaseChatModel, ChatGeneration
-
-from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
-from llama_index.chat_engine.utils import (
-    is_chat_model,
-    to_chat_buffer,
-    to_langchain_chat_history,
+from llama_index.chat_engine.types import (
+    BaseChatEngine,
+    AgentChatResponse,
+    StreamingAgentChatResponse,
 )
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.prompts.base import Prompt
-from llama_index.prompts.prompt_type import PromptType
-from llama_index.response.schema import RESPONSE_TYPE, Response
-
-DEFAULT_TMPL = """\
-Assistant is a versatile language model that can assist with various tasks. \
-It can answer questions, provide detailed explanations, and engage in discussions on \
-diverse subjects. By processing and understanding extensive text data, Assistant \
-offers coherent and relevant responses. It continually learns and improves, expanding \
-its capabilities. With the ability to generate its own text, Assistant can facilitate \
-conversations, offer explanations, and describe a broad range of topics. Whether you \
-require assistance with a specific inquiry or desire a conversation on a particular \
-subject, Assistant is a valuable resource at your disposal.
-
-{history}
-Human: {message}
-Assistant: 
-"""
-
-DEFAULT_PROMPT = Prompt(DEFAULT_TMPL, prompt_type=PromptType.CONVERSATION)
+from llama_index.llms.base import LLM, ChatMessage
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -41,82 +22,114 @@ class SimpleChatEngine(BaseChatEngine):
 
     def __init__(
         self,
-        service_context: ServiceContext,
-        prompt: Prompt,
-        chat_history: ChatHistoryType,
+        llm: LLM,
+        memory: BaseMemory,
+        prefix_messages: List[ChatMessage],
     ) -> None:
-        self._service_context = service_context
-        self._prompt = prompt
-        self._chat_history = chat_history
+        self._llm = llm
+        self._memory = memory
+        self._prefix_messages = prefix_messages
 
     @classmethod
     def from_defaults(
         cls,
         service_context: Optional[ServiceContext] = None,
-        prompt: Optional[Prompt] = None,
-        chat_history: Optional[ChatHistoryType] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
         service_context = service_context or ServiceContext.from_defaults()
-        prompt = prompt or DEFAULT_PROMPT
+        if not isinstance(service_context.llm_predictor, LLMPredictor):
+            raise ValueError("llm_predictor must be a LLMPredictor instance")
+        llm = service_context.llm_predictor.llm
+
         chat_history = chat_history or []
-        return cls(
-            service_context=service_context, prompt=prompt, chat_history=chat_history
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
+
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
+        return cls(llm=llm, memory=memory, prefix_messages=prefix_messages)
+
+    def chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> AgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + self._memory.get()
+
+        chat_response = self._llm.chat(all_messages)
+        ai_message = chat_response.message
+        self._memory.put(ai_message)
+
+        return AgentChatResponse(response=str(chat_response.message.content))
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + self._memory.get()
+
+        chat_response = StreamingAgentChatResponse(
+            chat_stream=self._llm.stream_chat(all_messages)
         )
+        thread = Thread(
+            target=chat_response.write_response_to_history, args=(self._memory,)
+        )
+        thread.start()
 
-    def chat(self, message: str) -> RESPONSE_TYPE:
-        if is_chat_model(self._service_context):
-            assert isinstance(self._service_context.llm_predictor, LLMPredictor)
-            llm = self._service_context.llm_predictor.llm
-            assert isinstance(llm, BaseChatModel)
-            history = to_langchain_chat_history(self._chat_history)
-            history.add_user_message(message=message)
-            result = llm.generate([history.messages])
-            generation = result.generations[0][0]
-            assert isinstance(generation, ChatGeneration)
-            response = generation.message.content
-        else:
-            history_buffer = to_chat_buffer(self._chat_history)
-            response, _ = self._service_context.llm_predictor.predict(
-                self._prompt,
-                history=history_buffer,
-                message=message,
-            )
+        return chat_response
 
-        # Record response
-        self._chat_history.append((message, response))
+    async def achat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> AgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + self._memory.get()
 
-        return Response(response=response)
+        chat_response = await self._llm.achat(all_messages)
+        ai_message = chat_response.message
+        self._memory.put(ai_message)
 
-    async def achat(self, message: str) -> RESPONSE_TYPE:
-        if is_chat_model(self._service_context):
-            assert isinstance(self._service_context.llm_predictor, LLMPredictor)
-            llm = self._service_context.llm_predictor.llm
-            assert isinstance(llm, BaseChatModel)
-            history = to_langchain_chat_history(self._chat_history)
-            history.add_user_message(message=message)
-            result = await llm.agenerate([history.messages])
-            generation = result.generations[0][0]
-            assert isinstance(generation, ChatGeneration)
-            response = generation.message.content
-        else:
-            history_buffer = to_chat_buffer(self._chat_history)
-            response, _ = await self._service_context.llm_predictor.apredict(
-                self._prompt,
-                history=history_buffer,
-                message=message,
-            )
+        return AgentChatResponse(response=str(chat_response.message.content))
 
-        # Record response
-        self._chat_history.append((message, response))
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + self._memory.get()
 
-        return Response(response=response)
+        chat_response = StreamingAgentChatResponse(
+            chat_stream=self._llm.stream_chat(all_messages)
+        )
+        thread = Thread(
+            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
+            args=(self._memory,),
+        )
+        thread.start()
+
+        return chat_response
 
     def reset(self) -> None:
-        self._chat_history = []
+        self._memory.reset()
 
     @property
-    def chat_history(self) -> ChatHistoryType:
-        """Get chat history as human and ai message pairs."""
-        return [(str(human), str(ai)) for human, ai in self._chat_history]
+    def chat_history(self) -> List[ChatMessage]:
+        """Get chat history."""
+        return self._memory.get_all()

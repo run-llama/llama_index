@@ -228,6 +228,14 @@ class QdrantVectorStore(VectorStore):
                 )
             )
 
+        if query.node_ids:
+            must_conditions.append(
+                FieldCondition(
+                    key="id",
+                    match=MatchAny(any=query.node_ids),
+                )
+            )
+
         # Qdrant does not use the query.query_str property for the filtering. Full-text
         # filtering cannot handle longer queries and can effectively filter our all the
         # nodes. See: https://github.com/jerryjliu/llama_index/pull/1181

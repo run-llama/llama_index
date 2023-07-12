@@ -48,10 +48,10 @@ class KVDocumentStore(BaseDocumentStore):
     ) -> None:
         """Init a KVDocumentStore."""
         self._kvstore = kvstore
-        namespace = namespace or DEFAULT_NAMESPACE
-        self._node_collection = f"{namespace}/data"
-        self._ref_doc_collection = f"{namespace}/ref_doc_info"
-        self._metadata_collection = f"{namespace}/metadata"
+        self._namespace = namespace or DEFAULT_NAMESPACE
+        self._node_collection = f"{self._namespace}/data"
+        self._ref_doc_collection = f"{self._namespace}/ref_doc_info"
+        self._metadata_collection = f"{self._namespace}/metadata"
 
     @property
     def docs(self) -> Dict[str, BaseNode]:

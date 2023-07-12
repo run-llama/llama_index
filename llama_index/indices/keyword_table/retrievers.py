@@ -118,7 +118,7 @@ class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        response, formatted_prompt = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,

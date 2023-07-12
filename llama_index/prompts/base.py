@@ -1,13 +1,14 @@
 """Base module for prompts."""
 from copy import deepcopy
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.langchain import BasePromptTemplate as BaseLangchainPrompt
 from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
-from llama_index.bridge.langchain import BaseLanguageModel, ConditionalPromptSelector
-
-from llama_index.types import BaseOutputParser
+from llama_index.llms.base import LLM, ChatMessage
+from llama_index.llms.langchain_utils import from_lc_messages
+from llama_index.prompts.prompt_selector import PromptSelector
 from llama_index.prompts.prompt_type import PromptType
+from llama_index.types import BaseOutputParser
 
 
 class Prompt:
@@ -16,16 +17,13 @@ class Prompt:
     Wrapper around langchain's prompt class. Adds ability to:
         - enforce certain prompt types
         - partially fill values
-        - define stop token
-
     """
 
     def __init__(
         self,
         template: Optional[str] = None,
         langchain_prompt: Optional[BaseLangchainPrompt] = None,
-        langchain_prompt_selector: Optional[ConditionalPromptSelector] = None,
-        stop_token: Optional[str] = None,
+        langchain_prompt_selector: Optional[PromptSelector] = None,
         output_parser: Optional[BaseOutputParser] = None,
         prompt_type: str = PromptType.CUSTOM,
         metadata: Optional[Dict[str, Any]] = None,
@@ -47,7 +45,7 @@ class Prompt:
             self.prompt = LangchainPrompt.from_template(
                 template=template, **prompt_kwargs
             )
-            self.prompt_selector = ConditionalPromptSelector(default_prompt=self.prompt)
+            self.prompt_selector = PromptSelector(default_prompt=self.prompt)
         # finally, check if langchain_prompt is provided
         else:
             if template:
@@ -56,11 +54,10 @@ class Prompt:
                     f"({langchain_prompt}) are provided, only one should be."
                 )
             self.prompt = langchain_prompt
-            self.prompt_selector = ConditionalPromptSelector(default_prompt=self.prompt)
+            self.prompt_selector = PromptSelector(default_prompt=self.prompt)
 
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
-        self.stop_token = stop_token
         # NOTE: this is only used for token counting and testing
         self.prompt_type = prompt_type
 
@@ -91,7 +88,7 @@ class Prompt:
 
     @classmethod
     def from_langchain_prompt_selector(
-        cls, prompt_selector: ConditionalPromptSelector, **kwargs: Any
+        cls, prompt_selector: PromptSelector, **kwargs: Any
     ) -> "Prompt":
         """Load prompt from LangChain prompt."""
         return cls(langchain_prompt_selector=prompt_selector, **kwargs)
@@ -120,7 +117,7 @@ class Prompt:
     def from_prompt(
         cls,
         prompt: "Prompt",
-        llm: Optional[BaseLanguageModel] = None,
+        llm: Optional[LLM] = None,
         prompt_type: Optional[PromptType] = None,
     ) -> "Prompt":
         """Create a prompt from an existing prompt.
@@ -146,19 +143,25 @@ class Prompt:
         )
         return cls_obj
 
-    def get_langchain_prompt(
-        self, llm: Optional[BaseLanguageModel] = None
-    ) -> BaseLangchainPrompt:
+    def get_langchain_prompt(self, llm: Optional[LLM] = None) -> BaseLangchainPrompt:
         """Get langchain prompt."""
-        if llm is None:
-            return self.prompt_selector.default_prompt
-        return self.prompt_selector.get_prompt(llm=llm)
+        return self.prompt_selector.select(llm=llm)
 
-    def format(self, llm: Optional[BaseLanguageModel] = None, **kwargs: Any) -> str:
-        """Format the prompt."""
+    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
+        """Format the prompt into a string."""
         kwargs.update(self.partial_dict)
         lc_prompt = self.get_langchain_prompt(llm=llm)
         return lc_prompt.format(**kwargs)
+
+    def format_messages(
+        self, llm: Optional[LLM] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Format the prompt into a list of chat messages."""
+        kwargs.update(self.partial_dict)
+        lc_template = self.get_langchain_prompt(llm=llm)
+        lc_value = lc_template.format_prompt(**kwargs)
+        lc_messages = lc_value.to_messages()
+        return from_lc_messages(lc_messages)
 
     def get_full_format_args(self, kwargs: Dict) -> Dict[str, Any]:
         """Get dict of all format args.
@@ -167,6 +170,4 @@ class Prompt:
 
         """
         kwargs.update(self.partial_dict)
-        if self.stop_token is not None:
-            kwargs["stop"] = self.stop_token
         return kwargs

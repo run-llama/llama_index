@@ -41,6 +41,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "m2r2",
     "myst_nb",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 
 myst_heading_anchors = 4

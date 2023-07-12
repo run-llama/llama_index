@@ -8,11 +8,9 @@ from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
-from llama_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
 IndexType = TypeVar("IndexType", bound="BaseIndex")
@@ -25,6 +23,7 @@ class BaseIndex(Generic[IS], ABC):
 
     Args:
         nodes (List[Node]): List of nodes to index
+        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
 
@@ -38,6 +37,7 @@ class BaseIndex(Generic[IS], ABC):
         index_struct: Optional[IS] = None,
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
@@ -59,6 +59,7 @@ class BaseIndex(Generic[IS], ABC):
         self._service_context = service_context or ServiceContext.from_defaults()
         self._storage_context = storage_context or StorageContext.from_defaults()
         self._docstore = self._storage_context.docstore
+        self._show_progress = show_progress
         self._vector_store = self._storage_context.vector_store
         self._graph_store = self._storage_context.graph_store
 
@@ -75,6 +76,7 @@ class BaseIndex(Generic[IS], ABC):
         documents: Sequence[Document],
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> IndexType:
         """Create index from documents.
@@ -91,12 +93,15 @@ class BaseIndex(Generic[IS], ABC):
         with service_context.callback_manager.as_trace("index_construction"):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
-            nodes = service_context.node_parser.get_nodes_from_documents(documents)
+            nodes = service_context.node_parser.get_nodes_from_documents(
+                documents, show_progress=show_progress
+            )
 
             return cls(
                 nodes=nodes,
                 storage_context=storage_context,
                 service_context=service_context,
+                show_progress=show_progress,
                 **kwargs,
             )
 
@@ -158,7 +163,6 @@ class BaseIndex(Generic[IS], ABC):
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IS:
         """Build the index from nodes."""
 
-    @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IS:
         """Build the index from nodes."""
         self._docstore.add_documents(nodes, allow_update=True)
@@ -168,7 +172,6 @@ class BaseIndex(Generic[IS], ABC):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Index-specific logic for inserting nodes to the index struct."""
 
-    @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes."""
         with self._service_context.callback_manager.as_trace("insert_nodes"):
@@ -344,9 +347,10 @@ class BaseIndex(Generic[IS], ABC):
             from llama_index.chat_engine import CondenseQuestionChatEngine
 
             query_engine = self.as_query_engine(**kwargs)
+            if "service_context" not in kwargs:
+                kwargs["service_context"] = self._service_context
             return CondenseQuestionChatEngine.from_defaults(
                 query_engine=query_engine,
-                service_context=self.service_context,
                 **kwargs,
             )
         elif chat_mode == ChatMode.REACT:
@@ -354,9 +358,10 @@ class BaseIndex(Generic[IS], ABC):
             from llama_index.chat_engine import ReActChatEngine
 
             query_engine = self.as_query_engine(**kwargs)
+            if "service_context" not in kwargs:
+                kwargs["service_context"] = self._service_context
             return ReActChatEngine.from_query_engine(
                 query_engine=query_engine,
-                service_context=self.service_context,
                 **kwargs,
             )
         else:

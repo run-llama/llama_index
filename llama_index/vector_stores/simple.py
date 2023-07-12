@@ -41,8 +41,9 @@ class SimpleVectorStoreData(DataClassJsonMixin):
     """Simple Vector Store Data container.
 
     Args:
-        embedding_dict (Optional[dict]): dict mapping doc_ids to embeddings.
-        text_id_to_ref_doc_id (Optional[dict]): dict mapping text_ids to ref_doc_ids.
+        embedding_dict (Optional[dict]): dict mapping node_ids to embeddings.
+        text_id_to_ref_doc_id (Optional[dict]):
+            dict mapping text_ids/node_ids to ref_doc_ids.
 
     """
 
@@ -136,8 +137,8 @@ class SimpleVectorStore(VectorStore):
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
 
-        if query.doc_ids:
-            available_ids = set(query.doc_ids)
+        if query.node_ids:
+            available_ids = set(query.node_ids)
 
             node_ids = [t[0] for t in items if t[0] in available_ids]
             embeddings = [t[1] for t in items if t[0] in available_ids]

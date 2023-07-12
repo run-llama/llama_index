@@ -5,10 +5,10 @@ from typing import List
 
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.indices.response import ResponseMode, get_response_builder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
+from llama_index.response_synthesizers import ResponseMode, get_response_synthesizer
 from llama_index.schema import Document
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
@@ -36,8 +36,8 @@ def test_give_response(
     query_str = "What is?"
 
     # test single line
-    builder = get_response_builder(
-        mode=ResponseMode.REFINE,
+    builder = get_response_synthesizer(
+        response_mode=ResponseMode.REFINE,
         service_context=service_context,
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,
@@ -73,9 +73,9 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -94,11 +94,11 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
         "This\n\nis\n\na\n\nbar",
         "This\n\nis\n\na\n\ntest",
     ]
-    builder = get_response_builder(
+    builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
         refine_template=mock_refine_prompt,
-        mode=ResponseMode.COMPACT,
+        response_mode=ResponseMode.COMPACT,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)
@@ -118,9 +118,9 @@ def test_accumulate_response(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -139,10 +139,10 @@ def test_accumulate_response(
         "This\nis\nbar",
         "This\nis\nfoo",
     ]
-    builder = get_response_builder(
+    builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
-        mode=ResponseMode.ACCUMULATE,
+        response_mode=ResponseMode.ACCUMULATE,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)
@@ -175,9 +175,9 @@ def test_accumulate_response_async(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -196,10 +196,10 @@ def test_accumulate_response_async(
         "This\nis\nbar",
         "This\nis\nfoo",
     ]
-    builder = get_response_builder(
+    builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
-        mode=ResponseMode.ACCUMULATE,
+        response_mode=ResponseMode.ACCUMULATE,
         use_async=True,
     )
 
@@ -233,9 +233,9 @@ def test_accumulate_response_aget(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -254,10 +254,10 @@ def test_accumulate_response_aget(
         "This\nis\nbar",
         "This\nis\nfoo",
     ]
-    builder = get_response_builder(
+    builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
-        mode=ResponseMode.ACCUMULATE,
+        response_mode=ResponseMode.ACCUMULATE,
     )
 
     response = asyncio.run(
@@ -293,9 +293,9 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        max_input_size=11,
+        context_window=11,
         num_output=0,
-        max_chunk_overlap=0,
+        chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
         separator="\n\n",
         chunk_size_limit=4,
@@ -321,10 +321,10 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     compacted_chunks = prompt_helper.repack(mock_qa_prompt, texts)
     assert compacted_chunks == ["This\n\nis\n\nbar\n\nThis", "is\n\nfoo"]
 
-    builder = get_response_builder(
+    builder = get_response_synthesizer(
         service_context=service_context,
         text_qa_template=mock_qa_prompt,
-        mode=ResponseMode.COMPACT_ACCUMULATE,
+        response_mode=ResponseMode.COMPACT_ACCUMULATE,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)

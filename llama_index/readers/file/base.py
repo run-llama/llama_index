@@ -2,6 +2,7 @@
 import logging
 from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
+import os
 
 from llama_index.readers.base import BaseReader
 from llama_index.readers.file.docs_reader import DocxReader, PDFReader
@@ -93,9 +94,13 @@ class SimpleDirectoryReader(BaseReader):
         if input_files:
             self.input_files = []
             for path in input_files:
+                if not os.path.isfile(path):
+                    raise ValueError(f"File {path} does not exist.")
                 input_file = Path(path)
                 self.input_files.append(input_file)
         elif input_dir:
+            if not os.path.isdir(input_dir):
+                raise ValueError(f"Directory {input_dir} does not exist.")
             self.input_dir = Path(input_dir)
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
@@ -153,6 +158,9 @@ class SimpleDirectoryReader(BaseReader):
 
         new_input_files = sorted(list(all_files))
 
+        if len(new_input_files) == 0:
+            raise ValueError(f"No files found in {input_dir}.")
+
         if self.num_files_limit is not None and self.num_files_limit > 0:
             new_input_files = new_input_files[0 : self.num_files_limit]
 
@@ -192,7 +200,7 @@ class SimpleDirectoryReader(BaseReader):
                     reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
-                docs = reader.load_data(input_file, metadata=metadata or {})
+                docs = reader.load_data(input_file, extra_info=metadata)
 
                 # iterate over docs if needed
                 if self.filename_as_id:

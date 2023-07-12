@@ -16,6 +16,8 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    node_to_metadata_dict, 
+    metadata_dict_to_node
     DEFAULT_DOC_ID_KEY,
     DEFAULT_EMBEDDING_KEY,
     DEFAULT_TEXT_KEY,
@@ -61,7 +63,7 @@ class MilvusVectorStore(VectorStore):
     """
 
     stores_text: bool = True
-    stores_node: bool = False
+    stores_node: bool = True
 
     def __init__(
         self,
@@ -227,6 +229,12 @@ class MilvusVectorStore(VectorStore):
                     description="The embedding vector",
                     dim=self.dim,
                 ),
+                FieldSchema(
+                    name="node",
+                    dtype=DataType.VARCHAR,
+                    description="The node content",
+                    max_length=65535,
+                ),
             ]
 
             col_schema = CollectionSchema(fields=fields)
@@ -332,6 +340,7 @@ class MilvusVectorStore(VectorStore):
         doc_ids = []
         texts = []
         embeddings = []
+        nodes = []
 
         # Process that data we are going to insert
         for result in embedding_results:
@@ -340,9 +349,13 @@ class MilvusVectorStore(VectorStore):
             texts.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
             embeddings.append(result.embedding)
 
+            # Store node without text
+            metadata = node_to_metadata_dict(result.node, remove_text=True)
+            nodes.append(metadata["_node_content"])
+
         try:
             # Insert the data into milvus
-            self.collection.insert([ids, doc_ids, texts, embeddings])
+            self.collection.insert([ids, doc_ids, texts, embeddings, nodes])
             logger.debug(
                 f"Successfully inserted embeddings into: {self.collection_name} "
                 f"Num Inserted: {len(ids)}"
@@ -415,7 +428,7 @@ class MilvusVectorStore(VectorStore):
             expr = f"{self.doc_id_field} in [{','.join(expr_list)}]"
 
         if query.output_fields is None:
-            output_fields = [self.doc_id_field, self.text_field]
+            output_fields = [self.doc_id_field, self.text_field, "node"]
 
         if query.embedding_field is None:
             embedding_field = self.embedding_field
@@ -433,27 +446,40 @@ class MilvusVectorStore(VectorStore):
                 f"Successfully searched embedding in collection: {self.collection_name}"
                 f" Num Results: {len(res[0])}"
             )
-        except MilvusException as e:
-            logger.debug(
-                f"Unsuccessfully searched embedding in collection: "
-                f"{self.collection_name}"
+        except MilvusException:
+            # TODO: Legacy support for old dbs
+            res = self.collection.search(
+                [query.query_embedding],
+                "embedding",
+                self.search_params,
+                limit=query.similarity_top_k,
+                output_fields=["doc_id", "text"],
+                expr=expr,
             )
-            raise e
+            logger.debug(
+                f"Successfully searched embedding in collection: {self.collection_name}"
+                f" Num Results: {len(res[0])}"
+            )
 
         nodes = []
         similarities = []
         ids = []
 
         for hit in res[0]:
-            node = TextNode(
-                text=hit.entity.get("text"),
-                id_=hit.id,
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(
-                        node_id=hit.entity.get("doc_id")
-                    ),
-                },
-            )
+            try:
+                node = metadata_dict_to_node({"_node_content": hit.entity.get("node")})
+                node.text = hit.entity.get("text")
+            except Exception:
+                # TODO: Legacy support for old nodes
+                node = TextNode(
+                    text=hit.entity.get("text"),
+                    id_=hit.id,
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(
+                            node_id=hit.entity.get("doc_id")
+                        ),
+                    },
+                )
             nodes.append(node)
             similarities.append(hit.score)
             ids.append(hit.id)

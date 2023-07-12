@@ -1,10 +1,10 @@
 """Default query for SQLStructStoreIndex."""
 import logging
+from abc import abstractmethod
 from typing import Any, List, Optional, Union
 
 from sqlalchemy import Table
 
-from abc import abstractmethod
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -13,13 +13,12 @@ from llama_index.indices.struct_store.container_builder import (
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.objects.base import ObjectRetriever
+from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
-from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.objects.table_node_mapping import SQLTableSchema
-from llama_index.objects.base import ObjectRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +127,10 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
+        # Find and remove SQLResult part
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
+            response = response[:sql_result_start]
         result_response = response.strip()
         return result_response
 
@@ -154,13 +157,12 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
         return tables_desc_str
 
-    @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -175,7 +177,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         metadata["sql_query"] = sql_query_str
 
         if self._synthesize_response:
-            response_str, _ = self._service_context.llm_predictor.predict(
+            response_str = self._service_context.llm_predictor.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query=sql_query_str,
@@ -187,16 +189,12 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         response = Response(response=response_str, metadata=metadata)
         return response
 
-    @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        (
-            response_str,
-            formatted_prompt,
-        ) = await self._service_context.llm_predictor.apredict(
+        response_str = await self._service_context.llm_predictor.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -243,6 +241,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
+        # Find and remove SQLResult part
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
+            response = response[:sql_result_start]
         result_response = response.strip()
         return result_response
 
@@ -254,13 +256,12 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         """
 
-    @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -275,7 +276,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         metadata["sql_query"] = sql_query_str
 
         if self._synthesize_response:
-            response_str, _ = self._service_context.llm_predictor.predict(
+            response_str = self._service_context.llm_predictor.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query=sql_query_str,
@@ -287,16 +288,12 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         response = Response(response=response_str, metadata=metadata)
         return response
 
-    @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        (
-            response_str,
-            formatted_prompt,
-        ) = await self._service_context.llm_predictor.apredict(
+        response_str = await self._service_context.llm_predictor.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -359,7 +356,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
 
         else:
             # get all tables
-            table_names = self._sql_database.get_table_names()
+            table_names = self._sql_database.get_usable_table_names()
             for table_name in table_names:
                 table_info = self._sql_database.get_single_table_info(table_name)
                 context_strs.append(table_info)
