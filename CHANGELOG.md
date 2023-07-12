@@ -6,8 +6,13 @@
 - Added sources to agent/chat engine responses (#6854)
 - Added basic chat buffer memory to agents / chat engines (#6857)
 
+### Breaking/Deprecated API Changes
+- Replace react chat engine with native reactive agent (#6870)
+- Set default chat mode to "best": use openai agent when possible, otherwise use react agent (#6870)
+
 ### Bug Fixes / Nits
 - Fixed support for legacy vector store metadata (#6867)
+
 
 ## [v0.7.5] - 2023-07-11
 
