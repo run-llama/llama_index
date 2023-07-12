@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Add `Anthropic` LLM implementation
+
 ## [v0.7.4] - 2023-07-08
 
 ### New Features
