@@ -34,6 +34,11 @@ class BaseMemory(BaseModel):
         pass
 
     @abstractmethod
+    def set(self, messages: List[ChatMessage]) -> None:
+        """Set chat history."""
+        pass
+
+    @abstractmethod
     def reset(self) -> None:
         """Reset chat history."""
         pass

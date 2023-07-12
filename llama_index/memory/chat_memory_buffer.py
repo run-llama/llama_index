@@ -66,6 +66,10 @@ class ChatMemoryBuffer(BaseMemory):
         """Put chat history."""
         self.chat_history.append(message)
 
+    def set(self, messages: List[ChatMessage]) -> None:
+        """Set chat history."""
+        self.chat_history = messages
+
     def reset(self) -> None:
         """Reset chat history."""
         return self.chat_history.clear()
