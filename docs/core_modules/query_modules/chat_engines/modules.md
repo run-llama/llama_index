@@ -11,6 +11,6 @@ maxdepth: 1
 ---
 Simple Chat Engine </examples/chat_engine/chat_engine_repl.ipynb>
 ReAct Chat Engine </examples/chat_engine/chat_engine_react.ipynb>
-OpenAI Chat Engine </examples/chat_engine/chat_engine_openai_agent.ipynb>
+OpenAI Chat Engine </examples/chat_engine/chat_engine_openai.ipynb>
 Condense Question Chat Engine </examples/chat_engine/chat_engine_condense_question.ipynb>
 ```
