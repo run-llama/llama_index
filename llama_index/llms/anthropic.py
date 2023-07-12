@@ -17,6 +17,8 @@ from llama_index.llms.base import (
     MessageRole,
 )
 from llama_index.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
@@ -27,7 +29,7 @@ class Anthropic(LLM):
         self,
         model: str = "claude-2",
         temperature: float = 0.0,
-        max_tokens: int = 256,
+        max_tokens: int = 512,
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
         max_retries: int = 10,
@@ -124,18 +126,52 @@ class Anthropic(LLM):
         stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
         return stream_complete_fn(prompt, **kwargs)
 
-    def achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        raise NotImplementedError()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        prompt = messages_to_anthropic_prompt(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
 
-    def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        raise NotImplementedError()
+        response = await self._aclient.completions.create(
+            prompt=prompt, stream=False, **all_kwargs
+        )
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=response.completion
+            ),
+            raw=dict(response),
+        )
 
-    def astream_chat(
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        acomplete_fn = achat_to_completion_decorator(self.achat)
+        return await acomplete_fn(prompt, **kwargs)
+
+    async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        raise NotImplementedError()
+        prompt = messages_to_anthropic_prompt(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
 
-    def astream_complete(
+        response = await self._aclient.completions.create(
+            prompt=prompt, stream=True, **all_kwargs
+        )
+
+        async def gen() -> ChatResponseAsyncGen:
+            content = ""
+            role = MessageRole.ASSISTANT
+            async for r in response:
+                content_delta = r.completion
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=r,
+                )
+
+        return gen()
+
+    async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        raise NotImplementedError()
+        astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
+        return await astream_complete_fn(prompt, **kwargs)
