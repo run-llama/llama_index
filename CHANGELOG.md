@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added sources to agent/chat engine responses (#6854)
+- Added basic chat buffer memory to agents / chat engines (#6857)
+
 ## [v0.7.5] - 2023-07-11
 
 ### New Features

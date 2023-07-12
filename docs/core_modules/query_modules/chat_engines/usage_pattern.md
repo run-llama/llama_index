@@ -99,7 +99,8 @@ This somewhat inconsistent with query engine (where you pass in a `streaming=Tru
 ```python
 chat_engine = index.as_chat_engine()
 streaming_response = chat_engine.stream_chat("Tell me a joke.")
-streaming_response.print_response_stream() 
+for token in streaming_response.response_gen:
+    print(token, end="")
 ```
 
 See an [end-to-end tutorial](/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb)
