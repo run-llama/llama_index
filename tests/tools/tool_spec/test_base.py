@@ -65,7 +65,9 @@ def test_tool_spec() -> None:
     # test metadata mapping
     tools = tool_spec.to_tool_list(
         func_to_metadata_mapping={
-            "foo": ToolMetadata("foo_description", name="foo_name"),
+            "foo": ToolMetadata(
+                "foo_description", name="foo_name", fn_schema=FooSchema
+            ),
         }
     )
     assert len(tools) == 3
@@ -73,6 +75,7 @@ def test_tool_spec() -> None:
     assert tools[0].metadata.description == "foo_description"
     assert tools[0].metadata.fn_schema is not None
     fn_schema = tools[0].metadata.fn_schema.schema()
+    print(fn_schema)
     assert fn_schema["properties"]["arg1"]["type"] == "string"
     assert fn_schema["properties"]["arg2"]["type"] == "integer"
     assert tools[1].metadata.name == "bar"
