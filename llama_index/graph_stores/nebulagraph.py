@@ -4,10 +4,14 @@ import os
 from string import Template
 from typing import Any, Dict, List, Optional
 
+from tenacity import retry, stop_after_attempt, wait_random_exponential
+
 from llama_index.graph_stores.types import GraphStore
 
 QUOTE = '"'
 RETRY_TIMES = 3
+WAIT_MIN_SECONDS = 0.1
+WAIT_MAX_SECONDS = 20
 
 logger = logging.getLogger(__name__)
 
@@ -103,13 +107,6 @@ class NebulaGraphStore(GraphStore):
         assert space_name is not None, "space_name should be provided."
         self._space_name = space_name
         self._session_pool_kwargs = session_pool_kwargs
-        if (
-            self._session_pool_kwargs is not None
-            and "retry" in self._session_pool_kwargs
-        ):
-            self._retry = self._session_pool_kwargs.pop("retry")
-        else:
-            self._retry = RETRY_TIMES
 
         if session_pool is None:
             self.init_session_pool()
@@ -164,6 +161,10 @@ class NebulaGraphStore(GraphStore):
         """Close NebulaGraph session pool."""
         self._session_pool.close()
 
+    @retry(
+        wait=wait_random_exponential(min=WAIT_MIN_SECONDS, max=WAIT_MAX_SECONDS),
+        stop=stop_after_attempt(RETRY_TIMES),
+    )
     def execute(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         """Execute query.
 
@@ -177,41 +178,42 @@ class NebulaGraphStore(GraphStore):
         from nebula3.Exception import IOErrorException
         from nebula3.fbthrift.transport.TTransport import TTransportException
 
-        retry = self._retry
-        while retry > 0:
-            try:
-                result = self._session_pool.execute_parameter(query, param_map)
-                if result is None:
-                    raise ValueError(
-                        f"Query failed. Query: {query}, Param: {param_map}"
-                    )
-                if not result.is_succeeded():
-                    raise ValueError(result.error_msg())
-                return result
-            except (TTransportException, IOErrorException) as e:
-                # connection issue, try to recreate session pool
-                retry -= 2
-                if retry > 0:
-                    # try to recreate session pool
-                    self.init_session_pool()
-                else:
-                    logger.error(f"Query failed. Query: {query}, Param: {param_map}")
-                    raise e
-            except ValueError as e:
-                # query failed on db side
-                retry -= 1
-                if retry > 0:
-                    continue
-                else:
-                    logger.error(f"Query failed. Query: {query}, Param: {param_map}")
-                    raise e
-            except Exception as e:
-                # other exceptions
-                retry -= 1
-                if retry > 0:
-                    continue
-                logger.error(f"Query failed. Query: {query}, Param: {param_map}")
-                raise e
+        try:
+            result = self._session_pool.execute_parameter(query, param_map)
+            if result is None:
+                raise ValueError(f"Query failed. Query: {query}, Param: {param_map}")
+            if not result.is_succeeded():
+                raise ValueError(
+                    f"Query failed. Query: {query}, Param: {param_map}"
+                    f"Error message: {result.error_msg()}"
+                )
+            return result
+        except (TTransportException, IOErrorException, RuntimeError) as e:
+            logger.error(
+                f"Connection issue, try to recreate session pool. Query: {query}, Param: {param_map}"
+                f"Erorr: {e}"
+            )
+            self.init_session_pool()
+            logger.info(
+                f"Session pool recreated. Query: {query}, Param: {param_map}"
+                f"This was due to error: {e}, and now retrying."
+            )
+            raise e
+
+        except ValueError as e:
+            # query failed on db side
+            logger.error(
+                f"Query failed. Query: {query}, Param: {param_map}"
+                f"Error message: {e}"
+            )
+            raise e
+        except Exception as e:
+            # other exceptions
+            logger.error(
+                f"Query failed. Query: {query}, Param: {param_map}"
+                f"Error message: {e}"
+            )
+            raise e
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "GraphStore":

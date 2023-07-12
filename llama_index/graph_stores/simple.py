@@ -130,13 +130,11 @@ class SimpleGraphStore(GraphStore):
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the Simple Graph store."""
-        # not implemented
-        raise NotImplementedError
+        raise NotImplementedError("SimpleGraphStore does not support get_schema")
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         """Query the Simple Graph store."""
-        # not implemented
-        raise NotImplementedError
+        raise NotImplementedError("SimpleGraphStore does not support query")
 
     @classmethod
     def from_persist_path(
