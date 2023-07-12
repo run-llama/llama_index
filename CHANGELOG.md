@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added sources to agent/chat engine responses (#6854)
+
 ## [v0.7.4] - 2023-07-08
 
 ### New Features
