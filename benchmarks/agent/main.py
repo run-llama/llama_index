@@ -1,10 +1,12 @@
-from typing import List
+from typing import List, cast
 
 import pandas as pd
 from agent_utils import AGENTS, ALL_MODELS, get_model, is_valid_combination
 from button_tasks import TASKS as BUTTON_TASKS
 from fire import Fire
 from math_tasks import TASKS as MATH_TASKS
+
+from llama_index.agent.types import BaseAgent
 
 ALL_TASKS = list(MATH_TASKS.keys()) + list(BUTTON_TASKS.keys())
 
@@ -29,18 +31,19 @@ def evaluate(agent: str, model: str, task_name: str, verbose: bool = False) -> b
     else:
         raise ValueError(f"Unknown agent {agent}")
 
-    agent = agent_cls.from_tools(
+    agent_ = agent_cls.from_tools(  # type: ignore
         tools=task.tools,
         llm=llm,
         verbose=verbose,
         **additional_kwargs,
-    )
+    )  # type: ignore
+    agent_ = cast(BaseAgent, agent_)
     try:
-        actual_response = agent.chat(task.message).response
+        actual_response = agent_.chat(task.message).response
         outcome = task.eval_fn(actual_response, task.expected_response)
     except Exception as e:
         if verbose:
-            print(e)
+            print("Failed due to: ", e)
 
         actual_response = None
         outcome = False

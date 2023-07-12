@@ -1,4 +1,7 @@
+from typing import Dict, Type
+
 from llama_index.agent import OpenAIAgent, ReActAgent
+from llama_index.agent.types import BaseAgent
 from llama_index.llms import Anthropic, OpenAI
 from llama_index.llms.base import LLM
 
@@ -10,13 +13,14 @@ OPENAI_MODELS = [
 ANTHROPIC_MODELS = ["claude-instant-1", "claude-2"]
 ALL_MODELS = OPENAI_MODELS + ANTHROPIC_MODELS
 
-AGENTS = {
+AGENTS: Dict[str, Type[BaseAgent]] = {
     "react": ReActAgent,
     "openai": OpenAIAgent,
 }
 
 
 def get_model(model: str) -> LLM:
+    llm: LLM
     if model in OPENAI_MODELS:
         llm = OpenAI(model=model)
     elif model in ANTHROPIC_MODELS:
