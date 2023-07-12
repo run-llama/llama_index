@@ -90,6 +90,13 @@ to fit their needs.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Agent Modules
+   :hidden:
+
+   core_modules/agent_modules/agents/root.md
+
+.. toctree::
+   :maxdepth: 1
    :caption: Model Modules
    :hidden:
 
