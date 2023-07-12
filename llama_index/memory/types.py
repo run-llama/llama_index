@@ -6,7 +6,10 @@ from llama_index.llms.base import ChatMessage, LLM
 
 
 class BaseMemory(BaseModel):
-    """Base class for all memory types."""
+    """Base class for all memory types.
+
+    NOTE: The interface for memory is not yet finalized and is subject to change.
+    """
 
     @classmethod
     @abstractmethod
