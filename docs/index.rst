@@ -94,6 +94,7 @@ to fit their needs.
    :hidden:
 
    core_modules/agent_modules/agents/root.md
+   core_modules/agent_modules/tools/root.md
 
 .. toctree::
    :maxdepth: 1

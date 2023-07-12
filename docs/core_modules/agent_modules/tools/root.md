@@ -2,7 +2,7 @@
 
 ## Concept
 
-Having proper tool abstractions is at the core of building data agents. Defining a set of Tools is similar to defining any API interface, with the exception that these Tools are meant for agent rather than human use. We allow users to define both a single Tool as well as a “ToolSpec” containing a series of functions under the hood. 
+Having proper tool abstractions is at the core of building data agents. Defining a set of Tools is similar to defining any API interface, with the exception that these Tools are meant for agent rather than human use. We allow users to define both a **Tool** as well as a **ToolSpec** containing a series of functions under the hood. 
 
 A Tool implements a very generic interface - simply define `__call__` and also return some basic metadata (name, description, function schema).
 
@@ -26,7 +26,7 @@ LlamaHub is an open-source repository containing tools and data loaders that you
 
 Our Tool Specs and Tools can be imported from the `llama-hub` package.
 
-To use with our OpenAIAgent,
+To use with our agent,
 ```python
 from llama_index.agent import OpenAIAgent
 from llama_hub.tools.tool_spec.gmail.base import GmailToolSpec
@@ -36,6 +36,7 @@ agent = OpenAIAgent.from_tools(tool_spec.to_tool_list(), verbose=True)
 
 ```
 
+See our Usage Pattern Guide for more details.
 ```{toctree}
 ---
 maxdepth: 1
