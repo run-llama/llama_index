@@ -1,6 +1,9 @@
 # ChangeLog
 
-## Unrleased
+## Unreleased
+
+### New Features
+- Add `Anthropic` LLM implementation
 
 ### Bug Fixes / Nits
 - Fix indexing error in `SentenceEmbeddingOptimizer` (#6850)
