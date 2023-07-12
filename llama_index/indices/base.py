@@ -372,12 +372,8 @@ class BaseIndex(Generic[IS], ABC):
             from llama_index.agent import OpenAIAgent, ReActAgent
             from llama_index.tools.query_engine import QueryEngineTool
 
-            # build query engine tool
-            name = kwargs.pop("name", None)
-            description = kwargs.pop("description", None)
-            query_engine_tool = QueryEngineTool.from_defaults(
-                query_engine=query_engine, name=name, description=description
-            )
+            # convert query engine to tool
+            query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)
 
             # get LLM
             service_context = cast(ServiceContext, kwargs.pop("service_context"))
