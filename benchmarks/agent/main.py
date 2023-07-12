@@ -17,15 +17,23 @@ def evaluate(agent: str, model: str, task_name: str, verbose: bool = False) -> b
     else:
         raise ValueError(f"Unknown task {task_name}")
 
-    print("=====")
+    print("=========================================")
     print(f"Evaluating | {agent} | {model} | {task.message} |")
 
     llm = get_model(model)
     agent_cls = AGENTS[agent]
+    if agent == "react":
+        additional_kwargs = {"max_iterations": 10}
+    elif agent == "openai":
+        additional_kwargs = {"max_function_calls": 10}
+    else:
+        raise ValueError(f"Unknown agent {agent}")
+
     agent = agent_cls.from_tools(
         tools=task.tools,
         llm=llm,
         verbose=verbose,
+        **additional_kwargs,
     )
     try:
         actual_response = agent.chat(task.message).response
@@ -41,7 +49,6 @@ def evaluate(agent: str, model: str, task_name: str, verbose: bool = False) -> b
         print(f"Expected response: {task.expected_response}")
         print(f"Actual response: {actual_response}")
     print(f"Outcome: {outcome}")
-    print("=====")
     return outcome
 
 
