@@ -69,7 +69,7 @@ agent = ReActAgent.from_tools([multiply_tool], llm=llm, verbose=True)
 
 ```
 
-## Advanced, Beta Concepts (for `OpenAIAgent`)
+## Advanced Concepts (for `OpenAIAgent`, in beta)
 
 You can also use agents in more advanced settings. For instance, being able to retrieve tools from an index during query-time, and
 being able to perform query planning over an existing set of Tools.
