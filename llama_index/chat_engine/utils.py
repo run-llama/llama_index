@@ -1,5 +1,3 @@
-from typing import Generator
-
 from llama_index.llms.base import (
     ChatMessage,
     MessageRole,
