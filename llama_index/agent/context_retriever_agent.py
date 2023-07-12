@@ -9,13 +9,13 @@ from llama_index.agent.openai_agent import (
     BaseOpenAIAgent,
 )
 from llama_index.bridge.langchain import print_text
+from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts.prompts import QuestionAnswerPrompt
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
 from llama_index.tools import BaseTool
 
@@ -149,7 +149,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         """Chat."""
         # augment user message
         retrieved_nodes_w_scores: List[NodeWithScore] = self._retriever.retrieve(

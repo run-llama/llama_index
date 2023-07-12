@@ -5,7 +5,7 @@ from llama_index.llms.base import ChatMessage
 try:
     import anthropic
 except ImportError:
-    anthropic = None
+    anthropic = None  # type: ignore
 
 
 @pytest.mark.skipif(anthropic is None, reason="anthropic not installed")

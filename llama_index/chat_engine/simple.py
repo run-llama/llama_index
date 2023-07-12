@@ -4,14 +4,13 @@ from typing import Any, List, Type, Optional
 
 from llama_index.chat_engine.types import (
     BaseChatEngine,
-    StreamingChatResponse,
-    STREAMING_CHAT_RESPONSE_TYPE,
+    AgentChatResponse,
+    StreamingAgentChatResponse,
 )
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -64,7 +63,7 @@ class SimpleChatEngine(BaseChatEngine):
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
@@ -74,27 +73,29 @@ class SimpleChatEngine(BaseChatEngine):
         ai_message = chat_response.message
         self._memory.put(ai_message)
 
-        return Response(response=chat_response.message.content)
+        return AgentChatResponse(response=str(chat_response.message.content))
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+    ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
         all_messages = self._prefix_messages + self._memory.get()
 
-        chat_response = StreamingChatResponse(self._llm.stream_chat(all_messages))
+        chat_response = StreamingAgentChatResponse(
+            chat_stream=self._llm.stream_chat(all_messages)
+        )
         thread = Thread(
             target=chat_response.write_response_to_history, args=(self._memory,)
         )
         thread.start()
 
-        return StreamingResponse(response_gen=chat_response.response_gen)
+        return chat_response
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
@@ -104,24 +105,26 @@ class SimpleChatEngine(BaseChatEngine):
         ai_message = chat_response.message
         self._memory.put(ai_message)
 
-        return Response(response=chat_response.message.content)
+        return AgentChatResponse(response=str(chat_response.message.content))
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+    ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
         all_messages = self._prefix_messages + self._memory.get()
 
-        chat_response = StreamingChatResponse(self._llm.stream_chat(all_messages))
+        chat_response = StreamingAgentChatResponse(
+            chat_stream=self._llm.stream_chat(all_messages)
+        )
         thread = Thread(
             target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
             args=(self._memory,),
         )
         thread.start()
 
-        return StreamingResponse(response_gen=chat_response.response_gen)
+        return chat_response
 
     def reset(self) -> None:
         self._memory.reset()
