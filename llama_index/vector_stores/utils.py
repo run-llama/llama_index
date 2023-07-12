@@ -4,6 +4,8 @@ from typing import Any, Dict, Tuple
 from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
 
 DEFAULT_TEXT_KEY = "text"
+DEFAULT_EMBEDDING_KEY = "embedding"
+DEFAULT_DOC_ID_KEY = "doc_id"
 
 
 def _validate_is_flat_dict(metadata_dict: dict) -> None:

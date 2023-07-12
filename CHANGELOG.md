@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Improved milvus consistency support and output fields support (#6452)
+
 ## [v0.7.6] - 2023-07-12
 
 ### New Features
