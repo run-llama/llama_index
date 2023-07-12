@@ -10,6 +10,10 @@
 - add agent docs  (#6866)
 - add react agent (#6865)
 
+### Breaking/Deprecated API Changes
+- Replace react chat engine with native react agent (#6870)
+- Set default chat mode to "best": use openai agent when possible, otherwise use react agent (#6870)
+
 ### Bug Fixes / Nits
 - Fixed support for legacy vector store metadata (#6867)
 - fix chroma notebook in docs (#6872)

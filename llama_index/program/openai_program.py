@@ -1,18 +1,13 @@
 from typing import Any, Dict, Optional, Type, Union
 
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.llms.openai_utils import to_openai_function
-from llama_index.types import Model
-
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.prompts.base import Prompt
 from pydantic import BaseModel
 
-SUPPORTED_MODEL_NAMES = [
-    "gpt-3.5-turbo-0613",
-    "gpt-4-0613",
-]
+from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import is_function_calling_model, to_openai_function
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.prompts.base import Prompt
+from llama_index.types import Model
 
 
 def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
@@ -59,11 +54,11 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
-        if llm.model not in SUPPORTED_MODEL_NAMES:
+        if not is_function_calling_model(llm.model):
             raise ValueError(
-                f"Model name {llm.model} not supported. "
-                f"Supported model names: {SUPPORTED_MODEL_NAMES}"
+                f"Model name {llm.model} does not support function calling API. "
             )
+
         prompt = Prompt(prompt_template_str)
         function_call = function_call or _default_function_call(output_cls)
         return cls(
