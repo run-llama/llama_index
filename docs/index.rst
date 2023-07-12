@@ -139,3 +139,9 @@ to fit their needs.
    :hidden:
 
    api_reference/index.rst
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   deprecated_terms.md
