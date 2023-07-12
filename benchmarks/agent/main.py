@@ -1,65 +1,33 @@
-from typing import Callable, List
+from typing import List
 
 import pandas as pd
 from fire import Fire
-from pydantic import BaseModel
+from agent_utils import (
+    AGENTS,
+    ALL_MODELS,
+    get_model,
+    is_valid_combination,
+)
+import button_tasks
+import math_tasks
+from math_tasks import TASKS as MATH_TASKS
+from button_tasks import TASKS as BUTTON_TASKS
+from task import Task
 
-from llama_index.agent import ReActAgent
-from llama_index.llms import OpenAI
-from llama_index.tools import BaseTool, FunctionTool
-
-
-class Task(BaseModel):
-    message: str
-    expected_response: str
-    tools: List[BaseTool]
-    eval_fn: Callable[[str, str], bool]
-
-    class Config:
-        arbitrary_types_allowed = True
+ALL_TASKS = MATH_TASKS + BUTTON_TASKS
 
 
-def add(a: int, b: int) -> int:
-    """Add two integers and returns the result integer"""
-    return a + b
-
-
-def multiply(a: int, b: int) -> int:
-    """Multiple two integers and returns the result integer"""
-    return a * b
-
-
-add_tool = FunctionTool.from_defaults(fn=add)
-multiply_tool = FunctionTool.from_defaults(fn=multiply)
-
-
-def contains_expected_response(response: str, expected_response: str) -> bool:
-    """Check if the response contains the expected response."""
-    return expected_response in response
-
-
-MODELS = [
-    "text-davinci-003",
-    "gpt-3.5-turbo",
-    "gpt-4",
-]
-
-TASKS = [
-    Task(
-        message="What is 123 + 321 * 2?",
-        expected_response="765",
-        tools=[add_tool, multiply_tool],
-        eval_fn=contains_expected_response,
-    ),
-]
-
-
-def evaluate(model: str, task: Task, verbose: bool = False) -> bool:
+def evaluate(agent: str, model: str, task_name: str, verbose: bool = False) -> bool:
+    if task_name in MATH_TASKS:
+        task = math_tasks.get_tasks([task_name])[0]
+    elif task_name in BUTTON_TASKS:
+        task = button_tasks.get_tasks([task_name])[0]
     print("=====")
-    print(f"Evaluating {model} on {task.message}")
+    print(f"| Evaluating | {agent} | {model} | {task.message} |")
 
-    llm = OpenAI(model=model)
-    agent = ReActAgent.from_tools(
+    llm = get_model(model)
+    agent_cls = AGENTS[agent]
+    agent = agent_cls.from_tools(
         tools=task.tools,
         llm=llm,
         verbose=verbose,
@@ -82,19 +50,26 @@ def evaluate(model: str, task: Task, verbose: bool = False) -> bool:
 
 
 def main(
-    models: List[str] = MODELS, tasks: List[Task] = TASKS, verbose: bool = False
+    agents: List[str] = list(AGENTS.keys()),
+    models: List[str] = ALL_MODELS,
+    tasks: List[Task] = ALL_TASKS,
+    verbose: bool = False,
 ) -> None:
     data = []
-    for model in models:
-        for task in tasks:
-            outcome = evaluate(model, task, verbose)
-            data.append(
-                {
-                    "model": model,
-                    "task": task.message,
-                    "outcome": outcome,
-                }
-            )
+    for agent in agents:
+        for model in models:
+            for task in tasks:
+                if not is_valid_combination(agent, model):
+                    continue
+                outcome = evaluate(agent, model, task, verbose)
+                data.append(
+                    {
+                        "agent": agent,
+                        "model": model,
+                        "task": task,
+                        "outcome": outcome,
+                    }
+                )
     df = pd.DataFrame(data)
     df.to_csv("results.csv")
 
