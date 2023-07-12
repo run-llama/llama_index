@@ -190,7 +190,8 @@ class NebulaGraphStore(GraphStore):
             return result
         except (TTransportException, IOErrorException, RuntimeError) as e:
             logger.error(
-                f"Connection issue, try to recreate session pool. Query: {query}, Param: {param_map}"
+                f"Connection issue, try to recreate session pool. Query: {query}, "
+                f"Param: {param_map}"
                 f"Erorr: {e}"
             )
             self.init_session_pool()
