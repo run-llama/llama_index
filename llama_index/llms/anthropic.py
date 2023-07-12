@@ -1,17 +1,31 @@
 from typing import Any, Dict, Optional, Sequence
 
-from llama_index.llms.anthropic_utils import messages_to_anthropic_prompt
-from llama_index.llms.base import (LLM, ChatMessage, ChatResponse,
-                                   ChatResponseGen, CompletionResponse,
-                                   CompletionResponseGen, MessageRole)
+from llama_index.llms.anthropic_utils import (
+    anthropic_modelname_to_contextsize,
+    messages_to_anthropic_prompt,
+)
+from llama_index.llms.base import (
+    LLM,
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.llms.generic_utils import (
-    chat_to_completion_decorator, stream_chat_to_completion_decorator)
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 
 
 class Anthropic(LLM):
     def __init__(
         self,
-        model: str = "claude-v1",
+        model: str = "claude-2",
         temperature: float = 0.0,
         max_tokens: int = 256,
         base_url: Optional[str] = None,
@@ -36,6 +50,13 @@ class Anthropic(LLM):
         )
         self._aclient = AsyncAnthropic(
             base_url=base_url, timeout=timeout, max_retries=max_retries
+        )
+
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(
+            context_window=anthropic_modelname_to_contextsize(self._model),
+            num_output=self._max_tokens,
+            is_chat_model=True,
         )
 
     @property
@@ -68,7 +89,7 @@ class Anthropic(LLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=response.completion
             ),
-            raw=response.completion,
+            raw=dict(response),
         )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
@@ -96,9 +117,25 @@ class Anthropic(LLM):
                     delta=content_delta,
                     raw=r,
                 )
+
         return gen()
 
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
         return stream_complete_fn(prompt, **kwargs)
-                
+
+    def achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        raise NotImplementedError()
+
+    def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        raise NotImplementedError()
+
+    def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError()
+
+    def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        raise NotImplementedError()

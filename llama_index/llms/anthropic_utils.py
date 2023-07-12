@@ -6,6 +6,22 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 
+CLAUDE_MODELS = {
+    "claude-instant-1": 100000,
+    "claude-2": 100000,
+}
+
+
+def anthropic_modelname_to_contextsize(modelname: str) -> int:
+    context_size = CLAUDE_MODELS.get(modelname, None)
+    if context_size is None:
+        raise ValueError(
+            f"Unknown model: {modelname}. Please provide a valid Anthropic model name."
+            "Known models are: " + ", ".join(CLAUDE_MODELS.keys())
+        )
+    return context_size
+
+
 def _message_to_anthropic_prompt(message: ChatMessage) -> str:
     if message.role == MessageRole.USER:
         prompt = f"{HUMAN_PREFIX} {message.content}"
@@ -20,10 +36,15 @@ def _message_to_anthropic_prompt(message: ChatMessage) -> str:
 
 
 def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> str:
-    str_list = [_message_to_anthropic_prompt(message) for message in messages]
-    prompt_str = "".join(str_list)
+    if len(messages) == 0:
+        raise ValueError("Got empty list of messages.")
 
     # NOTE: make sure the prompt ends with the assistant prefix
-    if not prompt_str.endswith(ASSISTANT_PREFIX):
-        prompt_str += ASSISTANT_PREFIX
+    if messages[-1].role != MessageRole.ASSISTANT:
+        messages = list(messages) + [
+            ChatMessage(role=MessageRole.ASSISTANT, content="")
+        ]
+
+    str_list = [_message_to_anthropic_prompt(message) for message in messages]
+    prompt_str = "".join(str_list)
     return prompt_str
