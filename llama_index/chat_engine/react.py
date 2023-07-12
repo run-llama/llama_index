@@ -5,7 +5,11 @@ from llama_index.bridge.langchain import (
     ChatMessageHistory,
     ConversationBufferMemory,
 )
-from llama_index.chat_engine.types import BaseChatEngine, STREAMING_CHAT_RESPONSE_TYPE
+from llama_index.chat_engine.types import (
+    BaseChatEngine,
+    AgentChatResponse,
+    StreamingAgentChatResponse,
+)
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.agents.agents import (
@@ -21,7 +25,6 @@ from llama_index.llms.langchain_utils import (
     is_chat_model,
     to_lc_messages,
 )
-from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 
 
@@ -148,34 +151,34 @@ class ReActChatEngine(BaseChatEngine):
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         if chat_history is not None:
             raise NotImplementedError(
                 "chat_history argument is not supported for ReActChatEngine."
             )
 
         response = self._agent.run(input=message)
-        return Response(response=response)
+        return AgentChatResponse(response=response)
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
         if chat_history is not None:
             raise NotImplementedError(
                 "chat_history argument is not supported for ReActChatEngine."
             )
 
         response = await self._agent.arun(input=message)
-        return Response(response=response)
+        return AgentChatResponse(response=response)
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+    ) -> StreamingAgentChatResponse:
         raise NotImplementedError("stream_chat() is not supported for ReActChatEngine.")
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> STREAMING_CHAT_RESPONSE_TYPE:
+    ) -> StreamingAgentChatResponse:
         raise NotImplementedError(
             "astream_chat() is not supported for ReActChatEngine."
         )
