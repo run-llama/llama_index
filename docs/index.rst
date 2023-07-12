@@ -53,6 +53,59 @@ to fit their needs.
 
    getting_started/installation.md
    getting_started/starter_example.md
+   getting_started/concepts.md
+   getting_started/customization.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: End-to-End Tutorials
+   :hidden:
+
+   end_to_end_tutorials/usage_pattern.md
+   end_to_end_tutorials/discover_llamaindex.md
+   end_to_end_tutorials/use_cases.md
+   
+.. toctree::
+   :maxdepth: 1
+   :caption: Index/Data Modules
+   :hidden:
+
+   core_modules/data_modules/connector/root.md
+   core_modules/data_modules/documents_and_nodes/root.md
+   core_modules/data_modules/node_parsers/root.md
+   core_modules/data_modules/storage/root.md
+   core_modules/data_modules/index/root.md
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Query Modules
+   :hidden:
+
+   core_modules/query_modules/retriever/root.md
+   core_modules/query_modules/node_postprocessors/root.md
+   core_modules/query_modules/response_synthesizers/root.md
+   core_modules/query_modules/structured_outputs/root.md
+   core_modules/query_modules/query_engine/root.md
+   core_modules/query_modules/chat_engines/root.md
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Model Modules
+   :hidden:
+
+   core_modules/model_modules/llms/root.md
+   core_modules/model_modules/embeddings/root.md
+   core_modules/model_modules/prompts.md
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Supporting Modules
+
+   core_modules/supporting_modules/service_context.md
+   core_modules/supporting_modules/callbacks/root.md
+   core_modules/supporting_modules/evaluation/root.md
+   core_modules/supporting_modules/cost_analysis/root.md
+   core_modules/supporting_modules/playground/root.md
 
 .. toctree::
    :maxdepth: 2
@@ -66,70 +119,15 @@ to fit their needs.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Guides
+   :caption: Community
    :hidden:
 
-   guides/primer.rst
-   guides/tutorials.rst
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Use Cases
-   :hidden:
-
-   use_cases/queries.md
-   use_cases/agents.md
-   use_cases/apps.md
-
+   community/integrations.md
+   community/app_showcase.md
 
 .. toctree::
    :maxdepth: 1
-   :caption: Key Components
+   :caption: API Reference
    :hidden:
 
-   how_to/connector/root.md
-   how_to/index/root.md
-   how_to/retriever/root.md
-   how_to/query_engine/root.md
-   how_to/chat_engine/root.md
-   how_to/customization.rst
-   how_to/analysis.rst
-   how_to/structured_outputs/root.md
-   how_to/evaluation/evaluation.md
-   how_to/integrations.rst
-   how_to/callbacks.rst
-   how_to/storage.rst
-
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference
-   :hidden:
-
-   reference/indices.rst
-   reference/query.rst
-   reference/node.rst
-   reference/llm_predictor.rst
-   reference/llms.rst
-   reference/node_postprocessor.rst
-   reference/storage.rst
-   reference/composability.rst
-   reference/readers.rst
-   reference/prompts.rst
-   reference/service_context.rst
-   reference/callbacks.rst
-   reference/struct_store.rst
-   reference/response.rst
-   reference/playground.rst
-   reference/node_parser.rst
-   reference/example_notebooks.rst
-   reference/langchain_integrations/base.rst
-
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Gallery
-   :hidden:
-
-   gallery/app_showcase.md
+   api_reference/index.rst

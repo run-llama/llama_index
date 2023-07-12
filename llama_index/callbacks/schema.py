@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 TIMESTAMP_FORMAT = "%m/%d/%Y, %H:%M:%S.%f"
 
 # base trace_id for the tracemap in callback_manager
-BASE_TRACE_ID = "root"
+BASE_TRACE_EVENT = "root"
 
 
 class CBEventType(str, Enum):
