@@ -4,7 +4,6 @@ import logging
 from typing import Any, Optional, Sequence
 
 from llama_index.bridge.langchain import print_text
-from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.graph_stores.registery import (
     GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE,
@@ -199,16 +198,22 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
             kg_response_str=graph_store_response,
         )
 
-        response = self._response_synthesizer.get_response(
-            query_str=query_bundle.query_str,
-            text_chunks=[prompt_string],
-            prev_response=None,
-            metadata={
-                "query_str": query_bundle.query_str,
-                "graph_store_query": graph_store_query,
-                "graph_store_response": graph_store_response,
-                "graph_schema": self._graph_schema,
-            },
+        node = NodeWithScore(
+            node=TextNode(
+                text=prompt_string,
+                score=1.0,
+                metadata={
+                    "query_str": query_bundle.query_str,
+                    "graph_store_query": graph_store_query,
+                    "graph_store_response": graph_store_response,
+                    "graph_schema": self._graph_schema,
+                },
+            )
+        )
+
+        response = self._response_synthesizer.synthesize(
+            query=query_bundle,
+            nodes=[node],
         )
 
         if self._verbose:
@@ -259,16 +264,22 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
             kg_response_str=graph_store_response,
         )
 
-        response = await self._response_synthesizer.aget_response(
-            query_str=query_bundle.query_str,
-            text_chunks=[prompt_string],
-            prev_response=None,
-            metadata={
-                "query_str": query_bundle.query_str,
-                "graph_store_query": graph_store_query,
-                "graph_store_response": graph_store_response,
-                "graph_schema": self._graph_schema,
-            },
+        node = NodeWithScore(
+            node=TextNode(
+                text=prompt_string,
+                score=1.0,
+                metadata={
+                    "query_str": query_bundle.query_str,
+                    "graph_store_query": graph_store_query,
+                    "graph_store_response": graph_store_response,
+                    "graph_schema": self._graph_schema,
+                },
+            )
+        )
+
+        response = await self._response_synthesizer.asynthesize(
+            query=query_bundle,
+            nodes=[node],
         )
 
         if self._verbose:
