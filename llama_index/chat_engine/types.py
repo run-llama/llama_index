@@ -5,6 +5,7 @@ from enum import Enum
 from typing import AsyncGenerator, Generator, List, Optional, Union
 
 from llama_index.llms.base import ChatMessage, ChatResponseGen, ChatResponseAsyncGen
+from llama_index.memory import BaseMemory
 from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ class StreamingChatResponse:
                 self.response_str += delta
         return self.response_str
 
-    def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+    def write_response_to_history(self, memory: BaseMemory) -> None:
         if isinstance(self._chat_stream, AsyncGenerator):
             raise ValueError(
                 "Cannot write to history with async generator in sync function."
@@ -43,11 +44,11 @@ class StreamingChatResponse:
             self._queue.put_nowait(chat.delta)
 
         if final_message is not None:
-            chat_history.append(final_message)
+            memory.put(final_message)
 
         self._is_done = True
 
-    async def awrite_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+    async def awrite_response_to_history(self, memory: BaseMemory) -> None:
         if isinstance(self._chat_stream, Generator):
             raise ValueError(
                 "Cannot write to history with sync generator in async function."
@@ -62,7 +63,7 @@ class StreamingChatResponse:
             self._queue.put_nowait(chat.delta)
 
         if final_message is not None:
-            chat_history.append(final_message)
+            memory.put(final_message)
 
         self._is_done = True
 
