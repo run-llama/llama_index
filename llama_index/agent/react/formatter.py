@@ -56,11 +56,6 @@ class ReActChatFormatter(BaseAgentChatFormatter):
     ) -> List[ChatMessage]:
         """Format chat history into list of ChatMessage."""
         current_reasoning = current_reasoning or []
-        current_reasoning_str = (
-            "\n".join(r.get_content() for r in current_reasoning)
-            if current_reasoning
-            else "None"
-        )
 
         tool_descs_str = "\n".join(get_react_tool_descriptions(self.tools))
 
