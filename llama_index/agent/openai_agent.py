@@ -7,6 +7,7 @@ from typing import (
     Callable,
     List,
     Tuple,
+    Type,
     Optional,
 )
 
@@ -24,6 +25,7 @@ from llama_index.llms.base import (
     MessageRole,
 )
 from llama_index.llms.openai import OpenAI
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool, ToolOutput
@@ -77,14 +79,14 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def __init__(
         self,
         llm: OpenAI,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._llm = llm
-        self._chat_history = chat_history
+        self._memory = memory
         self._prefix_messages = prefix_messages
         self._verbose = verbose
         self._max_function_calls = max_function_calls
@@ -92,10 +94,10 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 
     @property
     def chat_history(self) -> List[ChatMessage]:
-        return self._chat_history
+        return self._memory.get_all()
 
     def reset(self) -> None:
-        self._chat_history.clear()
+        self._memory.reset()
 
     @abstractmethod
     def _get_tools(self, message: str) -> List[BaseTool]:
@@ -107,11 +109,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         """Get latest function call from chat history."""
         return chat_history[-1].additional_kwargs.get("function_call", None)
 
-    def _init_chat(
-        self, chat_history: List[ChatMessage], message: str
-    ) -> Tuple[List[BaseTool], List[dict]]:
+    def _init_chat(self, message: str) -> Tuple[List[BaseTool], List[dict]]:
         """Add user message to chat history and get tools and functions."""
-        chat_history.append(ChatMessage(content=message, role=MessageRole.USER))
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
         tools = self._get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
         return tools, functions
@@ -119,18 +119,20 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._chat_history
-        tools, functions = self._init_chat(chat_history, message)
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        tools, functions = self._init_chat(message)
         sources = []
 
         # TODO: Support forced function call
-        all_messages = self._prefix_messages + chat_history
+        all_messages = self._prefix_messages + self._memory.get()
         chat_response = self._llm.chat(all_messages, functions=functions)
         ai_message = chat_response.message
-        chat_history.append(ai_message)
+        self._memory.put(ai_message)
 
         n_function_calls = 0
-        function_call = self._get_latest_function_call(chat_history)
+        function_call = self._get_latest_function_call(self._memory.get_all())
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -139,25 +141,26 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             function_message, tool_output = call_function(
                 tools, function_call, verbose=self._verbose
             )
-            chat_history.append(function_message)
             sources.append(tool_output)
+            self._memory.put(function_message)
             n_function_calls += 1
 
             # send function call & output back to get another response
-            all_messages = self._prefix_messages + chat_history
+            all_messages = self._prefix_messages + self._memory.get()
             chat_response = self._llm.chat(all_messages, functions=functions)
             ai_message = chat_response.message
-            chat_history.append(ai_message)
-            function_call = self._get_latest_function_call(chat_history)
+            self._memory.put(ai_message)
+            function_call = self._get_latest_function_call(self._memory.get_all())
 
         return AgentChatResponse(response=str(ai_message.content), sources=sources)
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._chat_history
-        all_messages = self._prefix_messages + chat_history
-        tools, functions = self._init_chat(chat_history, message)
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        tools, functions = self._init_chat(message)
+        all_messages = self._prefix_messages + self._memory.get()
         sources = []
 
         # TODO: Support forced function call
@@ -168,7 +171,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
-            args=(chat_history,),
+            args=(self._memory,),
         )
         thread.start()
 
@@ -181,7 +184,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         thread.join()
 
         n_function_calls = 0
-        function_call = self._get_latest_function_call(chat_history)
+        function_call = self._get_latest_function_call(self._memory.get_all())
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -191,11 +194,11 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 tools, function_call, verbose=self._verbose
             )
             sources.append(tool_output)
-            chat_history.append(function_message)
+            self._memory.put(function_message)
             n_function_calls += 1
 
             # send function call & output back to get another response
-            all_messages = self._prefix_messages + chat_history
+            all_messages = self._prefix_messages + self._memory.get()
             chat_stream_response = StreamingAgentChatResponse(
                 chat_stream=self._llm.stream_chat(all_messages, functions=functions),
                 sources=sources,
@@ -204,7 +207,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             # Get the response in a separate thread so we can yield the response
             thread = Thread(
                 target=chat_stream_response.write_response_to_history,
-                args=(chat_history,),
+                args=(self._memory,),
             )
             thread.start()
             while chat_stream_response._is_function is None:
@@ -214,25 +217,26 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                     return chat_stream_response
 
             thread.join()
-            function_call = self._get_latest_function_call(chat_history)
+            function_call = self._get_latest_function_call(self._memory.get_all())
 
         return chat_stream_response
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._chat_history
-        all_messages = self._prefix_messages + chat_history
-        tools, functions = self._init_chat(chat_history, message)
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        all_messages = self._prefix_messages + self._memory.get()
+        tools, functions = self._init_chat(message)
         sources = []
 
         # TODO: Support forced function call
         chat_response = await self._llm.achat(all_messages, functions=functions)
         ai_message = chat_response.message
-        chat_history.append(ai_message)
+        self._memory.put(ai_message)
 
         n_function_calls = 0
-        function_call = self._get_latest_function_call(chat_history)
+        function_call = self._get_latest_function_call(self._memory.get_all())
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -242,26 +246,26 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 tools, function_call, verbose=self._verbose
             )
             sources.append(tool_output)
-            chat_history.append(function_message)
+            self._memory.put(function_message)
             n_function_calls += 1
 
             # send function call & output back to get another response
             response = await self._llm.achat(
-                self._prefix_messages + chat_history, functions=functions
+                self._prefix_messages + self._memory.get(), functions=functions
             )
             ai_message = response.message
-            chat_history.append(ai_message)
-            function_call = self._get_latest_function_call(chat_history)
+            self._memory.put(ai_message)
+            function_call = self._get_latest_function_call(self._memory.get_all())
 
         return AgentChatResponse(response=str(ai_message.content), sources=sources)
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._chat_history
-        all_messages = self._prefix_messages + chat_history
-        tools, functions = self._init_chat(chat_history, message)
-
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        tools, functions = self._init_chat(message)
+        all_messages = self._prefix_messages + self._memory.get()
         sources = []
 
         # TODO: Support forced function call
@@ -274,7 +278,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             target=lambda x: asyncio.run(
                 chat_stream_response.awrite_response_to_history(x)
             ),
-            args=(chat_history,),
+            args=(self._memory,),
         )
         thread.start()
 
@@ -287,7 +291,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
         thread.join()
 
         n_function_calls = 0
-        function_call = self._get_latest_function_call(chat_history)
+        function_call = self._get_latest_function_call(self._memory.get_all())
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -297,11 +301,11 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 tools, function_call, verbose=self._verbose
             )
             sources.append(tool_output)
-            chat_history.append(function_message)
+            self._memory.put(function_message)
             n_function_calls += 1
 
             # send function call & output back to get another response
-            all_messages = self._prefix_messages + chat_history
+            all_messages = self._prefix_messages + self._memory.get()
             chat_stream_response = StreamingAgentChatResponse(
                 achat_stream=await self._llm.astream_chat(
                     all_messages, functions=functions
@@ -314,7 +318,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 target=lambda x: asyncio.run(
                     chat_stream_response.awrite_response_to_history(x)
                 ),
-                args=(chat_history,),
+                args=(self._memory,),
             )
             thread.start()
 
@@ -325,7 +329,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                     return chat_stream_response
 
             thread.join()
-            function_call = self._get_latest_function_call(chat_history)
+            function_call = self._get_latest_function_call(self._memory.get_all())
 
         return chat_stream_response
 
@@ -350,7 +354,7 @@ class OpenAIAgent(BaseOpenAIAgent):
         self,
         tools: List[BaseTool],
         llm: OpenAI,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
@@ -358,7 +362,7 @@ class OpenAIAgent(BaseOpenAIAgent):
     ) -> None:
         super().__init__(
             llm=llm,
-            chat_history=chat_history,
+            memory=memory,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
@@ -372,6 +376,8 @@ class OpenAIAgent(BaseOpenAIAgent):
         tools: Optional[List[BaseTool]] = None,
         llm: Optional[OpenAI] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -380,6 +386,7 @@ class OpenAIAgent(BaseOpenAIAgent):
     ) -> "OpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
+        memory = memory or memory_cls.from_defaults(chat_history)
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
@@ -402,7 +409,7 @@ class OpenAIAgent(BaseOpenAIAgent):
         return cls(
             tools=tools,
             llm=llm,
-            chat_history=chat_history,
+            memory=memory,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
@@ -433,7 +440,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         retriever: BaseRetriever,
         node_to_tool_fn: Callable[[BaseNode], BaseTool],
         llm: OpenAI,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
@@ -441,7 +448,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
     ) -> None:
         super().__init__(
             llm=llm,
-            chat_history=chat_history,
+            memory=memory,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
@@ -457,13 +464,17 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         node_to_tool_fn: Callable[[BaseNode], BaseTool],
         llm: Optional[OpenAI] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
     ) -> "RetrieverOpenAIAgent":
-        lc_chat_history = chat_history or []
+        chat_history = chat_history or []
+        memory = memory or memory_cls.from_defaults(chat_history)
+
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
@@ -487,7 +498,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
             retriever=retriever,
             node_to_tool_fn=node_to_tool_fn,
             llm=llm,
-            chat_history=lc_chat_history,
+            memory=memory,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,

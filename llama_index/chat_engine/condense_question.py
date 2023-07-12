@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Type, Optional
 
 from llama_index.chat_engine.types import (
     BaseChatEngine,
@@ -11,6 +11,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import StreamingResponse, RESPONSE_TYPE
 from llama_index.tools import ToolOutput
@@ -46,13 +47,13 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         self,
         query_engine: BaseQueryEngine,
         condense_question_prompt: Prompt,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
         service_context: ServiceContext,
         verbose: bool = False,
     ) -> None:
         self._query_engine = query_engine
         self._condense_question_prompt = condense_question_prompt
-        self._chat_history = chat_history
+        self._memory = memory
         self._service_context = service_context
         self._verbose = verbose
 
@@ -62,6 +63,8 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         query_engine: BaseQueryEngine,
         condense_question_prompt: Optional[Prompt] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
         system_prompt: Optional[str] = None,
@@ -71,6 +74,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """Initialize a CondenseQuestionChatEngine from default parameters."""
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
         chat_history = chat_history or []
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
         service_context = service_context or ServiceContext.from_defaults()
 
         if system_prompt is not None:
@@ -85,7 +89,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         return cls(
             query_engine,
             condense_question_prompt,
-            chat_history,
+            memory,
             service_context,
             verbose=verbose,
         )
@@ -137,7 +141,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._chat_history
+        chat_history = chat_history or self._memory.get()
 
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(chat_history, message)
@@ -154,18 +158,17 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
 
         # Record response
-        chat_history.extend(
-            [
-                ChatMessage(role=MessageRole.USER, content=message),
-                ChatMessage(role=MessageRole.ASSISTANT, content=str(query_response)),
-            ]
+        self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
+        self._memory.put(
+            ChatMessage(role=MessageRole.ASSISTANT, content=str(query_response))
         )
+
         return AgentChatResponse(response=str(query_response), sources=[tool_output])
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._chat_history
+        chat_history = chat_history or self._memory.get()
 
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(chat_history, message)
@@ -189,7 +192,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             # override the generator to include writing to chat history
             response = StreamingAgentChatResponse(
                 chat_stream=response_gen_with_chat_history(
-                    message, chat_history, query_response.response_gen
+                    message, self._memory, query_response.response_gen
                 ),
                 sources=[tool_output],
             )
@@ -200,7 +203,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._chat_history
+        chat_history = chat_history or self._memory.get()
 
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
@@ -217,11 +220,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
 
         # Record response
-        chat_history.extend(
-            [
-                ChatMessage(role=MessageRole.USER, content=message),
-                ChatMessage(role=MessageRole.ASSISTANT, content=str(query_response)),
-            ]
+        self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
+        self._memory.put(
+            ChatMessage(role=MessageRole.ASSISTANT, content=str(query_response))
         )
 
         return AgentChatResponse(response=str(query_response), sources=[tool_output])
@@ -229,7 +230,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._chat_history
+        chat_history = chat_history or self._memory.get()
 
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
@@ -254,7 +255,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             # TODO: query engine does not support async generator yet
             response = StreamingAgentChatResponse(
                 chat_stream=response_gen_with_chat_history(
-                    message, chat_history, query_response.response_gen
+                    message, self._memory, query_response.response_gen
                 ),
                 sources=[tool_output],
             )
@@ -264,9 +265,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
 
     def reset(self) -> None:
         # Clear chat history
-        self._chat_history = []
+        self._memory.reset()
 
     @property
     def chat_history(self) -> List[ChatMessage]:
-        """Get chat history as human and ai message pairs."""
-        return self._chat_history
+        """Get chat history."""
+        return self._memory.get_all()

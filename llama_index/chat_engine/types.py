@@ -7,6 +7,7 @@ from typing import Generator, List, Optional
 
 from llama_index.tools import ToolOutput
 from llama_index.llms.base import ChatMessage, ChatResponseGen, ChatResponseAsyncGen
+from llama_index.memory import BaseMemory
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class StreamingAgentChatResponse:
                 self.response += delta
         return self.response
 
-    def write_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+    def write_response_to_history(self, memory: BaseMemory) -> None:
         if self.chat_stream is None:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
@@ -55,11 +56,11 @@ class StreamingAgentChatResponse:
             self._queue.put_nowait(chat.delta)
 
         if final_message is not None:
-            chat_history.append(final_message)
+            memory.put(final_message)
 
         self._is_done = True
 
-    async def awrite_response_to_history(self, chat_history: List[ChatMessage]) -> None:
+    async def awrite_response_to_history(self, memory: BaseMemory) -> None:
         if self.achat_stream is None:
             raise ValueError(
                 "achat_stream is None. Cannot asynchronously write to "
@@ -75,7 +76,7 @@ class StreamingAgentChatResponse:
             self._queue.put_nowait(chat.delta)
 
         if final_message is not None:
-            chat_history.append(final_message)
+            memory.put(final_message)
 
         self._is_done = True
 

@@ -4,6 +4,22 @@
 
 ### New Features
 - Added sources to agent/chat engine responses (#6854)
+- Added basic chat buffer memory to agents / chat engines (#6857)
+
+## [v0.7.5] - 2023-07-11
+
+### New Features
+- Add `Anthropic` LLM implementation (#6855)
+
+### Bug Fixes / Nits
+- Fix indexing error in `SentenceEmbeddingOptimizer` (#6850)
+- fix doc for custom embedding model (#6851)
+- fix(silent error): Add validation to `SimpleDirectoryReader` (#6819)
+- Fix link in docs (#6833)
+- Fixes Azure gpt-35-turbo model not recognized  (#6828)
+- Update Chatbot_SEC.ipynb (#6808)
+- Rename leftover original name to LlamaIndex (#6792)
+- patch nested traces of the same type (#6791)
 
 ## [v0.7.4] - 2023-07-08
 

@@ -1,6 +1,6 @@
 """Context retriever agent."""
 
-from typing import List, Optional
+from typing import List, Type, Optional
 
 from llama_index.agent.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
@@ -14,6 +14,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.schema import NodeWithScore
 from llama_index.tools import BaseTool
@@ -59,7 +60,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         qa_prompt: QuestionAnswerPrompt,
         context_separator: str,
         llm: OpenAI,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
@@ -67,7 +68,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
     ) -> None:
         super().__init__(
             llm=llm,
-            chat_history=chat_history,
+            memory=memory,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
@@ -87,6 +88,8 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         context_separator: str = "\n",
         llm: Optional[OpenAI] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -108,6 +111,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         """
         qa_prompt = qa_prompt or DEFAULT_QA_PROMPT
         chat_history = chat_history or []
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
@@ -132,7 +136,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
             qa_prompt=qa_prompt,
             context_separator=context_separator,
             llm=llm,
-            chat_history=chat_history,
+            memory=memory,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,

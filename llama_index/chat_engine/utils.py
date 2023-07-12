@@ -1,11 +1,12 @@
-from typing import Generator, List
+from typing import Generator
 
 from llama_index.llms.base import ChatMessage, MessageRole, ChatResponse
+from llama_index.memory import BaseMemory
 from llama_index.types import TokenGen
 
 
 def response_gen_with_chat_history(
-    message: str, chat_history: List[ChatMessage], response_gen: TokenGen
+    message: str, memory: BaseMemory, response_gen: TokenGen
 ) -> Generator[ChatResponse, None, None]:
     response_str = ""
     for token in response_gen:
@@ -14,9 +15,6 @@ def response_gen_with_chat_history(
             role=MessageRole.ASSISTANT, content=response_str, delta=token
         )
 
-    chat_history.extend(
-        [
-            ChatMessage(role=MessageRole.USER, content=message),
-            ChatMessage(role=MessageRole.ASSISTANT, content=response_str),
-        ]
-    )
+    # Record response
+    memory.put(ChatMessage(role=MessageRole.USER, content=message))
+    memory.put(ChatMessage(role=MessageRole.ASSISTANT, content=response_str))
