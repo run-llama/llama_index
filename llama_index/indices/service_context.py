@@ -14,7 +14,10 @@ from llama_index.llms.utils import LLMType
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
-from llama_index.embeddings import DEFAULT_HUGGINGFACE_EMBEDDING_MODEL, LangchainEmbedding
+from llama_index.embeddings import (
+    DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
+    LangchainEmbedding,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -116,23 +119,24 @@ class ServiceContext:
         if isinstance(embed_model, str):
             splits = embed_model.split(":", 1)
             is_local = splits[0]
-            model_name = splits[1] if len(splits) > 1 else None        
+            model_name = splits[1] if len(splits) > 1 else None
             if is_local != "local":
                 raise ValueError(
                     "embed_model must start with str 'local' or of type BaseEmbedding"
                 )
             try:
                 from langchain.embeddings import HuggingFaceEmbeddings
-                import sentence_transformers
             except ImportError as exc:
                 raise ImportError(
                     "Could not import sentence_transformers or langchain package. "
                     "Please install with `pip install sentence-transformers langchain`."
                 ) from exc
 
-            embed_model = LangchainEmbedding(HuggingFaceEmbeddings(
-                model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
-            ))
+            embed_model = LangchainEmbedding(
+                HuggingFaceEmbeddings(
+                    model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+                )
+            )
 
         if llama_index.global_service_context is not None:
             return cls.from_service_context(

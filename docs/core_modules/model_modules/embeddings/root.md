@@ -18,10 +18,17 @@ from llama_index import ServiceContext
 from llama_index.embeddings import OpenAIEmbedding
 
 embed_model = OpenAIEmbedding()
-service_context = serviceContext.from_defaults(embed_model=embed_model)
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
 ```
 
-You can find more usage details and availbale customization options below.
+To save costs, you may want to use a local model.
+```python
+from llama_index import ServiceContext
+service_context = ServiceContext.from_defaults(embed_model="local")
+```
+This will use a well-performing and fast default from Hugging Face.
+
+You can find more usage details and available customization options below.
 
 ```{toctree}
 ---
