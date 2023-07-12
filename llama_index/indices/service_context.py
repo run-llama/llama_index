@@ -159,6 +159,7 @@ class ServiceContext:
         llm_predictor = llm_predictor or LLMPredictor()
         llm_predictor.callback_manager = callback_manager
 
+        # NOTE: the embed_model isn't used in all indices
         embed_model = embed_model or OpenAIEmbedding()
         embed_model.callback_manager = callback_manager
 
