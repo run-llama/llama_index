@@ -1,6 +1,9 @@
 # ChangeLog
 
-## Unrleased
+## Unreleased
+
+### New Features
+- Added basic chat buffer memory to agents / chat engines (#6857)
 
 ### Bug Fixes / Nits
 - Fix indexing error in `SentenceEmbeddingOptimizer` (#6850)
