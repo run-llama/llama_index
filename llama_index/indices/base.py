@@ -13,7 +13,6 @@ from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
-from llama_index.tools.query_engine import QueryEngineTool
 
 IS = TypeVar("IS", bound=IndexStruct)
 IndexType = TypeVar("IndexType", bound="BaseIndex")
@@ -369,6 +368,10 @@ class BaseIndex(Generic[IS], ABC):
                 **kwargs,
             )
         elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
+            # NOTE: lazy import
+            from llama_index.agent import OpenAIAgent, ReActAgent
+            from llama_index.tools.query_engine import QueryEngineTool
+
             # build query engine tool
             name = kwargs.pop("name", None)
             description = kwargs.pop("description", None)
@@ -380,9 +383,6 @@ class BaseIndex(Generic[IS], ABC):
             service_context = cast(ServiceContext, kwargs.pop("service_context"))
             llm = service_context.llm
 
-            # NOTE: lazy import
-            from llama_index.agent import OpenAIAgent, ReActAgent
-
             if chat_mode == ChatMode.REACT:
                 return ReActAgent.from_tools(
                     tools=[query_engine_tool],
@@ -390,12 +390,17 @@ class BaseIndex(Generic[IS], ABC):
                     **kwargs,
                 )
             elif chat_mode == ChatMode.OPENAI:
+                if not isinstance(llm, OpenAI):
+                    raise ValueError(
+                        "OpenAI chat mode requires an OpenAI LLM to be passed in."
+                    )
                 return OpenAIAgent.from_tools(
                     tools=[query_engine_tool],
                     llm=llm,
                     **kwargs,
                 )
-
+            else:
+                raise ValueError(f"Unknown chat mode: {chat_mode}")
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")
 

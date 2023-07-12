@@ -1,16 +1,16 @@
 """Retriever OpenAI agent."""
 
-from typing import List, Type, Optional
+from typing import List, Optional, Type
 
 from llama_index.agent.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
     DEFAULT_MODEL_NAME,
-    SUPPORTED_MODEL_NAMES,
     BaseOpenAIAgent,
 )
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools.types import BaseTool
@@ -63,11 +63,11 @@ class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
-        if llm.model not in SUPPORTED_MODEL_NAMES:
+        if not is_function_calling_model(llm.model):
             raise ValueError(
-                f"Model name {llm.model} not supported. "
-                f"Supported model names: {SUPPORTED_MODEL_NAMES}"
+                f"Model name {llm.model} does not support function calling API. "
             )
+
         if system_prompt is not None:
             if prefix_messages is not None:
                 raise ValueError(
