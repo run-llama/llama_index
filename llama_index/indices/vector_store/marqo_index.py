@@ -11,7 +11,6 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.vector_stores.marqo import MarqoVectorStore 
-import pprint
 
 class MarqoVectorStoreIndex(VectorStoreIndex):
     def __init__(self, *args, **kwargs):
