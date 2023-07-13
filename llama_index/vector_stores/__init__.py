@@ -41,6 +41,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.dashvector import DashVectorStore
 
 __all__ = [
     "ElasticsearchStore",
@@ -76,4 +77,5 @@ __all__ = [
     "VectorStoreQuery",
     "VectorStoreQueryResult",
     "MetadataFilters",
+    "DashVectorStore",
 ]

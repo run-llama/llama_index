@@ -32,6 +32,7 @@ We are actively adding more integrations and improving feature coverage for each
 | OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Neo4jVector              | self-hosted / cloud |                    |               | ✓      | ✓               |       |
 | Azure Cognitive Search   | cloud               |                    | ✓             | ✓      | ✓               |       |
+| DashVector               | cloud               | ✓                  |               | ✓      | ✓               |       |
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
@@ -78,4 +79,5 @@ maxdepth: 1
 /examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 /examples/vector_stores/EpsillaIndexDemo.ipynb
 /examples/vector_stores/Timescalevector.ipynb
+/examples/vector_stores/DashVectorDemo.ipynb
 ```
