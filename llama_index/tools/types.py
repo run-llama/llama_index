@@ -6,11 +6,30 @@ from llama_index.bridge.langchain import StructuredTool, Tool
 from pydantic import BaseModel
 
 
+class DefaultToolFnSchema(BaseModel):
+    """Default tool function Schema."""
+
+    input: str
+
+
 @dataclass
 class ToolMetadata:
     description: str
     name: Optional[str] = None
-    fn_schema: Optional[Type[BaseModel]] = None
+    fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema
+
+    @property
+    def fn_schema_str(self) -> str:
+        """Get fn schema as string."""
+        if self.fn_schema is None:
+            raise ValueError("fn_schema is None.")
+        return str(self.fn_schema.schema())
+
+    def get_name(self) -> str:
+        """Get name."""
+        if self.name is None:
+            raise ValueError("name is None.")
+        return self.name
 
     def to_openai_function(self) -> Dict[str, Any]:
         """To OpenAI function."""
@@ -32,6 +51,19 @@ class ToolMetadata:
         }
 
 
+class ToolOutput(BaseModel):
+    """Tool output."""
+
+    content: str
+    tool_name: str
+    raw_input: Dict[str, Any]
+    raw_output: Any
+
+    def __str__(self) -> str:
+        """String."""
+        return str(self.content)
+
+
 class BaseTool:
     @property
     @abstractmethod
@@ -39,7 +71,7 @@ class BaseTool:
         pass
 
     @abstractmethod
-    def __call__(self, input: Any) -> Any:
+    def __call__(self, input: Any) -> ToolOutput:
         pass
 
     def _process_langchain_tool_kwargs(

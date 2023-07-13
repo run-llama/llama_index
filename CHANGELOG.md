@@ -1,5 +1,45 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Improved milvus consistency support and output fields support (#6452)
+- Added support for knowledge graph querying w/ cypyer+nebula (#6642)
+
+## [v0.7.6] - 2023-07-12
+
+### New Features
+- Added sources to agent/chat engine responses (#6854)
+- Added basic chat buffer memory to agents / chat engines (#6857)
+- Adding load and search tool (#6871)
+- Add simple agent benchmark (#6869)
+- add agent docs  (#6866)
+- add react agent (#6865)
+
+### Breaking/Deprecated API Changes
+- Replace react chat engine with native react agent (#6870)
+- Set default chat mode to "best": use openai agent when possible, otherwise use react agent (#6870)
+
+### Bug Fixes / Nits
+- Fixed support for legacy vector store metadata (#6867)
+- fix chroma notebook in docs (#6872)
+- update LC embeddings docs (#6868)
+
+## [v0.7.5] - 2023-07-11
+
+### New Features
+- Add `Anthropic` LLM implementation (#6855)
+
+### Bug Fixes / Nits
+- Fix indexing error in `SentenceEmbeddingOptimizer` (#6850)
+- fix doc for custom embedding model (#6851)
+- fix(silent error): Add validation to `SimpleDirectoryReader` (#6819)
+- Fix link in docs (#6833)
+- Fixes Azure gpt-35-turbo model not recognized  (#6828)
+- Update Chatbot_SEC.ipynb (#6808)
+- Rename leftover original name to LlamaIndex (#6792)
+- patch nested traces of the same type (#6791)
+
 ## [v0.7.4] - 2023-07-08
 
 ### New Features

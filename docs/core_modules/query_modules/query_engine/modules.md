@@ -16,6 +16,7 @@ maxdepth: 1
 ---
 /examples/query_engine/json_query_engine.ipynb
 /examples/query_engine/pandas_query_engine.ipynb
+/examples/query_engine/knowledge_graph_query_engine.ipynb
 ```
 
 ## Advanced
