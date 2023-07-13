@@ -66,7 +66,7 @@ def create_hf_embedding(
 def bench_simple_vector_store(
     embed_models: List[Callable[[int], Tuple[BaseEmbedding, str, int]]],
     num_strings: List[int] = [100],
-    string_lengths: List[int] = [128, 512],
+    string_lengths: List[int] = [64, 256],
     embed_batch_sizes: List[int] = [1, DEFAULT_EMBED_BATCH_SIZE],
     torch_num_threads: Optional[int] = None,
 ) -> None:
@@ -81,7 +81,7 @@ def bench_simple_vector_store(
     max_num_strings = max(num_strings)
     for string_length in string_lengths:
         generated_strings = generate_strings(
-            num_strings=max_num_strings, string_length=max(string_lengths)
+            num_strings=max_num_strings, string_length=string_length
         )
 
         for string_count in num_strings:
