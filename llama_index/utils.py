@@ -262,6 +262,7 @@ def get_cache_dir() -> Path:
         os.makedirs(path)
     return path
 
+
 # Sample text from llama_index's readme
 SAMPLE_TEXT = """
 Context
