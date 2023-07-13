@@ -1,3 +1,4 @@
+import pandas as pd
 import time
 from typing import List, Optional, Tuple, Callable
 
@@ -73,6 +74,8 @@ def bench_simple_vector_store(
     """Benchmark embeddings."""
     print("Benchmarking Embeddings\n---------------------------")
 
+    results = []
+
     if torch_num_threads is not None:
         import torch
 
@@ -106,7 +109,15 @@ def bench_simple_vector_store(
                         f"{string_count} strings of length {string_length} took "
                         f"{time2 - time1} seconds."
                     )
+                    results.append((model[1], batch_size, string_length, time2 - time1))
                 # TODO: async version
+
+    # print final results
+    print("\n\nFinal Results\n---------------------------")
+    results_df = pd.DataFrame(
+        results, columns=["model", "batch_size", "string_length", "time"]
+    )
+    print(results_df)
 
 
 if __name__ == "__main__":
