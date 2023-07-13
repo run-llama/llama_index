@@ -6,7 +6,7 @@
 Welcome to LlamaIndex 🦙 !
 ##########################
 
-LlamaIndex is a data framework for LLM applications to ingest, structure, and access private or domain-specific data.
+LlamaIndex (formerly GPT Index) is a data framework for LLM applications to ingest, structure, and access private or domain-specific data.
 
 🚀 Why LlamaIndex?
 ******************
@@ -117,6 +117,7 @@ Associated projects
 .. toctree::
    :maxdepth: 1
    :caption: Supporting Modules
+   :hidden:
 
    core_modules/supporting_modules/service_context.md
    core_modules/supporting_modules/callbacks/root.md
