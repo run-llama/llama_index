@@ -3,7 +3,6 @@
 import os
 from typing import List
 
-import numpy as np
 import pytest
 
 from llama_index.indices.service_context import ServiceContext
