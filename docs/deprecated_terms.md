@@ -10,39 +10,24 @@ This has been renamed to `VectorStoreIndex`, as well as unifying all vector inde
 
 Please see the following links for more details on usage.
 
-```{toctree}
----
-maxdepth: 1
----
-/core_modules/data_modules/index/usage_pattern.md
-/core_modules/data_modules/index/vector_store_guide.ipynb
-/community/integrations/vector_stores.md
-```
+- [Index Usage Pattern](/core_modules/data_modules/index/usage_pattern.md)
+- [Vector Store Guide](/core_modules/data_modules/index/vector_store_guide.ipynb)
+- [Vector Store Integrations](/community/integrations/vector_stores.md)
 
 ## GPTVectorStoreIndex
 
 This has been renamed to `VectorStoreIndex`, but it is only a cosmetic change. Please see the following links for more details on usage.
 
-```{toctree}
----
-maxdepth: 1
----
-/core_modules/data_modules/index/usage_pattern.md
-/core_modules/data_modules/index/vector_store_guide.ipynb
-/community/integrations/vector_stores.md
-```
+- [Index Usage Pattern](/core_modules/data_modules/index/usage_pattern.md)
+- [Vector Store Guide](/core_modules/data_modules/index/vector_store_guide.ipynb)
+- [Vector Store Integrations](/community/integrations/vector_stores.md)
 
 ## LLMPredictor
 
 The `LLMPredictor` object is no longer intended to be used by users. Instead, you can setup an LLM directly and pass it into the `ServiceContext`.
 
-```{toctree}
----
-maxdepth: 1
----
-/core_modules/model_modules/llms/root.md
-/core_modules/supporting_modules/service_context.md
-```
+- [LLMs in LlamaIndex](/core_modules/model_modules/llms/root.md)
+- [Setting LLMs in the ServiceContext](/core_modules/supporting_modules/service_context.md)
 
 ## PromptHelper and max_input_size/
 
@@ -52,10 +37,5 @@ The `PromptHelper` in general has been deprecated in favour of specifying parame
 
 See the following links for more details.
 
-```{toctree}
----
-maxdepth: 1
----
-/core_modules/supporting_modules/service_context.md
-/core_modules/data_modules/node_parsers/root.md
-```
+- [Configuring settings in the Service Context](/core_modules/supporting_modules/service_context.md)
+- [Parsing Documents into Nodes](/core_modules/data_modules/node_parsers/root.md)
