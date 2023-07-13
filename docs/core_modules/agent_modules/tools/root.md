@@ -25,7 +25,7 @@ Our Tool Specs and Tools can be imported from the `llama-hub` package.
 To use with our agent,
 ```python
 from llama_index.agent import OpenAIAgent
-from llama_hub.tools.tool_spec.gmail.base import GmailToolSpec
+from llama_hub.tools.gmail.base import GmailToolSpec
 
 tool_spec = GmailToolSpec()
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list(), verbose=True)
