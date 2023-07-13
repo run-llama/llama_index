@@ -5,13 +5,13 @@ from llama_index.indices.base_retriever import BaseRetriever
 import os
 import tqdm
 
-beir_datasets = [
-    "trec-covid",
-    "hotpotqa",
-]
-
 
 class BeirEvaluator:
+    """
+    Refer to: https://github.com/beir-cellar/beir for a full list of supported datasets
+    and a full description of BEIR.
+    """
+
     def __init__(self) -> None:
         try:
             pass
@@ -65,6 +65,8 @@ class BeirEvaluator:
 
             print("Retriever created for: ", dataset)
 
+            print("Evaluating retriever on questions against qrels")
+
             results = {}
             for key, query in tqdm.tqdm(queries.items()):
                 nodes_with_score = retriever.retrieve(query)
@@ -74,14 +76,15 @@ class BeirEvaluator:
                 }
 
             ndcg, map_, recall, precision = EvaluateRetrieval.evaluate(
-                qrels, results, [1, 10, 100]
+                qrels, results, [1, 10]
             )
             print("Results for:", dataset)
             print(
                 {
                     "NDCG@10": ndcg["NDCG@10"],
+                    "MAP@10": map_["MAP@10"],
                     "Recall@10": recall["Recall@10"],
-                    "precision": precision,
+                    "precision@10": precision["P@10"],
                 }
             )
             print("-------------------------------------")
