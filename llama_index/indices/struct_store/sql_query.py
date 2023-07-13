@@ -399,16 +399,21 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         Get tables schema + optional context as a single string.
 
         """
+        context_strs = []
         if self._context_str_prefix is not None:
             context_strs = [self._context_str_prefix]
 
-        # TODO: allow top-level context
         table_schema_objs = self._table_retriever.retrieve(query_bundle)
-        context_strs = []
         for table_schema_obj in table_schema_objs:
             table_info = self._sql_database.get_single_table_info(
                 table_schema_obj.table_name
             )
+            
+            if table_schema_obj.context_str:
+                table_opt_context = " The table description is: "
+                table_opt_context += table_schema_obj.context_str
+                table_info += table_opt_context
+
             context_strs.append(table_info)
 
         tables_desc_str = "\n\n".join(context_strs)
