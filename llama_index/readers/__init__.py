@@ -25,6 +25,7 @@ from llama_index.readers.github_readers.github_repository_reader import (
 from llama_index.readers.google_readers.gdocs import GoogleDocsReader
 from llama_index.readers.json import JSONReader
 from llama_index.readers.make_com.wrapper import MakeWrapper
+from llama_index.readers.marqo import MarqoReader
 from llama_index.readers.mbox import MboxReader
 from llama_index.readers.milvus import MilvusReader
 from llama_index.readers.mongo import SimpleMongoReader
@@ -81,6 +82,7 @@ __all__ = [
     "ObsidianReader",
     "GithubRepositoryReader",
     "MboxReader",
+    "MarqoReader",
     "ElasticsearchReader",
     "SteamshipFileReader",
     "ChatGPTRetrievalPluginReader",

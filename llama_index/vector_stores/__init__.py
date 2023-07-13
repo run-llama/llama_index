@@ -46,4 +46,5 @@ __all__ = [
     "DocArrayHnswVectorStore",
     "SupabaseVectorStore",
     "PGVectorStore",
+    "MarqoVectorStore",
 ]

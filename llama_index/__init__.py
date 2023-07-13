@@ -31,7 +31,7 @@ from llama_index.indices.knowledge_graph import (
 )
 from llama_index.indices.list import ListIndex, GPTListIndex
 from llama_index.indices.tree import TreeIndex, GPTTreeIndex
-from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
+from llama_index.indices.vector_store import VectorStoreIndex, MarqoVectorStoreIndex, GPTVectorStoreIndex
 from llama_index.indices.document_summary import (
     DocumentSummaryIndex,
     GPTDocumentSummaryIndex,
@@ -92,6 +92,7 @@ from llama_index.prompts.prompts import (
 from llama_index.schema import Document
 from llama_index.readers import (
     BeautifulSoupWebReader,
+    MarqoReader,
     ChromaReader,
     DeepLakeReader,
     DiscordReader,
@@ -143,6 +144,7 @@ __all__ = [
     "ComposableGraph",
     # indices
     "VectorStoreIndex",
+    "MarqoVectorStoreIndex",
     "ListIndex",
     "SimpleKeywordTableIndex",
     "KeywordTableIndex",
@@ -185,6 +187,7 @@ __all__ = [
     "SimpleMongoReader",
     "NotionPageReader",
     "GoogleDocsReader",
+    "MarqoReader",
     "MboxReader",
     "SlackReader",
     "StringIterableReader",

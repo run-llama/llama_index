@@ -4,6 +4,7 @@ from llama_index.schema import TextNode
 from llama_index.vector_stores.types import VectorStoreQuery
 from llama_index.vector_stores.marqo import MarqoVectorStore
 from llama_index.indices.vector_store.marqo_index import MarqoVectorStoreIndex
+from llama_index.readers.marqo import MarqoReader
 from marqo import Client
 
 
@@ -71,3 +72,28 @@ def test_add_nodes_to_index(marqo_vector_store):
     result = marqo_vector_store.query(query)
     print(result)
     assert "doc1" in result.ids
+
+def test_load_data():
+    # Initialize MarqoReader
+    marqo_reader = MarqoReader(api_key="foobar", url="http://localhost:8882")
+
+    # Define the index name and id-to-text map
+    index_name = "test"
+    id_to_text_map = {"doc1": "This is a test document about cats.", "doc2": "This is a test document about dogs."}
+
+    # Use MarqoReader to load data with include_vectors= False
+    documents = marqo_reader.load_data(index_name=index_name, id_to_text_map=id_to_text_map, top_k=2, include_vectors=False)
+
+    # Check that the documents were loaded correctly
+    assert len(documents) == 2
+    assert {doc.id_ for doc in documents} == set(id_to_text_map.keys())
+
+    # Use MarqoReader to load data with include_vectors= True
+    documents = marqo_reader.load_data(index_name=index_name, id_to_text_map=id_to_text_map, top_k=2, include_vectors=True)
+
+    # Check that the documents were loaded correctly
+    assert len(documents) == 2
+    for doc in documents:
+        assert doc.embedding is not None
+    assert {doc.id_ for doc in documents} == set(id_to_text_map.keys())
+
