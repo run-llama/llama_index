@@ -4,6 +4,7 @@
 
 ## New Features
 - Added embedding speed benchmark (#6876)
+- Added BEIR retrieval benchmark (#6825)
 
 ## [v0.7.7] - 2023-07-13
 
