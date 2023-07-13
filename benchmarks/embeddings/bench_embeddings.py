@@ -113,7 +113,7 @@ if __name__ == "__main__":
         embed_models=[
             # create_open_ai_embedding,
             partial(
-                create_hf_embedding, 
+                create_hf_embedding,
                 model_name="sentence-transformers/all-MiniLM-L6-v2",
             ),
             partial(
