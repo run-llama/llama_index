@@ -11,6 +11,9 @@
 ### Bug Fixes / Nits
 - chore: added a help message to makefile (#6861)
 
+### Bug Fixes / Nits
+- Fixed support for using SQLTableSchema context_str attribute (#6891)
+
 ## [v0.7.6] - 2023-07-12
 
 ### New Features
