@@ -169,7 +169,7 @@ class DeepLakeVectorStore(VectorStoreBase):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self.vectorstore.delete(ids=[ref_doc_id])
+        self.vectorstore.delete(filter={"metadata": {"doc_id": ref_doc_id}})
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.

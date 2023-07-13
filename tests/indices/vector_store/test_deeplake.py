@@ -14,6 +14,10 @@ from llama_index.schema import TextNode
 from llama_index.storage.storage_context import StorageContext
 
 
+EMBEDDING_DIM = 100
+NUMBER_OF_DATA = 10
+
+
 @pytest.fixture
 def documents() -> List[Document]:
     """Get documents."""
@@ -55,6 +59,19 @@ def test_build_deeplake(
     nodes = retriever.retrieve("What is the answer to the third test?")
     assert len(nodes) == 1
     assert nodes[0].node.get_content() == "This is the third test. answer is C"
+
+    node = nodes[0].node
+
+    result = NodeWithEmbedding(
+        node=node,
+        embedding=[1.0 for i in range(EMBEDDING_DIM)],
+    )
+    results = [result for i in range(NUMBER_OF_DATA)]
+    vector_store.add(results)
+    assert len(vector_store.vectorstore) == 14
+
+    vector_store.delete(node.ref_doc_id)
+    assert len(vector_store.vectorstore) == 3
     deeplake.delete(dataset_path)
 
 
@@ -92,13 +109,14 @@ def test_backwards_compatibility() -> None:
     import deeplake
     from deeplake.core.vectorstore import utils
 
-    EMBEDDING_DIM = 100
-    NUMBER_OF_DATA = 10
     # create data
     texts, embeddings, ids, metadatas, images = utils.create_data(
         number_of_data=NUMBER_OF_DATA, embedding_dim=EMBEDDING_DIM
     )
-    node = TextNode(text="test node text", metadata={"key": "value"}, id_="1")
+    metadatas = [metadata.update({"doc_id": "2"}) for metadata in metadatas]
+    node = TextNode(
+        text="test node text", metadata={"key": "value", "doc_id": "1"}, id_="1"
+    )
     result = NodeWithEmbedding(
         node=node,
         embedding=[1.0 for i in range(EMBEDDING_DIM)],
@@ -130,7 +148,4 @@ def test_backwards_compatibility() -> None:
 
     vectorstore.add(results)
     assert len(vectorstore.vectorstore) == 20
-
-    vectorstore.delete("1")
-    assert len(vectorstore.vectorstore) == 9
     deeplake.delete(dataset_path)
