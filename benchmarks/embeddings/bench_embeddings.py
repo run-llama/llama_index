@@ -1,9 +1,6 @@
 import time
-from typing import List
+from typing import List, Optional
 
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-)
 from llama_index import SimpleDirectoryReader
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
@@ -11,9 +8,7 @@ from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding
 
 
-def generate_strings(
-    num_strings: int = 100, string_length: int = 10
-) -> List[NodeWithEmbedding]:
+def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[str]:
     content = (
         SimpleDirectoryReader("../../examples/paul_graham_essay/data")
         .load_data()[0]
@@ -35,11 +30,15 @@ def generate_strings(
     return strings
 
 
+def get_max_seq_length(model):  # type: ignore
+    return model._langchain_embedding.client.max_seq_length  # type: ignore
+
+
 def bench_simple_vector_store(
-    num_strings=[100],
-    string_lengths=[128, 256, 512, 1024],
-    embed_batch_sizes=[1, DEFAULT_EMBED_BATCH_SIZE],
-    torch_num_threads=None,
+    num_strings: List[int] = [100],
+    string_lengths: List[int] = [128, 512],
+    embed_batch_sizes: List[int] = [1, DEFAULT_EMBED_BATCH_SIZE],
+    torch_num_threads: Optional[int] = None,
 ) -> None:
     """Benchmark embeddings."""
     print("Benchmarking Embeddings\n---------------------------")
@@ -82,15 +81,15 @@ def bench_simple_vector_store(
                     ),
                     (
                         "hf/sentence-transformers/all-mpnet-base-v2",
-                        embed_models[1]._langchain_embedding.client.max_seq_length,
+                        get_max_seq_length(embed_models[1]),
                     ),
                     (
                         "hf/sentence-transformers/all-MiniLM-L6-v2",
-                        embed_models[2]._langchain_embedding.client.max_seq_length,
+                        get_max_seq_length(embed_models[2]),
                     ),
                 ]
 
-                skip_set = [0, 1]  # skip openai
+                skip_set = [0]  # skip openai
 
                 for idx, model in enumerate(embed_models):
                     if idx in skip_set:
