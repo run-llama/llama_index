@@ -90,7 +90,7 @@ def bench_simple_vector_store(
             for batch_size in embed_batch_sizes:
                 models = []
                 for create_model in embed_models:
-                    models.append(create_model(batch_size))
+                    models.append(create_model(batch_size=batch_size))  # typing: ignore
 
                 for model in models:
                     for i, string in enumerate(strings):
@@ -116,10 +116,10 @@ if __name__ == "__main__":
                 create_hf_embedding,
                 model_name="sentence-transformers/all-MiniLM-L6-v2",
             ),
-            partial(
-                create_hf_embedding,
-                model_name="sentence-transformers/all-mpnet-base-v2",
-            ),
+            # partial(
+            #     create_hf_embedding,
+            #     model_name="sentence-transformers/all-mpnet-base-v2",
+            # ),
         ],
-        torch_num_threads=12,
+        torch_num_threads=None,
     )
