@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+## New Features
+- Added embedding speed benchmark (#6876)
+
 ## [v0.7.7] - 2023-07-13
 
 ### New Features
