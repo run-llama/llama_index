@@ -50,7 +50,7 @@ Example usage is shown below:
 
 ```python
 from llama_hub.tools.wikipedia.base import WikipediaToolSpec
-from llama_index.tools.load_and_search.base import LoadAndSearchToolSpec
+from llama_index.tools.tool_spec.load_and_search import LoadAndSearchToolSpec
 
 wiki_spec = WikipediaToolSpec()
 # Get the search wikipedia tool
