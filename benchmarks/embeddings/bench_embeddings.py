@@ -1,14 +1,22 @@
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple, Callable
 
 from llama_index import SimpleDirectoryReader
 from llama_index.embeddings import OpenAIEmbedding
-from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding
+from functools import partial
 
 
 def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[str]:
+    """
+    Generate random strings sliced from the paul graham essay of the following form:
+
+    offset 0: [0:string_length], [string_length:2*string_length], ...
+    offset 1: [1:1+string_length], [1+string_length:1+2*string_length],...
+    ...
+    """
     content = (
         SimpleDirectoryReader("../../examples/paul_graham_essay/data")
         .load_data()[0]
@@ -17,10 +25,11 @@ def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[st
     content_length = len(content)
 
     strings_per_loop = content_length / string_length
+    num_loops_upper_bound = int(num_strings / strings_per_loop) + 1
     strings = []
 
-    for offset in range(0, int(num_strings / strings_per_loop) + 1):
-        ptr = offset
+    for offset in range(0, num_loops_upper_bound + 1):
+        ptr = offset % string_length
         while ptr + string_length < content_length:
             strings.append(content[ptr : ptr + string_length])
             ptr += string_length
@@ -30,11 +39,32 @@ def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[st
     return strings
 
 
-def get_max_seq_length(model):  # type: ignore
-    return model._langchain_embedding.client.max_seq_length  # type: ignore
+def create_open_ai_embedding(batch_size: int) -> Tuple[BaseEmbedding, str, int]:
+    return (
+        OpenAIEmbedding(embed_batch_size=batch_size),
+        "OpenAIEmbedding",
+        4096,
+    )
+
+
+def create_hf_embedding(
+    model_name: str, batch_size: int
+) -> Tuple[BaseEmbedding, str, int]:
+    model = LangchainEmbedding(
+        HuggingFaceEmbeddings(
+            model_name=model_name,
+        ),
+        embed_batch_size=batch_size,
+    )
+    return (
+        model,
+        "hf/" + model_name,
+        model._langchain_embedding.client.max_seq_length,  # type: ignore
+    )
 
 
 def bench_simple_vector_store(
+    embed_models: List[Callable[[int], Tuple[BaseEmbedding, str, int]]],
     num_strings: List[int] = [100],
     string_lengths: List[int] = [128, 512],
     embed_batch_sizes: List[int] = [1, DEFAULT_EMBED_BATCH_SIZE],
@@ -58,56 +88,38 @@ def bench_simple_vector_store(
             strings = generated_strings[:string_count]
 
             for batch_size in embed_batch_sizes:
-                embed_models = [
-                    OpenAIEmbedding(embed_batch_size=batch_size),
-                    LangchainEmbedding(
-                        HuggingFaceEmbeddings(
-                            model_name="sentence-transformers/all-mpnet-base-v2"
-                        ),
-                        embed_batch_size=batch_size,
-                    ),
-                    LangchainEmbedding(
-                        HuggingFaceEmbeddings(
-                            model_name="sentence-transformers/all-MiniLM-L6-v2"
-                        ),
-                        embed_batch_size=batch_size,
-                    ),
-                ]
+                models = []
+                for create_model in embed_models:
+                    models.append(create_model(batch_size=batch_size))
 
-                embed_model_info = [
-                    (
-                        "OpenAIEmbedding",
-                        4096,
-                    ),
-                    (
-                        "hf/sentence-transformers/all-mpnet-base-v2",
-                        get_max_seq_length(embed_models[1]),
-                    ),
-                    (
-                        "hf/sentence-transformers/all-MiniLM-L6-v2",
-                        get_max_seq_length(embed_models[2]),
-                    ),
-                ]
-
-                skip_set = [0]  # skip openai
-
-                for idx, model in enumerate(embed_models):
-                    if idx in skip_set:
-                        continue
+                for model in models:
                     for i, string in enumerate(strings):
-                        model.queue_text_for_embedding(str(i), string)
+                        model[0].queue_text_for_embedding(str(i), string)
 
                     time1 = time.time()
-                    _ = model.get_queued_text_embeddings(show_progress=True)
+                    _ = model[0].get_queued_text_embeddings(show_progress=True)
 
                     time2 = time.time()
                     print(
-                        f"""Embedding with model {embed_model_info[idx][0]} with \
-batch size {batch_size} and max_seq_length {embed_model_info[idx][1]} for \
+                        f"""Embedding with model {model[1]} with \
+batch size {batch_size} and max_seq_length {model[2]} for \
 {string_count} strings of length {string_length} took {time2 - time1} seconds"""
                     )
                 # TODO: async version
 
 
 if __name__ == "__main__":
-    bench_simple_vector_store(torch_num_threads=12)
+    bench_simple_vector_store(
+        embed_models=[
+            # create_open_ai_embedding,
+            partial(
+                create_hf_embedding, 
+                model_name="sentence-transformers/all-MiniLM-L6-v2",
+            ),
+            partial(
+                create_hf_embedding,
+                model_name="sentence-transformers/all-mpnet-base-v2",
+            ),
+        ],
+        torch_num_threads=12,
+    )
