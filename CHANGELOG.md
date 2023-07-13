@@ -7,6 +7,9 @@
 - Added support for knowledge graph querying w/ cypyer+nebula (#6642)
 - Added `Document.example()` to create documents for fast prototyping (#6739)
 
+### Bug Fixes / Nits
+- Fixed support for using SQLTableSchema context_str attribute (#6891)
+
 ## [v0.7.6] - 2023-07-12
 
 ### New Features

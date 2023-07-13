@@ -352,6 +352,12 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
                 else:
                     raise ValueError(f"Unknown table type: {table}")
                 table_info = self._sql_database.get_single_table_info(table_str)
+
+                if self._context_query_kwargs.get(table_str, None) is not None:
+                    table_opt_context = " The table description is: "
+                    table_opt_context += self._context_query_kwargs[table_str]
+                    table_info += table_opt_context
+
                 context_strs.append(table_info)
 
         else:
@@ -359,6 +365,12 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             table_names = self._sql_database.get_usable_table_names()
             for table_name in table_names:
                 table_info = self._sql_database.get_single_table_info(table_name)
+
+                if self._context_query_kwargs.get(table_name, None) is not None:
+                    table_opt_context = " The table description is: "
+                    table_opt_context += self._context_query_kwargs[table_name]
+                    table_info += table_opt_context
+
                 context_strs.append(table_info)
 
         tables_desc_str = "\n\n".join(context_strs)
