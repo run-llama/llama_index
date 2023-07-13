@@ -8,6 +8,7 @@ import pytest
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
+from llama_index.vector_stores.types import NodeWithEmbedding
 from llama_index.vector_stores import DeepLakeVectorStore
 from llama_index.schema import Document
 from llama_index.schema import TextNode
@@ -88,7 +89,7 @@ def test_node_with_metadata(
 
 
 @pytest.mark.skipif("CI" in os.environ, reason="no DeepLake in CI")
-def test_backwards_compatibility():
+def test_backwards_compatibility() -> None:
     import deeplake
     from deeplake.core.vectorstore import utils
 
@@ -98,11 +99,11 @@ def test_backwards_compatibility():
     texts, embeddings, ids, metadatas, images = utils.create_data(
         number_of_data=NUMBER_OF_DATA, embedding_dim=EMBEDDING_DIM
     )
-
-    class result:
-        embedding = np.ones(EMBEDDING_DIM, dtype=np.float32)
-        id = f"1"
-        node = TextNode(text="test node text", metadata={"key": "value"})
+    node = TextNode(text="test node text", metadata={"key": "value"}, id_="1")
+    result = NodeWithEmbedding(
+        node=node,
+        embedding=[1.0 for i in range(EMBEDDING_DIM)],
+    )
 
     results = [result for i in range(10)]
 
