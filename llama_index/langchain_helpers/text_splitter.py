@@ -424,11 +424,18 @@ class SentenceSplitter(TextSplitter):
             cur_len = len(self.tokenizer(cur_token.text))
             if cur_len > effective_chunk_size - self._chunk_overlap:
                 raise ValueError("Single token exceed chunk size")
+
+            # If we add any more tokens to the current doc list, we'll exceed
+            # the effective size.
+            # Combine what we've accumulated so far and reset the current doc list
             if cur_tokens + cur_len > effective_chunk_size:
                 docs.append(TextSplit("".join(cur_doc_list).strip()))
                 cur_doc_list = []
                 cur_tokens = 0
             else:
+                # If this is a sentence, add it to the current doc list
+                # If adding these tokens wouldn't put us over the usable
+                # effective chunk size, add it as well
                 if (
                     cur_token.is_sentence
                     or cur_tokens + cur_len < effective_chunk_size - self._chunk_overlap
