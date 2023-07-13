@@ -1,10 +1,16 @@
-from typing import Any, List, Optional
+import asyncio
+from threading import Thread
+from typing import Any, List, Type, Optional
 
-from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.chat_engine.types import (
+    BaseChatEngine,
+    AgentChatResponse,
+    StreamingAgentChatResponse,
+)
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -12,23 +18,27 @@ class SimpleChatEngine(BaseChatEngine):
 
     Have a conversation with the LLM.
     This does not make use of a knowledge base.
-
-    # TODO: add back ability to configure prompt/system message
     """
 
     def __init__(
         self,
         llm: LLM,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
+        prefix_messages: List[ChatMessage],
     ) -> None:
         self._llm = llm
-        self._chat_history = chat_history
+        self._memory = memory
+        self._prefix_messages = prefix_messages
 
     @classmethod
     def from_defaults(
         cls,
         service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
@@ -38,37 +48,88 @@ class SimpleChatEngine(BaseChatEngine):
         llm = service_context.llm_predictor.llm
 
         chat_history = chat_history or []
-        return cls(llm=llm, chat_history=chat_history)
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
+
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
+        return cls(llm=llm, memory=memory, prefix_messages=prefix_messages)
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
+    ) -> AgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + self._memory.get()
 
-        chat_response = self._llm.chat(chat_history)
+        chat_response = self._llm.chat(all_messages)
         ai_message = chat_response.message
-        chat_history.append(ai_message)
+        self._memory.put(ai_message)
 
-        return Response(response=chat_response.message.content)
+        return AgentChatResponse(response=str(chat_response.message.content))
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + self._memory.get()
+
+        chat_response = StreamingAgentChatResponse(
+            chat_stream=self._llm.stream_chat(all_messages)
+        )
+        thread = Thread(
+            target=chat_response.write_response_to_history, args=(self._memory,)
+        )
+        thread.start()
+
+        return chat_response
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+    ) -> AgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + self._memory.get()
 
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
-
-        chat_response = await self._llm.achat(chat_history)
+        chat_response = await self._llm.achat(all_messages)
         ai_message = chat_response.message
-        chat_history.append(ai_message)
+        self._memory.put(ai_message)
 
-        return Response(response=chat_response.message.content)
+        return AgentChatResponse(response=str(chat_response.message.content))
+
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
+        all_messages = self._prefix_messages + self._memory.get()
+
+        chat_response = StreamingAgentChatResponse(
+            chat_stream=self._llm.stream_chat(all_messages)
+        )
+        thread = Thread(
+            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
+            args=(self._memory,),
+        )
+        thread.start()
+
+        return chat_response
 
     def reset(self) -> None:
-        self._chat_history = []
+        self._memory.reset()
 
     @property
     def chat_history(self) -> List[ChatMessage]:
-        """Get chat history as human and ai message pairs."""
-        return self._chat_history
+        """Get chat history."""
+        return self._memory.get_all()

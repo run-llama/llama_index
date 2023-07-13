@@ -1,5 +1,86 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Improved milvus consistency support and output fields support (#6452)
+- Added support for knowledge graph querying w/ cypyer+nebula (#6642)
+
+## [v0.7.6] - 2023-07-12
+
+### New Features
+- Added sources to agent/chat engine responses (#6854)
+- Added basic chat buffer memory to agents / chat engines (#6857)
+- Adding load and search tool (#6871)
+- Add simple agent benchmark (#6869)
+- add agent docs  (#6866)
+- add react agent (#6865)
+
+### Breaking/Deprecated API Changes
+- Replace react chat engine with native react agent (#6870)
+- Set default chat mode to "best": use openai agent when possible, otherwise use react agent (#6870)
+
+### Bug Fixes / Nits
+- Fixed support for legacy vector store metadata (#6867)
+- fix chroma notebook in docs (#6872)
+- update LC embeddings docs (#6868)
+
+## [v0.7.5] - 2023-07-11
+
+### New Features
+- Add `Anthropic` LLM implementation (#6855)
+
+### Bug Fixes / Nits
+- Fix indexing error in `SentenceEmbeddingOptimizer` (#6850)
+- fix doc for custom embedding model (#6851)
+- fix(silent error): Add validation to `SimpleDirectoryReader` (#6819)
+- Fix link in docs (#6833)
+- Fixes Azure gpt-35-turbo model not recognized  (#6828)
+- Update Chatbot_SEC.ipynb (#6808)
+- Rename leftover original name to LlamaIndex (#6792)
+- patch nested traces of the same type (#6791)
+
+## [v0.7.4] - 2023-07-08
+
+### New Features
+- `MetadataExtractor` - Documnent Metadata Augmentation via LLM-based feature extractors (#6764)
+
+### Bug Fixes / Nits
+- fixed passing in query bundle to node postprocessors (#6780)
+- fixed error in callback manager with nested traces (#6791)
+
+## [v0.7.3] - 2023-07-07
+
+### New Features
+- Sub question query engine returns source nodes of sub questions in the callback manager (#6745)
+- trulens integration (#6741)
+- Add sources to subquestion engine (#6745)
+
+### Bug Fixes / Nits
+- Added/Fixed streaming support to simple and condense chat engines (#6717)
+- fixed `response_mode="no_text"` response synthesizer (#6755)
+- fixed error setting `num_output` and `context_window` in service context (#6766)
+- Fix missing as_query_engine() in tutorial (#6747)
+- Fixed variable sql_query_engine in the notebook (#6778)
+- fix required function fields (#6761)
+- Remove usage of stop token in Prompt, SQL gen (#6782)
+
+## [v0.7.2] - 2023-07-06
+
+### New Features
+- Support Azure OpenAI (#6718)
+- Support prefix messages (e.g. system prompt) in chat engine and OpenAI agent (#6723)
+- Added `CBEventType.SUB_QUESTIONS` event type for tracking sub question queries/responses (#6716)
+
+### Bug Fixes / Nits
+- Fix HF LLM output error (#6737)
+- Add system message support for langchain message templates (#6743)
+- Fixed applying node-postprocessors (#6749)
+- Add missing `CustomLLM` import under `llama_index.llms` (#6752)
+- fix(typo): `get_transformer_tokenizer_fn` (#6729)
+- feat(formatting): `black[jupyter]` (#6732)
+- fix(test): `test_optimizer_chinese` (#6730)
+
 ## [v0.7.1] - 2023-07-05
 
 ### New Features

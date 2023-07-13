@@ -55,7 +55,7 @@ def test_tool_object_node_mapping() -> None:
         "Tool name: test_tool2\n" "Tool description: test\n"
     ) in node_mapping.to_node(tool2).get_text()
     recon_tool2 = node_mapping.from_node(node_mapping.to_node(tool2))
-    assert recon_tool2(1, 2) == 3
+    assert recon_tool2(1, 2).raw_output == 3
 
     tool3 = FunctionTool.from_defaults(
         fn=lambda x, y: x * y, name="test_tool3", description="test3"

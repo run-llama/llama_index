@@ -17,8 +17,6 @@ class Prompt:
     Wrapper around langchain's prompt class. Adds ability to:
         - enforce certain prompt types
         - partially fill values
-        - define stop token
-
     """
 
     def __init__(
@@ -26,7 +24,6 @@ class Prompt:
         template: Optional[str] = None,
         langchain_prompt: Optional[BaseLangchainPrompt] = None,
         langchain_prompt_selector: Optional[PromptSelector] = None,
-        stop_token: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
         prompt_type: str = PromptType.CUSTOM,
         metadata: Optional[Dict[str, Any]] = None,
@@ -61,7 +58,6 @@ class Prompt:
 
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
-        self.stop_token = stop_token
         # NOTE: this is only used for token counting and testing
         self.prompt_type = prompt_type
 
@@ -174,6 +170,4 @@ class Prompt:
 
         """
         kwargs.update(self.partial_dict)
-        if self.stop_token is not None:
-            kwargs["stop"] = self.stop_token
         return kwargs

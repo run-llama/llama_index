@@ -29,6 +29,11 @@ GPT4_MODELS = {
     "gpt-4-32k-0314": 32768,
 }
 
+AZURE_TURBO_MODELS = {
+    "gpt-35-turbo-16k": 16384,
+    "gpt-35-turbo": 4096,
+}
+
 TURBO_MODELS = {
     # stable model names:
     #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
@@ -64,11 +69,13 @@ ALL_AVAILABLE_MODELS = {
     **TURBO_MODELS,
     **GPT3_5_MODELS,
     **GPT3_MODELS,
+    **AZURE_TURBO_MODELS,
 }
 
 CHAT_MODELS = {
     **GPT4_MODELS,
     **TURBO_MODELS,
+    **AZURE_TURBO_MODELS,
 }
 
 
@@ -172,6 +179,12 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
 
 def is_chat_model(model: str) -> bool:
     return model in CHAT_MODELS
+
+
+def is_function_calling_model(model: str) -> bool:
+    is_chat_model_ = is_chat_model(model)
+    is_old = "0314" in model or "0301" in model
+    return is_chat_model_ and not is_old
 
 
 def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:

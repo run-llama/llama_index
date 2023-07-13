@@ -18,7 +18,7 @@ def test_function_tool() -> None:
     assert "x" in actual_schema["properties"]
 
     result = function_tool(1)
-    assert result == "1"
+    assert str(result) == "1"
 
     # test adding typing to function
     def tmp_function(x: int) -> str:
@@ -48,7 +48,7 @@ def test_function_tool() -> None:
         description="bar",
         fn_schema=TestSchema,
     )
-    assert function_tool(1, 2) == "1,2"
+    assert str(function_tool(1, 2)) == "1,2"
     langchain_tool2 = function_tool.to_langchain_structured_tool()
     assert langchain_tool2.run({"x": 1, "y": 2}) == "1,2"
     assert langchain_tool2.args_schema == TestSchema

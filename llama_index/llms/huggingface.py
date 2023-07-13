@@ -125,7 +125,7 @@ class HuggingFaceLLM(CustomLLM):
         self._total_tokens_used += len(completion_tokens) + inputs["input_ids"].size(1)
         completion = self.tokenizer.decode(completion_tokens, skip_special_tokens=True)
 
-        return CompletionResponse(text=completion, raw=tokens)
+        return CompletionResponse(text=completion, raw={"model_output": tokens})
 
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Streaming completion endpoint."""
@@ -163,7 +163,9 @@ class HuggingFaceLLM(CustomLLM):
 
         # create generator based off of streamer
         def gen() -> CompletionResponseGen:
+            text = ""
             for x in streamer:
-                yield x
+                text += x
+                yield CompletionResponse(text=text, delta=x)
 
         return gen()

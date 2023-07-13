@@ -1,4 +1,3 @@
-import dataclasses
 import logging
 from dataclasses import dataclass
 from typing import Optional
@@ -39,9 +38,9 @@ def _get_default_prompt_helper(
 ) -> PromptHelper:
     """Get default prompt helper."""
     if context_window is not None:
-        llm_metadata = dataclasses.replace(llm_metadata, context_window=context_window)
+        llm_metadata.context_window = context_window
     if num_output is not None:
-        llm_metadata = dataclasses.replace(llm_metadata, num_output=num_output)
+        llm_metadata.num_output = num_output
     return PromptHelper.from_llm_metadata(llm_metadata=llm_metadata)
 
 
@@ -225,6 +224,12 @@ class ServiceContext:
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
         )
+
+    @property
+    def llm(self) -> LLM:
+        if not isinstance(self.llm_predictor, LLMPredictor):
+            raise ValueError("llm_predictor must be an instance of LLMPredictor")
+        return self.llm_predictor.llm
 
 
 def set_global_service_context(service_context: Optional[ServiceContext]) -> None:
