@@ -1,11 +1,15 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.7] - 2023-07-13
 
 ### New Features
 - Improved milvus consistency support and output fields support (#6452)
 - Added support for knowledge graph querying w/ cypyer+nebula (#6642)
 - Added `Document.example()` to create documents for fast prototyping (#6739)
+- Replace react chat engine to use native reactive agent (#6870)
+
+### Bug Fixes / Nits
+- chore: added a help message to makefile (#6861)
 
 ## [v0.7.6] - 2023-07-12
 
