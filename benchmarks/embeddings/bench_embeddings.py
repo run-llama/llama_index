@@ -1,19 +1,14 @@
-import random
 import time
 from typing import List
-from llama_index.schema import TextNode
 
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
 )
-from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index import SimpleDirectoryReader
-from llama_index.node_parser import NodeParser
 from llama_index.embeddings import OpenAIEmbedding
+from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from llama_index import LangchainEmbedding, ServiceContext
+from llama_index import LangchainEmbedding
 
 
 def generate_strings(
@@ -43,14 +38,15 @@ def generate_strings(
 def bench_simple_vector_store(
     num_strings=[100],
     string_lengths=[128, 256, 512, 1024],
-    embed_batch_sizes=[1, 10],
-    torch_num_threads = None,
+    embed_batch_sizes=[1, DEFAULT_EMBED_BATCH_SIZE],
+    torch_num_threads=None,
 ) -> None:
     """Benchmark embeddings."""
     print("Benchmarking Embeddings\n---------------------------")
 
     if torch_num_threads is not None:
         import torch
+
         torch.set_num_threads(torch_num_threads)
 
     max_num_strings = max(num_strings)
@@ -80,9 +76,12 @@ def bench_simple_vector_store(
                 ]
 
                 embed_model_info = [
-                    ("OpenAIEmbedding", 4096,),
                     (
-                        "hf/sentence-transformers/all-mpnet-base-v2", 
+                        "OpenAIEmbedding",
+                        4096,
+                    ),
+                    (
+                        "hf/sentence-transformers/all-mpnet-base-v2",
                         embed_models[1]._langchain_embedding.client.max_seq_length,
                     ),
                     (
@@ -91,7 +90,7 @@ def bench_simple_vector_store(
                     ),
                 ]
 
-                skip_set = [0, 1] # skip openai
+                skip_set = [0, 1]  # skip openai
 
                 for idx, model in enumerate(embed_models):
                     if idx in skip_set:
@@ -104,9 +103,9 @@ def bench_simple_vector_store(
 
                     time2 = time.time()
                     print(
-                        f"""Embedding with model {embed_model_info[idx][0]} with batch size {batch_size} \
-and max_seq_length {embed_model_info[idx][1]} for {string_count} strings of length {string_length} and \
-took {time2 - time1} seconds"""
+                        f"""Embedding with model {embed_model_info[idx][0]} with \
+batch size {batch_size} and max_seq_length {embed_model_info[idx][1]} for \
+{string_count} strings of length {string_length} took {time2 - time1} seconds"""
                     )
                 # TODO: async version
 
