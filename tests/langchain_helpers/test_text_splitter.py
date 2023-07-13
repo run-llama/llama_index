@@ -3,6 +3,7 @@ from llama_index.langchain_helpers.text_splitter import (
     SentenceSplitter,
     TokenTextSplitter,
 )
+import pytest
 
 
 def test_split_token() -> None:
@@ -85,3 +86,25 @@ def test_split_diff_sentence_token2() -> None:
     assert token_split[1] == " ".join(["bar"] * 11)
     assert sentence_split[0] == " ".join(["foo"] * 15) + "."
     assert sentence_split[1] == " ".join(["bar"] * 15)
+
+
+def test_sentence_splitter_infinite_loop() -> None:
+    sentence_splitter = SentenceSplitter(
+        chunk_size=20,
+        chunk_overlap=5,
+        secondary_chunking_regex="[^\,]+[,]",
+    )
+    # This is ok
+    sentence_splitter.split_text_with_overlaps("This is fine. No problems.")
+
+    # This next one infinite loops.
+    # The entire text is too large to be saved as a single sentence, so we fall
+    # back to `secondary_chunking_regex` This splits into two chunks based on
+    # the comma.
+    #
+    # The first split is 18 tokens, which is smaller than the chunk size (20)
+    # but larger than the chunk size - chunk overlap (15)
+    with pytest.raises(ValueError, match="Single token exceed chunk size"):
+        sentence_splitter.split_text_with_overlaps(
+            "This is a sentence hand-crafted to be very very bad for the sentence splitter, since the secondary_chunking_regex won't get the resulting splits small enough"  # noqa: E501
+        )

@@ -419,7 +419,7 @@ class SentenceSplitter(TextSplitter):
         while len(new_splits) > 0:
             cur_token = new_splits[0]
             cur_len = len(self.tokenizer(cur_token.text))
-            if cur_len > effective_chunk_size:
+            if cur_len > effective_chunk_size - self._chunk_overlap:
                 raise ValueError("Single token exceed chunk size")
             if cur_tokens + cur_len > effective_chunk_size:
                 docs.append(TextSplit("".join(cur_doc_list).strip()))
