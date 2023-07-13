@@ -406,7 +406,10 @@ class SentenceSplitter(TextSplitter):
                 else:
                     splits2 = [split]
                 for split2 in splits2:
-                    if len(self.tokenizer(split2)) <= effective_chunk_size:
+                    if (
+                        len(self.tokenizer(split2))
+                        <= effective_chunk_size - self._chunk_overlap
+                    ):
                         new_splits.append(Split(split2, False))
                     else:
                         splits3 = split2.split(self._separator)

@@ -88,11 +88,12 @@ def test_split_diff_sentence_token2() -> None:
     assert sentence_split[1] == " ".join(["bar"] * 15)
 
 
-def test_sentence_splitter_infinite_loop() -> None:
+def test_sentence_splitter_raises_error_when_token_size_in_overlap() -> None:
     sentence_splitter = SentenceSplitter(
         chunk_size=20,
         chunk_overlap=5,
         secondary_chunking_regex="[^\,]+[,]",
+        separator="***",
     )
     # This is ok
     sentence_splitter.split_text_with_overlaps("This is fine. No problems.")
@@ -108,3 +109,20 @@ def test_sentence_splitter_infinite_loop() -> None:
         sentence_splitter.split_text_with_overlaps(
             "This is a sentence hand-crafted to be very very bad for the sentence splitter, since the secondary_chunking_regex won't get the resulting splits small enough"  # noqa: E501
         )
+
+
+def test_sentence_splitter_raises_error_when_token_size_in_overlap_with_sep() -> None:
+    sentence_splitter = SentenceSplitter(
+        chunk_size=20,
+        chunk_overlap=5,
+        secondary_chunking_regex="[^\,]+[,]",
+        separator=" ",
+    )
+    # This is ok
+    sentence_splitter.split_text_with_overlaps("This is fine. No problems.")
+
+    # This has the same failure scenario as the previous test
+    # but should be okay because it can split by the separator
+    sentence_splitter.split_text_with_overlaps(
+        "This is a sentence hand-crafted to be very very bad for the sentence splitter, since the secondary_chunking_regex won't get the resulting splits small enough"  # noqa: E501
+    )
