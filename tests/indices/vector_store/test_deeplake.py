@@ -70,7 +70,8 @@ def test_build_deeplake(
     vector_store.add(results)
     assert len(vector_store.vectorstore) == 14
 
-    vector_store.delete(node.ref_doc_id)
+    ref_doc_id = str(node.ref_doc_id)
+    vector_store.delete(ref_doc_id)
     assert len(vector_store.vectorstore) == 3
     deeplake.delete(dataset_path)
 
