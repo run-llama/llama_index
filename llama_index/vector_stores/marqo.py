@@ -69,9 +69,9 @@ class MarqoVectorStore(VectorStore):
         return [doc['_id'] for doc in response['items']]
 
 
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, ref_doc_id: List[str], **delete_kwargs: Any) -> None:
         # modify so that it can accept a list of ids
-        self._marqo_client.index(self._index_name).delete_documents([ref_doc_id])
+        self._marqo_client.index(self._index_name).delete_documents(ref_doc_id)
 
 
     @property

@@ -7,6 +7,7 @@ from llama_index.schema import Document
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY
 )
+import logging
 
 ID_KEY = "_id"
 
@@ -31,6 +32,14 @@ class MarqoReader(BaseReader):
         self._url = url
         self._text_key = DEFAULT_TEXT_KEY
         self.mq = marqo.Client(url=self._url, api_key=self._api_key)
+        
+
+    def _ensure_index(self, index_name: str = None):
+        """Ensure the index exists, creating it if necessary."""
+        indexes = [index.index_name for index in self._marqo_client.get_indexes()["results"]]
+        if index_name not in indexes:
+            self.mq.create_index(index_name)
+            logging.info(f"Created index {index_name}.")
     
     def load_data(
         self,
@@ -59,6 +68,7 @@ class MarqoReader(BaseReader):
             List[Document]: A list of documents.
         """
         import marqo 
+        self._ensure_index(index_name=index_name)  # Ensure the index exists
         self._text_key = _text_key
 
         # Construct filter string from searchable_attributes

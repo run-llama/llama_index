@@ -48,8 +48,8 @@ def test_query(marqo_vector_store):
 
 
 def test_add_nodes_to_index(marqo_vector_store):
-    print("test1:", type(marqo_vector_store))  # This line should print "<class 'MarqoVectorStore'>"
-
+    #print("test1:", type(marqo_vector_store))  # This line should print "<class 'MarqoVectorStore'>"
+    
     # Create a custom storage context with MarqoVectorStore
     storage_context = StorageContext.from_defaults(vector_store=marqo_vector_store)
 
