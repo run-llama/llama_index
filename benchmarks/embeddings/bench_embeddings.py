@@ -90,7 +90,7 @@ def bench_simple_vector_store(
             for batch_size in embed_batch_sizes:
                 models = []
                 for create_model in embed_models:
-                    models.append(create_model(batch_size=batch_size))  # typing: ignore
+                    models.append(create_model(batch_size=batch_size))  # type: ignore
 
                 for model in models:
                     for i, string in enumerate(strings):
@@ -101,9 +101,10 @@ def bench_simple_vector_store(
 
                     time2 = time.time()
                     print(
-                        f"""Embedding with model {model[1]} with \
-batch size {batch_size} and max_seq_length {model[2]} for \
-{string_count} strings of length {string_length} took {time2 - time1} seconds"""
+                        f"Embedding with model {model[1]} with "
+                        f"batch size {batch_size} and max_seq_length {model[2]} for "
+                        f"{string_count} strings of length {string_length} took "
+                        f"{time2 - time1} seconds."
                     )
                 # TODO: async version
 
