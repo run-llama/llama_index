@@ -408,7 +408,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             table_info = self._sql_database.get_single_table_info(
                 table_schema_obj.table_name
             )
-            
+
             if table_schema_obj.context_str:
                 table_opt_context = " The table description is: "
                 table_opt_context += table_schema_obj.context_str
