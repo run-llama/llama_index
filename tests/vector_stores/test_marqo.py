@@ -1,4 +1,5 @@
 import pytest
+from llama_index.storage import StorageContext
 from llama_index.schema import TextNode
 from llama_index.vector_stores.types import VectorStoreQuery
 from llama_index.vector_stores.marqo import MarqoVectorStore
@@ -24,6 +25,7 @@ def test_add_documents(marqo_vector_store):
     ids = marqo_vector_store.add(documents)
 
     # Check that the returned IDs match the ones we provided
+    print(ids)
     assert ids == [doc_id for doc_id, _ in documents]
 
 
@@ -38,14 +40,17 @@ def test_query(marqo_vector_store):
     # Query the Marqo vector store
     query = VectorStoreQuery(query_str="cats")
     result = marqo_vector_store.query(query)
+    print(result)
 
     # Check that the result contains the ID of the document about cats
     assert "doc1" in result.ids
 
 
 def test_add_nodes_to_index(marqo_vector_store):
-    # Create a MarqoVectorStoreIndex with the MarqoVectorStore
-    marqo_vector_store_index = MarqoVectorStoreIndex(vector_store=marqo_vector_store)
+    print("test1:", type(marqo_vector_store))  # This line should print "<class 'MarqoVectorStore'>"
+
+    # Create a custom storage context with MarqoVectorStore
+    storage_context = StorageContext.from_defaults(vector_store=marqo_vector_store)
 
     # Create some nodes to add to the index
     nodes = [
@@ -53,10 +58,16 @@ def test_add_nodes_to_index(marqo_vector_store):
         TextNode(text="This is a test document about dogs.", id_="doc2"),
     ]
 
+    marqo_vector_store_index = MarqoVectorStoreIndex(storage_context=storage_context, nodes=nodes)
+
+    print("test2:", type(marqo_vector_store_index))  # This line should print "<class 'MarqoVectorStoreIndex'>"
+    print("test3:", type(marqo_vector_store_index._vector_store))  # This line should print "<class 'MarqoVectorStore'>"
+
     # Add the nodes to the index
     marqo_vector_store_index._add_nodes_to_index({}, nodes)
 
     # Query the Marqo vector store to check that the documents were added
     query = VectorStoreQuery(query_str="cats")
     result = marqo_vector_store.query(query)
+    print(result)
     assert "doc1" in result.ids

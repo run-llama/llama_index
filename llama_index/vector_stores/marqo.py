@@ -1,7 +1,7 @@
 import logging
 from collections import Counter
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -49,7 +49,7 @@ class MarqoVectorStore(VectorStore):
 
     def _ensure_index(self):
         """Ensure the index exists, creating it if necessary."""
-        indexes = self._marqo_client.get_indexes()["results"]
+        indexes = [index.index_name for index in self._marqo_client.get_indexes()["results"]]
         if self._index_name not in indexes:
             self._marqo_client.create_index(self._index_name)
 
@@ -58,11 +58,15 @@ class MarqoVectorStore(VectorStore):
         for doc_id, doc_text in documents:
             entry = {
                 ID_KEY: doc_id,  # Use the passed in ID
-                METADATA_KEY: doc_text,  # The document text
+                self._text_key: doc_text,
+                #METADATA_KEY: doc_text,  # Implement getting metadata in the future
             }
             entries.append(entry)
-        self._marqo_client.index(self._index_name).add_documents(entries, non_tensor_fields=[METADATA_KEY])
-        return [doc_id for doc_id, _ in documents]
+        response = self._marqo_client.index(self._index_name).add_documents(entries, non_tensor_fields=[METADATA_KEY])
+
+        # response should be something like:
+        # {'errors': False, 'processingTimeMs': 444.4244759997673, 'index_name': 'test', 'items': [{'_id': 'doc1', 'result': 'updated', 'status': 200}, {'_id': 'doc2', 'result': 'updated', 'status': 200}]}
+        return [doc['_id'] for doc in response['items']]
 
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -111,6 +115,10 @@ class MarqoVectorStore(VectorStore):
             top_k_nodes.append(node)
             top_k_scores.append(match["_score"])
 
+        """return VectorStoreQueryResult(
+            nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
+        )"""
+        #return (query.query_str, response)
         return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )

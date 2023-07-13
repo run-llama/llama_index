@@ -11,12 +11,30 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.vector_stores.marqo import MarqoVectorStore 
+import pprint
 
 class MarqoVectorStoreIndex(VectorStoreIndex):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not isinstance(self._vector_store, MarqoVectorStore):
             raise ValueError("Vector store must be an instance of MarqoVectorStore.")
+        
+    @classmethod
+    def from_vector_store(
+        cls,
+        vector_store: MarqoVectorStore,
+        service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
+    ) -> "MarqoVectorStoreIndex":
+        if not vector_store.stores_text:
+            raise ValueError(
+                "Cannot initialize from a Marqo vector store that does not store text."
+            )
+
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        return cls(
+            nodes=[], service_context=service_context, storage_context=storage_context
+        )
 
     def _add_nodes_to_index(self, index_struct: IndexDict, nodes: Sequence[BaseNode], show_progress: bool = False) -> None:
         if not nodes:
@@ -24,6 +42,7 @@ class MarqoVectorStoreIndex(VectorStoreIndex):
 
         # Get the id and content for each node
         documents = [(n.node_id, n.get_content(metadata_mode=MetadataMode.EMBED)) for n in nodes]
+        #embedding_results = [NodeWithEmbedding(id=doc_id, embedding=doc_text) for doc_id, doc_text in documents]
 
         # Call the vector store's add method with the documents
         new_ids = self._vector_store.add(documents)
