@@ -1,6 +1,6 @@
 # Modules
 
-We support integrations with OpenAI, Hugging Face, PaLM, and more.
+We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 
 ## OpenAI
 ```{toctree}
@@ -9,6 +9,15 @@ maxdepth: 1
 ---
 /examples/llm/openai.ipynb
 /examples/llm/azure_openai.ipynb
+
+```
+
+## Anthropic
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/anthropic.ipynb
 
 ```
 
