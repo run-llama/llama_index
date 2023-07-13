@@ -24,7 +24,7 @@ PYARROW_LIST_OF_FLOATS_TYPE = pyarrow.list_(pyarrow.float64())
 
 
 @dataclass
-class PyArrowData:
+class LogData:
     @classmethod
     def schema(cls) -> pyarrow.Schema:
         return pyarrow.schema(
@@ -32,11 +32,11 @@ class PyArrowData:
         )
 
 
-PyArrowDataType = TypeVar("PyArrowDataType", bound=PyArrowData)
+LogDataType = TypeVar("LogDataType", bound=LogData)
 
 
 @dataclass
-class QueryData(PyArrowData):
+class QueryData(LogData):
     query_text: Optional[str] = field(
         default=None, metadata={PYARROW_TYPE: PYARROW_STRING_TYPE}
     )
@@ -58,7 +58,7 @@ class QueryData(PyArrowData):
 
 
 @dataclass
-class DocumentData(PyArrowData):
+class DocumentData(LogData):
     document_text: Optional[str] = field(
         default=None, metadata={PYARROW_TYPE: PYARROW_STRING_TYPE}
     )
@@ -84,16 +84,16 @@ class TraceData:
     document_datas: List[DocumentData] = field(default_factory=list)
 
 
-class PyArrowDataBuffer(Generic[PyArrowDataType]):
+class LogDataBuffer(Generic[LogDataType]):
     def __init__(self) -> None:
-        self._datas: List[PyArrowDataType] = []
+        self._datas: List[LogDataType] = []
         self._size_in_bytes: int = 0
 
-    def append(self, data: PyArrowDataType) -> None:
+    def append(self, data: LogDataType) -> None:
         self._size_in_bytes += sys.getsizeof(data)
         self._datas.append(data)
 
-    def extend(self, datas: Sequence[PyArrowDataType]) -> None:
+    def extend(self, datas: Sequence[LogDataType]) -> None:
         for data in datas:
             self.append(data)
 
@@ -109,12 +109,11 @@ class PyArrowDataBuffer(Generic[PyArrowDataType]):
         return self._size_in_bytes
 
 
-def _write_buffer_to_file_system(
-    buffer: PyArrowDataBuffer[PyArrowDataType],
+def _write_batch_to_file_system(
+    batch: pyarrow.RecordBatch,
     file_system: FileSystem,
     data_path: str,
 ) -> None:
-    batch = buffer.to_batch()
     is_local_file_system = isinstance(file_system, pyarrow.fs.LocalFileSystem)
     if is_local_file_system:
         os.makedirs(os.path.dirname(data_path), exist_ok=True)
@@ -124,7 +123,7 @@ def _write_buffer_to_file_system(
         writer.close()
 
 
-class PyArrowLogger(Generic[PyArrowDataType]):
+class Logger(Generic[LogDataType]):
     def __init__(
         self,
         file_system: FileSystem,
@@ -134,17 +133,17 @@ class PyArrowLogger(Generic[PyArrowDataType]):
         self._file_system = file_system
         self._data_path = data_path
         self._max_buffer_size_in_bytes = max_buffer_size_in_bytes
-        self._buffer = PyArrowDataBuffer[PyArrowDataType]()
+        self._buffer = LogDataBuffer[LogDataType]()
 
-    def log_datas(self, datas: List[PyArrowDataType]) -> None:
+    def log_datas(self, datas: List[LogDataType]) -> None:
         self._buffer.extend(datas)
         buffer_full = self._buffer.size_in_bytes >= self._max_buffer_size_in_bytes
         if buffer_full:
             self.flush()
 
     def flush(self) -> None:
-        _write_buffer_to_file_system(
-            buffer=self._buffer,
+        _write_batch_to_file_system(
+            batch=self._buffer.to_batch(),
             file_system=self._file_system,
             data_path=self._data_path,
         )
@@ -161,12 +160,12 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
     ) -> None:
         super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
         self._trace_data = TraceData()
-        self._query_data_logger = PyArrowLogger[QueryData](
+        self._query_data_logger = Logger[QueryData](
             file_system=file_system,
             data_path=os.path.join(data_path, "query.arrow"),
             max_buffer_size_in_bytes=max_buffer_size_in_bytes,
         )
-        self._document_data_logger = PyArrowLogger[DocumentData](
+        self._document_data_logger = Logger[DocumentData](
             file_system=file_system,
             data_path=os.path.join(data_path, "document.arrow"),
             max_buffer_size_in_bytes=max_buffer_size_in_bytes,
@@ -177,7 +176,6 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         return cls(pyarrow.fs.LocalFileSystem(), data_path)
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
-        """Run when an overall trace is launched."""
         if trace_id == "query":
             self._trace_data = TraceData()
 
@@ -197,7 +195,6 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         event_id: str = "",
         **kwargs: Any,
     ) -> str:
-        """Run when an event starts and return id of event."""
         if payload is not None:
             if event_type is CBEventType.QUERY:
                 self._trace_data.query_data.query_text = payload[EventPayload.QUERY_STR]
@@ -210,7 +207,6 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         event_id: str = "",
         **kwargs: Any,
     ) -> None:
-        """Run when an event ends."""
         if payload is not None:
             if event_type is CBEventType.RETRIEVE:
                 for node_with_score in payload[EventPayload.NODES]:
