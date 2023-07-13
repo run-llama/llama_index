@@ -40,6 +40,7 @@ class BeirEvaluator:
         self,
         create_retriever: Callable[[List[Document]], BaseRetriever],
         datasets: List[str] = ["nfcorpus"],
+        metrics_k_values: List[int] = [3, 10],
     ) -> None:
         from beir.datasets.data_loader import GenericDataLoader
         from beir.retrieval.evaluation import EvaluateRetrieval
@@ -76,15 +77,16 @@ class BeirEvaluator:
                 }
 
             ndcg, map_, recall, precision = EvaluateRetrieval.evaluate(
-                qrels, results, [1, 10]
+                qrels, results, metrics_k_values
             )
             print("Results for:", dataset)
-            print(
-                {
-                    "NDCG@10": ndcg["NDCG@10"],
-                    "MAP@10": map_["MAP@10"],
-                    "Recall@10": recall["Recall@10"],
-                    "precision@10": precision["P@10"],
-                }
-            )
+            for k in metrics_k_values:
+                print(
+                    {
+                        f"NDCG@{k}": ndcg[f"NDCG@{k}"],
+                        f"MAP@{k}": map_[f"MAP@{k}"],
+                        f"Recall@{k}": recall[f"Recall@{k}"],
+                        f"precision@{k}": precision[f"P@{k}"],
+                    }
+                )
             print("-------------------------------------")
