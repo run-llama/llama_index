@@ -29,7 +29,7 @@ A usage example is given below:
 
 ```python
 from llama_hub.wikipedia.base import WikipediaReader
-from llama_hub.tools.on_demand_loader_tool import OnDemandLoaderTool
+from llama_index.tools.on_demand_loader_tool import OnDemandLoaderTool
 
 tool = OnDemandLoaderTool.from_defaults(
 	reader,
@@ -49,8 +49,8 @@ This is helpful for any API endpoint that will by default return large volumes o
 Example usage is shown below:
 
 ```python
-from llama_hub.tools.tool_spec.wikipedia.base import WikipediaToolSpec
-from llama_hub.tools.tool_spec.load_and_search.base import LoadAndSearchToolSpec
+from llama_hub.tools.wikipedia.base import WikipediaToolSpec
+from llama_index.tools.load_and_search.base import LoadAndSearchToolSpec
 
 wiki_spec = WikipediaToolSpec()
 # Get the search wikipedia tool

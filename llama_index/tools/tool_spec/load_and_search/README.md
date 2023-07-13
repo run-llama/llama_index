@@ -8,9 +8,9 @@ This Tool Spec is intended to wrap other tools, allowing the Agent to perform se
 Here's an example usage of the LoadAndSearchToolSpec.
 
 ```python
-from llama_hub.tools.tool_spec.load_and_search.base import LoadAndSearchToolSpec
+from llama_index.tools.tool_spec.load_and_search.base import LoadAndSearchToolSpec
 from llama_index.agent import OpenAIAgent
-from llama_hub.tools.tool_spec.wikipedia.base import WikipediaToolSpec
+from llama_hub.tools.wikipedia.base import WikipediaToolSpec
 
 wiki_spec = WikipediaToolSpec()
 
