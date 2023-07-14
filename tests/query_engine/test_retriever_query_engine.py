@@ -24,7 +24,7 @@ def test_query_engine_passes_service_context_to_response_synthesizer() -> None:
         llm=ChatOpenAI(temperature=0, model_name="gpt-4-0613", streaming=True)
     )
     gpt4_sc = ServiceContext.from_defaults(
-        llm_predictor=gpt35turbo_predictor,
+        llm_predictor=gpt4_predictor,
         chunk_size=512,
     )
 
@@ -37,15 +37,13 @@ def test_query_engine_passes_service_context_to_response_synthesizer() -> None:
 
     assert (
         retriever._service_context.llm_predictor.metadata.model_name
-        == gpt4_predictor._llm.metadata.model_name
+        == gpt35turbo_predictor._llm.metadata.model_name
     )
     assert (
         query_engine._response_synthesizer.service_context.llm_predictor.metadata.model_name
-        == retriever._service_context.llm_predictor.metadata.model_name
+        == gpt4_sc.llm_predictor.metadata.model_name
     )
-    assert (
-        query_engine._response_synthesizer.service_context == retriever._service_context
-    )
+    assert query_engine._response_synthesizer.service_context == gpt4_sc
 
 
 # We test two different models in case one ends up becoming the default of
