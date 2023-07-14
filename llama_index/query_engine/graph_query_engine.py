@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional, Tuple
 
+from llama_index.indices.vector_store import VectorStoreIndex
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.query.base import BaseQueryEngine
@@ -19,6 +21,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         custom_query_engines (Optional[Dict[str, BaseQueryEngine]]): A dictionary of
             custom query engines.
         recursive (bool): Whether to recursively query the graph.
+        similarity_top_k (int): number of top k results to return. Only applies when an underlying index is VectorStoreIndex
 
     """
 
@@ -27,6 +30,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         graph: ComposableGraph,
         custom_query_engines: Optional[Dict[str, BaseQueryEngine]] = None,
         recursive: bool = True,
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
         """Init params."""
         self._graph = graph
@@ -34,6 +38,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
 
         # additional configs
         self._recursive = recursive
+        self._similarity_top_k = similarity_top_k
         callback_manager = self._graph.service_context.callback_manager
         super().__init__(callback_manager)
 
@@ -59,7 +64,12 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         if index_id in self._custom_query_engines:
             query_engine = self._custom_query_engines[index_id]
         else:
-            query_engine = self._graph.get_index(index_id).as_query_engine()
+            if isinstance(self._graph.get_index(index_id), VectorStoreIndex):
+                query_engine = self._graph.get_index(index_id).as_query_engine(
+                    similarity_top_k=self._similarity_top_k
+                )
+            else:
+                query_engine = self._graph.get_index(index_id).as_query_engine()
 
         retrieve_event_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = query_engine.retrieve(query_bundle)
