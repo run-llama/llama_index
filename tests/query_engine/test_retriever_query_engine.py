@@ -1,3 +1,4 @@
+import pytest
 from llama_index import (
     ServiceContext,
     LLMPredictor,
@@ -9,9 +10,13 @@ from langchain.chat_models import ChatOpenAI
 from llama_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
+try:
+    import anthropic
+except ImportError:
+    anthropic = None  # type: ignore
 
-# We test two different models in case one ends up becoming the default of
-# llama_index.llms.utils.resolve_llm
+
+@pytest.mark.skipif(anthropic is None, reason="anthropic not installed")
 def test_query_engine_falls_back_to_inheriting_retrievers_service_context() -> None:
     documents = [Document(text="Hi")]
     gpt35turbo_predictor = LLMPredictor(
