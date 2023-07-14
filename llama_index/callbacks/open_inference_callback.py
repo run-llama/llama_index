@@ -1,183 +1,144 @@
 """
-Callback handler for logging data to OpenInference files.
+Callback handler for storing trace data in-memory in OpenInference format.
 """
 
 import hashlib
+import importlib
 import os
 import sys
-from dataclasses import asdict, dataclass, field, fields
-from typing import Any, Dict, Generic, List, Optional, Sequence, TypeAlias, TypeVar
-
-import pyarrow
-from pyarrow.fs import FileSystem
+from collections import OrderedDict
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from types import ModuleType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    TypeAlias,
+    TypeVar,
+)
 
 from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
 
+if TYPE_CHECKING:
+    from pandas import DataFrame
+
+
+DataWithIdType = TypeVar("DataWithIdType", bound="DataWithId")
 Embedding: TypeAlias = List[float]
 
-PYARROW_TYPE = "pyarrow_type"
-PYARROW_STRING_TYPE = pyarrow.string()
-PYARROW_EMBEDDING_TYPE = pyarrow.list_(pyarrow.float64())
-PYARROW_LIST_OF_STRINGS_TYPE = pyarrow.list_(pyarrow.string())
-PYARROW_LIST_OF_FLOATS_TYPE = pyarrow.list_(pyarrow.float64())
+
+def _hash_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _generate_random_id() -> str:
+    return _hash_bytes(os.urandom(32))
 
 
 @dataclass
-class LogData:
-    @classmethod
-    def schema(cls) -> pyarrow.Schema:
-        return pyarrow.schema(
-            [(field_.name, field_.metadata[PYARROW_TYPE]) for field_ in fields(cls)]
-        )
-
-
-LogDataType = TypeVar("LogDataType", bound=LogData)
+class DataWithId:
+    id: str = field(default_factory=_generate_random_id)
 
 
 @dataclass
-class QueryData(LogData):
-    query_text: Optional[str] = field(
-        default=None, metadata={PYARROW_TYPE: PYARROW_STRING_TYPE}
-    )
-    query_embedding: Optional[Embedding] = field(
-        default=None, metadata={PYARROW_TYPE: PYARROW_EMBEDDING_TYPE}
-    )
-    response_text: Optional[str] = field(
-        default=None, metadata={PYARROW_TYPE: PYARROW_STRING_TYPE}
-    )
-    document_ids: List[str] = field(
-        default_factory=list, metadata={PYARROW_TYPE: PYARROW_LIST_OF_STRINGS_TYPE}
-    )
-    document_hashes: List[str] = field(
-        default_factory=list, metadata={PYARROW_TYPE: PYARROW_LIST_OF_STRINGS_TYPE}
-    )
-    scores: List[float] = field(
-        default_factory=list, metadata={PYARROW_TYPE: PYARROW_LIST_OF_FLOATS_TYPE}
-    )
+class QueryData(DataWithId):
+    timestamp: Optional[datetime] = None
+    query_text: Optional[str] = None
+    query_embedding: Optional[Embedding] = None
+    response_text: Optional[str] = None
+    document_ids: List[str] = field(default_factory=list)
+    document_hashes: List[str] = field(default_factory=list)
+    scores: List[float] = field(default_factory=list)
 
 
 @dataclass
-class DocumentData(LogData):
-    document_text: Optional[str] = field(
-        default=None, metadata={PYARROW_TYPE: PYARROW_STRING_TYPE}
-    )
-    document_embedding: Optional[Embedding] = field(
-        default=None, metadata={PYARROW_TYPE: PYARROW_EMBEDDING_TYPE}
-    )
-    document_id: Optional[str] = field(
-        default=None, metadata={PYARROW_TYPE: PYARROW_STRING_TYPE}
-    )
-    document_hash: Optional[str] = field(
-        default=None, metadata={PYARROW_TYPE: PYARROW_STRING_TYPE}
-    )
-
-
-def _generate_id() -> str:
-    return hashlib.sha256().hexdigest()
+class DocumentData(DataWithId):
+    document_text: Optional[str] = None
+    document_embedding: Optional[Embedding] = None
+    document_hash: Optional[str] = None
 
 
 @dataclass
 class TraceData:
-    trace_id: Optional[str] = field(default_factory=_generate_id)
+    trace_id: Optional[str] = field(default_factory=_generate_random_id)
+    start_timestamp: Optional[datetime] = None
+    end_timestamp: Optional[datetime] = None
     query_data: QueryData = field(default_factory=QueryData)
     document_datas: List[DocumentData] = field(default_factory=list)
 
 
-class LogDataBuffer(Generic[LogDataType]):
-    def __init__(self) -> None:
-        self._datas: List[LogDataType] = []
-        self._size_in_bytes: int = 0
+def _import_package(package_name: str) -> ModuleType:
+    try:
+        package = importlib.import_module(package_name)
+    except ImportError:
+        raise ImportError(f"The {package_name} package must be installed.")
+    return package
 
-    def append(self, data: LogDataType) -> None:
+
+class DataBuffer(Generic[DataWithIdType]):
+    def __init__(self, max_size_in_bytes: Optional[int] = None) -> None:
+        self._id_to_data_map: OrderedDict[str, DataWithId] = OrderedDict()
+        self._max_size_in_bytes = max_size_in_bytes
+        self._size_in_bytes = 0
+
+    def __len__(self) -> int:
+        return len(self._id_to_data_map)
+
+    def add(self, data: DataWithId) -> None:
+        if data.id in self._id_to_data_map:
+            self._size_in_bytes -= sys.getsizeof(self._id_to_data_map.pop(data.id))
+        self._id_to_data_map[data.id] = data
         self._size_in_bytes += sys.getsizeof(data)
-        self._datas.append(data)
 
-    def extend(self, datas: Sequence[LogDataType]) -> None:
-        for data in datas:
-            self.append(data)
-
-    def to_batch(self) -> pyarrow.RecordBatch:
-        return pyarrow.RecordBatch.from_pylist([asdict(data) for data in self._datas])
+        if self._max_size_in_bytes is not None:
+            while self._size_in_bytes > self._max_size_in_bytes:
+                _, data = self._id_to_data_map.popitem(last=False)
+                self._size_in_bytes -= sys.getsizeof(data)
 
     def clear(self) -> None:
-        self._datas = []
+        self._id_to_data_map.clear()
         self._size_in_bytes = 0
+
+    @property
+    def dataframe(self) -> "DataFrame":
+        pandas = _import_package("pandas")
+        return pandas.DataFrame(
+            [asdict(data) for data in self._id_to_data_map.values()]
+        )
 
     @property
     def size_in_bytes(self) -> int:
         return self._size_in_bytes
 
 
-def _write_batch_to_file_system(
-    batch: pyarrow.RecordBatch,
-    file_system: FileSystem,
-    data_path: str,
-) -> None:
-    is_local_file_system = isinstance(file_system, pyarrow.fs.LocalFileSystem)
-    if is_local_file_system:
-        os.makedirs(os.path.dirname(data_path), exist_ok=True)
-    with file_system.open_output_stream(data_path) as sink:
-        writer = pyarrow.ipc.new_stream(sink, batch.schema)
-        writer.write_batch(batch)
-        writer.close()
-
-
-class Logger(Generic[LogDataType]):
-    def __init__(
-        self,
-        file_system: FileSystem,
-        data_path: str,
-        max_buffer_size_in_bytes: int,
-    ) -> None:
-        self._file_system = file_system
-        self._data_path = data_path
-        self._max_buffer_size_in_bytes = max_buffer_size_in_bytes
-        self._buffer = LogDataBuffer[LogDataType]()
-
-    def log_datas(self, datas: List[LogDataType]) -> None:
-        self._buffer.extend(datas)
-        buffer_full = self._buffer.size_in_bytes >= self._max_buffer_size_in_bytes
-        if buffer_full:
-            self.flush()
-
-    def flush(self) -> None:
-        _write_batch_to_file_system(
-            batch=self._buffer.to_batch(),
-            file_system=self._file_system,
-            data_path=self._data_path,
-        )
-        self._buffer.clear()
-
-
 class OpenInferenceCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
-        file_system: FileSystem,
-        data_path: str,  # TODO: generalize types
-        max_buffer_size_in_bytes: int = 10 * pow(10, 3),
-        max_file_size_in_bytes: int = 50 * pow(10, 3),
+        max_size_in_bytes: Optional[int] = None,
+        callback: Optional[Callable[[DataBuffer[QueryData]], None]] = None,
     ) -> None:
         super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
+        self._callback = callback
         self._trace_data = TraceData()
-        self._query_data_logger = Logger[QueryData](
-            file_system=file_system,
-            data_path=os.path.join(data_path, "query.arrow"),
-            max_buffer_size_in_bytes=max_buffer_size_in_bytes,
+        self._query_data_buffer = DataBuffer[QueryData](
+            max_size_in_bytes=max_size_in_bytes
         )
-        self._document_data_logger = Logger[DocumentData](
-            file_system=file_system,
-            data_path=os.path.join(data_path, "document.arrow"),
-            max_buffer_size_in_bytes=max_buffer_size_in_bytes,
+        self._document_data_buffer = DataBuffer[DocumentData](
+            max_size_in_bytes=max_size_in_bytes,
         )
-
-    @classmethod
-    def to_local_file_system(cls, data_path: str) -> "OpenInferenceCallbackHandler":
-        return cls(pyarrow.fs.LocalFileSystem(), data_path)
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         if trace_id == "query":
-            self._trace_data = TraceData()
+            trace_start_time = datetime.now()
+            self._trace_data = TraceData(start_timestamp=trace_start_time)
+            self._trace_data.query_data.timestamp = trace_start_time
+            self._trace_data.query_data.id = _generate_random_id()
 
     def end_trace(
         self,
@@ -185,8 +146,12 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         if trace_id == "query":
-            self._query_data_logger.log_datas([self._trace_data.query_data])
-            self._document_data_logger.log_datas(self._trace_data.document_datas)
+            self._trace_data.end_timestamp = datetime.now()
+            self._query_data_buffer.add(self._trace_data.query_data)
+            for document_data in self._trace_data.document_datas:
+                self._document_data_buffer.add(document_data)
+            if self._callback is not None:
+                self._callback(self._query_data_buffer)
 
     def on_event_start(
         self,
@@ -197,7 +162,9 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
     ) -> str:
         if payload is not None:
             if event_type is CBEventType.QUERY:
-                self._trace_data.query_data.query_text = payload[EventPayload.QUERY_STR]
+                query_text = payload[EventPayload.QUERY_STR]
+                self._trace_data.query_data.id = _hash_bytes(query_text.encode())
+                self._trace_data.query_data.query_text = query_text
         return event_id
 
     def on_event_end(
@@ -217,8 +184,8 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
                     self._trace_data.query_data.scores.append(score)
                     self._trace_data.document_datas.append(
                         DocumentData(
+                            id=node.id_,
                             document_text=node.text,
-                            document_id=node.id_,
                             document_hash=node.hash,
                         )
                     )
@@ -233,6 +200,10 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
                     0
                 ]  # when does this list have more than one element?
 
-    def flush_log_buffers(self) -> None:
-        self._query_data_logger.flush()
-        self._document_data_logger.flush()
+    @property
+    def query_dataframe(self) -> "DataFrame":
+        return self._query_data_buffer.dataframe
+
+    @property
+    def document_dataframe(self) -> "DataFrame":
+        return self._document_data_buffer.dataframe
