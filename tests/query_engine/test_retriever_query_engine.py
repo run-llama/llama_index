@@ -13,7 +13,12 @@ from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 def test_query_engine_passes_service_context_to_response_synthesizer() -> None:
     documents = [Document(text="Hi")]
     gpt35turbo_predictor = LLMPredictor(
-        llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613", streaming=True)
+        llm=ChatOpenAI(
+            temperature=0,
+            model_name="gpt-3.5-turbo-0613",
+            streaming=True,
+            openai_api_key="test-test-test",
+        )
     )
     gpt35_sc = ServiceContext.from_defaults(
         llm_predictor=gpt35turbo_predictor,
@@ -21,7 +26,12 @@ def test_query_engine_passes_service_context_to_response_synthesizer() -> None:
     )
 
     gpt4_predictor = LLMPredictor(
-        llm=ChatOpenAI(temperature=0, model_name="gpt-4-0613", streaming=True)
+        llm=ChatOpenAI(
+            temperature=0,
+            model_name="gpt-4-0613",
+            streaming=True,
+            openai_api_key="test-test-test",
+        )
     )
     gpt4_sc = ServiceContext.from_defaults(
         llm_predictor=gpt4_predictor,
@@ -51,7 +61,12 @@ def test_query_engine_passes_service_context_to_response_synthesizer() -> None:
 def test_query_engine_falls_back_to_inheriting_retrievers_service_context() -> None:
     documents = [Document(text="Hi")]
     gpt35turbo_predictor = LLMPredictor(
-        llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613", streaming=True)
+        llm=ChatOpenAI(
+            temperature=0,
+            model_name="gpt-3.5-turbo-0613",
+            streaming=True,
+            openai_api_key="test-test-test",
+        ),
     )
     gpt35_sc = ServiceContext.from_defaults(
         llm_predictor=gpt35turbo_predictor,
