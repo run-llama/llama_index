@@ -1,5 +1,6 @@
 """General utils functions."""
 
+import os
 import random
 import sys
 import time
@@ -7,20 +8,20 @@ import traceback
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import partial
 from itertools import islice
 from typing import (
     Any,
     Callable,
     Generator,
+    Iterable,
     List,
     Optional,
     Set,
     Type,
-    cast,
     Union,
-    Iterable,
+    cast,
 )
-import os
 
 
 class GlobalsHelper:
@@ -47,6 +48,7 @@ class GlobalsHelper:
                 raise ImportError(tiktoken_import_err)
             enc = tiktoken.get_encoding("gpt2")
             self._tokenizer = cast(Callable[[str], List], enc.encode)
+            self._tokenizer = partial(self._tokenizer, allowed_special="all")
         return self._tokenizer
 
     @property
