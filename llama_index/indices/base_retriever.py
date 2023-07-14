@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from llama_index.schema import NodeWithScore
 from llama_index.indices.query.schema import QueryBundle, QueryType
+from llama_index.indices.service_context import ServiceContext
 
 
 class BaseRetriever(ABC):
@@ -28,3 +29,16 @@ class BaseRetriever(ABC):
 
         """
         pass
+
+    def get_service_context(self) -> Optional[ServiceContext]:
+        """Attempts to resolve a service context.
+        Short-circuits at self.service_context, self._service_context,
+        or self._index.service_context
+        """
+        if hasattr(self, "service_context"):
+            return self.service_context
+        if hasattr(self, "_service_context"):
+            return self._service_context
+        elif hasattr(self, "_index") and hasattr(self._index, "service_context"):
+            return self._index.service_context
+        return None

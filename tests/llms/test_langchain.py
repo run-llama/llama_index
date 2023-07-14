@@ -7,7 +7,11 @@ from llama_index.bridge.langchain import (
     AIMessage,
     FunctionMessage,
     BaseMessage,
+    Cohere,
+    ChatOpenAI,
+    OpenAI,
 )
+
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.langchain_utils import from_lc_messages, to_lc_messages
@@ -54,3 +58,16 @@ def test_from_lc_messages() -> None:
 
     for i in range(len(messages)):
         assert messages[i].content == lc_messages[i].content
+
+
+def test_metadata_sets_model_name() -> None:
+    chat_gpt = LangChainLLM(llm=ChatOpenAI(model="gpt-4-0613"))
+    assert chat_gpt.metadata.model_name == "gpt-4-0613"
+
+    gpt35 = LangChainLLM(llm=OpenAI(model="gpt-3.5-turbo-0613"))
+    assert gpt35.metadata.model_name == "gpt-3.5-turbo-0613"
+
+    cohere = LangChainLLM(
+        llm=Cohere(model="j2-jumbo-instruct", cohere_api_key="XXXXXXX")
+    )
+    assert cohere.metadata.model_name == "j2-jumbo-instruct"
