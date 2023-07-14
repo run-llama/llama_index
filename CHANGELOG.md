@@ -4,6 +4,7 @@
 
 ### New Features
 - Added embedding speed benchmark (#6876)
+- Added BEIR retrieval benchmark (#6825)
 
 ### Bug Fixes / Nits
 - remove toctrees from deprecated_terms (#6895)
