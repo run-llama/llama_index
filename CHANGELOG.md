@@ -5,6 +5,9 @@
 ### New Features
 - specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
 
+### Bug Fixes / Nits
+- improve postgress connection reliability (#6843)
+
 ## [v0.7.8] - 2023-07-13
 
 ### New Features
