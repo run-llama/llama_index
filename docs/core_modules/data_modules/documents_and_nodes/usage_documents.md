@@ -22,6 +22,12 @@ text_list = [text1, text2, ...]
 documents = [Document(text=t) for t in text_list]
 ```
 
+To speed up prototyping and development, you can also quickly create a document using some default text:
+
+```python
+document = Document.example()
+```
+
 ## Customizing Documents
 
 This section covers various ways to customize `Document` objects. Since the `Document` object is a subclass of our `TextNode` object, all these settings and details apply to the `TextNode` object class as well.

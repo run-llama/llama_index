@@ -116,7 +116,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
-        if is_function_calling_model(llm.model):
+        if not is_function_calling_model(llm.model):
             raise ValueError(
                 f"Model name {llm.model} does not support function calling API."
             )

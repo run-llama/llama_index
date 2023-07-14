@@ -9,7 +9,7 @@ At a high-level, `Indices` are built from [Documents](/core_modules/data_modules
 They are used to build [Query Engines](/core_modules/query_modules/query_engine/root.md) and [Chat Engines](/core_modules/query_modules/chat_engines/root.md)
 which enables question & answer and chat over your data.  
 
-Under the hood, `Indices` store data in `Node` objects (which represent chunks of the original documents), and expose an [Retriever](/core_modules/query_modules/retriever/root.md) interface that supports additional configuration and automation.
+Under the hood, `Indices` store data in `Node` objects (which represent chunks of the original documents), and expose a [Retriever](/core_modules/query_modules/retriever/root.md) interface that supports additional configuration and automation.
 
 For a more in-depth explanation, check out our guide below:
 ```{toctree}
