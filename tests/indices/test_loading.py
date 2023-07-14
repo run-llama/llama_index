@@ -180,6 +180,7 @@ def test_load_index_from_storage_faiss_vector_store(
     assert nodes == new_nodes
 
 
+@pytest.mark.skipif("CI" in os.environ, reason="don't want to make OpenAI calls in ")
 def test_load_index_query_engine_service_context(
     documents: List[Document],
     tmp_path: Path,
@@ -190,9 +191,7 @@ def test_load_index_query_engine_service_context(
     service_context = ServiceContext.from_defaults(
         llm_predictor=LLMPredictor(
             llm=ChatOpenAI(
-                temperature=0,
                 model_name="gpt-3.5-turbo-0613",
-                streaming=True,
                 openai_api_key="test-test-test",
             )
         )

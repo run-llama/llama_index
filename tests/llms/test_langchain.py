@@ -64,10 +64,10 @@ def test_from_lc_messages() -> None:
 try:
     import cohere  # noqa: F401
 except ImportError:
-    cohere_available = None  # type: ignore
+    cohere = None  # type: ignore
 
 
-@pytest.mark.skipif(cohere_available is None, reason="or cohere not installed")
+@pytest.mark.skipif(cohere is None, reason="cohere not installed")
 def test_metadata_sets_model_name() -> None:
     chat_gpt = LangChainLLM(
         llm=ChatOpenAI(model="gpt-4-0613", openai_api_key="model-name-tests")
