@@ -24,6 +24,9 @@ class IndexStructType(str, Enum):
         PINECONE ("pinecone"): Pinecone Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Pinecone vector store index.
+        MARQO ("marqo"): Marqo Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Marqo vector store index.
         DEEPLAKE ("deeplake"): DeepLake Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Pinecone vector store index.
@@ -70,6 +73,7 @@ class IndexStructType(str, Enum):
     SIMPLE_DICT = "simple_dict"
     WEAVIATE = "weaviate"
     PINECONE = "pinecone"
+    MARQO = "marqo"
     QDRANT = "qdrant"
     LANCEDB = "lancedb"
     MILVUS = "milvus"

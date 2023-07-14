@@ -16,6 +16,7 @@ from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.types import VectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.marqo import MarqoVectorStore
 
 
 class VectorStoreType(str, Enum):
@@ -33,6 +34,7 @@ class VectorStoreType(str, Enum):
     DEEPLAKE = "deeplake"
     MYSCALE = "myscale"
     SUPABASE = "supabase"
+    MARQO = "marqo"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -50,6 +52,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.CHATGPT_PLUGIN: ChatGPTRetrievalPluginClient,
     VectorStoreType.DEEPLAKE: DeepLakeVectorStore,
     VectorStoreType.MYSCALE: MyScaleVectorStore,
+    VectorStoreType.MARQO: MarqoVectorStore,
 }
 
 VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {

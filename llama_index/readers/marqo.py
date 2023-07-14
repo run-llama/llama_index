@@ -18,7 +18,7 @@ class MarqoReader(BaseReader):
         url (str): Marqo url.
     """
 
-    def __init__(self, url: str, api_key: Optional[str] = None):
+    def __init__(self, api_key: str, url: str):
         """Initialize with parameters."""
         # Necessary Marqo initialization steps here.
         try:
@@ -27,12 +27,12 @@ class MarqoReader(BaseReader):
             raise ImportError(
                 "`marqo` package not found, please run `pip install marqo`"
             )
-        self._url = url
         self._api_key = api_key
+        self._url = url
         self._text_key = DEFAULT_TEXT_KEY
         self.mq = marqo.Client(url=self._url, api_key=self._api_key)
 
-    def _ensure_index(self, index_name: str = None):
+    def _ensure_index(self, index_name: str) -> None:
         """Ensure the index exists, creating it if necessary."""
         indexes = [index.index_name for index in self.mq.get_indexes()["results"]]
         if index_name not in indexes:
@@ -57,15 +57,16 @@ class MarqoReader(BaseReader):
             index_name (str): Name of the index.
             id_to_text_map (Dict[str, str]): A map from ID's to text.
             top_k (int): Number of results to return.
-            separate_documents (bool): Whether to return separate documents per retrieved entry. Defaults to True.
+            separate_documents (bool): Whether to return separate 
+                documents per retrieved entry. Defaults to True.
             include_vectors (bool): Whether to include vector data in the results.
-            searchable_attributes (Optional[List[str]]): The attributes to retrieve from the Marqo index.
+            searchable_attributes (Optional[List[str]]): The attributes to retrieve from
+                the Marqo index.
             **query_kwargs: Keyword arguments to pass to the query.
 
         Returns:
             List[Document]: A list of documents.
         """
-        import marqo
 
         self._ensure_index(index_name=index_name)  # Ensure the index exists
         self._text_key = _text_key
@@ -89,7 +90,6 @@ class MarqoReader(BaseReader):
             **query_kwargs,
         )
 
-        print("\n\results:", results)
         # If include_vectors is True, get the document embeddings
         if include_vectors:
             results["hits"] = [
@@ -104,7 +104,8 @@ class MarqoReader(BaseReader):
             assert text == id_to_text_map[doc_id]
 
             if include_vectors:
-                # Get the embedding from '_tensor_facets' for the field specified by self._text_key
+                # Get the embedding from '_tensor_facets' for the field
+                # specified by self._text_key
                 embedding = next(
                     (
                         facet["_embedding"]
@@ -123,5 +124,4 @@ class MarqoReader(BaseReader):
             text = "\n\n".join(text_list)
             documents = [Document(text=text)]
 
-        print("\n\ndocuments:", documents)
         return documents

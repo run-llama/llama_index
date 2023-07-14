@@ -1,20 +1,15 @@
 import logging
-from collections import Counter
-from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
-from llama_index.schema import MetadataMode, TextNode
+from typing import Any, List, Optional, cast
+from llama_index.schema import TextNode
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
-    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
-    node_to_metadata_dict,
     legacy_metadata_dict_to_node,
 )
 
@@ -34,8 +29,8 @@ class MarqoVectorStore(VectorStore):
 
     def __init__(
         self,
-        marqo_client: Optional[Any] = None,
-        index_name: Optional[str] = None,
+        marqo_client: Any,
+        index_name: str,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         text_key: str = DEFAULT_TEXT_KEY,
@@ -61,7 +56,7 @@ class MarqoVectorStore(VectorStore):
         self._batch_size = batch_size
         self._ensure_index()  # Ensure the index exists
 
-    def _ensure_index(self):
+    def _ensure_index(self) -> None:
         """Ensure the index exists, creating it if necessary."""
         indexes = [
             index.index_name for index in self._marqo_client.get_indexes()["results"]
@@ -69,26 +64,39 @@ class MarqoVectorStore(VectorStore):
         if self._index_name not in indexes:
             self._marqo_client.create_index(self._index_name)
 
-    def add(self, documents: List[Tuple[str, str]]) -> List[str]:
+    def add(self, documents: List[NodeWithEmbedding]) -> List[str]:
         entries = []
-        for doc_id, doc_text in documents:
+        for doc in documents:
             entry = {
-                ID_KEY: doc_id,  # Use the passed in ID
-                self._text_key: doc_text,
+                ID_KEY: doc.node.node_id,  # Use the node id
+                self._text_key: doc.node.get_content(),
+                # VECTOR_KEY: doc.embedding,  
+                # Marqo can't accept embeddings directly yet
                 # METADATA_KEY: doc_text,  # Implement getting metadata in the future
             }
             entries.append(entry)
+
         response = self._marqo_client.index(self._index_name).add_documents(
-            entries, non_tensor_fields=[METADATA_KEY]
+            entries, non_tensor_fields=[METADATA_KEY, VECTOR_KEY]
         )
 
         # response should be something like:
-        # {'errors': False, 'processingTimeMs': 444.4244759997673, 'index_name': 'test', 'items': [{'_id': 'doc1', 'result': 'updated', 'status': 200}, {'_id': 'doc2', 'result': 'updated', 'status': 200}]}
+        """
+            {
+            'errors': False, 
+            'processingTimeMs': 444.4244759997673, 
+            'index_name': 'test', 
+            'items': [
+                    {'_id': 'doc1', 'result': 'updated', 'status': 200}, 
+                    {'_id': 'doc2', 'result': 'updated', 'status': 200}
+                ]
+            }
+        """
         return [doc["_id"] for doc in response["items"]]
 
-    def delete(self, ref_doc_id: List[str], **delete_kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         # modify so that it can accept a list of ids
-        self._marqo_client.index(self._index_name).delete_documents(ref_doc_id)
+        self._marqo_client.index(self._index_name).delete_documents([ref_doc_id])
 
     @property
     def client(self) -> Any:
@@ -131,10 +139,6 @@ class MarqoVectorStore(VectorStore):
             top_k_nodes.append(node)
             top_k_scores.append(match["_score"])
 
-        """return VectorStoreQueryResult(
-            nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
-        )"""
-        # return (query.query_str, response)
         return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
