@@ -41,6 +41,25 @@ By default, embeddings requests are sent to OpenAI in batches of 10. For some us
 embed_model = OpenAIEmbedding(embed_batch_size=42)
 ```
 
+### Local Embedding Models
+
+The easiest way to use a local model is:
+
+```python
+from llama_index import ServiceContext
+service_context = ServiceContext.from_defaults(embed_model="local")
+```
+
+To configure the model used (from Hugging Face hub), add the model name separated by a colon:
+
+```python
+from llama_index import ServiceContext
+
+service_context = ServiceContext.from_defaults(
+  embed_model="local:sentence-transformers/all-mpnet-base-v2"
+)
+```
+
 ### Embedding Model Integrations
 
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/), using our `LangchainEmbedding` wrapper class.
