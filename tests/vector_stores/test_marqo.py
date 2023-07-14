@@ -94,7 +94,7 @@ def test_add_nodes_to_index(marqo_vector_store):
 @pytest.mark.skipif(marqo_not_available, reason="marqo is not available")
 def test_load_data():
     # Initialize MarqoReader
-    marqo_reader = MarqoReader(api_key="foobar", url="http://localhost:8882")
+    marqo_reader = MarqoReader(url="http://localhost:8882")
 
     # Define the index name and id-to-text map
     index_name = "test"
