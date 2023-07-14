@@ -100,6 +100,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         return cls(
             retriever=retriever,
+            service_context=service_context,
             response_synthesizer=response_synthesizer,
             callback_manager=callback_manager,
             node_postprocessors=node_postprocessors,
