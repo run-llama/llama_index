@@ -1,7 +1,7 @@
 # Embeddings
 
 ## Concept
-Embeddings are used in LlamaIndex to represent your documents using a sophistacted numerical representation. Embedding models take text as input, and return a long list of numbers used to caputre the semantics of the text. These embedding models have been trained to represent text this way, and help enable many applications, including search!
+Embeddings are used in LlamaIndex to represent your documents using a sophisticated numerical representation. Embedding models take text as input, and return a long list of numbers used to capture the semantics of the text. These embedding models have been trained to represent text this way, and help enable many applications, including search!
 
 At a high level, if a user asks a question about dogs, then the embedding for that question will be highly similar to text that talks about dogs.
 
