@@ -1,9 +1,16 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.8] - 2023-07-13
 
-## New Features
+### New Features
 - Added embedding speed benchmark (#6876)
+
+### Bug Fixes / Nits
+- remove toctrees from deprecated_terms (#6895)
+- Relax typing dependencies (#6879)
+- docs: modification to evaluation notebook (#6840)
+- raise error if the model does not support functions (#6896)
+- fix(bench embeddings): bug not taking into account string length (#6899)x
 
 ## [v0.7.7] - 2023-07-13
 
