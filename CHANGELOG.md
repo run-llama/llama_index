@@ -4,6 +4,7 @@
 
 ### New Features
 - Improved milvus consistency support and output fields support (#6452)
+- specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
 
 ## [v0.7.6] - 2023-07-12
 

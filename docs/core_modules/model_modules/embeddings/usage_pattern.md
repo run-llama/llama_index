@@ -50,7 +50,7 @@ from llama_index import ServiceContext
 service_context = ServiceContext.from_defaults(embed_model="local")
 ```
 
-To configure the model used (from Hugging Face hub):
+To configure the model used (from Hugging Face hub), add the model name separated by a colon:
 
 ```python
 from llama_index import ServiceContext
