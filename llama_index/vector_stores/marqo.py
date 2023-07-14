@@ -27,21 +27,35 @@ DEFAULT_BATCH_SIZE = 100
 
 _logger = logging.getLogger(__name__)
 
+
 class MarqoVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
-    def __init__(self, marqo_client: Optional[Any] = None, index_name: Optional[str] = None, url: Optional[str] = None, api_key: Optional[str] = None, text_key: str = DEFAULT_TEXT_KEY, batch_size: int = DEFAULT_BATCH_SIZE, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        marqo_client: Optional[Any] = None,
+        index_name: Optional[str] = None,
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        text_key: str = DEFAULT_TEXT_KEY,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        **kwargs: Any
+    ) -> None:
         try:
             import marqo
         except ImportError:
-            raise ImportError("`marqo` package not found, please run `pip install marqo`")
+            raise ImportError(
+                "`marqo` package not found, please run `pip install marqo`"
+            )
         self._index_name = index_name
         if marqo_client is not None:
             self._marqo_client = cast(marqo.Client, marqo_client)
         else:
             if api_key is None or url is None:
-                raise ValueError("Must specify api_key and url if not directly passing in client.")
+                raise ValueError(
+                    "Must specify api_key and url if not directly passing in client."
+                )
             self._marqo_client = marqo.Client(url, api_key)
         self._text_key = text_key
         self._batch_size = batch_size
@@ -49,7 +63,9 @@ class MarqoVectorStore(VectorStore):
 
     def _ensure_index(self):
         """Ensure the index exists, creating it if necessary."""
-        indexes = [index.index_name for index in self._marqo_client.get_indexes()["results"]]
+        indexes = [
+            index.index_name for index in self._marqo_client.get_indexes()["results"]
+        ]
         if self._index_name not in indexes:
             self._marqo_client.create_index(self._index_name)
 
@@ -59,20 +75,20 @@ class MarqoVectorStore(VectorStore):
             entry = {
                 ID_KEY: doc_id,  # Use the passed in ID
                 self._text_key: doc_text,
-                #METADATA_KEY: doc_text,  # Implement getting metadata in the future
+                # METADATA_KEY: doc_text,  # Implement getting metadata in the future
             }
             entries.append(entry)
-        response = self._marqo_client.index(self._index_name).add_documents(entries, non_tensor_fields=[METADATA_KEY])
+        response = self._marqo_client.index(self._index_name).add_documents(
+            entries, non_tensor_fields=[METADATA_KEY]
+        )
 
         # response should be something like:
         # {'errors': False, 'processingTimeMs': 444.4244759997673, 'index_name': 'test', 'items': [{'_id': 'doc1', 'result': 'updated', 'status': 200}, {'_id': 'doc2', 'result': 'updated', 'status': 200}]}
-        return [doc['_id'] for doc in response['items']]
-
+        return [doc["_id"] for doc in response["items"]]
 
     def delete(self, ref_doc_id: List[str], **delete_kwargs: Any) -> None:
         # modify so that it can accept a list of ids
         self._marqo_client.index(self._index_name).delete_documents(ref_doc_id)
-
 
     @property
     def client(self) -> Any:
@@ -118,7 +134,7 @@ class MarqoVectorStore(VectorStore):
         """return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )"""
-        #return (query.query_str, response)
+        # return (query.query_str, response)
         return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
