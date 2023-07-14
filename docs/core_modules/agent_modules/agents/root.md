@@ -26,7 +26,7 @@ You can learn more about our Tool abstractions in our [Tools section](/core_modu
 
 ### Blog Post
 
-For full details, please check out our detailed [blog post]().
+For full details, please check out our detailed [blog post](https://medium.com/llamaindex-blog/data-agents-eed797d7972f).
 
 
 ## Usage Pattern
