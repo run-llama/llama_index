@@ -60,7 +60,7 @@ class BaseRelevancyPostprocessor(BaseNodePostprocessor):
     - Splitting / Chunking
     - Ranking Function / Relevancy Scoring
     - Filtering / Marginalization
-    - Node Synthesis: Aggregation, Mapping 
+    - Node Synthesis: Aggregation, Mapping
     """
 
     filter_operator_shuffle: OperatorMode
