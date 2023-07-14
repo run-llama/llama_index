@@ -1,13 +1,13 @@
-class Aggregator:
+class Synthesizer:
     op_mode: OperatorMode
 
     def validate(self):
         assert self.op_mode in [MapMode.NODE, MapMode.SUB_NODE, AggMode.INTRA_NODE]
 
-    def aggregate(self, nodes: List[NodeWithScores]) -> List[NodeWithScores]:
+    def synthesize(self, nodes: List[NodeWithScores]) -> List[NodeWithScores]:
         pass
 
-    def aggregate_nested(
+    def synthesize_nested(
         self,
         subnodes: List[List[NodeWithScores]],
         nodes: List[NodeWithScores],
@@ -15,7 +15,7 @@ class Aggregator:
         pass
 
 
-class ScoreAggregator(Aggregator):
+class ScoreSynthesizer(Synthesizer):
     """
     score modes: old, new_max, new_avg
     """
@@ -26,11 +26,11 @@ class ScoreAggregator(Aggregator):
         assert self.score_mode in ["old", "new_max", "new_avg"]
         assert self.op_mode == AggMode.INTRA_NODE
 
-    def aggregate_nested(
+    def synthesize_nested(
         self, subnodes: List[List[NodeWithScores]], nodes: List[NodeWithScores]
     ) -> Tuple[List[List[NodeWithScores]], List[NodeWithScores]]:
         if self.op_mode != AggMode.INTRA_NODE:
-            raise ValueError("Invalid aggregator operator mode.")
+            raise ValueError("Invalid synthesizer operator mode.")
         if self.score_mode == "old":
             # Do not modify the scores from the nodes
             pass
@@ -45,9 +45,9 @@ class ScoreAggregator(Aggregator):
         return subnodes, nodes
 
 
-class FormatterAggregator(Aggregator):
+class FormatterSynthesizer(Synthesizer):
     op_mode: AggMode
 
 
-class SummarizerAggregator(Aggregator):
+class SummarizerSynthesizer(Synthesizer):
     op_mode: MapMode

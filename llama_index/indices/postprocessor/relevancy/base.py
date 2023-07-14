@@ -22,12 +22,12 @@ post_processor_config: Dict = {
             "similarity_function": "cosine",
         }
     ],
-    # Aggregators have access to the old nodes and the new nodes
-    "aggregator": {
+    # node_synthesizers have access to the old nodes and the new nodes
+    "synthesizer": {
         "score_mode": "new_avg",
-        "aggregators": [
+        "node_synthesizers": [
             { 
-                "aggregator_type": "summarizer", 
+                "synthesizer_type": "summarizer", 
                 "op_mode": "sub_node",
                 "summarizer_type": "hugging-face",
                 "model_name": "t5-base", 
@@ -35,13 +35,13 @@ post_processor_config: Dict = {
             # Highlight the top 1 sentence, used in 
             # relevancy highlighting formatter
             { 
-                "aggregator_type": "relevancy_highlights",
+                "synthesizer_type": "relevancy_highlights",
                 "op_mode": "intra_node", 
                 "relevancy_mode": "top_k", 
                 "top_k": 1
             },
             { 
-                "aggregator_type": "formatter", 
+                "synthesizer_type": "formatter", 
                 "op_mode": "intra_node", 
                 "format_mode": "join",
                 "join_on": "...",
@@ -60,7 +60,7 @@ class BaseRelevancyPostprocessor(BaseNodePostprocessor):
     - Splitting / Chunking
     - Ranking Function / Relevancy Scoring
     - Filtering / Marginalization
-    - Aggregation and Node Representation
+    - Node Synthesis: Aggregation, Mapping 
     """
 
     filter_operator_shuffle: OperatorMode
@@ -81,14 +81,14 @@ class BaseRelevancyPostprocessor(BaseNodePostprocessor):
             assert self.scorer.agg_mode == AggMode.INTER_NODE
             for filter in self.filters:
                 assert filter.agg_mode == AggMode.INTER_NODE
-            for aggregator in self.aggregators:
-                assert aggregator.op_mode == MapMode.NODE
+            for synthesizer in self.node_synthesizers:
+                assert synthesizer.op_mode == MapMode.NODE
         else:
             assert self.scorer.agg_mode != AggMode.INTER_NODE
             for filter in self.filters:
                 assert filter.agg_mode != AggMode.INTER_NODE
-            for aggregator in self.aggregators:
-                assert aggregator.op_mode in [
+            for synthesizer in self.node_synthesizers:
+                assert synthesizer.op_mode in [
                     MapMode.SUB_NODE,
                     MapMode.NODE,
                     AggMode.INTRA_NODE,
@@ -112,9 +112,9 @@ class BaseRelevancyPostprocessor(BaseNodePostprocessor):
             assert self.filter.agg_mode == AggMode.INTER_NODE
             self._nodes = self.filter.filter(self._nodes)
 
-            # Aggregator can only be a map from each node to a new node
-            assert self.aggregator.op_mode == MapMode.NODE
-            self._nodes = self.aggregator.aggregate(self._nodes)
+            # Synthesizer can only be a map from each node to a new node
+            assert self.synthesizer.op_mode == MapMode.NODE
+            self._nodes = self.synthesizer.synthesize(self._nodes)
         else:
             assert self.splitter is not None
             self._subnodes = self.splitter.split(nodes)
@@ -142,24 +142,24 @@ class BaseRelevancyPostprocessor(BaseNodePostprocessor):
                 else:
                     raise ValueError("Invalid filter agg mode.")
 
-            # Aggregate the subnodes into nodes
+            # synthesize the subnodes into nodes
             # Modify the original nodes in place, utilizing
             # information from the subnodes.
             self._nodes = self._original_nodes
-            for aggregator in self.aggregators:
-                if aggregator.op_mode == MapMode.SUB_NODE:
-                    aggregated = []
+            for synthesizer in self.node_synthesizers:
+                if synthesizer.op_mode == MapMode.SUB_NODE:
+                    synthesized = []
                     for nodes in self._subnodes:
-                        aggregated.append(aggregator.aggregate(nodes))
-                    self._subnodes = aggregated
-                if self.aggregator.op_mode == MapMode.NODE:
-                    self._nodes = aggregator.aggregate(self._nodes)
-                elif aggregator.op_mode == AggMode.INTRA_NODE:
-                    self._subnodes, self._nodes = aggregator.aggregate_nested(
+                        synthesized.append(synthesizer.synthesize(nodes))
+                    self._subnodes = synthesized
+                if self.synthesizer.op_mode == MapMode.NODE:
+                    self._nodes = synthesizer.synthesize(self._nodes)
+                elif synthesizer.op_mode == AggMode.INTRA_NODE:
+                    self._subnodes, self._nodes = synthesizer.synthesize_nested(
                         self._subnodes, self._nodes
                     )
                 else:
-                    raise ValueError("Invalid aggregator operator mode.")
+                    raise ValueError("Invalid synthesizer operator mode.")
 
         return self._nodes
 
