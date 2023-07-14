@@ -1,3 +1,4 @@
+import pytest
 from typing import List
 
 from llama_index.bridge.langchain import (
@@ -60,6 +61,13 @@ def test_from_lc_messages() -> None:
         assert messages[i].content == lc_messages[i].content
 
 
+try:
+    import cohere  # noqa: F401
+except ImportError:
+    cohere_available = None  # type: ignore
+
+
+@pytest.mark.skipif(cohere_available is None, reason="or cohere not installed")
 def test_metadata_sets_model_name() -> None:
     chat_gpt = LangChainLLM(
         llm=ChatOpenAI(model="gpt-4-0613", openai_api_key="model-name-tests")
@@ -71,7 +79,7 @@ def test_metadata_sets_model_name() -> None:
     )
     assert gpt35.metadata.model_name == "gpt-3.5-turbo-0613"
 
-    cohere = LangChainLLM(
+    cohere_llm = LangChainLLM(
         llm=Cohere(model="j2-jumbo-instruct", cohere_api_key="XXXXXXX")
     )
-    assert cohere.metadata.model_name == "j2-jumbo-instruct"
+    assert cohere_llm.metadata.model_name == "j2-jumbo-instruct"
