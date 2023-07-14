@@ -34,13 +34,14 @@ class RetrieverQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         retriever: BaseRetriever,
+        service_context: Optional[ServiceContext] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._retriever = retriever
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            service_context=retriever.get_service_context(),
+            service_context=service_context or retriever.get_service_context(),
             callback_manager=callback_manager,
         )
         self._node_postprocessors = node_postprocessors or []
