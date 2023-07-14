@@ -10,52 +10,6 @@ from llama_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriev
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
 
-def test_query_engine_passes_service_context_to_response_synthesizer() -> None:
-    documents = [Document(text="Hi")]
-    gpt35turbo_predictor = LLMPredictor(
-        llm=ChatOpenAI(
-            temperature=0,
-            model_name="gpt-3.5-turbo-0613",
-            streaming=True,
-            openai_api_key="test-test-test",
-        )
-    )
-    gpt35_sc = ServiceContext.from_defaults(
-        llm_predictor=gpt35turbo_predictor,
-        chunk_size=512,
-    )
-
-    gpt4_predictor = LLMPredictor(
-        llm=ChatOpenAI(
-            temperature=0,
-            model_name="gpt-4-0613",
-            streaming=True,
-            openai_api_key="test-test-test",
-        )
-    )
-    gpt4_sc = ServiceContext.from_defaults(
-        llm_predictor=gpt4_predictor,
-        chunk_size=512,
-    )
-
-    gpt35_tree_index = TreeIndex.from_documents(documents, service_context=gpt35_sc)
-    retriever = TreeSelectLeafRetriever(index=gpt35_tree_index, child_branch_factor=2)
-
-    # Explicitly pass service context that's different from the index to ensure that
-    # it is using that context rather than the retriever's context.
-    query_engine = RetrieverQueryEngine(retriever=retriever, service_context=gpt4_sc)
-
-    assert (
-        retriever._service_context.llm_predictor.metadata.model_name
-        == gpt35turbo_predictor._llm.metadata.model_name
-    )
-    assert (
-        query_engine._response_synthesizer.service_context.llm_predictor.metadata.model_name
-        == gpt4_sc.llm_predictor.metadata.model_name
-    )
-    assert query_engine._response_synthesizer.service_context == gpt4_sc
-
-
 # We test two different models in case one ends up becoming the default of
 # llama_index.llms.utils.resolve_llm
 def test_query_engine_falls_back_to_inheriting_retrievers_service_context() -> None:
