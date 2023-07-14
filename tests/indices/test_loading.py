@@ -18,8 +18,6 @@ from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.index_store.simple_index_store import SimpleIndexStore
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.faiss import FaissVectorStore
-from llama_index import LLMPredictor
-from langchain.chat_models import ChatOpenAI
 
 
 def test_load_index_from_storage_simple(
@@ -183,24 +181,16 @@ def test_load_index_from_storage_faiss_vector_store(
 def test_load_index_query_engine_service_context(
     documents: List[Document],
     tmp_path: Path,
+    mock_service_context: ServiceContext,
 ) -> None:
     # construct simple (i.e. in memory) storage context
     storage_context = StorageContext.from_defaults()
-
-    service_context = ServiceContext.from_defaults(
-        llm_predictor=LLMPredictor(
-            llm=ChatOpenAI(
-                model_name="gpt-3.5-turbo-0613",
-                openai_api_key="test-test-test",
-            )
-        )
-    )
 
     # construct index
     index = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
-        service_context=service_context,
+        service_context=mock_service_context,
     )
 
     # persist storage to disk
@@ -211,7 +201,7 @@ def test_load_index_query_engine_service_context(
 
     # load index
     new_index = load_index_from_storage(
-        storage_context=new_storage_context, service_context=service_context
+        storage_context=new_storage_context, service_context=mock_service_context
     )
 
     query_engine = index.as_query_engine()
@@ -221,4 +211,6 @@ def test_load_index_query_engine_service_context(
     assert isinstance(query_engine, RetrieverQueryEngine)
     assert isinstance(new_query_engine, RetrieverQueryEngine)
     # Ensure that the loaded index will end up querying with the same service_context
-    assert new_query_engine._response_synthesizer.service_context == service_context
+    assert (
+        new_query_engine._response_synthesizer.service_context == mock_service_context
+    )
