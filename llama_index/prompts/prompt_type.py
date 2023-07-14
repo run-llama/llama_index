@@ -29,6 +29,9 @@ class PromptType(str, Enum):
     # text to sql
     TEXT_TO_SQL = "text_to_sql"
 
+    # text to graph query
+    TEXT_TO_GRAPH_QUERY = "text_to_graph_query"
+
     # table context
     TABLE_CONTEXT = "table_context"
 
