@@ -296,7 +296,7 @@ class PineconeVectorStore(VectorStore):
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    match.metadata, text_key=self._text_key
+                    match.metadata or {}, text_key=self._text_key
                 )
 
                 text = match.metadata[self._text_key]
