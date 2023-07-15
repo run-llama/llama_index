@@ -3,8 +3,37 @@
 ## Unreleased
 
 ### New Features
+- specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
+
+### Bug Fixes / Nits
+- fix null metadata for searching existing vector dbs (#6912)
+
+## [v0.7.8] - 2023-07-13
+
+### New Features
+- Added embedding speed benchmark (#6876)
+- Added BEIR retrieval benchmark (#6825)
+
+### Bug Fixes / Nits
+- remove toctrees from deprecated_terms (#6895)
+- Relax typing dependencies (#6879)
+- docs: modification to evaluation notebook (#6840)
+- raise error if the model does not support functions (#6896)
+- fix(bench embeddings): bug not taking into account string length (#6899)x
+
+## [v0.7.7] - 2023-07-13
+
+### New Features
 - Improved milvus consistency support and output fields support (#6452)
 - Added support for knowledge graph querying w/ cypyer+nebula (#6642)
+- Added `Document.example()` to create documents for fast prototyping (#6739)
+- Replace react chat engine to use native reactive agent (#6870)
+
+### Bug Fixes / Nits
+- chore: added a help message to makefile (#6861)
+
+### Bug Fixes / Nits
+- Fixed support for using SQLTableSchema context_str attribute (#6891)
 
 ## [v0.7.6] - 2023-07-12
 

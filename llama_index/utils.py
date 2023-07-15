@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial
 from itertools import islice
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -236,3 +237,57 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
         )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     return tokenizer.tokenize
+
+
+def get_cache_dir() -> Path:
+    """Locate a platform-appropriate cache directory for llama_index,
+    and create it if it doesn't yet exist
+    """
+    # Linux, Unix, AIX, etc.
+    if os.name == "posix" and sys.platform != "darwin":
+        # use ~/.cache if empty OR not set
+        base = os.path.expanduser("~/.cache")
+        path = Path(base, "llama_index")
+
+    # Mac OS
+    elif sys.platform == "darwin":
+        path = Path(os.path.expanduser("~"), "Library/Caches/llama_index")
+
+    # Windows (hopefully)
+    else:
+        local = os.environ.get("LOCALAPPDATA", None) or os.path.expanduser(
+            "~\\AppData\\Local"
+        )
+        path = Path(local, "llama_index")
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
+# Sample text from llama_index's readme
+SAMPLE_TEXT = """
+Context
+LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. 
+They are pre-trained on large amounts of publicly available data.
+How do we best augment LLMs with our own private data?
+We need a comprehensive toolkit to help perform this data augmentation for LLMs.
+
+Proposed Solution
+That's where LlamaIndex comes in. LlamaIndex is a "data framework" to help 
+you build LLM  apps. It provides the following tools:
+
+Offers data connectors to ingest your existing data sources and data formats 
+(APIs, PDFs, docs, SQL, etc.)
+Provides ways to structure your data (indices, graphs) so that this data can be 
+easily used with LLMs.
+Provides an advanced retrieval/query interface over your data: 
+Feed in any LLM input prompt, get back retrieved context and knowledge-augmented output.
+Allows easy integrations with your outer application framework 
+(e.g. with LangChain, Flask, Docker, ChatGPT, anything else).
+LlamaIndex provides tools for both beginner users and advanced users. 
+Our high-level API allows beginner users to use LlamaIndex to ingest and 
+query their data in 5 lines of code. Our lower-level APIs allow advanced users to 
+customize and extend any module (data connectors, indices, retrievers, query engines, 
+reranking modules), to fit their needs.
+"""
