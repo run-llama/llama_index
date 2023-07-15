@@ -181,16 +181,29 @@ class BaseIndex(Generic[IS], ABC):
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
+    def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        '''Insert nodes.'''
+        with self._service_context.callback_manager.as_trace("insert_nodes"):
+            # Apply Time-Weighted Rerank postprocessor to nodes
+            postprocessor = TimeWeightedPostprocessor()
+            nodes = postprocessor.postprocess_nodes(nodes)
+            
+            self.docstore.add_documents(nodes, allow_update=True)
+            self._insert(nodes, **insert_kwargs)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
+
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
-        """Insert a document."""
+        '''Insert a document.'''
         with self._service_context.callback_manager.as_trace("insert"):
             nodes = self.service_context.node_parser.get_nodes_from_documents(
                 [document]
             )
+            # Apply Time-Weighted Rerank postprocessor to nodes
+            postprocessor = TimeWeightedPostprocessor()
+            nodes = postprocessor.postprocess_nodes(nodes)
+            
             self.insert_nodes(nodes, **insert_kwargs)
             self.docstore.set_document_hash(document.get_doc_id(), document.hash)
-
-    @abstractmethod
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
 
