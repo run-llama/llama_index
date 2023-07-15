@@ -70,7 +70,7 @@ It takes in a natural language query, and returns a response, along with referen
 A chat engine is an end-to-end pipeline for having a conversation with your data
 (multiple back-and-forth instead of a single question & answer).
 
-[**Agents**](/core_modules/query_modules/agent/root.md): 
+[**Agents**](/core_modules/agent_modules/agents/root.md): 
 An agent is an automated decision maker (powered by an LLM) that interacts with the world via a set of tools.
 Agent may be used in the same fashion as query engines or chat engines. 
 The main distinction is that an agent dynamically decides the best sequence of actions, instead of following a predetermined logic.

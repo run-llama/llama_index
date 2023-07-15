@@ -41,6 +41,25 @@ By default, embeddings requests are sent to OpenAI in batches of 10. For some us
 embed_model = OpenAIEmbedding(embed_batch_size=42)
 ```
 
+### Local Embedding Models
+
+The easiest way to use a local model is:
+
+```python
+from llama_index import ServiceContext
+service_context = ServiceContext.from_defaults(embed_model="local")
+```
+
+To configure the model used (from Hugging Face hub), add the model name separated by a colon:
+
+```python
+from llama_index import ServiceContext
+
+service_context = ServiceContext.from_defaults(
+  embed_model="local:sentence-transformers/all-mpnet-base-v2"
+)
+```
+
 ### Embedding Model Integrations
 
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/), using our `LangchainEmbedding` wrapper class.
@@ -52,7 +71,7 @@ from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding, ServiceContext
 
 embed_model = LangchainEmbedding(
-  HuggingFaceEmbeddings("sentence-transformers/all-mpnet-base-v2")
+  HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 )
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 ```
@@ -80,15 +99,15 @@ class InstructorEmbeddings(BaseEmbedding):
     super().__init__(**kwargs)
 
     def _get_query_embedding(self, query: str) -> List[float]:
-      embeddings = model.encode([[self._instruction, query]])
+      embeddings = self._model.encode([[self._instruction, query]])
       return embeddings[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
-      embeddings = model.encode([[self._instruction, text]])
+      embeddings = self._model.encode([[self._instruction, text]])
       return embeddings[0] 
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-      embeddings = model.encode([[self._instruction, text] for text in texts])
+      embeddings = self._model.encode([[self._instruction, text] for text in texts])
       return embeddings
 ```
 
