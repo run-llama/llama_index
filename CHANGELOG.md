@@ -4,9 +4,11 @@
 
 ### New Features
 - specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
+- Add async `acall` endpoint to `BasePydanticProgram` (defaults to sync version). Implement for `OpenAIPydanticProgram`
 
 ### Bug Fixes / Nits
 - fix null metadata for searching existing vector dbs (#6912)
+- add module guide docs for `SimpleDirectoryReader` (#6916)
 
 ## [v0.7.8] - 2023-07-13
 
