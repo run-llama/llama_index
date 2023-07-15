@@ -49,7 +49,7 @@ class GlobalsHelper:
                 raise ImportError(tiktoken_import_err)
             enc = tiktoken.get_encoding("gpt2")
             self._tokenizer = cast(Callable[[str], List], enc.encode)
-            self._tokenizer = partial(self._tokenizer, allowed_special="all")
+            self._tokenizer = partial(self._tokenizer, allowed_special="all")  # type: ignore
         return self._tokenizer
 
     @property

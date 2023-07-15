@@ -1,7 +1,7 @@
 """Async utils."""
 import asyncio
 from itertools import zip_longest
-from typing import Any, Coroutine, List
+from typing import Any, Coroutine, Iterable, List
 
 
 def run_async_tasks(
@@ -40,13 +40,15 @@ def run_async_tasks(
     return outputs
 
 
-def chunks(iterable, size):
+def chunks(iterable: Iterable, size: int) -> Iterable:
     args = [iter(iterable)] * size
     return zip_longest(*args, fillvalue=None)
 
 
-async def batch_gather(tasks: List[Coroutine], batch_size: int = 10, verbose = False) -> List[Any]:
-    output = []
+async def batch_gather(
+    tasks: List[Coroutine], batch_size: int = 10, verbose: bool = False
+) -> List[Any]:
+    output: List[Any] = []
     for task_chunk in chunks(tasks, batch_size):
         output_chunk = await asyncio.gather(*task_chunk)
         output.extend(output_chunk)

@@ -19,6 +19,5 @@ class BasePydanticProgram(ABC, Generic[Model]):
     def __call__(self, *args: Any, **kwds: Any) -> Model:
         pass
 
-
     async def acall(self, *args: Any, **kwds: Any) -> Model:
         return self(*args, **kwds)
