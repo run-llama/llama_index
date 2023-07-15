@@ -1,9 +1,9 @@
 import logging
-from typing import Any, List, Type, Optional
+from typing import Any, List, Optional, Type
 
 from llama_index.chat_engine.types import (
-    BaseChatEngine,
     AgentChatResponse,
+    BaseChatEngine,
     StreamingAgentChatResponse,
 )
 from llama_index.chat_engine.utils import response_gen_with_chat_history
@@ -13,7 +13,7 @@ from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts.base import Prompt
-from llama_index.response.schema import StreamingResponse, RESPONSE_TYPE
+from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.tools import ToolOutput
 
 logger = logging.getLogger(__name__)
@@ -151,6 +151,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         if self._verbose:
             print(log_str)
 
+        # TODO: right now, query engine uses class attribute to configure streaming,
+        #       we are moving towards separate streaming and non-streaming methods.
+        #       In the meanwhile, use this hack to toggle streaming.
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = False
+
         # Query with standalone question
         query_response = self._query_engine.query(condensed_question)
         tool_output = self._get_tool_output_from_response(
@@ -177,6 +185,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         logger.info(log_str)
         if self._verbose:
             print(log_str)
+
+        # TODO: right now, query engine uses class attribute to configure streaming,
+        #       we are moving towards separate streaming and non-streaming methods.
+        #       In the meanwhile, use this hack to toggle streaming.
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = True
 
         # Query with standalone question
         query_response = self._query_engine.query(condensed_question)
@@ -213,6 +229,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         if self._verbose:
             print(log_str)
 
+        # TODO: right now, query engine uses class attribute to configure streaming,
+        #       we are moving towards separate streaming and non-streaming methods.
+        #       In the meanwhile, use this hack to toggle streaming.
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = False
+
         # Query with standalone question
         query_response = await self._query_engine.aquery(condensed_question)
         tool_output = self._get_tool_output_from_response(
@@ -239,6 +263,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         logger.info(log_str)
         if self._verbose:
             print(log_str)
+
+        # TODO: right now, query engine uses class attribute to configure streaming,
+        #       we are moving towards separate streaming and non-streaming methods.
+        #       In the meanwhile, use this hack to toggle streaming.
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = True
 
         # Query with standalone question
         query_response = await self._query_engine.aquery(condensed_question)
