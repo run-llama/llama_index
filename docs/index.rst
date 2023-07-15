@@ -42,9 +42,7 @@ For more complex applications, our lower-level APIs allow advanced users to cust
 
 Getting Started
 ****************
-```
-pip install llama-index
-```
+`pip install llama-index`
 
 Our documentation includes detailed [Installation](/getting_started/installation.md) instructions and a [Starter Tutorial](/getting_started/starter_example.md) to build your first application (in five lines of code!)
 
