@@ -167,7 +167,8 @@ class PGVectorStore(VectorStore):
         with self._session() as session:
             with session.begin():
                 stmt = sqlalchemy.text(
-                    f"DELETE FROM public.data_{self.table_name} where (metadata_->>'doc_id')::text = '{ref_doc_id}' "
+                    f"DELETE FROM public.data_{self.table_name} where "
+                    f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
                 )
 
                 session.execute(stmt)
