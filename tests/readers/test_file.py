@@ -318,7 +318,7 @@ def test_specifying_encoding() -> None:
             f.write("test2â")
         with open(f"{tmp_dir}/test3.txt", "w", encoding="latin-1") as f:
             f.write("test3ã")
-        with open(f"{tmp_dir}/test5.json", "w", encoding="latin-1") as f:
+        with open(f"{tmp_dir}/test4.json", "w", encoding="latin-1") as f:
             f.write('{"test_1á": {"test_2ã": ["â"]}}')
 
         reader = SimpleDirectoryReader(
@@ -331,7 +331,7 @@ def test_specifying_encoding() -> None:
             f"{tmp_dir}/test1.txt",
             f"{tmp_dir}/test2.txt",
             f"{tmp_dir}/test3.txt",
-            f"{tmp_dir}/test5.json",
+            f"{tmp_dir}/test4.json",
         ]
 
         # check paths. Split handles path_part_X doc_ids from md and json files
