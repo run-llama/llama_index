@@ -28,6 +28,7 @@ LlamaIndex provides the following tools:
 
   - Query engines are powerful retrieval interfaces for knowledge-augmented output.
   - Chat engines are conversational interfaces for multi-message, "back and forth" interactions with your data.
+- **Data agents** are LLM-powered knowledge workers augmented by tools, from simple helper functions to API integrations and more.
 - **Application integrations** tie LlamaIndex back into the rest of your ecosystem. This could be LangChain, Flask, Docker, ChatGPT, or… anything else!
 
 👨‍👩‍👧‍👦 Who is LlamaIndex for?
@@ -38,6 +39,17 @@ LlamaIndex provides tools for beginners, advanced users, and everyone in between
 Our high-level API allows beginner users to use LlamaIndex to ingest and query their data in 5 lines of code.
 
 For more complex applications, our lower-level APIs allow advanced users to customize and extend any module—data connectors, indices, retrievers, query engines, reranking modules—to fit their needs.
+
+Getting Started
+****************
+```
+pip install llama-index
+```
+
+Our documentation includes detailed [Installation](/getting_started/installation.md) instructions and a [Starter Tutorial](/getting_started/starter_example.md) to build your first application (in five lines of code!)
+
+Once you're up and running, [High-Level Concepts](getting_started/concepts.html) has an overview of LlamaIndex's modular architecture. For more hands-on practical examples, look through our [End-to-End Tutorials](/end_to_end_tutorials/use_cases.html) or learn how to [customize](getting_started/customization.html) components to fit your specific needs.
+
 
 🗺️ Ecosystem
 ************
