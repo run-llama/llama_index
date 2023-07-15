@@ -157,10 +157,16 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         if isinstance(self._query_engine, RetrieverQueryEngine):
+            is_streaming = self._query_engine._response_synthesizer._streaming
             self._query_engine._response_synthesizer._streaming = False
 
         # Query with standalone question
         query_response = self._query_engine.query(condensed_question)
+
+        # NOTE: reset streaming flag
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = is_streaming
+
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
         )
@@ -192,10 +198,16 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         if isinstance(self._query_engine, RetrieverQueryEngine):
+            is_streaming = self._query_engine._response_synthesizer._streaming
             self._query_engine._response_synthesizer._streaming = True
 
         # Query with standalone question
         query_response = self._query_engine.query(condensed_question)
+
+        # NOTE: reset streaming flag
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = is_streaming
+
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
         )
@@ -235,10 +247,16 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         if isinstance(self._query_engine, RetrieverQueryEngine):
+            is_streaming = self._query_engine._response_synthesizer._streaming
             self._query_engine._response_synthesizer._streaming = False
 
         # Query with standalone question
         query_response = await self._query_engine.aquery(condensed_question)
+
+        # NOTE: reset streaming flag
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = is_streaming
+
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
         )
@@ -270,10 +288,16 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         if isinstance(self._query_engine, RetrieverQueryEngine):
+            is_streaming = self._query_engine._response_synthesizer._streaming
             self._query_engine._response_synthesizer._streaming = True
 
         # Query with standalone question
         query_response = await self._query_engine.aquery(condensed_question)
+
+        # NOTE: reset streaming flag
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = is_streaming
+
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
         )
