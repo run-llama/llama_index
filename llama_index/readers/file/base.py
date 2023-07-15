@@ -47,6 +47,8 @@ class SimpleDirectoryReader(BaseReader):
             (Optional; overrides input_dir, exclude)
         exclude (List): glob of python file paths to exclude (Optional)
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
+        encoding (str): Encoding of the files.
+            Default is utf-8.
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
         recursive (bool): Whether to recursively search in subdirectories.
@@ -73,6 +75,7 @@ class SimpleDirectoryReader(BaseReader):
         exclude_hidden: bool = True,
         errors: str = "ignore",
         recursive: bool = False,
+        encoding: str = "utf-8",
         filename_as_id: bool = False,
         required_exts: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, BaseReader]] = None,
@@ -86,6 +89,7 @@ class SimpleDirectoryReader(BaseReader):
             raise ValueError("Must provide either `input_dir` or `input_files`.")
 
         self.errors = errors
+        self.encoding = encoding
 
         self.exclude = exclude
         self.recursive = recursive
@@ -206,7 +210,9 @@ class SimpleDirectoryReader(BaseReader):
                 documents.extend(docs)
             else:
                 # do standard read
-                with open(input_file, "r", errors=self.errors, encoding="utf8") as f:
+                with open(
+                    input_file, "r", errors=self.errors, encoding=self.encoding
+                ) as f:
                     data = f.read()
 
                 doc = Document(text=data, metadata=metadata or {})
