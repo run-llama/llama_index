@@ -158,14 +158,13 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             result = NodeWithEmbedding(node=node, embedding=embedding)
             results.append(result)
         return results
-
     async def _async_add_nodes_to_index(
         self,
         index_struct: IndexDict,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
     ) -> None:
-        """Asynchronously add nodes to index."""
+        '''Asynchronously add nodes to index.'''
         if not nodes:
             return
 
@@ -178,14 +177,14 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         # index struct and document store
         if not self._vector_store.stores_text or self._store_nodes_override:
             for result, new_id in zip(embedding_results, new_ids):
-                index_struct.add_node(result.node, text_id=new_id)
+                index_struct.add_node(result.node, text_id=new_id, timestamp=document.timestamp)
                 self._docstore.add_documents([result.node], allow_update=True)
         else:
             # NOTE: if the vector store keeps text,
             # we only need to add image and index nodes
             for result, new_id in zip(embedding_results, new_ids):
                 if isinstance(result.node, (ImageNode, IndexNode)):
-                    index_struct.add_node(result.node, text_id=new_id)
+                    index_struct.add_node(result.node, text_id=new_id, timestamp=document.timestamp)
                     self._docstore.add_documents([result.node], allow_update=True)
 
     def _add_nodes_to_index(
@@ -194,7 +193,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
     ) -> None:
-        """Add document to index."""
+        '''Add document to index.'''
         if not nodes:
             return
 
@@ -205,14 +204,14 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             # NOTE: if the vector store doesn't store text,
             # we need to add the nodes to the index struct and document store
             for result, new_id in zip(embedding_results, new_ids):
-                index_struct.add_node(result.node, text_id=new_id)
+                index_struct.add_node(result.node, text_id=new_id, timestamp=document.timestamp)
                 self._docstore.add_documents([result.node], allow_update=True)
         else:
             # NOTE: if the vector store keeps text,
             # we only need to add image and index nodes
             for result, new_id in zip(embedding_results, new_ids):
                 if isinstance(result.node, (ImageNode, IndexNode)):
-                    index_struct.add_node(result.node, text_id=new_id)
+                    index_struct.add_node(result.node, text_id=new_id, timestamp=document.timestamp)
                     self._docstore.add_documents([result.node], allow_update=True)
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
