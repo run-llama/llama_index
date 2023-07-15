@@ -97,7 +97,7 @@ This somewhat inconsistent with query engine (where you pass in a `streaming=Tru
 ```
 
 ```python
-chat_engine = index.as_chat_engine()
+chat_engine = index.as_chat_engine(streaming=True)
 streaming_response = chat_engine.stream_chat("Tell me a joke.")
 for token in streaming_response.response_gen:
     print(token, end="")
