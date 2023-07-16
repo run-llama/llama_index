@@ -73,7 +73,7 @@ class ServiceContext:
     @classmethod
     def from_defaults(
         cls,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm_predictor: Optional[Union[BaseLLMPredictor, str]] = None,
         llm: Optional[LLMType] = None,
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[Union[BaseEmbedding, str]] = None,
@@ -97,9 +97,10 @@ class ServiceContext:
         to a ServiceContext object with your desired settings.
 
         Args:
-            llm_predictor (Optional[BaseLLMPredictor]): LLMPredictor
+            llm_predictor (Optional[Union[BaseLLMPredictor, str]]): LLMPredictor
+                or "local" (use local model)
             prompt_helper (Optional[PromptHelper]): PromptHelper
-            embed_model (Optional[BaseEmbedding]): BaseEmbedding
+            embed_model (Optional[Union[BaseEmbedding, str]]): BaseEmbedding
                 or "local" (use local model)
             node_parser (Optional[NodeParser]): NodeParser
             llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
@@ -117,26 +118,10 @@ class ServiceContext:
             chunk_size = chunk_size_limit
 
         if isinstance(embed_model, str):
-            splits = embed_model.split(":", 1)
-            is_local = splits[0]
-            model_name = splits[1] if len(splits) > 1 else None
-            if is_local != "local":
-                raise ValueError(
-                    "embed_model must start with str 'local' or of type BaseEmbedding"
-                )
-            try:
-                from langchain.embeddings import HuggingFaceEmbeddings
-            except ImportError as exc:
-                raise ImportError(
-                    "Could not import sentence_transformers or langchain package. "
-                    "Please install with `pip install sentence-transformers langchain`."
-                ) from exc
+            embed_model = _get_embed_model_from_str(embed_model)
 
-            embed_model = LangchainEmbedding(
-                HuggingFaceEmbeddings(
-                    model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
-                )
-            )
+        if isinstance(llm_predictor, str):
+            llm_predictor = _get_llm_predictor_from_str(llm_predictor)
 
         if llama_index.global_service_context is not None:
             return cls.from_service_context(
@@ -262,3 +247,50 @@ class ServiceContext:
 def set_global_service_context(service_context: Optional[ServiceContext]) -> None:
     """Helper function to set the global service context."""
     llama_index.global_service_context = service_context
+
+
+def _get_embed_model_from_str(embed_model: str):
+    splits = embed_model.split(":", 1)
+    is_local = splits[0]
+    model_name = splits[1] if len(splits) > 1 else None
+    if is_local != "local":
+        raise ValueError(
+            "embed_model must start with str 'local' or of type BaseEmbedding"
+        )
+    try:
+        from langchain.embeddings import HuggingFaceEmbeddings
+    except ImportError as exc:
+        raise ImportError(
+            "Could not import sentence_transformers or langchain package. "
+            "Please install with `pip install sentence-transformers langchain`."
+        ) from exc
+
+    embed_model = LangchainEmbedding(
+        HuggingFaceEmbeddings(
+            model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+        )
+    )
+    return embed_model
+
+def _get_llm_predictor_from_str(llm_predictor: str):
+    splits = llm_predictor.split(":", 1)
+    is_local = splits[0]
+    model_name = splits[1] if len(splits) > 1 else None
+    if is_local != "local":
+        raise ValueError(
+            "llm_predictor must start with str 'local' or of type BaseLlmPredictor"
+        )
+    try:
+        from langchain.embeddings import HuggingFaceEmbeddings
+    except ImportError as exc:
+        raise ImportError(
+            "Could not import sentence_transformers or langchain package. "
+            "Please install with `pip install sentence-transformers langchain`."
+        ) from exc
+
+    embed_model = LangchainEmbedding(
+        HuggingFaceEmbeddings(
+            model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+        )
+    )
+    return embed_model
