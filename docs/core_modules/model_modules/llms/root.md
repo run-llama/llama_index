@@ -34,6 +34,15 @@ usage_standalone.md
 usage_custom.md
 ```
 
+To save costs, you may want to use a local model. Note that these models may be slow and may not generate high-quality outputs.
+
+```python
+from llama_index import ServiceContext
+service_context = ServiceContext.from_defaults(embed_model="local:cpu")
+```
+
+The default uses a 4-bit quantized vicuna-13b running on CPU using llama.cpp/ggml.
+
 
 ## Modules
 
@@ -45,5 +54,6 @@ maxdepth: 2
 ---
 modules.md
 ```
+
 
 

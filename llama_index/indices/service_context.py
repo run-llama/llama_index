@@ -1,8 +1,10 @@
 import logging
 from dataclasses import dataclass
 from typing import Optional, Union
+import os
 
 import llama_index
+from llama_index.utils import get_cache_dir
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -249,8 +251,8 @@ def set_global_service_context(service_context: Optional[ServiceContext]) -> Non
     llama_index.global_service_context = service_context
 
 
-def _get_embed_model_from_str(embed_model: str):
-    splits = embed_model.split(":", 1)
+def _get_embed_model_from_str(config: str) -> BaseEmbedding:
+    splits = config.split(":", 1)
     is_local = splits[0]
     model_name = splits[1] if len(splits) > 1 else None
     if is_local != "local":
@@ -272,20 +274,21 @@ def _get_embed_model_from_str(embed_model: str):
     )
     return embed_model
 
-# DEFAULT_LLAMA_CPP_MODEL = 
 
-def _get_llm_predictor_from_str(llm_predictor: str):
-    splits = llm_predictor.split(":", 2)
+def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
+    splits = config.split(":", 2)
     is_local = splits[0]
-    i
-    model_name = splits[2] if len(splits) > 2 else None
+    is_cpu = splits[1]
     if is_local != "local":
         raise ValueError(
             "llm_predictor must start with str 'local' or of type BaseLlmPredictor"
         )
+    if is_cpu != "cpu":
+        raise ValueError(
+            "llm_predictor can only accept CPU defaults using llama-cpp for now"
+        )
     try:
         from langchain.llms import LlamaCpp
-        from llama_index.llms import LangChainLLM
         from llama_index import LLMPredictor
     except ImportError as exc:
         raise ImportError(
@@ -293,9 +296,44 @@ def _get_llm_predictor_from_str(llm_predictor: str):
             "Please install with `pip install llama-cpp-python langchain`."
         ) from exc
 
-    llm_predictor = LLMPredictor(
-        LlamaCpp(
-            model_path="../../models/vicuna-13b/ggml-model-q4_0.bin",
+    model_path = os.path.join(
+        get_cache_dir(), "models", "llama-cpp-vicuna13b", "ggml-model-q4_0.bin"
+    )
+    if not os.path.exists(model_path):
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+
+        download_to_cache_dir(
+            url="https://huggingface.co/vicuna/ggml-vicuna-13b-1.1/"
+            "resolve/main/ggml-vic13b-q4_0.bin",
+            path=model_path,
         )
+        assert os.path.exists(model_path)
+
+    llm_predictor = LLMPredictor(
+        LlamaCpp(model_path=model_path, n_ctx=2048, stop=["### Human"])
     )
     return llm_predictor
+
+
+def download_to_cache_dir(url: str, path: str) -> None:
+    import requests
+    from tqdm import tqdm
+
+    # use a context manager to make an HTTP request and file
+    completed = False
+    try:
+        print("Downloading url", url, "to path", path)
+        with requests.get(url, stream=True) as r:
+            with open(path, "wb") as file:
+                total_size = int(r.headers.get("Content-Length") or 0)
+                print("total size (MB):", round(total_size / 1000 / 1000, 2))
+                chunk_size = 1024 * 1024  # 1 MB
+                for chunk in tqdm(
+                    r.iter_content(chunk_size=chunk_size),
+                    total=int(total_size / chunk_size),
+                ):
+                    file.write(chunk)
+        completed = True
+    finally:
+        if not completed:
+            os.remove(path)
