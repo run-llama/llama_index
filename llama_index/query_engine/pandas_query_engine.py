@@ -4,6 +4,7 @@ import logging
 from typing import Any, Callable, Optional
 
 import pandas as pd
+import numpy as np
 from llama_index.bridge.langchain import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
