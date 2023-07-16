@@ -80,7 +80,7 @@ postprocessor = SentenceTransformerRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](/docs/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
+Full notebook guide is available [here](/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
 
 ## LLM Rerank
 
