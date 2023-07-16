@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.9] - 2023-07-15
 
 ### New Features
 - specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
