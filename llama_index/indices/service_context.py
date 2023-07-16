@@ -272,25 +272,30 @@ def _get_embed_model_from_str(embed_model: str):
     )
     return embed_model
 
+# DEFAULT_LLAMA_CPP_MODEL = 
+
 def _get_llm_predictor_from_str(llm_predictor: str):
-    splits = llm_predictor.split(":", 1)
+    splits = llm_predictor.split(":", 2)
     is_local = splits[0]
-    model_name = splits[1] if len(splits) > 1 else None
+    i
+    model_name = splits[2] if len(splits) > 2 else None
     if is_local != "local":
         raise ValueError(
             "llm_predictor must start with str 'local' or of type BaseLlmPredictor"
         )
     try:
-        from langchain.embeddings import HuggingFaceEmbeddings
+        from langchain.llms import LlamaCpp
+        from llama_index.llms import LangChainLLM
+        from llama_index import LLMPredictor
     except ImportError as exc:
         raise ImportError(
-            "Could not import sentence_transformers or langchain package. "
-            "Please install with `pip install sentence-transformers langchain`."
+            "Could not import llama-cpp-python or langchain package. "
+            "Please install with `pip install llama-cpp-python langchain`."
         ) from exc
 
-    embed_model = LangchainEmbedding(
-        HuggingFaceEmbeddings(
-            model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+    llm_predictor = LLMPredictor(
+        LlamaCpp(
+            model_path="../../models/vicuna-13b/ggml-model-q4_0.bin",
         )
     )
-    return embed_model
+    return llm_predictor
