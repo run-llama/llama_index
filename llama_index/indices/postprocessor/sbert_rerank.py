@@ -39,6 +39,6 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         for node, score in zip(nodes, scores):
             node.score = score
 
-        new_nodes = sorted(nodes, key=lambda x: -x.score)[: self._top_n]
+        new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[: self._top_n]
 
         return new_nodes
