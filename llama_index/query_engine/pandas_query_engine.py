@@ -55,7 +55,7 @@ def default_output_processor(
         module_end_str = ast.unparse(module_end)  # type: ignore
         print(module_end_str)
         try:
-            return str(eval(module_end_str, {}, local_vars))
+            return str(eval(module_end_str, {"np": np}, local_vars))
         except Exception as e:
             raise e
     except Exception as e:
