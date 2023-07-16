@@ -1,4 +1,3 @@
-import os
 from typing import List, Optional
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
@@ -39,6 +38,8 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         for node, score in zip(nodes, scores):
             node.score = score
 
-        new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[: self._top_n]
+        new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
+            : self._top_n
+        ]
 
         return new_nodes
