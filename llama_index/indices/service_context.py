@@ -302,7 +302,7 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
     if not os.path.exists(model_path):
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
 
-        download_to_cache_dir(
+        _download_to_cache_dir(
             url="https://huggingface.co/vicuna/ggml-vicuna-13b-1.1/"
             "resolve/main/ggml-vic13b-q4_0.bin",
             path=model_path,
@@ -315,7 +315,7 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
     return llm_predictor
 
 
-def download_to_cache_dir(url: str, path: str) -> None:
+def _download_to_cache_dir(url: str, path: str) -> None:
     import requests
     from tqdm import tqdm
 
