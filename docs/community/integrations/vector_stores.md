@@ -25,6 +25,7 @@ as the storage backend for `VectorStoreIndex`.
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart] (https://www.mongodb.com/atlas/database).
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
+- Marqo (`MarqoVectorStore`). [Installation/Quickstart](https://docs.marqo.ai/latest)
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -74,6 +75,30 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+**Marqo**
+First, run a marqo instance (or get the url of a marqo instance). See marqo documentation for more.
+
+```bash
+
+docker rm -f marqo
+docker pull marqoai/marqo:latest
+docker run --name marqo -it --privileged -p 8882:8882 --add-host host.docker.internal:host-gateway marqoai/marqo:latest
+```
+Then, to use marqo as a vector store,
+```python
+import marqo
+from llama_index.vector_stores import MarqoVectorStore
+
+# Creating a Pinecone index
+mq = marqo.Client(url="http://localhost:8882", api_key="foobar")
+mq.create_index(index_name="llama_index_test3")
+
+# construct vector store
+vector_store = MarqoVectorStore(
+    marqo_client=mq, 
+    index_name="llama_index_test2"
+)
+```
 
 **Redis**
 
