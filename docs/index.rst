@@ -42,12 +42,11 @@ For more complex applications, our lower-level APIs allow advanced users to cust
 
 Getting Started
 ****************
-`pip install llama-index`
+``pip install llama-index``
 
-Our documentation includes detailed [Installation](/getting_started/installation.md) instructions and a [Starter Tutorial](/getting_started/starter_example.md) to build your first application (in five lines of code!)
+Our documentation includes detailed `Installation Instructions <./getting_started/installation.html>`_ and a `Starter Tutorial <./getting_started/starter_example.html>`_ to build your first application (in five lines of code!)
 
-Once you're up and running, [High-Level Concepts](getting_started/concepts.html) has an overview of LlamaIndex's modular architecture. For more hands-on practical examples, look through our [End-to-End Tutorials](/end_to_end_tutorials/use_cases.html) or learn how to [customize](getting_started/customization.html) components to fit your specific needs.
-
+Once you're up and running, `High-Level Concepts <./getting_started/concepts.html>`_ has an overview of LlamaIndex's modular architecture. For more hands-on practical examples, look through our `End-to-End Tutorials <./end_to_end_tutorials/use_cases.html>`_ or learn how to `customize <./getting_started/customization.html>`_ components to fit your specific needs.
 
 🗺️ Ecosystem
 ************
