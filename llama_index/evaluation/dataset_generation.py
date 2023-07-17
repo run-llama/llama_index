@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 
 from llama_index import (
@@ -69,6 +69,11 @@ class DatasetGenerator:
                             across the document. Restrict the questions to the \
                                 context information provided."
         )
+        self.qna_gen_query = (
+            self.question_gen_query
+            + " Begin a question with `Q:` and an answer with `A:`."
+            " Each question and answer must be on a new line."
+        )
         self.nodes = nodes
 
     @classmethod
@@ -107,14 +112,16 @@ class DatasetGenerator:
             question_gen_query=question_gen_query,
         )
 
-    def _node_question_generator(
-        self, nodes: List[BaseNode], num: Optional[int] = None
+    def _node_qna_generator(
+        self, nodes: List[BaseNode], num: Optional[int] = None, qna_mode=False
     ) -> List[str]:
         """Node question generator."""
-        questions: List[str] = []
+        output_strings: List[str] = []
 
         for node in nodes:
-            if num is not None and len(questions) >= num:
+            if num is not None and len(output_strings) >= (
+                num * 2 if qna_mode else num
+            ):
                 break
             index = ListIndex.from_documents(
                 [
@@ -131,21 +138,39 @@ class DatasetGenerator:
                 use_async=True,
             )
             response = query_engine.query(
-                self.question_gen_query,
+                self.qna_gen_query if qna_mode else self.question_gen_query,
             )
 
             result = str(response).strip().split("\n")
-            cleaned_questions = [
+            cleaned_output = [
                 re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
             ]
-            questions.extend(cleaned_questions)
+            output_strings.extend(cleaned_output)
 
-        questions = [question for question in questions if question != ""]
+        output_strings = [string for string in output_strings if string != ""]
 
         if num is not None:
-            questions = questions[:num]
-        return questions
+            output_strings = output_strings[:num]
+        return output_strings
 
     def generate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
         """Generates questions for each document."""
-        return self._node_question_generator(self.nodes, num)
+        return self._node_qna_generator(self.nodes, num, qna_mode=False)
+
+    def generate_qna_from_nodes(
+        self, num: Optional[int] = None
+    ) -> List[Tuple[str, str]]:
+        """Generates questions for each document."""
+        output_strings = self._node_qna_generator(self.nodes, num, qna_mode=True)
+        # Validate that questions start with Q: and answers start with A:
+        for i in range(0, len(output_strings), 2):
+            if not output_strings[i].startswith("Q:"):
+                raise ValueError(f"Question {output_strings[i]} does not start with Q:")
+            if not output_strings[i + 1].startswith("A:"):
+                raise ValueError(f"Answer {output_strings[i+1]} does not start with A:")
+            output_strings[i] = output_strings[i][2:].strip()
+            output_strings[i + 1] = output_strings[i + 1][2:].strip()
+        return [
+            (output_strings[i], output_strings[i + 1])
+            for i in range(0, len(output_strings), 2)
+        ]
