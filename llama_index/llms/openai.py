@@ -57,7 +57,7 @@ class OpenAI(LLM, BaseModel):
     max_retries: int = 10
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        openai_api_key = os.environ["OPENAI_API_KEY"] or openai.api_key
+        openai_api_key = os.environ.get("OPENAI_API_KEY", "") or openai.api_key
         if not openai_api_key:
             raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
         elif not OPENAI_API_KEY_FORMAT.search(openai_api_key):
