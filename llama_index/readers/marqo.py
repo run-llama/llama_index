@@ -42,26 +42,27 @@ class MarqoReader(BaseReader):
     def load_data(
         self,
         index_name: str,
-        id_to_text_map: Dict[str, str],
         top_k: int,
         separate_documents: bool = True,
         include_vectors: bool = False,
         _text_key: str = DEFAULT_TEXT_KEY,
-        searchable_attributes: Optional[List[str]] = None,
+        searchable_attributes: Optional[Dict[str, str]] = None,
         **query_kwargs: Any,
     ) -> List[Document]:
+
         """
         Load data from Marqo.
 
         Args:
             index_name (str): Name of the index.
-            id_to_text_map (Dict[str, str]): A map from ID's to text.
             top_k (int): Number of results to return.
-            separate_documents (bool): Whether to return separate 
+            separate_documents (bool): Whether to return separate
                 documents per retrieved entry. Defaults to True.
             include_vectors (bool): Whether to include vector data in the results.
-            searchable_attributes (Optional[List[str]]): The attributes to retrieve from
-                the Marqo index.
+            _text_key (str): Key to access the main text content of a document.
+                Defaults to DEFAULT_TEXT_KEY.
+            searchable_attributes (Optional[Dict[str, str]]): 
+                Optional map from field names to search terms.
             **query_kwargs: Keyword arguments to pass to the query.
 
         Returns:
@@ -71,22 +72,19 @@ class MarqoReader(BaseReader):
         self._ensure_index(index_name=index_name)  # Ensure the index exists
         self._text_key = _text_key
 
-        # Construct filter string from searchable_attributes
-        filter_string = None
+        # Construct filter string from searchable_attributes if provided
+        filter_string = ""
         if searchable_attributes:
             filter_string = " AND ".join(
-                [
-                    f"{attr}:{id_to_text_map[id]}"
-                    for attr in searchable_attributes
-                    for id in id_to_text_map.keys()
-                ]
+                [f"{field}:({term})" for field, term in searchable_attributes.items()]
             )
 
-        # Fetch the documents by their IDs
+        # Fetch the documents
+        query_kwargs["limit"] = top_k
+        if filter_string:
+            query_kwargs["filter_string"] = filter_string
         results = self.mq.index(index_name).search(
             q="",
-            limit=top_k,
-            filter_string=filter_string,
             **query_kwargs,
         )
 
@@ -101,7 +99,6 @@ class MarqoReader(BaseReader):
         for result in results["hits"]:
             doc_id = result["_id"]
             text = result[self._text_key]
-            assert text == id_to_text_map[doc_id]
 
             if include_vectors:
                 # Get the embedding from '_tensor_facets' for the field

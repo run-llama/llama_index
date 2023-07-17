@@ -70,7 +70,7 @@ class MarqoVectorStore(VectorStore):
             entry = {
                 ID_KEY: doc.node.node_id,  # Use the node id
                 self._text_key: doc.node.get_content(),
-                # VECTOR_KEY: doc.embedding,  
+                # VECTOR_KEY: doc.embedding,
                 # Marqo can't accept embeddings directly yet
                 # METADATA_KEY: doc_text,  # Implement getting metadata in the future
             }

@@ -101,29 +101,22 @@ def test_load_data() -> None:
     # Initialize MarqoReader
     marqo_reader = MarqoReader(api_key="foobar", url="http://localhost:8882")
 
-    # Define the index name and id-to-text map
+    # Define the index name and searchable_attributes
     index_name = "test"
-    id_to_text_map = {
-        "doc1": "This is a test document about cats.",
-        "doc2": "This is a test document about dogs.",
-    }
 
     # Use MarqoReader to load data with include_vectors= False
     documents = marqo_reader.load_data(
         index_name=index_name,
-        id_to_text_map=id_to_text_map,
         top_k=2,
         include_vectors=False,
     )
 
     # Check that the documents were loaded correctly
     assert len(documents) == 2
-    assert {doc.id_ for doc in documents} == set(id_to_text_map.keys())
 
     # Use MarqoReader to load data with include_vectors= True
     documents = marqo_reader.load_data(
         index_name=index_name,
-        id_to_text_map=id_to_text_map,
         top_k=2,
         include_vectors=True,
     )
@@ -132,4 +125,3 @@ def test_load_data() -> None:
     assert len(documents) == 2
     for doc in documents:
         assert doc.embedding is not None
-    assert {doc.id_ for doc in documents} == set(id_to_text_map.keys())
