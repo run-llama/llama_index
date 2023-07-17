@@ -1,9 +1,28 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.9] - 2023-07-15
 
-## New Features
+### New Features
+- specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
+- Add async `acall` endpoint to `BasePydanticProgram` (defaults to sync version). Implement for `OpenAIPydanticProgram`
+
+### Bug Fixes / Nits
+- fix null metadata for searching existing vector dbs (#6912)
+- add module guide docs for `SimpleDirectoryReader` (#6916)
+- make sure `CondenseQuestionChatEngine` streaming chat endpoints work even if not explicitly setting `streaming=True` in the underlying query engine.
+
+## [v0.7.8] - 2023-07-13
+
+### New Features
 - Added embedding speed benchmark (#6876)
+- Added BEIR retrieval benchmark (#6825)
+
+### Bug Fixes / Nits
+- remove toctrees from deprecated_terms (#6895)
+- Relax typing dependencies (#6879)
+- docs: modification to evaluation notebook (#6840)
+- raise error if the model does not support functions (#6896)
+- fix(bench embeddings): bug not taking into account string length (#6899)x
 
 ## [v0.7.7] - 2023-07-13
 

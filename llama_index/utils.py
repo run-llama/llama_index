@@ -1,5 +1,6 @@
 """General utils functions."""
 
+import os
 import random
 import sys
 import time
@@ -7,20 +8,21 @@ import traceback
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import partial
 from itertools import islice
+from pathlib import Path
 from typing import (
     Any,
     Callable,
     Generator,
+    Iterable,
     List,
     Optional,
     Set,
     Type,
-    cast,
     Union,
-    Iterable,
+    cast,
 )
-import os
 
 
 class GlobalsHelper:
@@ -47,7 +49,8 @@ class GlobalsHelper:
                 raise ImportError(tiktoken_import_err)
             enc = tiktoken.get_encoding("gpt2")
             self._tokenizer = cast(Callable[[str], List], enc.encode)
-        return self._tokenizer
+            self._tokenizer = partial(self._tokenizer, allowed_special="all")
+        return self._tokenizer  # type: ignore
 
     @property
     def stopwords(self) -> List[str]:
@@ -234,6 +237,32 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
         )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     return tokenizer.tokenize
+
+
+def get_cache_dir() -> Path:
+    """Locate a platform-appropriate cache directory for llama_index,
+    and create it if it doesn't yet exist
+    """
+    # Linux, Unix, AIX, etc.
+    if os.name == "posix" and sys.platform != "darwin":
+        # use ~/.cache if empty OR not set
+        base = os.path.expanduser("~/.cache")
+        path = Path(base, "llama_index")
+
+    # Mac OS
+    elif sys.platform == "darwin":
+        path = Path(os.path.expanduser("~"), "Library/Caches/llama_index")
+
+    # Windows (hopefully)
+    else:
+        local = os.environ.get("LOCALAPPDATA", None) or os.path.expanduser(
+            "~\\AppData\\Local"
+        )
+        path = Path(local, "llama_index")
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
 
 
 # Sample text from llama_index's readme
