@@ -80,7 +80,7 @@ Below we show more examples of how to construct various vector stores we support
 
 **Marqo**
 
-First, run a marqo instance (or get the url of a marqo instance). See marqo documentation for more.
+First, run a Marqo instance (or get the url of a Marqo cloud instance). See [Marqo documentation for more](https://docs.marqo.ai/latest/). If you are using an M1 Mac then [go here for the Docker commands](https://docs.marqo.ai/latest/m1_mac_users/). If you want to use a GPU locally then [go here for the Docker commands](https://docs.marqo.ai/latest/using_marqo_with_a_gpu/).
 
 ```bash
 
@@ -94,13 +94,13 @@ import marqo
 from llama_index.vector_stores import MarqoVectorStore
 
 # Creating a Pinecone index
-mq = marqo.Client(url="http://localhost:8882", api_key="foobar")
-mq.create_index(index_name="llama_index_test3")
+mq = marqo.Client(url="http://localhost:8882")
+mq.create_index(index_name="llama_index_test")
 
 # construct vector store
 vector_store = MarqoVectorStore(
     marqo_client=mq, 
-    index_name="llama_index_test2"
+    index_name="llama_index_test"
 )
 ```
 
