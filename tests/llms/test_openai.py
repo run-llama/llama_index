@@ -1,7 +1,10 @@
-from pytest import MonkeyPatch
+import os
 from typing import Any, AsyncGenerator, Generator
 
+import openai
 import pytest
+from pytest import MonkeyPatch
+
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
 
@@ -222,3 +225,51 @@ async def test_completion_model_async_streaming(monkeypatch: MonkeyPatch) -> Non
     chat_response_gen = await llm.astream_chat([message])
     chat_responses = [item async for item in chat_response_gen]
     assert chat_responses[-1].message.content == "12"
+
+
+def test_validates_api_key_is_present() -> None:
+    try:
+        api_env_variable_was = os.environ.get("OPENAI_API_KEY")
+        openai_api_key_was = openai.api_key
+
+        # Set them both to blank
+        os.environ["OPENAI_API_KEY"] = ""
+        openai.api_key = None
+
+        with pytest.raises(ValueError, match="No API key found for OpenAI."):
+            OpenAI()
+
+        os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
+
+        # We can create a new LLM when the env variable is set
+        assert OpenAI()
+
+        os.environ["OPENAI_API_KEY"] = ""
+        openai.api_key = "sk-" + ("a" * 48)
+
+        # We can create a new LLM when the api_key is set on the
+        # library directly
+        assert OpenAI()
+    # No matter what, set the environment variable back to what it was
+    finally:
+        os.environ["OPENAI_API_KEY"] = str(api_env_variable_was)
+        openai.api_key = openai_api_key_was
+
+
+def test_validates_api_key_format() -> None:
+    try:
+        api_env_variable_was = os.environ["OPENAI_API_KEY"]
+        openai_api_key_was = openai.api_key
+
+        # Set them both to blank
+        os.environ["OPENAI_API_KEY"] = ""
+        openai.api_key = None
+
+        os.environ["OPENAI_API_KEY"] = "api-hf47930g732gf372"
+        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
+            OpenAI()
+
+    # No matter what, set the environment variable back to what it was
+    finally:
+        os.environ["OPENAI_API_KEY"] = str(api_env_variable_was)
+        openai.api_key = openai_api_key_was

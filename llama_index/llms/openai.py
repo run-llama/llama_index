@@ -1,5 +1,8 @@
+import os
+import re
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
+import openai
 from pydantic import BaseModel, Field
 
 from llama_index.llms.base import (
@@ -32,6 +35,19 @@ from llama_index.llms.openai_utils import (
     to_openai_message_dicts,
 )
 
+# "sk-" followed by 48 alphanumberic characters
+OPENAI_API_KEY_FORMAT = re.compile("^sk-[a-zA-Z0-9]{48}$")
+MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
+Please set either the OPENAI_API_KEY environment variable or \
+openai.api_key prior to initialization.
+API keys can be found or created at \
+https://platform.openai.com/account/api-keys
+"""
+INVALID_API_KEY_ERROR_MESSAGE = """Invalid OpenAI API key.
+API key should be of the format: "sk-" followed by \
+48 alphanumeric characters.
+"""
+
 
 class OpenAI(LLM, BaseModel):
     model: str = Field("text-davinci-003")
@@ -39,6 +55,14 @@ class OpenAI(LLM, BaseModel):
     max_tokens: Optional[int] = None
     additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
     max_retries: int = 10
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        openai_api_key = os.environ["OPENAI_API_KEY"] or openai.api_key
+        if not openai_api_key:
+            raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+        elif not OPENAI_API_KEY_FORMAT.search(openai_api_key):
+            raise ValueError(INVALID_API_KEY_ERROR_MESSAGE)
+        super().__init__(*args, **kwargs)
 
     @property
     def metadata(self) -> LLMMetadata:
