@@ -12,6 +12,7 @@ maxdepth: 1
 ../../../examples/data_connectors/DiscordDemo.ipynb
 ../../../examples/data_connectors/MongoDemo.ipynb
 ../../../examples/data_connectors/ChromaDemo.ipynb
+../../../examples/data_connectors/MarqoDemo.ipynb
 ../../../examples/data_connectors/MyScaleReaderDemo.ipynb
 ../../../examples/data_connectors/FaissDemo.ipynb
 ../../../examples/data_connectors/ObsidianReaderDemo.ipynb

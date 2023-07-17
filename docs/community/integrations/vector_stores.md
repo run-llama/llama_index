@@ -13,6 +13,7 @@ LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
+- Marqo (`MarqoVectorStore`). [Installation/Quickstart](https://docs.marqo.ai/latest)
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
@@ -25,7 +26,7 @@ as the storage backend for `VectorStoreIndex`.
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart] (https://www.mongodb.com/atlas/database).
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
-- Marqo (`MarqoVectorStore`). [Installation/Quickstart](https://docs.marqo.ai/latest)
+
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -75,7 +76,10 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+
 **Marqo**
+
 First, run a marqo instance (or get the url of a marqo instance). See marqo documentation for more.
 
 ```bash

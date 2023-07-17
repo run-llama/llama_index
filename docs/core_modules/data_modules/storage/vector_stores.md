@@ -19,11 +19,11 @@ They mainly differ in 2 aspects:
 
 ### (Self) Hosted Vector Stores
 * Pinecone
+* Marqo
 * Weaviate
 * Milvus/Zilliz
 * Qdrant
 * Chroma
-* Marqo
 * Opensearch
 * DeepLake
 * MyScale
@@ -50,8 +50,8 @@ maxdepth: 1
 /examples/vector_stores/WeaviateIndexDemo.ipynb
 /examples/vector_stores/OpensearchDemo.ipynb
 /examples/vector_stores/PineconeIndexDemo.ipynb
-/examples/vector_stores/ChromaIndexDemo.ipynb
 /examples/vector_stores/MarqoIndexDemo.ipynb
+/examples/vector_stores/ChromaIndexDemo.ipynb
 /examples/vector_stores/LanceDBIndexDemo.ipynb
 /examples/vector_stores/MilvusIndexDemo.ipynb
 /examples/vector_stores/RedisIndexDemo.ipynb
