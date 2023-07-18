@@ -118,10 +118,10 @@ class DatasetGenerator:
         """Node question generator."""
         output_strings: List[str] = []
 
+        if num is not None:
+            num = num * 2 if qna_mode else num
         for node in nodes:
-            if num is not None and len(output_strings) >= (
-                num * 2 if qna_mode else num
-            ):
+            if num is not None and len(output_strings) >= num:
                 break
             index = ListIndex.from_documents(
                 [
