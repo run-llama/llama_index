@@ -54,7 +54,7 @@ A full notebook guide can be found [here](/examples/node_postprocessor/Optimizer
 Uses the "Cohere ReRank" functionality to re-order nodes, and returns the top N nodes.
 
 ```python
-from llama_index.indices.postprocessor import CohereRerank
+from llama_index.indices import CohereRerank
 
 postprocessor = CohereRerank(
   top_n=2
@@ -65,7 +65,22 @@ postprocessor = CohereRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](/examples/node_postprocessor/CohereRerank.ipynb).
+## SentenceTransformerRerank
+
+Uses the cross-encoders from the `sentence-transformer` package to re-order nodes, and returns the top N nodes.
+
+```python
+from llama_index.indices.postprocessor import SentenceTransformerRerank
+
+postprocessor = SentenceTransformerRerank(
+  model="cross-encoder/ms-marco-MiniLM-L-2-v2", 
+  top_n=3
+)
+
+postprocessor.postprocess_nodes(nodes)
+```
+
+Full notebook guide is available [here](/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
 
 ## LLM Rerank
 
