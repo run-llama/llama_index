@@ -1,11 +1,19 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Add support for chroma v0.4.0 (#6937)
+
+### Bug Fixes / Nits
+- add more robust embedding timeouts (#6779)
+- improved connection session management on postgres vector store (#6843)
+
 ## [v0.7.9] - 2023-07-15
 
 ### New Features
 - specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
 - Add async `acall` endpoint to `BasePydanticProgram` (defaults to sync version). Implement for `OpenAIPydanticProgram`
-- Add support for chroma v0.4.0 (#6937)
 
 ### Bug Fixes / Nits
 - fix null metadata for searching existing vector dbs (#6912)
@@ -81,7 +89,6 @@
 ### Bug Fixes / Nits
 - fixed passing in query bundle to node postprocessors (#6780)
 - fixed error in callback manager with nested traces (#6791)
-- fix: Connection Session Management on Postgres Vector Store (#6843)
 
 ## [v0.7.3] - 2023-07-07
 
