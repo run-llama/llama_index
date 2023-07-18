@@ -70,7 +70,7 @@ postprocessor.postprocess_nodes(nodes)
 Uses the cross-encoders from the `sentence-transformer` package to re-order nodes, and returns the top N nodes.
 
 ```python
-from llama_index.indices.postprocessor import CohereRerank
+from llama_index.indices.postprocessor import SentenceTransformerRerank
 
 postprocessor = SentenceTransformerRerank(
   model="cross-encoder/ms-marco-MiniLM-L-2-v2", 
