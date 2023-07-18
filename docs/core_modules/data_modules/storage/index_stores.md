@@ -8,6 +8,8 @@ See the [API Reference](/api_reference/storage/index_store.rst) for more details
 By default, LlamaIndex uses a simple index store backed by an in-memory key-value store.
 They can be persisted to (and loaded from) disk by calling `index_store.persist()` (and `SimpleIndexStore.from_persist_path(...)` respectively).
 
+A more complete example can be found [here](https://github.com/ravi03071991/gpt_index/blob/main/docs/examples/docstore/DocstoreDemo.ipynb)
+
 
 ### MongoDB Index Store
 Similarly to document stores, we can also use `MongoDB` as the storage backend of the index store.
