@@ -42,6 +42,15 @@ maxdepth: 1
 
 ```
 
+
+## Replicate
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_2.ipynb
+
 ## LangChain
 
 ```{toctree}
