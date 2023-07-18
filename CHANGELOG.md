@@ -1,10 +1,102 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.9] - 2023-07-15
+
+### New Features
+- specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
+- Add async `acall` endpoint to `BasePydanticProgram` (defaults to sync version). Implement for `OpenAIPydanticProgram`
+- Add support for chroma v0.4.0 (#6937)
 
 ### Bug Fixes / Nits
+- fix null metadata for searching existing vector dbs (#6912)
+- add module guide docs for `SimpleDirectoryReader` (#6916)
+- make sure `CondenseQuestionChatEngine` streaming chat endpoints work even if not explicitly setting `streaming=True` in the underlying query engine.
+
+## [v0.7.8] - 2023-07-13
+
+### New Features
+- Added embedding speed benchmark (#6876)
+- Added BEIR retrieval benchmark (#6825)
+
+### Bug Fixes / Nits
+- remove toctrees from deprecated_terms (#6895)
+- Relax typing dependencies (#6879)
+- docs: modification to evaluation notebook (#6840)
+- raise error if the model does not support functions (#6896)
+- fix(bench embeddings): bug not taking into account string length (#6899)x
+
+## [v0.7.7] - 2023-07-13
+
+### New Features
+- Improved milvus consistency support and output fields support (#6452)
+- Added support for knowledge graph querying w/ cypyer+nebula (#6642)
+- Added `Document.example()` to create documents for fast prototyping (#6739)
+- Replace react chat engine to use native reactive agent (#6870)
+
+### Bug Fixes / Nits
+- chore: added a help message to makefile (#6861)
+
+### Bug Fixes / Nits
+- Fixed support for using SQLTableSchema context_str attribute (#6891)
+
+## [v0.7.6] - 2023-07-12
+
+### New Features
+- Added sources to agent/chat engine responses (#6854)
+- Added basic chat buffer memory to agents / chat engines (#6857)
+- Adding load and search tool (#6871)
+- Add simple agent benchmark (#6869)
+- add agent docs  (#6866)
+- add react agent (#6865)
+
+### Breaking/Deprecated API Changes
+- Replace react chat engine with native react agent (#6870)
+- Set default chat mode to "best": use openai agent when possible, otherwise use react agent (#6870)
+
+### Bug Fixes / Nits
+- Fixed support for legacy vector store metadata (#6867)
+- fix chroma notebook in docs (#6872)
+- update LC embeddings docs (#6868)
+
+## [v0.7.5] - 2023-07-11
+
+### New Features
+- Add `Anthropic` LLM implementation (#6855)
+
+### Bug Fixes / Nits
+- Fix indexing error in `SentenceEmbeddingOptimizer` (#6850)
+- fix doc for custom embedding model (#6851)
+- fix(silent error): Add validation to `SimpleDirectoryReader` (#6819)
+- Fix link in docs (#6833)
+- Fixes Azure gpt-35-turbo model not recognized  (#6828)
+- Update Chatbot_SEC.ipynb (#6808)
+- Rename leftover original name to LlamaIndex (#6792)
+- patch nested traces of the same type (#6791)
+
+## [v0.7.4] - 2023-07-08
+
+### New Features
+- `MetadataExtractor` - Documnent Metadata Augmentation via LLM-based feature extractors (#6764)
+
+### Bug Fixes / Nits
+- fixed passing in query bundle to node postprocessors (#6780)
+- fixed error in callback manager with nested traces (#6791)
+
+## [v0.7.3] - 2023-07-07
+
+### New Features
+- Sub question query engine returns source nodes of sub questions in the callback manager (#6745)
+- trulens integration (#6741)
+- Add sources to subquestion engine (#6745)
+
+### Bug Fixes / Nits
+- Added/Fixed streaming support to simple and condense chat engines (#6717)
 - fixed `response_mode="no_text"` response synthesizer (#6755)
 - fixed error setting `num_output` and `context_window` in service context (#6766)
+- Fix missing as_query_engine() in tutorial (#6747)
+- Fixed variable sql_query_engine in the notebook (#6778)
+- fix required function fields (#6761)
+- Remove usage of stop token in Prompt, SQL gen (#6782)
 
 ## [v0.7.2] - 2023-07-06
 

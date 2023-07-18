@@ -8,7 +8,6 @@ from llama_index.types import BaseOutputParser
 from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 
 try:
-
     gptcache_installed = True
 except ImportError:
     gptcache_installed = False

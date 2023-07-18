@@ -193,7 +193,6 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
 
 DEFAULT_TEXT_TO_SQL_PROMPT = Prompt(
     DEFAULT_TEXT_TO_SQL_TMPL,
-    stop_token="\nSQLResult:",
     prompt_type=PromptType.TEXT_TO_SQL,
 )
 

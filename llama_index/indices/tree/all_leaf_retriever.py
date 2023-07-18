@@ -1,7 +1,7 @@
 """Summarize query."""
 
 import logging
-from typing import List, cast
+from typing import Any, List, cast
 
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.indices.base_retriever import BaseRetriever
@@ -28,7 +28,7 @@ class TreeAllLeafRetriever(BaseRetriever):
 
     """
 
-    def __init__(self, index: TreeIndex):
+    def __init__(self, index: TreeIndex, **kwargs: Any) -> None:
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore

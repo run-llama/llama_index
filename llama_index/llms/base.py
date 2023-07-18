@@ -43,6 +43,7 @@ class ChatResponse(BaseModel):
 ChatResponseGen = Generator[ChatResponse, None, None]
 ChatResponseAsyncGen = AsyncGenerator[ChatResponse, None]
 
+
 # ===== Generic Model Output - Completion =====
 class CompletionResponse(BaseModel):
     """Completion response."""

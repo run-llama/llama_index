@@ -1,18 +1,13 @@
 from typing import Any, Dict, Optional, Type, Union
 
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.llms.openai_utils import to_openai_function
-from llama_index.types import Model
-
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.prompts.base import Prompt
 from pydantic import BaseModel
 
-SUPPORTED_MODEL_NAMES = [
-    "gpt-3.5-turbo-0613",
-    "gpt-4-0613",
-]
+from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import is_function_calling_model, to_openai_function
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.prompts.base import Prompt
+from llama_index.types import Model
 
 
 def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
@@ -59,11 +54,11 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
-        if llm.model not in SUPPORTED_MODEL_NAMES:
+        if not is_function_calling_model(llm.model):
             raise ValueError(
-                f"Model name {llm.model} not supported. "
-                f"Supported model names: {SUPPORTED_MODEL_NAMES}"
+                f"Model name {llm.model} does not support function calling API. "
             )
+
         prompt = Prompt(prompt_template_str)
         function_call = function_call or _default_function_call(output_cls)
         return cls(
@@ -88,6 +83,36 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
         openai_fn_spec = to_openai_function(self._output_cls)
 
         chat_response = self._llm.chat(
+            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            functions=[openai_fn_spec],
+            function_call=self._function_call,
+        )
+        message = chat_response.message
+        if "function_call" not in message.additional_kwargs:
+            raise ValueError(
+                "Expected function call in ai_message.additional_kwargs, "
+                "but none found."
+            )
+
+        function_call = message.additional_kwargs["function_call"]
+        if self._verbose:
+            name = function_call["name"]
+            arguments_str = function_call["arguments"]
+            print(f"Function call: {name} with args: {arguments_str}")
+
+        output = self.output_cls.parse_raw(function_call["arguments"])
+        return output
+
+    async def acall(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> BaseModel:
+        formatted_prompt = self._prompt.format(**kwargs)
+
+        openai_fn_spec = to_openai_function(self._output_cls)
+
+        chat_response = await self._llm.achat(
             messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
             functions=[openai_fn_spec],
             function_call=self._function_call,
