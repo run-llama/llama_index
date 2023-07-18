@@ -1,17 +1,23 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Add support for chroma v0.4.0 (#6937)
+
+### Bug Fixes / Nits
+- add more robust embedding timeouts (#6779)
+
 ## [v0.7.9] - 2023-07-15
 
 ### New Features
 - specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
 - Add async `acall` endpoint to `BasePydanticProgram` (defaults to sync version). Implement for `OpenAIPydanticProgram`
-- Add support for chroma v0.4.0 (#6937)
 
 ### Bug Fixes / Nits
 - fix null metadata for searching existing vector dbs (#6912)
 - add module guide docs for `SimpleDirectoryReader` (#6916)
 - make sure `CondenseQuestionChatEngine` streaming chat endpoints work even if not explicitly setting `streaming=True` in the underlying query engine.
-- add more robust embedding timeouts (#6779)
 
 ## [v0.7.8] - 2023-07-13
 
