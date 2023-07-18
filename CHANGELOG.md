@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- fix streaming for condense chat engine (#6958)
+
 ## [v0.7.10] - 2023-07-17
 
 ### New Features
