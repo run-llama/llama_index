@@ -11,13 +11,11 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.llms.utils import is_openai_function_calling_model
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.openai_generator import OpenAIQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response_synthesizers import (BaseSynthesizer,
-                                               get_response_synthesizer)
+from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.tools.query_engine import QueryEngineTool
 
@@ -96,12 +94,12 @@ class SubQuestionQueryEngine(BaseQueryEngine):
                 question_gen = OpenAIQuestionGenerator.from_defaults()
             else:
                 # try to use OpenAI function calling based question generator.
-                # if incompatible with selected model, use general LLM question generator
+                # if incompatible, use general LLM question generator
                 try:
                     question_gen = OpenAIQuestionGenerator.from_defaults(
                         llm=service_context.llm
                     )
-                except:
+                except ValueError:
                     question_gen = LLMQuestionGenerator.from_defaults(
                         service_context=service_context
                     )

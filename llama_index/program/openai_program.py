@@ -2,10 +2,9 @@ from typing import Any, Dict, Optional, Type, Union
 
 from pydantic import BaseModel
 
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import (is_function_calling_model,
-                                           to_openai_function)
+from llama_index.llms.openai_utils import is_function_calling_model, to_openai_function
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import Prompt
 from llama_index.types import Model
@@ -46,7 +45,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
         cls,
         output_cls: Type[Model],
         prompt_template_str: str,
-        llm: Optional[OpenAI] = None,
+        llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
         **kwargs: Any,

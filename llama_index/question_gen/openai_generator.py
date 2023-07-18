@@ -5,8 +5,11 @@ from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.question_gen.prompts import build_tools_text
-from llama_index.question_gen.types import (BaseQuestionGenerator, SubQuestion,
-                                            SubQuestionList)
+from llama_index.question_gen.types import (
+    BaseQuestionGenerator,
+    SubQuestion,
+    SubQuestionList,
+)
 from llama_index.tools.types import ToolMetadata
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
