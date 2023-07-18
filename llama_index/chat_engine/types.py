@@ -47,16 +47,22 @@ class StreamingAgentChatResponse:
                 "chat_stream is None. Cannot write to history without chat_stream."
             )
 
-        final_message = None
-        for chat in self.chat_stream:
-            final_message = chat.message
-            self._is_function = (
-                final_message.additional_kwargs.get("function_call", None) is not None
-            )
-            self._queue.put_nowait(chat.delta)
+        # Try/except to prevent from hanging on error
+        try:
+            final_message = None
+            for chat in self.chat_stream:
+                final_message = chat.message
+                self._is_function = (
+                    final_message.additional_kwargs.get("function_call", None)
+                    is not None
+                )
+                self._queue.put_nowait(chat.delta)
 
-        if final_message is not None:
-            memory.put(final_message)
+            if final_message is not None:
+                memory.put(final_message)
+        except Exception as e:
+            print(e)
+            pass
 
         self._is_done = True
 
@@ -67,16 +73,22 @@ class StreamingAgentChatResponse:
                 "history without achat_stream."
             )
 
-        final_message = None
-        async for chat in self.achat_stream:
-            final_message = chat.message
-            self._is_function = (
-                final_message.additional_kwargs.get("function_call", None) is not None
-            )
-            self._queue.put_nowait(chat.delta)
+        # Try/except to prevent from hanging on error
+        try:
+            final_message = None
+            async for chat in self.achat_stream:
+                final_message = chat.message
+                self._is_function = (
+                    final_message.additional_kwargs.get("function_call", None)
+                    is not None
+                )
+                self._queue.put_nowait(chat.delta)
 
-        if final_message is not None:
-            memory.put(final_message)
+            if final_message is not None:
+                memory.put(final_message)
+        except Exception as e:
+            print(e)
+            pass
 
         self._is_done = True
 
