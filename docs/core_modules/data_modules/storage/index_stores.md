@@ -8,8 +8,6 @@ See the [API Reference](/api_reference/storage/index_store.rst) for more details
 By default, LlamaIndex uses a simple index store backed by an in-memory key-value store.
 They can be persisted to (and loaded from) disk by calling `index_store.persist()` (and `SimpleIndexStore.from_persist_path(...)` respectively).
 
-A more complete example can be found [here](https://github.com/ravi03071991/gpt_index/blob/main/docs/examples/docstore/DocstoreDemo.ipynb)
-
 
 ### MongoDB Index Store
 Similarly to document stores, we can also use `MongoDB` as the storage backend of the index store.
@@ -41,7 +39,7 @@ since data is persisted by default.
 
 You can easily reconnect to your MongoDB collection and reload the index by re-initializing a `MongoIndexStore` with an existing `db_name` and `collection_name`.
 
-A more complete example can be found [here](https://github.com/ravi03071991/gpt_index/blob/main/docs/examples/docstore/MongoDocstoreDemo.ipynb)
+A more complete example can be found [here](../../examples/docstore/MongoDocstoreDemo.ipynb)
 
 ### Redis Index Store
 
@@ -74,4 +72,4 @@ Under the hood, `RedisIndexStore` connects to a redis database and adds your nod
 
 You can easily reconnect to your Redis client and reload the index by re-initializing a `RedisIndexStore` with an existing `host`, `port`, and `namespace`.
 
-A more complete example can be found [here](https://github.com/ravi03071991/gpt_index/blob/main/docs/examples/docstore/RedisDocstoreIndexStoreDemo.ipynb)
+A more complete example can be found [here](../../examples/docstore/RedisDocstoreIndexStoreDemo.ipynb)
