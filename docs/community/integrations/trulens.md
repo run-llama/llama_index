@@ -25,11 +25,11 @@ from trulens_eval import TruLlama
 
 ## Try it out!
 
-[llama_index_quickstart.ipynb](https://github.com/truera/trulens/blob/releases/rc-trulens-eval-0.5.0/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/truera/trulens/blob/releases/rc-trulens-eval-0.5.0/trulens_eval/examples/colab/quickstarts/llama_index_quickstart_colab.ipynb)
+[llama_index_quickstart.ipynb](https://github.com/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb)
+[![Open In Colab]([https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/truera/trulens/blob/releases/rc-trulens-eval-0.5.0/trulens_eval/examples/colab/quickstarts/llama_index_quickstart_colab.ipynb](https://colab.research.google.com/github/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb)
 
 ## Read more
 
 * [Build and Evaluate LLM Apps with LlamaIndex and TruLens](https://medium.com/llamaindex-blog/build-and-evaluate-llm-apps-with-llamaindex-and-trulens-6749e030d83c)
-
+* [More examples](https://github.com/truera/trulens/tree/main/trulens_eval/examples/frameworks/llama_index)
 * [trulens.org](https://www.trulens.org/)
