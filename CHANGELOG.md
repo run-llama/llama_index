@@ -5,6 +5,7 @@
 ### New Features
 - specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
 - Add async `acall` endpoint to `BasePydanticProgram` (defaults to sync version). Implement for `OpenAIPydanticProgram`
+- Add support for chroma v0.4.0 (#6937)
 
 ### Bug Fixes / Nits
 - fix null metadata for searching existing vector dbs (#6912)
