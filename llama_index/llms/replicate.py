@@ -1,6 +1,8 @@
 from typing import Any, Dict, Optional
 
-from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.llms.base import (CompletionResponse, CompletionResponseGen,
+                                   LLMMetadata)
 from llama_index.llms.custom import CustomLLM
 
 
@@ -9,9 +11,9 @@ class Replicate(CustomLLM):
         self,
         model: str,
         temperature: float = 0.75,
-        max_tokens: int = 256,
+        max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
-        context_window: int = 2048,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
         prompt_key: str = "prompt",
     ) -> None:
         self._model = model
