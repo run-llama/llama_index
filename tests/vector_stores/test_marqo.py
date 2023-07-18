@@ -20,7 +20,7 @@ except (ImportError, Exception):
 
 @pytest.fixture
 def marqo_client() -> Client:
-    return Client(url="http://localhost:8882", api_key="foobar")
+    return Client(url="http://localhost:8882")
 
 
 @pytest.fixture
@@ -99,7 +99,7 @@ def test_add_nodes_to_index(marqo_vector_store: MarqoVectorStore) -> None:
 @pytest.mark.skipif(marqo_not_available, reason="marqo is not available")
 def test_load_data() -> None:
     # Initialize MarqoReader
-    marqo_reader = MarqoReader(api_key="foobar", url="http://localhost:8882")
+    marqo_reader = MarqoReader(url="http://localhost:8882")
 
     # Define the index name and searchable_attributes
     index_name = "test"

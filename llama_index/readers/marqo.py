@@ -18,7 +18,7 @@ class MarqoReader(BaseReader):
         url (str): Marqo url.
     """
 
-    def __init__(self, api_key: str, url: str):
+    def __init__(self, url: str, api_key: Optional[str] = None):
         """Initialize with parameters."""
         # Necessary Marqo initialization steps here.
         try:
@@ -30,7 +30,7 @@ class MarqoReader(BaseReader):
         self._api_key = api_key
         self._url = url
         self._text_key = DEFAULT_TEXT_KEY
-        self.mq = marqo.Client(url=self._url, api_key=self._api_key)
+        self.mq = marqo.Client(api_key=self._api_key, url=self._url)
 
     def _ensure_index(self, index_name: str) -> None:
         """Ensure the index exists, creating it if necessary."""
@@ -61,7 +61,7 @@ class MarqoReader(BaseReader):
             include_vectors (bool): Whether to include vector data in the results.
             _text_key (str): Key to access the main text content of a document.
                 Defaults to DEFAULT_TEXT_KEY.
-            searchable_attributes (Optional[Dict[str, str]]): 
+            searchable_attributes (Optional[Dict[str, str]]):
                 Optional map from field names to search terms.
             **query_kwargs: Keyword arguments to pass to the query.
 
