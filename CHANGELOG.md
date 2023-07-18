@@ -7,6 +7,7 @@
 
 ### Bug Fixes / Nits
 - add more robust embedding timeouts (#6779)
+- improved connection session management on postgres vector store (#6843)
 
 ## [v0.7.9] - 2023-07-15
 
@@ -88,7 +89,6 @@
 ### Bug Fixes / Nits
 - fixed passing in query bundle to node postprocessors (#6780)
 - fixed error in callback manager with nested traces (#6791)
-- fix: Connection Session Management on Postgres Vector Store (#6843)
 
 ## [v0.7.3] - 2023-07-07
 
