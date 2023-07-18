@@ -1,5 +1,5 @@
 import os
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Generator
 
 import openai
 import pytest
@@ -7,6 +7,7 @@ from pytest import MonkeyPatch
 
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
+from ..conftest import CachedOpenAIApiKeys
 
 
 def mock_completion(*args: Any, **kwargs: Any) -> dict:
@@ -71,39 +72,6 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
     for response in responses:
         yield response
 
-
-class CachedOpenAIApiKeys:
-    """
-    Saves the users' OpenAI API key either in the environment variable
-    or set to the library itself.
-    This allows us to run tests by setting it without plowing over
-    the local environment.
-    """
-
-    def __init__(
-        self,
-        set_env_key_to: Optional[str] = "",
-        set_library_key_to: Optional[str] = None,
-        set_fake_key: bool = False,
-    ):
-        self.set_env_key_to = set_env_key_to
-        self.set_library_key_to = set_library_key_to
-        self.set_fake_key = set_fake_key
-
-    def __enter__(self) -> None:
-        self.api_env_variable_was = os.environ.get("OPENAI_API_KEY", "")
-        self.openai_api_key_was = openai.api_key
-
-        os.environ["OPENAI_API_KEY"] = str(self.set_env_key_to)
-        openai.api_key = self.set_library_key_to
-
-        if self.set_fake_key:
-            openai.api_key = "sk-" + "a" * 48
-
-    # No matter what, set the environment variable back to what it was
-    def __exit__(self, *exc: Any) -> None:
-        os.environ["OPENAI_API_KEY"] = str(self.api_env_variable_was)
-        openai.api_key = self.openai_api_key_was
 
 
 async def mock_async_completion_stream(
