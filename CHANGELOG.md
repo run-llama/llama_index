@@ -11,6 +11,7 @@
 - fix null metadata for searching existing vector dbs (#6912)
 - add module guide docs for `SimpleDirectoryReader` (#6916)
 - make sure `CondenseQuestionChatEngine` streaming chat endpoints work even if not explicitly setting `streaming=True` in the underlying query engine.
+- add more robust embedding timeouts (#6779)
 
 ## [v0.7.8] - 2023-07-13
 
