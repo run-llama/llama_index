@@ -158,6 +158,10 @@ class VectorStore(Protocol):
         """Add embedding results to vector store."""
         ...
 
+    def get_by_id(self, doc_id: str) -> List[str]:
+        """Get row ids by doc ids."""
+        ...
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id."""

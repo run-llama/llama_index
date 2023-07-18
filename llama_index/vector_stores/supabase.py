@@ -41,11 +41,11 @@ class SupabaseVectorStore(VectorStore):
     flat_metadata = False
 
     def __init__(
-        self,
-        postgres_connection_string: str,
-        collection_name: str,
-        dimension: int = DEFAULT_EMBEDDING_DIM,
-        **kwargs: Any,
+            self,
+            postgres_connection_string: str,
+            collection_name: str,
+            dimension: int = DEFAULT_EMBEDDING_DIM,
+            **kwargs: Any,
     ) -> None:
         """Init params."""
         import_err_msg = "`vecs` package not found, please run `pip install vecs`"
@@ -107,19 +107,45 @@ class SupabaseVectorStore(VectorStore):
 
         return ids
 
+    def get_by_id(self, doc_id: str) -> list[str] | None:
+        """Get row ids by doc id.
+
+        Args:
+            doc_id (str): document id
+        """
+        filters = {
+            "doc_id": {"$eq": doc_id}
+        }
+
+        result = self._collection.query(
+            query_vector=None,
+            limit=1,
+            filters=filters,
+            include_value=False,
+            include_metadata=False,
+        )
+
+        # NOTE: list of row ids
+        return result
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete doc.
 
         Args:
-            doc_id (str): document id
+            :param ref_doc_id (str): document id
 
         """
-        raise NotImplementedError("Delete not yet implemented for vecs.")
+        row_ids = self.get_by_id(ref_doc_id)
+
+        if len(row_ids) > 0:
+            self._collection.delete(row_ids)
+
+        # raise NotImplementedError("Delete not yet implemented for vecs.")
 
     def query(
-        self,
-        query: VectorStoreQuery,
-        **kwargs: Any,
+            self,
+            query: VectorStoreQuery,
+            **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
