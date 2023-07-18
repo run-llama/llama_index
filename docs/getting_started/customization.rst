@@ -49,7 +49,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     from llama_index.vector_stores import ChromaVectorStore
     from llama_index import StorageContext
 
-    chroma_client = chromadb.Client()
+    chroma_client = chromadb.PersistentClient()
     chroma_collection = chroma_client.create_collection("quickstart")
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
