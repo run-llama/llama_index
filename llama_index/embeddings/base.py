@@ -185,7 +185,10 @@ class BaseEmbedding:
                 result_embeddings.extend(embeddings)
                 self.callback_manager.on_event_end(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.CHUNKS: cur_batch_texts},
+                    payload={
+                        EventPayload.CHUNKS: cur_batch_texts,
+                        EventPayload.EMBEDDINGS: embeddings,
+                    },
                     event_id=event_id,
                 )
                 cur_batch = []
