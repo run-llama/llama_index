@@ -228,7 +228,7 @@ class OpenAIEmbedding(BaseEmbedding):
         # or OPENAI_API_KEY env variable are set to a valid key
         # Raises ValueError if missing or doesn't match valid format
         validate_openai_api_key()
-        
+
         """Init params."""
         super().__init__(embed_batch_size, tokenizer, callback_manager)
         self.deployment_name = deployment_name

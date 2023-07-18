@@ -1,4 +1,5 @@
 import os
+
 # import socket
 from typing import Any, Optional
 
@@ -11,10 +12,14 @@ from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.mock import MockLLM
 from tests.indices.vector_store.mock_services import MockEmbedding
-from tests.mock_utils.mock_predict import (patch_llmpredictor_apredict,
-                                           patch_llmpredictor_predict)
+from tests.mock_utils.mock_predict import (
+    patch_llmpredictor_apredict,
+    patch_llmpredictor_predict,
+)
 from tests.mock_utils.mock_text_splitter import (
-    patch_token_splitter_newline, patch_token_splitter_newline_with_overlaps)
+    patch_token_splitter_newline,
+    patch_token_splitter_newline_with_overlaps,
+)
 
 # @pytest.fixture(autouse=True)
 # def no_networking(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -78,6 +83,13 @@ def mock_service_context(
 @pytest.fixture()
 def mock_llm() -> MockLLM:
     return MockLLM()
+
+
+@pytest.fixture(autouse=True)
+def mock_openai_credentials() -> None:
+    if not os.environ.get("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
+
 
 class CachedOpenAIApiKeys:
     """

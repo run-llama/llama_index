@@ -73,7 +73,6 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
         yield response
 
 
-
 async def mock_async_completion_stream(
     *args: Any, **kwargs: Any
 ) -> AsyncGenerator[dict, None]:
