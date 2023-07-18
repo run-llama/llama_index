@@ -4,7 +4,8 @@ from pydantic import BaseModel
 
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import is_function_calling_model, to_openai_function
+from llama_index.llms.openai_utils import (is_function_calling_model,
+                                           to_openai_function)
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import Prompt
 from llama_index.types import Model
