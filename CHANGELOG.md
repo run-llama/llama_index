@@ -1,6 +1,12 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added a `SentenceTransformerRerank` node post-processor for fast local re-ranking (#6934)
+
 ## [v0.7.10.post1] - 2023-07-18
+
 ### New Features
 - Add support for Replicate LLM (vicuna & llama 2!)
 
