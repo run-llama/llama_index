@@ -65,6 +65,8 @@ postprocessor = CohereRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
+Full notebook guide is available [here](/examples/node_postprocessor/CohereRerank.ipynb).
+
 ## SentenceTransformerRerank
 
 Uses the cross-encoders from the `sentence-transformer` package to re-order nodes, and returns the top N nodes.
@@ -83,7 +85,7 @@ postprocessor.postprocess_nodes(nodes)
 
 Full notebook guide is available [here](/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
 
-Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy).
+Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy). The default model is `cross-encoder/ms-marco-TinyBERT-L-2-v2`, which provides the most speed.
 
 ## LLM Rerank
 
