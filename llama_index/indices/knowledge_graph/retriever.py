@@ -11,7 +11,7 @@ from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.prompts.prompts import QueryKeywordExtractPrompt
-from llama_index.schema import BaseNode, NodeWithScore, TextNode, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TextNode
 from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -63,6 +63,9 @@ class KGTableRetriever(BaseRetriever):
         similarity_top_k (int): The number of top embeddings to use
             (if embeddings are used).
         graph_store_query_depth (int): The depth of the graph store query.
+        use_global_node_triplets (bool): Whether to get more keywords(entities) from
+            text chunks matched by keywords. This helps introduce more global knowledge.
+            While it's more expensive, thus to be turned off by default.
     """
 
     def __init__(

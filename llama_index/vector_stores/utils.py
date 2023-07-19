@@ -69,7 +69,10 @@ def legacy_metadata_dict_to_node(
 ) -> Tuple[dict, dict, dict]:
     """Common logic for loading Node data from metadata dict."""
     # make a copy first
-    metadata = metadata.copy()
+    if metadata is None:
+        metadata = {}
+    else:
+        metadata = metadata.copy()
 
     # load node_info from json string
     node_info_str = metadata.pop("node_info", "")

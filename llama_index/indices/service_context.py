@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 import llama_index
 from llama_index.callbacks.base import CallbackManager
@@ -14,6 +14,10 @@ from llama_index.llms.utils import LLMType
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
+from llama_index.embeddings import (
+    DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
+    LangchainEmbedding,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +76,7 @@ class ServiceContext:
         llm_predictor: Optional[BaseLLMPredictor] = None,
         llm: Optional[LLMType] = None,
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[BaseEmbedding] = None,
+        embed_model: Optional[Union[BaseEmbedding, str]] = None,
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -96,6 +100,7 @@ class ServiceContext:
             llm_predictor (Optional[BaseLLMPredictor]): LLMPredictor
             prompt_helper (Optional[PromptHelper]): PromptHelper
             embed_model (Optional[BaseEmbedding]): BaseEmbedding
+                or "local" (use local model)
             node_parser (Optional[NodeParser]): NodeParser
             llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
             chunk_size (Optional[int]): chunk_size
@@ -110,6 +115,28 @@ class ServiceContext:
                 "chunk_size_limit is deprecated, please specify chunk_size instead"
             )
             chunk_size = chunk_size_limit
+
+        if isinstance(embed_model, str):
+            splits = embed_model.split(":", 1)
+            is_local = splits[0]
+            model_name = splits[1] if len(splits) > 1 else None
+            if is_local != "local":
+                raise ValueError(
+                    "embed_model must start with str 'local' or of type BaseEmbedding"
+                )
+            try:
+                from langchain.embeddings import HuggingFaceEmbeddings
+            except ImportError as exc:
+                raise ImportError(
+                    "Could not import sentence_transformers or langchain package. "
+                    "Please install with `pip install sentence-transformers langchain`."
+                ) from exc
+
+            embed_model = LangchainEmbedding(
+                HuggingFaceEmbeddings(
+                    model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+                )
+            )
 
         if llama_index.global_service_context is not None:
             return cls.from_service_context(
