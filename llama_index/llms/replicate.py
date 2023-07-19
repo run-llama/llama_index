@@ -1,8 +1,20 @@
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
+from llama_index.llms.base import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import completion_response_to_chat_response
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 
 
 class Replicate(CustomLLM):
@@ -14,10 +26,12 @@ class Replicate(CustomLLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         prompt_key: str = "prompt",
+        messages_to_prompt: Optional[Callable] = None,
     ) -> None:
         self._model = model
         self._context_window = context_window
         self._prompt_key = prompt_key
+        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
 
         # model kwargs
         self._temperature = temperature
@@ -45,6 +59,18 @@ class Replicate(CustomLLM):
 
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {self._prompt_key: prompt, **self._model_kwargs, **kwargs}
+
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        prompt = self._messages_to_prompt(messages)
+        completion_response = self.complete(prompt, **kwargs)
+        return completion_response_to_chat_response(completion_response)
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        prompt = self._messages_to_prompt(messages)
+        completion_response = self.stream_complete(prompt, **kwargs)
+        return stream_completion_response_to_chat_response(completion_response)
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         response_gen = self.stream_complete(prompt, **kwargs)
