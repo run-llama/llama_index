@@ -85,6 +85,26 @@ Full notebook guide is available [here](/examples/node_postprocessor/SentenceTra
 
 Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy).
 
+## SentenceTransformerRerank
+
+Uses the cross-encoders from the `sentence-transformer` package to re-order nodes, and returns the top N nodes.
+
+```python
+from llama_index.indices.postprocessor import SentenceTransformerRerank
+
+# We choose a model with relatively high speed and decent accuracy.
+postprocessor = SentenceTransformerRerank(
+  model="cross-encoder/ms-marco-MiniLM-L-2-v2", 
+  top_n=3
+)
+
+postprocessor.postprocess_nodes(nodes)
+```
+
+Full notebook guide is available [here](/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
+
+Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy). The default model is `cross-encoder/ms-marco-TinyBERT-L-2-v2`, which provides the most speed.
+
 ## LLM Rerank
 
 Uses a LLM to re-order nodes by asking the LLM to return the relevant documents and a score of how relevant they are. Returns the top N ranked nodes.
