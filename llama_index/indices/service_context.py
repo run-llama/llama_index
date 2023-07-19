@@ -283,16 +283,9 @@ https://huggingface.co/TheBloke/Llama-2-13B-chat-GGML/resolve\
 
 
 def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
-    splits = config.split(":", 2)
-    is_local = splits[0]
-    is_cpu = splits[1]
-    if is_local != "local":
+    if config != "local":
         raise ValueError(
             "llm_predictor must start with str 'local' or of type BaseLlmPredictor"
-        )
-    if is_cpu != "cpu":
-        raise ValueError(
-            "llm_predictor can only accept CPU defaults using llama-cpp for now"
         )
     try:
         from langchain.llms import LlamaCpp
@@ -301,6 +294,8 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
         raise ImportError(
             "Could not import llama-cpp-python or langchain package. "
             "Please install with `pip install llama-cpp-python langchain`."
+            "More advanced installation (e.g. GPU/BLAS offloading): ", 
+            "https://github.com/abetlen/llama-cpp-python"
         ) from exc
 
     model_path = os.path.join(
