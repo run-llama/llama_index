@@ -65,25 +65,7 @@ postprocessor = CohereRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-## SentenceTransformerRerank
-
-Uses the cross-encoders from the `sentence-transformer` package to re-order nodes, and returns the top N nodes.
-
-```python
-from llama_index.indices.postprocessor import SentenceTransformerRerank
-
-# We choose a model with relatively high speed and decent accuracy.
-postprocessor = SentenceTransformerRerank(
-  model="cross-encoder/ms-marco-MiniLM-L-2-v2", 
-  top_n=3
-)
-
-postprocessor.postprocess_nodes(nodes)
-```
-
-Full notebook guide is available [here](/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
-
-Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy).
+Full notebook guide is available [here](/examples/node_postprocessor/CohereRerank.ipynb).
 
 ## SentenceTransformerRerank
 
