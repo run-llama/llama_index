@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
@@ -43,7 +43,7 @@ class Replicate(CustomLLM):
         """LLM metadata."""
         return LLMMetadata(
             context_window=self._context_window,
-            num_output=self._max_tokens,
+            num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self._model,
         )
 
