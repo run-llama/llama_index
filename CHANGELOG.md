@@ -4,6 +4,7 @@
 
 ### New Features
 - Added a `SentenceTransformerRerank` node post-processor for fast local re-ranking (#6934)
+- Add numpy support for evaluating queries in pandas query engine (#6935)
 
 ## [v0.7.10.post1] - 2023-07-18
 
