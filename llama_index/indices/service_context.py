@@ -274,11 +274,13 @@ def _get_embed_model_from_str(config: str) -> BaseEmbedding:
     )
     return embed_model
 
+
 DEFAULT_LOCAL_LLM_NAME = "llama-2-13b"
 DEFAULT_LOCAL_LLM_URL = """
 https://huggingface.co/TheBloke/Llama-2-13B-chat-GGML/resolve\
 /main/llama-2-13b-chat.ggmlv3.q4_0.bin\
 """
+
 
 def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
     splits = config.split(":", 2)
@@ -294,7 +296,6 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
         )
     try:
         from langchain.llms import LlamaCpp
-        import llama_cpp
         from llama_index import LLMPredictor
     except ImportError as exc:
         raise ImportError(
@@ -303,10 +304,7 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
         ) from exc
 
     model_path = os.path.join(
-        get_cache_dir(), 
-        "models", 
-        DEFAULT_LOCAL_LLM_NAME, 
-        "ggml-model-q4_0.bin"
+        get_cache_dir(), "models", DEFAULT_LOCAL_LLM_NAME, "ggml-model-q4_0.bin"
     )
     if not os.path.exists(model_path):
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
@@ -320,7 +318,7 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
     llm_predictor = LLMPredictor(
         LlamaCpp(
             model_path=model_path,
-            n_ctx=4096, 
+            n_ctx=4096,
             suffix="[/INST]",
         )
     )
@@ -339,11 +337,11 @@ def _download_to_cache_dir(url: str, path: str) -> None:
         with requests.get(url, stream=True) as r:
             with open(path, "wb") as file:
                 total_size = int(r.headers.get("Content-Length") or "0")
-                if total_size  < 1000 * 1000:
+                if total_size < 1000 * 1000:
                     raise ValueError(
-                        "Content should be at least 1 MB, but is only", 
+                        "Content should be at least 1 MB, but is only",
                         r.headers.get("Content-Length"),
-                        "bytes"
+                        "bytes",
                     )
                 print("total size (MB):", round(total_size / 1000 / 1000, 2))
                 chunk_size = 1024 * 1024  # 1 MB
@@ -355,6 +353,5 @@ def _download_to_cache_dir(url: str, path: str) -> None:
         completed = True
     finally:
         if not completed:
-            print("Download incomplete.", 
-                  "Removing partially downloaded file.")
+            print("Download incomplete.", "Removing partially downloaded file.")
             os.remove(path)

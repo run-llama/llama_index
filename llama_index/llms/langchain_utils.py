@@ -5,6 +5,7 @@ from llama_index.bridge.langchain import (
     AIMessage,
     BaseChatModel,
     BaseLanguageModel,
+    LlamaCpp,
 )
 from llama_index.bridge.langchain import BaseMessage as LCMessage
 from llama_index.bridge.langchain import (
@@ -137,6 +138,12 @@ def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         return LLMMetadata(
             context_window=AI21_J2_CONTEXT_WINDOW,
             num_output=llm.maxTokens,
+            is_chat_model=is_chat_model_,
+        )
+    elif isinstance(llm, LlamaCpp):
+        return LLMMetadata(
+            context_window=llm.n_ctx,
+            num_output=llm.max_tokens,
             is_chat_model=is_chat_model_,
         )
     else:
