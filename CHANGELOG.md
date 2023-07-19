@@ -4,6 +4,7 @@
 
 ### New Features
 - Added a `SentenceTransformerRerank` node post-processor for fast local re-ranking (#6934)
+- Added a default local LLM based on Llama 2 and llama.cpp (#6936)
 
 ## [v0.7.10.post1] - 2023-07-18
 
