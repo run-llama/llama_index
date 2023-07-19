@@ -4,7 +4,12 @@ import pytest
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import PGVectorStore
-from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery, MetadataFilters, ExactMatchFilter
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStoreQuery,
+    MetadataFilters,
+    ExactMatchFilter,
+)
 
 # from testing find install here https://github.com/pgvector/pgvector#installation-notes
 
@@ -114,8 +119,12 @@ def test_add_to_db_and_query_with_metadata_filters(
     )
     pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
-    filters = MetadataFilters(filters=[ExactMatchFilter(key="test_key", value="test_value")])
-    q = VectorStoreQuery(query_embedding=[0.5] * 1536, similarity_top_k=10, filters=filters)
+    filters = MetadataFilters(
+        filters=[ExactMatchFilter(key="test_key", value="test_value")]
+    )
+    q = VectorStoreQuery(
+        query_embedding=[0.5] * 1536, similarity_top_k=10, filters=filters
+    )
     res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
