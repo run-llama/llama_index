@@ -160,98 +160,92 @@ def test_chat_model_basic(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_completion_model_streaming(monkeypatch: MonkeyPatch) -> None:
-    with CachedOpenAIApiKeys(set_fake_key=True):
-        monkeypatch.setattr(
-            "llama_index.llms.openai.completion_with_retry", mock_completion_stream
-        )
+    monkeypatch.setattr(
+        "llama_index.llms.openai.completion_with_retry", mock_completion_stream
+    )
 
-        llm = OpenAI(model="text-davinci-003")
-        prompt = "test prompt"
-        message = ChatMessage(role="user", content="test message")
+    llm = OpenAI(model="text-davinci-003")
+    prompt = "test prompt"
+    message = ChatMessage(role="user", content="test message")
 
-        response_gen = llm.stream_complete(prompt)
-        responses = list(response_gen)
-        assert responses[-1].text == "12"
-        chat_response_gen = llm.stream_chat([message])
-        chat_responses = list(chat_response_gen)
-        assert chat_responses[-1].message.content == "12"
+    response_gen = llm.stream_complete(prompt)
+    responses = list(response_gen)
+    assert responses[-1].text == "12"
+    chat_response_gen = llm.stream_chat([message])
+    chat_responses = list(chat_response_gen)
+    assert chat_responses[-1].message.content == "12"
 
 
 def test_chat_model_streaming(monkeypatch: MonkeyPatch) -> None:
-    with CachedOpenAIApiKeys(set_fake_key=True):
-        monkeypatch.setattr(
-            "llama_index.llms.openai.completion_with_retry", mock_chat_completion_stream
-        )
+    monkeypatch.setattr(
+        "llama_index.llms.openai.completion_with_retry", mock_chat_completion_stream
+    )
 
-        llm = OpenAI(model="gpt-3.5-turbo")
-        prompt = "test prompt"
-        message = ChatMessage(role="user", content="test message")
+    llm = OpenAI(model="gpt-3.5-turbo")
+    prompt = "test prompt"
+    message = ChatMessage(role="user", content="test message")
 
-        response_gen = llm.stream_complete(prompt)
-        responses = list(response_gen)
-        assert responses[-1].text == "\n\n2"
+    response_gen = llm.stream_complete(prompt)
+    responses = list(response_gen)
+    assert responses[-1].text == "\n\n2"
 
-        chat_response_gen = llm.stream_chat([message])
-        chat_responses = list(chat_response_gen)
-        assert chat_responses[-1].message.content == "\n\n2"
-        assert chat_responses[-1].message.role == "assistant"
+    chat_response_gen = llm.stream_chat([message])
+    chat_responses = list(chat_response_gen)
+    assert chat_responses[-1].message.content == "\n\n2"
+    assert chat_responses[-1].message.role == "assistant"
 
 
 @pytest.mark.asyncio
 async def test_completion_model_async(monkeypatch: MonkeyPatch) -> None:
-    with CachedOpenAIApiKeys(set_fake_key=True):
-        monkeypatch.setattr(
-            "llama_index.llms.openai.acompletion_with_retry", mock_async_completion
-        )
+    monkeypatch.setattr(
+        "llama_index.llms.openai.acompletion_with_retry", mock_async_completion
+    )
 
-        llm = OpenAI(model="text-davinci-003")
-        prompt = "test prompt"
-        message = ChatMessage(role="user", content="test message")
+    llm = OpenAI(model="text-davinci-003")
+    prompt = "test prompt"
+    message = ChatMessage(role="user", content="test message")
 
-        response = await llm.acomplete(prompt)
-        assert response.text == "\n\nThis is indeed a test"
+    response = await llm.acomplete(prompt)
+    assert response.text == "\n\nThis is indeed a test"
 
-        chat_response = await llm.achat([message])
-        assert chat_response.message.content == "\n\nThis is indeed a test"
+    chat_response = await llm.achat([message])
+    assert chat_response.message.content == "\n\nThis is indeed a test"
 
 
 @pytest.mark.asyncio
 async def test_completion_model_async_streaming(monkeypatch: MonkeyPatch) -> None:
-    with CachedOpenAIApiKeys(set_fake_key=True):
-        monkeypatch.setattr(
-            "llama_index.llms.openai.acompletion_with_retry",
-            mock_async_completion_stream,
-        )
+    monkeypatch.setattr(
+        "llama_index.llms.openai.acompletion_with_retry",
+        mock_async_completion_stream,
+    )
 
-        llm = OpenAI(model="text-davinci-003")
-        prompt = "test prompt"
-        message = ChatMessage(role="user", content="test message")
+    llm = OpenAI(model="text-davinci-003")
+    prompt = "test prompt"
+    message = ChatMessage(role="user", content="test message")
 
-        response_gen = await llm.astream_complete(prompt)
-        responses = [item async for item in response_gen]
-        assert responses[-1].text == "12"
-        chat_response_gen = await llm.astream_chat([message])
-        chat_responses = [item async for item in chat_response_gen]
-        assert chat_responses[-1].message.content == "12"
+    response_gen = await llm.astream_complete(prompt)
+    responses = [item async for item in response_gen]
+    assert responses[-1].text == "12"
+    chat_response_gen = await llm.astream_chat([message])
+    chat_responses = [item async for item in chat_response_gen]
+    assert chat_responses[-1].message.content == "12"
 
 
 def test_validates_api_key_is_present() -> None:
-    with CachedOpenAIApiKeys():
+    with pytest.raises(ValueError, match="No API key found for OpenAI."):
+        OpenAI()
 
-        with pytest.raises(ValueError, match="No API key found for OpenAI."):
-            OpenAI()
+    os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
 
-        os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
+    # We can create a new LLM when the env variable is set
+    assert OpenAI()
 
-        # We can create a new LLM when the env variable is set
-        assert OpenAI()
+    os.environ["OPENAI_API_KEY"] = ""
+    openai.api_key = "sk-" + ("a" * 48)
 
-        os.environ["OPENAI_API_KEY"] = ""
-        openai.api_key = "sk-" + ("a" * 48)
-
-        # We can create a new LLM when the api_key is set on the
-        # library directly
-        assert OpenAI()
+    # We can create a new LLM when the api_key is set on the
+    # library directly
+    assert OpenAI()
 
 
 def test_validates_api_key_format_from_env() -> None:
