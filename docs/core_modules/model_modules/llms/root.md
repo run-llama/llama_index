@@ -38,10 +38,10 @@ To save costs, you may want to use a local model. Note that these models may be 
 
 ```python
 from llama_index import ServiceContext
-service_context = ServiceContext.from_defaults(embed_model="local:cpu")
+service_context = ServiceContext.from_defaults(llm_predictor="local:cpu")
 ```
 
-The default uses a 4-bit quantized vicuna-13b running on CPU using llama.cpp/ggml.
+The default uses a 4-bit quantized llama-2-13b requiring about 10GB of RAM running on CPU using [llama.cpp](https://github.com/ggerganov/llama.cpp).
 
 
 ## Modules

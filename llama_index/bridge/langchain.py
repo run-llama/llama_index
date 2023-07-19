@@ -1,7 +1,7 @@
 import langchain
 
 # LLMs
-from langchain.llms import BaseLLM, FakeListLLM, OpenAI, AI21, Cohere
+from langchain.llms import BaseLLM, FakeListLLM, OpenAI, AI21, Cohere, LlamaCpp
 from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models import ChatOpenAI
 from langchain.base_language import BaseLanguageModel
@@ -62,6 +62,7 @@ __all__ = [
     "OpenAI",
     "AI21",
     "Cohere",
+    "LlamaCpp",
     "BaseChatModel",
     "ChatOpenAI",
     "BaseLanguageModel",

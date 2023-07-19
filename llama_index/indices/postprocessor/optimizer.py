@@ -18,7 +18,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
     def __init__(
         self,
         embed_model: Optional[BaseEmbedding] = None,
-        percentile_cutoff: Optional[float] = 0.5,
+        percentile_cutoff: float = 0.5,
         threshold_cutoff: Optional[float] = None,
         tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
     ):
