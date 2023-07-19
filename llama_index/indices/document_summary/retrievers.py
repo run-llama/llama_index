@@ -21,7 +21,7 @@ from llama_index.prompts.choice_select import (
     DEFAULT_CHOICE_SELECT_PROMPT,
     ChoiceSelectPrompt,
 )
-from llama_index.schema import NodeWithScore, BaseNode, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,10 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             )
             self._index._service_context.callback_manager.on_event_end(
                 CBEventType.EMBEDDING,
-                payload={EventPayload.CHUNKS: query_bundle.embedding_strs},
+                payload={
+                    EventPayload.CHUNKS: query_bundle.embedding_strs,
+                    EventPayload.EMBEDDINGS: [query_bundle.embedding],
+                },
                 event_id=event_id,
             )
 

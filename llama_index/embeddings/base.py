@@ -9,7 +9,7 @@ import numpy as np
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utils import globals_helper, get_tqdm_iterable
+from llama_index.utils import get_tqdm_iterable, globals_helper
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -80,7 +80,10 @@ class BaseEmbedding:
         self._total_tokens_used += query_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
-            payload={EventPayload.CHUNKS: [query]},
+            payload={
+                EventPayload.CHUNKS: [query],
+                EventPayload.EMBEDDINGS: [query_embedding],
+            },
             event_id=event_id,
         )
         return query_embedding
@@ -138,7 +141,10 @@ class BaseEmbedding:
         self._total_tokens_used += text_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
-            payload={EventPayload.CHUNKS: [text]},
+            payload={
+                EventPayload.CHUNKS: [text],
+                EventPayload.EMBEDDINGS: [text_embedding],
+            },
             event_id=event_id,
         )
         return text_embedding
@@ -182,7 +188,10 @@ class BaseEmbedding:
                 result_embeddings.extend(embeddings)
                 self.callback_manager.on_event_end(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.CHUNKS: cur_batch_texts},
+                    payload={
+                        EventPayload.CHUNKS: cur_batch_texts,
+                        EventPayload.EMBEDDINGS: embeddings,
+                    },
                     event_id=event_id,
                 )
                 cur_batch = []
