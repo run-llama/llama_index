@@ -179,7 +179,12 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         self._index._service_context.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
             payload={
-                EventPayload.CHUNKS: [x for x in nodes if node.embedding is not None]
+                EventPayload.CHUNKS: [
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
+                    for node in nodes
+                    if node.embedding is not None
+                ],
+                EventPayload.EMBEDDINGS: result_embeddings,
             },
             event_id=event_id,
         )
