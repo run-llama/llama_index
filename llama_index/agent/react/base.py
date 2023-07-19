@@ -1,6 +1,6 @@
 # ReAct agent
 
-from typing import List, Optional, Sequence, Tuple, cast
+from typing import Any, List, Optional, Sequence, Tuple, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
@@ -66,6 +66,7 @@ class ReActAgent(BaseAgent):
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        **kwargs: Any,
     ) -> "ReActAgent":
         tools = tools or []
         chat_history = chat_history or []
