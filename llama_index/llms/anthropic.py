@@ -61,6 +61,7 @@ class Anthropic(LLM):
             context_window=anthropic_modelname_to_contextsize(self._model),
             num_output=self._max_tokens,
             is_chat_model=True,
+            model_name=self._model,
         )
 
     @property
