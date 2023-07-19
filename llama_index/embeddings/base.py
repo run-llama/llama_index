@@ -226,11 +226,6 @@ class BaseEmbedding:
                     self._aget_text_embeddings(cur_batch_texts)
                 )
                 result_ids.extend(cur_batch_ids)
-                self.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING,
-                    payload={EventPayload.CHUNKS: cur_batch_texts},
-                    event_id=event_id,
-                )
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
@@ -255,6 +250,14 @@ class BaseEmbedding:
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
+        self.callback_manager.on_event_end(
+            CBEventType.EMBEDDING,
+            payload={
+                EventPayload.CHUNKS: [text for _, text in text_queue],
+                EventPayload.EMBEDDINGS: result_embeddings,
+            },
+            event_id=event_id,
+        )
 
         return result_ids, result_embeddings
 
