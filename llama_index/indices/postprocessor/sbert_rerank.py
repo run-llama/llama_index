@@ -43,7 +43,9 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
 
         scores = self._model.predict(query_and_nodes)
 
-        for node, score in zip(nodes, scores, strict=True): # type: ignore
+        assert len(scores) == len(nodes)
+
+        for node, score in zip(nodes, scores):
             node.score = score
 
         new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
