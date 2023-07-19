@@ -46,6 +46,7 @@ class OpenAI(LLM, BaseModel):
             context_window=openai_modelname_to_contextsize(self.model),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
+            model_name=self.model,
         )
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:

@@ -207,7 +207,9 @@ class OurLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=context_window, num_output=num_output
+            context_window=context_window,
+            num_output=num_output,
+            model_name=model_name
         )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
