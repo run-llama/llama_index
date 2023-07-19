@@ -314,6 +314,7 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
         LlamaCpp(
             model_path=model_path,
             n_ctx=4096,
+            echo=True,
             suffix="[/INST]",
         )
     )
