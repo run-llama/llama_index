@@ -42,6 +42,17 @@ maxdepth: 1
 
 ```
 
+
+## Replicate
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_2.ipynb
+/examples/llm/vicuna.ipynb
+```
+
 ## LangChain
 
 ```{toctree}
@@ -49,3 +60,4 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/langchain.ipynb
+```
