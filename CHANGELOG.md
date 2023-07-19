@@ -6,6 +6,7 @@
 - Added a `SentenceTransformerRerank` node post-processor for fast local re-ranking (#6934)
 - Add numpy support for evaluating queries in pandas query engine (#6935)
 - Add metadata filtering support for Postgres Vector Storage integration (#6968)
+- Proper llama2 support for agents and query engines (#6969)
 
 ### Bug Fixes / Nits
 - Added `model_name` to LLMMetadata (#6911)
