@@ -6,6 +6,7 @@ from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    MetadataFilters,
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
@@ -122,23 +123,39 @@ class PGVectorStore(VectorStore):
         return ids
 
     def _query_with_score(
-        self, embedding: Optional[List[float]], limit: int = 10
+        self,
+        embedding: Optional[List[float]],
+        limit: int = 10,
+        metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[Any]:
+        import sqlalchemy
+        from sqlalchemy import and_
+
         with self._session() as session:
             with session.begin():
-                res = (
-                    session.query(
-                        self.table_class,
-                        self.table_class.embedding.l2_distance(embedding),
-                        # type: ignore
-                    )
-                    .order_by(self.table_class.embedding.l2_distance(embedding))
-                    .limit(limit)
-                )  # type: ignore
+                query = session.query(
+                    self.table_class,
+                    self.table_class.embedding.l2_distance(embedding),
+                ).order_by(self.table_class.embedding.l2_distance(embedding))
+                if metadata_filters:
+                    for filter_ in metadata_filters.filters:
+                        bind_parameter = f"value_{filter_.key}"
+                        query = query.filter(
+                            and_(
+                                sqlalchemy.text(
+                                    f"metadata_->>'{filter_.key}' = :{bind_parameter}"
+                                )
+                            )
+                        )
+                        query = query.params(**{bind_parameter: str(filter_.value)})
+                query = query.limit(limit)
+                res = query
         return res.all()
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        results = self._query_with_score(query.query_embedding, query.similarity_top_k)
+        results = self._query_with_score(
+            query.query_embedding, query.similarity_top_k, query.filters
+        )
         nodes = []
         similarities = []
         ids = []
