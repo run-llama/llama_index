@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 from llama_index.llms.base import ChatMessage, MessageRole
 
@@ -18,13 +18,15 @@ If you don't know the answer to a question, please don't share false information
 """
 
 
-def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
+def messages_to_prompt(
+    messages: Sequence[ChatMessage], system_prompt: Optional[str] = None
+) -> str:
     string_messages = []
     if messages[0].role == MessageRole.SYSTEM:
         system_message_str = messages[0].content or ""
         messages = messages[1:]
     else:
-        system_message_str = DEFAULT_SYSTEM_PROMPT
+        system_message_str = system_prompt or DEFAULT_SYSTEM_PROMPT
 
     system_message_str = B_SYS + system_message_str + E_SYS
 
@@ -49,3 +51,12 @@ def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
     assert last_message.role == MessageRole.USER
     string_messages.append(f"{B_INST} {last_message.content} {E_INST}")
     return "".join(string_messages)
+
+
+def completion_to_prompt(completion: str, system_prompt: Optional[str] = None) -> str:
+    system_prompt_str = system_prompt or DEFAULT_SYSTEM_PROMPT
+
+    return (
+        f"{BOS}{B_INST} {B_SYS}{system_prompt_str.strip()}{E_SYS}"
+        f"{completion.strip()} {E_INST}"
+    )
