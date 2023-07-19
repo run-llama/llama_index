@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
@@ -22,7 +22,6 @@ class Replicate(CustomLLM):
         self,
         model: str,
         temperature: float = 0.75,
-        max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         prompt_key: str = "prompt",
@@ -37,7 +36,6 @@ class Replicate(CustomLLM):
 
         # model kwargs
         self._temperature = temperature
-        self._max_tokens = max_tokens
         self._additional_kwargs = additional_kwargs or {}
 
     @property
