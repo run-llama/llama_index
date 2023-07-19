@@ -50,9 +50,7 @@ def get_model(model: str) -> LLM:
         llm = Replicate(
             model=replicate_model,
             temperature=0.01,
-            # override max tokens since it's interpreted
-            # as context window instead of max tokens
-            max_tokens=4096,
+            context_window=4096,
             # override message representation for llama 2
             messages_to_prompt=messages_to_prompt,
         )

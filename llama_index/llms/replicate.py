@@ -22,34 +22,36 @@ class Replicate(CustomLLM):
         self,
         model: str,
         temperature: float = 0.75,
-        max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         prompt_key: str = "prompt",
         messages_to_prompt: Optional[Callable] = None,
+        completion_to_prompt: Optional[Callable] = None,
     ) -> None:
         self._model = model
         self._context_window = context_window
         self._prompt_key = prompt_key
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
 
         # model kwargs
         self._temperature = temperature
-        self._max_tokens = max_tokens
         self._additional_kwargs = additional_kwargs or {}
 
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self._context_window, num_output=self._max_tokens
+            context_window=self._context_window,
+            num_output=DEFAULT_NUM_OUTPUTS,
+            model_name=self._model,
         )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "temperature": self._temperature,
-            "max_length": self._max_tokens,
+            "max_length": self._context_window,
         }
         model_kwargs = {
             **base_kwargs,
@@ -88,6 +90,7 @@ class Replicate(CustomLLM):
                 "Please install replicate with `pip install replicate`"
             )
 
+        prompt = self._completion_to_prompt(prompt)
         input_dict = self._get_input_dict(prompt, **kwargs)
         response_iter = replicate.run(self._model, input=input_dict)
 
