@@ -10,7 +10,9 @@ from llama_index.graph_stores.types import GraphStore
 
 
 class KuzuGraphStore(GraphStore):
-    def __init__(self, database, node_table_name="entity", rel_table_name="links", **kwargs):
+    def __init__(
+        self, database, node_table_name="entity", rel_table_name="links", **kwargs
+    ):
         try:
             import kuzu
         except ImportError:
@@ -22,17 +24,19 @@ class KuzuGraphStore(GraphStore):
         self.init_schema()
 
     def init_schema(self):
+        """Initialize schema if the tables do not exist."""
         node_tables = self.connection._get_node_table_names()
         if self.node_table_name not in node_tables:
             self.connection.execute(
-                "CREATE NODE TABLE %s (ID STRING, PRIMARY KEY(ID))" % self.node_table_name
+                "CREATE NODE TABLE %s (ID STRING, PRIMARY KEY(ID))"
+                % self.node_table_name
             )
         rel_tables = self.connection._get_rel_table_names()
         rel_tables = [rel_table["name"] for rel_table in rel_tables]
         if self.rel_table_name not in rel_tables:
             self.connection.execute(
-                "CREATE REL TABLE %s (FROM %s TO %s, predicate STRING)" % (
-                    self.rel_table_name, self.node_table_name, self.node_table_name)
+                "CREATE REL TABLE %s (FROM %s TO %s, predicate STRING)"
+                % (self.rel_table_name, self.node_table_name, self.node_table_name)
             )
 
     @property
@@ -47,9 +51,9 @@ class KuzuGraphStore(GraphStore):
             RETURN r.predicate, n2.ID;
         """
         prepared_statement = self.connection.prepare(
-            query % (self.node_table_name, self.rel_table_name, self.node_table_name))
-        query_result = self.connection.execute(
-            prepared_statement, [("subj", subj)])
+            query % (self.node_table_name, self.rel_table_name, self.node_table_name)
+        )
+        query_result = self.connection.execute(prepared_statement, [("subj", subj)])
         retval = []
         while query_result.has_next():
             row = query_result.get_next()
@@ -57,38 +61,87 @@ class KuzuGraphStore(GraphStore):
         return retval
 
     def get_rel_map(
-            self, sinjs: Optional[List[str]] = None, depth: int = 2
+        self, subjs: Optional[List[str]] = None, depth: int = 2
     ) -> Dict[str, List[List[str]]]:
         """Get depth-aware rel map."""
+        rel_wildcard = "r:%s*1..%d" % (self.rel_table_name, depth)
+        match_clause = "MATCH (n1:%s)-[%s]->(n2:%s)" % (
+            self.node_table_name,
+            rel_wildcard,
+            self.node_table_name,
+        )
+        return_clause = "RETURN n1, r, n2"
+        params = []
+        if subjs is not None:
+            for i, subj in enumerate(subjs):
+                if i == 0:
+                    where_clause = "WHERE n1.ID = $%d" % i
+                else:
+                    where_clause += " OR n1.ID = $%d" % i
+                params.append((str(i), subj))
+        else:
+            where_clause = ""
+        query = "%s %s %s" % (match_clause, where_clause, return_clause)
+        prepared_statement = self.connection.prepare(query)
+        if subjs is not None:
+            query_result = self.connection.execute(prepared_statement, params)
+        else:
+            query_result = self.connection.execute(prepared_statement)
+        retval = {}
+        while query_result.has_next():
+            row = query_result.get_next()
+            curr_path = []
+            subj = row[0]
+            recursive_rel = row[1]
+            obj = row[2]
+            nodes_map = {}
+            nodes_map[(subj["_id"]["table"], subj["_id"]["offset"])] = subj["ID"]
+            nodes_map[(obj["_id"]["table"], obj["_id"]["offset"])] = obj["ID"]
+            for node in recursive_rel["_nodes"]:
+                nodes_map[(node["_id"]["table"], node["_id"]["offset"])] = node["ID"]
+            for rel in recursive_rel["_rels"]:
+                predicate = rel["predicate"]
+                curr_subj_id = nodes_map[(rel["_src"]["table"], rel["_src"]["offset"])]
+                curr_path.append(curr_subj_id)
+                curr_path.append(predicate)
+            # Add the last node
+            curr_path.append(obj["ID"])
+            # Remove subject as it is the key of the map
+            curr_path = curr_path[1:]
+            if subj["ID"] not in retval:
+                retval[subj["ID"]] = []
+            retval[subj["ID"]].append(curr_path)
+        return retval
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
+
         def check_entity_exists(connection, entity):
             is_exists_result = connection.execute(
                 "MATCH (n:%s) WHERE n.ID = $entity RETURN n.ID" % self.node_table_name,
-                [("entity", entity)]
+                [("entity", entity)],
             )
             return is_exists_result.has_next()
 
         def create_entity(connection, entity):
             connection.execute(
                 "CREATE (n:%s {ID: $entity})" % self.node_table_name,
-                [("entity", entity)]
+                [("entity", entity)],
             )
 
         def check_rel_exists(connection, subj, obj, rel):
             is_exists_result = connection.execute(
-                "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj AND r.predicate = $pred RETURN r.predicate" % (
-                    self.node_table_name, self.rel_table_name, self.node_table_name),
-                [("subj", subj), ("obj", obj), ("pred", rel)]
+                "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj AND r.predicate = $pred RETURN r.predicate"
+                % (self.node_table_name, self.rel_table_name, self.node_table_name),
+                [("subj", subj), ("obj", obj), ("pred", rel)],
             )
             return is_exists_result.has_next()
 
         def create_rel(connection, subj, obj, rel):
             connection.execute(
-                "MATCH (n1:%s), (n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj CREATE (n1)-[r:%s {predicate: $pred}]->(n2)" % (
-                    self.node_table_name, self.node_table_name, self.rel_table_name),
-                [("subj", subj), ("obj", obj), ("pred", rel)]
+                "MATCH (n1:%s), (n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj CREATE (n1)-[r:%s {predicate: $pred}]->(n2)"
+                % (self.node_table_name, self.node_table_name, self.rel_table_name),
+                [("subj", subj), ("obj", obj), ("pred", rel)],
             )
 
         is_subj_exists = check_entity_exists(self.connection, subj)
@@ -108,23 +161,25 @@ class KuzuGraphStore(GraphStore):
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
+
         def delete_rel(connection, subj, obj, rel):
             connection.execute(
-                "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj AND r.predicate = $pred DELETE r" % (
-                    self.node_table_name, self.rel_table_name, self.node_table_name),
-                [("subj", subj), ("obj", obj), ("pred", rel)])
+                "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj AND r.predicate = $pred DELETE r"
+                % (self.node_table_name, self.rel_table_name, self.node_table_name),
+                [("subj", subj), ("obj", obj), ("pred", rel)],
+            )
 
         def delete_entity(connection, entity):
             connection.execute(
                 "MATCH (n:%s) WHERE n.ID = $entity DELETE n" % self.node_table_name,
-                [("entity", entity)]
+                [("entity", entity)],
             )
 
         def check_edges(connection, entity):
             is_exists_result = connection.execute(
-                "MATCH (n1:%s)-[r:%s]-(n2:%s) WHERE n2.ID = $entity RETURN r.predicate" % (
-                    self.node_table_name, self.rel_table_name, self.node_table_name),
-                [("entity", entity)]
+                "MATCH (n1:%s)-[r:%s]-(n2:%s) WHERE n2.ID = $entity RETURN r.predicate"
+                % (self.node_table_name, self.rel_table_name, self.node_table_name),
+                [("entity", entity)],
             )
             return is_exists_result.has_next()
 
@@ -136,9 +191,7 @@ class KuzuGraphStore(GraphStore):
 
     @classmethod
     def from_persist_dir(
-            cls,
-            persist_dir: str,
-            node_table_name="entity", rel_table_name="links"
+        cls, persist_dir: str, node_table_name="entity", rel_table_name="links"
     ) -> "KuzuGraphStore":
         """Load from persist dir."""
         try:
