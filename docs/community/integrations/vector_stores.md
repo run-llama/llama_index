@@ -207,8 +207,8 @@ import chromadb
 from llama_index.vector_stores import ChromaVectorStore
 
 # Creating a Chroma client
-# By default, Chroma will operate purely in-memory.
-chroma_client = chromadb.Client()
+# EphemeralClient operates purely in-memory, PersistentClient will also save to disk
+chroma_client = chromadb.EphemeralClient()
 chroma_collection = chroma_client.create_collection("quickstart")
 
 # construct vector store
