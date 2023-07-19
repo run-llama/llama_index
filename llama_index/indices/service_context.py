@@ -294,8 +294,8 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
         raise ImportError(
             "Could not import llama-cpp-python or langchain package. "
             "Please install with `pip install llama-cpp-python langchain`."
-            "More advanced installation (e.g. GPU/BLAS offloading): ", 
-            "https://github.com/abetlen/llama-cpp-python"
+            "More advanced installation (e.g. GPU/BLAS offloading): ",
+            "https://github.com/abetlen/llama-cpp-python",
         ) from exc
 
     model_path = os.path.join(
