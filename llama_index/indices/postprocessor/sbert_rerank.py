@@ -5,6 +5,7 @@ from llama_index.schema import MetadataMode, NodeWithScore
 
 DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH = 512
 
+
 class SentenceTransformerRerank(BaseNodePostprocessor):
     def __init__(
         self,
