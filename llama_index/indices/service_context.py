@@ -293,7 +293,7 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
     except ImportError as exc:
         raise ImportError(
             "Could not import llama-cpp-python or langchain package. "
-            "Please install with `pip install llama-cpp-python langchain`."
+            "Please install with `pip install llama-cpp-python langchain`. "
             "More advanced installation (e.g. GPU/BLAS offloading): ",
             "https://github.com/abetlen/llama-cpp-python",
         ) from exc
@@ -314,8 +314,8 @@ def _get_llm_predictor_from_str(config: str) -> BaseLLMPredictor:
         LlamaCpp(
             model_path=model_path,
             n_ctx=4096,
-            echo=True,
-            suffix="[/INST]",
+            # echo=True,
+            # suffix="[/INST]",
         )
     )
     print("LLM metadata:", llm_predictor.llm.metadata)
