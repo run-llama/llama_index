@@ -1,4 +1,4 @@
-from typing import Dict, Type
+from typing import Dict, List, Type
 
 from llama_index.agent import OpenAIAgent, ReActAgent
 from llama_index.agent.types import BaseAgent
@@ -17,7 +17,7 @@ LLAMA_MODELS = [
     "llama13b-v2-chat",
     "llama70b-v2-chat",
 ]
-REPLICATE_MODELS = []
+REPLICATE_MODELS: List[str] = []
 ALL_MODELS = OPENAI_MODELS + ANTHROPIC_MODELS
 
 AGENTS: Dict[str, Type[BaseAgent]] = {

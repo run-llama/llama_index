@@ -40,7 +40,7 @@ def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
                 f"{E_INST} {assistant_message} "
             )
         else:
-            string_messages[-1].append(f" {EOS}")
+            string_messages[-1] += f" {EOS}"
             string_messages.append(
                 f"{BOS}{B_INST} {user_message.content} {E_INST} {assistant_message}"
             )
