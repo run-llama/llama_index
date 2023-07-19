@@ -25,6 +25,15 @@ AGENTS: Dict[str, Type[BaseAgent]] = {
     "openai": OpenAIAgent,
 }
 
+LLAMA_13B_V2_CHAT = (
+    "a16z-infra/llama13b-v2-chat:"
+    "df7690f1994d94e96ad9d568eac121aecf50684a0b0963b25a41cc40061269e5"
+)
+LLAMA_70B_V2_CHAT = (
+    "replicate/llama70b-v2-chat:"
+    "e951f18578850b652510200860fc4ea62b3b16fac280f83ff32282f87bbd2e48"
+)
+
 
 def get_model(model: str) -> LLM:
     llm: LLM
@@ -34,15 +43,18 @@ def get_model(model: str) -> LLM:
         llm = Anthropic(model=model)
     elif model in LLAMA_MODELS:
         model_dict = {
-            "llama13b-v2-chat": "a16z-infra/llama13b-v2-chat:df7690f1994d94e96ad9d568eac121aecf50684a0b0963b25a41cc40061269e5",
-            "llama70b-v2-chat": "replicate/llama70b-v2-chat:e951f18578850b652510200860fc4ea62b3b16fac280f83ff32282f87bbd2e48",
+            "llama13b-v2-chat": LLAMA_13B_V2_CHAT,
+            "llama70b-v2-chat": LLAMA_70B_V2_CHAT,
         }
         replicate_model = model_dict[model]
         llm = Replicate(
             model=replicate_model,
             temperature=0.01,
-            max_tokens=4096,  # override max tokens since it's interpreted as context window instead of max tokens
-            messages_to_prompt=messages_to_prompt,  # override message representation for llama 2
+            # override max tokens since it's interpreted
+            # as context window instead of max tokens
+            max_tokens=4096,
+            # override message representation for llama 2
+            messages_to_prompt=messages_to_prompt,
         )
     else:
         raise ValueError(f"Unknown model {model}")

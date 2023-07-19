@@ -4,10 +4,12 @@ from typing import List, Optional, Sequence, Tuple, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.types import (ActionReasoningStep,
-                                           BaseReasoningStep,
-                                           ObservationReasoningStep,
-                                           ResponseReasoningStep)
+from llama_index.agent.react.types import (
+    ActionReasoningStep,
+    BaseReasoningStep,
+    ObservationReasoningStep,
+    ResponseReasoningStep,
+)
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
