@@ -4,7 +4,7 @@ import pytest
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import PGVectorStore
-from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
+from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery, MetadataFilters, ExactMatchFilter
 
 # from testing find install here https://github.com/pgvector/pgvector#installation-notes
 
@@ -38,11 +38,12 @@ def conn() -> Any:
     return conn_
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def db(conn: Any) -> Generator:
     conn.autocommit = True
 
     with conn.cursor() as c:
+        c.execute(f"DROP DATABASE IF EXISTS {TEST_DB}")
         c.execute(f"CREATE DATABASE {TEST_DB}")
         conn.commit()
     yield
@@ -68,6 +69,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
                 text="dolor sit amet",
                 id_="bbb",
                 relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
+                extra_info={"test_key": "test_value"},
             ),
         ),
     ]
@@ -99,6 +101,25 @@ def test_add_to_db_and_query(
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "aaa"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+def test_add_to_db_and_query_with_metadata_filters(
+    db: None, node_embeddings: List[NodeWithEmbedding]
+) -> None:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB,
+        table_name=TEST_TABLE_NAME,
+    )
+    pg.add(node_embeddings)
+    assert isinstance(pg, PGVectorStore)
+    filters = MetadataFilters(filters=[ExactMatchFilter(key="test_key", value="test_value")])
+    q = VectorStoreQuery(query_embedding=[0.5] * 1536, similarity_top_k=10, filters=filters)
+    res = pg.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "bbb"
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
