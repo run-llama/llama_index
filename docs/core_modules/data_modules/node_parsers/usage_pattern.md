@@ -46,7 +46,7 @@ node_parser = SimpleNodeParser.from_defaults(chunk_size=1024, chunk_overlap=20)
 
 ### Text Splitter Customization
 
-If you do customize the `text_splitter` from the default `TokenTextSplitter`, you can use any splitter from langchain, or optionally our `SentenceSplitter`. Each text splitter has options for the default seperator, as well as options for backup seperators. These are useful for languages that are sufficiently different from English.
+If you do customize the `text_splitter` from the default `TokenTextSplitter`, you can use any splitter from langchain, or optionally our `SentenceSplitter`. Each text splitter has options for the default separator, as well as options for backup separators. These are useful for languages that are sufficiently different from English.
 
 `TokenTextSplitter` configuration:
 
@@ -72,7 +72,7 @@ text_splitter = SentenceSplitter(
   separator=" ",
   chunk_size=1024,
   chunk_overlap=20,
-  backup_seperators=["\n"],
+  backup_separators=["\n"],
   paragraph_separator="\n\n\n"
 )
 
