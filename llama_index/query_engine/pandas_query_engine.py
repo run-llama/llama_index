@@ -4,6 +4,7 @@ import logging
 from typing import Any, Callable, Optional
 
 import pandas as pd
+import numpy as np
 from llama_index.bridge.langchain import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
@@ -54,7 +55,7 @@ def default_output_processor(
         module_end_str = ast.unparse(module_end)  # type: ignore
         print(module_end_str)
         try:
-            return str(eval(module_end_str, {}, local_vars))
+            return str(eval(module_end_str, {"np": np}, local_vars))
         except Exception as e:
             raise e
     except Exception as e:
