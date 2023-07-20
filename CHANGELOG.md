@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Default to pydantic question generation when possible for sub-question query engine (#6979)
+
 ### Bug Fixes / Nits
 - Fix returned order of messages in large chat memory (#6979) 
 
