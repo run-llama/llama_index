@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.11.post1] - 2023-07-20
 
 ### New Features
 - Default to pydantic question generation when possible for sub-question query engine (#6979)
