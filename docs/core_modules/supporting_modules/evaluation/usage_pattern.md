@@ -84,8 +84,9 @@ evaluator = QueryResponseEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
-response = query_engine.query("What battles took place in New York City in the American Revolution?")
-eval_result = evaluator.evaluate(response)
+query = "What battles took place in New York City in the American Revolution?"
+response = query_engine.query(query)
+eval_result = evaluator.evaluate(query, response)
 print(str(eval_result))
 
 ```
@@ -112,8 +113,9 @@ evaluator = QueryResponseEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
-response = query_engine.query("What battles took place in New York City in the American Revolution?")
-eval_result = evaluator.evaluate_source_nodes(response)
+query = "What battles took place in New York City in the American Revolution?"
+response = query_engine.query(query)
+eval_result = evaluator.evaluate_source_nodes(query, response)
 print(str(eval_result))
 ```
 
