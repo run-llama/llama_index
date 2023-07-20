@@ -1,10 +1,10 @@
 import asyncio
 from threading import Thread
-from typing import Any, List, Type, Optional
+from typing import Any, List, Optional, Type
 
 from llama_index.chat_engine.types import (
-    BaseChatEngine,
     AgentChatResponse,
+    BaseChatEngine,
     StreamingAgentChatResponse,
 )
 from llama_index.indices.service_context import ServiceContext

@@ -3,7 +3,7 @@ import json
 import time
 from abc import abstractmethod
 from threading import Thread
-from typing import Callable, List, Optional, Tuple, Type
+from typing import Any, Callable, List, Optional, Tuple, Type
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -367,6 +367,7 @@ class OpenAIAgent(BaseOpenAIAgent):
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
     ) -> "OpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
