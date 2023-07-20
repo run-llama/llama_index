@@ -144,24 +144,10 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         """Get top nodes by similarity to the query."""
         embed_model = self._index.service_context.embed_model
         if query_bundle.embedding is None:
-            event_id = self._index._service_context.callback_manager.on_event_start(
-                CBEventType.EMBEDDING
-            )
             query_bundle.embedding = embed_model.get_agg_embedding_from_queries(
                 query_bundle.embedding_strs
             )
-            self._index._service_context.callback_manager.on_event_end(
-                CBEventType.EMBEDDING,
-                payload={
-                    EventPayload.CHUNKS: query_bundle.embedding_strs,
-                    EventPayload.EMBEDDINGS: [query_bundle.embedding],
-                },
-                event_id=event_id,
-            )
 
-        event_id = self._index._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING
-        )
         id_to_embed_map: Dict[str, List[float]] = {}
         for node in nodes:
             if node.embedding is None:
@@ -176,18 +162,6 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             result_ids,
             result_embeddings,
         ) = embed_model.get_queued_text_embeddings()
-        self._index._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={
-                EventPayload.CHUNKS: [
-                    node.get_content(metadata_mode=MetadataMode.EMBED)
-                    for node in nodes
-                    if node.embedding is not None
-                ],
-                EventPayload.EMBEDDINGS: result_embeddings,
-            },
-            event_id=event_id,
-        )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
         node_embeddings = [id_to_embed_map[n.node_id] for n in nodes]
