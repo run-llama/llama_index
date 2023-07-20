@@ -210,6 +210,7 @@ class BaseEmbedding:
 
         """
         cur_batch: List[Tuple[str, str]] = []
+        callback_payloads: List[Tuple[str, List[str]]] = []
         result_ids: List[str] = []
         result_embeddings: List[List[float]] = []
         embeddings_coroutines: List[Coroutine] = []
@@ -222,6 +223,7 @@ class BaseEmbedding:
                 event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
+                callback_payloads.append((event_id, cur_batch_texts))
                 embeddings_coroutines.append(
                     self._aget_text_embeddings(cur_batch_texts)
                 )
@@ -250,14 +252,16 @@ class BaseEmbedding:
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
-        self.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={
-                EventPayload.CHUNKS: [text for _, text in text_queue],
-                EventPayload.EMBEDDINGS: result_embeddings,
-            },
-            event_id=event_id,
-        )
+
+        for (event_id, text_batch), embeddings in zip(callback_payloads, nested_embeddings):
+            self.callback_manager.on_event_end(
+                CBEventType.EMBEDDING,
+                payload={
+                    EventPayload.CHUNKS: text_batch,
+                    EventPayload.EMBEDDINGS: embeddings,
+                },
+                event_id=event_id,
+            )
 
         return result_ids, result_embeddings
 
