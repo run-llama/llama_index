@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [v0.7.11] - 2023-07-19
 
 ### New Features
 - Added a `SentenceTransformerRerank` node post-processor for fast local re-ranking (#6934)
