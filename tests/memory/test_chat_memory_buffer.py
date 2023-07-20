@@ -27,7 +27,7 @@ def test_set() -> None:
 def test_max_tokens() -> None:
     memory = ChatMemoryBuffer.from_defaults(chat_history=[CHAT_MESSAGE], token_limit=5)
 
-    memory.put(ChatMessage(role=MessageRole.USER, content="test message2"))
+    memory.put(CHAT_MESSAGE)
     assert len(memory.get()) == 2
 
     # do we limit properly
@@ -39,4 +39,6 @@ def test_max_tokens() -> None:
     assert len(memory.get_all()) == 4
 
     # does get return in the correct order?
+    memory.put(ChatMessage(role=MessageRole.USER, content="test message2"))
     assert memory.get()[-1].content == "test message2"
+    assert len(memory.get()) == 2
