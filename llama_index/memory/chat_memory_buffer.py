@@ -56,7 +56,7 @@ class ChatMemoryBuffer(BaseMemory):
         if token_count > self.token_limit:
             return []
 
-        return self.chat_history[:message_count]
+        return self.chat_history[-message_count:]
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""
