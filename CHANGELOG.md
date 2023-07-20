@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix returned order of messages in large chat memory (#6979) 
+
 ## [v0.7.11] - 2023-07-19
 
 ### New Features
