@@ -213,7 +213,7 @@ class BaseOpenAIAgent(BaseAgent):
 
         tools, functions = self._init_chat(message)
         sources = []
-        
+
         all_messages = self._prefix_messages + self._memory.get()
 
         # TODO: Support forced function call
