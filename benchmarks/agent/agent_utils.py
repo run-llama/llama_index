@@ -18,7 +18,7 @@ LLAMA_MODELS = [
     "llama70b-v2-chat",
 ]
 REPLICATE_MODELS: List[str] = []
-ALL_MODELS = OPENAI_MODELS + ANTHROPIC_MODELS
+ALL_MODELS = OPENAI_MODELS + ANTHROPIC_MODELS + LLAMA_MODELS
 
 AGENTS: Dict[str, Type[BaseAgent]] = {
     "react": ReActAgent,
