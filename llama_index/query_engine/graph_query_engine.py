@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.composability.graph import ComposableGraph
@@ -29,7 +29,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         graph: ComposableGraph,
         custom_query_engines: Optional[Dict[str, BaseQueryEngine]] = None,
         recursive: bool = True,
-        **kwargs
+        **kwargs: Any
     ) -> None:
         """Init params."""
         self._graph = graph
