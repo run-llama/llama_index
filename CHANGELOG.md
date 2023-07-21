@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added `kwargs` to `ComposableGraph` for the underlying query engines (#6990)
+
 ## [v0.7.11.post1] - 2023-07-20
 
 ### New Features
