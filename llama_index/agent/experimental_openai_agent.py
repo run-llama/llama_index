@@ -45,6 +45,13 @@ class BaseOpenAIAgent(BaseAgent):
         self.response_handler = response_handler
         self.stream_handler = stream_handler
 
+    @property
+    def chat_history(self) -> List[ChatMessage]:
+        return self._memory.get_all()
+
+    def reset(self) -> None:
+        self._memory.reset()
+
     def _get_latest_function_call(self) -> Optional[dict]:
         """Get latest function call from chat history."""
         return self._memory[-1].additional_kwargs.get("function_call", None)
