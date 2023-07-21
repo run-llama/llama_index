@@ -63,7 +63,7 @@ class BaseOpenAIAgent(BaseAgent):
         return True
 
     def init_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
-        session = ChatSession(self._memory, self._prefix_messages)
+        session = ChatSession(self._memory, self._prefix_messages, self._get_tools)
         tools, functions = session.init_chat(message, chat_history)
         latest_function_call = self._get_latest_function_call()
         return session, tools, functions, latest_function_call
@@ -210,9 +210,12 @@ class BaseMemory:
 
 
 class ChatSession:
-    def __init__(self, memory: BaseMemory, prefix_messages: List[ChatMessage]):
+    def __init__(
+        self, memory: BaseMemory, prefix_messages: List[ChatMessage], get_tools_callback
+    ):
         self.memory = memory
         self.prefix_messages = prefix_messages
+        self.get_tools_callback = get_tools_callback
         self.tools = []
         self.functions = []
 
@@ -222,7 +225,7 @@ class ChatSession:
         if chat_history is not None:
             self.memory.set(chat_history)
         self.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        self.tools = self._get_tools(message)
+        self.tools = self.get_tools_callback(message)
         self.functions = [tool.metadata.to_openai_function() for tool in self.tools]
         return self.tools, self.functions
 
