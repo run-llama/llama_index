@@ -24,6 +24,98 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
+class ChatSession:
+    def __init__(
+        self, memory: BaseMemory, prefix_messages: List[ChatMessage], get_tools_callback
+    ):
+        self.memory = memory
+        self.prefix_messages = prefix_messages
+        self.get_tools_callback = get_tools_callback
+        self.tools = []
+        self.functions = []
+
+    @property
+    def chat_history(self) -> List[ChatMessage]:
+        return self.memory.get_all()
+
+    def reset(self) -> None:
+        self.memory.reset()
+
+    # def init_chat(
+    #     self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    # ) -> Tuple[List[BaseTool], List[dict]]:
+    #     if chat_history is not None:
+    #         self.memory.set(chat_history)
+    #     self.memory.put(ChatMessage(content=message, role=MessageRole.USER))
+    #     self.tools = self.get_tools_callback(message)
+    #     self.functions = [tool.metadata.to_openai_function() for tool in self.tools]
+    #     return self.tools, self.functions
+
+    def prepare_message(self, message: str) -> Tuple[List[BaseTool], List[dict]]:
+        """Prepare tools and functions for the message."""
+        self.tools = self.get_tools_callback(message)
+        self.functions = [tool.metadata.to_openai_function() for tool in self.tools]
+        return self.tools, self.functions
+
+    def get_all_messages(self) -> List[ChatMessage]:
+        return self.prefix_messages + self.memory.get()
+
+    def get_latest_function_call(self) -> Optional[dict]:
+        return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
+
+
+class StreamHandler:
+    pass
+
+
+class ChatHistoryHandler(StreamHandler):
+    def handle(self, chat_response):
+        # Write the response to chat_history (in separate thread?)
+        pass
+
+
+class ChatStreamHandler:
+    def __init__(self, llm, handlers=None):
+        self.llm = llm
+        self.handlers = list() or handlers  # A list of handlers
+
+    def start_stream(self, all_messages, functions):
+        chat_stream = self.llm.stream_chat(all_messages, functions=functions)
+
+        # Start a new thread to handle the chat stream
+        thread = Thread(target=self._handle_stream, args=(chat_stream,))
+        thread.start()
+
+        # Return the thread so the caller can join it if necessary
+        return thread
+
+    def _handle_stream(self, chat_stream, chat_stream_response):
+        # Handle the chat stream (this code runs in a separate thread)
+        for chat_response in chat_stream:
+            # Call each handler with the chat response
+            for handler in self.handlers:
+                handler.handle(chat_response)
+
+            # Update the _is_function attribute of the chat_stream_response
+            chat_stream_response._is_function = (
+                chat_response.message.additional_kwargs.get("function_call", None)
+                is not None
+            )
+
+    async def start_async_stream(self, all_messages, functions):
+        chat_stream = await self.llm.astream_chat(all_messages, functions=functions)
+
+        # Handle the chat stream asynchronously
+        await self._ahandle_async_stream(chat_stream)
+
+    async def _ahandle_async_stream(self, chat_stream):
+        # Handle the chat stream (this code runs in a separate thread)
+        async for chat_response in chat_stream:
+            # Call each handler with the chat response
+            for handler in self.handlers:
+                await handler.handle(chat_response)
+
+
 class BaseOpenAIAgent(BaseAgent):
     def __init__(
         self,
@@ -37,20 +129,19 @@ class BaseOpenAIAgent(BaseAgent):
         stream_handler,
     ):
         self._llm = llm
-        self._memory = memory
-        self._prefix_messages = prefix_messages
         self._verbose = verbose
         self._max_function_calls = max_function_calls
         self.callback_manager = callback_manager or CallbackManager([])
         self.response_handler = response_handler
         self.stream_handler = stream_handler
+        self.session = ChatSession(memory, prefix_messages, self._get_tools)
 
     @property
     def chat_history(self) -> List[ChatMessage]:
-        return self._memory.get_all()
+        return self.session.chat_history
 
     def reset(self) -> None:
-        self._memory.reset()
+        self.session.reset()
 
     def _should_continue(n_function_calls):
         if n_function_calls >= self._max_function_calls:
@@ -59,10 +150,9 @@ class BaseOpenAIAgent(BaseAgent):
         return True
 
     def init_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
-        session = ChatSession(self._memory, self._prefix_messages, self._get_tools)
-        tools, functions = session.init_chat(message, chat_history)
-        latest_function_call = session.get_latest_function_call()
-        return session, tools, functions, latest_function_call
+        tools, functions = self.session.init_chat(message, chat_history)
+        latest_function_call = self.session.get_latest_function_call()
+        return tools, functions, latest_function_call
 
     def handle_ai_response(self, session, tools, functions):
         all_messages = session.get_all_messages()
@@ -99,7 +189,10 @@ class BaseOpenAIAgent(BaseAgent):
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        session, tools, functions, function_call = self.init_chat(message, chat_history)
+        if chat_history is not None:
+            self.session.memory.set(chat_history)
+        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        tools, functions = self.session.prepare_message(message)
 
         n_function_calls = 0
         while function_call is not None and self._should_continue(n_function_calls):
@@ -113,7 +206,10 @@ class BaseOpenAIAgent(BaseAgent):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        session, tools, functions, function_call = self.init_chat(message, chat_history)
+        if chat_history is not None:
+            self.session.memory.set(chat_history)
+        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        tools, functions = self.session.prepare_message(message)
 
         n_function_calls = 0
         while function_call is not None and self._should_continue(n_function_calls):
@@ -127,7 +223,10 @@ class BaseOpenAIAgent(BaseAgent):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        session, tools, functions, function_call = self.init_chat(message, chat_history)
+        if chat_history is not None:
+            self.session.memory.set(chat_history)
+        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        tools, functions = self.session.prepare_message(message)
         chat_stream = self.stream_handler.start_stream(
             session.get_all_messages(), functions
         )
@@ -149,7 +248,10 @@ class BaseOpenAIAgent(BaseAgent):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        session, tools, functions, function_call = self.init_chat(message, chat_history)
+        if chat_history is not None:
+            self.session.memory.set(chat_history)
+        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        tools, functions = self.session.prepare_message(message)
         chat_stream = await self.stream_handler.start_async_stream(
             session.get_all_messages(), functions
         )
@@ -183,62 +285,6 @@ class BaseOpenAIAgent(BaseAgent):
             chat_history=[],
         )
         return Response(response=str(agent_response))
-
-
-class ChatSession:
-    def __init__(
-        self, memory: BaseMemory, prefix_messages: List[ChatMessage], get_tools_callback
-    ):
-        self.memory = memory
-        self.prefix_messages = prefix_messages
-        self.get_tools_callback = get_tools_callback
-        self.tools = []
-        self.functions = []
-
-    def init_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> Tuple[List[BaseTool], List[dict]]:
-        if chat_history is not None:
-            self.memory.set(chat_history)
-        self.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        self.tools = self.get_tools_callback(message)
-        self.functions = [tool.metadata.to_openai_function() for tool in self.tools]
-        return self.tools, self.functions
-
-    def get_all_messages(self) -> List[ChatMessage]:
-        return self.prefix_messages + self.memory.get()
-
-    def get_latest_function_call(self) -> Optional[dict]:
-        return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
-
-
-class ChatResponseHandler:
-    def __init__(self, llm):
-        self.llm = llm
-
-    def get_response(self, all_messages, functions):
-        raise NotImplementedError
-
-
-class SyncChatResponseHandler(ChatResponseHandler):
-    def get_response(self, all_messages, functions):
-        return self.llm.chat(all_messages, functions=functions)
-
-
-class AsyncChatResponseHandler(ChatResponseHandler):
-    async def get_response(self, all_messages, functions):
-        return await self.llm.achat(all_messages, functions=functions)
-
-
-class ChatStreamHandler:
-    def __init__(self, llm):
-        self.llm = llm
-
-    def start_stream(self, all_messages, functions):
-        return self.llm.stream_chat(all_messages, functions=functions)
-
-    async def start_async_stream(self, all_messages, functions):
-        return await self.llm.astream_chat(all_messages, functions=functions)
 
 
 class ExperimentalOpenAIAgent(BaseOpenAIAgent):
