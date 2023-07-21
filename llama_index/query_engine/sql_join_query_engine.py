@@ -3,7 +3,7 @@
 from llama_index.bridge.langchain import print_text
 from typing import Optional, cast, Dict, Callable
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
+from llama_index.indices.struct_store.sql_query import BaseSQLTableQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
@@ -169,15 +169,15 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         """Initialize params."""
         super().__init__(callback_manager=callback_manager)
         # validate that the query engines are of the right type
-        if not isinstance(sql_query_tool.query_engine, NLStructStoreQueryEngine):
+        if not isinstance(sql_query_tool.query_engine, BaseSQLTableQueryEngine):
             raise ValueError(
                 "sql_query_tool.query_engine must be an instance of "
-                "NLStructStoreQueryEngine"
+                "BaseSQLTableQueryEngine"
             )
         self._sql_query_tool = sql_query_tool
         self._other_query_tool = other_query_tool
 
-        sql_query_engine = cast(NLStructStoreQueryEngine, sql_query_tool.query_engine)
+        sql_query_engine = cast(BaseSQLTableQueryEngine, sql_query_tool.query_engine)
         self._service_context = service_context or sql_query_engine.service_context
         self._selector = selector or LLMSingleSelector.from_defaults()
         self._sql_join_synthesis_prompt = (
