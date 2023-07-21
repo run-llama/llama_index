@@ -185,26 +185,6 @@ class BaseOpenAIAgent(BaseAgent):
         return Response(response=str(agent_response))
 
 
-@dataclass
-class ChatMessage:
-    role: str
-    content: str
-
-
-class BaseMemory:
-    def __init__(self):
-        self.memory = []
-
-    def get_all(self):
-        return self.memory
-
-    def put(self, message):
-        self.memory.append(message)
-
-    def reset(self):
-        self.memory = []
-
-
 class ChatSession:
     def __init__(
         self, memory: BaseMemory, prefix_messages: List[ChatMessage], get_tools_callback
