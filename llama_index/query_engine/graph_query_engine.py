@@ -19,6 +19,8 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         custom_query_engines (Optional[Dict[str, BaseQueryEngine]]): A dictionary of
             custom query engines.
         recursive (bool): Whether to recursively query the graph.
+        **kwargs: additional arguments to be passed to the underlying index query
+            engine.
 
     """
 
@@ -27,10 +29,12 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         graph: ComposableGraph,
         custom_query_engines: Optional[Dict[str, BaseQueryEngine]] = None,
         recursive: bool = True,
+        **kwargs
     ) -> None:
         """Init params."""
         self._graph = graph
         self._custom_query_engines = custom_query_engines or {}
+        self._kwargs = kwargs
 
         # additional configs
         self._recursive = recursive
@@ -59,7 +63,9 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         if index_id in self._custom_query_engines:
             query_engine = self._custom_query_engines[index_id]
         else:
-            query_engine = self._graph.get_index(index_id).as_query_engine()
+            query_engine = self._graph.get_index(index_id).as_query_engine(
+                **self._kwargs
+            )
 
         retrieve_event_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = query_engine.retrieve(query_bundle)
