@@ -52,10 +52,6 @@ class BaseOpenAIAgent(BaseAgent):
     def reset(self) -> None:
         self._memory.reset()
 
-    def _get_latest_function_call(self) -> Optional[dict]:
-        """Get latest function call from chat history."""
-        return self._memory[-1].additional_kwargs.get("function_call", None)
-
     def _should_continue(n_function_calls):
         if n_function_calls >= self._max_function_calls:
             print(f"Exceeded max function calls: {self._max_function_calls}.")
@@ -65,7 +61,7 @@ class BaseOpenAIAgent(BaseAgent):
     def init_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
         session = ChatSession(self._memory, self._prefix_messages, self._get_tools)
         tools, functions = session.init_chat(message, chat_history)
-        latest_function_call = self._get_latest_function_call()
+        latest_function_call = session.get_latest_function_call()
         return session, tools, functions, latest_function_call
 
     def handle_ai_response(self, session, tools, functions):
