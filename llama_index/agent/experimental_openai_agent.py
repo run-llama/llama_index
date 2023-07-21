@@ -34,10 +34,15 @@ class BaseOpenAIAgent(BaseAgent):
         self.response_handler = response_handler
         self.stream_handler = stream_handler
 
+    def _get_latest_function_call(self) -> Optional[dict]:
+        """Get latest function call from chat history."""
+        return self._memory[-1].additional_kwargs.get("function_call", None)
+
     def init_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
         session = ChatSession(self._memory, self._prefix_messages)
         tools, functions = session.init_chat(message, chat_history)
-        return session, tools, functions
+        latest_function_call = self._get_latest_function_call()
+        return session, tools, functions, latest_function_call
 
     def handle_ai_response(self, session, tools, functions):
         all_messages = session.get_all_messages()
@@ -54,10 +59,9 @@ class BaseOpenAIAgent(BaseAgent):
         return ai_message, function_call, sources
 
     def chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None) -> AgentChatResponse:
-        session, tools, functions = self.init_chat(message, chat_history)
+        session, tools, functions, function_call = self.init_chat(message, chat_history)
 
         n_function_calls = 0
-        function_call = None
         while function_call is not None and n_function_calls < self._max_function_calls:
             ai_message, function_call, sources = self.handle_ai_response(session, tools, functions)
             n_function_calls += 1
@@ -65,10 +69,9 @@ class BaseOpenAIAgent(BaseAgent):
         return AgentChatResponse(response=str(ai_message.content), sources=sources)
 
     def stream_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None) -> StreamingAgentChatResponse:
-        session, tools, functions = self.init_chat(message, chat_history)
+        session, tools, functions, function_call = self.init_chat(message, chat_history)
 
         n_function_calls = 0
-        function_call = None
         while function_call is not None and n_function_calls < self._max_function_calls:
             ai_message, function_call, sources = self.handle_ai_response(session, tools, functions)
             n_function_calls += 1
@@ -76,10 +79,9 @@ class BaseOpenAIAgent(BaseAgent):
         return StreamingAgentChatResponse(response=str(ai_message.content), sources=sources)
 
     async def achat(self, message: str, chat_history: Optional[List[ChatMessage]] = None) -> AgentChatResponse:
-        session, tools, functions = self.init_chat(message, chat_history)
+        session, tools, functions, function_call = self.init_chat(message, chat_history)
 
         n_function_calls = 0
-        function_call = None
         while function_call is not None and n_function_calls < self._max_function_calls:
             ai_message, function_call, sources = await self.handle_ai_response(session, tools, functions)
             n_function_calls += 1
@@ -87,10 +89,9 @@ class BaseOpenAIAgent(BaseAgent):
         return AgentChatResponse(response=str(ai_message.content), sources=sources)
 
     async def astream_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None) -> StreamingAgentChatResponse:
-        session, tools, functions = self.init_chat(message, chat_history)
+        session, tools, functions, function_call = self.init_chat(message, chat_history)
 
         n_function_calls = 0
-        function_call = None
         while function_call is not None and n_function_calls < self._max_function_calls:
             ai_message, function_call, sources = await self.handle_ai_response(session, tools, functions)
             n_function_calls += 1
