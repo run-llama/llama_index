@@ -56,6 +56,12 @@ class BaseOpenAIAgent(BaseAgent):
         """Get latest function call from chat history."""
         return self._memory[-1].additional_kwargs.get("function_call", None)
 
+    def _should_continue(n_function_calls):
+        if n_function_calls >= self._max_function_calls:
+            print(f"Exceeded max function calls: {self._max_function_calls}.")
+            return False
+        return True
+
     def init_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
         session = ChatSession(self._memory, self._prefix_messages)
         tools, functions = session.init_chat(message, chat_history)
@@ -100,7 +106,7 @@ class BaseOpenAIAgent(BaseAgent):
         session, tools, functions, function_call = self.init_chat(message, chat_history)
 
         n_function_calls = 0
-        while function_call is not None and n_function_calls < self._max_function_calls:
+        while function_call is not None and self._should_continue(n_function_calls):
             ai_message, function_call, sources = self.handle_ai_response(
                 session, tools, functions
             )
@@ -114,7 +120,7 @@ class BaseOpenAIAgent(BaseAgent):
         session, tools, functions, function_call = self.init_chat(message, chat_history)
 
         n_function_calls = 0
-        while function_call is not None and n_function_calls < self._max_function_calls:
+        while function_call is not None and self._should_continue(n_function_calls):
             ai_message, function_call, sources = await self.handle_ai_response(
                 session, tools, functions
             )
@@ -131,7 +137,7 @@ class BaseOpenAIAgent(BaseAgent):
         )
 
         n_function_calls = 0
-        while function_call is not None and n_function_calls < self._max_function_calls:
+        while function_call is not None and self._should_continue(n_function_calls):
             for chat_response in chat_stream:
                 ai_message, function_call, sources = self.handle_ai_response(
                     session, tools, functions
