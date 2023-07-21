@@ -340,3 +340,97 @@ class ExperimentalOpenAIAgent(BaseOpenAIAgent):
     def _get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
         return self._tools
+
+
+class RetrieverOpenAIAgent(BaseOpenAIAgent):
+    """Retriever OpenAI Agent.
+
+    This agent specifically performs retrieval on top of functions
+    during query-time.
+
+    NOTE: this is a beta feature, function interfaces might change.
+    NOTE: this is also a too generally named, a better name is
+        FunctionRetrieverOpenAIAgent
+
+    TODO: add a native OpenAI Tool Index.
+
+    """
+
+    def __init__(
+        self,
+        retriever: BaseRetriever,
+        node_to_tool_fn: Callable[[BaseNode], BaseTool],
+        llm: OpenAI,
+        memory: BaseMemory,
+        prefix_messages: List[ChatMessage],
+        verbose: bool = False,
+        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> None:
+        super().__init__(
+            llm=llm,
+            memory=memory,
+            prefix_messages=prefix_messages,
+            verbose=verbose,
+            max_function_calls=max_function_calls,
+            callback_manager=callback_manager,
+        )
+        self._retriever = retriever
+        self._node_to_tool_fn = node_to_tool_fn
+
+    @classmethod
+    def from_retriever(
+        cls,
+        retriever: BaseRetriever,
+        node_to_tool_fn: Callable[[BaseNode], BaseTool],
+        llm: Optional[OpenAI] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        verbose: bool = False,
+        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
+    ) -> "RetrieverOpenAIAgent":
+        chat_history = chat_history or []
+        memory = memory or memory_cls.from_defaults(chat_history)
+
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        if not isinstance(llm, OpenAI):
+            raise ValueError("llm must be a OpenAI instance")
+
+        if not is_function_calling_model(llm.model):
+            raise ValueError(
+                f"Model name {llm.model} does not support function calling API. "
+            )
+
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
+        return cls(
+            retriever=retriever,
+            node_to_tool_fn=node_to_tool_fn,
+            llm=llm,
+            memory=memory,
+            prefix_messages=prefix_messages,
+            verbose=verbose,
+            max_function_calls=max_function_calls,
+            callback_manager=callback_manager,
+        )
+
+    def _get_tools(self, message: str) -> List[BaseTool]:
+        retrieved_nodes_w_scores: List[NodeWithScore] = self._retriever.retrieve(
+            message
+        )
+        retrieved_nodes = [node.node for node in retrieved_nodes_w_scores]
+        retrieved_tools: List[BaseTool] = [
+            self._node_to_tool_fn(n) for n in retrieved_nodes
+        ]
+        return retrieved_tools
