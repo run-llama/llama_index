@@ -95,6 +95,14 @@ BaseDataType = TypeVar("BaseDataType", QueryData, DocumentData)
 
 
 def as_dataframe(data: Iterable[BaseDataType]) -> "DataFrame":
+    """Converts a list of BaseDataType to a pandas dataframe.
+
+    Args:
+        data (Iterable[BaseDataType]): A list of BaseDataType.
+
+    Returns:
+        DataFrame: The converted pandas dataframe.
+    """
     pandas = _import_package("pandas")
     as_dict_list = []
     for datum in data:
@@ -137,6 +145,15 @@ def _import_package(package_name: str) -> ModuleType:
 
 
 class OpenInferenceCallbackHandler(BaseCallbackHandler):
+    """Callback handler for storing generation data in OpenInference format.
+    OpenInference is an open standard for capturing and storing AI model
+    inferences. It enables production LLMapp servers to seamlessly integrate
+    with LLM observability solutions such as Arize and Phoenix.
+
+    For more information on the specification, see
+    https://github.com/Arize-ai/open-inference-spec
+    """
+
     def __init__(
         self,
     ) -> None:
@@ -201,16 +218,24 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         elif event_type is CBEventType.EMBEDDING:
             self._trace_data.query_data.query_embedding = payload[
                 EventPayload.EMBEDDINGS
-            ][
-                0
-            ]  # when does this list have more than one element?
+            ][0]
 
     def flush_query_data_buffer(self) -> List[QueryData]:
+        """Clears the query data buffer and returns the data.
+
+        Returns:
+            List[QueryData]: The query data.
+        """
         query_data_buffer = self._query_data_buffer
         self._query_data_buffer = []
         return query_data_buffer
 
     def flush_document_data_buffer(self) -> List[DocumentData]:
+        """Clears the document data buffer and returns the data.
+
+        Returns:
+            List[QueryData]: The document data.
+        """
         document_data_buffer = self._document_data_buffer
         self._document_data_buffer = []
         return document_data_buffer
