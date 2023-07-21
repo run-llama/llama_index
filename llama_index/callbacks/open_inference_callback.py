@@ -1,6 +1,11 @@
 """
-Callback handler for retrieval-augmented generation data in OpenInference
-format.
+Callback handler for storing generation data in OpenInference format.
+OpenInference is an open standard for capturing and storing AI model inferences.
+It enables production LLMapp servers to seamlessly integrate with LLM
+observability solutions such as Arize and Phoenix.
+
+For more information on the specification, see
+https://github.com/Arize-ai/open-inference-spec
 """
 
 import importlib
@@ -42,8 +47,7 @@ def _generate_random_id() -> str:
 @dataclass
 class QueryData:
     """
-    Query data for retrieval-augmented generation data, with column names
-    following the OpenInference specification.
+    Query data with column names following the OpenInference specification.
     """
 
     id: str = field(
@@ -80,7 +84,7 @@ class QueryData:
 
 @dataclass
 class DocumentData:
-    """Document data for retrieval-augmented generation."""
+    """Document data."""
 
     id: str
     document_text: Optional[str] = None
