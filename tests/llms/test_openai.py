@@ -7,6 +7,7 @@ from pytest import MonkeyPatch
 
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
+
 from ..conftest import CachedOpenAIApiKeys
 
 
@@ -232,8 +233,9 @@ async def test_completion_model_async_streaming(monkeypatch: MonkeyPatch) -> Non
 
 
 def test_validates_api_key_is_present() -> None:
-    with pytest.raises(ValueError, match="No API key found for OpenAI."):
-        OpenAI()
+    with CachedOpenAIApiKeys():
+        with pytest.raises(ValueError, match="No API key found for OpenAI."):
+            OpenAI()
 
     os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
 
