@@ -208,6 +208,7 @@ class BaseOpenAIAgent(BaseAgent):
     def init_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
         if chat_history is not None:
             self.session.memory.set(chat_history)
+        self.sources = []
         self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
         tools, functions = self.session.prepare_message(message)
         return tools, functions
@@ -219,8 +220,7 @@ class BaseOpenAIAgent(BaseAgent):
         )
         ai_message = chat_response.message
         self.session.memory.put(ai_message)
-        function_call = self.session.get_latest_function_call()
-        return ai_message, function_call
+        return ai_message
 
     async def _get_async_ai_response(self, functions):
         all_messages = self.session.get_all_messages()
@@ -229,8 +229,7 @@ class BaseOpenAIAgent(BaseAgent):
         )
         ai_message = chat_response.message
         self.session.memory.put(ai_message)
-        function_call = self.session.get_latest_function_call()
-        return ai_message, function_call
+        return ai_message
 
     def _call_function(self, tools, function_call):
         function_message, tool_output = call_function(
@@ -273,13 +272,13 @@ class BaseOpenAIAgent(BaseAgent):
         tools, functions = self.init_chat(message, chat_history)
         self.response_handler = SyncChatResponseHandler(self._llm)
         n_function_calls = 0
-        self.sources = []
 
         while True:
-            ai_message, function_call = self._get_ai_response(functions)
-            if not self._should_continue(function_call, n_function_calls):
+            ai_message = self._get_ai_response(functions)
+            latest_function = self.session.get_latest_function_call()
+            if not self._should_continue(latest_function, n_function_calls):
                 break
-            self._call_function(tools, function_call)
+            self._call_function(tools, latest_function)
             n_function_calls += 1
 
         return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
@@ -290,13 +289,13 @@ class BaseOpenAIAgent(BaseAgent):
         tools, functions = self.init_chat(message, chat_history)
         self.response_handler = AsyncChatResponseHandler(self._llm)
         n_function_calls = 0
-        self.sources = []
 
         while True:
-            ai_message, function_call = await self._get_async_ai_response(functions)
-            if not self._should_continue(function_call, n_function_calls):
+            ai_message = await self._get_async_ai_response(functions)
+            latest_function = self.session.get_latest_function_call()
+            if not self._should_continue(latest_function, n_function_calls):
                 break
-            self._call_function(tools, function_call)
+            self._call_function(tools, latest_function)
             n_function_calls += 1
 
         return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
@@ -310,7 +309,6 @@ class BaseOpenAIAgent(BaseAgent):
         )
 
         n_function_calls = 0
-        self.sources = []
         while function_call is not None and self._should_continue(n_function_calls):
             for chat_response in chat_stream:
                 ai_message, function_call, sources = self.handle_ai_response(
