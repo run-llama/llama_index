@@ -249,6 +249,28 @@ class BaseOpenAIAgent(BaseAgent):
         self.sources.append(tool_output)
         self.session.memory.put(function_message)
 
+    def _get_agent_response(
+        self, mode: ChatMode, functions: List[dict]
+    ) -> AgentChatResponse | StreamingAgentChatResponse:
+        if mode == ChatMode.default:
+            chat_response: ChatResponse = self._llm.chat(
+                self.all_messages, functions=functions
+            )
+            return self._process_message(chat_response)
+        elif mode == ChatMode.stream:
+            return self._get_stream_ai_response(functions)
+
+    async def _get_async_agent_response(
+        self, mode: ChatMode, functions: List[dict]
+    ) -> AgentChatResponse | StreamingAgentChatResponse:
+        if mode == ChatMode.default:
+            chat_response: ChatResponse = await self._llm.achat(
+                self.all_messages, functions=functions
+            )
+            return self._process_message(chat_response)
+        elif mode == ChatMode.stream:
+            return await self._get_async_stream_ai_response(functions)
+
     def chat(
         self,
         message: str,
@@ -260,18 +282,7 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
 
         while True:
-            if mode == ChatMode.default:
-                chat_response: ChatResponse = self._llm.chat(
-                    self.all_messages, functions=functions
-                )
-                agent_chat_response: AgentChatResponse = self._process_message(
-                    chat_response
-                )
-            elif mode == ChatMode.stream:
-                agent_chat_response: StreamingAgentChatResponse = (
-                    self._get_stream_ai_response(functions)
-                )
-
+            agent_chat_response = self._get_agent_response(mode, functions)
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
                 break
@@ -289,16 +300,9 @@ class BaseOpenAIAgent(BaseAgent):
     ) -> AgentChatResponse | StreamingAgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
+
         while True:
-            if mode == ChatMode.default:
-                chat_response: ChatResponse = await self._llm.achat(
-                    self.all_messages, functions=functions
-                )
-                agent_chat_response = self._process_message(chat_response)
-            elif mode == ChatMode.stream:
-                agent_chat_response: ChatStreamHandler = (
-                    await self._get_async_stream_ai_response(functions)
-                )
+            agent_chat_response = await self._get_async_agent_response(mode, functions)
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
                 break
