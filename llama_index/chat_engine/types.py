@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import queue
 from abc import ABC, abstractmethod
@@ -46,6 +47,7 @@ class StreamingAgentChatResponse:
     _nodes: List[NodeWithScore] = field(default_factory=list)
     _queue: queue.Queue = queue.Queue()
     _is_done = False
+    _is_function_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function: Optional[bool] = None
 
     @property
@@ -62,6 +64,16 @@ class StreamingAgentChatResponse:
             for delta in self._queue.queue:
                 self.response += delta
         return self.response
+
+    @property
+    def _is_function(self):
+        return self.__is_function
+
+    @_is_function.setter
+    def _is_function(self, value):
+        self.__is_function = value
+        if value is not None:
+            self._is_function_event.set()
 
     def write_response_to_history(self, memory: BaseMemory) -> None:
         if self.chat_stream is None:

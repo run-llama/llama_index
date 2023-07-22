@@ -104,15 +104,11 @@ class BaseOpenAIAgent(BaseAgent):
         verbose,
         max_function_calls,
         callback_manager,
-        response_handler,
-        stream_handler,
     ):
         self._llm = llm
         self._verbose = verbose
         self._max_function_calls = max_function_calls
         self.callback_manager = callback_manager or CallbackManager([])
-        self.response_handler = response_handler
-        self.stream_handler = stream_handler
         self.session = ChatSession(memory, prefix_messages, self._get_tools)
         self.sources = []
 
@@ -182,7 +178,7 @@ class BaseOpenAIAgent(BaseAgent):
         )
         while chat_stream_response._is_function is None:
             # Wait until we know if the response is a function call or not
-            await asyncio.sleep(0.05)
+            await chat_stream_response._is_function_event.wait()
             if chat_stream_response._is_function is False:
                 return chat_stream_response
 
@@ -291,8 +287,6 @@ class ExperimentalOpenAIAgent(BaseOpenAIAgent):
         tools: List[BaseTool],
         llm: OpenAI,
         memory: BaseMemory,
-        response_handler,
-        stream_handler,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
@@ -301,8 +295,6 @@ class ExperimentalOpenAIAgent(BaseOpenAIAgent):
         super().__init__(
             llm=llm,
             memory=memory,
-            response_handler=response_handler,
-            stream_handler=stream_handler,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
@@ -318,8 +310,6 @@ class ExperimentalOpenAIAgent(BaseOpenAIAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
-        response_handler=None,
-        stream_handler=None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -352,8 +342,6 @@ class ExperimentalOpenAIAgent(BaseOpenAIAgent):
             tools=tools,
             llm=llm,
             memory=memory,
-            response_handler=response_handler,
-            stream_handler=stream_handler,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
