@@ -24,6 +24,41 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
+def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
+    """Get function by name."""
+    name_to_tool = {tool.metadata.name: tool for tool in tools}
+    if name not in name_to_tool:
+        raise ValueError(f"Tool with name {name} not found")
+    return name_to_tool[name]
+
+
+def call_function(
+    tools: List[BaseTool], function_call: dict, verbose: bool = False
+) -> Tuple[ChatMessage, ToolOutput]:
+    """Call a function and return the output as a string."""
+    name = function_call["name"]
+    arguments_str = function_call["arguments"]
+    if verbose:
+        print("=== Calling Function ===")
+        print(f"Calling function: {name} with args: {arguments_str}")
+    tool = get_function_by_name(tools, name)
+    argument_dict = json.loads(arguments_str)
+    output = tool(**argument_dict)
+    if verbose:
+        print(f"Got output: {str(output)}")
+        print("========================")
+    return (
+        ChatMessage(
+            content=str(output),
+            role=MessageRole.FUNCTION,
+            additional_kwargs={
+                "name": function_call["name"],
+            },
+        ),
+        output,
+    )
+
+
 class ChatSession:
     def __init__(
         self, memory: BaseMemory, prefix_messages: List[ChatMessage], get_tools_callback
@@ -143,7 +178,7 @@ class BaseOpenAIAgent(BaseAgent):
     def reset(self) -> None:
         self.session.reset()
 
-    def _should_continue(n_function_calls):
+    def _should_continue(self, n_function_calls):
         if n_function_calls >= self._max_function_calls:
             print(f"Exceeded max function calls: {self._max_function_calls}.")
             return False
@@ -157,32 +192,26 @@ class BaseOpenAIAgent(BaseAgent):
     def handle_ai_response(self, session, tools, functions):
         all_messages = session.get_all_messages()
         chat_response = self.response_handler.get_response(all_messages, functions)
-        return parse_response_and_call_function(
-            chat_response, sessions, tools, functions
-        )
+        return self.parse_response_and_call_function(chat_response, tools, functions)
 
     async def ahandle_ai_response(self, session, tools, functions):
         all_messages = session.get_all_messages()
         chat_response = await self.response_handler.get_response(
             all_messages, functions
         )
-        return parse_response_and_call_function(
-            chat_response, sessions, tools, functions
-        )
+        return self.parse_response_and_call_function(chat_response, tools, functions)
 
-    def parse_response_and_call_function(
-        self, chat_response, sessions, tools, functions
-    ):
+    def parse_response_and_call_function(self, chat_response, tools, functions):
         ai_message = chat_response.message
-        session.memory.put(ai_message)
+        self.session.memory.put(ai_message)
 
-        function_call = session.get_latest_function_call()
+        function_call = self.session.get_latest_function_call()
         function_message, sources = None, []
         if function_call is not None:
             function_message, sources = call_function(
                 tools, function_call, verbose=self._verbose
             )
-            session.memory.put(function_message)
+            self.session.memory.put(function_message)
 
         return ai_message, function_call, sources
 
@@ -197,7 +226,7 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
         while function_call is not None and self._should_continue(n_function_calls):
             ai_message, function_call, sources = self.handle_ai_response(
-                session, tools, functions
+                self.session, tools, functions
             )
             n_function_calls += 1
 
@@ -214,7 +243,7 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
         while function_call is not None and self._should_continue(n_function_calls):
             ai_message, function_call, sources = await self.handle_ai_response(
-                session, tools, functions
+                self.session, tools, functions
             )
             n_function_calls += 1
 
@@ -228,14 +257,14 @@ class BaseOpenAIAgent(BaseAgent):
         self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
         tools, functions = self.session.prepare_message(message)
         chat_stream = self.stream_handler.start_stream(
-            session.get_all_messages(), functions
+            self.session.get_all_messages(), functions
         )
 
         n_function_calls = 0
         while function_call is not None and self._should_continue(n_function_calls):
             for chat_response in chat_stream:
                 ai_message, function_call, sources = self.handle_ai_response(
-                    session, tools, functions
+                    self.session, tools, functions
                 )
                 n_function_calls += 1
                 if function_call is None:
@@ -253,7 +282,7 @@ class BaseOpenAIAgent(BaseAgent):
         self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
         tools, functions = self.session.prepare_message(message)
         chat_stream = await self.stream_handler.start_async_stream(
-            session.get_all_messages(), functions
+            self.session.get_all_messages(), functions
         )
 
         n_function_calls = 0
@@ -261,7 +290,7 @@ class BaseOpenAIAgent(BaseAgent):
         while function_call is not None and n_function_calls < self._max_function_calls:
             async for chat_response in chat_stream:
                 ai_message, function_call, sources = await self.handle_ai_response(
-                    session, tools, functions
+                    self.session, tools, functions
                 )
                 n_function_calls += 1
                 if function_call is None:
@@ -328,7 +357,7 @@ class ExperimentalOpenAIAgent(BaseOpenAIAgent):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
-    ) -> "OpenAIAgent":
+    ) -> "ExperimentalOpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history)
