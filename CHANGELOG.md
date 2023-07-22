@@ -9,6 +9,7 @@
 
 ### New Features
 - Add support for chroma v0.4.0 (#6937)
+- Log embedding vectors to callback manager (#6962)
 
 ### Bug Fixes / Nits
 - add more robust embedding timeouts (#6779)
