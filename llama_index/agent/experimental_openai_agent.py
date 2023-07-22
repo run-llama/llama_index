@@ -178,7 +178,7 @@ class BaseOpenAIAgent(BaseAgent):
         )
         while chat_stream_response._is_function is None:
             # Wait until we know if the response is a function call or not
-            await chat_stream_response._is_function_event.wait()
+            await asyncio.sleep(0.05)  # chat_stream_response._is_function_event.wait()
             if chat_stream_response._is_function is False:
                 return chat_stream_response
 
