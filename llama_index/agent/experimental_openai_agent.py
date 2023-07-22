@@ -230,8 +230,7 @@ class BaseOpenAIAgent(BaseAgent):
             ),
             sources=self.sources,
         )
-
-        # Get the response in a separate thread so we can yield the response
+        # create task to write chat response to history
         asyncio.create_task(
             chat_stream_response.awrite_response_to_history(self.session.memory)
         )
