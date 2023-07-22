@@ -68,7 +68,9 @@ class QueryData:
     scores: List[float] = field(
         default_factory=list,
         metadata={
-            OPENINFERENCE_COLUMN_NAME: ":feature.[float].retrieved_document_scores:prompt"
+            OPENINFERENCE_COLUMN_NAME: (
+                ":feature.[float].retrieved_document_scores:prompt"
+            )
         },
     )
 
