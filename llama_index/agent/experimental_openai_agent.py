@@ -185,7 +185,10 @@ class BaseOpenAIAgent(BaseAgent):
         return True
 
     def init_chat(self, message: str, chat_history: Optional[List[ChatMessage]] = None):
-        tools, functions = self.session.init_chat(message, chat_history)
+        if chat_history is not None:
+            self.session.memory.set(chat_history)
+        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        tools, functions = self.session.prepare_message(message)
         latest_function_call = self.session.get_latest_function_call()
         return tools, functions, latest_function_call
 
@@ -218,11 +221,7 @@ class BaseOpenAIAgent(BaseAgent):
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        if chat_history is not None:
-            self.session.memory.set(chat_history)
-        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        tools, functions = self.session.prepare_message(message)
-
+        tools, functions, function_call = self.init_chat(message, chat_history)
         n_function_calls = 0
         while function_call is not None and self._should_continue(n_function_calls):
             ai_message, function_call, sources = self.handle_ai_response(
@@ -235,10 +234,7 @@ class BaseOpenAIAgent(BaseAgent):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        if chat_history is not None:
-            self.session.memory.set(chat_history)
-        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        tools, functions = self.session.prepare_message(message)
+        tools, functions, function_call = self.init_chat(message, chat_history)
 
         n_function_calls = 0
         while function_call is not None and self._should_continue(n_function_calls):
@@ -252,10 +248,7 @@ class BaseOpenAIAgent(BaseAgent):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        if chat_history is not None:
-            self.session.memory.set(chat_history)
-        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        tools, functions = self.session.prepare_message(message)
+        tools, functions, function_call = self.init_chat(message, chat_history)
         chat_stream = self.stream_handler.start_stream(
             self.session.get_all_messages(), functions
         )
@@ -277,10 +270,7 @@ class BaseOpenAIAgent(BaseAgent):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        if chat_history is not None:
-            self.session.memory.set(chat_history)
-        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        tools, functions = self.session.prepare_message(message)
+        tools, functions, function_call = self.init_chat(message, chat_history)
         chat_stream = await self.stream_handler.start_async_stream(
             self.session.get_all_messages(), functions
         )
