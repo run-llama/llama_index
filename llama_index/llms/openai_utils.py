@@ -1,7 +1,7 @@
 import logging
 import os
 import re
-from typing import Any, Callable, Dict, List, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import openai
 from openai import ChatCompletion, Completion
@@ -255,8 +255,8 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
     }
 
 
-def validate_openai_api_key() -> None:
-    openai_api_key = os.environ.get("OPENAI_API_KEY", "") or openai.api_key
+def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
     elif not OPENAI_API_KEY_FORMAT.search(openai_api_key):

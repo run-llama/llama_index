@@ -42,7 +42,7 @@ class OpenAI(LLM, BaseModel):
     max_retries: int = 10
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        validate_openai_api_key()
+        validate_openai_api_key(kwargs.get("api_key", None))
         super().__init__(*args, **kwargs)
 
     @property

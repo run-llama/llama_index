@@ -1,4 +1,4 @@
-te# Usage Pattern
+# Usage Pattern
 
 ## Getting Started
 

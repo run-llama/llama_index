@@ -245,7 +245,7 @@ class OpenAIEmbedding(BaseEmbedding):
         # Validate that either the openai.api_key property
         # or OPENAI_API_KEY env variable are set to a valid key
         # Raises ValueError if missing or doesn't match valid format
-        validate_openai_api_key()
+        validate_openai_api_key(kwargs.get("api_key", None))
 
         """Init params."""
         super().__init__(embed_batch_size, tokenizer, callback_manager)
