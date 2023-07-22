@@ -274,9 +274,11 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
 
         while True:
-            chat_response = self._llm.chat(self.all_messages, functions=functions)
             match (mode):
                 case ChatMode.default:
+                    chat_response = self._llm.chat(
+                        self.all_messages, functions=functions
+                    )
                     agent_chat_response = self._process_message(chat_response)
                 case ChatMode.stream:
                     agent_chat_response = self._get_stream_ai_response(functions)
@@ -301,9 +303,10 @@ class BaseOpenAIAgent(BaseAgent):
         while True:
             match (mode):
                 case ChatMode.default:
-                    agent_chat_response = await self._llm.achat(
+                    chat_response = await self._llm.achat(
                         self.all_messages, functions=functions
                     )
+                    agent_chat_response = self._process_message(chat_response)
                 case ChatMode.stream:
                     agent_chat_response = await self._get_async_stream_ai_response(
                         functions
