@@ -1,26 +1,22 @@
 # ReAct agent
 
+from typing import Any, List, Optional, Sequence, Tuple, cast
+
 from llama_index.agent.react.formatter import ReActChatFormatter
-from llama_index.llms.base import LLM
-from typing import Sequence, cast, Tuple
-from llama_index.llms.openai import OpenAI
-from llama_index.tools import BaseTool
-from llama_index.agent.types import BaseAgent
-from typing import List, Optional
-from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
+from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.agent.react.types import (
-    BaseReasoningStep,
     ActionReasoningStep,
+    BaseReasoningStep,
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
-from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import (
-    AgentChatResponse,
-)
-
-from llama_index.agent.react.output_parser import ReActOutputParser
+from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
+from llama_index.callbacks.base import CallbackManager
+from llama_index.chat_engine.types import AgentChatResponse
+from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.openai import OpenAI
+from llama_index.tools import BaseTool
 
 
 class ReActAgent(BaseAgent):
@@ -70,6 +66,7 @@ class ReActAgent(BaseAgent):
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        **kwargs: Any,
     ) -> "ReActAgent":
         tools = tools or []
         chat_history = chat_history or []

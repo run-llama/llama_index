@@ -17,6 +17,7 @@ from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.palm import PaLM
+from llama_index.llms.replicate import Replicate
 
 __all__ = [
     "OpenAI",
@@ -25,6 +26,7 @@ __all__ = [
     "HuggingFaceLLM",
     "PaLM",
     "Anthropic",
+    "Replicate",
     "CustomLLM",
     "MockLLM",
     "ChatMessage",

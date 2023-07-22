@@ -1,5 +1,52 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added `kwargs` to `ComposableGraph` for the underlying query engines (#6990)
+
+### Bug Fixes / Nits
+- Fix achat memory initialization for data agents (#7000)
+
+## [v0.7.11.post1] - 2023-07-20
+
+### New Features
+- Default to pydantic question generation when possible for sub-question query engine (#6979)
+
+### Bug Fixes / Nits
+- Fix returned order of messages in large chat memory (#6979) 
+
+## [v0.7.11] - 2023-07-19
+
+### New Features
+- Added a `SentenceTransformerRerank` node post-processor for fast local re-ranking (#6934)
+- Add numpy support for evaluating queries in pandas query engine (#6935)
+- Add metadata filtering support for Postgres Vector Storage integration (#6968)
+- Proper llama2 support for agents and query engines (#6969)
+
+### Bug Fixes / Nits
+- Added `model_name` to LLMMetadata (#6911)
+- Fallback to retriever service context in query engines (#6911)
+- Fixed `as_chat_engine()` ValueError with extra kwargs (#6971
+
+## [v0.7.10.post1] - 2023-07-18
+
+### New Features
+- Add support for Replicate LLM (vicuna & llama 2!)
+
+### Bug Fixes / Nits
+- fix streaming for condense chat engine (#6958)
+
+## [v0.7.10] - 2023-07-17
+
+### New Features
+- Add support for chroma v0.4.0 (#6937)
+- Log embedding vectors to callback manager (#6962)
+
+### Bug Fixes / Nits
+- add more robust embedding timeouts (#6779)
+- improved connection session management on postgres vector store (#6843)
+
 ## [v0.7.9] - 2023-07-15
 
 ### New Features

@@ -184,7 +184,7 @@ class DeepLakeVectorStore(VectorStoreBase):
             VectorStoreQueryResult
         """
         query_embedding = cast(List[float], query.query_embedding)
-        exec_option = kwargs.get("exec_option", "python")
+        exec_option = kwargs.get("exec_option")
         data = self.vectorstore.search(
             embedding=query_embedding,
             exec_option=exec_option,

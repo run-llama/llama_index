@@ -6,6 +6,7 @@ from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    MetadataFilters,
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
@@ -49,21 +50,21 @@ class PGVectorStore(VectorStore):
 
         self.connection_string = connection_string
         self.table_name: str = table_name.lower()
-        self._conn: Any
 
         # def __enter__(self):
         from sqlalchemy.orm import declarative_base
 
-        self._conn = self._connect()
         self._base = declarative_base()
         # sqlalchemy model
         self.table_class = get_data_model(self._base, self.table_name)
+        self._connect()
         self._create_extension()
         self._create_tables_if_not_exists()
 
     def __del__(self) -> None:
+        self._session.close_all()
         self._conn.close()
-        self.engine.dispose()
+        self._engine.dispose()
 
     @classmethod
     def from_params(
@@ -80,64 +81,81 @@ class PGVectorStore(VectorStore):
         return cls(connection_string=conn_str, table_name=table_name)
 
     def _connect(self) -> Any:
-        import sqlalchemy
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
 
-        self.engine = sqlalchemy.create_engine(self.connection_string)
-        conn: sqlalchemy.engine.Connection = self.engine.connect()
-
-        return conn
+        self._engine = create_engine(self.connection_string)
+        self._conn = self._engine.connect()
+        self._session = sessionmaker(self._engine)
 
     def _create_tables_if_not_exists(self) -> None:
         with self._conn.begin():
             self._base.metadata.create_all(self._conn)
 
     def _create_extension(self) -> None:
-        from sqlalchemy.orm import Session
         import sqlalchemy
 
-        with Session(self._conn) as session:
-            statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
-            session.execute(statement)
-            session.commit()
+        with self._session() as session:
+            with session.begin():
+                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+                session.execute(statement)
+                session.commit()
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        from sqlalchemy.orm import Session
-
         ids = []
-        with Session(self._conn) as session:
-            for result in embedding_results:
-                ids.append(result.id)
+        with self._session() as session:
+            with session.begin():
+                for result in embedding_results:
+                    ids.append(result.id)
 
-                item = self.table_class(
-                    node_id=result.id,
-                    embedding=result.embedding,
-                    text=result.node.get_content(metadata_mode=MetadataMode.NONE),
-                    metadata_=node_to_metadata_dict(
-                        result.node, remove_text=True, flat_metadata=self.flat_metadata
-                    ),
-                )
-                session.add(item)
-            session.commit()
+                    item = self.table_class(
+                        node_id=result.id,
+                        embedding=result.embedding,
+                        text=result.node.get_content(metadata_mode=MetadataMode.NONE),
+                        metadata_=node_to_metadata_dict(
+                            result.node,
+                            remove_text=True,
+                            flat_metadata=self.flat_metadata,
+                        ),
+                    )
+                    session.add(item)
+                session.commit()
         return ids
 
     def _query_with_score(
-        self, embedding: Optional[List[float]], limit: int = 10
+        self,
+        embedding: Optional[List[float]],
+        limit: int = 10,
+        metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[Any]:
-        from sqlalchemy.orm import Session
+        import sqlalchemy
+        from sqlalchemy import and_
 
-        with Session(self._conn) as session:
-            res = (
-                session.query(
+        with self._session() as session:
+            with session.begin():
+                query = session.query(
                     self.table_class,
-                    self.table_class.embedding.l2_distance(embedding),  # type: ignore
-                )
-                .order_by(self.table_class.embedding.l2_distance(embedding))
-                .limit(limit)
-            )  # type: ignore
+                    self.table_class.embedding.l2_distance(embedding),
+                ).order_by(self.table_class.embedding.l2_distance(embedding))
+                if metadata_filters:
+                    for filter_ in metadata_filters.filters:
+                        bind_parameter = f"value_{filter_.key}"
+                        query = query.filter(
+                            and_(
+                                sqlalchemy.text(
+                                    f"metadata_->>'{filter_.key}' = :{bind_parameter}"
+                                )
+                            )
+                        )
+                        query = query.params(**{bind_parameter: str(filter_.value)})
+                query = query.limit(limit)
+                res = query
         return res.all()
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        results = self._query_with_score(query.query_embedding, query.similarity_top_k)
+        results = self._query_with_score(
+            query.query_embedding, query.similarity_top_k, query.filters
+        )
         nodes = []
         similarities = []
         ids = []
@@ -161,12 +179,14 @@ class PGVectorStore(VectorStore):
         )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        from sqlalchemy.orm import Session
         import sqlalchemy
 
-        with Session(self._conn) as session:
-            stmt = sqlalchemy.delete(self.table_class).where(
-                self.table_class.doc_id == ref_doc_id
-            )
-            session.execute(stmt)
-            session.commit()
+        with self._session() as session:
+            with session.begin():
+                stmt = sqlalchemy.text(
+                    f"DELETE FROM public.data_{self.table_name} where "
+                    f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
+                )
+
+                session.execute(stmt)
+                session.commit()
