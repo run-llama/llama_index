@@ -16,6 +16,7 @@ from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -156,9 +157,17 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
+        callback: Optional[Callable[[List[QueryData]], None]] = None,
     ) -> None:
-        """Initializer for the OpenInferenceCallbackHandler."""
+        """Initializes the OpenInferenceCallbackHandler.
+
+        Args:
+            callback (Optional[Callable[[List[QueryData]], None]], optional): A
+            callback function that will be called when a query trace is
+            completed, often used for logging or persisting query data.
+        """
         super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
+        self._callback = callback
         self._trace_data = TraceData()
         self._query_data_buffer: List[QueryData] = []
         self._document_data_buffer: List[DocumentData] = []
@@ -178,6 +187,8 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
             self._query_data_buffer.append(self._trace_data.query_data)
             self._document_data_buffer.extend(self._trace_data.document_datas)
             self._trace_data = TraceData()
+            if self._callback is not None:
+                self._callback(self._query_data_buffer)
 
     def on_event_start(
         self,
