@@ -253,7 +253,9 @@ class BaseEmbedding:
             embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
 
-        for (event_id, text_batch), embeddings in zip(callback_payloads, nested_embeddings):
+        for (event_id, text_batch), embeddings in zip(
+            callback_payloads, nested_embeddings
+        ):
             self.callback_manager.on_event_end(
                 CBEventType.EMBEDDING,
                 payload={
