@@ -70,7 +70,7 @@ class ReActAgent(BaseAgent):
     ) -> "ReActAgent":
         tools = tools or []
         chat_history = chat_history or []
-        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
+        llm = llm or OpenAI(model="gpt-3.5-turbo-0613", temperature = 0)
 
         return cls(
             tools=tools,

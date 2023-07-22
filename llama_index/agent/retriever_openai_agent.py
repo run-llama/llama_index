@@ -59,7 +59,7 @@ class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
     ) -> "FnRetrieverOpenAIAgent":
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history)
-        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME, temperature = 0)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 

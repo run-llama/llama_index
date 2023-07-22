@@ -44,6 +44,7 @@ class CohereRerank(BaseNodePostprocessor):
             top_n=self._top_n,
             query=query_bundle.query_str,
             documents=texts,
+            temperature = 0
         )
 
         new_nodes = []
