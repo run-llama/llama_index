@@ -95,60 +95,6 @@ class ChatSession:
         return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
 
 
-class StreamHandler:
-    @abstractmethod
-    def handle(self, chat_response):
-        raise NotImplementedError
-
-
-class ChatHistoryHandler(StreamHandler):
-    def handle(self, chat_response):
-        # Write the response to chat_history (in separate thread?)
-        pass
-
-
-class ChatStreamHandler:
-    def __init__(self, llm, handlers=None):
-        self.llm = llm
-        self.handlers = list() or handlers  # A list of handlers
-
-    def start_stream(self, all_messages, functions):
-        chat_stream = self.llm.stream_chat(all_messages, functions=functions)
-
-        # Start a new thread to handle the chat stream
-        thread = Thread(target=self._handle_stream, args=(chat_stream,))
-        thread.start()
-
-        # Return the thread so the caller can join it if necessary
-        return thread
-
-    def _handle_stream(self, chat_stream, chat_stream_response):
-        # Handle the chat stream (this code runs in a separate thread)
-        for chat_response in chat_stream:
-            # Call each handler with the chat response
-            for handler in self.handlers:
-                handler.handle(chat_response)
-
-            # Update the _is_function attribute of the chat_stream_response
-            chat_stream_response._is_function = (
-                chat_response.message.additional_kwargs.get("function_call", None)
-                is not None
-            )
-
-    async def start_async_stream(self, all_messages, functions):
-        chat_stream = await self.llm.astream_chat(all_messages, functions=functions)
-
-        # Handle the chat stream asynchronously
-        await self._ahandle_async_stream(chat_stream)
-
-    async def _ahandle_async_stream(self, chat_stream):
-        # Handle the chat stream (this code runs in a separate thread)
-        async for chat_response in chat_stream:
-            # Call each handler with the chat response
-            for handler in self.handlers:
-                await handler.handle(chat_response)
-
-
 class BaseOpenAIAgent(BaseAgent):
     def __init__(
         self,
@@ -281,6 +227,7 @@ class BaseOpenAIAgent(BaseAgent):
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 
+        # Loop until no more function calls or max_function_calls is reached
         while True:
             agent_chat_response = self._get_agent_response(mode, functions)
             latest_function = self.session.get_latest_function_call()
@@ -301,6 +248,7 @@ class BaseOpenAIAgent(BaseAgent):
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 
+        # Loop until no more function calls or max_function_calls is reached
         while True:
             agent_chat_response = await self._get_async_agent_response(mode, functions)
             latest_function = self.session.get_latest_function_call()
