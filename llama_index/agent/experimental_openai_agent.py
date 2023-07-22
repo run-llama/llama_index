@@ -172,7 +172,7 @@ class ChatStreamHandler:
 class BaseOpenAIAgent(BaseAgent):
     def __init__(
         self,
-        llm,
+        llm: OpenAI,
         memory,
         prefix_messages,
         verbose,
@@ -194,6 +194,10 @@ class BaseOpenAIAgent(BaseAgent):
     def chat_history(self) -> List[ChatMessage]:
         return self.session.chat_history
 
+    @property
+    def all_messages(self):
+        return self.session.get_all_messages()
+
     def reset(self) -> None:
         self.session.reset()
 
@@ -213,23 +217,56 @@ class BaseOpenAIAgent(BaseAgent):
         tools, functions = self.session.prepare_message(message)
         return tools, functions
 
-    def _get_ai_response(self, functions):
-        all_messages = self.session.get_all_messages()
-        chat_response: ChatResponse = self.response_handler.get_response(
-            all_messages, functions
-        )
+    def _process_message(self, chat_response: ChatResponse):
         ai_message = chat_response.message
         self.session.memory.put(ai_message)
-        return ai_message
+        return ai_message.content
 
-    async def _get_async_ai_response(self, functions):
-        all_messages = self.session.get_all_messages()
-        chat_response: ChatResponse = await self.response_handler.get_response(
-            all_messages, functions
+    def _get_stream_ai_response(self, functions):
+        chat_stream_response = StreamingAgentChatResponse(
+            chat_stream=self._llm.stream_chat(self.all_messages, functions=functions),
+            sources=self.sources,
         )
-        ai_message = chat_response.message
-        self.session.memory.put(ai_message)
-        return ai_message
+
+        # Get the response in a separate thread so we can yield the response
+        thread = Thread(
+            target=chat_stream_response.write_response_to_history,
+            args=(self.session.memory,),
+        )
+        thread.start()
+        while chat_stream_response._is_function is None:
+            # Wait until we know if the response is a function call or not
+            time.sleep(0.05)
+            if chat_stream_response._is_function is False:
+                return chat_stream_response
+
+        thread.join()
+        return chat_stream_response
+
+    async def _get_async_stream_ai_response(self, functions):
+        chat_stream_response = StreamingAgentChatResponse(
+            achat_stream=await self._llm.astream_chat(
+                self.all_messages, functions=functions
+            ),
+            sources=self.sources,
+        )
+
+        # Get the response in a separate thread so we can yield the response
+        thread = Thread(
+            target=lambda x: asyncio.run(
+                chat_stream_response.awrite_response_to_history(x)
+            ),
+            args=(self._memory,),
+        )
+        thread.start()
+        while chat_stream_response._is_function is None:
+            # Wait until we know if the response is a function call or not
+            time.sleep(0.05)
+            if chat_stream_response._is_function is False:
+                return chat_stream_response
+
+        thread.join()
+        return chat_stream_response
 
     def _call_function(self, tools, function_call):
         function_message, tool_output = call_function(
@@ -238,112 +275,70 @@ class BaseOpenAIAgent(BaseAgent):
         self.sources.append(tool_output)
         self.session.memory.put(function_message)
 
-    def handle_ai_response(self, tools, functions):
-        all_messages = self.session.get_all_messages()
-        chat_response = self.response_handler.get_response(all_messages, functions)
-        return self.parse_response_and_call_function(chat_response, tools, functions)
-
-    async def ahandle_ai_response(self, session, tools, functions):
-        all_messages = session.get_all_messages()
-        chat_response = await self.response_handler.get_response(
-            all_messages, functions
-        )
-        return self.parse_response_and_call_function(chat_response, tools, functions)
-
-    def parse_response_and_call_function(
-        self, chat_response: ChatResponse, tools, functions
-    ):
-        ai_message = chat_response.message
-        self.session.memory.put(ai_message)
-
-        function_call = self.session.get_latest_function_call()
-        function_message, sources = None, []
-        if function_call is not None:
-            function_message, sources = call_function(
-                tools, function_call, verbose=self._verbose
-            )
-            self.session.memory.put(function_message)
-
-        return ai_message, function_call, sources
-
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
-        self.response_handler = SyncChatResponseHandler(self._llm)
         n_function_calls = 0
 
         while True:
-            ai_message = self._get_ai_response(functions)
+            chat_response = self._llm.chat(self.all_messages, functions=functions)
+            ai_message = self._process_message(chat_response)
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
                 break
             self._call_function(tools, latest_function)
             n_function_calls += 1
 
-        return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
+        return AgentChatResponse(response=str(ai_message), sources=self.sources)
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
-        self.response_handler = AsyncChatResponseHandler(self._llm)
         n_function_calls = 0
-
         while True:
-            ai_message = await self._get_async_ai_response(functions)
+            chat_response = await self._llm.achat(
+                self.all_messages, functions=functions
+            )
+            ai_message = self._process_message(chat_response)
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
                 break
             self._call_function(tools, latest_function)
             n_function_calls += 1
 
-        return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
+        return AgentChatResponse(response=str(ai_message), sources=self.sources)
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
-        chat_stream = self.stream_handler.start_stream(
-            self.session.get_all_messages(), functions
-        )
-
         n_function_calls = 0
-        while function_call is not None and self._should_continue(n_function_calls):
-            for chat_response in chat_stream:
-                ai_message, function_call, sources = self.handle_ai_response(
-                    tools, functions
-                )
-                n_function_calls += 1
-                if function_call is None:
-                    break
+        while True:
+            chat_stream_response = self._get_stream_ai_response(functions)
+            latest_function = self.session.get_latest_function_call()
+            if not self._should_continue(latest_function, n_function_calls):
+                break
+            self._call_function(tools, latest_function)
+            n_function_calls += 1
 
-        return StreamingAgentChatResponse(
-            response=str(ai_message.content), sources=sources
-        )
+        return chat_stream_response
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
-        chat_stream = await self.stream_handler.start_async_stream(
-            self.session.get_all_messages(), functions
-        )
-
         n_function_calls = 0
-        function_call = None
-        while function_call is not None and n_function_calls < self._max_function_calls:
-            async for chat_response in chat_stream:
-                ai_message, function_call, sources = await self.handle_ai_response(
-                    tools, functions
-                )
-                n_function_calls += 1
-                if function_call is None:
-                    break
+        while True:
+            chat_stream_response = await self._get_async_stream_ai_response(functions)
+            latest_function = self.session.get_latest_function_call()
+            if not self._should_continue(latest_function, n_function_calls):
+                break
+            self._call_function(tools, latest_function)
+            n_function_calls += 1
 
-        return StreamingAgentChatResponse(
-            response=str(ai_message.content), sources=sources
-        )
+        return chat_stream_response
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
