@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
 from typing import Any, Callable, List, Optional, Tuple, Type
+from enum import Enum
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -57,6 +58,11 @@ def call_function(
         ),
         output,
     )
+
+
+class ChatMode(Enum):
+    default = 0
+    stream = 1
 
 
 class ChatSession:
@@ -220,7 +226,7 @@ class BaseOpenAIAgent(BaseAgent):
     def _process_message(self, chat_response: ChatResponse):
         ai_message = chat_response.message
         self.session.memory.put(ai_message)
-        return ai_message.content
+        return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
 
     def _get_stream_ai_response(self, functions):
         chat_stream_response = StreamingAgentChatResponse(
@@ -276,69 +282,65 @@ class BaseOpenAIAgent(BaseAgent):
         self.session.memory.put(function_message)
 
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        mode: ChatMode = ChatMode.default,
+    ) -> AgentChatResponse | StreamingAgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 
         while True:
             chat_response = self._llm.chat(self.all_messages, functions=functions)
-            ai_message = self._process_message(chat_response)
+            match (mode):
+                case ChatMode.default:
+                    agent_chat_response = self._process_message(chat_response)
+                case ChatMode.stream:
+                    agent_chat_response = self._get_stream_ai_response(functions)
+
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
                 break
             self._call_function(tools, latest_function)
             n_function_calls += 1
 
-        return AgentChatResponse(response=str(ai_message), sources=self.sources)
+        return agent_chat_response
 
     async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        mode: ChatMode = ChatMode.default,
+    ) -> AgentChatResponse | StreamingAgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
         while True:
-            chat_response = await self._llm.achat(
-                self.all_messages, functions=functions
-            )
-            ai_message = self._process_message(chat_response)
+            match (mode):
+                case ChatMode.default:
+                    agent_chat_response = await self._llm.achat(
+                        self.all_messages, functions=functions
+                    )
+                case ChatMode.stream:
+                    agent_chat_response = await self._get_async_stream_ai_response(
+                        functions
+                    )
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
                 break
             self._call_function(tools, latest_function)
             n_function_calls += 1
 
-        return AgentChatResponse(response=str(ai_message), sources=self.sources)
+        return agent_chat_response
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        tools, functions = self.init_chat(message, chat_history)
-        n_function_calls = 0
-        while True:
-            chat_stream_response = self._get_stream_ai_response(functions)
-            latest_function = self.session.get_latest_function_call()
-            if not self._should_continue(latest_function, n_function_calls):
-                break
-            self._call_function(tools, latest_function)
-            n_function_calls += 1
-
-        return chat_stream_response
+        return self.chat(message, chat_history, ChatMode.stream)
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        tools, functions = self.init_chat(message, chat_history)
-        n_function_calls = 0
-        while True:
-            chat_stream_response = await self._get_async_stream_ai_response(functions)
-            latest_function = self.session.get_latest_function_call()
-            if not self._should_continue(latest_function, n_function_calls):
-                break
-            self._call_function(tools, latest_function)
-            n_function_calls += 1
-
-        return chat_stream_response
+        return self.achat(message, chat_history, ChatMode.stream)
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
