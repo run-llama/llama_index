@@ -13,17 +13,7 @@ import uuid
 from dataclasses import dataclass, field, fields
 from datetime import datetime
 from types import ModuleType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    TypeAlias,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, TypeVar
 
 from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -33,7 +23,7 @@ if TYPE_CHECKING:
 
 
 OPENINFERENCE_COLUMN_NAME = "openinference_column_name"
-Embedding: TypeAlias = List[float]
+Embedding = List[float]
 
 
 def _generate_random_id() -> str:
