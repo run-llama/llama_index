@@ -3,10 +3,10 @@ import json
 import time
 from abc import abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from queue import Queue
 from threading import Thread
 from typing import Any, Callable, List, Optional, Tuple, Type
-from enum import Enum
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -82,16 +82,6 @@ class ChatSession:
     def reset(self) -> None:
         self.memory.reset()
 
-    # def init_chat(
-    #     self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    # ) -> Tuple[List[BaseTool], List[dict]]:
-    #     if chat_history is not None:
-    #         self.memory.set(chat_history)
-    #     self.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-    #     self.tools = self.get_tools_callback(message)
-    #     self.functions = [tool.metadata.to_openai_function() for tool in self.tools]
-    #     return self.tools, self.functions
-
     def prepare_message(self, message: str) -> Tuple[List[BaseTool], List[dict]]:
         """Prepare tools and functions for the message."""
         self.tools = self.get_tools_callback(message)
@@ -106,7 +96,9 @@ class ChatSession:
 
 
 class StreamHandler:
-    pass
+    @abstractmethod
+    def handle(self, chat_response):
+        raise NotImplementedError
 
 
 class ChatHistoryHandler(StreamHandler):
@@ -205,12 +197,12 @@ class BaseOpenAIAgent(BaseAgent):
         tools, functions = self.session.prepare_message(message)
         return tools, functions
 
-    def _process_message(self, chat_response: ChatResponse):
+    def _process_message(self, chat_response: ChatResponse) -> AgentChatResponse:
         ai_message = chat_response.message
         self.session.memory.put(ai_message)
         return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
 
-    def _get_stream_ai_response(self, functions):
+    def _get_stream_ai_response(self, functions) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             chat_stream=self._llm.stream_chat(self.all_messages, functions=functions),
             sources=self.sources,
@@ -240,20 +232,24 @@ class BaseOpenAIAgent(BaseAgent):
         )
 
         # Get the response in a separate thread so we can yield the response
-        thread = Thread(
-            target=lambda x: asyncio.run(
-                chat_stream_response.awrite_response_to_history(x)
-            ),
-            args=(self.session.memory,),
+        asyncio.create_task(
+            chat_stream_response.awrite_response_to_history(self.session.memory)
         )
-        thread.start()
+        # thread = Thread(
+        #     target=lambda x: asyncio.run(
+        #         chat_stream_response.awrite_response_to_history(x)
+        #     ),
+        #     args=(self.session.memory,),
+        # )
+        # thread.start()
         while chat_stream_response._is_function is None:
             # Wait until we know if the response is a function call or not
-            time.sleep(0.05)
+            # time.sleep(0.05)
+            await asyncio.sleep(0.05)
             if chat_stream_response._is_function is False:
                 return chat_stream_response
 
-        thread.join()
+        # thread.join()
         return chat_stream_response
 
     def _call_function(self, tools, function_call):
@@ -274,14 +270,17 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
 
         while True:
-            match (mode):
-                case ChatMode.default:
-                    chat_response = self._llm.chat(
-                        self.all_messages, functions=functions
-                    )
-                    agent_chat_response = self._process_message(chat_response)
-                case ChatMode.stream:
-                    agent_chat_response = self._get_stream_ai_response(functions)
+            if mode == ChatMode.default:
+                chat_response: ChatResponse = self._llm.chat(
+                    self.all_messages, functions=functions
+                )
+                agent_chat_response: AgentChatResponse = self._process_message(
+                    chat_response
+                )
+            elif mode == ChatMode.stream:
+                agent_chat_response: StreamingAgentChatResponse = (
+                    self._get_stream_ai_response(functions)
+                )
 
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
@@ -301,16 +300,15 @@ class BaseOpenAIAgent(BaseAgent):
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
         while True:
-            match (mode):
-                case ChatMode.default:
-                    chat_response = await self._llm.achat(
-                        self.all_messages, functions=functions
-                    )
-                    agent_chat_response = self._process_message(chat_response)
-                case ChatMode.stream:
-                    agent_chat_response = await self._get_async_stream_ai_response(
-                        functions
-                    )
+            if mode == ChatMode.default:
+                chat_response: ChatResponse = await self._llm.achat(
+                    self.all_messages, functions=functions
+                )
+                agent_chat_response = self._process_message(chat_response)
+            elif mode == ChatMode.stream:
+                agent_chat_response: ChatStreamHandler = (
+                    await self._get_async_stream_ai_response(functions)
+                )
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
                 break
