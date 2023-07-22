@@ -105,24 +105,6 @@ class ChatSession:
         return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
 
 
-class ChatResponseHandler:
-    def __init__(self, llm):
-        self.llm = llm
-
-    def get_response(self, all_messages, functions):
-        raise NotImplementedError
-
-
-class SyncChatResponseHandler(ChatResponseHandler):
-    def get_response(self, all_messages, functions):
-        return self.llm.chat(all_messages, functions=functions)
-
-
-class AsyncChatResponseHandler(ChatResponseHandler):
-    async def get_response(self, all_messages, functions):
-        return await self.llm.achat(all_messages, functions=functions)
-
-
 class StreamHandler:
     pass
 
