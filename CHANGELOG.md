@@ -4,6 +4,7 @@
 
 ### New Features
 - Added `kwargs` to `ComposableGraph` for the underlying query engines (#6990)
+- Validate openai key on init (#6940)
 
 ### Bug Fixes / Nits
 - Fix achat memory initialization for data agents (#7000)
