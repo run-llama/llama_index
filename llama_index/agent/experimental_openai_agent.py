@@ -262,7 +262,7 @@ class BaseOpenAIAgent(BaseAgent):
             target=lambda x: asyncio.run(
                 chat_stream_response.awrite_response_to_history(x)
             ),
-            args=(self._memory,),
+            args=(self.session.memory,),
         )
         thread.start()
         while chat_stream_response._is_function is None:
@@ -285,6 +285,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
+        *,
         mode: ChatMode = ChatMode.default,
     ) -> AgentChatResponse | StreamingAgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
@@ -310,6 +311,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
+        *,
         mode: ChatMode = ChatMode.default,
     ) -> AgentChatResponse | StreamingAgentChatResponse:
         tools, functions = self.init_chat(message, chat_history)
@@ -335,12 +337,12 @@ class BaseOpenAIAgent(BaseAgent):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        return self.chat(message, chat_history, ChatMode.stream)
+        return self.chat(message, chat_history, mode=ChatMode.stream)
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        return self.achat(message, chat_history, ChatMode.stream)
+        return await self.achat(message, chat_history, mode=ChatMode.stream)
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
