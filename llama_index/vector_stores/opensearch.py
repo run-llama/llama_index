@@ -58,13 +58,6 @@ def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
     return client
 
 
-def _get_kwargs_value(kwargs: Any, key: str, default_value: Any) -> Any:
-    """Get the value of the key if present. Else get the default_value."""
-    if key in kwargs:
-        return kwargs.get(key)
-    return default_value
-
-
 def _bulk_ingest_embeddings(
         client: Any,
         index_name: str,
@@ -242,7 +235,7 @@ class OpensearchVectorClient:
             texts.append(node.node.get_content(metadata_mode=MetadataMode.NONE))
             metadatas.append(node_to_metadata_dict(node.node, remove_text=True))
 
-        max_chunk_bytes = _get_kwargs_value(kwargs, "max_chunk_bytes", 1 * 1024 * 1024)
+        max_chunk_bytes = kwargs.get("max_chunk_bytes", 1 * 1024 * 1024)
 
         return _bulk_ingest_embeddings(
             self._os_client,
@@ -288,12 +281,11 @@ class OpensearchVectorClient:
             pre_filter = []
             for f in filters.filters:
                 pre_filter.append({"term": {f.key: str(f.value)}})
-            pre_filter = {"bool": {"filter": pre_filter}}
             # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
             search_query = _default_painless_scripting_query(query_embedding,
                                                              k,
                                                                   space_type="l2Squared",
-                                                                  pre_filter=pre_filter,
+                                                                  pre_filter={"bool": {"filter": pre_filter}},
                                                                   vector_field=self._embedding_field)
 
         res = self._os_client.search(index=self._index, body=search_query)
