@@ -30,6 +30,7 @@ from llama_index.llms.openai_utils import (
     is_chat_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
+    validate_openai_api_key,
 )
 
 
@@ -39,6 +40,10 @@ class OpenAI(LLM, BaseModel):
     max_tokens: Optional[int] = None
     additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
     max_retries: int = 10
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        validate_openai_api_key(kwargs.get("api_key", None))
+        super().__init__(*args, **kwargs)
 
     @property
     def metadata(self) -> LLMMetadata:
