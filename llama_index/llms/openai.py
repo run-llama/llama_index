@@ -28,6 +28,7 @@ from llama_index.llms.openai_utils import (
     completion_with_retry,
     from_openai_message_dict,
     is_chat_model,
+    is_function_calling_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
     validate_openai_api_key,
@@ -51,6 +52,7 @@ class OpenAI(LLM, BaseModel):
             context_window=openai_modelname_to_contextsize(self.model),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
+            is_function_calling_model=is_function_calling_model(self.model),
             model_name=self.model,
         )
 

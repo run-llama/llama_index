@@ -62,3 +62,11 @@ maxdepth: 1
 ---
 /examples/llm/langchain.ipynb
 ```
+
+## Llama API
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_api.ipynb
+```
