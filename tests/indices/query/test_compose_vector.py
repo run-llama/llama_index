@@ -17,6 +17,12 @@ from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 
 
 class MockEmbedding(BaseEmbedding):
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        return []
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        return []
+
     def _get_query_embedding(self, query: str) -> List[float]:
         """Mock get query embedding."""
         if query == "Foo?":

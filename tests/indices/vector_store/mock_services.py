@@ -4,6 +4,12 @@ from llama_index.embeddings.base import BaseEmbedding
 
 
 class MockEmbedding(BaseEmbedding):
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        return []
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        return []
+
     def _get_query_embedding(self, query: str) -> List[float]:
         del query  # Unused
         return [0, 0, 1, 0, 0]

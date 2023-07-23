@@ -14,6 +14,12 @@ from llama_index.schema import Document
 
 
 class MockEmbedding(BaseEmbedding):
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        return []
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        return []
+
     def _get_text_embedding(self, text: str) -> List[float]:
         """Mock get text embedding."""
         # assume dimensions are 5
