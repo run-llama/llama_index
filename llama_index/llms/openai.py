@@ -2,36 +2,24 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from pydantic import BaseModel, Field
 
-from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-)
+from llama_index.llms.base import (LLM, ChatMessage, ChatResponse,
+                                   ChatResponseAsyncGen, ChatResponseGen,
+                                   CompletionResponse,
+                                   CompletionResponseAsyncGen,
+                                   CompletionResponseGen, LLMMetadata)
 from llama_index.llms.generic_utils import (
-    achat_to_completion_decorator,
-    acompletion_to_chat_decorator,
-    astream_chat_to_completion_decorator,
-    astream_completion_to_chat_decorator,
-    chat_to_completion_decorator,
-    completion_to_chat_decorator,
-    stream_chat_to_completion_decorator,
-    stream_completion_to_chat_decorator,
-)
-from llama_index.llms.openai_utils import (
-    acompletion_with_retry,
-    completion_with_retry,
-    from_openai_message_dict,
-    is_chat_model,
-    openai_modelname_to_contextsize,
-    to_openai_message_dicts,
-    validate_openai_api_key,
-)
+    achat_to_completion_decorator, acompletion_to_chat_decorator,
+    astream_chat_to_completion_decorator, astream_completion_to_chat_decorator,
+    chat_to_completion_decorator, completion_to_chat_decorator,
+    stream_chat_to_completion_decorator, stream_completion_to_chat_decorator)
+from llama_index.llms.openai_utils import (acompletion_with_retry,
+                                           completion_with_retry,
+                                           from_openai_message_dict,
+                                           is_chat_model,
+                                           is_function_calling_model,
+                                           openai_modelname_to_contextsize,
+                                           to_openai_message_dicts,
+                                           validate_openai_api_key)
 
 
 class OpenAI(LLM, BaseModel):
@@ -51,6 +39,7 @@ class OpenAI(LLM, BaseModel):
             context_window=openai_modelname_to_contextsize(self.model),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
+            is_function_calling_model=is_function_calling_model(self.model),
             model_name=self.model,
         )
 
