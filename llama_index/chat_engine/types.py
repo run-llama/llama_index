@@ -4,7 +4,7 @@ import queue
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Generator, List, Optional
+from typing import AsyncGenerator, Generator, List, Optional
 
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
@@ -47,6 +47,7 @@ class StreamingAgentChatResponse:
     achat_stream: Optional[ChatResponseAsyncGen] = None
     _nodes: List[NodeWithScore] = field(default_factory=list)
     _queue: queue.Queue = queue.Queue()
+    _aqueue: asyncio.Queue = asyncio.Queue()
     _is_done = False
     _is_function_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function: Optional[bool] = None
@@ -98,7 +99,7 @@ class StreamingAgentChatResponse:
                 "achat_stream is None. Cannot asynchronously write to "
                 "history without achat_stream."
             )
-
+        print("awrite response")
         # try/except to prevent hanging on error
         try:
             final_message = None
@@ -108,7 +109,7 @@ class StreamingAgentChatResponse:
                     final_message.additional_kwargs.get("function_call", None)
                     is not None
                 )
-                self._queue.put_nowait(chat.delta)
+                self._aqueue.put_nowait(chat.delta)
 
             if final_message is not None:
                 memory.put(final_message)
@@ -120,16 +121,30 @@ class StreamingAgentChatResponse:
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
-        logger.debug("enter response gen")
+        print("enter response gen")
         while not self._is_done or not self._queue.empty():
-            logger.debug("enter while")
+            print("enter while")
             try:
                 delta = self._queue.get(block=False)
                 self.response += delta
-                logger.debug(f"delta {delta}")
+                print(f"delta {delta}")
                 yield delta
             except queue.Empty:
-                logger.debug("Queue empty, start again")
+                print("Queue empty, start again")
+                # Queue is empty, but we're not done yet
+                continue
+
+    async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        print("enter async response gen")
+        while not self._is_done or not self._aqueue.empty():
+            print("enter while")
+            try:
+                delta = self._aqueue.get_nowait()
+                self.response += delta
+                print(f"delta {delta}")
+                yield delta
+            except asyncio.QueueEmpty:
+                print("Queue empty")
                 # Queue is empty, but we're not done yet
                 continue
 
