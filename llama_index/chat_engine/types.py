@@ -101,6 +101,7 @@ class StreamingAgentChatResponse:
         self._is_done = True
 
     async def awrite_response_to_history(self, memory: BaseMemory) -> None:
+        logger.warning("awrite response to hist")
         if self.achat_stream is None:
             raise ValueError(
                 "achat_stream is None. Cannot asynchronously write to "
@@ -112,6 +113,8 @@ class StreamingAgentChatResponse:
             final_message = None
             async for chat in self.achat_stream:
                 final_message = chat.message
+                logger.warning(f"delta: {chat.delta}")
+                logger.warning(f"msg: {final_message}")
                 self._is_function = (
                     final_message.additional_kwargs.get("function_call", None)
                     is not None

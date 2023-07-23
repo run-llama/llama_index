@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import time
 from abc import abstractmethod
 from dataclasses import dataclass
@@ -20,6 +21,9 @@ from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool, ToolOutput
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -155,14 +159,21 @@ class BaseOpenAIAgent(BaseAgent):
             target=chat_stream_response.write_response_to_history,
             args=(self.session.memory,),
         )
+        logger.debug("Start thread")
         thread.start()
+
         while chat_stream_response._is_function is None:
             # Wait until we know if the response is a function call or not
             time.sleep(0.05)
             if chat_stream_response._is_function is False:
+                logger.debug("return stream")
                 return chat_stream_response
+        else:
+            logger.debug("chat_stream_response._is_function is not None")
 
+        logger.debug("Join thread")
         thread.join()
+        logger.debug("Thread joined, rtn response")
         return chat_stream_response
 
     async def _get_async_stream_ai_response(self, functions):
@@ -185,6 +196,7 @@ class BaseOpenAIAgent(BaseAgent):
         return chat_stream_response
 
     def _call_function(self, tools, function_call):
+        logger.debug("in _call_function")
         function_message, tool_output = call_function(
             tools, function_call, verbose=self._verbose
         )
@@ -228,6 +240,7 @@ class BaseOpenAIAgent(BaseAgent):
             agent_chat_response = self._get_agent_response(mode, functions)
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
+                logger.debug("Break: should continue False")
                 break
             self._call_function(tools, latest_function)
             n_function_calls += 1
