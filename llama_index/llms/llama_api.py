@@ -28,11 +28,11 @@ class LlamaAPI(CustomLLM):
     ) -> None:
         try:
             from llamaapi import LlamaAPI as Client
-        except:
+        except ImportError as e:
             raise ImportError(
                 "llama_api not installed."
                 "Please install it with `pip install llamaapi`."
-            )
+            ) from e
 
         self._client = Client(api_key)
         self._model = model

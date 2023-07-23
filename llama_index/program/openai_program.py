@@ -18,7 +18,7 @@ def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
     }
 
 
-class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
+class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     """
     An OpenAI-based function that returns a pydantic model.
 
@@ -28,7 +28,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
     def __init__(
         self,
         output_cls: Type[Model],
-        llm: OpenAI,
+        llm: LLM,
         prompt: Prompt,
         function_call: Union[str, Dict[str, Any]],
         verbose: bool = False,
@@ -54,7 +54,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[OpenAI]):
 
         if not llm.metadata.is_function_calling_model:
             raise ValueError(
-                f"Model name {llm.metadata.model_name} does not support function calling API. "
+                f"Model name {llm.metadata.model_name} does not support "
+                "function calling API. "
             )
 
         prompt = Prompt(prompt_template_str)
