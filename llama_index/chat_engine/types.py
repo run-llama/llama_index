@@ -13,6 +13,7 @@ from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
 
 
 @dataclass
@@ -65,16 +66,6 @@ class StreamingAgentChatResponse:
                 self.response += delta
         return self.response
 
-    @property
-    def _is_function(self):
-        return self.__is_function
-
-    @_is_function.setter
-    def _is_function(self, value):
-        self.__is_function = value
-        if value is not None:
-            self._is_function_event.set()
-
     def write_response_to_history(self, memory: BaseMemory) -> None:
         if self.chat_stream is None:
             raise ValueError(
@@ -90,6 +81,7 @@ class StreamingAgentChatResponse:
                     final_message.additional_kwargs.get("function_call", None)
                     is not None
                 )
+                self._is_function_event.set()
                 self._queue.put_nowait(chat.delta)
 
             if final_message is not None:
@@ -131,12 +123,16 @@ class StreamingAgentChatResponse:
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
+        logger.debug("enter response gen")
         while not self._is_done or not self._queue.empty():
+            logger.debug("enter while")
             try:
                 delta = self._queue.get(block=False)
                 self.response += delta
+                logger.debug(f"delta {delta}")
                 yield delta
             except queue.Empty:
+                logger.debug("Queue empty, start again")
                 # Queue is empty, but we're not done yet
                 continue
 
