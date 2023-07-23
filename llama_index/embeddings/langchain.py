@@ -24,9 +24,12 @@ class LangchainEmbedding(BaseEmbedding):
         """Get query embedding."""
         return self._langchain_embedding.embed_query(query)
 
-    # TODO: use proper async methods
-    async def _aget_text_embedding(self, query: str) -> List[float]:
-        return self._get_query_embedding(query)
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        return await self._langchain_embedding.aembed_query(query)
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        embeds = await self._langchain_embedding.aembed_documents([text])
+        return embeds[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
