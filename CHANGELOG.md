@@ -8,6 +8,7 @@
 
 ### Bug Fixes / Nits
 - Fix achat memory initialization for data agents (#7000)
+- Add `print_response_stream()` to agengt/chat engine response class (#7018)
 
 ## [v0.7.11.post1] - 2023-07-20
 
