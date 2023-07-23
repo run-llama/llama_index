@@ -51,7 +51,7 @@ These building blocks can be customized to reflect ranking preferences, as well 
 #### Building Blocks
 [**Retrievers**](/core_modules/query_modules/retriever/root.md): 
 A retriever defines how to efficiently retrieve relevant context from a knowledge base (i.e. index) when given a query.
-The specific retrieval logic differs for difference indices, the most popular being dense retrieval against a vector index.
+The specific retrieval logic differs for different indices, the most popular being dense retrieval against a vector index.
 
 [**Node Postprocessors**](/core_modules/query_modules/node_postprocessors/root.md):
 A node postprocessor takes in a set of nodes, then apply transformation, filtering, or re-ranking logic to them. 
