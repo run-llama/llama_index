@@ -103,6 +103,10 @@ class StreamingAgentChatResponse:
                 # Queue is empty, but we're not done yet
                 continue
 
+    def print_response_stream(self) -> None:
+        for token in self.response_gen:
+            print(token, end="")
+
 
 class BaseChatEngine(ABC):
     """Base Chat Engine."""
