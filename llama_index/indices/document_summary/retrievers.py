@@ -7,7 +7,6 @@ This module contains retrievers for document summary indices.
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -21,7 +20,7 @@ from llama_index.prompts.choice_select import (
     DEFAULT_CHOICE_SELECT_PROMPT,
     ChoiceSelectPrompt,
 )
-from llama_index.schema import NodeWithScore, BaseNode, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +71,7 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(summary_nodes)
             # call each batch independently
-            raw_response, _ = self._service_context.llm_predictor.predict(
+            raw_response = self._service_context.llm_predictor.predict(
                 self._choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,
@@ -144,21 +143,10 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         """Get top nodes by similarity to the query."""
         embed_model = self._index.service_context.embed_model
         if query_bundle.embedding is None:
-            event_id = self._index._service_context.callback_manager.on_event_start(
-                CBEventType.EMBEDDING
-            )
             query_bundle.embedding = embed_model.get_agg_embedding_from_queries(
                 query_bundle.embedding_strs
             )
-            self._index._service_context.callback_manager.on_event_end(
-                CBEventType.EMBEDDING,
-                payload={EventPayload.CHUNKS: query_bundle.embedding_strs},
-                event_id=event_id,
-            )
 
-        event_id = self._index._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING
-        )
         id_to_embed_map: Dict[str, List[float]] = {}
         for node in nodes:
             if node.embedding is None:
@@ -173,13 +161,6 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             result_ids,
             result_embeddings,
         ) = embed_model.get_queued_text_embeddings()
-        self._index._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={
-                EventPayload.CHUNKS: [x for x in nodes if node.embedding is not None]
-            },
-            event_id=event_id,
-        )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
         node_embeddings = [id_to_embed_map[n.node_id] for n in nodes]

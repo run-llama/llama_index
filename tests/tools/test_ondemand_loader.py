@@ -35,10 +35,10 @@ def test_ondemand_loader_tool(
         fn_schema=TestSchemaSpec,
     )
     response = tool(["Hello world."], query_str="What is?")
-    assert response == "What is?:Hello world."
+    assert str(response) == "What is?:Hello world."
 
     # convert tool to structured langchain tool
     lc_tool = tool.to_langchain_structured_tool()
     assert lc_tool.args_schema == TestSchemaSpec
     response = lc_tool.run({"texts": ["Hello world."], "query_str": "What is?"})
-    assert response == "What is?:Hello world."
+    assert str(response) == "What is?:Hello world."

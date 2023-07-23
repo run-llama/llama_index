@@ -1,16 +1,20 @@
 """Test LLM program."""
 
-from llama_index.program.llm_program import LLMTextCompletionProgram
-from llama_index.output_parsers.pydantic import PydanticOutputParser
-from unittest.mock import MagicMock
-from pydantic import BaseModel
 import json
+from unittest.mock import MagicMock
+
+from pydantic import BaseModel
+
+from llama_index.llms.base import CompletionResponse
+from llama_index.output_parsers.pydantic import PydanticOutputParser
+from llama_index.program.llm_program import LLMTextCompletionProgram
 
 
 class MockLLM(MagicMock):
-    def predict(self, prompt: str) -> str:
+    def complete(self, prompt: str) -> CompletionResponse:
         test_object = {"hello": "world"}
-        return json.dumps(test_object)
+        text = json.dumps(test_object)
+        return CompletionResponse(text=text)
 
 
 class TestModel(BaseModel):

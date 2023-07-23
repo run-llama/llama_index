@@ -133,7 +133,7 @@ types of data?
 
 Our query engine classes are lightweight classes that implement a `query` method; the query returns a response type.
 For instance, they may take in a retriever class as input; our `RetrieverQueryEngine` 
-takes in a `retriever` as input as well as a `ResponseSynthesizer` class, and
+takes in a `retriever` as input as well as a `BaseSynthesizer` class for response synthesis, and
 the `query` method performs retrieval and synthesis before returning the final result.
 They may take in other query engine classes in as input too.
 
@@ -239,7 +239,7 @@ if you are in windows, use the following to activate your virtual environment:
 .venv\scripts\activate
 ```
 
-Install the required dependencies (this will also install gpt-index through `pip install -e .` 
+Install the required dependencies (this will also install LlamaIndex through `pip install -e .` 
 so that you can start developing on it):
 
 ```bash

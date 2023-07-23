@@ -1,5 +1,6 @@
 """General utils functions."""
 
+import os
 import random
 import sys
 import time
@@ -7,20 +8,21 @@ import traceback
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import partial
 from itertools import islice
+from pathlib import Path
 from typing import (
     Any,
     Callable,
     Generator,
+    Iterable,
     List,
     Optional,
     Set,
     Type,
-    cast,
     Union,
-    Iterable,
+    cast,
 )
-import os
 
 
 class GlobalsHelper:
@@ -38,34 +40,17 @@ class GlobalsHelper:
     def tokenizer(self) -> Callable[[str], List]:
         """Get tokenizer."""
         if self._tokenizer is None:
-            # if python version >= 3.9, then use tiktoken
-            # else use GPT2TokenizerFast
-            if sys.version_info >= (3, 9):
-                tiktoken_import_err = (
-                    "`tiktoken` package not found, please run `pip install tiktoken`"
-                )
-                try:
-                    import tiktoken
-                except ImportError:
-                    raise ImportError(tiktoken_import_err)
-                enc = tiktoken.get_encoding("gpt2")
-                self._tokenizer = cast(Callable[[str], List], enc.encode)
-            else:
-                try:
-                    import transformers
-                except ImportError:
-                    raise ImportError(
-                        "`transformers` package not found, "
-                        "please run `pip install transformers`"
-                    )
-
-                tokenizer = transformers.GPT2TokenizerFast.from_pretrained("gpt2")
-
-                def tokenizer_fn(text: str) -> List:
-                    return tokenizer(text)["input_ids"]
-
-                self._tokenizer = tokenizer_fn
-        return self._tokenizer
+            tiktoken_import_err = (
+                "`tiktoken` package not found, please run `pip install tiktoken`"
+            )
+            try:
+                import tiktoken
+            except ImportError:
+                raise ImportError(tiktoken_import_err)
+            enc = tiktoken.get_encoding("gpt2")
+            self._tokenizer = cast(Callable[[str], List], enc.encode)
+            self._tokenizer = partial(self._tokenizer, allowed_special="all")
+        return self._tokenizer  # type: ignore
 
     @property
     def stopwords(self) -> List[str]:
@@ -216,3 +201,93 @@ def concat_dirs(dir1: str, dir2: str) -> str:
     """
     dir1 += "/" if dir1[-1] != "/" else ""
     return os.path.join(dir1, dir2)
+
+
+def get_tqdm_iterable(items: Iterable, show_progress: bool, desc: str) -> Iterable:
+    """
+    Optionally get a tqdm iterable. Ensures tqdm.auto is used.
+    """
+    _iterator = items
+    if show_progress:
+        try:
+            from tqdm.auto import tqdm
+
+            return tqdm(items, desc=desc)
+        except ImportError:
+            pass
+    return _iterator
+
+
+def count_tokens(text: str) -> int:
+    tokens = globals_helper.tokenizer(text)
+    return len(tokens)
+
+
+def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
+    """
+    Args:
+        model_name(str): the model name of the tokenizer.
+                        For instance, fxmarty/tiny-llama-fast-tokenizer
+    """
+    try:
+        from transformers import AutoTokenizer
+    except ImportError:
+        raise ValueError(
+            "`transformers` package not found, please run `pip install transformers`"
+        )
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    return tokenizer.tokenize
+
+
+def get_cache_dir() -> Path:
+    """Locate a platform-appropriate cache directory for llama_index,
+    and create it if it doesn't yet exist
+    """
+    # Linux, Unix, AIX, etc.
+    if os.name == "posix" and sys.platform != "darwin":
+        # use ~/.cache if empty OR not set
+        base = os.path.expanduser("~/.cache")
+        path = Path(base, "llama_index")
+
+    # Mac OS
+    elif sys.platform == "darwin":
+        path = Path(os.path.expanduser("~"), "Library/Caches/llama_index")
+
+    # Windows (hopefully)
+    else:
+        local = os.environ.get("LOCALAPPDATA", None) or os.path.expanduser(
+            "~\\AppData\\Local"
+        )
+        path = Path(local, "llama_index")
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
+# Sample text from llama_index's readme
+SAMPLE_TEXT = """
+Context
+LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. 
+They are pre-trained on large amounts of publicly available data.
+How do we best augment LLMs with our own private data?
+We need a comprehensive toolkit to help perform this data augmentation for LLMs.
+
+Proposed Solution
+That's where LlamaIndex comes in. LlamaIndex is a "data framework" to help 
+you build LLM  apps. It provides the following tools:
+
+Offers data connectors to ingest your existing data sources and data formats 
+(APIs, PDFs, docs, SQL, etc.)
+Provides ways to structure your data (indices, graphs) so that this data can be 
+easily used with LLMs.
+Provides an advanced retrieval/query interface over your data: 
+Feed in any LLM input prompt, get back retrieved context and knowledge-augmented output.
+Allows easy integrations with your outer application framework 
+(e.g. with LangChain, Flask, Docker, ChatGPT, anything else).
+LlamaIndex provides tools for both beginner users and advanced users. 
+Our high-level API allows beginner users to use LlamaIndex to ingest and 
+query their data in 5 lines of code. Our lower-level APIs allow advanced users to 
+customize and extend any module (data connectors, indices, retrievers, query engines, 
+reranking modules), to fit their needs.
+"""

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base import BaseGPTIndex
@@ -6,16 +6,18 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.response.type import ResponseMode
 from llama_index.langchain_helpers.text_splitter import (
     SentenceSplitter,
     TokenTextSplitter,
 )
-from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response_synthesizers import (
+    BaseSynthesizer,
+    ResponseMode,
+    get_response_synthesizer,
+)
 from llama_index.schema import NodeWithScore, TextNode
 
 
@@ -81,8 +83,8 @@ class CitationQueryEngine(BaseQueryEngine):
 
     Args:
         retriever (BaseRetriever): A retriever object.
-        response_synthesizer (Optional[ResponseSynthesizer]):
-            A ResponseSynthesizer object.
+        response_synthesizer (Optional[BaseSynthesizer]):
+            A BaseSynthesizer object.
         citation_chunk_size (int):
             Size of citation chunks, default=512. Useful for controlling
             granularity of sources.
@@ -96,20 +98,22 @@ class CitationQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         retriever: BaseRetriever,
-        response_synthesizer: Optional[ResponseSynthesizer] = None,
+        response_synthesizer: Optional[BaseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
         text_splitter: Optional[TextSplitterType] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self.text_splitter = text_splitter or SentenceSplitter(
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
         )
         self._retriever = retriever
-        self._response_synthesizer = (
-            response_synthesizer
-            or ResponseSynthesizer.from_args(callback_manager=callback_manager)
+        self._response_synthesizer = response_synthesizer or get_response_synthesizer(
+            service_context=retriever.get_service_context(),
+            callback_manager=callback_manager,
         )
+        self._node_postprocessors = node_postprocessors or []
 
         super().__init__(callback_manager)
 
@@ -117,6 +121,7 @@ class CitationQueryEngine(BaseQueryEngine):
     def from_args(
         cls,
         index: BaseGPTIndex,
+        response_synthesizer: Optional[BaseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
         text_splitter: Optional[TextSplitterType] = None,
@@ -124,13 +129,10 @@ class CitationQueryEngine(BaseQueryEngine):
         citation_refine_template: Prompt = CITATION_REFINE_TEMPLATE,
         retriever: Optional[BaseRetriever] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        verbose: bool = False,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
-        response_kwargs: Optional[Dict] = None,
         use_async: bool = False,
         streaming: bool = False,
-        optimizer: Optional[BaseTokenUsageOptimizer] = None,
         # class-specific args
         **kwargs: Any,
     ) -> "CitationQueryEngine":
@@ -153,7 +155,6 @@ class CitationQueryEngine(BaseQueryEngine):
                 node postprocessors.
             verbose (bool): Whether to print out debug info.
             response_mode (ResponseMode): A ResponseMode object.
-            response_kwargs (Optional[Dict]): A dict of response kwargs.
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
             optimizer (Optional[BaseTokenUsageOptimizer]): A BaseTokenUsageOptimizer
@@ -162,17 +163,13 @@ class CitationQueryEngine(BaseQueryEngine):
         """
         retriever = retriever or index.as_retriever(**kwargs)
 
-        response_synthesizer = ResponseSynthesizer.from_args(
+        response_synthesizer = response_synthesizer or get_response_synthesizer(
             service_context=index.service_context,
             text_qa_template=citation_qa_template,
             refine_template=citation_refine_template,
             response_mode=response_mode,
-            response_kwargs=response_kwargs,
             use_async=use_async,
             streaming=streaming,
-            optimizer=optimizer,
-            node_postprocessors=node_postprocessors,
-            verbose=verbose,
         )
 
         return cls(
@@ -182,6 +179,7 @@ class CitationQueryEngine(BaseQueryEngine):
             citation_chunk_size=citation_chunk_size,
             citation_chunk_overlap=citation_chunk_overlap,
             text_splitter=text_splitter,
+            node_postprocessors=node_postprocessors,
         )
 
     def _create_citation_nodes(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
@@ -223,7 +221,12 @@ class CitationQueryEngine(BaseQueryEngine):
         return new_nodes
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        return self._retriever.retrieve(query_bundle)
+        nodes = self._retriever.retrieve(query_bundle)
+
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(nodes)
+
+        return nodes
 
     @property
     def retriever(self) -> BaseRetriever:
@@ -238,7 +241,7 @@ class CitationQueryEngine(BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         nodes = self._create_citation_nodes(nodes)
         response = self._response_synthesizer.synthesize(
-            query_bundle=query_bundle,
+            query=query_bundle,
             nodes=nodes,
             additional_source_nodes=additional_source_nodes,
         )
@@ -252,7 +255,7 @@ class CitationQueryEngine(BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         nodes = self._create_citation_nodes(nodes)
         return await self._response_synthesizer.asynthesize(
-            query_bundle=query_bundle,
+            query=query_bundle,
             nodes=nodes,
             additional_source_nodes=additional_source_nodes,
         )
@@ -264,7 +267,7 @@ class CitationQueryEngine(BaseQueryEngine):
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self._retriever.retrieve(query_bundle)
+        nodes = self.retrieve(query_bundle)
         nodes = self._create_citation_nodes(nodes)
         self.callback_manager.on_event_end(
             CBEventType.RETRIEVE,
@@ -273,7 +276,7 @@ class CitationQueryEngine(BaseQueryEngine):
         )
 
         response = self._response_synthesizer.synthesize(
-            query_bundle=query_bundle,
+            query=query_bundle,
             nodes=nodes,
         )
 
@@ -291,7 +294,7 @@ class CitationQueryEngine(BaseQueryEngine):
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self._retriever.retrieve(query_bundle)
+        nodes = self.retrieve(query_bundle)
         nodes = self._create_citation_nodes(nodes)
         self.callback_manager.on_event_end(
             CBEventType.RETRIEVE,
@@ -300,7 +303,7 @@ class CitationQueryEngine(BaseQueryEngine):
         )
 
         response = await self._response_synthesizer.asynthesize(
-            query_bundle=query_bundle,
+            query=query_bundle,
             nodes=nodes,
         )
 

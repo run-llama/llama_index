@@ -41,7 +41,7 @@ class WeaviateVectorStore(VectorStore):
     Args:
         weaviate_client (weaviate.Client): WeaviateClient
             instance from `weaviate-client` package
-        class_prefix (Optional[str]): prefix for Weaviate classes
+        index_name (Optional[str]): name for Weaviate classes
 
     """
 
@@ -71,7 +71,7 @@ class WeaviateVectorStore(VectorStore):
         self._client = cast(Client, weaviate_client)
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
-            logger.warning("class_prefix is deprecated, please use class_name")
+            logger.warning("class_prefix is deprecated, please use index_name")
             # legacy, kept for backward compatibility
             index_name = f"{class_prefix}_Node"
 
@@ -156,8 +156,10 @@ class WeaviateVectorStore(VectorStore):
 
         all_properties = get_all_properties(self._client, self._index_name)
 
+        # build query
+        query_builder = self._client.query.get(self._index_name, all_properties)
+
         # list of documents to constrain search
-        add_filtering = True
         if query.doc_ids:
             filter_with_doc_ids = {
                 "operator": "Or",
@@ -166,13 +168,18 @@ class WeaviateVectorStore(VectorStore):
                     for doc_id in query.doc_ids
                 ],
             }
-        else:
-            add_filtering = False
-
-        # build query
-        query_builder = self._client.query.get(self._index_name, all_properties)
-        if add_filtering:
             query_builder = query_builder.with_where(filter_with_doc_ids)
+
+        if query.node_ids:
+            filter_with_node_ids = {
+                "operator": "Or",
+                "operands": [
+                    {"path": ["id"], "operator": "Equal", "valueString": node_id}
+                    for node_id in query.node_ids
+                ],
+            }
+            query_builder = query_builder.with_where(filter_with_node_ids)
+
         query_builder = query_builder.with_additional(["id", "vector", "distance"])
 
         vector = query.query_embedding

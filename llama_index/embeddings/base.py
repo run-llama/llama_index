@@ -9,7 +9,7 @@ import numpy as np
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utils import globals_helper
+from llama_index.utils import get_tqdm_iterable, globals_helper
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -84,7 +84,10 @@ class BaseEmbedding:
         self._total_tokens_used += query_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
-            payload={EventPayload.CHUNKS: [query]},
+            payload={
+                EventPayload.CHUNKS: [query],
+                EventPayload.EMBEDDINGS: [query_embedding],
+            },
             event_id=event_id,
         )
         return query_embedding
@@ -165,7 +168,10 @@ class BaseEmbedding:
         self._total_tokens_used += text_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
-            payload={EventPayload.CHUNKS: [text]},
+            payload={
+                EventPayload.CHUNKS: [text],
+                EventPayload.EMBEDDINGS: [text_embedding],
+            },
             event_id=event_id,
         )
         return text_embedding
@@ -178,7 +184,9 @@ class BaseEmbedding:
         """
         self._text_queue.append((text_id, text))
 
-    def get_queued_text_embeddings(self) -> Tuple[List[str], List[List[float]]]:
+    def get_queued_text_embeddings(
+        self, show_progress: bool = False
+    ) -> Tuple[List[str], List[List[float]]]:
         """Get queued text embeddings.
 
         Call embedding API to get embeddings for all queued texts.
@@ -188,7 +196,12 @@ class BaseEmbedding:
         cur_batch: List[Tuple[str, str]] = []
         result_ids: List[str] = []
         result_embeddings: List[List[float]] = []
-        for idx, (text_id, text) in enumerate(text_queue):
+
+        queue_with_progress = enumerate(
+            get_tqdm_iterable(text_queue, show_progress, "Generating embeddings")
+        )
+
+        for idx, (text_id, text) in queue_with_progress:
             cur_batch.append((text_id, text))
             text_tokens_count = len(self._tokenizer(text))
             self._total_tokens_used += text_tokens_count
@@ -202,10 +215,12 @@ class BaseEmbedding:
                 result_embeddings.extend(embeddings)
                 self.callback_manager.on_event_end(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.CHUNKS: cur_batch_texts},
+                    payload={
+                        EventPayload.CHUNKS: cur_batch_texts,
+                        EventPayload.EMBEDDINGS: embeddings,
+                    },
                     event_id=event_id,
                 )
-
                 cur_batch = []
 
         # reset queue
@@ -213,7 +228,7 @@ class BaseEmbedding:
         return result_ids, result_embeddings
 
     async def aget_queued_text_embeddings(
-        self, text_queue: List[Tuple[str, str]]
+        self, text_queue: List[Tuple[str, str]], show_progress: bool = False
     ) -> Tuple[List[str], List[List[float]]]:
         """Asynchronously get a list of text embeddings.
 
@@ -222,6 +237,7 @@ class BaseEmbedding:
 
         """
         cur_batch: List[Tuple[str, str]] = []
+        callback_payloads: List[Tuple[str, List[str]]] = []
         result_ids: List[str] = []
         result_embeddings: List[List[float]] = []
         embeddings_coroutines: List[Coroutine] = []
@@ -234,22 +250,47 @@ class BaseEmbedding:
                 event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
+                callback_payloads.append((event_id, cur_batch_texts))
                 embeddings_coroutines.append(
                     self._aget_text_embeddings(cur_batch_texts)
                 )
                 result_ids.extend(cur_batch_ids)
-                self.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING,
-                    payload={EventPayload.CHUNKS: cur_batch_texts},
-                    event_id=event_id,
-                )
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
+        nested_embeddings = []
+        if show_progress:
+            try:
+                from tqdm.auto import tqdm
+
+                nested_embeddings = [
+                    await f
+                    for f in tqdm(
+                        asyncio.as_completed(embeddings_coroutines),
+                        total=len(embeddings_coroutines),
+                        desc="Generating embeddings",
+                    )
+                ]
+            except ImportError:
+                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                pass
+        else:
+            nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+
         result_embeddings = [
-            embedding
-            for embeddings in await asyncio.gather(*embeddings_coroutines)
-            for embedding in embeddings
+            embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
+
+        for (event_id, text_batch), embeddings in zip(
+            callback_payloads, nested_embeddings
+        ):
+            self.callback_manager.on_event_end(
+                CBEventType.EMBEDDING,
+                payload={
+                    EventPayload.CHUNKS: text_batch,
+                    EventPayload.EMBEDDINGS: embeddings,
+                },
+                event_id=event_id,
+            )
 
         return result_ids, result_embeddings
 

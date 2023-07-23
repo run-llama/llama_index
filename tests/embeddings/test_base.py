@@ -1,9 +1,15 @@
 """Embeddings."""
+import os
 from typing import Any, List
 from unittest.mock import patch
 
+import openai
+import pytest
+
 from llama_index.embeddings.base import SimilarityMode, mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
+
+from ..conftest import CachedOpenAIApiKeys
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -97,3 +103,33 @@ def test_mean_agg() -> None:
     embedding_1 = [0.0, 1.0, 0.0]
     output = mean_agg([embedding_0, embedding_1])
     assert output == [1.5, 2.5, 0.0]
+
+
+def test_validates_api_key_is_present() -> None:
+    with CachedOpenAIApiKeys():
+        with pytest.raises(ValueError, match="No API key found for OpenAI."):
+            OpenAIEmbedding()
+
+        os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
+
+        # We can create a new LLM when the env variable is set
+        assert OpenAIEmbedding()
+
+        os.environ["OPENAI_API_KEY"] = ""
+        openai.api_key = "sk-" + ("a" * 48)
+
+        # We can create a new LLM when the api_key is set on the
+        # library directly
+        assert OpenAIEmbedding()
+
+
+def test_validates_api_key_format_from_env() -> None:
+    with CachedOpenAIApiKeys(set_env_key_to="api-hf47930g732gf372"):
+        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
+            OpenAIEmbedding()
+
+
+def test_validates_api_key_format_in_library() -> None:
+    with CachedOpenAIApiKeys(set_library_key_to="api-hf47930g732gf372"):
+        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
+            OpenAIEmbedding()

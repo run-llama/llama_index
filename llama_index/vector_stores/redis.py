@@ -22,7 +22,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
 _logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ class RedisVectorStore(VectorStore):
         self,
         index_name: str,
         index_prefix: str = "llama_index",
+        prefix_ending: str = "/vector",
         index_args: Optional[Dict[str, Any]] = None,
         metadata_fields: Optional[List[str]] = None,
         redis_url: str = "redis://localhost:6379",
@@ -62,6 +63,11 @@ class RedisVectorStore(VectorStore):
         Args:
             index_name (str): Name of the index.
             index_prefix (str): Prefix for the index. Defaults to "llama_index".
+                The actual prefix used by Redis will be
+                "{index_prefix}{prefix_ending}".
+            prefix_ending (str): Prefix ending for the index. Be careful when
+                changing this: https://github.com/jerryjliu/llama_index/pull/6665.
+                Defaults to "/vector".
             index_args (Dict[str, Any]): Arguments for the index. Defaults to None.
             metadata_fields (List[str]): List of metadata fields to store in the index
                 (only supports TAG fields).
@@ -80,7 +86,7 @@ class RedisVectorStore(VectorStore):
             >>> # Create a RedisVectorStore
             >>> vector_store = RedisVectorStore(
             >>>     index_name="my_index",
-            >>>     index_prefix="gpt_index",
+            >>>     index_prefix="llama_index",
             >>>     index_args={"algorithm": "HNSW", "m": 16, "ef_construction": 200,
                 "distance_metric": "cosine"},
             >>>     redis_url="redis://localhost:6379/",
@@ -103,7 +109,7 @@ class RedisVectorStore(VectorStore):
             raise ValueError(f"Redis failed to connect: {e}")
 
         # index identifiers
-        self._prefix = index_prefix
+        self._prefix = index_prefix + prefix_ending
         self._index_name = index_name
         self._index_args = index_args if index_args is not None else {}
         self._metadata_fields = metadata_fields if metadata_fields is not None else []
@@ -215,7 +221,14 @@ class RedisVectorStore(VectorStore):
         from redis.exceptions import RedisError
         from redis.exceptions import TimeoutError as RedisTimeoutError
 
-        return_fields = ["id", "doc_id", "text", self._vector_key, "vector_score"]
+        return_fields = [
+            "id",
+            "doc_id",
+            "text",
+            self._vector_key,
+            "vector_score",
+            "_node_content",
+        ]
 
         filters = _to_redis_filters(query.filters) if query.filters is not None else "*"
 
@@ -259,15 +272,19 @@ class RedisVectorStore(VectorStore):
         nodes = []
         scores = []
         for doc in results.docs:
-            # TODO: properly retrieve metadata
-            node = TextNode(
-                text=doc.text,
-                id_=doc.id,
-                embedding=None,
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc.doc_id)
-                },
-            )
+            try:
+                node = metadata_dict_to_node({"_node_content": doc._node_content})
+                node.text = doc.text
+            except Exception:
+                # TODO: Legacy support for old metadata format
+                node = TextNode(
+                    text=doc.text,
+                    id_=doc.id,
+                    embedding=None,
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc.doc_id)
+                    },
+                )
             ids.append(doc.id)
             nodes.append(node)
             scores.append(1 - float(doc.vector_score))

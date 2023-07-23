@@ -17,8 +17,9 @@ from llama_index.indices.postprocessor.pii import (
     NERPIINodePostprocessor,
 )
 from llama_index.indices.postprocessor.llm_rerank import LLMRerank
-
 from llama_index.indices.postprocessor.cohere_rerank import CohereRerank
+from llama_index.indices.postprocessor.optimizer import SentenceEmbeddingOptimizer
+from llama_index.indices.postprocessor.sbert_rerank import SentenceTransformerRerank
 
 __all__ = [
     "SimilarityPostprocessor",
@@ -32,4 +33,6 @@ __all__ = [
     "NERPIINodePostprocessor",
     "CohereRerank",
     "LLMRerank",
+    "SentenceEmbeddingOptimizer",
+    "SentenceTransformerRerank",
 ]

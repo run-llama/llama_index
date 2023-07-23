@@ -65,6 +65,17 @@ class DataFrameRowsOnly(BaseModel):
             return existing_df.append(new_df, ignore_index=True)
 
 
+class DataFrameValuesPerColumn(BaseModel):
+    """Data-frame as a list of column objects.
+
+    Each column object contains a list of values. Note that they can be
+    of variable length, and so may not be able to be converted to a dataframe.
+
+    """
+
+    columns: List[DataFrameRow] = Field(..., description="""List of column objects.""")
+
+
 DEFAULT_FULL_DF_PARSER_TMPL = """
 Please extract the following query into a structured data.
 Query: {input_str}.
