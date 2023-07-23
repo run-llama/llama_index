@@ -129,7 +129,6 @@ class BaseOpenAIAgent(BaseAgent):
 
     def _should_continue(self, function_call, n_function_calls):
         if n_function_calls > self._max_function_calls:
-            print(f"Exceeded max function calls: {self._max_function_calls}.")
             return False
         if not function_call:
             return False
@@ -188,14 +187,13 @@ class BaseOpenAIAgent(BaseAgent):
             chat_stream_response.awrite_response_to_history(self.session.memory)
         )
 
-        while chat_stream_response._is_function is None:
+        while not task.done() or chat_stream_response._is_function is None:
             # Wait until we know if the response is a function call or not
             await asyncio.sleep(0.05)  # chat_stream_response._is_function_event.wait()
             if chat_stream_response._is_function is False:
-                raise Exception
                 return chat_stream_response
             # raise Exception
-        print("returning from _get_async_stream_ai_response")
+
         # raise Exception
         return chat_stream_response
 
@@ -264,16 +262,12 @@ class BaseOpenAIAgent(BaseAgent):
         # Loop until no more function calls or max_function_calls is reached
         while True:
             agent_chat_response = await self._get_async_agent_response(mode, functions)
-            print("Got response")
             latest_function = self.session.get_latest_function_call()
-            print("got latest function, check continue")
             if not self._should_continue(latest_function, n_function_calls):
-                print("break, not continue")
                 break
-            print("call func")
             self._call_function(tools, latest_function)
             n_function_calls += 1
-        print("out of while, return response")
+
         return agent_chat_response
 
     def stream_chat(

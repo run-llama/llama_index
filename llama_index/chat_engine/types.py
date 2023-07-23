@@ -84,11 +84,9 @@ class StreamingAgentChatResponse:
                 )
                 self._is_function_event.set()
                 self._queue.put_nowait(chat.delta)
-
             if final_message is not None:
                 memory.put(final_message)
         except Exception as e:
-            print("Error reading response: ", e)
             pass
 
         self._is_done = True
@@ -99,7 +97,7 @@ class StreamingAgentChatResponse:
                 "achat_stream is None. Cannot asynchronously write to "
                 "history without achat_stream."
             )
-        print("awrite response")
+
         # try/except to prevent hanging on error
         try:
             final_message = None
@@ -110,46 +108,43 @@ class StreamingAgentChatResponse:
                     is not None
                 )
                 self._aqueue.put_nowait(chat.delta)
-
             if final_message is not None:
                 memory.put(final_message)
         except Exception as e:
-            print("Error reading response: ", e)
             pass
 
         self._is_done = True
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
-        print("enter response gen")
+
         ix = 20
         while not self._is_done or not self._queue.empty():
-            print("enter while")
+
             if ix <= 0:
                 raise Exception("Get out!")
             try:
                 delta = self._queue.get(block=False)
                 self.response += delta
-                print(f"delta {delta}")
+
                 yield delta
             except queue.Empty:
                 ix -= 1
-                print("Queue empty, start again")
+
                 # Queue is empty, but we're not done yet
                 continue
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
-        print("enter async response gen")
+
         while not self._is_done or not self._aqueue.empty():
-            print("enter while")
+
             try:
                 delta = await self._aqueue.get()
                 self.response += delta
-                print(f"response {self.response}")
-                print(f"delta {delta}")
+
                 yield delta
             except asyncio.QueueEmpty:
-                print("Queue empty")
+
                 # Queue is empty, but we're not done yet
                 continue
 
@@ -196,14 +191,12 @@ class BaseChatEngine(ABC):
 
     def chat_repl(self) -> None:
         """Enter interactive chat REPL."""
-        print("===== Entering Chat REPL =====")
-        print('Type "exit" to exit.\n')
 
         self.reset()
         message = input("Human: ")
         while message != "exit":
             response = self.chat(message)
-            print(f"Assistant: {response}\n")
+
             message = input("Human: ")
 
     @property
