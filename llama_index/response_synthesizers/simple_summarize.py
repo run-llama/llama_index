@@ -4,7 +4,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts.prompts import QuestionAnswerPrompt, SimpleInputPrompt
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -15,8 +15,13 @@ class SimpleSummarize(BaseSynthesizer):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
+        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
     ) -> None:
-        super().__init__(service_context=service_context, streaming=streaming)
+        super().__init__(
+            service_context=service_context,
+            streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
+        )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
 
     async def aget_response(
@@ -25,6 +30,7 @@ class SimpleSummarize(BaseSynthesizer):
         text_chunks: Sequence[str],
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
+        query_str = self._wrap_query_str(query_str)
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         truncated_chunks = self._service_context.prompt_helper.truncate(
             prompt=text_qa_template,
@@ -57,6 +63,7 @@ class SimpleSummarize(BaseSynthesizer):
         text_chunks: Sequence[str],
         **kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
+        query_str = self._wrap_query_str(query_str)
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         truncated_chunks = self._service_context.prompt_helper.truncate(
             prompt=text_qa_template,

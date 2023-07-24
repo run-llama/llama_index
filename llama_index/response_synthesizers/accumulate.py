@@ -6,7 +6,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts.prompts import QuestionAnswerPrompt, SimpleInputPrompt
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -19,11 +19,13 @@ class Accumulate(BaseSynthesizer):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
+        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
         use_async: bool = False,
     ) -> None:
         super().__init__(
             service_context=service_context,
             streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
@@ -49,6 +51,7 @@ class Accumulate(BaseSynthesizer):
     ) -> RESPONSE_TEXT_TYPE:
         """Apply the same prompt to text chunks and return async responses"""
 
+        query_str = self._wrap_query_str(query_str)
         if self._streaming:
             raise ValueError("Unable to stream in Accumulate response mode")
 
@@ -71,6 +74,7 @@ class Accumulate(BaseSynthesizer):
     ) -> RESPONSE_TEXT_TYPE:
         """Apply the same prompt to text chunks and return responses"""
 
+        query_str = self._wrap_query_str(query_str)
         if self._streaming:
             raise ValueError("Unable to stream in Accumulate response mode")
 

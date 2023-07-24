@@ -6,6 +6,8 @@ from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_S
 from llama_index.prompts.default_prompts import (
     DEFAULT_SIMPLE_INPUT_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
+    DEFAULT_CUSTOM_QUERY_PROMPT,
+    DEFAULT_CUSTOM_REFINE_PROMPT,
 )
 from llama_index.prompts.prompts import (
     QuestionAnswerPrompt,
@@ -33,13 +35,30 @@ def get_response_synthesizer(
     simple_template: Optional[SimpleInputPrompt] = None,
     response_mode: ResponseMode = ResponseMode.COMPACT,
     callback_manager: Optional[CallbackManager] = None,
+    system_prompt: Optional[str] = None,
+    post_query_prompt: Optional[str] = None,
+    query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
     use_async: bool = False,
     streaming: bool = False,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
 
-    text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-    refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
+    if system_prompt or post_query_prompt:
+        # Change unused custom fields to empty strings for formatting
+        system_prompt = system_prompt if system_prompt else ""
+        post_query_prompt = post_query_prompt if post_query_prompt else ""
+
+        text_qa_template = text_qa_template or DEFAULT_CUSTOM_QUERY_PROMPT
+        text_qa_template = text_qa_template.partial_format(
+            system_prompt=system_prompt, post_query_prompt=post_query_prompt
+        )
+        refine_template = refine_template or DEFAULT_CUSTOM_REFINE_PROMPT
+        refine_template = refine_template.partial_format(
+            post_query_prompt=post_query_prompt
+        )
+    else:
+        text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
     simple_template = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
     service_context = service_context or ServiceContext.from_defaults(
@@ -52,6 +71,7 @@ def get_response_synthesizer(
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
         )
     elif response_mode == ResponseMode.COMPACT:
         return CompactAndRefine(
@@ -59,12 +79,14 @@ def get_response_synthesizer(
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
         )
     elif response_mode == ResponseMode.TREE_SUMMARIZE:
         return TreeSummarize(
             service_context=service_context,
             text_qa_template=text_qa_template,
             streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
             use_async=use_async,
         )
     elif response_mode == ResponseMode.SIMPLE_SUMMARIZE:
@@ -72,18 +94,21 @@ def get_response_synthesizer(
             service_context=service_context,
             text_qa_template=text_qa_template,
             streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
         )
     elif response_mode == ResponseMode.GENERATION:
         return Generation(
             service_context=service_context,
             simple_template=simple_template,
             streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
         )
     elif response_mode == ResponseMode.ACCUMULATE:
         return Accumulate(
             service_context=service_context,
             text_qa_template=text_qa_template,
             streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
             use_async=use_async,
         )
     elif response_mode == ResponseMode.COMPACT_ACCUMULATE:
@@ -91,6 +116,7 @@ def get_response_synthesizer(
             service_context=service_context,
             text_qa_template=text_qa_template,
             streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
             use_async=use_async,
         )
     elif response_mode == ResponseMode.NO_TEXT:

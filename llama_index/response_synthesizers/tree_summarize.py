@@ -5,7 +5,11 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt
+from llama_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    SummaryPrompt,
+    SimpleInputPrompt,
+)
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -28,10 +32,15 @@ class TreeSummarize(BaseSynthesizer):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
+        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
         use_async: bool = False,
         verbose: bool = False,
     ) -> None:
-        super().__init__(service_context=service_context, streaming=streaming)
+        super().__init__(
+            service_context=service_context,
+            streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
+        )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         self._verbose = verbose
@@ -43,7 +52,7 @@ class TreeSummarize(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
-
+        query_str = self._wrap_query_str(query_str)
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(
             text_qa_template, prompt_type=PromptType.SUMMARY
@@ -97,6 +106,7 @@ class TreeSummarize(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
+        query_str = self._wrap_query_str(query_str)
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(
             text_qa_template, prompt_type=PromptType.SUMMARY

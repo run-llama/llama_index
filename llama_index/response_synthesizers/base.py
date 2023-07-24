@@ -17,6 +17,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 from llama_index.types import RESPONSE_TEXT_TYPE
+from llama_index.prompts.prompts import SimpleInputPrompt
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +31,13 @@ class BaseSynthesizer(ABC):
         self,
         service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
+        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
     ) -> None:
         """Init params."""
         self._service_context = service_context or ServiceContext.from_defaults()
         self._callback_manager = self._service_context.callback_manager
         self._streaming = streaming
+        self._query_wrapper_prompt = query_wrapper_prompt
 
     @property
     def service_context(self) -> ServiceContext:
@@ -59,6 +62,11 @@ class BaseSynthesizer(ABC):
     ) -> RESPONSE_TEXT_TYPE:
         """Get response."""
         ...
+
+    def _wrap_query_str(self, query_str: str) -> str:
+        if self._query_wrapper_prompt:
+            query_str = self._query_wrapper_prompt.format(query_str=query_str)
+        return query_str
 
     def _log_prompt_and_response(
         self,

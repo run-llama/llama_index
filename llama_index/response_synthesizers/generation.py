@@ -13,8 +13,13 @@ class Generation(BaseSynthesizer):
         simple_template: Optional[SimpleInputPrompt] = None,
         service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
+        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
     ) -> None:
-        super().__init__(service_context=service_context, streaming=streaming)
+        super().__init__(
+            service_context=service_context,
+            streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
+        )
         self._input_prompt = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
     async def aget_response(
@@ -26,6 +31,7 @@ class Generation(BaseSynthesizer):
         # NOTE: ignore text chunks and previous response
         del text_chunks
 
+        query_str = self._wrap_query_str(query_str)
         if not self._streaming:
             response = await self._service_context.llm_predictor.apredict(
                 self._input_prompt,
@@ -48,6 +54,7 @@ class Generation(BaseSynthesizer):
         # NOTE: ignore text chunks and previous response
         del text_chunks
 
+        query_str = self._wrap_query_str(query_str)
         if not self._streaming:
             response = self._service_context.llm_predictor.predict(
                 self._input_prompt,

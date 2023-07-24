@@ -7,7 +7,11 @@ from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_S
 from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    SimpleInputPrompt,
+)
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -24,9 +28,14 @@ class Refine(BaseSynthesizer):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         streaming: bool = False,
+        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
         verbose: bool = False,
     ) -> None:
-        super().__init__(service_context=service_context, streaming=streaming)
+        super().__init__(
+            service_context=service_context,
+            streaming=streaming,
+            query_wrapper_prompt=query_wrapper_prompt,
+        )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._verbose = verbose
@@ -38,6 +47,7 @@ class Refine(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
+        query_str = self._wrap_query_str(query_str)
         prev_response_obj = cast(
             Optional[RESPONSE_TEXT_TYPE], response_kwargs.get("prev_response", None)
         )
@@ -145,6 +155,7 @@ class Refine(BaseSynthesizer):
         text_chunks: Sequence[str],
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
+        query_str = self._wrap_query_str(query_str)
         prev_response_obj = cast(
             Optional[RESPONSE_TEXT_TYPE], response_kwargs.get("prev_response", None)
         )

@@ -58,6 +58,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         simple_template: Optional[SimpleInputPrompt] = None,
+        system_prompt: Optional[str] = None,
+        post_query_prompt: Optional[str] = None,
+        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
         use_async: bool = False,
         streaming: bool = False,
         # class-specific args
@@ -76,7 +79,12 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 object.
             refine_template (Optional[RefinePrompt]): A RefinePrompt object.
             simple_template (Optional[SimpleInputPrompt]): A SimpleInputPrompt object.
-
+            system_prompt (Optional[str]): A system prompt to be inserted
+                post-context, pre-query
+            post_query_prompt (Optional[str]): Additional set text to be appended
+                post-query
+            query_wrapper_prompt (Optional[SimpleInputPrompt]): Additional formatting
+                or text Prompt to wrap incoming query strings
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
             optimizer (Optional[BaseTokenUsageOptimizer]): A BaseTokenUsageOptimizer
@@ -89,6 +97,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
             refine_template=refine_template,
             simple_template=simple_template,
             response_mode=response_mode,
+            system_prompt=system_prompt,
+            post_query_prompt=post_query_prompt,
+            query_wrapper_prompt=query_wrapper_prompt,
             use_async=use_async,
             streaming=streaming,
         )
