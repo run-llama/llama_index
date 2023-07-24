@@ -127,18 +127,12 @@ class StreamingAgentChatResponse:
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
-        ix = 20
         while not self._is_done or not self._queue.empty():
-            if ix <= 0:
-                raise Exception("Get out!")
             try:
                 delta = self._queue.get(block=False)
                 self.response += delta
-
                 yield delta
             except queue.Empty:
-                ix -= 1
-
                 # Queue is empty, but we're not done yet
                 continue
 
@@ -147,7 +141,6 @@ class StreamingAgentChatResponse:
             try:
                 delta = await self._aqueue.get()
                 self.response += delta
-
                 yield delta
             except asyncio.QueueEmpty:
                 # Queue is empty, but we're not done yet
