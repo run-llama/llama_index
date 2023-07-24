@@ -8,6 +8,7 @@ from typing import Generator, List, Optional
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.tools import ToolOutput
+from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class AgentChatResponse:
 
     response: str = ""
     sources: List[ToolOutput] = field(default_factory=list)
+    source_nodes: List[NodeWithScore] = field(default_factory=list)
 
     def __str__(self) -> str:
         return self.response
@@ -29,6 +31,7 @@ class StreamingAgentChatResponse:
 
     response: str = ""
     sources: List[ToolOutput] = field(default_factory=list)
+    source_nodes: List[NodeWithScore] = field(default_factory=list)
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
     _queue: queue.Queue = queue.Queue()
