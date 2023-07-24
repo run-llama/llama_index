@@ -178,6 +178,13 @@ class ChatMode(str, Enum):
     then query the query engine for a response.
     """
 
+    CONTEXT = "context"
+    """Corresponds to `ContextChatEngine`.
+    
+    First retrieve text from the index using the user's message, then use the context
+    in the system prompt to generate a response.
+    """
+
     REACT = "react"
     """Corresponds to `ReActAgent`.
     
