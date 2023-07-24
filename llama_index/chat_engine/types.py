@@ -115,12 +115,14 @@ class StreamingAgentChatResponse:
 
         self._is_done = True
 
+        # This acts as an is_done event for the async_response_gen function
+        # else it'll be stuck in the while loop.
+        self._aqueue.put_nowait("")
+
     @property
     def response_gen(self) -> Generator[str, None, None]:
-
         ix = 20
         while not self._is_done or not self._queue.empty():
-
             if ix <= 0:
                 raise Exception("Get out!")
             try:
@@ -135,16 +137,13 @@ class StreamingAgentChatResponse:
                 continue
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
-
         while not self._is_done or not self._aqueue.empty():
-
             try:
                 delta = await self._aqueue.get()
                 self.response += delta
 
                 yield delta
             except asyncio.QueueEmpty:
-
                 # Queue is empty, but we're not done yet
                 continue
 
