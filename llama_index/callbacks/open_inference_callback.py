@@ -8,6 +8,7 @@ For more information on the specification, see
 https://github.com/Arize-ai/open-inference-spec
 """
 
+import hashlib
 import importlib
 import uuid
 from dataclasses import dataclass, field, fields
@@ -35,6 +36,18 @@ def _generate_random_id() -> str:
     return str(uuid.uuid4())
 
 
+def hash_string_with_sha256(text: str) -> str:
+    """Hashes the text using SHA256.
+
+    Args:
+        text (str): A piece of text to be hashed.
+
+    Returns:
+        str: SHA256 hash of the text as a string.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 @dataclass
 class QueryData:
     """
@@ -43,7 +56,7 @@ class QueryData:
 
     id: str = field(
         default_factory=_generate_random_id,
-        metadata={OPENINFERENCE_COLUMN_NAME: ":id.str:"},
+        metadata={OPENINFERENCE_COLUMN_NAME: ":id.id:"},
     )
     timestamp: Optional[str] = field(
         default=None, metadata={OPENINFERENCE_COLUMN_NAME: ":timestamp.iso_8601:"}
@@ -208,7 +221,10 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
             for node_with_score in payload[EventPayload.NODES]:
                 node = node_with_score.node
                 score = node_with_score.score
-                self._trace_data.query_data.document_ids.append(node.id_)
+                document_id = hash_string_with_sha256(
+                    node.text
+                )  # use hash as ID until we're able to access the real document ID
+                self._trace_data.query_data.document_ids.append(document_id)
                 self._trace_data.query_data.scores.append(score)
                 self._trace_data.document_datas.append(
                     DocumentData(
