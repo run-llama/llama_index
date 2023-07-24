@@ -49,7 +49,6 @@ class StreamingAgentChatResponse:
     _queue: queue.Queue = queue.Queue()
     _aqueue: asyncio.Queue = asyncio.Queue()
     _is_done = False
-    _is_function_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function: Optional[bool] = None
 
@@ -83,7 +82,6 @@ class StreamingAgentChatResponse:
                     final_message.additional_kwargs.get("function_call", None)
                     is not None
                 )
-                self._is_function_event.set()
                 self._queue.put_nowait(chat.delta)
             if final_message is not None:
                 memory.put(final_message)
