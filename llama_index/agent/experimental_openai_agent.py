@@ -158,21 +158,14 @@ class BaseOpenAIAgent(BaseAgent):
             target=chat_stream_response.write_response_to_history,
             args=(self.session.memory,),
         )
-        logger.debug("Start thread")
         thread.start()
 
         while chat_stream_response._is_function is None:
             # Wait until we know if the response is a function call or not
             time.sleep(0.05)
             if chat_stream_response._is_function is False:
-                logger.debug("return stream")
                 return chat_stream_response
-        else:
-            logger.debug("chat_stream_response._is_function is not None")
-
-        logger.debug("Join thread")
         thread.join()
-        logger.debug("Thread joined, rtn response")
         return chat_stream_response
 
     async def _get_async_stream_ai_response(self, functions):
