@@ -72,6 +72,10 @@ class BaseEmbedding:
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
 
+    @abstractmethod
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding asynchronously."""
+
     def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
@@ -88,6 +92,19 @@ class BaseEmbedding:
         )
         return query_embedding
 
+    async def aget_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding."""
+        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
+        query_embedding = await self._aget_query_embedding(query)
+        query_tokens_count = len(self._tokenizer(query))
+        self._total_tokens_used += query_tokens_count
+        self.callback_manager.on_event_end(
+            CBEventType.EMBEDDING,
+            payload={EventPayload.CHUNKS: [query]},
+            event_id=event_id,
+        )
+        return query_embedding
+
     def get_agg_embedding_from_queries(
         self,
         queries: List[str],
@@ -95,6 +112,16 @@ class BaseEmbedding:
     ) -> List[float]:
         """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
+        agg_fn = agg_fn or mean_agg
+        return agg_fn(query_embeddings)
+
+    async def aget_agg_embedding_from_queries(
+        self,
+        queries: List[str],
+        agg_fn: Optional[Callable[..., List[float]]] = None,
+    ) -> List[float]:
+        """Get aggregated embedding from multiple queries."""
+        query_embeddings = [await self.aget_query_embedding(query) for query in queries]
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
