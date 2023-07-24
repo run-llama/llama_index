@@ -52,6 +52,7 @@ class StreamingAgentChatResponse:
     _is_done = False
     _is_function_not_none_thread_event: Event = field(default_factory=Event)
     _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
+    _is_done_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function: Optional[bool] = None
 
     @property
@@ -125,7 +126,7 @@ class StreamingAgentChatResponse:
 
         # These act as is_done events for any consumers waiting
         self._aqueue.put_nowait("")
-        self._is_function_false_event.set()
+        self._is_done_event.set()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:

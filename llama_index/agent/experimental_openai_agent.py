@@ -179,7 +179,13 @@ class BaseOpenAIAgent(BaseAgent):
         asyncio.create_task(
             chat_stream_response.awrite_response_to_history(self.session.memory)
         )
-        await chat_stream_response._is_function_false_event.wait()
+        await asyncio.wait(
+            [
+                chat_stream_response._is_function_false_event.wait(),
+                chat_stream_response._is_done_event.wait(),
+            ],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
         return chat_stream_response
 
     def _call_function(self, tools, function_call):
