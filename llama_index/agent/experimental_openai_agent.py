@@ -183,18 +183,10 @@ class BaseOpenAIAgent(BaseAgent):
             sources=self.sources,
         )
         # create task to write chat response to history
-        task = asyncio.create_task(
+        asyncio.create_task(
             chat_stream_response.awrite_response_to_history(self.session.memory)
         )
-
-        while not task.done() or chat_stream_response._is_function is None:
-            # Wait until we know if the response is a function call or not
-            await asyncio.sleep(0.05)  # chat_stream_response._is_function_event.wait()
-            if chat_stream_response._is_function is False:
-                return chat_stream_response
-            # raise Exception
-
-        # raise Exception
+        await chat_stream_response._is_function_false_event.wait()
         return chat_stream_response
 
     def _call_function(self, tools, function_call):

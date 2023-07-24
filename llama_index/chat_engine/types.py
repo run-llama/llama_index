@@ -50,6 +50,7 @@ class StreamingAgentChatResponse:
     _aqueue: asyncio.Queue = asyncio.Queue()
     _is_done = False
     _is_function_event: asyncio.Event = field(default_factory=asyncio.Event)
+    _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function: Optional[bool] = None
 
     @property
@@ -88,15 +89,18 @@ class StreamingAgentChatResponse:
                 memory.put(final_message)
         except Exception as e:
             pass
-
         self._is_done = True
 
-    async def awrite_response_to_history(self, memory: BaseMemory) -> None:
+    async def awrite_response_to_history(
+        self,
+        memory: BaseMemory,
+    ) -> None:
         if self.achat_stream is None:
             raise ValueError(
                 "achat_stream is None. Cannot asynchronously write to "
                 "history without achat_stream."
             )
+        self._is_function_false_event.clear()
 
         # try/except to prevent hanging on error
         try:
@@ -108,6 +112,8 @@ class StreamingAgentChatResponse:
                     is not None
                 )
                 self._aqueue.put_nowait(chat.delta)
+                if self._is_function == False:
+                    self._is_function_false_event.set()
             if final_message is not None:
                 memory.put(final_message)
         except Exception as e:
@@ -115,9 +121,9 @@ class StreamingAgentChatResponse:
 
         self._is_done = True
 
-        # This acts as an is_done event for the async_response_gen function
-        # else it'll be stuck in the while loop.
+        # These act as is_done events for any consumers waiting
         self._aqueue.put_nowait("")
+        self._is_function_false_event.set()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
