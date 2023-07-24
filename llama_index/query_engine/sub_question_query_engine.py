@@ -1,17 +1,18 @@
 import asyncio
 import logging
 from typing import List, Optional, Sequence, cast
+
 from pydantic import BaseModel
 
-from llama_index.bridge.langchain import get_color_mapping, print_text
-
 from llama_index.async_utils import run_async_tasks
+from llama_index.bridge.langchain import get_color_mapping, print_text
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
+from llama_index.question_gen.openai_generator import OpenAIQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
@@ -87,9 +88,22 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         elif len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
 
-        question_gen = question_gen or LLMQuestionGenerator.from_defaults(
-            service_context=service_context
-        )
+        if question_gen is None:
+            if service_context is None:
+                # use default openai model that supports function calling API
+                question_gen = OpenAIQuestionGenerator.from_defaults()
+            else:
+                # try to use OpenAI function calling based question generator.
+                # if incompatible, use general LLM question generator
+                try:
+                    question_gen = OpenAIQuestionGenerator.from_defaults(
+                        llm=service_context.llm
+                    )
+                except ValueError:
+                    question_gen = LLMQuestionGenerator.from_defaults(
+                        service_context=service_context
+                    )
+
         synth = response_synthesizer or get_response_synthesizer(
             callback_manager=callback_manager,
             service_context=service_context,

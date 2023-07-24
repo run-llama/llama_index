@@ -40,6 +40,7 @@ class HuggingFaceLLM(CustomLLM):
         )
 
         model_kwargs = model_kwargs or {}
+        self._model_name = model_name
         self.model = model or AutoModelForCausalLM.from_pretrained(
             model_name, device_map=device_map, **model_kwargs
         )
@@ -97,7 +98,9 @@ class HuggingFaceLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self._context_window, num_output=self._max_new_tokens
+            context_window=self._context_window,
+            num_output=self._max_new_tokens,
+            model_name=self._model_name,
         )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:

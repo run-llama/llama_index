@@ -3,7 +3,7 @@ import json
 import time
 from abc import abstractmethod
 from threading import Thread
-from typing import Callable, List, Optional, Tuple, Type
+from typing import Any, Callable, List, Optional, Tuple, Type
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -210,9 +210,11 @@ class BaseOpenAIAgent(BaseAgent):
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
-        all_messages = self._prefix_messages + self._memory.get()
+
         tools, functions = self._init_chat(message)
         sources = []
+
+        all_messages = self._prefix_messages + self._memory.get()
 
         # TODO: Support forced function call
         chat_response = await self._llm.achat(all_messages, functions=functions)
@@ -367,6 +369,7 @@ class OpenAIAgent(BaseOpenAIAgent):
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
     ) -> "OpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
