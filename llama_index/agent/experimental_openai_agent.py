@@ -160,12 +160,12 @@ class BaseOpenAIAgent(BaseAgent):
         )
         thread.start()
 
-        while chat_stream_response._is_function is None:
-            # Wait until we know if the response is a function call or not
-            time.sleep(0.05)
-            if chat_stream_response._is_function is False:
-                return chat_stream_response
-        thread.join()
+        # Wait for the event to be set
+        chat_stream_response._is_function_not_none_thread_event.wait()
+
+        # If _is_function is True, wait for the thread to finish
+        if chat_stream_response._is_function:
+            thread.join()
         return chat_stream_response
 
     async def _get_async_stream_ai_response(self, functions):

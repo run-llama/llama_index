@@ -4,6 +4,7 @@ import queue
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
+from threading import Event
 from typing import AsyncGenerator, Generator, List, Optional
 
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
@@ -49,6 +50,7 @@ class StreamingAgentChatResponse:
     _queue: queue.Queue = queue.Queue()
     _aqueue: asyncio.Queue = asyncio.Queue()
     _is_done = False
+    _is_function_not_none_thread_event: Event = field(default_factory=Event)
     _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function: Optional[bool] = None
 
@@ -83,6 +85,8 @@ class StreamingAgentChatResponse:
                     is not None
                 )
                 self._queue.put_nowait(chat.delta)
+                # if self._is_function == False:
+                self._is_function_not_none_thread_event.set()
             if final_message is not None:
                 memory.put(final_message)
         except Exception as e:
