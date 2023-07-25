@@ -283,8 +283,9 @@ class OpensearchVectorClient:
         Args:
             query_embedding: Vector embedding to query.
             k: Maximum number of results.
-            filters: Optional filters to apply to the search.  Applied at "term"
-                matches.
+            filters: Optional filters to apply before the search.
+                Supports filter-context queries documented at
+                https://opensearch.org/docs/latest/query-dsl/query-filter-context/
 
         Returns:
             Up to k docs closest to query_embedding
