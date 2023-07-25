@@ -14,6 +14,7 @@ from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
+    VectorStoreQueryResult
 )
 
 
@@ -85,21 +86,19 @@ class VectorIndexRetriever(BaseRetriever):
 
         return self._get_nodes_with_embeddings(query_bundle)
 
-    def _get_nodes_with_embeddings(
-        self, query_bundle_with_embeddings: QueryBundle
-    ) -> List[NodeWithScore]:
-        query = VectorStoreQuery(
-            query_embedding=query_bundle_with_embeddings.embedding,
+    def _build_vector_store_query(self, query_bundle_with_embeddints: QueryBundle) -> VectorStoreQuery:
+        return VectorStoreQuery(
+            query_embedding=query_bundle_with_embeddints.embedding,
             similarity_top_k=self._similarity_top_k,
             node_ids=self._node_ids,
             doc_ids=self._doc_ids,
-            query_str=query_bundle_with_embeddings.query_str,
+            query_str=query_bundle_with_embeddints.query_str,
             mode=self._vector_store_query_mode,
             alpha=self._alpha,
             filters=self._filters,
         )
-        query_result = self._vector_store.query(query, **self._kwargs)
 
+    def _build_node_list_from_query_result(self, query_result: VectorStoreQueryResult) -> List[NodeWithScore]:
         if query_result.nodes is None:
             # NOTE: vector store does not keep text and returns node indices.
             # Need to recover all nodes from docstore
@@ -140,3 +139,17 @@ class VectorIndexRetriever(BaseRetriever):
             node_with_scores.append(NodeWithScore(node=node, score=score))
 
         return node_with_scores
+
+    def _get_nodes_with_embeddings(
+        self, query_bundle_with_embeddings: QueryBundle
+    ) -> List[NodeWithScore]:
+        query = self._build_vector_store_query(query_bundle_with_embeddings)
+        query_result = self._vector_store.query(query, **self._kwargs)
+        return self._build_node_list_from_query_result(query_result)
+
+    async def _aget_nodes_with_embeddings(
+        self, query_bundle_with_embeddings: QueryBundle
+    ) -> List[NodeWithScore]:
+        query = self._build_vector_store_query(query_bundle_with_embeddings)
+        query_result = await self._vector_store.aquery(query, **self._kwargs)
+        return self._build_node_list_from_query_result(query_result)
