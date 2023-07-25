@@ -7,6 +7,7 @@
 - Validate openai key on init (#6940)
 - Added async embeddings and async RetrieverQueryEngine (#6587)
 - Added async `aquery` and `async_add` to PGVectorStore (#7031)
+- Added `.source_nodes` attribute to chat engine and agent responses (#7029)
 
 ### Bug Fixes / Nits
 - Fix achat memory initialization for data agents (#7000)
