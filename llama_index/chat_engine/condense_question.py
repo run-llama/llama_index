@@ -188,8 +188,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
 
         return AgentChatResponse(
             response=str(query_response),
-            sources=[tool_output],
-            source_nodes=query_response.source_nodes
+            sources=[tool_output]
         )
 
     def stream_chat(
@@ -234,8 +233,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
             response = StreamingAgentChatResponse(
                 chat_stream=response_gen_from_query_engine(query_response.response_gen),
-                sources=[tool_output],
-                source_nodes=query_response.source_nodes
+                sources=[tool_output]
             )
             thread = Thread(
                 target=response.write_response_to_history, args=(self._memory,)

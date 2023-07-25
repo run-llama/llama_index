@@ -8,6 +8,7 @@ from typing import Generator, List, Optional
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.tools import ToolOutput
+from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,15 @@ class AgentChatResponse:
 
     response: str = ""
     sources: List[ToolOutput] = field(default_factory=list)
-    source_nodes: List[NodeWithScore] = field(default_factory=list)
+    _nodes: List[NodeWithScore] = None
+    @property
+    def source_nodes(self) -> List[NodeWithScore]:
+        if self._nodes is None:
+            self._nodes = []
+            for tool_output in self.sources:
+                if isinstance(tool_output.raw_output, Response):
+                    self._nodes.extend(tool_output.raw_output.source_nodes)
+        return self._nodes
 
     def __str__(self) -> str:
         return self.response
@@ -31,12 +40,21 @@ class StreamingAgentChatResponse:
 
     response: str = ""
     sources: List[ToolOutput] = field(default_factory=list)
-    source_nodes: List[NodeWithScore] = field(default_factory=list)
+    _nodes: List[NodeWithScore] = None
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
     _queue: queue.Queue = queue.Queue()
     _is_done = False
     _is_function: Optional[bool] = None
+
+    @property
+    def source_nodes(self) -> List[NodeWithScore]:
+        if self._nodes is None:
+            self._nodes = []
+            for tool_output in self.sources:
+                if isinstance(tool_output.raw_output, StreamingResponse):
+                    self._nodes.extend(tool_output.raw_output.source_nodes)
+        return self._nodes
 
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
@@ -56,8 +74,8 @@ class StreamingAgentChatResponse:
             for chat in self.chat_stream:
                 final_message = chat.message
                 self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None)
-                    is not None
+                        final_message.additional_kwargs.get("function_call", None)
+                        is not None
                 )
                 self._queue.put_nowait(chat.delta)
 
@@ -82,8 +100,8 @@ class StreamingAgentChatResponse:
             async for chat in self.achat_stream:
                 final_message = chat.message
                 self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None)
-                    is not None
+                        final_message.additional_kwargs.get("function_call", None)
+                        is not None
                 )
                 self._queue.put_nowait(chat.delta)
 
@@ -117,28 +135,28 @@ class BaseChatEngine(ABC):
 
     @abstractmethod
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+            self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Main chat interface."""
         pass
 
     @abstractmethod
     def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+            self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         """Stream chat interface."""
         pass
 
     @abstractmethod
     async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+            self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Async version of main chat interface."""
         pass
 
     @abstractmethod
     async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+            self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         """Async version of main chat interface."""
         pass
