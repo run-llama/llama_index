@@ -84,7 +84,7 @@ class VectorIndexRetriever(BaseRetriever):
                     )
                 )
 
-        return self._get_nodes_with_embeddings(query_bundle)
+        return await self._aget_nodes_with_embeddings(query_bundle)
 
     def _build_vector_store_query(self, query_bundle_with_embeddings: QueryBundle) -> VectorStoreQuery:
         return VectorStoreQuery(
