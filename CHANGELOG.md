@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- tune prompt to get rid of KeyError in SubQ engine (#7039)
+
 ## [0.7.12] - 2023-07-25
 
 ### New Features
