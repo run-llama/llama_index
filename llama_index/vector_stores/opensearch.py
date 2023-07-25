@@ -1,6 +1,7 @@
 """Elasticsearch/Opensearch vector store."""
 from typing import Any, Dict, List, Optional, cast, Iterable, Union
 
+import json
 import uuid
 
 from llama_index.schema import MetadataMode, TextNode
@@ -296,7 +297,7 @@ class OpensearchVectorClient:
         else:
             pre_filter = []
             for f in filters.filters:
-                pre_filter.append({"term": {f.key: str(f.value)}})
+                pre_filter.append({f.key: json.loads(f.value)})
             # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
             search_query = _default_painless_scripting_query(
                 query_embedding,
