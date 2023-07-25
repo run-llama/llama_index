@@ -8,7 +8,8 @@ from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
-    VectorStoreQueryResult, MetadataFilters
+    VectorStoreQueryResult,
+    MetadataFilters,
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
@@ -59,16 +60,16 @@ def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
 
 
 def _bulk_ingest_embeddings(
-        client: Any,
-        index_name: str,
-        embeddings: List[List[float]],
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
-        vector_field: str = "embedding",
-        text_field: str = "content",
-        mapping: Optional[Dict] = None,
-        max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
+    client: Any,
+    index_name: str,
+    embeddings: List[List[float]],
+    texts: Iterable[str],
+    metadatas: Optional[List[dict]] = None,
+    ids: Optional[List[str]] = None,
+    vector_field: str = "embedding",
+    text_field: str = "content",
+    mapping: Optional[Dict] = None,
+    max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
@@ -104,9 +105,9 @@ def _bulk_ingest_embeddings(
 
 
 def _default_approximate_search_query(
-        query_vector: List[float],
-        k: int = 4,
-        vector_field: str = "embedding",
+    query_vector: List[float],
+    k: int = 4,
+    vector_field: str = "embedding",
 ) -> Dict:
     """For Approximate k-NN Search, this is the default query."""
     return {
@@ -115,7 +116,9 @@ def _default_approximate_search_query(
     }
 
 
-def __get_painless_scripting_source(space_type: str, vector_field: str = "embedding") -> str:
+def __get_painless_scripting_source(
+    space_type: str, vector_field: str = "embedding"
+) -> str:
     """For Painless Scripting, it returns the script source based on space type."""
     source_value = f"(1.0 + {space_type}(params.query_value, doc['{vector_field}']))"
     if space_type == "cosineSimilarity":
@@ -128,7 +131,7 @@ def _default_painless_scripting_query(
     query_vector: List[float],
     k: int = 4,
     space_type: str = "l2Squared",
-    pre_filter: Optional[Union[Dict,List]] = None,
+    pre_filter: Optional[Union[Dict, List]] = None,
     vector_field: str = "embedding",
 ) -> Dict:
     """For Painless Scripting Search, this is the default query."""
@@ -150,8 +153,9 @@ def _default_painless_scripting_query(
                     },
                 },
             }
-        }
+        },
     }
+
 
 class OpensearchVectorClient:
     """Object encapsulating an Opensearch index that has vector search enabled.
@@ -177,14 +181,14 @@ class OpensearchVectorClient:
     """
 
     def __init__(
-            self,
-            endpoint: str,
-            index: str,
-            dim: int,
-            embedding_field: str = "embedding",
-            text_field: str = "content",
-            method: Optional[dict] = None,
-            **kwargs
+        self,
+        endpoint: str,
+        index: str,
+        dim: int,
+        embedding_field: str = "embedding",
+        text_field: str = "content",
+        method: Optional[dict] = None,
+        **kwargs: Any,
     ):
         """Init params."""
         if method is None:
@@ -216,13 +220,14 @@ class OpensearchVectorClient:
             },
         }
         self._os_client = _get_opensearch_client(self._endpoint, **kwargs)
+        not_found_error = _import_not_found_error()
         try:
             self._os_client.indices.get(index=self._index)
-        except:
+        except not_found_error:
             self._os_client.indices.create(index=self._index, body=idx_conf)
             self._os_client.indices.refresh(index=self._index)
 
-    def index_results(self, results: List[NodeWithEmbedding], **kwargs) -> List[str]:
+    def index_results(self, results: List[NodeWithEmbedding], **kwargs: Any) -> List[str]:
         """Store results in the index."""
 
         embeddings: List[List[float]] = []
@@ -247,7 +252,8 @@ class OpensearchVectorClient:
             vector_field=self._embedding_field,
             text_field=self._text_field,
             mapping=None,
-            max_chunk_bytes=max_chunk_bytes)
+            max_chunk_bytes=max_chunk_bytes,
+        )
 
     def delete_doc_id(self, doc_id: str) -> None:
         """Delete a document.
@@ -258,35 +264,45 @@ class OpensearchVectorClient:
         self._os_client.delete(index=self._index, id=doc_id)
 
     def knn(
-            self, query_embedding: List[float], k: int, filters: Optional[MetadataFilters] = None) -> VectorStoreQueryResult:
+        self,
+        query_embedding: List[float],
+        k: int,
+        filters: Optional[MetadataFilters] = None,
+    ) -> VectorStoreQueryResult:
         """Do knn search.
 
         If there are no filters do approx-knn search.
-        If there are (pre)-filters, do an exhaustive exact knn search using 'painless scripting'.
+        If there are (pre)-filters, do an exhaustive exact knn search using 'painless
+            scripting'.
 
         Note that approximate knn search does not support pre-filtering.
 
         Args:
             query_embedding: Vector embedding to query.
             k: Maximum number of results.
-            filters: Optional filters to apply to the search.  Applied at "term" matches.
+            filters: Optional filters to apply to the search.  Applied at "term"
+                matches.
 
         Returns:
             Up to k docs closest to query_embedding
         """
 
         if filters is None:
-            search_query = _default_approximate_search_query(query_embedding, k, vector_field=self._embedding_field)
+            search_query = _default_approximate_search_query(
+                query_embedding, k, vector_field=self._embedding_field
+            )
         else:
             pre_filter = []
             for f in filters.filters:
                 pre_filter.append({"term": {f.key: str(f.value)}})
             # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
-            search_query = _default_painless_scripting_query(query_embedding,
-                                                             k,
-                                                                  space_type="l2Squared",
-                                                                  pre_filter={"bool": {"filter": pre_filter}},
-                                                                  vector_field=self._embedding_field)
+            search_query = _default_painless_scripting_query(
+                query_embedding,
+                k,
+                space_type="l2Squared",
+                pre_filter={"bool": {"filter": pre_filter}},
+                vector_field=self._embedding_field,
+            )
 
         res = self._os_client.search(index=self._index, body=search_query)
         nodes = []
@@ -336,8 +352,8 @@ class OpensearchVectorStore(VectorStore):
     stores_text: bool = True
 
     def __init__(
-            self,
-            client: OpensearchVectorClient,
+        self,
+        client: OpensearchVectorClient,
     ) -> None:
         """Initialize params."""
         self._client = client
@@ -348,8 +364,8 @@ class OpensearchVectorStore(VectorStore):
         return self._client
 
     def add(
-            self,
-            embedding_results: List[NodeWithEmbedding],
+        self,
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to index.
 
@@ -378,4 +394,6 @@ class OpensearchVectorStore(VectorStore):
 
         """
         query_embedding = cast(List[float], query.query_embedding)
-        return self._client.knn(query_embedding, query.similarity_top_k, filters=query.filters)
+        return self._client.knn(
+            query_embedding, query.similarity_top_k, filters=query.filters
+        )
