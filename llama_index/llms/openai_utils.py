@@ -1,5 +1,7 @@
 import logging
-from typing import Any, Callable, Dict, List, Sequence, Type, Union
+import os
+import re
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import openai
 from openai import ChatCompletion, Completion
@@ -86,6 +88,18 @@ DISCONTINUED_MODELS = {
     "code-cushman-001": 2048,
 }
 
+# "sk-" followed by 48 alphanumberic characters
+OPENAI_API_KEY_FORMAT = re.compile("^sk-[a-zA-Z0-9]{48}$")
+MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
+Please set either the OPENAI_API_KEY environment variable or \
+openai.api_key prior to initialization.
+API keys can be found or created at \
+https://platform.openai.com/account/api-keys
+"""
+INVALID_API_KEY_ERROR_MESSAGE = """Invalid OpenAI API key.
+API key should be of the format: "sk-" followed by \
+48 alphanumeric characters.
+"""
 
 logger = logging.getLogger(__name__)
 
@@ -239,3 +253,11 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
         "description": schema["description"],
         "parameters": pydantic_class.schema(),
     }
+
+
+def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
+    if not openai_api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+    elif not OPENAI_API_KEY_FORMAT.search(openai_api_key):
+        raise ValueError(INVALID_API_KEY_ERROR_MESSAGE)

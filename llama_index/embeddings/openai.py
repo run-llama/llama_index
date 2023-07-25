@@ -14,6 +14,7 @@ from tenacity import (
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.llms.openai_utils import validate_openai_api_key
 
 
 class OpenAIEmbeddingMode(str, Enum):
@@ -241,6 +242,11 @@ class OpenAIEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
+        # Validate that either the openai.api_key property
+        # or OPENAI_API_KEY env variable are set to a valid key
+        # Raises ValueError if missing or doesn't match valid format
+        validate_openai_api_key(kwargs.get("api_key", None))
+
         """Init params."""
         super().__init__(embed_batch_size, tokenizer, callback_manager)
         self.deployment_name = deployment_name
@@ -251,6 +257,15 @@ class OpenAIEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return get_embedding(
+            query,
+            engine=self.query_engine,
+            deployment_id=self.deployment_name,
+            **self.openai_kwargs,
+        )
+
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        """The asynchronous version of _get_query_embedding."""
+        return await aget_embedding(
             query,
             engine=self.query_engine,
             deployment_id=self.deployment_name,

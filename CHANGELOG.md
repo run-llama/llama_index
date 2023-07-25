@@ -1,5 +1,17 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added `kwargs` to `ComposableGraph` for the underlying query engines (#6990)
+- Validate openai key on init (#6940)
+- Added async embeddings and async RetrieverQueryEngine (#6587)
+- Added async `aquery` and `async_add` to PGVectorStore (#7031)
+
+### Bug Fixes / Nits
+- Fix achat memory initialization for data agents (#7000)
+- Add `print_response_stream()` to agengt/chat engine response class (#7018)
+
 ## [v0.7.11.post1] - 2023-07-20
 
 ### New Features
@@ -33,6 +45,7 @@
 
 ### New Features
 - Add support for chroma v0.4.0 (#6937)
+- Log embedding vectors to callback manager (#6962)
 
 ### Bug Fixes / Nits
 - add more robust embedding timeouts (#6779)
