@@ -227,7 +227,9 @@ class OpensearchVectorClient:
             self._os_client.indices.create(index=self._index, body=idx_conf)
             self._os_client.indices.refresh(index=self._index)
 
-    def index_results(self, results: List[NodeWithEmbedding], **kwargs: Any) -> List[str]:
+    def index_results(
+        self, results: List[NodeWithEmbedding], **kwargs: Any
+    ) -> List[str]:
         """Store results in the index."""
 
         embeddings: List[List[float]] = []
