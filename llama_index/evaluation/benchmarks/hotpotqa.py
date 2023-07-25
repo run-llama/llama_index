@@ -86,7 +86,7 @@ class HotpotQAEvaluator:
             queries_fraction = round(queries / len(query_objects), 5)
 
         print(
-            f"Loading {queries_to_load} queries out of\
+            f"Loading {queries_to_load} queries out of \
 {len(query_objects)} (fraction: {queries_fraction})"
         )
         query_objects = query_objects[:queries_to_load]
@@ -102,8 +102,12 @@ class HotpotQAEvaluator:
 
         for query in query_objects:
             response = query_engine.query(query["question"])
-            em = int(exact_match_score(query["answer"], str(response)))
-            f1, _, _ = f1_score(query["answer"], str(response))
+            em = int(
+                exact_match_score(
+                    prediction=str(response), ground_truth=query["answer"]
+                )
+            )
+            f1, _, _ = f1_score(prediction=str(response), ground_truth=query["answer"])
             scores["exact_match"] += em
             scores["f1"] += f1
             if show_result:
@@ -188,7 +192,12 @@ def f1_score(prediction: str, ground_truth: str) -> Tuple[float, float, float]:
         normalized_ground_truth in ["yes", "no", "noanswer"]
         and normalized_prediction != normalized_ground_truth
     ):
-        return ZERO_METRIC
+        # try to detect if the prediction starts with yes or no
+        prediction_words = normalized_prediction.split()
+        if normalized_ground_truth == prediction_words[0]:
+            return (1, 1, 1)
+        else:
+            return ZERO_METRIC
 
     prediction_tokens = normalized_prediction.split()
     ground_truth_tokens = normalized_ground_truth.split()
