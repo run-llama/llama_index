@@ -212,7 +212,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
                 self._trace_data.query_data.scores.append(score)
                 self._trace_data.node_datas.append(
                     NodeData(
-                        id=node.id_,
+                        id=node.hash,
                         node_text=node.text,
                     )
                 )
