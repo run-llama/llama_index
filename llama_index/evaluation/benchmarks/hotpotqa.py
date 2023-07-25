@@ -23,14 +23,6 @@ class HotpotQAEvaluator:
     Refer to https://hotpotqa.github.io/ for more details on the dataset
     """
 
-    def __init__(self) -> None:
-        try:
-            pass
-        except ImportError:
-            raise ImportError(
-                "Please install beir to use this feature: " "`pip install beir`",
-            )
-
     def _download_datasets(self) -> Dict[str, str]:
         cache_dir = get_cache_dir()
 
