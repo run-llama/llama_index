@@ -5,6 +5,7 @@ from typing import Any, List, Dict, Optional, Tuple
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.query_engine.multistep_query_engine import MultiStepQueryEngine
 from llama_index.utils import get_cache_dir
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.indices.base_retriever import BaseRetriever
@@ -13,9 +14,10 @@ import tqdm
 import requests
 import json
 from collections import Counter
+from copy import copy
 
-DEV_DISTRACTOR_URL = """http://curtis.ml.cmu.edu/datasets/\
-hotpot/hotpot_dev_distractor_v1.json"""
+URL = """http://curtis.ml.cmu.edu/datasets/\
+hotpot/hotpot_{dataset}_v1.json"""
 
 
 class HotpotQAEvaluator:
@@ -23,38 +25,46 @@ class HotpotQAEvaluator:
     Refer to https://hotpotqa.github.io/ for more details on the dataset
     """
 
-    def _download_datasets(self) -> Dict[str, str]:
+    def _download_datasets(self, datasets=List[str]) -> Dict[str, str]:
         cache_dir = get_cache_dir()
 
         dataset_paths = {}
-        dataset = "hotpot_dev_distractor"
-        dataset_full_path = os.path.join(cache_dir, "datasets", "HotpotQA")
-        if not os.path.exists(dataset_full_path):
-            url = DEV_DISTRACTOR_URL
-            try:
-                os.makedirs(dataset_full_path, exist_ok=True)
-                save_file = open(
-                    os.path.join(dataset_full_path, "dev_distractor.json"), "wb"
-                )
-                response = requests.get(url, stream=True)
+        for dataset in datasets:
+            dataset_full_path = os.path.join(
+                cache_dir, "datasets", "HotpotQA", dataset + ".json"
+            )
+            if not os.path.exists(dataset_full_path):
+                url = URL.format(dataset=dataset)
 
-                # Define the size of each chunk
-                chunk_size = 1024
+                try:
+                    os.makedirs(os.path.dirname(dataset_full_path), exist_ok=True)
+                    save_file = open(dataset_full_path, "wb")
+                    response = requests.get(url, stream=True)
 
-                # Loop over the chunks and parse the JSON data
-                for chunk in tqdm.tqdm(response.iter_content(chunk_size=chunk_size)):
-                    if chunk:
-                        save_file.write(chunk)
-            except Exception as e:
-                if os.path.exists(dataset_full_path):
-                    print(
-                        "Dataset:", dataset, "not found at:", url, "Removing cached dir"
-                    )
-                    rmtree(dataset_full_path)
-                raise ValueError(f"could not download {dataset} dataset") from e
-        dataset_paths[dataset] = os.path.join(dataset_full_path, "dev_distractor.json")
-        print("Dataset:", dataset, "downloaded at:", dataset_full_path)
-        return dataset_paths
+                    # Define the size of each chunk
+                    chunk_size = 1024
+
+                    # Loop over the chunks and parse the JSON data
+                    print("Downloading dataset:", dataset)
+                    for chunk in tqdm.tqdm(
+                        response.iter_content(chunk_size=chunk_size), total=chunk_size
+                    ):
+                        if chunk:
+                            save_file.write(chunk)
+                except Exception as e:
+                    if os.path.exists(dataset_full_path):
+                        print(
+                            "Dataset:",
+                            dataset,
+                            "not found at:",
+                            url,
+                            "Removing cached dir",
+                        )
+                        rmtree(dataset_full_path)
+                    raise ValueError(f"could not download {dataset} dataset") from e
+            dataset_paths[dataset] = dataset_full_path
+            print("Dataset:", dataset, "downloaded at:", dataset_full_path)
+            return dataset_paths
 
     def run(
         self,
@@ -62,57 +72,64 @@ class HotpotQAEvaluator:
         queries: int = 10,
         queries_fraction: Optional[float] = None,
         show_result: bool = False,
+        datasets=["dev_distractor"],
     ) -> None:
-        dataset_paths = self._download_datasets()
-        dataset = "hotpot_dev_distractor"
-        dataset_path = dataset_paths[dataset]
-        print("Evaluating on dataset:", dataset)
-        print("-------------------------------------")
+        dataset_paths = self._download_datasets(datasets)
+        for dataset, path in zip(datasets, dataset_paths):
+            dataset_path = dataset_paths[dataset]
+            print("Evaluating on dataset:", dataset)
+            print("-------------------------------------")
 
-        f = open(dataset_path)
-        query_objects = json.loads(f.read())
-        if queries_fraction:
-            queries_to_load = int(len(query_objects) * queries_fraction)
-        else:
-            queries_to_load = queries
-            queries_fraction = round(queries / len(query_objects), 5)
+            f = open(dataset_path)
+            query_objects = json.loads(f.read())
+            if queries_fraction:
+                queries_to_load = int(len(query_objects) * queries_fraction)
+            else:
+                queries_to_load = queries
+                queries_fraction = round(queries / len(query_objects), 5)
 
-        print(
-            f"Loading {queries_to_load} queries out of \
+            print(
+                f"Loading {queries_to_load} queries out of \
 {len(query_objects)} (fraction: {queries_fraction})"
-        )
-        query_objects = query_objects[:queries_to_load]
+            )
+            query_objects = query_objects[:queries_to_load]
+            if dataset == "dev_distractor":
+                retriever = HotpotQARetriever(query_objects)
+                assert isinstance(
+                    query_engine, RetrieverQueryEngine
+                ), "Query engine must be a retriever query engine for this dataset"
+            elif dataset == "dev_fullwiki":
+                retriever = ColbertV2WikipediaRetriever()
 
-        assert isinstance(
-            query_engine, RetrieverQueryEngine
-        ), "query_engine must be a RetrieverQueryEngine for this evaluation"
-        retriever = HotpotQARetriever(query_objects)
-        # Mock the query engine with a retriever
-        query_engine = query_engine.with_retriever(retriever=retriever)
+            # Mock the query engine's retriever
+            query_engine = replace_retriever(query_engine, retriever)
 
-        scores = {"exact_match": 0.0, "f1": 0.0}
+            scores = {"exact_match": 0.0, "f1": 0.0}
 
-        for query in query_objects:
-            response = query_engine.query(query["question"])
-            em = int(
-                exact_match_score(
+            for query in query_objects:
+                response = query_engine.query(query["question"])
+                em = int(
+                    exact_match_score(
+                        prediction=str(response), ground_truth=query["answer"]
+                    )
+                )
+                f1, _, _ = f1_score(
                     prediction=str(response), ground_truth=query["answer"]
                 )
-            )
-            f1, _, _ = f1_score(prediction=str(response), ground_truth=query["answer"])
-            scores["exact_match"] += em
-            scores["f1"] += f1
-            if show_result:
-                print("Question: ", query["question"])
-                print("Response:", response)
-                print("Correct answer: ", query["answer"])
-                print("EM:", em, "F1:", f1)
-                print("-------------------------------------")
+                scores["exact_match"] += em
+                scores["f1"] += f1
+                if show_result:
+                    print("Question: ", query["question"])
+                    print("Response:", response)
+                    # print("Sources: ", response.get_formatted_sources())
+                    print("Correct answer: ", query["answer"])
+                    print("EM:", em, "F1:", f1)
+                    print("-------------------------------------")
 
-        for score in scores:
-            scores[score] /= len(query_objects)
+            for score in scores:
+                scores[score] /= len(query_objects)
 
-        print("Scores: ", scores)
+            print("Scores: ", scores)
 
 
 class HotpotQARetriever(BaseRetriever):
@@ -147,18 +164,32 @@ class HotpotQARetriever(BaseRetriever):
         return "HotpotQARetriever"
 
 
+COLBERT_PUBLIC_WIKIPEDIA_ENDPOINT = "http://index.contextual.ai:8893/api/search\
+?query={query}&top_k={top_k}"
+
+
 class ColbertV2WikipediaRetriever(BaseRetriever):
     """
-    This is a mocked retriever for the Wikipedia corpus that has been indexed by
-    ColbertV2/PLAID.
+    This is a mocked retriever using a public retriever endpoint for the
+    Wikipedia corpus that has been indexed by ColbertV2/PLAID.
+
+    This endpoint is provided in the DSP repo and notebooks:
+    https://github.com/stanfordnlp/dsp/
     """
+
     def _retrieve(self, query: QueryBundle) -> List[NodeWithScore]:
-        res = requests.get(COLBERT_PUBLIC_WIKIPEDIA_ENDPOINT.format(query=query.query_str, top_k=10)))
+        res = requests.get(
+            COLBERT_PUBLIC_WIKIPEDIA_ENDPOINT.format(query=query.query_str, top_k=10)
+        )
         obj = json.loads(res.text)
 
-        print(obj["topk"])
+        node_with_scores = []
+        for item in obj["topk"]:
+            node = TextNode(text=item["text"])
+            node_with_scores.append(NodeWithScore(node=node, score=item["score"]))
 
-        return []
+        return node_with_scores
+
 
 """
 Utils from https://github.com/hotpotqa/hotpot/blob/master/hotpot_evaluate_v1.py
@@ -213,3 +244,16 @@ def f1_score(prediction: str, ground_truth: str) -> Tuple[float, float, float]:
 
 def exact_match_score(prediction: str, ground_truth: str) -> bool:
     return normalize_answer(prediction) == normalize_answer(ground_truth)
+
+
+def replace_retriever(
+    query_engine: BaseQueryEngine, retriever: BaseRetriever
+) -> BaseQueryEngine:
+    if isinstance(query_engine, RetrieverQueryEngine):
+        return query_engine.with_retriever(retriever=retriever)
+    elif isinstance(query_engine, MultiStepQueryEngine):
+        engine = copy(query_engine)  # shallow copy
+        engine._query_engine = replace_retriever(engine._query_engine, retriever)
+        return engine
+    else:
+        raise ValueError("{type(query_engine)} is not supported")
