@@ -53,7 +53,8 @@ class PGVectorStore(VectorStore):
             import sqlalchemy.ext.asyncio  # noqa: F401
         except ImportError:
             raise ImportError(
-                """`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` packages should be pre installed"""
+                "`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` "
+                "packages should be pre installed"
             )
 
         self.connection_string = connection_string
@@ -162,21 +163,23 @@ class PGVectorStore(VectorStore):
         embedding: Optional[List[float]],
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
-    ):
+    ) -> Any:
         import sqlalchemy
         from sqlalchemy import select
 
-        stmt = select(
+        stmt = select(  # type: ignore
             self.table_class, self.table_class.embedding.l2_distance(embedding)
         ).order_by(self.table_class.embedding.l2_distance(embedding))
         if metadata_filters:
             for filter_ in metadata_filters.filters:
                 bind_parameter = f"value_{filter_.key}"
-                stmt = stmt.where(
+                stmt = stmt.where(  # type: ignore
                     sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}")
                 )
-                stmt = stmt.params(**{bind_parameter: str(filter_.value)})
-        return stmt.limit(limit)
+                stmt = stmt.params(  # type: ignore
+                    **{bind_parameter: str(filter_.value)}
+                )
+        return stmt.limit(limit)  # type: ignore
 
     def _query_with_score(
         self,

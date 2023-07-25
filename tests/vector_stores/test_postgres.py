@@ -34,7 +34,7 @@ try:
     conn__.close()
 
     postgres_not_available = False
-except (ImportError, Exception) as e:
+except (ImportError, Exception):
     postgres_not_available = True
 
 
@@ -61,7 +61,7 @@ def db(conn: Any) -> Generator:
 
 
 @pytest.fixture
-def pg(db: None):
+def pg(db: None) -> Any:
     pg = PGVectorStore.from_params(
         **PARAMS,  # type: ignore
         database=TEST_DB,
@@ -127,7 +127,6 @@ async def test_add_to_db_and_query(
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "aaa"
-    pg.close()
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
