@@ -6,6 +6,7 @@ import os
 import tqdm
 from shutil import rmtree
 
+
 class BeirEvaluator:
     """
     Refer to: https://github.com/beir-cellar/beir for a full list of supported datasets
@@ -33,8 +34,10 @@ class BeirEvaluator:
 /BEIR/datasets/{dataset}.zip"""
                 try:
                     util.download_and_unzip(url, dataset_full_path)
-                except:
-                    print("Dataset:", dataset, "not found at:", url, "Removing cached dir")
+                except Exception:
+                    print(
+                        "Dataset:", dataset, "not found at:", url, "Removing cached dir"
+                    )
                     rmtree("/home/jonch/.cache/llama_index/datasets/BeIR__fiqa/")
 
             print("Dataset:", dataset, "downloaded at:", dataset_full_path)
