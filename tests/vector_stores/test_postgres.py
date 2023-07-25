@@ -115,7 +115,7 @@ async def test_add_to_db_and_query(
     pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
-        await pg.aadd(node_embeddings)
+        await pg.async_add(node_embeddings)
     else:
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
@@ -136,7 +136,7 @@ async def test_add_to_db_and_query_with_metadata_filters(
     pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
-        await pg.aadd(node_embeddings)
+        await pg.async_add(node_embeddings)
     else:
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
@@ -162,7 +162,7 @@ async def test_add_to_db_query_and_delete(
     pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
-        await pg.aadd(node_embeddings)
+        await pg.async_add(node_embeddings)
     else:
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)

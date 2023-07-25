@@ -158,7 +158,7 @@ class VectorStore(Protocol):
         """Add embedding results to vector store."""
         ...
 
-    async def aadd(
+    async def async_add(
         self,
         embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:

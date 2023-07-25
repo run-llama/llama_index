@@ -147,7 +147,7 @@ class PGVectorStore(VectorStore):
                 session.commit()
         return ids
 
-    async def aadd(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+    async def async_add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         ids = []
         async with self._async_session() as session:
             async with session.begin():
