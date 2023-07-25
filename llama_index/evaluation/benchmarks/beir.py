@@ -34,11 +34,12 @@ class BeirEvaluator:
 /BEIR/datasets/{dataset}.zip"""
                 try:
                     util.download_and_unzip(url, dataset_full_path)
-                except Exception:
+                except Exception as e:
                     print(
                         "Dataset:", dataset, "not found at:", url, "Removing cached dir"
                     )
                     rmtree(dataset_full_path)
+                    raise ValueError(f"invalid BEIR dataset: {dataset}") from e
 
             print("Dataset:", dataset, "downloaded at:", dataset_full_path)
             dataset_paths[dataset] = os.path.join(dataset_full_path, dataset)
