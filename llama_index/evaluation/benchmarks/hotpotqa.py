@@ -25,7 +25,7 @@ class HotpotQAEvaluator:
     Refer to https://hotpotqa.github.io/ for more details on the dataset
     """
 
-    def _download_datasets(self, datasets=List[str]) -> Dict[str, str]:
+    def _download_datasets(self, datasets: List[str]) -> Dict[str, str]:
         cache_dir = get_cache_dir()
 
         dataset_paths = {}
@@ -64,7 +64,7 @@ class HotpotQAEvaluator:
                     raise ValueError(f"could not download {dataset} dataset") from e
             dataset_paths[dataset] = dataset_full_path
             print("Dataset:", dataset, "downloaded at:", dataset_full_path)
-            return dataset_paths
+        return dataset_paths
 
     def run(
         self,
@@ -72,7 +72,7 @@ class HotpotQAEvaluator:
         queries: int = 10,
         queries_fraction: Optional[float] = None,
         show_result: bool = False,
-        datasets=["dev_distractor"],
+        datasets: List[str] = ["dev_distractor"],
     ) -> None:
         dataset_paths = self._download_datasets(datasets)
         for dataset, path in zip(datasets, dataset_paths):
@@ -93,13 +93,16 @@ class HotpotQAEvaluator:
 {len(query_objects)} (fraction: {queries_fraction})"
             )
             query_objects = query_objects[:queries_to_load]
+
             if dataset == "dev_distractor":
-                retriever = HotpotQARetriever(query_objects)
                 assert isinstance(
                     query_engine, RetrieverQueryEngine
                 ), "Query engine must be a retriever query engine for this dataset"
+                retriever = HotpotQARetriever(query_objects)  # type: ignore
             elif dataset == "dev_fullwiki":
-                retriever = ColbertV2WikipediaRetriever()
+                retriever = ColbertV2WikipediaRetriever()  # type: ignore
+            else:
+                raise ValueError(f"Dataset {dataset} is not supported")
 
             # Mock the query engine's retriever
             query_engine = replace_retriever(query_engine, retriever)
