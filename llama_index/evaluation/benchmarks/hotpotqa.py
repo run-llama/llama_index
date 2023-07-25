@@ -147,6 +147,19 @@ class HotpotQARetriever(BaseRetriever):
         return "HotpotQARetriever"
 
 
+class ColbertV2WikipediaRetriever(BaseRetriever):
+    """
+    This is a mocked retriever for the Wikipedia corpus that has been indexed by
+    ColbertV2/PLAID.
+    """
+    def _retrieve(self, query: QueryBundle) -> List[NodeWithScore]:
+        res = requests.get(COLBERT_PUBLIC_WIKIPEDIA_ENDPOINT.format(query=query.query_str, top_k=10)))
+        obj = json.loads(res.text)
+
+        print(obj["topk"])
+
+        return []
+
 """
 Utils from https://github.com/hotpotqa/hotpot/blob/master/hotpot_evaluate_v1.py
 """
