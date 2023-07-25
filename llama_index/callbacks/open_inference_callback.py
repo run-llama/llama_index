@@ -8,7 +8,6 @@ For more information on the specification, see
 https://github.com/Arize-ai/open-inference-spec
 """
 
-import hashlib
 import importlib
 import uuid
 from dataclasses import dataclass, field, fields
@@ -36,18 +35,6 @@ def _generate_random_id() -> str:
     return str(uuid.uuid4())
 
 
-def hash_string_with_sha256(text: str) -> str:
-    """Hashes the text using SHA256.
-
-    Args:
-        text (str): A piece of text to be hashed.
-
-    Returns:
-        str: SHA256 hash of the text as a string.
-    """
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
 @dataclass
 class QueryData:
     """
@@ -72,7 +59,7 @@ class QueryData:
     response_text: Optional[str] = field(
         default=None, metadata={OPENINFERENCE_COLUMN_NAME: ":prediction.text:response"}
     )
-    document_ids: List[str] = field(
+    node_ids: List[str] = field(
         default_factory=list,
         metadata={
             OPENINFERENCE_COLUMN_NAME: ":feature.[str].retrieved_document_ids:prompt"
@@ -89,15 +76,15 @@ class QueryData:
 
 
 @dataclass
-class DocumentData:
-    """Document data."""
+class NodeData:
+    """Node data."""
 
     id: str
-    document_text: Optional[str] = None
-    document_embedding: Optional[Embedding] = None
+    node_text: Optional[str] = None
+    node_embedding: Optional[Embedding] = None
 
 
-BaseDataType = TypeVar("BaseDataType", QueryData, DocumentData)
+BaseDataType = TypeVar("BaseDataType", QueryData, NodeData)
 
 
 def as_dataframe(data: Iterable[BaseDataType]) -> "DataFrame":
@@ -128,7 +115,7 @@ class TraceData:
     """Trace data"""
 
     query_data: QueryData = field(default_factory=QueryData)
-    document_datas: List[DocumentData] = field(default_factory=list)
+    node_datas: List[NodeData] = field(default_factory=list)
 
 
 def _import_package(package_name: str) -> ModuleType:
@@ -175,7 +162,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         self._callback = callback
         self._trace_data = TraceData()
         self._query_data_buffer: List[QueryData] = []
-        self._document_data_buffer: List[DocumentData] = []
+        self._node_data_buffer: List[NodeData] = []
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         if trace_id == "query":
@@ -190,7 +177,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
     ) -> None:
         if trace_id == "query":
             self._query_data_buffer.append(self._trace_data.query_data)
-            self._document_data_buffer.extend(self._trace_data.document_datas)
+            self._node_data_buffer.extend(self._trace_data.node_datas)
             self._trace_data = TraceData()
             if self._callback is not None:
                 self._callback(self._query_data_buffer)
@@ -221,15 +208,12 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
             for node_with_score in payload[EventPayload.NODES]:
                 node = node_with_score.node
                 score = node_with_score.score
-                document_id = hash_string_with_sha256(
-                    node.text
-                )  # use hash as ID until we're able to access the real document ID
-                self._trace_data.query_data.document_ids.append(document_id)
+                self._trace_data.query_data.node_ids.append(node.hash)
                 self._trace_data.query_data.scores.append(score)
-                self._trace_data.document_datas.append(
-                    DocumentData(
+                self._trace_data.node_datas.append(
+                    NodeData(
                         id=node.id_,
-                        document_text=node.text,
+                        node_text=node.text,
                     )
                 )
         elif event_type is CBEventType.LLM:
@@ -249,12 +233,12 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         self._query_data_buffer = []
         return query_data_buffer
 
-    def flush_document_data_buffer(self) -> List[DocumentData]:
-        """Clears the document data buffer and returns the data.
+    def flush_node_data_buffer(self) -> List[NodeData]:
+        """Clears the node data buffer and returns the data.
 
         Returns:
-            List[QueryData]: The document data.
+            List[NodeData]: The node data.
         """
-        document_data_buffer = self._document_data_buffer
-        self._document_data_buffer = []
-        return document_data_buffer
+        node_data_buffer = self._node_data_buffer
+        self._node_data_buffer = []
+        return node_data_buffer
