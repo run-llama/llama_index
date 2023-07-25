@@ -162,7 +162,7 @@ HuggingFaceLLM(
 )
 ```
 
-A full API reference can be found [here](../../reference/llm_predictor.rst).
+A full API reference can be found [here](../../../api_reference/llms/huggingface.rst).
 
 Several example notebooks are also listed below:
 
