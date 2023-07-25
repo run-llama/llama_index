@@ -38,7 +38,7 @@ class BeirEvaluator:
                     print(
                         "Dataset:", dataset, "not found at:", url, "Removing cached dir"
                     )
-                    rmtree("/home/jonch/.cache/llama_index/datasets/BeIR__fiqa/")
+                    rmtree(dataset_full_path)
 
             print("Dataset:", dataset, "downloaded at:", dataset_full_path)
             dataset_paths[dataset] = os.path.join(dataset_full_path, dataset)
