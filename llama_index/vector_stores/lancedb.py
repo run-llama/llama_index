@@ -104,12 +104,21 @@ class LanceDBVectorStore(VectorStore):
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for LanceDB yet.")
+            if "where" in kwargs:
+                raise ValueError(
+                    "Cannot specify filter via both query and kwargs. "
+                    "Use kwargs only for lancedb specific items that are "
+                    "not supported via the generic query interface."
+                )
+            where = query.filters
+        else:
+            where = kwargs.pop("where", {})
 
         table = self.connection.open_table(self.table_name)
         lance_query = (
             table.search(query.query_embedding)
             .limit(query.similarity_top_k)
+            .where(where)
             .nprobes(self.nprobes)
         )
 
