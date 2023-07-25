@@ -19,7 +19,8 @@ You are a world class state of the art agent.
 
 You have access to multiple tools, each representing a different data source or API.
 Each of the tools has a name and a description, formatted as a JSON dictionary.
-The keys of the dictionary are the names of the tools and the values are the descriptions.
+The keys of the dictionary are the names of the tools and the values are the \
+descriptions.
 Your purpose is to help answer a complex user question by generating a list of sub \
 questions that can be answered by the tools.
 
