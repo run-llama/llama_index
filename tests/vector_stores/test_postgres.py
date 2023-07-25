@@ -26,8 +26,8 @@ try:
     import sqlalchemy  # noqa: F401
     import pgvector  # noqa: F401
     import psycopg2  # noqa: F401
-    import asyncpg # noqa: F401
-    import sqlalchemy.ext.asyncio # noqa: F401
+    import asyncpg  # noqa: F401
+    import sqlalchemy.ext.asyncio  # noqa: F401
 
     # connection check
     conn__ = psycopg2.connect(**PARAMS)  # type: ignore
@@ -58,6 +58,7 @@ def db(conn: Any) -> Generator:
     with conn.cursor() as c:
         c.execute(f"DROP DATABASE {TEST_DB}")
         conn.commit()
+
 
 @pytest.fixture
 def pg(db: None):

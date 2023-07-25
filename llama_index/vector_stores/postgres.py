@@ -11,7 +11,10 @@ from llama_index.vector_stores.types import (
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
-DBEmbeddingRow = namedtuple("DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"])
+DBEmbeddingRow = namedtuple(
+    "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"]
+)
+
 
 def get_data_model(base: Type, index_name: str) -> Any:
     """
@@ -39,13 +42,15 @@ class PGVectorStore(VectorStore):
     stores_text = True
     flat_metadata = False
 
-    def __init__(self, connection_string: str, async_connection_string: str, table_name: str) -> None:
+    def __init__(
+        self, connection_string: str, async_connection_string: str, table_name: str
+    ) -> None:
         try:
             import sqlalchemy  # noqa: F401
             import pgvector  # noqa: F401
             import psycopg2  # noqa: F401
-            import asyncpg # noqa: F401
-            import sqlalchemy.ext.asyncio # noqa: F401
+            import asyncpg  # noqa: F401
+            import sqlalchemy.ext.asyncio  # noqa: F401
         except ImportError:
             raise ImportError(
                 """`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` packages should be pre installed"""
@@ -83,8 +88,14 @@ class PGVectorStore(VectorStore):
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-        async_conn_str = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
-        return cls(connection_string=conn_str, async_connection_string=async_conn_str, table_name=table_name)
+        async_conn_str = (
+            f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
+        )
+        return cls(
+            connection_string=conn_str,
+            async_connection_string=async_conn_str,
+            table_name=table_name,
+        )
 
     def _connect(self) -> Any:
         from sqlalchemy import create_engine
@@ -146,16 +157,24 @@ class PGVectorStore(VectorStore):
                 await session.commit()
         return ids
 
-    def _build_query(self, embedding: Optional[List[float]], limit: int = 10, metadata_filters: Optional[MetadataFilters] = None,):
+    def _build_query(
+        self,
+        embedding: Optional[List[float]],
+        limit: int = 10,
+        metadata_filters: Optional[MetadataFilters] = None,
+    ):
         import sqlalchemy
         from sqlalchemy import select
 
-        stmt = select(self.table_class, self.table_class.embedding.l2_distance(embedding)) \
-            .order_by(self.table_class.embedding.l2_distance(embedding))
+        stmt = select(
+            self.table_class, self.table_class.embedding.l2_distance(embedding)
+        ).order_by(self.table_class.embedding.l2_distance(embedding))
         if metadata_filters:
             for filter_ in metadata_filters.filters:
                 bind_parameter = f"value_{filter_.key}"
-                stmt = stmt.where(sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}"))
+                stmt = stmt.where(
+                    sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}")
+                )
                 stmt = stmt.params(**{bind_parameter: str(filter_.value)})
         return stmt.limit(limit)
 
@@ -199,7 +218,9 @@ class PGVectorStore(VectorStore):
                     for item, sim in res.all()
                 ]
 
-    def _db_rows_to_query_result(self, rows: List[DBEmbeddingRow]) -> VectorStoreQueryResult:
+    def _db_rows_to_query_result(
+        self, rows: List[DBEmbeddingRow]
+    ) -> VectorStoreQueryResult:
         nodes = []
         similarities = []
         ids = []
@@ -210,7 +231,9 @@ class PGVectorStore(VectorStore):
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 node = TextNode(
-                    id_=db_embedding_row.node_id, text=db_embedding_row.text, metadata=db_embedding_row.metadata
+                    id_=db_embedding_row.node_id,
+                    text=db_embedding_row.text,
+                    metadata=db_embedding_row.metadata,
                 )
             similarities.append(db_embedding_row.similarity)
             ids.append(db_embedding_row.node_id)
@@ -228,7 +251,9 @@ class PGVectorStore(VectorStore):
         )
         return self._db_rows_to_query_result(results)
 
-    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         results = await self._aquery_with_score(
             query.query_embedding, query.similarity_top_k, query.filters
         )

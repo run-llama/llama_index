@@ -182,19 +182,19 @@ class VectorStore(Protocol):
         """
         self.delete(ref_doc_id, **delete_kwargs)
 
-
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
 
-    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         """
         Asynchronously query vector store.
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call query synchronously.
         """
         return self.query(query, **kwargs)
-
 
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None

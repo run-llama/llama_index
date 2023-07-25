@@ -14,7 +14,7 @@ from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
-    VectorStoreQueryResult
+    VectorStoreQueryResult,
 )
 
 
@@ -86,7 +86,9 @@ class VectorIndexRetriever(BaseRetriever):
 
         return await self._aget_nodes_with_embeddings(query_bundle)
 
-    def _build_vector_store_query(self, query_bundle_with_embeddings: QueryBundle) -> VectorStoreQuery:
+    def _build_vector_store_query(
+        self, query_bundle_with_embeddings: QueryBundle
+    ) -> VectorStoreQuery:
         return VectorStoreQuery(
             query_embedding=query_bundle_with_embeddings.embedding,
             similarity_top_k=self._similarity_top_k,
@@ -98,7 +100,9 @@ class VectorIndexRetriever(BaseRetriever):
             filters=self._filters,
         )
 
-    def _build_node_list_from_query_result(self, query_result: VectorStoreQueryResult) -> List[NodeWithScore]:
+    def _build_node_list_from_query_result(
+        self, query_result: VectorStoreQueryResult
+    ) -> List[NodeWithScore]:
         if query_result.nodes is None:
             # NOTE: vector store does not keep text and returns node indices.
             # Need to recover all nodes from docstore
