@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.12] - 2023-07-25
 
 ### New Features
 - Added `kwargs` to `ComposableGraph` for the underlying query engines (#6990)
@@ -8,6 +8,7 @@
 - Added async embeddings and async RetrieverQueryEngine (#6587)
 - Added async `aquery` and `async_add` to PGVectorStore (#7031)
 - Added `.source_nodes` attribute to chat engine and agent responses (#7029)
+- Added `OpenInferenceCallback` for storing generation data in OpenInference format (#6998)
 
 ### Bug Fixes / Nits
 - Fix achat memory initialization for data agents (#7000)
