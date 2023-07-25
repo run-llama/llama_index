@@ -52,7 +52,6 @@ class StreamingAgentChatResponse:
     _is_done = False
     _is_function_not_none_thread_event: Event = field(default_factory=Event)
     _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
-    _is_done_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function: Optional[bool] = None
 
     @property
@@ -103,7 +102,6 @@ class StreamingAgentChatResponse:
                 "achat_stream is None. Cannot asynchronously write to "
                 "history without achat_stream."
             )
-        self._is_function_false_event.clear()
 
         # try/except to prevent hanging on error
         try:
@@ -125,8 +123,7 @@ class StreamingAgentChatResponse:
         self._is_done = True
 
         # These act as is_done events for any consumers waiting
-        self._aqueue.put_nowait("")
-        self._is_done_event.set()
+        self._is_function_false_event.set()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
@@ -141,13 +138,12 @@ class StreamingAgentChatResponse:
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
         while not self._is_done or not self._aqueue.empty():
-            try:
-                delta = await self._aqueue.get()
+            if not self._aqueue.empty():
+                delta = self._aqueue.get_nowait()
                 self.response += delta
                 yield delta
-            except asyncio.QueueEmpty:
-                # Queue is empty, but we're not done yet
-                continue
+            else:
+                await asyncio.sleep(0.05)
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:
