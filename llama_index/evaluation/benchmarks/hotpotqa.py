@@ -192,12 +192,7 @@ def f1_score(prediction: str, ground_truth: str) -> Tuple[float, float, float]:
         normalized_ground_truth in ["yes", "no", "noanswer"]
         and normalized_prediction != normalized_ground_truth
     ):
-        # try to detect if the prediction starts with yes or no
-        prediction_words = normalized_prediction.split()
-        if normalized_ground_truth == prediction_words[0]:
-            return (1, 1, 1)
-        else:
-            return ZERO_METRIC
+        return ZERO_METRIC
 
     prediction_tokens = normalized_prediction.split()
     ground_truth_tokens = normalized_ground_truth.split()
