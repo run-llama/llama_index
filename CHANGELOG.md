@@ -1,7 +1,10 @@
 # ChangeLog
 
 ## Unreleased
+
+### New Features
 - Added HotpotQADistractor benchmark evaluator (#7034)
+- Add metadata filter and delete support for LanceDB (#7048)
 
 ## [0.7.13] - 2023-07-26
 
