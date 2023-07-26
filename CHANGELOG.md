@@ -1,6 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.13] - 2023-07-26
+
+### New Features
+- Support function calling api for AzureOpenAI (#7041)
 
 ### Bug Fixes / Nits
 - tune prompt to get rid of KeyError in SubQ engine (#7039)
