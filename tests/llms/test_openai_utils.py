@@ -71,7 +71,7 @@ def azure_openi_message_dicts_with_function_calling() -> List[dict]:
 
 
 @pytest.fixture
-def chat_messages_with_function_calling() -> List[ChatMessage]:
+def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
     return [
         ChatMessage(role=MessageRole.USER, content="test question with functions"),
         ChatMessage(
