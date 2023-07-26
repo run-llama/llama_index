@@ -164,20 +164,21 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from llama_index import LLMPredictor, VectorStoreIndex, ServiceContext
-from langchain import OpenAI
+from llama_index import VectorStoreIndex, ServiceContext, set_global_service_context
+from llama_index.llms import OpenAI
 
 ...
 
 # define LLM
-llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-003"))
+llm = OpenAI(model="gpt-4", temperature=0, max_tokens=256)
 
 # configure service context
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+service_context = ServiceContext.from_defaults(llm=llm)
+set_global_service_context(service_context)
 
 # build index
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents
 )
 ```
 
@@ -212,7 +213,7 @@ Creating an index, inserting to an index, and querying an index may use tokens. 
 token usage through the outputs of these operations. When running operations,
 the token usage will be printed.
 
-You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
+You can also fetch the token usage through `TokenCountingCallback` handler.
 See [Cost Analysis How-To](/core_modules/supporting_modules/cost_analysis/usage_pattern.md) for more details.
 
 ### [Optional] Save the index for future use
@@ -240,22 +241,24 @@ index = load_index_from_storage(storage_context)
 
 **NOTE**: If you had initialized the index with a custom
 `ServiceContext` object, you will also need to pass in the same
-ServiceContext during `load_index_from_storage`.
+ServiceContext during `load_index_from_storage` or ensure you have a global sevice context.
 
 ```python
 
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+service_context = ServiceContext.from_defaults(llm=llm)
+set_global_service_context(service_context)
 
 # when first building the index
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents, # service_context=service_context -> optional if not using global
 )
 
 ...
 
 # when loading the index from disk
 index = load_index_from_storage(
-    service_context=service_context,
+    StorageContext.from_defaults(persist_dir="<persist_dir>")
+    # service_context=service_context -> optional if not using global
 )
 
 ```

@@ -78,18 +78,16 @@ We can add the following functions to both initialize our LLM, as well as use it
 
 ```python
 from llama_index import Document, ListIndex, LLMPredictor, ServiceContext, load_index_from_storage
+from llama_index.llms import OpenAI
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
     os.environ['OPENAI_API_KEY'] = api_key
-    if llm_name == "text-davinci-003":
-        return OpenAI(temperature=model_temperature, model_name=llm_name, max_tokens=max_tokens)
-    else:
-        return ChatOpenAI(temperature=model_temperature, model_name=llm_name, max_tokens=max_tokens)
+    return OpenAI(temperature=model_temperature, model=llm_name, max_tokens=max_tokens)
 
 def extract_terms(documents, term_extract_str, llm_name, model_temperature, api_key):
     llm = get_llm(llm_name, model_temperature, api_key, max_tokens=1024)
 
-    service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm),
+    service_context = ServiceContext.from_defaults(llm=llm,
                                                    chunk_size=1024)
 
     temp_index = ListIndex.from_documents(documents, service_context=service_context)
@@ -148,7 +146,7 @@ def initialize_index(llm_name, model_temperature, api_key):
     """Create the VectorStoreIndex object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
-    service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
+    service_context = ServiceContext.from_defaults(llm=llm)
 
     index = VectorStoreIndex([], service_context=service_context)
 
@@ -273,7 +271,7 @@ def initialize_index(llm_name, model_temperature, api_key):
     """Load the Index object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
-    service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
+    service_context = ServiceContext.from_defaults(llm=llm)
 
     index = load_index_from_storage(service_context=service_context)
 

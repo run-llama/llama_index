@@ -7,7 +7,7 @@
 This mode of evaluation will return "YES"/"NO" if the synthesized response matches any source context.
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
 from llama_index.evaluation import ResponseEvaluator
 
@@ -38,12 +38,13 @@ You'll get back either a `YES` or `NO` response.
 This mode of evaluation will return "YES"/"NO" for every source node.
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index import VectorStoreIndex, ServiceContext
+from llama_index.llms import OpenAI
 from llama_index.evaluation import ResponseEvaluator
 
 # build service context
-llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+llm = OpenAI(model="gpt-4", temperature=0.0)
+service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
 ...
@@ -68,7 +69,7 @@ You'll get back a list of "YES"/"NO", corresponding to each source node in `resp
 This mode of evaluation will return "YES"/"NO" if the synthesized response matches the query + any source context.
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
 from llama_index.evaluation import QueryResponseEvaluator
 
@@ -98,12 +99,13 @@ print(str(eval_result))
 This mode of evaluation will look at each source node, and see if each source node contains an answer to the query.
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index import VectorStoreIndex, ServiceContext
+from llama_index.llms import OpenAI
 from llama_index.evaluation import QueryResponseEvaluator
 
 # build service context
-llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+llm = OpenAI(model="gpt-4", temperature=0.0)
+service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
 ...
@@ -126,12 +128,13 @@ print(str(eval_result))
 LlamaIndex can also generate questions to answer using your data. Using in combination with the above evaluators, you can create a fully automated evaluation pipeline over your data.
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index import SimpleDirectoryReader, ServiceContext
+from llama_index.llms import OpenAI
 from llama_index.evaluation import ResponseEvaluator
 
 # build service context
-llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+llm = OpenAI(model="gpt-4", temperature=0.0)
+service_context = ServiceContext.from_defaults(llm=llm)
 
 # build documents
 documents = SimpleDirectoryReader("./data").load_data()

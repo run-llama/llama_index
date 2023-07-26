@@ -146,7 +146,7 @@ You can explicitly perform compare/contrast queries with a **query transformatio
 ```python
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
-    llm_predictor_chatgpt, verbose=True
+    service_context.llm_predictor, verbose=True
 )
 ```
 

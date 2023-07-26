@@ -231,11 +231,12 @@ def to_openai_message_dicts(messages: Sequence[ChatMessage]) -> List[dict]:
 def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
-    content = message_dict["content"]
+    # NOTE: Azure OpenAI returns function calling messages without a content key
+    content = message_dict.get("content", None)
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
-    additional_kwargs.pop("content")
+    additional_kwargs.pop("content", None)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
@@ -255,9 +256,17 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
     }
 
 
-def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+def validate_openai_api_key(
+    api_key: Optional[str] = None, api_type: Optional[str] = None
+) -> None:
     openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
+    openai_api_type = (
+        api_type or os.environ.get("OPENAI_API_TYPE", "") or openai.api_type
+    )
+
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-    elif not OPENAI_API_KEY_FORMAT.search(openai_api_key):
+    elif openai_api_type == "open_ai" and not OPENAI_API_KEY_FORMAT.search(
+        openai_api_key
+    ):
         raise ValueError(INVALID_API_KEY_ERROR_MESSAGE)
