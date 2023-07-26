@@ -3,11 +3,20 @@ from typing import Any, List, Optional
 
 from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+
+
+def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
+    """Translate standard metadata filters to Lance specific spec."""
+    filters = []
+    for filter in standard_filters.filters:
+        filters.append(filter.key + " = " + filter.value)
+    return " AND ".join(filters)
 
 
 class LanceDBVectorStore(VectorStore):
@@ -110,7 +119,7 @@ class LanceDBVectorStore(VectorStore):
                     "Use kwargs only for lancedb specific items that are "
                     "not supported via the generic query interface."
                 )
-            where = query.filters
+            where = _to_lance_filter(query.filters)
         else:
             where = kwargs.pop("where", {})
 
