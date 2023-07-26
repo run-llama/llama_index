@@ -10,7 +10,7 @@ from llama_index.chat_engine.types import (
 )
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM, ChatMessage
+from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.schema import MetadataMode
@@ -21,7 +21,6 @@ DEFAULT_CONTEXT_TEMPALTE = (
     "\n--------------------\n"
     "{context_str}"
     "\n--------------------\n"
-    "{{system_prompt}}"
 )
 
 
@@ -72,7 +71,9 @@ class ContextChatEngine(BaseChatEngine):
                 raise ValueError(
                     "Cannot specify both system_prompt and prefix_messages"
                 )
-            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+            prefix_messages = [
+                ChatMessage(content=system_prompt, role=MessageRole.SYSTEM)
+            ]
 
         prefix_messages = prefix_messages or []
 
@@ -96,9 +97,7 @@ class ContextChatEngine(BaseChatEngine):
 
         return self._context_template.format(context_str=context_str)
 
-    def _get_prefix_messages_with_context(
-        self, context_str_template: str
-    ) -> List[ChatMessage]:
+    def _get_prefix_messages_with_context(self, context_str: str) -> List[ChatMessage]:
         """Get the prefix messages with context"""
 
         # ensure we grab the user-configured system prompt
@@ -106,13 +105,15 @@ class ContextChatEngine(BaseChatEngine):
         prefix_messages = self._prefix_messages
         if (
             len(self._prefix_messages) != 0
-            and self._prefix_messages[0].role == "system"
+            and self._prefix_messages[0].role == MessageRole.SYSTEM
         ):
             system_prompt = str(self._prefix_messages[0].content)
             prefix_messages = self._prefix_messages[1:]
 
-        context_str = context_str_template.format(system_prompt=system_prompt)
-        return [ChatMessage(content=context_str, role="system")] + prefix_messages
+        context_str_w_sys_prompt = context_str + system_prompt.strip()
+        return [
+            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM)
+        ] + prefix_messages
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
