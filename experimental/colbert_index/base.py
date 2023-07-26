@@ -28,7 +28,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
     index_path: directory containing PLAID index files.
     model_name: ColBERT hugging face model name.
         Default: "colbert-ir/colbertv2.0".
-    show_progress: whether to show progress bar when building index. 
+    show_progress: whether to show progress bar when building index.
         Default: False. noop for ColBERT for now.
     nbits: number of bits to quantize the residual vectors. Default: 2.
     kmeans_niters: number of kmeans clustering iterations. Default: 1.
@@ -88,7 +88,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
         raise NotImplementedError("ColbertStoreIndex does not support deletion yet.")
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        from llama_index.indices.colbert.retriever import ColbertRetriever
+        from .retriever import ColbertRetriever
 
         return ColbertRetriever(index=self, **kwargs)
 
@@ -99,7 +99,6 @@ class ColbertIndex(BaseIndex[IndexDict]):
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
         """Generate a PLAID index from the ColBERT checkpoint via its hugging face
         model_name.
-
         """
 
         from colbert import Indexer, Searcher, IndexUpdater

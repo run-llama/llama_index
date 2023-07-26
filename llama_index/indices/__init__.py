@@ -15,7 +15,6 @@ from llama_index.indices.keyword_table.simple_base import (
 )
 from llama_index.indices.list.base import GPTListIndex, ListIndex
 from llama_index.indices.tree.base import TreeIndex, GPTTreeIndex
-from llama_index.indices.colbert.base import ColbertIndex
 
 __all__ = [
     "KeywordTableIndex",
@@ -23,7 +22,6 @@ __all__ = [
     "RAKEKeywordTableIndex",
     "ListIndex",
     "TreeIndex",
-    "ColbertIndex",
     # legacy
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
