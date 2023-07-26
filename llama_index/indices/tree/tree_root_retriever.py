@@ -1,6 +1,6 @@
 """Retrieve query."""
 import logging
-from typing import List
+from typing import Any, List
 
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
@@ -21,7 +21,7 @@ class TreeRootRetriever(BaseRetriever):
     attempt to parse information down the graph in order to synthesize an answer.
     """
 
-    def __init__(self, index: TreeIndex):
+    def __init__(self, index: TreeIndex, **kwargs: Any) -> None:
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore

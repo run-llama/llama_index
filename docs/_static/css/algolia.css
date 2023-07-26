@@ -1,0 +1,74 @@
+/* Hide search button */
+.sidebar-search-container {
+    display: none;
+}
+
+/* Hide the search wrapper window when hitting Ctrl+K */
+.search-button__wrapper.show {
+    display: none !important;
+}
+
+/* Make sure Algolia's search container is always on top */
+.bd-article-container {
+    z-index: 10;
+}
+
+@media (prefers-color-scheme: dark) {
+    body:not([data-theme="light"]) .DocSearch-Button {
+        background-color: #3d4751 !important;
+        color: white !important;
+    }
+
+    body:not([data-theme="light"]) .DocSearch-Search-Icon {
+        color: white !important;
+    }
+
+    body:not([data-theme="light"]) .DocSearch-Button-Key {
+        color: black !important;
+        box-shadow: 0 .0625rem 0 rgba(0, 0, 0, .2), inset 0 0 0 0.01rem #3d4751 !important;
+    }
+
+    body:not([data-theme="light"]) .DocSearch-Commands-Key {
+        color: black !important;
+        box-shadow: 0 .0625rem 0 rgba(0, 0, 0, .2), inset 0 0 0 .01rem #858a8f !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    body[data-theme="dark"] .DocSearch-Button {
+        background-color: #3d4751 !important;
+        color: white !important;
+    }
+
+    body[data-theme="dark"] .DocSearch-Search-Icon {
+        color: white !important;
+    }
+
+    body[data-theme="dark"] .DocSearch-Button-Key {
+        color: black !important;
+        box-shadow: 0 .0625rem 0 rgba(0, 0, 0, .2), inset 0 0 0 0.01rem #3d4751 !important;
+    }
+
+    body[data-theme="dark"] .DocSearch-Commands-Key {
+        color: black !important;
+        box-shadow: 0 .0625rem 0 rgba(0, 0, 0, .2), inset 0 0 0 .01rem #858a8f !important;
+    }
+}
+
+.DocSearch-Button-Key {
+    font-family: "SFMono-Regular", Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace !important;
+    padding: 0 !important;
+    padding-top: 0.1rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.DocSearch-Commands-Key {
+    font-family: "SFMono-Regular", Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace !important;
+    padding: 0 !important;
+    padding-left: 0.05rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

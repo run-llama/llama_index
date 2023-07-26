@@ -1,3 +1,4 @@
+from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.llms.base import (
     ChatMessage,
@@ -13,8 +14,10 @@ from llama_index.llms.base import (
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.langchain import LangChainLLM
+from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.palm import PaLM
+from llama_index.llms.replicate import Replicate
 
 __all__ = [
     "OpenAI",
@@ -22,7 +25,10 @@ __all__ = [
     "LangChainLLM",
     "HuggingFaceLLM",
     "PaLM",
+    "Anthropic",
+    "Replicate",
     "CustomLLM",
+    "MockLLM",
     "ChatMessage",
     "MessageRole",
     "ChatResponse",

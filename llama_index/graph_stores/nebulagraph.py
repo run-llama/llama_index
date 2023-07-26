@@ -1,14 +1,29 @@
 """NebulaGraph graph store index."""
 import logging
 import os
+from string import Template
 from typing import Any, Dict, List, Optional
+
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from llama_index.graph_stores.types import GraphStore
 
 QUOTE = '"'
 RETRY_TIMES = 3
+WAIT_MIN_SECONDS = 0.1
+WAIT_MAX_SECONDS = 20
 
 logger = logging.getLogger(__name__)
+
+
+rel_query = Template(
+    """
+MATCH ()-[e:`$edge_type`]->()
+  WITH e limit 1
+MATCH (m)-[:`$edge_type`]->(n) WHERE id(m) == src(e) AND id(n) == dst(e)
+RETURN "(:" + tags(m)[0] + ")-[:$edge_type]->(:" + tags(n)[0] + ")" AS rels
+"""
+)
 
 
 def hash_string_to_rank(string: str) -> int:
@@ -55,6 +70,8 @@ def escape_str(value: str) -> str:
     for pattern in patterns:
         if pattern in value:
             value = value.replace(pattern, patterns[pattern])
+    if value[0] == " " or value[-1] == " ":
+        value = value.strip()
 
     return value
 
@@ -66,8 +83,8 @@ class NebulaGraphStore(GraphStore):
         self,
         session_pool: Optional[Any] = None,
         space_name: Optional[str] = None,
-        edge_types: Optional[List[str]] = ["rel"],
-        rel_prop_names: Optional[List[str]] = ["predicate"],
+        edge_types: Optional[List[str]] = ["relationship"],
+        rel_prop_names: Optional[List[str]] = ["relationship"],
         tags: Optional[List[str]] = ["entity"],
         session_pool_kwargs: Optional[Dict[str, Any]] = {},
         **kwargs: Any,
@@ -92,13 +109,6 @@ class NebulaGraphStore(GraphStore):
         assert space_name is not None, "space_name should be provided."
         self._space_name = space_name
         self._session_pool_kwargs = session_pool_kwargs
-        if (
-            self._session_pool_kwargs is not None
-            and "retry" in self._session_pool_kwargs
-        ):
-            self._retry = self._session_pool_kwargs.pop("retry")
-        else:
-            self._retry = RETRY_TIMES
 
         if session_pool is None:
             self.init_session_pool()
@@ -153,6 +163,10 @@ class NebulaGraphStore(GraphStore):
         """Close NebulaGraph session pool."""
         self._session_pool.close()
 
+    @retry(
+        wait=wait_random_exponential(min=WAIT_MIN_SECONDS, max=WAIT_MAX_SECONDS),
+        stop=stop_after_attempt(RETRY_TIMES),
+    )
     def execute(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         """Execute query.
 
@@ -166,30 +180,43 @@ class NebulaGraphStore(GraphStore):
         from nebula3.Exception import IOErrorException
         from nebula3.fbthrift.transport.TTransport import TTransportException
 
-        retry = self._retry
-        while retry > 0:
-            try:
-                result = self._session_pool.execute_parameter(query, param_map)
-                if not result.is_succeeded():
-                    raise ValueError(result.error_msg())
-                return result
-            except (TTransportException, IOErrorException) as e:
-                # connection issue, try to recreate session pool
-                if retry > 0:
-                    retry -= 2
-                    # try to recreate session pool
-                    self.init_session_pool()
-                else:
-                    raise e
-            except ValueError as e:
-                # query failed on db side
-                if retry > 0:
-                    retry -= 1
-                    continue
-                else:
-                    raise e
-            except Exception as e:
-                raise e
+        try:
+            result = self._session_pool.execute_parameter(query, param_map)
+            if result is None:
+                raise ValueError(f"Query failed. Query: {query}, Param: {param_map}")
+            if not result.is_succeeded():
+                raise ValueError(
+                    f"Query failed. Query: {query}, Param: {param_map}"
+                    f"Error message: {result.error_msg()}"
+                )
+            return result
+        except (TTransportException, IOErrorException, RuntimeError) as e:
+            logger.error(
+                f"Connection issue, try to recreate session pool. Query: {query}, "
+                f"Param: {param_map}"
+                f"Erorr: {e}"
+            )
+            self.init_session_pool()
+            logger.info(
+                f"Session pool recreated. Query: {query}, Param: {param_map}"
+                f"This was due to error: {e}, and now retrying."
+            )
+            raise e
+
+        except ValueError as e:
+            # query failed on db side
+            logger.error(
+                f"Query failed. Query: {query}, Param: {param_map}"
+                f"Error message: {e}"
+            )
+            raise e
+        except Exception as e:
+            # other exceptions
+            logger.error(
+                f"Query failed. Query: {query}, Param: {param_map}"
+                f"Error message: {e}"
+            )
+            raise e
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "GraphStore":
@@ -364,7 +391,7 @@ class NebulaGraphStore(GraphStore):
 
         # lower case subjs
         if subjs is not None:
-            subjs = [escape_str(subj.lower()) for subj in subjs]
+            subjs = [escape_str(subj) for subj in subjs]
             if len(subjs) == 0:
                 return {}
 
@@ -381,19 +408,19 @@ class NebulaGraphStore(GraphStore):
         # thus we have to assume subj to be the first entity.tag_name
 
         # lower case subj, rel, obj
-        subj = escape_str(subj.lower())
-        rel = escape_str(rel.lower())
-        obj = escape_str(obj.lower())
+        subj = escape_str(subj)
+        rel = escape_str(rel)
+        obj = escape_str(obj)
 
         edge_type = self._edge_types[0]
         rel_prop_name = self._rel_prop_names[0]
         entity_type = self._tags[0]
         rel_hash = hash_string_to_rank(rel)
         dml_query = (
-            f"INSERT VERTEX `{entity_type}`() "
-            f"  VALUES {QUOTE}{subj}{QUOTE}:();"
-            f"INSERT VERTEX `{entity_type}`() "
-            f"  VALUES {QUOTE}{obj}{QUOTE}:();"
+            f"INSERT VERTEX `{entity_type}`(name) "
+            f"  VALUES {QUOTE}{subj}{QUOTE}:({QUOTE}{subj}{QUOTE});"
+            f"INSERT VERTEX `{entity_type}`(name) "
+            f"  VALUES {QUOTE}{obj}{QUOTE}:({QUOTE}{obj}{QUOTE});"
             f"INSERT EDGE `{edge_type}`(`{rel_prop_name}`) "
             f"  VALUES "
             f"{QUOTE}{subj}{QUOTE}->{QUOTE}{obj}{QUOTE}"
@@ -415,9 +442,9 @@ class NebulaGraphStore(GraphStore):
         """
 
         # lower case subj, rel, obj
-        subj = escape_str(subj.lower())
-        rel = escape_str(rel.lower())
-        obj = escape_str(obj.lower())
+        subj = escape_str(subj)
+        rel = escape_str(rel)
+        obj = escape_str(obj)
 
         # DELETE EDGE serve "player100" -> "team204"@7696463696635583936;
         edge_type = self._edge_types[0]
@@ -453,3 +480,56 @@ class NebulaGraphStore(GraphStore):
         assert (
             result and result.is_succeeded()
         ), f"Failed to delete isolated vertices: {isolated}, query: {dml_query}"
+
+    def refresh_schema(self) -> None:
+        """
+        Refreshes the NebulaGraph Store Schema.
+        """
+        tags_schema, edge_types_schema, relationships = [], [], []
+        for tag in self.execute("SHOW TAGS").column_values("Name"):
+            tag_name = tag.cast()
+            tag_schema = {"tag": tag_name, "properties": []}
+            r = self.execute(f"DESCRIBE TAG `{tag_name}`")
+            props, types = r.column_values("Field"), r.column_values("Type")
+            for i in range(r.row_size()):
+                tag_schema["properties"].append((props[i].cast(), types[i].cast()))
+            tags_schema.append(tag_schema)
+        for edge_type in self.execute("SHOW EDGES").column_values("Name"):
+            edge_type_name = edge_type.cast()
+            edge_schema = {"edge": edge_type_name, "properties": []}
+            r = self.execute(f"DESCRIBE EDGE `{edge_type_name}`")
+            props, types = r.column_values("Field"), r.column_values("Type")
+            for i in range(r.row_size()):
+                edge_schema["properties"].append((props[i].cast(), types[i].cast()))
+            edge_types_schema.append(edge_schema)
+
+            # build relationships types
+            r = self.execute(
+                rel_query.substitute(edge_type=edge_type_name)
+            ).column_values("rels")
+            if len(r) > 0:
+                relationships.append(r[0].cast())
+
+        self.schema = (
+            f"Node properties: {tags_schema}\n"
+            f"Edge properties: {edge_types_schema}\n"
+            f"Relationships: {relationships}\n"
+        )
+
+    def get_schema(self, refresh: bool = False) -> str:
+        """Get the schema of the NebulaGraph store."""
+        if self.schema and not refresh:
+            return self.schema
+        self.refresh_schema()
+        logger.debug(f"get_schema() schema:\n{self.schema}")
+        return self.schema
+
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+        result = self.execute(query, param_map)
+        columns = result.keys()
+        d: Dict[str, list] = {}
+        for col_num in range(result.col_size()):
+            col_name = columns[col_num]
+            col_list = result.column_values(col_name)
+            d[col_name] = [x.cast() for x in col_list]
+        return d

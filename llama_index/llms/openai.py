@@ -28,8 +28,10 @@ from llama_index.llms.openai_utils import (
     completion_with_retry,
     from_openai_message_dict,
     is_chat_model,
+    is_function_calling_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
+    validate_openai_api_key,
 )
 
 
@@ -40,12 +42,18 @@ class OpenAI(LLM, BaseModel):
     additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
     max_retries: int = 10
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        validate_openai_api_key(kwargs.get("api_key", None))
+        super().__init__(*args, **kwargs)
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
             context_window=openai_modelname_to_contextsize(self.model),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
+            is_function_calling_model=is_function_calling_model(self.model),
+            model_name=self.model,
         )
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:

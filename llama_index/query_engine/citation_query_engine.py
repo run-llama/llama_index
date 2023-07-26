@@ -110,7 +110,8 @@ class CitationQueryEngine(BaseQueryEngine):
         )
         self._retriever = retriever
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            callback_manager=callback_manager
+            service_context=retriever.get_service_context(),
+            callback_manager=callback_manager,
         )
         self._node_postprocessors = node_postprocessors or []
 
