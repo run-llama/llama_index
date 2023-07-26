@@ -8,28 +8,35 @@ from llama_index.indices.base import BaseIndex
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.schema import BaseNode, NodeWithScore
 
-# Only implement __init__, _build_index_from_nodes,
-# _insert/_delete (NotImplementedError), ref_doc_info??
+# TODO(jon-chuang):
+# 1. Add support for updating index (inserts/deletes)
+# 2. Add proper support for storage (managing/loading from the index files)
+# 3. Normalize scores (not sure what the best practice is here)
 
 
 class ColbertIndex(BaseIndex[IndexDict]):
     """
     Store for ColBERT v2 with PLAID indexing.
 
+    ColBERT is a neural retrieval method that tends to work
+    well in a zero-shot setting on out of domain datasets, due
+    to it's use of token-level encodings (rather than sentence or
+    chunk level)
+
     Parameters:
 
     index_path: directory containing PLAID index files.
-    checkpoint_path: directory containing ColBERT checkpoint model files.
-    collection_path: a csv/tsv data file of the form (id,content), no header line.
-
-    create: whether to create a new index or load an index from disk. Default: False.
-
+    model_name: ColBERT hugging face model name.
+        Default: "colbert-ir/colbertv2.0".
+    show_progress: whether to show progress bar when building index. 
+        Default: False. noop for ColBERT for now.
     nbits: number of bits to quantize the residual vectors. Default: 2.
     kmeans_niters: number of kmeans clustering iterations. Default: 1.
     gpus: number of GPUs to use for indexing. Default: 0.
     rank: number of ranks to use for indexing. Default: 1.
     doc_maxlen: max document length. Default: 120.
     query_maxlen: max query length. Default: 60.
+    kmeans_niters: number of kmeans iterations. Default: 4.
 
     """
 
@@ -39,9 +46,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
-        use_async: bool = False,
         model_name: str = "colbert-ir/colbertv2.0",
-        store_nodes_override: bool = False,
         show_progress: bool = False,
         nbits: int = 2,
         gpus: int = 0,
@@ -60,6 +65,13 @@ class ColbertIndex(BaseIndex[IndexDict]):
         self.query_maxlen = query_maxlen
         self.kmeans_niters = kmeans_niters
         self._docs_pos_to_node_id: Dict[int, str] = {}
+        try:
+            pass
+        except ImportError as exc:
+            raise ImportError(
+                "Please install colbert to use this feature from the repo:",
+                "https://github.com/stanford-futuredata/ColBERT",
+            ) from exc
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -90,7 +102,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
 
         """
 
-        from colbert import Indexer, Searcher
+        from colbert import Indexer, Searcher, IndexUpdater
         from colbert.infra import ColBERTConfig, Run, RunConfig
 
         index_struct = IndexDict()
@@ -115,7 +127,9 @@ class ColbertIndex(BaseIndex[IndexDict]):
             self.store = Searcher(
                 index="", collection=docs_list, checkpoint=self.model_name
             )
-
+            self.updater = IndexUpdater(
+                config=config, searcher=self.store, checkpoint=self.model_name
+            )
         return index_struct
 
     # @staticmethod
