@@ -9,13 +9,17 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 
 def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
     """Translate standard metadata filters to Lance specific spec."""
     filters = []
     for filter in standard_filters.filters:
-        filters.append(filter.key + " = " + filter.value)
+        if isinstance(filter.value, str):
+            filters.append(filter.key + ' = "' + filter.value + '"')
+        else:
+            filters.append(filter.key + " = " + str(filter.value))
     return " AND ".join(filters)
 
 
@@ -45,6 +49,7 @@ class LanceDBVectorStore(VectorStore):
     """
 
     stores_text = True
+    flat_metadata: bool = True
 
     def __init__(
         self,
@@ -79,14 +84,17 @@ class LanceDBVectorStore(VectorStore):
         data = []
         ids = []
         for result in embedding_results:
-            data.append(
-                {
-                    "id": result.id,
-                    "doc_id": result.ref_doc_id,
-                    "vector": result.embedding,
-                    "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
-                }
+            metadata = node_to_metadata_dict(
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
             )
+            append_data = {
+                "id": result.id,
+                "doc_id": result.ref_doc_id,
+                "vector": result.embedding,
+                "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
+            }
+            append_data.update(metadata)
+            data.append(append_data)
             ids.append(result.id)
 
         if self.table_name in self.connection.table_names():
@@ -121,7 +129,7 @@ class LanceDBVectorStore(VectorStore):
                 )
             where = _to_lance_filter(query.filters)
         else:
-            where = kwargs.pop("where", {})
+            where = kwargs.pop("where", None)
 
         table = self.connection.open_table(self.table_name)
         lance_query = (
