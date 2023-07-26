@@ -93,7 +93,12 @@ class HotpotQAEvaluator:
         scores = {"exact_match": 0.0, "f1": 0.0}
 
         for query in query_objects:
-            response = query_engine.query(query["question"])
+            query_bundle = QueryBundle(
+                query_str=query["question"]
+                + " Give a short factoid answer (as few words as possible).",
+                custom_embedding_strs=[query["question"]],
+            )
+            response = query_engine.query(query_bundle)
             em = int(
                 exact_match_score(
                     prediction=str(response), ground_truth=query["answer"]
@@ -133,7 +138,11 @@ class HotpotQARetriever(BaseRetriever):
             self._queries[object["question"]] = object
 
     def _retrieve(self, query: QueryBundle) -> List[NodeWithScore]:
-        contexts = self._queries[query.query_str]["context"]
+        if query.custom_embedding_strs:
+            query_str = query.custom_embedding_strs[0]
+        else:
+            query_str = query.query_str
+        contexts = self._queries[query_str]["context"]
         node_with_scores = []
         for ctx in contexts:
             text_list = ctx[1]
