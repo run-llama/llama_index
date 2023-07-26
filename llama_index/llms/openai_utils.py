@@ -236,7 +236,7 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
-    additional_kwargs.pop("content")
+    additional_kwargs.pop("content", None)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
