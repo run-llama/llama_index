@@ -112,7 +112,8 @@ class LanceDBVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        raise NotImplementedError("Delete not yet implemented for LanceDB.")
+        table = self.connection.open_table(self.table_name)
+        table.delete('document_id = "' + ref_doc_id + '"')
 
     def query(
         self,
