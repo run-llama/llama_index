@@ -128,8 +128,18 @@ def test_validates_api_key_format_from_env() -> None:
         with pytest.raises(ValueError, match="Invalid OpenAI API key."):
             OpenAIEmbedding()
 
+    with CachedOpenAIApiKeys(
+        set_env_key_to="api-hf47930g732gf372", set_env_type_to="azure"
+    ):
+        assert OpenAIEmbedding()
+
 
 def test_validates_api_key_format_in_library() -> None:
     with CachedOpenAIApiKeys(set_library_key_to="api-hf47930g732gf372"):
         with pytest.raises(ValueError, match="Invalid OpenAI API key."):
             OpenAIEmbedding()
+
+    with CachedOpenAIApiKeys(
+        set_library_key_to="api-hf47930g732gf372", set_library_type_to="azure"
+    ):
+        assert OpenAIEmbedding()
