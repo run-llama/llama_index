@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - tune prompt to get rid of KeyError in SubQ engine (#7039)
+- Fix validation of Azure OpenAI keys (#7042)
 
 ## [0.7.12] - 2023-07-25
 
