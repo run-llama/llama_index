@@ -1,11 +1,23 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.13] - 2023-07-26
+
+### New Features
+- Support function calling api for AzureOpenAI (#7041)
+
+### Bug Fixes / Nits
+- tune prompt to get rid of KeyError in SubQ engine (#7039)
+- Fix validation of Azure OpenAI keys (#7042)
+
+## [0.7.12] - 2023-07-25
 
 ### New Features
 - Added `kwargs` to `ComposableGraph` for the underlying query engines (#6990)
 - Validate openai key on init (#6940)
 - Added async embeddings and async RetrieverQueryEngine (#6587)
+- Added async `aquery` and `async_add` to PGVectorStore (#7031)
+- Added `.source_nodes` attribute to chat engine and agent responses (#7029)
+- Added `OpenInferenceCallback` for storing generation data in OpenInference format (#6998)
 
 ### Bug Fixes / Nits
 - Fix achat memory initialization for data agents (#7000)
