@@ -5,6 +5,7 @@
 ---
 maxdepth: 1
 ---
+../../../examples/data_connectors/simple_directory_reader.ipynb
 ../../../examples/data_connectors/PsychicDemo.ipynb
 ../../../examples/data_connectors/DeepLakeReader.ipynb
 ../../../examples/data_connectors/QdrantDemo.ipynb

@@ -9,7 +9,7 @@ import numpy as np
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utils import globals_helper, get_tqdm_iterable
+from llama_index.utils import get_tqdm_iterable, globals_helper
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -72,10 +72,30 @@ class BaseEmbedding:
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
 
+    @abstractmethod
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding asynchronously."""
+
     def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
         query_embedding = self._get_query_embedding(query)
+        query_tokens_count = len(self._tokenizer(query))
+        self._total_tokens_used += query_tokens_count
+        self.callback_manager.on_event_end(
+            CBEventType.EMBEDDING,
+            payload={
+                EventPayload.CHUNKS: [query],
+                EventPayload.EMBEDDINGS: [query_embedding],
+            },
+            event_id=event_id,
+        )
+        return query_embedding
+
+    async def aget_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding."""
+        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
+        query_embedding = await self._aget_query_embedding(query)
         query_tokens_count = len(self._tokenizer(query))
         self._total_tokens_used += query_tokens_count
         self.callback_manager.on_event_end(
@@ -92,6 +112,16 @@ class BaseEmbedding:
     ) -> List[float]:
         """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
+        agg_fn = agg_fn or mean_agg
+        return agg_fn(query_embeddings)
+
+    async def aget_agg_embedding_from_queries(
+        self,
+        queries: List[str],
+        agg_fn: Optional[Callable[..., List[float]]] = None,
+    ) -> List[float]:
+        """Get aggregated embedding from multiple queries."""
+        query_embeddings = [await self.aget_query_embedding(query) for query in queries]
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
@@ -138,7 +168,10 @@ class BaseEmbedding:
         self._total_tokens_used += text_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
-            payload={EventPayload.CHUNKS: [text]},
+            payload={
+                EventPayload.CHUNKS: [text],
+                EventPayload.EMBEDDINGS: [text_embedding],
+            },
             event_id=event_id,
         )
         return text_embedding
@@ -182,7 +215,10 @@ class BaseEmbedding:
                 result_embeddings.extend(embeddings)
                 self.callback_manager.on_event_end(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.CHUNKS: cur_batch_texts},
+                    payload={
+                        EventPayload.CHUNKS: cur_batch_texts,
+                        EventPayload.EMBEDDINGS: embeddings,
+                    },
                     event_id=event_id,
                 )
                 cur_batch = []
@@ -201,6 +237,7 @@ class BaseEmbedding:
 
         """
         cur_batch: List[Tuple[str, str]] = []
+        callback_payloads: List[Tuple[str, List[str]]] = []
         result_ids: List[str] = []
         result_embeddings: List[List[float]] = []
         embeddings_coroutines: List[Coroutine] = []
@@ -213,15 +250,11 @@ class BaseEmbedding:
                 event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
+                callback_payloads.append((event_id, cur_batch_texts))
                 embeddings_coroutines.append(
                     self._aget_text_embeddings(cur_batch_texts)
                 )
                 result_ids.extend(cur_batch_ids)
-                self.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING,
-                    payload={EventPayload.CHUNKS: cur_batch_texts},
-                    event_id=event_id,
-                )
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
@@ -246,6 +279,18 @@ class BaseEmbedding:
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
+
+        for (event_id, text_batch), embeddings in zip(
+            callback_payloads, nested_embeddings
+        ):
+            self.callback_manager.on_event_end(
+                CBEventType.EMBEDDING,
+                payload={
+                    EventPayload.CHUNKS: text_batch,
+                    EventPayload.EMBEDDINGS: embeddings,
+                },
+                event_id=event_id,
+            )
 
         return result_ids, result_embeddings
 

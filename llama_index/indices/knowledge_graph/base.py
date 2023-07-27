@@ -10,7 +10,6 @@ existing keywords in the table.
 
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple
-from llama_index.utils import get_tqdm_iterable
 
 from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.data_structs.data_structs import KG
@@ -19,19 +18,12 @@ from llama_index.graph_stores.types import GraphStore
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompts import (
-    DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
-    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-)
+from llama_index.prompts.default_prompts import DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
-
-# import registery functions
-
-
-DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
+from llama_index.utils import get_tqdm_iterable
 
 logger = logging.getLogger(__name__)
 
@@ -124,14 +116,17 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         knowledge_strs = response.strip().split("\n")
         results = []
         for text in knowledge_strs:
-            if text == "" or text[0] != "(":
+            if not text or text[0] != "(" or text[-1] != ")":
                 # skip empty lines and non-triplets
                 continue
             tokens = text[1:-1].split(",")
             if len(tokens) != 3:
                 continue
-            subj, pred, obj = tokens
-            results.append((subj.strip(), pred.strip(), obj.strip()))
+            subj, pred, obj = map(str.strip, tokens)
+            if not subj or not pred or not obj:
+                # skip partial triplets
+                continue
+            results.append((subj, pred, obj))
         return results
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> KG:

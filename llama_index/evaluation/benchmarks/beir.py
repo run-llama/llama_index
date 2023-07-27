@@ -4,6 +4,7 @@ from llama_index.schema import Document
 from llama_index.indices.base_retriever import BaseRetriever
 import os
 import tqdm
+from shutil import rmtree
 
 
 class BeirEvaluator:
@@ -29,9 +30,17 @@ class BeirEvaluator:
         for dataset in datasets:
             dataset_full_path = os.path.join(cache_dir, "datasets", "BeIR__" + dataset)
             if not os.path.exists(dataset_full_path):
-                url = f""""https://public.ukp.informatik.tu-darmstadt.de\
-                        /thakur/BEIR/datasets/{dataset}.zip"""
-                util.download_and_unzip(url, dataset_full_path)
+                url = f"""https://public.ukp.informatik.tu-darmstadt.de/thakur\
+/BEIR/datasets/{dataset}.zip"""
+                try:
+                    util.download_and_unzip(url, dataset_full_path)
+                except Exception as e:
+                    print(
+                        "Dataset:", dataset, "not found at:", url, "Removing cached dir"
+                    )
+                    rmtree(dataset_full_path)
+                    raise ValueError(f"invalid BEIR dataset: {dataset}") from e
+
             print("Dataset:", dataset, "downloaded at:", dataset_full_path)
             dataset_paths[dataset] = os.path.join(dataset_full_path, dataset)
         return dataset_paths

@@ -42,6 +42,18 @@ maxdepth: 1
 
 ```
 
+
+## Replicate
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_2.ipynb
+/examples/llm/vicuna.ipynb
+/examples/vector_stores/SimpleIndexDemoLlama2.ipynb
+```
+
 ## LangChain
 
 ```{toctree}
@@ -49,3 +61,12 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/langchain.ipynb
+```
+
+## Llama API
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_api.ipynb
+```

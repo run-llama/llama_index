@@ -162,7 +162,7 @@ HuggingFaceLLM(
 )
 ```
 
-A full API reference can be found [here](../../reference/llm_predictor.rst).
+A full API reference can be found [here](../../../api_reference/llms/huggingface.rst).
 
 Several example notebooks are also listed below:
 
@@ -207,7 +207,9 @@ class OurLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=context_window, num_output=num_output
+            context_window=context_window,
+            num_output=num_output,
+            model_name=model_name
         )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:

@@ -46,7 +46,11 @@ class PaLM(CustomLLM):
         """Get LLM metadata."""
         # TODO: google palm actually separates input and output token limits
         total_tokens = self._model.input_token_limit + self._num_output
-        return LLMMetadata(context_window=total_tokens, num_output=self._num_output)
+        return LLMMetadata(
+            context_window=total_tokens,
+            num_output=self._num_output,
+            model_name=self._model_name,
+        )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Predict the answer to a query.
