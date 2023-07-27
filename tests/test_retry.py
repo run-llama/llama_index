@@ -3,12 +3,12 @@ import pytest
 from llama_index.retry import ExponentialBackoffRetryStrategy
 
 
-def test_no_retries():
+def test_no_retries() -> None:
     retry_strategy = ExponentialBackoffRetryStrategy()
     counter = 0
 
     @retry_strategy.decorate
-    def increment_counter():
+    def increment_counter() -> None:
         nonlocal counter
         counter += 1
 
@@ -17,7 +17,7 @@ def test_no_retries():
     assert counter == 1
 
 
-def test_retry_on_failure():
+def test_retry_on_failure() -> None:
     """
     Test that the retry mechanism is working by ensuring that a function
     that throws an exception is called the expected number of times before
@@ -29,7 +29,7 @@ def test_retry_on_failure():
     counter = 0
 
     @retry_strategy.decorate
-    def increment_counter():
+    def increment_counter() -> None:
         nonlocal counter
         counter += 1
         raise Exception("Test exception")
@@ -40,7 +40,7 @@ def test_retry_on_failure():
     assert counter == 3
 
 
-def test_wait_time():
+def test_wait_time() -> None:
     """
     Test that the wait time between each retry is increasing as expected.
     """
@@ -51,7 +51,7 @@ def test_wait_time():
     times = []
 
     @retry_strategy.decorate
-    def track_time():
+    def track_time() -> None:
         nonlocal counter, times
         times.append(time.time())
         counter += 1
@@ -66,7 +66,7 @@ def test_wait_time():
     ), "Exponential backoff not respected."
 
 
-def test_max_retries():
+def test_max_retries() -> None:
     """
     Test that the maximum number of retries is correctly enforced.
     """
@@ -76,7 +76,7 @@ def test_max_retries():
     counter = 0
 
     @retry_strategy.decorate
-    def increment_counter():
+    def increment_counter() -> None:
         nonlocal counter
         counter += 1
         raise Exception("Test exception")
@@ -88,9 +88,10 @@ def test_max_retries():
 
 
 @pytest.mark.asyncio
-async def test_async_retry_on_failure():
+async def test_async_retry_on_failure() -> None:
     """
-    Test that the retry mechanism works as expected when decorating asynchronous functions.
+    Test that the retry mechanism works as expected when
+    decorating asynchronous functions.
     """
     retry_strategy = ExponentialBackoffRetryStrategy(
         num_attempts=3, min_wait=0.01, max_wait=0.02
@@ -98,7 +99,7 @@ async def test_async_retry_on_failure():
     counter = 0
 
     @retry_strategy.decorate
-    async def increment_counter():
+    async def increment_counter() -> None:
         nonlocal counter
         counter += 1
         raise Exception("Test exception")
@@ -109,7 +110,7 @@ async def test_async_retry_on_failure():
     assert counter == 3
 
 
-def test_retry_on_specific_exception():
+def test_retry_on_specific_exception() -> None:
     """
     Test that the retry mechanism only retries on specific exceptions.
     """
@@ -119,7 +120,7 @@ def test_retry_on_specific_exception():
     counter = 0
 
     @retry_strategy.decorate
-    def raise_exception():
+    def raise_exception() -> None:
         nonlocal counter
         counter += 1
         if counter == 1:
@@ -136,9 +137,10 @@ def test_retry_on_specific_exception():
 
 
 @pytest.mark.asyncio
-async def test_async_retry_on_specific_exception():
+async def test_async_retry_on_specific_exception() -> None:
     """
-    Test that the retry mechanism only retries on specific exceptions for asynchronous functions.
+    Test that the retry mechanism only retries on specific exceptions for
+    asynchronous functions.
     """
     retry_strategy = ExponentialBackoffRetryStrategy(
         num_attempts=3, min_wait=0.01, max_wait=0.02, retry_on_exceptions=[ValueError]
@@ -146,7 +148,7 @@ async def test_async_retry_on_specific_exception():
     counter = 0
 
     @retry_strategy.decorate
-    async def raise_exception():
+    async def raise_exception() -> None:
         nonlocal counter
         counter += 1
         if counter == 1:

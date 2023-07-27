@@ -3,7 +3,7 @@
 import logging
 import asyncio
 from abc import abstractmethod
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable, Callable
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -52,12 +52,12 @@ class BaseLLMPredictor(Protocol):
         """Async predict the answer to a query."""
 
 
-def _llm_predictor_retry(func):
+def _llm_predictor_retry(func: Callable) -> Callable:
     """Retry decorator for LLM predictor methods."""
 
     if asyncio.iscoroutinefunction(func):
 
-        async def async_wrapper(self: "LLMPredictor", *args, **kwargs):
+        async def async_wrapper(self: "LLMPredictor", *args: Any, **kwargs: Any) -> Any:
             """Wrap LLM predictor methods with retry logic."""
             retry_strategy = self.retry_strategy
             if retry_strategy is None:
@@ -67,7 +67,7 @@ def _llm_predictor_retry(func):
 
         return async_wrapper
 
-    def wrapper(self: "LLMPredictor", *args, **kwargs):
+    def wrapper(self: "LLMPredictor", *args: Any, **kwargs: Any) -> Any:
         """Wrap LLM predictor methods with retry logic."""
         retry_strategy = self.retry_strategy
         if retry_strategy is None:
