@@ -66,6 +66,8 @@ class KGTableRetriever(BaseRetriever):
         use_global_node_triplets (bool): Whether to get more keywords(entities) from
             text chunks matched by keywords. This helps introduce more global knowledge.
             While it's more expensive, thus to be turned off by default.
+        max_knowledge_sequence (int): The maximum number of knowledge sequence to
+            include in the response. By default, it's 30.
     """
 
     def __init__(
@@ -79,6 +81,7 @@ class KGTableRetriever(BaseRetriever):
         similarity_top_k: int = 2,
         graph_store_query_depth: int = 2,
         use_global_node_triplets: bool = False,
+        max_knowledge_sequence: int = REL_TEXT_LIMIT,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -99,6 +102,7 @@ class KGTableRetriever(BaseRetriever):
         self._graph_store = index.graph_store
         self.graph_store_query_depth = graph_store_query_depth
         self.use_global_node_triplets = use_global_node_triplets
+        self.max_knowledge_sequence = max_knowledge_sequence
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -226,8 +230,8 @@ class KGTableRetriever(BaseRetriever):
                         rel_texts[j] = ""
             rel_texts = [rel_text for rel_text in rel_texts if rel_text != ""]
 
-            # truncate rel_texts to REL_TEXT_LIMIT
-            rel_texts = rel_texts[:REL_TEXT_LIMIT]
+            # tuncate rel_texts
+            rel_texts = rel_texts[: self.max_knowledge_sequence]
 
         sorted_chunk_indices = sorted(
             list(chunk_indices_count.keys()),
@@ -255,12 +259,18 @@ class KGTableRetriever(BaseRetriever):
                 f"> Querying with idx: {chunk_idx}: "
                 f"{truncate_text(node.get_content(), 80)}"
             )
+        # if no relationship is found, return the nodes found by keywords
+        if not rel_texts:
+            logger.info("> No relationships found, returning nodes found by keywords.")
+            if len(sorted_nodes_with_scores) == 0:
+                logger.info("> No nodes found by keywords, returning empty response.")
+            return sorted_nodes_with_scores
 
         # add relationships as Node
         # TODO: make initial text customizable
         rel_initial_text = (
-            f"The following are knowledge triplets in max depth"
-            f" {self.graph_store_query_depth} "
+            f"The following are knowledge sequence in"
+            f" {self.graph_store_query_depth}-depth "
             f"in the form of "
             f"`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
         )
