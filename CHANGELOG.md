@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+- Added HotpotQADistractor benchmark evaluator (#7034)
+- Add metadata filter and delete support for LanceDB (#7048)
+
 ### Bug Fixes / Nits
 - Fix string formatting in context chat engine (#7050)
 
