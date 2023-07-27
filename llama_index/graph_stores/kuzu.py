@@ -1,10 +1,6 @@
 """Kùzu graph store index."""
-import logging
-import os
-from string import Template
 from typing import Any, Dict, List, Optional
 
-from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from llama_index.graph_stores.types import GraphStore
 
@@ -131,7 +127,10 @@ class KuzuGraphStore(GraphStore):
 
         def check_rel_exists(connection, subj, obj, rel):
             is_exists_result = connection.execute(
-                "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj AND r.predicate = $pred RETURN r.predicate"
+                (
+                    "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = "
+                    "$obj AND r.predicate = $pred RETURN r.predicate"
+                )
                 % (self.node_table_name, self.rel_table_name, self.node_table_name),
                 [("subj", subj), ("obj", obj), ("pred", rel)],
             )
@@ -139,7 +138,10 @@ class KuzuGraphStore(GraphStore):
 
         def create_rel(connection, subj, obj, rel):
             connection.execute(
-                "MATCH (n1:%s), (n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj CREATE (n1)-[r:%s {predicate: $pred}]->(n2)"
+                (
+                    "MATCH (n1:%s), (n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj "
+                    "CREATE (n1)-[r:%s {predicate: $pred}]->(n2)"
+                )
                 % (self.node_table_name, self.node_table_name, self.rel_table_name),
                 [("subj", subj), ("obj", obj), ("pred", rel)],
             )
@@ -164,7 +166,10 @@ class KuzuGraphStore(GraphStore):
 
         def delete_rel(connection, subj, obj, rel):
             connection.execute(
-                "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj AND r.predicate = $pred DELETE r"
+                (
+                    "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID"
+                    " = $obj AND r.predicate = $pred DELETE r"
+                )
                 % (self.node_table_name, self.rel_table_name, self.node_table_name),
                 [("subj", subj), ("obj", obj), ("pred", rel)],
             )
