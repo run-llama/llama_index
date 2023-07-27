@@ -269,8 +269,8 @@ class KGTableRetriever(BaseRetriever):
         # add relationships as Node
         # TODO: make initial text customizable
         rel_initial_text = (
-            f"The following are knowledge sequence in"
-            f" {self.graph_store_query_depth}-depth "
+            f"The following are knowledge sequence in max depth"
+            f" {self.graph_store_query_depth} "
             f"in the form of "
             f"`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
         )

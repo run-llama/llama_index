@@ -316,7 +316,7 @@ class NebulaGraphStore(GraphStore):
             #       REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
             # RETURN
             #   subj,
-            #   REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l ) AS flattened_rels
+            #   REDUCE(acc = subj,l in flattened_rels|acc + ', ' + l) AS flattened_rels
             query = (
                 f"MATCH (s)-[e:`{self._edge_types[0]}`*..{depth}]-() "
                 f"  WHERE id(s) IN $subjs "
