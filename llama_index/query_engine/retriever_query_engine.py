@@ -104,15 +104,34 @@ class RetrieverQueryEngine(BaseQueryEngine):
             node_postprocessors=node_postprocessors,
         )
 
-    def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        nodes = self._retriever.retrieve(query_bundle)
-
+    def _apply_node_postprocessors(
+        self, nodes: List[NodeWithScore], query_bundle: QueryBundle
+    ) -> List[NodeWithScore]:
         for node_postprocessor in self._node_postprocessors:
             nodes = node_postprocessor.postprocess_nodes(
                 nodes, query_bundle=query_bundle
             )
+        return nodes
+
+    def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        nodes = self._retriever.retrieve(query_bundle)
+        nodes = self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
 
         return nodes
+
+    async def aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        nodes = await self._retriever.aretrieve(query_bundle)
+        nodes = self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
+
+        return nodes
+
+    def with_retriever(self, retriever: BaseRetriever) -> "RetrieverQueryEngine":
+        return RetrieverQueryEngine(
+            retriever=retriever,
+            response_synthesizer=self._response_synthesizer,
+            callback_manager=self.callback_manager,
+            node_postprocessors=self._node_postprocessors,
+        )
 
     def synthesize(
         self,
@@ -171,7 +190,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
         )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self.retrieve(query_bundle)
+
+        nodes = await self.aretrieve(query_bundle)
+
         self.callback_manager.on_event_end(
             CBEventType.RETRIEVE,
             payload={EventPayload.NODES: nodes},

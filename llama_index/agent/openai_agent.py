@@ -210,9 +210,11 @@ class BaseOpenAIAgent(BaseAgent):
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
-        all_messages = self._prefix_messages + self._memory.get()
+
         tools, functions = self._init_chat(message)
         sources = []
+
+        all_messages = self._prefix_messages + self._memory.get()
 
         # TODO: Support forced function call
         chat_response = await self._llm.achat(all_messages, functions=functions)
