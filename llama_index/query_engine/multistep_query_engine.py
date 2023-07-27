@@ -70,43 +70,42 @@ class MultiStepQueryEngine(BaseQueryEngine):
         super().__init__(callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        query_event_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
-        nodes, source_nodes, metadata = self._query_multistep(query_bundle)
+        with self.callback_manager.event(CBEventType.QUERY) as query_event:
+            query_event.on_start(
+                payload={EventPayload.QUERY_STR: query_bundle.query_str}
+            )
 
-        final_response = self._response_synthesizer.synthesize(
-            query=query_bundle,
-            nodes=nodes,
-            additional_source_nodes=source_nodes,
-        )
-        final_response.metadata = metadata
+            nodes, source_nodes, metadata = self._query_multistep(query_bundle)
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: final_response},
-            event_id=query_event_id,
-        )
+            final_response = self._response_synthesizer.synthesize(
+                query=query_bundle,
+                nodes=nodes,
+                additional_source_nodes=source_nodes,
+            )
+            final_response.metadata = metadata
+
+            query_event.on_end(payload={EventPayload.RESPONSE: final_response})
+
         return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
-        nodes, source_nodes, metadata = self._query_multistep(query_bundle)
 
-        final_response = await self._response_synthesizer.asynthesize(
-            query=query_bundle,
-            nodes=nodes,
-            additional_source_nodes=source_nodes,
-        )
-        final_response.metadata = metadata
+        with self.callback_manager.event(CBEventType.QUERY) as query_event:
+            query_event.on_start(
+                payload={EventPayload.QUERY_STR: query_bundle.query_str}
+            )
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: final_response},
-            event_id=event_id,
-        )
+            nodes, source_nodes, metadata = self._query_multistep(query_bundle)
+
+            final_response = await self._response_synthesizer.asynthesize(
+                query=query_bundle,
+                nodes=nodes,
+                additional_source_nodes=source_nodes,
+            )
+            final_response.metadata = metadata
+
+            query_event.on_end(payload={EventPayload.RESPONSE: final_response})
+
         return final_response
 
     def _combine_queries(

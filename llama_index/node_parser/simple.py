@@ -83,30 +83,26 @@ class SimpleNodeParser(NodeParser):
             include_metadata (bool): whether to include metadata in nodes
 
         """
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
-        )
+        with self.callback_manager.event(CBEventType.NODE_PARSING) as event:
+            event.on_start(payload={EventPayload.DOCUMENTS: documents})
 
-        all_nodes: List[BaseNode] = []
-        documents_with_progress = get_tqdm_iterable(
-            documents, show_progress, "Parsing documents into nodes"
-        )
-
-        for document in documents_with_progress:
-            nodes = get_nodes_from_document(
-                document,
-                self._text_splitter,
-                self._include_metadata,
-                include_prev_next_rel=self._include_prev_next_rel,
+            all_nodes: List[BaseNode] = []
+            documents_with_progress = get_tqdm_iterable(
+                documents, show_progress, "Parsing documents into nodes"
             )
-            all_nodes.extend(nodes)
 
-        if self._metadata_extractor is not None:
-            self._metadata_extractor.process_nodes(all_nodes)
+            for document in documents_with_progress:
+                nodes = get_nodes_from_document(
+                    document,
+                    self._text_splitter,
+                    self._include_metadata,
+                    include_prev_next_rel=self._include_prev_next_rel,
+                )
+                all_nodes.extend(nodes)
 
-        self.callback_manager.on_event_end(
-            CBEventType.NODE_PARSING,
-            payload={EventPayload.NODES: all_nodes},
-            event_id=event_id,
-        )
+            if self._metadata_extractor is not None:
+                self._metadata_extractor.process_nodes(all_nodes)
+
+            event.on_end(payload={EventPayload.NODES: all_nodes})
+
         return all_nodes

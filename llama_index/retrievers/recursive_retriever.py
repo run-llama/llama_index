@@ -116,15 +116,11 @@ class RecursiveRetriever(BaseRetriever):
         query_id = query_id or self._root_id
         obj = self._fetch_retriever_or_query_engine(query_id)
         if isinstance(obj, BaseRetriever):
-            retrieve_event_id = self.callback_manager.on_event_start(
-                CBEventType.RETRIEVE
-            )
-            nodes = obj.retrieve(query_bundle)
-            self.callback_manager.on_event_end(
-                CBEventType.RETRIEVE,
-                payload={EventPayload.NODES: nodes},
-                event_id=retrieve_event_id,
-            )
+            with self.callback_manager.event(CBEventType.RETRIEVE) as event:
+                event.on_start()
+                nodes = obj.retrieve(query_bundle)
+                event.on_end(payload={EventPayload.NODES: nodes})
+
             nodes_to_add = []
             additional_nodes = []
             for node_with_score in nodes:

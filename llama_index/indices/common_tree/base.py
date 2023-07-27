@@ -6,7 +6,7 @@ import logging
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore import BaseDocumentStore
@@ -144,43 +144,40 @@ class GPTTreeIndexBuilder:
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.TREE, payload={EventPayload.CHUNKS: text_chunks}
-        )
 
-        if self._use_async:
-            tasks = [
-                self._service_context.llm_predictor.apredict(
-                    self.summary_prompt, context_str=text_chunk
+        with self._service_context.callback_manager.event(CBEventType.TREE) as event:
+            event.on_start(payload={"chunks": text_chunks})
+
+            if self._use_async:
+                tasks = [
+                    self._service_context.llm_predictor.apredict(
+                        self.summary_prompt, context_str=text_chunk
+                    )
+                    for text_chunk in text_chunks
+                ]
+                outputs: List[Tuple[str, str]] = run_async_tasks(
+                    tasks,
+                    show_progress=self._show_progress,
+                    progress_bar_desc="Generating summaries",
                 )
-                for text_chunk in text_chunks
-            ]
-            outputs: List[Tuple[str, str]] = run_async_tasks(
-                tasks,
-                show_progress=self._show_progress,
-                progress_bar_desc="Generating summaries",
-            )
-            summaries = [output[0] for output in outputs]
-        else:
-            text_chunks_progress = get_tqdm_iterable(
-                text_chunks,
-                show_progress=self._show_progress,
-                desc="Generating summaries",
-            )
-            summaries = [
-                self._service_context.llm_predictor.predict(
-                    self.summary_prompt, context_str=text_chunk
+                summaries = [output[0] for output in outputs]
+            else:
+                text_chunks_progress = get_tqdm_iterable(
+                    text_chunks,
+                    show_progress=self._show_progress,
+                    desc="Generating summaries",
                 )
-                for text_chunk in text_chunks_progress
-            ]
-        self._service_context.llama_logger.add_log(
-            {"summaries": summaries, "level": level}
-        )
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.TREE,
-            payload={"summaries": summaries, "level": level},
-            event_id=event_id,
-        )
+                summaries = [
+                    self._service_context.llm_predictor.predict(
+                        self.summary_prompt, context_str=text_chunk
+                    )
+                    for text_chunk in text_chunks_progress
+                ]
+            self._service_context.llama_logger.add_log(
+                {"summaries": summaries, "level": level}
+            )
+
+            event.on_end(payload={"summaries": summaries, "level": level})
 
         new_node_dict = self._construct_parent_nodes(
             index_graph, indices, cur_nodes_chunks, summaries
@@ -211,29 +208,28 @@ class GPTTreeIndexBuilder:
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.TREE, payload={"chunks": text_chunks}
-        )
 
-        text_chunks_progress = get_tqdm_iterable(
-            text_chunks, show_progress=self._show_progress, desc="Generating summaries"
-        )
-        tasks = [
-            self._service_context.llm_predictor.apredict(
-                self.summary_prompt, context_str=text_chunk
+        with self._service_context.callback_manager.event(CBEventType.TREE) as event:
+            event.on_start(payload={"chunks": text_chunks})
+
+            text_chunks_progress = get_tqdm_iterable(
+                text_chunks,
+                show_progress=self._show_progress,
+                desc="Generating summaries",
             )
-            for text_chunk in text_chunks_progress
-        ]
-        outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)
-        summaries = [output[0] for output in outputs]
-        self._service_context.llama_logger.add_log(
-            {"summaries": summaries, "level": level}
-        )
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.TREE,
-            payload={"summaries": summaries, "level": level},
-            event_id=event_id,
-        )
+            tasks = [
+                self._service_context.llm_predictor.apredict(
+                    self.summary_prompt, context_str=text_chunk
+                )
+                for text_chunk in text_chunks_progress
+            ]
+            outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)
+            summaries = [output[0] for output in outputs]
+            self._service_context.llama_logger.add_log(
+                {"summaries": summaries, "level": level}
+            )
+
+            event.on_end(payload={"summaries": summaries, "level": level})
 
         new_node_dict = self._construct_parent_nodes(
             index_graph, indices, cur_nodes_chunks, summaries

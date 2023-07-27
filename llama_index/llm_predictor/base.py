@@ -80,51 +80,45 @@ class LLMPredictor(BaseLLMPredictor):
         """Get LLM metadata."""
         return self._llm.metadata
 
-    def _log_start(self, prompt: Prompt, prompt_args: dict) -> str:
+    def _get_start_payload(self, prompt: Prompt, prompt_args: dict) -> dict:
         """Log start of an LLM event."""
         llm_payload = prompt_args.copy()
         llm_payload[EventPayload.TEMPLATE] = prompt
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload=llm_payload,
-        )
 
-        return event_id
+        return llm_payload
 
-    def _log_end(self, event_id: str, output: str, formatted_prompt: str) -> None:
+    def _get_end_payload(self, output: str, formatted_prompt: str) -> dict:
         """Log end of an LLM event."""
         prompt_tokens_count = count_tokens(formatted_prompt)
         prediction_tokens_count = count_tokens(output)
-        self.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={
-                EventPayload.RESPONSE: output,
-                EventPayload.PROMPT: formatted_prompt,
-                # deprecated
-                "formatted_prompt_tokens_count": prompt_tokens_count,
-                "prediction_tokens_count": prediction_tokens_count,
-                "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
-            },
-            event_id=event_id,
-        )
+        return {
+            EventPayload.RESPONSE: output,
+            EventPayload.PROMPT: formatted_prompt,
+            # deprecated
+            "formatted_prompt_tokens_count": prompt_tokens_count,
+            "prediction_tokens_count": prediction_tokens_count,
+            "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
+        }
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Predict."""
-        event_id = self._log_start(prompt, prompt_args)
+        with self.callback_manager.event(CBEventType.LLM) as event:
+            event.on_start(payload=self._get_start_payload(prompt, prompt_args))
 
-        if self._llm.metadata.is_chat_model:
-            messages = prompt.format_messages(llm=self._llm, **prompt_args)
-            chat_response = self._llm.chat(messages=messages)
-            output = chat_response.message.content or ""
-            # NOTE: this is an approximation, only for token counting
-            formatted_prompt = messages_to_prompt(messages)
-        else:
-            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-            response = self._llm.complete(formatted_prompt)
-            output = response.text
+            if self._llm.metadata.is_chat_model:
+                messages = prompt.format_messages(llm=self._llm, **prompt_args)
+                chat_response = self._llm.chat(messages=messages)
+                output = chat_response.message.content or ""
+                # NOTE: this is an approximation, only for token counting
+                formatted_prompt = messages_to_prompt(messages)
+            else:
+                formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+                response = self._llm.complete(formatted_prompt)
+                output = response.text
 
-        logger.debug(output)
-        self._log_end(event_id, output, formatted_prompt)
+            logger.debug(output)
+
+            event.on_end(payload=self._get_end_payload(output, formatted_prompt))
 
         return output
 
@@ -142,22 +136,24 @@ class LLMPredictor(BaseLLMPredictor):
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Async predict."""
-        event_id = self._log_start(prompt, prompt_args)
+        with self.callback_manager.event(CBEventType.LLM) as event:
+            event.on_start(payload=self._get_start_payload(prompt, prompt_args))
 
-        if self._llm.metadata.is_chat_model:
-            messages = prompt.format_messages(llm=self._llm, **prompt_args)
-            chat_response = await self._llm.achat(messages=messages)
-            output = chat_response.message.content or ""
-            # NOTE: this is an approximation, only for token counting
-            formatted_prompt = messages_to_prompt(messages)
-        else:
-            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-            response = await self._llm.acomplete(formatted_prompt)
-            output = response.text
+            if self._llm.metadata.is_chat_model:
+                messages = prompt.format_messages(llm=self._llm, **prompt_args)
+                chat_response = await self._llm.achat(messages=messages)
+                output = chat_response.message.content or ""
+                # NOTE: this is an approximation, only for token counting
+                formatted_prompt = messages_to_prompt(messages)
+            else:
+                formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+                response = await self._llm.acomplete(formatted_prompt)
+                output = response.text
 
-        logger.debug(output)
+            logger.debug(output)
 
-        self._log_end(event_id, output, formatted_prompt)
+            event.on_end(payload=self._get_end_payload(output, formatted_prompt))
+
         return output
 
     async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:

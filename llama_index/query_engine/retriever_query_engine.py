@@ -149,56 +149,52 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        query_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        with self.callback_manager.event(CBEventType.QUERY) as query_event:
+            query_event.on_start(
+                payload={EventPayload.QUERY_STR: query_bundle.query_str}
+            )
 
-        retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self.retrieve(query_bundle)
-        self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.NODES: nodes},
-            event_id=retrieve_id,
-        )
+            with self.callback_manager.event(CBEventType.RETRIEVE) as retrieve_event:
+                retrieve_event.on_start()
 
-        response = self._response_synthesizer.synthesize(
-            query=query_bundle,
-            nodes=nodes,
-        )
+                nodes = self.retrieve(query_bundle)
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=query_id,
-        )
+                retrieve_event.on_end(
+                    payload={EventPayload.NODES: nodes},
+                )
+
+            response = self._response_synthesizer.synthesize(
+                query=query_bundle,
+                nodes=nodes,
+            )
+
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        query_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        with self.callback_manager.event(CBEventType.QUERY) as query_event:
+            query_event.on_start(
+                payload={EventPayload.QUERY_STR: query_bundle.query_str}
+            )
 
-        retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
+            with self.callback_manager.event(CBEventType.RETRIEVE) as retrieve_event:
+                retrieve_event.on_start()
 
-        nodes = await self.aretrieve(query_bundle)
+                nodes = await self.aretrieve(query_bundle)
 
-        self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.NODES: nodes},
-            event_id=retrieve_id,
-        )
+                retrieve_event.on_end(
+                    payload={EventPayload.NODES: nodes},
+                )
 
-        response = await self._response_synthesizer.asynthesize(
-            query=query_bundle,
-            nodes=nodes,
-        )
+            response = await self._response_synthesizer.asynthesize(
+                query=query_bundle,
+                nodes=nodes,
+            )
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=query_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+
         return response
 
     @property

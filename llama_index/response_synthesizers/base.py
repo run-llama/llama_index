@@ -116,28 +116,25 @@ class BaseSynthesizer(ABC):
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
-        event_id = self._callback_manager.on_event_start(CBEventType.SYNTHESIZE)
+        with self._callback_manager.event(CBEventType.SYNTHESIZE) as event:
+            event.on_start()
 
-        if isinstance(query, str):
-            query = QueryBundle(query_str=query)
+            if isinstance(query, str):
+                query = QueryBundle(query_str=query)
 
-        response_str = self.get_response(
-            query_str=query.query_str,
-            text_chunks=[
-                n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
-            ],
-        )
+            response_str = self.get_response(
+                query_str=query.query_str,
+                text_chunks=[
+                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
+                ],
+            )
 
-        additional_source_nodes = additional_source_nodes or []
-        source_nodes = list(nodes) + list(additional_source_nodes)
+            additional_source_nodes = additional_source_nodes or []
+            source_nodes = list(nodes) + list(additional_source_nodes)
 
-        response = self._prepare_response_output(response_str, source_nodes)
+            response = self._prepare_response_output(response_str, source_nodes)
 
-        self._callback_manager.on_event_end(
-            CBEventType.SYNTHESIZE,
-            payload={EventPayload.RESPONSE: response},
-            event_id=event_id,
-        )
+            event.on_end(payload={EventPayload.RESPONSE: response})
 
         return response
 
@@ -147,27 +144,23 @@ class BaseSynthesizer(ABC):
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
-        event_id = self._callback_manager.on_event_start(CBEventType.SYNTHESIZE)
+        with self._callback_manager.event(CBEventType.SYNTHESIZE) as event:
 
-        if isinstance(query, str):
-            query = QueryBundle(query_str=query)
+            if isinstance(query, str):
+                query = QueryBundle(query_str=query)
 
-        response_str = await self.aget_response(
-            query_str=query.query_str,
-            text_chunks=[
-                n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
-            ],
-        )
+            response_str = await self.aget_response(
+                query_str=query.query_str,
+                text_chunks=[
+                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
+                ],
+            )
 
-        additional_source_nodes = additional_source_nodes or []
-        source_nodes = list(nodes) + list(additional_source_nodes)
+            additional_source_nodes = additional_source_nodes or []
+            source_nodes = list(nodes) + list(additional_source_nodes)
 
-        response = self._prepare_response_output(response_str, source_nodes)
+            response = self._prepare_response_output(response_str, source_nodes)
 
-        self._callback_manager.on_event_end(
-            CBEventType.SYNTHESIZE,
-            payload={EventPayload.RESPONSE: response},
-            event_id=event_id,
-        )
+            event.on_end(payload={EventPayload.RESPONSE: response})
 
         return response
