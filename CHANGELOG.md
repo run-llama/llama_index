@@ -6,6 +6,7 @@
 - Added HotpotQADistractor benchmark evaluator (#7034)
 - Add metadata filter and delete support for LanceDB (#7048)
 - Use MetadataFilters in opensearch (#7005)
+- Added support for `KuzuGraphStore` (#6970)
 
 ### Bug Fixes / Nits
 - Fix string formatting in context chat engine (#7050)
