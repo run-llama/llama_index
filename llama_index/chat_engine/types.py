@@ -89,7 +89,7 @@ class StreamingAgentChatResponse:
                 self._is_function_not_none_thread_event.set()
             if final_message is not None:
                 memory.put(final_message)
-        except Exception as e:
+        except Exception:
             pass
         self._is_done = True
 
@@ -113,11 +113,11 @@ class StreamingAgentChatResponse:
                     is not None
                 )
                 self._aqueue.put_nowait(chat.delta)
-                if self._is_function == False:
+                if self._is_function is False:
                     self._is_function_false_event.set()
             if final_message is not None:
                 memory.put(final_message)
-        except Exception as e:
+        except Exception:
             pass
 
         self._is_done = True
@@ -161,7 +161,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
+    ) -> AgentChatResponse | StreamingAgentChatResponse:
         """Main chat interface."""
         pass
 
@@ -175,7 +175,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
+    ) -> AgentChatResponse | StreamingAgentChatResponse:
         """Async version of main chat interface."""
         pass
 
@@ -192,7 +192,7 @@ class BaseChatEngine(ABC):
         self.reset()
         message = input("Human: ")
         while message != "exit":
-            response = self.chat(message)
+            self.chat(message)
 
             message = input("Human: ")
 

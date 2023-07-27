@@ -5,7 +5,6 @@ from abc import abstractmethod
 from enum import Enum
 from threading import Thread
 from typing import Any, Callable, Optional, Tuple, Type
-from abc import ABC, abstractmethod
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -108,7 +107,7 @@ class BaseOpenAIAgent(BaseAgent):
         prefix_messages: list[ChatMessage],
         verbose: bool,
         max_function_calls: int,
-        callback_manager: CallbackManager,
+        callback_manager: Optional[CallbackManager],
     ):
         self._llm = llm
         self._verbose = verbose
@@ -133,7 +132,9 @@ class BaseOpenAIAgent(BaseAgent):
         """Get tools."""
         pass
 
-    def _should_continue(self, function_call: dict | None, n_function_calls: int) -> bool:
+    def _should_continue(
+        self, function_call: dict | None, n_function_calls: int
+    ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
         if not function_call:
@@ -155,7 +156,9 @@ class BaseOpenAIAgent(BaseAgent):
         self.session.memory.put(ai_message)
         return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
 
-    def _get_stream_ai_response(self, functions: list[dict]) -> StreamingAgentChatResponse:
+    def _get_stream_ai_response(
+        self, functions: list[dict]
+    ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             chat_stream=self._llm.stream_chat(self.all_messages, functions=functions),
             sources=self.sources,
@@ -176,7 +179,9 @@ class BaseOpenAIAgent(BaseAgent):
             thread.join()
         return chat_stream_response
 
-    async def _get_async_stream_ai_response(self, functions: list[dict]) -> StreamingAgentChatResponse:
+    async def _get_async_stream_ai_response(
+        self, functions: list[dict]
+    ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             achat_stream=await self._llm.astream_chat(
                 self.all_messages, functions=functions
@@ -263,6 +268,7 @@ class BaseOpenAIAgent(BaseAgent):
             latest_function = self.session.get_latest_function_call()
             if not self._should_continue(latest_function, n_function_calls):
                 break
+            assert isinstance(latest_function, dict)
             self._call_function(tools, latest_function)
             n_function_calls += 1
 
@@ -271,12 +277,16 @@ class BaseOpenAIAgent(BaseAgent):
     def stream_chat(
         self, message: str, chat_history: Optional[list[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        return self.chat(message, chat_history, mode=ChatMode.stream)
+        chat_response = self.chat(message, chat_history, mode=ChatMode.stream)
+        assert isinstance(chat_response, StreamingAgentChatResponse)
+        return chat_response
 
     async def astream_chat(
         self, message: str, chat_history: Optional[list[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        return await self.achat(message, chat_history, mode=ChatMode.stream)
+        chat_response = await self.achat(message, chat_history, mode=ChatMode.stream)
+        assert isinstance(chat_response, StreamingAgentChatResponse)
+        return chat_response
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
