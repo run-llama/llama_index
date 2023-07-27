@@ -8,6 +8,7 @@
 
 ### Bug Fixes / Nits
 - Fix string formatting in context chat engine (#7050)
+- Fixed tracing for async events (#7052)
 
 ## [0.7.13] - 2023-07-26
 
