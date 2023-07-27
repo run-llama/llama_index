@@ -105,23 +105,33 @@ class RetrieverQueryEngine(BaseQueryEngine):
         )
 
     def _apply_node_postprocessors(
-        self, nodes: List[NodeWithScore]
+        self, nodes: List[NodeWithScore], query_bundle: QueryBundle
     ) -> List[NodeWithScore]:
         for node_postprocessor in self._node_postprocessors:
-            nodes = node_postprocessor.postprocess_nodes(nodes)
+            nodes = node_postprocessor.postprocess_nodes(
+                nodes, query_bundle=query_bundle
+            )
         return nodes
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = self._retriever.retrieve(query_bundle)
-        nodes = self._apply_node_postprocessors(nodes)
+        nodes = self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
 
         return nodes
 
     async def aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = await self._retriever.aretrieve(query_bundle)
-        nodes = self._apply_node_postprocessors(nodes)
+        nodes = self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
 
         return nodes
+
+    def with_retriever(self, retriever: BaseRetriever) -> "RetrieverQueryEngine":
+        return RetrieverQueryEngine(
+            retriever=retriever,
+            response_synthesizer=self._response_synthesizer,
+            callback_manager=self.callback_manager,
+            node_postprocessors=self._node_postprocessors,
+        )
 
     def synthesize(
         self,

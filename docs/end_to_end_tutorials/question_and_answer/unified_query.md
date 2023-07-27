@@ -66,12 +66,12 @@ We will first define a vector index over the documents of each city.
 
 ```python
 from llama_index import VectorStoreIndex, ServiceContext, StorageContext
-from langchain.llms.openai import OpenAIChat
+from llama_index.llms import OpenAI
 
 # set service context
-llm_predictor_gpt4 = LLMPredictor(llm=OpenAIChat(temperature=0, model_name="gpt-4"))
+llm_gpt4 = OpenAI(temperature=0, model="gpt-4")
 service_context = ServiceContext.from_defaults(
-    llm_predictor=llm_predictor_gpt4, chunk_size=1024
+    llm=llm_gpt4, chunk_size=1024
 )
 
 # Build city document index
@@ -150,9 +150,11 @@ An example is shown below.
 
 ```python
 # define decompose_transform
+from llama_index import LLMPredictor
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+
 decompose_transform = DecomposeQueryTransform(
-    llm_predictor_chatgpt, verbose=True
+    LLMPredictor(llm=llm_gpt4), verbose=True
 )
 
 # define custom query engines

@@ -1,5 +1,23 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added HotpotQADistractor benchmark evaluator (#7034)
+- Add metadata filter and delete support for LanceDB (#7048)
+
+### Bug Fixes / Nits
+- Fix string formatting in context chat engine (#7050)
+
+## [0.7.13] - 2023-07-26
+
+### New Features
+- Support function calling api for AzureOpenAI (#7041)
+
+### Bug Fixes / Nits
+- tune prompt to get rid of KeyError in SubQ engine (#7039)
+- Fix validation of Azure OpenAI keys (#7042)
+
 ## [0.7.12] - 2023-07-25
 
 ### New Features

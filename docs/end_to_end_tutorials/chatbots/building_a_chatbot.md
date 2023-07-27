@@ -88,15 +88,15 @@ To address this, we compose a "graph" which consists of a list index defined ove
 
 ```python
 from llama_index import ListIndex, LLMPredictor, ServiceContext, load_graph_from_storage
-from langchain import OpenAI
+from llama_index.llms import OpenAI
 from llama_index.indices.composability import ComposableGraph
 
 # describe each index to help traversal of composed graph
 index_summaries = [f"UBER 10-k Filing for {year} fiscal year" for year in years]
 
 # define an LLMPredictor set number of output tokens
-llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, max_tokens=512))
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+llm = OpenAI(temperature=0, max_tokens=512, model="gpt-4")
+service_context = ServiceContext.from_defaults(llm=llm)
 storage_context = StorageContext.from_defaults()
 
 # define a list index over the vector indices
@@ -132,6 +132,7 @@ LlamaIndex provides some wrappers around indices and graphs so that they can be 
 from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.agents import initialize_agent
 
+from llama_index import LLMPredictor
 from llama_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig
 ```
 
@@ -144,7 +145,7 @@ Below, we define a `IndexToolConfig` for our graph. Note that we also import a `
 # define a decompose transform
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
-    llm_predictor, verbose=True
+    LLMPredictor(llm=llm), verbose=True
 )
 
 # define custom retrievers
