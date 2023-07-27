@@ -64,6 +64,7 @@ Here's an example where we configure the following:
 
 ```python
 from llama_index.prompts  import Prompt
+from llama_index.llms import ChatMessage, MessageRole
 
 custom_prompt = Prompt("""\
 Given a conversation (between Human and Assistant) and a follow up message from Human, \
@@ -79,11 +80,15 @@ from the conversation.
 <Standalone question>
 """)
 
-# list of (human_message, ai_message) tuples
+# list of `ChatMessage` objects
 custom_chat_history = [
-    (
-        'Hello assistant, we are having a insightful discussion about Paul Graham today.', 
-        'Okay, sounds good.'
+    ChatMessage(
+        role=MessageRole.USER, 
+        content='Hello assistant, we are having a insightful discussion about Paul Graham today.'
+    ), 
+    ChatMessage(
+        role=MessageRole.ASSISTANT, 
+        content='Okay, sounds good.'
     )
 ]
 
