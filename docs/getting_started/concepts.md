@@ -32,9 +32,7 @@ A data connector (i.e. `Reader`) ingest data from different data sources and dat
 [**Documents / Nodes**](/core_modules/data_modules/documents_and_nodes/root.md): A `Document` is a generic container around any data source - for instance, a PDF, an API output, or retrieved data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. It's a rich representation that includes metadata and relationships (to other nodes) to enable accurate and expressive retrieval operations.
 
 [**Data Indexes**](/core_modules/data_modules/index/root.md): 
-Once you've ingested your data, LlamaIndex help you index data into a format that's easy to retrieve.
-Under the hood, LlamaIndex parse the raw documents into intermediate representations, calculate vector embeddings, and infer metadata, etc.
-The most commonly used index is the [VectorStoreIndex](/core_modules/data_modules/index/vector_store_guide.ipynb)
+Once you've ingested your data, LlamaIndex will help you index the data into a format that's easy to retrieve. Under the hood, LlamaIndex parses the raw documents into intermediate representations, calculates vector embeddings, and infers metadata. The most commonly used index is the [VectorStoreIndex](/core_modules/data_modules/index/vector_store_guide.ipynb)
 
 ### Querying Stage
 In the querying stage, the RAG pipeline retrieves the most relevant context given a user query,
@@ -51,7 +49,7 @@ These building blocks can be customized to reflect ranking preferences, as well 
 #### Building Blocks
 [**Retrievers**](/core_modules/query_modules/retriever/root.md): 
 A retriever defines how to efficiently retrieve relevant context from a knowledge base (i.e. index) when given a query.
-The specific retrieval logic differs for difference indices, the most popular being dense retrieval against a vector index.
+The specific retrieval logic differs for different indices, the most popular being dense retrieval against a vector index.
 
 [**Node Postprocessors**](/core_modules/query_modules/node_postprocessors/root.md):
 A node postprocessor takes in a set of nodes, then apply transformation, filtering, or re-ranking logic to them. 
@@ -70,7 +68,7 @@ It takes in a natural language query, and returns a response, along with referen
 A chat engine is an end-to-end pipeline for having a conversation with your data
 (multiple back-and-forth instead of a single question & answer).
 
-[**Agents**](/core_modules/query_modules/agent/root.md): 
+[**Agents**](/core_modules/agent_modules/agents/root.md): 
 An agent is an automated decision maker (powered by an LLM) that interacts with the world via a set of tools.
 Agent may be used in the same fashion as query engines or chat engines. 
 The main distinction is that an agent dynamically decides the best sequence of actions, instead of following a predetermined logic.

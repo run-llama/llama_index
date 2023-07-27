@@ -1,5 +1,7 @@
 import logging
-from typing import Any, Callable, Dict, List, Sequence, Type, Union
+import os
+import re
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import openai
 from openai import ChatCompletion, Completion
@@ -86,6 +88,18 @@ DISCONTINUED_MODELS = {
     "code-cushman-001": 2048,
 }
 
+# "sk-" followed by 48 alphanumberic characters
+OPENAI_API_KEY_FORMAT = re.compile("^sk-[a-zA-Z0-9]{48}$")
+MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
+Please set either the OPENAI_API_KEY environment variable or \
+openai.api_key prior to initialization.
+API keys can be found or created at \
+https://platform.openai.com/account/api-keys
+"""
+INVALID_API_KEY_ERROR_MESSAGE = """Invalid OpenAI API key.
+API key should be of the format: "sk-" followed by \
+48 alphanumeric characters.
+"""
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +195,12 @@ def is_chat_model(model: str) -> bool:
     return model in CHAT_MODELS
 
 
+def is_function_calling_model(model: str) -> bool:
+    is_chat_model_ = is_chat_model(model)
+    is_old = "0314" in model or "0301" in model
+    return is_chat_model_ and not is_old
+
+
 def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
     if is_chat_model:
         return openai.ChatCompletion
@@ -211,11 +231,12 @@ def to_openai_message_dicts(messages: Sequence[ChatMessage]) -> List[dict]:
 def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
-    content = message_dict["content"]
+    # NOTE: Azure OpenAI returns function calling messages without a content key
+    content = message_dict.get("content", None)
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
-    additional_kwargs.pop("content")
+    additional_kwargs.pop("content", None)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
@@ -233,3 +254,19 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
         "description": schema["description"],
         "parameters": pydantic_class.schema(),
     }
+
+
+def validate_openai_api_key(
+    api_key: Optional[str] = None, api_type: Optional[str] = None
+) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
+    openai_api_type = (
+        api_type or os.environ.get("OPENAI_API_TYPE", "") or openai.api_type
+    )
+
+    if not openai_api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+    elif openai_api_type == "open_ai" and not OPENAI_API_KEY_FORMAT.search(
+        openai_api_key
+    ):
+        raise ValueError(INVALID_API_KEY_ERROR_MESSAGE)

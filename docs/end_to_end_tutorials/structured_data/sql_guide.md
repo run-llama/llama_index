@@ -70,6 +70,7 @@ construct natural language queries that are synthesized into SQL queries.
 Note that we need to specify the tables we want to use with this query engine.
 If we don't the query engine will pull all the schema context, which could
 overflow the context window of the LLM.
+
 ```python
 query_engine = NLSQLTableQueryEngine(
     sql_database=sql_database,
@@ -80,6 +81,7 @@ query_str = (
 )
 response = query_engine.query(query_str)
 ```
+
 This query engine should used in any case where you can specify the tables you want
 to query over beforehand, or the total size of all the table schema plus the rest of
 the prompt fits your context window.
@@ -103,13 +105,15 @@ obj_index = ObjectIndex.from_objects(
     VectorStoreIndex,
 )
 ```
+
 Here you can see we define our table_node_mapping, and a single SQLTableSchema with the
 "city_stats" table name. We pass these into the ObjectIndex constructor, along with the
 VectorStoreIndex class definition we want to use. This will give us a VectorStoreIndex where
 each Node contains table schema and other context information. You can also add any additional
 context information you'd like.
+
 ```python
-# manually set context text
+# manually set extra context text
 city_stats_text = (
     "This table gives information regarding the population and country of a given city.\n"
     "The user will query with codewords, where 'foo' corresponds to population and 'bar'"
