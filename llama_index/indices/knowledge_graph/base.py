@@ -80,10 +80,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             )
         )
         self._max_object_length = max_object_length
-        if kg_triplet_extract_fn is not None:
-            self._extract_triplets = kg_triplet_extract_fn
-        else:
-            self._extract_triplets = self._llm_extract_triplets
+        self._kg_triplet_extract_fn = kg_triplet_extract_fn
 
         super().__init__(
             nodes=nodes,
@@ -117,6 +114,12 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
 
         return KGTableRetriever(self, **kwargs)
+
+    def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
+        if self._kg_triplet_extract_fn is not None:
+            return self._kg_triplet_extract_fn(text)
+        else:
+            return self._llm_extract_triplets(text)
 
     def _llm_extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
