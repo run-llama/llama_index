@@ -50,6 +50,7 @@ class StreamingAgentChatResponse:
     _queue: queue.Queue = queue.Queue()
     _aqueue: asyncio.Queue = asyncio.Queue()
     _is_done = False
+    _new_item_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function_not_none_thread_event: Event = field(default_factory=Event)
     _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
     _is_function: Optional[bool] = None
@@ -109,6 +110,7 @@ class StreamingAgentChatResponse:
                     is not None
                 )
                 self._aqueue.put_nowait(chat.delta)
+                self._new_item_event.set()
                 if self._is_function is False:
                     self._is_function_false_event.set()
             if self._is_function is not None:  # if loop has gone through iteration
@@ -133,13 +135,15 @@ class StreamingAgentChatResponse:
                 continue
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        # not self._is_function_false_event.is_set()
         while not self._is_done or not self._aqueue.empty():
             if not self._aqueue.empty():
                 delta = self._aqueue.get_nowait()
                 self.response += delta
                 yield delta
             else:
-                await asyncio.sleep(0.05)
+                await self._new_item_event.wait()  # Wait until a new item is added
+                self._new_item_event.clear()  # Clear the event for the next wait
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:
