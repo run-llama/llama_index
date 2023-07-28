@@ -21,6 +21,9 @@ from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool, ToolOutput
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 

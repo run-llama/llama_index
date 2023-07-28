@@ -138,12 +138,16 @@ class StreamingAgentChatResponse:
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
+        logger.debug("enter response gen")
         while not self._is_done or not self._queue.empty():
+            logger.debug("enter while")
             try:
                 delta = self._queue.get(block=False)
                 self.response += delta
+                logger.debug(f"delta {delta}")
                 yield delta
             except queue.Empty:
+                logger.debug("Queue empty, start again")
                 # Queue is empty, but we're not done yet
                 continue
 
