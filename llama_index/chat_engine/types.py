@@ -166,6 +166,7 @@ class StreamingAgentChatResponse:
                 continue
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        # not self._is_function_false_event.is_set()
         while not self._is_done or not self._aqueue.empty():
             if not self._aqueue.empty():
                 delta = self._aqueue.get_nowait()
