@@ -77,20 +77,18 @@ class StreamingAgentChatResponse:
 
         # try/except to prevent hanging on error
         try:
-            final_message = None
             for chat in self.chat_stream:
-                final_message = chat.message
                 self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None)
+                    chat.message.additional_kwargs.get("function_call", None)
                     is not None
                 )
                 self._queue.put_nowait(chat.delta)
-                # if self._is_function == False:
                 self._is_function_not_none_thread_event.set()
-            if final_message is not None:
-                memory.put(final_message)
-        except Exception:
-            pass
+            if self._is_function is not None:  # if loop has gone through iteration
+                memory.put(chat.message)
+        except Exception as e:
+            logger.warning(f"Encountered exception writing response to history: {e}")
+
         self._is_done = True
 
     async def awrite_response_to_history(
@@ -105,20 +103,18 @@ class StreamingAgentChatResponse:
 
         # try/except to prevent hanging on error
         try:
-            final_message = None
             async for chat in self.achat_stream:
-                final_message = chat.message
                 self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None)
+                    chat.message.additional_kwargs.get("function_call", None)
                     is not None
                 )
                 self._aqueue.put_nowait(chat.delta)
                 if self._is_function is False:
                     self._is_function_false_event.set()
-            if final_message is not None:
-                memory.put(final_message)
+            if self._is_function is not None:  # if loop has gone through iteration
+                memory.put(chat.message)
         except Exception:
-            pass
+            logger.warning(f"Encountered exception writing response to history: {e}")
 
         self._is_done = True
 

@@ -163,20 +163,18 @@ class BaseOpenAIAgent(BaseAgent):
             chat_stream=self._llm.stream_chat(self.all_messages, functions=functions),
             sources=self.sources,
         )
-
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
             args=(self.session.memory,),
         )
         thread.start()
-
         # Wait for the event to be set
         chat_stream_response._is_function_not_none_thread_event.wait()
-
-        # If _is_function is True, wait for the thread to finish
+        # If it is executing an openAI function, wait for the thread to finish
         if chat_stream_response._is_function:
             thread.join()
+        # if it's false, return the answer (to stream)
         return chat_stream_response
 
     async def _get_async_stream_ai_response(
@@ -192,11 +190,12 @@ class BaseOpenAIAgent(BaseAgent):
         asyncio.create_task(
             chat_stream_response.awrite_response_to_history(self.session.memory)
         )
+        # wait until openAI functions stop executing
         await chat_stream_response._is_function_false_event.wait()
+        # return response stream
         return chat_stream_response
 
     def _call_function(self, tools: list[BaseTool], function_call: dict) -> None:
-        logger.debug("in _call_function")
         function_message, tool_output = call_function(
             tools, function_call, verbose=self._verbose
         )
