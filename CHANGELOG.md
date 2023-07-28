@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.14] - 2023-07-28
 
 ### New Features
 - Added HotpotQADistractor benchmark evaluator (#7034)
