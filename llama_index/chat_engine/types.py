@@ -49,11 +49,18 @@ class StreamingAgentChatResponse:
     _nodes: List[NodeWithScore] = field(default_factory=list)
     _queue: queue.Queue = queue.Queue()
     _aqueue: asyncio.Queue = asyncio.Queue()
-    _is_done = False
-    _new_item_event: asyncio.Event = field(default_factory=asyncio.Event)
-    _is_function_not_none_thread_event: Event = field(default_factory=Event)
-    _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
+    # flag when chat message is a function call
     _is_function: Optional[bool] = None
+    # flag when processing done
+    _is_done = False
+    # signal when a new item is added to the queue
+    _new_item_event: asyncio.Event = field(default_factory=asyncio.Event)
+    # NOTE: async code uses two events rather than one since it yields
+    # control when waiting for queue item
+    # signal when the OpenAI functions stop executing
+    _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
+    # signal when an OpenAI function is being executed
+    _is_function_not_none_thread_event: Event = field(default_factory=Event)
 
     @property
     def source_nodes(self) -> List[NodeWithScore]:
@@ -142,18 +149,14 @@ class StreamingAgentChatResponse:
                 continue
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
-        n = 0
-        # not self._is_function_false_event.is_set()
         while not self._is_done or not self._aqueue.empty():
             if not self._aqueue.empty():
                 delta = self._aqueue.get_nowait()
                 self.response += delta
                 yield delta
-                n += 1
             else:
                 await self._new_item_event.wait()  # Wait until a new item is added
                 self._new_item_event.clear()  # Clear the event for the next wait
-        print(n)
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:
