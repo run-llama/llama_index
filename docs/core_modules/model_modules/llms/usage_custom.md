@@ -18,7 +18,7 @@ In this example, we use `text-davinci-002` instead of `text-davinci-003`. Availa
 
 Note that
 you may also plug in any LLM shown on Langchain's
-[LLM](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) page.
+[LLM](https://python.langchain.com/docs/integrations/llms/) page.
 
 ```python
 
