@@ -24,7 +24,7 @@ class CBEventType(str, Enum):
         RETRIEVE: Logs for the nodes retrieved for a query.
         SYNTHESIZE: Logs for the result for synthesize calls.
         TREE: Logs for the summary and level of summaries generated.
-        SUB_QUESTIONS: Logs for the sub questions and answers generated.
+        SUB_QUESTION: Logs for a generated sub question and answer.
     """
 
     CHUNKING = "chunking"
