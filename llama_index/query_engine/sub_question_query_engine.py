@@ -130,30 +130,22 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
-            with self.callback_manager.event(
-                CBEventType.SUB_QUESTION,
-                payload={EventPayload.SUB_QUESTION: sub_questions},
-            ) as event:
-                if self._use_async:
-                    tasks = [
-                        self._aquery_subq(sub_q, color=colors[str(ind)])
-                        for ind, sub_q in enumerate(sub_questions)
-                    ]
+            if self._use_async:
+                tasks = [
+                    self._aquery_subq(sub_q, color=colors[str(ind)])
+                    for ind, sub_q in enumerate(sub_questions)
+                ]
 
-                    qa_pairs_all = run_async_tasks(tasks)
-                    qa_pairs_all = cast(
-                        List[Optional[SubQuestionAnswerPair]], qa_pairs_all
-                    )
-                else:
-                    qa_pairs_all = [
-                        self._query_subq(sub_q, color=colors[str(ind)])
-                        for ind, sub_q in enumerate(sub_questions)
-                    ]
+                qa_pairs_all = run_async_tasks(tasks)
+                qa_pairs_all = cast(List[Optional[SubQuestionAnswerPair]], qa_pairs_all)
+            else:
+                qa_pairs_all = [
+                    self._query_subq(sub_q, color=colors[str(ind)])
+                    for ind, sub_q in enumerate(sub_questions)
+                ]
 
-                # filter out sub questions that failed
-                qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
-
-                event.on_end(payload={EventPayload.SUB_QUESTION: qa_pairs})
+            # filter out sub questions that failed
+            qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
 
             nodes = [self._construct_node(pair) for pair in qa_pairs]
 
@@ -179,22 +171,16 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
-            with self.callback_manager.event(
-                CBEventType.SUB_QUESTION,
-                payload={EventPayload.SUB_QUESTION: sub_questions},
-            ) as event:
-                tasks = [
-                    self._aquery_subq(sub_q, color=colors[str(ind)])
-                    for ind, sub_q in enumerate(sub_questions)
-                ]
+            tasks = [
+                self._aquery_subq(sub_q, color=colors[str(ind)])
+                for ind, sub_q in enumerate(sub_questions)
+            ]
 
-                qa_pairs_all = await asyncio.gather(*tasks)
-                qa_pairs_all = cast(List[Optional[SubQuestionAnswerPair]], qa_pairs_all)
+            qa_pairs_all = await asyncio.gather(*tasks)
+            qa_pairs_all = cast(List[Optional[SubQuestionAnswerPair]], qa_pairs_all)
 
-                # filter out sub questions that failed
-                qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
-
-                event.on_end(payload={EventPayload.SUB_QUESTION: qa_pairs})
+            # filter out sub questions that failed
+            qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
 
             nodes = [self._construct_node(pair) for pair in qa_pairs]
 
