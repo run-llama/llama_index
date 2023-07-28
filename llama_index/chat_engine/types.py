@@ -70,6 +70,14 @@ class StreamingAgentChatResponse:
                 self.response += delta
         return self.response
 
+    def put_in_queue(self, delta):
+        self._queue.put_nowait(delta)
+        self._is_function_not_none_thread_event.set()
+
+    def aput_in_queue(self, delta):
+        self._aqueue.put_nowait(delta)
+        self._new_item_event.set()
+
     def write_response_to_history(self, memory: BaseMemory) -> None:
         if self.chat_stream is None:
             raise ValueError(
@@ -83,8 +91,7 @@ class StreamingAgentChatResponse:
                     chat.message.additional_kwargs.get("function_call", None)
                     is not None
                 )
-                self._queue.put_nowait(chat.delta)
-                self._is_function_not_none_thread_event.set()
+                self.put_in_queue(chat.delta)
             if self._is_function is not None:  # if loop has gone through iteration
                 memory.put(chat.message)
         except Exception as e:
@@ -109,8 +116,7 @@ class StreamingAgentChatResponse:
                     chat.message.additional_kwargs.get("function_call", None)
                     is not None
                 )
-                self._aqueue.put_nowait(chat.delta)
-                self._new_item_event.set()
+                self.aput_in_queue(chat.delta)
                 if self._is_function is False:
                     self._is_function_false_event.set()
             if self._is_function is not None:  # if loop has gone through iteration
