@@ -377,7 +377,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             span_kind = self._trace_tree.SpanKind.CHAIN
         elif event_type == CBEventType.TREE:
             span_kind = self._trace_tree.SpanKind.CHAIN
-        elif event_type == CBEventType.SUB_QUESTIONS:
+        elif event_type == CBEventType.SUB_QUESTION:
             span_kind = self._trace_tree.SpanKind.CHAIN
         else:
             raise ValueError(f"Unknown event type: {event_type}")

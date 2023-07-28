@@ -130,30 +130,22 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
-            with self.callback_manager.event(
-                CBEventType.SUB_QUESTIONS,
-                payload={EventPayload.SUB_QUESTIONS: sub_questions},
-            ) as event:
-                if self._use_async:
-                    tasks = [
-                        self._aquery_subq(sub_q, color=colors[str(ind)])
-                        for ind, sub_q in enumerate(sub_questions)
-                    ]
+            if self._use_async:
+                tasks = [
+                    self._aquery_subq(sub_q, color=colors[str(ind)])
+                    for ind, sub_q in enumerate(sub_questions)
+                ]
 
-                    qa_pairs_all = run_async_tasks(tasks)
-                    qa_pairs_all = cast(
-                        List[Optional[SubQuestionAnswerPair]], qa_pairs_all
-                    )
-                else:
-                    qa_pairs_all = [
-                        self._query_subq(sub_q, color=colors[str(ind)])
-                        for ind, sub_q in enumerate(sub_questions)
-                    ]
+                qa_pairs_all = run_async_tasks(tasks)
+                qa_pairs_all = cast(List[Optional[SubQuestionAnswerPair]], qa_pairs_all)
+            else:
+                qa_pairs_all = [
+                    self._query_subq(sub_q, color=colors[str(ind)])
+                    for ind, sub_q in enumerate(sub_questions)
+                ]
 
-                # filter out sub questions that failed
-                qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
-
-                event.on_end(payload={EventPayload.SUB_QUESTIONS: qa_pairs})
+            # filter out sub questions that failed
+            qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
 
             nodes = [self._construct_node(pair) for pair in qa_pairs]
 
@@ -179,22 +171,16 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
-            with self.callback_manager.event(
-                CBEventType.SUB_QUESTIONS,
-                payload={EventPayload.SUB_QUESTIONS: sub_questions},
-            ) as event:
-                tasks = [
-                    self._aquery_subq(sub_q, color=colors[str(ind)])
-                    for ind, sub_q in enumerate(sub_questions)
-                ]
+            tasks = [
+                self._aquery_subq(sub_q, color=colors[str(ind)])
+                for ind, sub_q in enumerate(sub_questions)
+            ]
 
-                qa_pairs_all = await asyncio.gather(*tasks)
-                qa_pairs_all = cast(List[Optional[SubQuestionAnswerPair]], qa_pairs_all)
+            qa_pairs_all = await asyncio.gather(*tasks)
+            qa_pairs_all = cast(List[Optional[SubQuestionAnswerPair]], qa_pairs_all)
 
-                # filter out sub questions that failed
-                qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
-
-                event.on_end(payload={EventPayload.SUB_QUESTIONS: qa_pairs})
+            # filter out sub questions that failed
+            qa_pairs: List[SubQuestionAnswerPair] = list(filter(None, qa_pairs_all))
 
             nodes = [self._construct_node(pair) for pair in qa_pairs]
 
@@ -217,21 +203,30 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         self, sub_q: SubQuestion, color: Optional[str] = None
     ) -> Optional[SubQuestionAnswerPair]:
         try:
-            question = sub_q.sub_question
-            query_engine = self._query_engines[sub_q.tool_name]
+            with self.callback_manager.event(
+                CBEventType.SUB_QUESTION,
+                payload={EventPayload.SUB_QUESTION: SubQuestionAnswerPair(sub_q=sub_q)},
+            ) as event:
 
-            if self._verbose:
-                print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
+                question = sub_q.sub_question
+                query_engine = self._query_engines[sub_q.tool_name]
 
-            response = await query_engine.aquery(question)
-            response_text = str(response)
+                if self._verbose:
+                    print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
 
-            if self._verbose:
-                print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
+                response = await query_engine.aquery(question)
+                response_text = str(response)
 
-            return SubQuestionAnswerPair(
-                sub_q=sub_q, answer=response_text, sources=response.source_nodes
-            )
+                if self._verbose:
+                    print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
+
+                qa_pair = SubQuestionAnswerPair(
+                    sub_q=sub_q, answer=response_text, sources=response.source_nodes
+                )
+
+                event.on_end(payload={EventPayload.SUB_QUESTION: qa_pair})
+
+            return qa_pair
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
@@ -240,21 +235,30 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         self, sub_q: SubQuestion, color: Optional[str] = None
     ) -> Optional[SubQuestionAnswerPair]:
         try:
-            question = sub_q.sub_question
-            query_engine = self._query_engines[sub_q.tool_name]
+            with self.callback_manager.event(
+                CBEventType.SUB_QUESTION,
+                payload={EventPayload.SUB_QUESTION: SubQuestionAnswerPair(sub_q=sub_q)},
+            ) as event:
 
-            if self._verbose:
-                print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
+                question = sub_q.sub_question
+                query_engine = self._query_engines[sub_q.tool_name]
 
-            response = query_engine.query(question)
-            response_text = str(response)
+                if self._verbose:
+                    print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
 
-            if self._verbose:
-                print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
+                response = query_engine.query(question)
+                response_text = str(response)
 
-            return SubQuestionAnswerPair(
-                sub_q=sub_q, answer=response_text, sources=response.source_nodes
-            )
+                if self._verbose:
+                    print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
+
+                qa_pair = SubQuestionAnswerPair(
+                    sub_q=sub_q, answer=response_text, sources=response.source_nodes
+                )
+
+                event.on_end(payload={EventPayload.SUB_QUESTION: qa_pair})
+
+            return qa_pair
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
