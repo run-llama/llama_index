@@ -116,8 +116,10 @@ class RecursiveRetriever(BaseRetriever):
         query_id = query_id or self._root_id
         obj = self._fetch_retriever_or_query_engine(query_id)
         if isinstance(obj, BaseRetriever):
-            with self.callback_manager.event(CBEventType.RETRIEVE) as event:
-                event.on_start()
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as event:
                 nodes = obj.retrieve(query_bundle)
                 event.on_end(payload={EventPayload.NODES: nodes})
 

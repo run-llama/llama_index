@@ -115,11 +115,9 @@ class RouterQueryEngine(BaseQueryEngine):
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             result = self._selector.select(self._metadatas, query_bundle)
 
             if len(result.inds) > 1:
@@ -153,11 +151,9 @@ class RouterQueryEngine(BaseQueryEngine):
         return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             result = await self._selector.aselect(self._metadatas, query_bundle)
 
             if len(result.inds) > 1:
@@ -281,11 +277,9 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
 
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             query_engine_tools = self._retriever.retrieve(query_bundle)
             responses = []
             for query_engine_tool in query_engine_tools:
@@ -304,11 +298,9 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             query_engine_tools = self._retriever.retrieve(query_bundle)
             tasks = []
             for query_engine_tool in query_engine_tools:

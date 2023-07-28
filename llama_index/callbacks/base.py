@@ -145,8 +145,19 @@ class CallbackManager(BaseCallbackHandler, ABC):
         self.handlers = handlers
 
     @contextmanager
-    def event(self, event_type: CBEventType) -> Generator["EventContext", None, None]:
-        yield EventContext(self, event_type)
+    def event(
+        self,
+        event_type: CBEventType,
+        payload: Optional[Dict[str, Any]] = None,
+        event_id: Optional[str] = None,
+    ) -> Generator["EventContext", None, None]:
+        event = EventContext(self, event_type, event_id=event_id)
+        event.on_start(payload=payload)
+
+        yield event
+
+        if not event.finished:
+            event.on_end()
 
     @contextmanager
     def as_trace(self, trace_id: str) -> Generator[None, None, None]:
@@ -198,17 +209,28 @@ class EventContext:
     with an event type and id.
     """
 
-    def __init__(self, callback_manager: CallbackManager, event_type: CBEventType):
+    def __init__(
+        self,
+        callback_manager: CallbackManager,
+        event_type: CBEventType,
+        event_id: Optional[str] = None,
+    ):
         self._callback_manager = callback_manager
         self._event_type = event_type
-        self._event_id: Optional[str] = None
+        self._event_id = event_id or str(uuid.uuid4())
+        self.started = False
+        self.finished = False
 
     def on_start(self, payload: Optional[Dict[str, Any]] = None, **kwargs: Any) -> None:
-        self._event_id = self._callback_manager.on_event_start(
-            self._event_type, payload=payload, event_id=self._event_id, **kwargs
-        )
+        if not self.started:
+            self.started = True
+            self._callback_manager.on_event_start(
+                self._event_type, payload=payload, event_id=self._event_id, **kwargs
+            )
 
     def on_end(self, payload: Optional[Dict[str, Any]] = None, **kwargs: Any) -> None:
-        self._callback_manager.on_event_end(
-            self._event_type, payload=payload, event_id=self._event_id, **kwargs
-        )
+        if not self.finished:
+            self.finished = True
+            self._callback_manager.on_event_end(
+                self._event_type, payload=payload, event_id=self._event_id, **kwargs
+            )

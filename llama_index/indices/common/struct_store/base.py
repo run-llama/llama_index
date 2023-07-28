@@ -113,9 +113,9 @@ class SQLDocumentContextBuilder:
             refine_template=refine_prompt_with_schema,
         )
         with self._service_context.callback_manager.event(
-            CBEventType.CHUNKING
+            CBEventType.CHUNKING,
+            payload={EventPayload.DOCUMENTS: documents},
         ) as event:
-            event.on_start(payload={EventPayload.DOCUMENTS: documents})
             text_chunks = []
             for doc in documents:
                 chunks = text_splitter.split_text(

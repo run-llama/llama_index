@@ -83,9 +83,9 @@ class SimpleNodeParser(NodeParser):
             include_metadata (bool): whether to include metadata in nodes
 
         """
-        with self.callback_manager.event(CBEventType.NODE_PARSING) as event:
-            event.on_start(payload={EventPayload.DOCUMENTS: documents})
-
+        with self.callback_manager.event(
+            CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
+        ) as event:
             all_nodes: List[BaseNode] = []
             documents_with_progress = get_tqdm_iterable(
                 documents, show_progress, "Parsing documents into nodes"

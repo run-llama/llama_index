@@ -56,11 +56,9 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         """Query a single index."""
         index_id = index_id or self._graph.root_id
 
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             # get query engine
             if index_id in self._custom_query_engines:
                 query_engine = self._custom_query_engines[index_id]
@@ -69,8 +67,10 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
                     **self._kwargs
                 )
 
-            with self.callback_manager.event(CBEventType.RETRIEVE) as retrieve_event:
-                retrieve_event.on_start()
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
                 nodes = query_engine.retrieve(query_bundle)
                 retrieve_event.on_end(payload={EventPayload.NODES: nodes})
 

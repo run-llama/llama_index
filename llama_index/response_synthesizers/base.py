@@ -116,12 +116,12 @@ class BaseSynthesizer(ABC):
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
-        with self._callback_manager.event(CBEventType.SYNTHESIZE) as event:
-            event.on_start()
+        if isinstance(query, str):
+            query = QueryBundle(query_str=query)
 
-            if isinstance(query, str):
-                query = QueryBundle(query_str=query)
-
+        with self._callback_manager.event(
+            CBEventType.SYNTHESIZE, payload={EventPayload.QUERY_STR: query.query_str}
+        ) as event:
             response_str = self.get_response(
                 query_str=query.query_str,
                 text_chunks=[
@@ -144,11 +144,12 @@ class BaseSynthesizer(ABC):
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
-        with self._callback_manager.event(CBEventType.SYNTHESIZE) as event:
+        if isinstance(query, str):
+            query = QueryBundle(query_str=query)
 
-            if isinstance(query, str):
-                query = QueryBundle(query_str=query)
-
+        with self._callback_manager.event(
+            CBEventType.SYNTHESIZE, payload={EventPayload.QUERY_STR: query.query_str}
+        ) as event:
             response_str = await self.aget_response(
                 query_str=query.query_str,
                 text_chunks=[

@@ -262,14 +262,13 @@ class CitationQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
-            with self.callback_manager.event(CBEventType.RETRIEVE) as retrieve_event:
-                retrieve_event.on_start()
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
                 nodes = self.retrieve(query_bundle)
                 nodes = self._create_citation_nodes(nodes)
 
@@ -286,14 +285,13 @@ class CitationQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
-            with self.callback_manager.event(CBEventType.RETRIEVE) as retrieve_event:
-                retrieve_event.on_start()
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
                 nodes = self.retrieve(query_bundle)
                 nodes = self._create_citation_nodes(nodes)
 

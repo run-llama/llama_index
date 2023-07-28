@@ -70,11 +70,9 @@ class MultiStepQueryEngine(BaseQueryEngine):
         super().__init__(callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             nodes, source_nodes, metadata = self._query_multistep(query_bundle)
 
             final_response = self._response_synthesizer.synthesize(
@@ -90,11 +88,9 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
 
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             nodes, source_nodes, metadata = self._query_multistep(query_bundle)
 
             final_response = await self._response_synthesizer.asynthesize(

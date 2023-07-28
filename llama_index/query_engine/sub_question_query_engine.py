@@ -120,11 +120,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             sub_questions = self._question_gen.generate(self._metadatas, query_bundle)
 
             colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
@@ -132,9 +130,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
-            with self.callback_manager.event(CBEventType.SUB_QUESTIONS) as event:
-                event.on_start(payload={EventPayload.SUB_QUESTIONS: sub_questions})
-
+            with self.callback_manager.event(
+                CBEventType.SUB_QUESTIONS,
+                payload={EventPayload.SUB_QUESTIONS: sub_questions},
+            ) as event:
                 if self._use_async:
                     tasks = [
                         self._aquery_subq(sub_q, color=colors[str(ind)])
@@ -168,11 +167,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        with self.callback_manager.event(CBEventType.QUERY) as query_event:
-            query_event.on_start(
-                payload={EventPayload.QUERY_STR: query_bundle.query_str}
-            )
-
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
             sub_questions = await self._question_gen.agenerate(
                 self._metadatas, query_bundle
             )
@@ -182,9 +179,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"Generated {len(sub_questions)} sub questions.\n")
 
-            with self.callback_manager.event(CBEventType.SUB_QUESTIONS) as event:
-                event.on_start(payload={EventPayload.SUB_QUESTIONS: sub_questions})
-
+            with self.callback_manager.event(
+                CBEventType.SUB_QUESTIONS,
+                payload={EventPayload.SUB_QUESTIONS: sub_questions},
+            ) as event:
                 tasks = [
                     self._aquery_subq(sub_q, color=colors[str(ind)])
                     for ind, sub_q in enumerate(sub_questions)

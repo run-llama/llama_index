@@ -102,9 +102,9 @@ class LLMPredictor(BaseLLMPredictor):
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Predict."""
-        with self.callback_manager.event(CBEventType.LLM) as event:
-            event.on_start(payload=self._get_start_payload(prompt, prompt_args))
-
+        with self.callback_manager.event(
+            CBEventType.LLM, payload=self._get_start_payload(prompt, prompt_args)
+        ) as event:
             if self._llm.metadata.is_chat_model:
                 messages = prompt.format_messages(llm=self._llm, **prompt_args)
                 chat_response = self._llm.chat(messages=messages)
@@ -136,9 +136,9 @@ class LLMPredictor(BaseLLMPredictor):
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Async predict."""
-        with self.callback_manager.event(CBEventType.LLM) as event:
-            event.on_start(payload=self._get_start_payload(prompt, prompt_args))
-
+        with self.callback_manager.event(
+            CBEventType.LLM, payload=self._get_start_payload(prompt, prompt_args)
+        ) as event:
             if self._llm.metadata.is_chat_model:
                 messages = prompt.format_messages(llm=self._llm, **prompt_args)
                 chat_response = await self._llm.achat(messages=messages)

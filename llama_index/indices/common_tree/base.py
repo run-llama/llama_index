@@ -6,7 +6,7 @@ import logging
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore import BaseDocumentStore
@@ -145,9 +145,9 @@ class GPTTreeIndexBuilder:
             cur_node_ids
         )
 
-        with self._service_context.callback_manager.event(CBEventType.TREE) as event:
-            event.on_start(payload={"chunks": text_chunks})
-
+        with self._service_context.callback_manager.event(
+            CBEventType.TREE, payload={EventPayload.CHUNKS: text_chunks}
+        ) as event:
             if self._use_async:
                 tasks = [
                     self._service_context.llm_predictor.apredict(
@@ -209,9 +209,9 @@ class GPTTreeIndexBuilder:
             cur_node_ids
         )
 
-        with self._service_context.callback_manager.event(CBEventType.TREE) as event:
-            event.on_start(payload={"chunks": text_chunks})
-
+        with self._service_context.callback_manager.event(
+            CBEventType.TREE, payload={EventPayload.CHUNKS: text_chunks}
+        ) as event:
             text_chunks_progress = get_tqdm_iterable(
                 text_chunks,
                 show_progress=self._show_progress,
