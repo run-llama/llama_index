@@ -9,6 +9,7 @@
 
 ### Bug Fixes / Nits
 - Fix string formatting in context chat engine (#7050)
+- Fixed tracing for async events (#7052)
 - Less strict triplet extraction for KGs (#7059)
 - Add configurable limit to KG data retrieved (#7059)
 - Nebula connection improvements (#7059)

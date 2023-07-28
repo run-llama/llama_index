@@ -128,16 +128,16 @@ class TokenTextSplitter(TextSplitter):
 
     def split_text(self, text: str, metadata_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
-        )
-        text_splits = self.split_text_with_overlaps(text, metadata_str=metadata_str)
-        chunks = [text_split.text_chunk for text_split in text_splits]
-        self.callback_manager.on_event_end(
-            CBEventType.CHUNKING,
-            payload={EventPayload.CHUNKS: chunks},
-            event_id=event_id,
-        )
+        with self.callback_manager.event(
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
+        ) as event:
+            text_splits = self.split_text_with_overlaps(text, metadata_str=metadata_str)
+            chunks = [text_split.text_chunk for text_split in text_splits]
+
+            event.on_end(
+                payload={EventPayload.CHUNKS: chunks},
+            )
+
         return chunks
 
     def split_text_with_overlaps(
@@ -146,102 +146,109 @@ class TokenTextSplitter(TextSplitter):
         """Split incoming text and return chunks with overlap size."""
         if text == "":
             return []
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
-        )
 
-        # NOTE: Consider metadata info str that will be added to the chunk at query time
-        #       This reduces the effective chunk size that we can have
-        if metadata_str is not None:
-            # NOTE: extra 2 newline chars for formatting when prepending in query
-            num_extra_tokens = len(self.tokenizer(f"{metadata_str}\n\n")) + 1
-            effective_chunk_size = self._chunk_size - num_extra_tokens
+        with self.callback_manager.event(
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
+        ) as event:
+            # NOTE: Consider metadata info str that will be added
+            #   to the chunk at query time. This reduces the effective
+            #   chunk size that we can have
+            if metadata_str is not None:
+                # NOTE: extra 2 newline chars for formatting when prepending in query
+                num_extra_tokens = len(self.tokenizer(f"{metadata_str}\n\n")) + 1
+                effective_chunk_size = self._chunk_size - num_extra_tokens
 
-            if effective_chunk_size <= 0:
-                raise ValueError(
-                    "Effective chunk size is non positive after considering metadata"
-                )
-        else:
-            effective_chunk_size = self._chunk_size
+                if effective_chunk_size <= 0:
+                    raise ValueError(
+                        "Effective chunk size is non positive "
+                        "after considering metadata"
+                    )
+            else:
+                effective_chunk_size = self._chunk_size
 
-        # First we naively split the large input into a bunch of smaller ones.
-        splits = text.split(self._separator)
-        splits = self._preprocess_splits(splits, effective_chunk_size)
-        # We now want to combine these smaller pieces into medium size
-        # chunks to send to the LLM.
-        docs: List[TextSplit] = []
+            # First we naively split the large input into a bunch of smaller ones.
+            splits = text.split(self._separator)
+            splits = self._preprocess_splits(splits, effective_chunk_size)
+            # We now want to combine these smaller pieces into medium size
+            # chunks to send to the LLM.
+            docs: List[TextSplit] = []
 
-        start_idx = 0
-        cur_idx = 0
-        cur_total = 0
-        prev_idx = 0  # store the previous end index
-        while cur_idx < len(splits):
-            cur_token = splits[cur_idx]
-            num_cur_tokens = max(len(self.tokenizer(cur_token)), 1)
-            if num_cur_tokens > effective_chunk_size:
-                raise ValueError(
-                    "A single term is larger than the allowed chunk size.\n"
-                    f"Term size: {num_cur_tokens}\n"
-                    f"Chunk size: {self._chunk_size}"
-                    f"Effective chunk size: {effective_chunk_size}"
-                )
-            # If adding token to current_doc would exceed the chunk size:
-            # 1. First verify with tokenizer that current_doc
-            # 1. Update the docs list
-            if cur_total + num_cur_tokens > effective_chunk_size:
-                # NOTE: since we use a proxy for counting tokens, we want to
-                # run tokenizer across all of current_doc first. If
-                # the chunk is too big, then we will reduce text in pieces
-                cur_idx = self._reduce_chunk_size(start_idx, cur_idx, splits)
-                overlap = 0
-                # after first round, check if last chunk ended after this chunk begins
-                if prev_idx > 0 and prev_idx > start_idx:
-                    overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)])
+            start_idx = 0
+            cur_idx = 0
+            cur_total = 0
+            prev_idx = 0  # store the previous end index
+            while cur_idx < len(splits):
+                cur_token = splits[cur_idx]
+                num_cur_tokens = max(len(self.tokenizer(cur_token)), 1)
+                if num_cur_tokens > effective_chunk_size:
+                    raise ValueError(
+                        "A single term is larger than the allowed chunk size.\n"
+                        f"Term size: {num_cur_tokens}\n"
+                        f"Chunk size: {self._chunk_size}"
+                        f"Effective chunk size: {effective_chunk_size}"
+                    )
+                # If adding token to current_doc would exceed the chunk size:
+                # 1. First verify with tokenizer that current_doc
+                # 1. Update the docs list
+                if cur_total + num_cur_tokens > effective_chunk_size:
+                    # NOTE: since we use a proxy for counting tokens, we want to
+                    # run tokenizer across all of current_doc first. If
+                    # the chunk is too big, then we will reduce text in pieces
+                    cur_idx = self._reduce_chunk_size(start_idx, cur_idx, splits)
+                    overlap = 0
+                    # after first round, check if last chunk
+                    # ended after this chunk begins
+                    if prev_idx > 0 and prev_idx > start_idx:
+                        overlap = sum(
+                            [len(splits[i]) for i in range(start_idx, prev_idx)]
+                        )
 
-                docs.append(
-                    TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap)
-                )
-                prev_idx = cur_idx
-                # 2. Shrink the current_doc (from the front) until it is gets smaller
-                # than the overlap size
-                # NOTE: because counting tokens individually is an imperfect
-                # proxy (but much faster proxy) for the total number of tokens consumed,
-                # we need to enforce that start_idx <= cur_idx, otherwise
-                # start_idx has a chance of going out of bounds.
-                while cur_total > self._chunk_overlap and start_idx < cur_idx:
-                    # # call tokenizer on entire overlap
-                    # cur_total = self.tokenizer()
-                    cur_num_tokens = max(len(self.tokenizer(splits[start_idx])), 1)
-                    cur_total -= cur_num_tokens
-                    start_idx += 1
-                # NOTE: This is a hack, make more general
-                if start_idx == cur_idx:
-                    cur_total = 0
-            # Build up the current_doc with term d, and update the total counter with
-            # the number of the number of tokens in d, wrt self.tokenizer
+                    docs.append(
+                        TextSplit(
+                            self._separator.join(splits[start_idx:cur_idx]), overlap
+                        )
+                    )
+                    prev_idx = cur_idx
+                    # 2. Shrink the current_doc (from the front) until it is gets
+                    # smaller than the overlap size
+                    # NOTE: because counting tokens individually is an imperfect
+                    # proxy (but much faster proxy) for the total number of tokens
+                    # consumed, we need to enforce that start_idx <= cur_idx, otherwise
+                    # start_idx has a chance of going out of bounds.
+                    while cur_total > self._chunk_overlap and start_idx < cur_idx:
+                        # # call tokenizer on entire overlap
+                        # cur_total = self.tokenizer()
+                        cur_num_tokens = max(len(self.tokenizer(splits[start_idx])), 1)
+                        cur_total -= cur_num_tokens
+                        start_idx += 1
+                    # NOTE: This is a hack, make more general
+                    if start_idx == cur_idx:
+                        cur_total = 0
+                # Build up the current_doc with term d, and update the total counter
+                # with the number of the number of tokens in d, wrt self.tokenizer
 
-            # we reassign cur_token and num_cur_tokens, because cur_idx
-            # may have changed
-            cur_token = splits[cur_idx]
-            num_cur_tokens = max(len(self.tokenizer(cur_token)), 1)
+                # we reassign cur_token and num_cur_tokens, because cur_idx
+                # may have changed
+                cur_token = splits[cur_idx]
+                num_cur_tokens = max(len(self.tokenizer(cur_token)), 1)
 
-            cur_total += num_cur_tokens
-            cur_idx += 1
-        overlap = 0
-        # after first round, check if last chunk ended after this chunk begins
-        if prev_idx > start_idx:
-            overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)]) + len(
-                range(start_idx, prev_idx)
+                cur_total += num_cur_tokens
+                cur_idx += 1
+            overlap = 0
+            # after first round, check if last chunk ended after this chunk begins
+            if prev_idx > start_idx:
+                overlap = sum(
+                    [len(splits[i]) for i in range(start_idx, prev_idx)]
+                ) + len(range(start_idx, prev_idx))
+            docs.append(
+                TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap)
             )
-        docs.append(TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap))
 
-        # run postprocessing to remove blank spaces
-        docs = self._postprocess_splits(docs)
-        self.callback_manager.on_event_end(
-            CBEventType.CHUNKING,
-            payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]},
-            event_id=event_id,
-        )
+            # run postprocessing to remove blank spaces
+            docs = self._postprocess_splits(docs)
+
+            event.on_end(payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]})
+
         return docs
 
     def truncate_text(self, text: str) -> str:
@@ -347,121 +354,122 @@ class SentenceSplitter(TextSplitter):
         """
         if text == "":
             return []
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
-        )
 
-        # NOTE: Consider metadata info str that will be added to the chunk at query time
-        #       This reduces the effective chunk size that we can have
-        if metadata_str is not None:
-            # NOTE: extra 2 newline chars for formatting when prepending in query
-            num_extra_tokens = len(self.tokenizer(f"{metadata_str}\n\n")) + 1
-            effective_chunk_size = self._chunk_size - num_extra_tokens
+        with self.callback_manager.event(
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
+        ) as event:
+            # NOTE: Consider metadata info str that will be added to the chunk at query
+            #       This reduces the effective chunk size that we can have
+            if metadata_str is not None:
+                # NOTE: extra 2 newline chars for formatting when prepending in query
+                num_extra_tokens = len(self.tokenizer(f"{metadata_str}\n\n")) + 1
+                effective_chunk_size = self._chunk_size - num_extra_tokens
 
-            if effective_chunk_size <= 0:
-                raise ValueError(
-                    "Effective chunk size is non positive after considering metadata"
-                )
-        else:
-            effective_chunk_size = self._chunk_size
-
-        # First we split paragraphs using separator
-        splits = text.split(self.paragraph_separator)
-
-        # Merge paragraphs that are too small.
-
-        idx = 0
-        while idx < len(splits):
-            if idx < len(splits) - 1 and len(splits[idx]) < effective_chunk_size:
-                splits[idx] = "\n\n".join([splits[idx], splits[idx + 1]])
-                splits.pop(idx + 1)
+                if effective_chunk_size <= 0:
+                    raise ValueError(
+                        "Effective chunk size is non positive "
+                        "after considering metadata"
+                    )
             else:
-                idx += 1
+                effective_chunk_size = self._chunk_size
 
-        # Next we split the text using the chunk tokenizer fn,
-        # which defaults to the sentence tokenizer from nltk.
-        chunked_splits = [self.chunking_tokenizer_fn(text) for text in splits]
-        splits = [chunk for split in chunked_splits for chunk in split]
+            # First we split paragraphs using separator
+            splits = text.split(self.paragraph_separator)
 
-        # Check if any sentences exceed the chunk size. If they do, split again
-        # using the second chunk separator. If it any still exceed,
-        # use the default separator (" ").
-        @dataclass
-        class Split:
-            text: str  # the split text
-            is_sentence: bool  # save whether this is a full sentence
+            # Merge paragraphs that are too small.
 
-        new_splits: List[Split] = []
-        for split in splits:
-            split_len = len(self.tokenizer(split))
-            if split_len <= effective_chunk_size:
-                new_splits.append(Split(split, True))
-            else:
-                if self.second_chunking_regex is not None:
-                    import re
-
-                    # Default regex is "[^,\.;]+[,\.;]?"
-                    splits2 = re.findall(self.second_chunking_regex, split)
-
+            idx = 0
+            while idx < len(splits):
+                if idx < len(splits) - 1 and len(splits[idx]) < effective_chunk_size:
+                    splits[idx] = "\n\n".join([splits[idx], splits[idx + 1]])
+                    splits.pop(idx + 1)
                 else:
-                    splits2 = [split]
-                for split2 in splits2:
-                    if len(self.tokenizer(split2)) <= effective_chunk_size:
-                        new_splits.append(Split(split2, False))
+                    idx += 1
+
+            # Next we split the text using the chunk tokenizer fn,
+            # which defaults to the sentence tokenizer from nltk.
+            chunked_splits = [self.chunking_tokenizer_fn(text) for text in splits]
+            splits = [chunk for split in chunked_splits for chunk in split]
+
+            # Check if any sentences exceed the chunk size. If they do, split again
+            # using the second chunk separator. If it any still exceed,
+            # use the default separator (" ").
+            @dataclass
+            class Split:
+                text: str  # the split text
+                is_sentence: bool  # save whether this is a full sentence
+
+            new_splits: List[Split] = []
+            for split in splits:
+                split_len = len(self.tokenizer(split))
+                if split_len <= effective_chunk_size:
+                    new_splits.append(Split(split, True))
+                else:
+                    if self.second_chunking_regex is not None:
+                        import re
+
+                        # Default regex is "[^,\.;]+[,\.;]?"
+                        splits2 = re.findall(self.second_chunking_regex, split)
+
                     else:
-                        splits3 = split2.split(self._separator)
-                        new_splits.extend([Split(split3, False) for split3 in splits3])
+                        splits2 = [split]
+                    for split2 in splits2:
+                        if len(self.tokenizer(split2)) <= effective_chunk_size:
+                            new_splits.append(Split(split2, False))
+                        else:
+                            splits3 = split2.split(self._separator)
+                            new_splits.extend(
+                                [Split(split3, False) for split3 in splits3]
+                            )
 
-        # Create the list of text splits by combining smaller chunks.
-        docs: List[TextSplit] = []
-        cur_doc_list: List[str] = []
-        cur_tokens = 0
-        while len(new_splits) > 0:
-            cur_token = new_splits[0]
-            cur_len = len(self.tokenizer(cur_token.text))
-            if cur_len > effective_chunk_size:
-                raise ValueError("Single token exceed chunk size")
-            if cur_tokens + cur_len > effective_chunk_size:
-                docs.append(TextSplit("".join(cur_doc_list).strip()))
-                cur_doc_list = []
-                cur_tokens = 0
-            else:
-                if (
-                    cur_token.is_sentence
-                    or cur_tokens + cur_len < effective_chunk_size - self._chunk_overlap
-                ):
-                    cur_tokens += cur_len
-                    cur_doc_list.append(cur_token.text)
-                    new_splits.pop(0)
-                else:
+            # Create the list of text splits by combining smaller chunks.
+            docs: List[TextSplit] = []
+            cur_doc_list: List[str] = []
+            cur_tokens = 0
+            while len(new_splits) > 0:
+                cur_token = new_splits[0]
+                cur_len = len(self.tokenizer(cur_token.text))
+                if cur_len > effective_chunk_size:
+                    raise ValueError("Single token exceed chunk size")
+                if cur_tokens + cur_len > effective_chunk_size:
                     docs.append(TextSplit("".join(cur_doc_list).strip()))
                     cur_doc_list = []
                     cur_tokens = 0
+                else:
+                    if (
+                        cur_token.is_sentence
+                        or cur_tokens + cur_len
+                        < effective_chunk_size - self._chunk_overlap
+                    ):
+                        cur_tokens += cur_len
+                        cur_doc_list.append(cur_token.text)
+                        new_splits.pop(0)
+                    else:
+                        docs.append(TextSplit("".join(cur_doc_list).strip()))
+                        cur_doc_list = []
+                        cur_tokens = 0
 
-        docs.append(TextSplit("".join(cur_doc_list).strip()))
+            docs.append(TextSplit("".join(cur_doc_list).strip()))
 
-        # run postprocessing to remove blank spaces
-        docs = self._postprocess_splits(docs)
+            # run postprocessing to remove blank spaces
+            docs = self._postprocess_splits(docs)
 
-        self.callback_manager.on_event_end(
-            CBEventType.CHUNKING,
-            payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]},
-            event_id=event_id,
-        )
+            event.on_end(payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]})
+
         return docs
 
     def split_text(self, text: str, metadata_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
-        )
-        text_splits = self.split_text_with_overlaps(text, metadata_str=metadata_str)
-        chunks = [text_split.text_chunk for text_split in text_splits]
-        self.callback_manager.on_event_end(
-            CBEventType.CHUNKING,
-            payload={EventPayload.CHUNKS: chunks},
-            event_id=event_id,
-        )
+        with self.callback_manager.event(
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
+        ) as event:
+            text_splits = self.split_text_with_overlaps(text, metadata_str=metadata_str)
+            chunks = [text_split.text_chunk for text_split in text_splits]
+
+            event.on_end(
+                payload={EventPayload.CHUNKS: chunks},
+            )
+
         return chunks
 
 
