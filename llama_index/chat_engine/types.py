@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from threading import Event
-from typing import AsyncGenerator, Generator, List, Optional
+from typing import AsyncGenerator, Generator, List, Optional, Union
 
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
@@ -173,7 +173,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse | StreamingAgentChatResponse:
+    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
         """Main chat interface."""
         pass
 
@@ -187,7 +187,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse | StreamingAgentChatResponse:
+    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
         """Async version of main chat interface."""
         pass
 

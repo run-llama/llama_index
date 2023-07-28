@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 from enum import Enum, auto
 from threading import Thread
-from typing import Any, Callable, Optional, Tuple, Type
+from typing import Any, Callable, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -133,7 +133,7 @@ class BaseOpenAIAgent(BaseAgent):
         pass
 
     def _should_continue(
-        self, function_call: dict | None, n_function_calls: int
+        self, function_call: Optional[dict], n_function_calls: int
     ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
@@ -204,7 +204,7 @@ class BaseOpenAIAgent(BaseAgent):
 
     def _get_agent_response(
         self, mode: ChatMode, functions: list[dict]
-    ) -> AgentChatResponse | StreamingAgentChatResponse:
+    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
         if mode == ChatMode.default:
             chat_response: ChatResponse = self._llm.chat(
                 self.all_messages, functions=functions
@@ -217,7 +217,7 @@ class BaseOpenAIAgent(BaseAgent):
 
     async def _get_async_agent_response(
         self, mode: ChatMode, functions: list[dict]
-    ) -> AgentChatResponse | StreamingAgentChatResponse:
+    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
         if mode == ChatMode.default:
             chat_response: ChatResponse = await self._llm.achat(
                 self.all_messages, functions=functions
@@ -234,7 +234,7 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[list[ChatMessage]] = None,
         *,
         mode: ChatMode = ChatMode.default,
-    ) -> AgentChatResponse | StreamingAgentChatResponse:
+    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 
@@ -257,7 +257,7 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[list[ChatMessage]] = None,
         *,
         mode: ChatMode = ChatMode.default,
-    ) -> AgentChatResponse | StreamingAgentChatResponse:
+    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 
