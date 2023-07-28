@@ -41,7 +41,7 @@ class WeaviateVectorStore(VectorStore):
     Args:
         weaviate_client (weaviate.Client): WeaviateClient
             instance from `weaviate-client` package
-        class_prefix (Optional[str]): prefix for Weaviate classes
+        index_name (Optional[str]): name for Weaviate classes
 
     """
 
@@ -71,7 +71,7 @@ class WeaviateVectorStore(VectorStore):
         self._client = cast(Client, weaviate_client)
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
-            logger.warning("class_prefix is deprecated, please use class_name")
+            logger.warning("class_prefix is deprecated, please use index_name")
             # legacy, kept for backward compatibility
             index_name = f"{class_prefix}_Node"
 

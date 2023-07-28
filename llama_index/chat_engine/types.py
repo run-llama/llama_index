@@ -8,6 +8,8 @@ from typing import Generator, List, Optional
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.tools import ToolOutput
+from llama_index.response.schema import Response, StreamingResponse
+from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,16 @@ class AgentChatResponse:
 
     response: str = ""
     sources: List[ToolOutput] = field(default_factory=list)
+    _nodes: List[NodeWithScore] = field(default_factory=list)
+
+    @property
+    def source_nodes(self) -> List[NodeWithScore]:
+        if not self._nodes:
+            self._nodes = []
+            for tool_output in self.sources:
+                if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
+                    self._nodes.extend(tool_output.raw_output.source_nodes)
+        return self._nodes
 
     def __str__(self) -> str:
         return self.response
@@ -31,9 +43,19 @@ class StreamingAgentChatResponse:
     sources: List[ToolOutput] = field(default_factory=list)
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
+    _nodes: List[NodeWithScore] = field(default_factory=list)
     _queue: queue.Queue = queue.Queue()
     _is_done = False
     _is_function: Optional[bool] = None
+
+    @property
+    def source_nodes(self) -> List[NodeWithScore]:
+        if not self._nodes:
+            self._nodes = []
+            for tool_output in self.sources:
+                if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
+                    self._nodes.extend(tool_output.raw_output.source_nodes)
+        return self._nodes
 
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
@@ -102,6 +124,10 @@ class StreamingAgentChatResponse:
             except queue.Empty:
                 # Queue is empty, but we're not done yet
                 continue
+
+    def print_response_stream(self) -> None:
+        for token in self.response_gen:
+            print(token, end="")
 
 
 class BaseChatEngine(ABC):
@@ -172,6 +198,13 @@ class ChatMode(str, Enum):
     
     First generate a standalone question from conversation context and last message,
     then query the query engine for a response.
+    """
+
+    CONTEXT = "context"
+    """Corresponds to `ContextChatEngine`.
+    
+    First retrieve text from the index using the user's message, then use the context
+    in the system prompt to generate a response.
     """
 
     REACT = "react"

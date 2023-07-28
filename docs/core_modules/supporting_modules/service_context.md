@@ -13,7 +13,7 @@ The `ServiceContext` is a simple python dataclass that you can directly construc
 @dataclass
 class ServiceContext:
     # The LLM used to generate natural language responses to queries.
-    llm_predictor: BaseLLMPredictor
+    llm: LLM
 
     # The PromptHelper object that helps with truncating and repacking text chunks to fit in the LLM's context window.
     prompt_helper: PromptHelper
