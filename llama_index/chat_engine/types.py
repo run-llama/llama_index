@@ -142,15 +142,18 @@ class StreamingAgentChatResponse:
                 continue
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        n = 0
         # not self._is_function_false_event.is_set()
         while not self._is_done or not self._aqueue.empty():
             if not self._aqueue.empty():
                 delta = self._aqueue.get_nowait()
                 self.response += delta
                 yield delta
+                n += 1
             else:
                 await self._new_item_event.wait()  # Wait until a new item is added
                 self._new_item_event.clear()  # Clear the event for the next wait
+        print(n)
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:
