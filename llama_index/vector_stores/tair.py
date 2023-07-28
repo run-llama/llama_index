@@ -5,12 +5,14 @@ An index that is built on top of Alibaba Cloud's Tair database.
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from llama_index.schema import (MetadataMode, NodeRelationship,
-                                RelatedNodeInfo, TextNode)
-from llama_index.vector_stores.types import (MetadataFilters,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 from llama_index.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
