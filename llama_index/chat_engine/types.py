@@ -117,7 +117,7 @@ class StreamingAgentChatResponse:
                 "achat_stream is None. Cannot asynchronously write to "
                 "history without achat_stream."
             )
-
+        print("awrite response")
         # try/except to prevent hanging on error
         try:
             async for chat in self.achat_stream:
@@ -138,16 +138,30 @@ class StreamingAgentChatResponse:
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
-        logger.debug("enter response gen")
+        print("enter response gen")
         while not self._is_done or not self._queue.empty():
-            logger.debug("enter while")
+            print("enter while")
             try:
                 delta = self._queue.get(block=False)
                 self.response += delta
-                logger.debug(f"delta {delta}")
+                print(f"delta {delta}")
                 yield delta
             except queue.Empty:
-                logger.debug("Queue empty, start again")
+                print("Queue empty, start again")
+                # Queue is empty, but we're not done yet
+                continue
+
+    async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        print("enter async response gen")
+        while not self._is_done or not self._aqueue.empty():
+            print("enter while")
+            try:
+                delta = self._aqueue.get_nowait()
+                self.response += delta
+                print(f"delta {delta}")
+                yield delta
+            except asyncio.QueueEmpty:
+                print("Queue empty")
                 # Queue is empty, but we're not done yet
                 continue
 
