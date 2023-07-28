@@ -8,7 +8,7 @@ from typing import Generator, List, Optional
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.tools import ToolOutput
-from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class AgentChatResponse:
         if not self._nodes:
             self._nodes = []
             for tool_output in self.sources:
-                if isinstance(tool_output.raw_output, RESPONSE_TYPE):
+                if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
                     self._nodes.extend(tool_output.raw_output.source_nodes)
         return self._nodes
 
@@ -53,7 +53,7 @@ class StreamingAgentChatResponse:
         if not self._nodes:
             self._nodes = []
             for tool_output in self.sources:
-                if isinstance(tool_output.raw_output, RESPONSE_TYPE):
+                if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
                     self._nodes.extend(tool_output.raw_output.source_nodes)
         return self._nodes
 
