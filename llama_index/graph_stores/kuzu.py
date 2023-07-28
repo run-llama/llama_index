@@ -7,8 +7,12 @@ from llama_index.graph_stores.types import GraphStore
 
 class KuzuGraphStore(GraphStore):
     def __init__(
-        self, database, node_table_name="entity", rel_table_name="links", **kwargs
-    ):
+        self,
+        database: Any,
+        node_table_name: str = "entity",
+        rel_table_name: str = "links",
+        **kwargs: Any
+    ) -> None:
         try:
             import kuzu
         except ImportError:
@@ -19,7 +23,7 @@ class KuzuGraphStore(GraphStore):
         self.rel_table_name = rel_table_name
         self.init_schema()
 
-    def init_schema(self):
+    def init_schema(self) -> None:
         """Initialize schema if the tables do not exist."""
         node_tables = self.connection._get_node_table_names()
         if self.node_table_name not in node_tables:
@@ -36,7 +40,7 @@ class KuzuGraphStore(GraphStore):
             )
 
     @property
-    def client(self):
+    def client(self) -> Any:
         return self.connection
 
     def get(self, subj: str) -> List[List[str]]:
@@ -69,12 +73,12 @@ class KuzuGraphStore(GraphStore):
         return_clause = "RETURN n1, r, n2"
         params = []
         if subjs is not None:
-            for i, subj in enumerate(subjs):
+            for i, curr_subj in enumerate(subjs):
                 if i == 0:
                     where_clause = "WHERE n1.ID = $%d" % i
                 else:
                     where_clause += " OR n1.ID = $%d" % i
-                params.append((str(i), subj))
+                params.append((str(i), curr_subj))
         else:
             where_clause = ""
         query = "%s %s %s" % (match_clause, where_clause, return_clause)
@@ -83,7 +87,7 @@ class KuzuGraphStore(GraphStore):
             query_result = self.connection.execute(prepared_statement, params)
         else:
             query_result = self.connection.execute(prepared_statement)
-        retval = {}
+        retval: Dict[str, List[List[str]]] = {}
         while query_result.has_next():
             row = query_result.get_next()
             curr_path = []
@@ -112,20 +116,20 @@ class KuzuGraphStore(GraphStore):
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
 
-        def check_entity_exists(connection, entity):
+        def check_entity_exists(connection: Any, entity: str) -> bool:
             is_exists_result = connection.execute(
                 "MATCH (n:%s) WHERE n.ID = $entity RETURN n.ID" % self.node_table_name,
                 [("entity", entity)],
             )
             return is_exists_result.has_next()
 
-        def create_entity(connection, entity):
+        def create_entity(connection: Any, entity: str) -> None:
             connection.execute(
                 "CREATE (n:%s {ID: $entity})" % self.node_table_name,
                 [("entity", entity)],
             )
 
-        def check_rel_exists(connection, subj, obj, rel):
+        def check_rel_exists(connection: Any, subj: str, obj: str, rel: str) -> bool:
             is_exists_result = connection.execute(
                 (
                     "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = "
@@ -136,7 +140,7 @@ class KuzuGraphStore(GraphStore):
             )
             return is_exists_result.has_next()
 
-        def create_rel(connection, subj, obj, rel):
+        def create_rel(connection: Any, subj: str, obj: str, rel: str) -> None:
             connection.execute(
                 (
                     "MATCH (n1:%s), (n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj "
@@ -164,7 +168,7 @@ class KuzuGraphStore(GraphStore):
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
 
-        def delete_rel(connection, subj, obj, rel):
+        def delete_rel(connection: Any, subj: str, obj: str, rel: str) -> None:
             connection.execute(
                 (
                     "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID"
@@ -174,13 +178,13 @@ class KuzuGraphStore(GraphStore):
                 [("subj", subj), ("obj", obj), ("pred", rel)],
             )
 
-        def delete_entity(connection, entity):
+        def delete_entity(connection: Any, entity: str) -> None:
             connection.execute(
                 "MATCH (n:%s) WHERE n.ID = $entity DELETE n" % self.node_table_name,
                 [("entity", entity)],
             )
 
-        def check_edges(connection, entity):
+        def check_edges(connection: Any, entity: str) -> bool:
             is_exists_result = connection.execute(
                 "MATCH (n1:%s)-[r:%s]-(n2:%s) WHERE n2.ID = $entity RETURN r.predicate"
                 % (self.node_table_name, self.rel_table_name, self.node_table_name),
@@ -196,7 +200,10 @@ class KuzuGraphStore(GraphStore):
 
     @classmethod
     def from_persist_dir(
-        cls, persist_dir: str, node_table_name="entity", rel_table_name="links"
+        cls,
+        persist_dir: str,
+        node_table_name: str = "entity",
+        rel_table_name: str = "links",
     ) -> "KuzuGraphStore":
         """Load from persist dir."""
         try:
