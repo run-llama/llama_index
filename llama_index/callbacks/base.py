@@ -1,3 +1,4 @@
+import logging
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -6,6 +7,9 @@ from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Generator
 
 from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_EVENT
+
+logger = logging.getLogger(__name__)
+global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
 
 
 class BaseCallbackHandler(ABC):
@@ -86,9 +90,6 @@ class CallbackManager(BaseCallbackHandler, ABC):
         """Initialize the manager with a list of handlers."""
         self.handlers = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
-        self._trace_event_stack: ContextVar[List[str]] = ContextVar(
-            "trace", default=[BASE_TRACE_EVENT]
-        )
         self._trace_id_stack: List[str] = []
 
     def on_event_start(
@@ -101,16 +102,17 @@ class CallbackManager(BaseCallbackHandler, ABC):
         """Run handlers when an event starts and return id of event."""
         event_id = event_id or str(uuid.uuid4())
 
-        parent_id = self._trace_event_stack.get()[-1]
+        parent_id = global_stack_trace.get()[-1]
         self._trace_map[parent_id].append(event_id)
         for handler in self.handlers:
             if event_type not in handler.event_starts_to_ignore:
                 handler.on_event_start(event_type, payload, event_id=event_id, **kwargs)
 
         if event_type not in LEAF_EVENTS:
-            current_trace_stack = self._trace_event_stack.get().copy()
+            # copy the stack trace to prevent conflicts with threads/coroutines
+            current_trace_stack = global_stack_trace.get().copy()
             current_trace_stack.append(event_id)
-            self._trace_event_stack.set(current_trace_stack)
+            global_stack_trace.set(current_trace_stack)
 
         return event_id
 
@@ -128,9 +130,10 @@ class CallbackManager(BaseCallbackHandler, ABC):
                 handler.on_event_end(event_type, payload, event_id=event_id, **kwargs)
 
         if event_type not in LEAF_EVENTS:
-            current_trace_stack = self._trace_event_stack.get().copy()
+            # copy the stack trace to prevent conflicts with threads/coroutines
+            current_trace_stack = global_stack_trace.get().copy()
             current_trace_stack.pop()
-            self._trace_event_stack.set(current_trace_stack)
+            global_stack_trace.set(current_trace_stack)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
@@ -151,11 +154,23 @@ class CallbackManager(BaseCallbackHandler, ABC):
         payload: Optional[Dict[str, Any]] = None,
         event_id: Optional[str] = None,
     ) -> Generator["EventContext", None, None]:
+        """Context manager for lanching and shutdown of events.
+
+        Handles sending on_evnt_start and on_event_end to handlers for specified event.
+
+        Usage:
+            with callback_manager.event(CBEventType.QUERY, payload={key, val}) as event:
+                ...
+                event.on_end(payload={key, val})  # optional
+        """
+
+        # create event context wrapper
         event = EventContext(self, event_type, event_id=event_id)
         event.on_start(payload=payload)
 
         yield event
 
+        # ensure event is ended
         if not event.finished:
             event.on_end()
 
@@ -196,7 +211,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         """Helper function to reset the current trace."""
 
         self._trace_map = defaultdict(list)
-        self._trace_event_stack.set([BASE_TRACE_EVENT])
+        global_stack_trace.set([BASE_TRACE_EVENT])
 
     @property
     def trace_map(self) -> Dict[str, List[str]]:
@@ -226,6 +241,10 @@ class EventContext:
             self.started = True
             self._callback_manager.on_event_start(
                 self._event_type, payload=payload, event_id=self._event_id, **kwargs
+            )
+        else:
+            logger.warning(
+                f"Event {str(self._event_type)}: {self._event_id} already started!"
             )
 
     def on_end(self, payload: Optional[Dict[str, Any]] = None, **kwargs: Any) -> None:
