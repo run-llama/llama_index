@@ -2,11 +2,7 @@ import asyncio
 import json
 import logging
 from abc import abstractmethod
-<<<<<<< HEAD
 from enum import Enum, auto
-=======
-from enum import Enum
->>>>>>> 71a72b27 (fix merge conflict)
 from threading import Thread
 from typing import Any, Callable, Optional, Tuple, Type
 
