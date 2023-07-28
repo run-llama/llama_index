@@ -8,6 +8,9 @@ By default, LlamaIndex uses a simple in-memory vector store that's great for qui
 They can be persisted to (and loaded from) disk by calling `vector_store.persist()` (and `SimpleVectorStore.from_persist_path(...)` respectively).
 
 ## Vector Store Options & Feature Support
+LlamaIndex supports over 20 different vector store options.
+We are actively adding more integrations and improving feature coverage for each.
+
 | Vector Store    | Type                | Metadata Filtering | Delete | Store Documents | Async | Popular |
 | --------------- | ------------------- | ------------------ | ------ | --------------- | ----- | ------- |
 | Pinecone        | cloud               | ✓                  | ✓      | ✓               |       | ✓       |
