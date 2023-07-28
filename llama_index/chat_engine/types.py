@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 
+def is_function(message: ChatMessage):
+    """Utility for ChatMessage responses from OpenAI models"""
+    return message.additional_kwargs.get("function_call", None) is not None
+
+
 @dataclass
 class AgentChatResponse:
     """Agent chat response."""
@@ -94,10 +99,7 @@ class StreamingAgentChatResponse:
         # try/except to prevent hanging on error
         try:
             for chat in self.chat_stream:
-                self._is_function = (
-                    chat.message.additional_kwargs.get("function_call", None)
-                    is not None
-                )
+                self._is_function = is_function(chat.message)
                 self.put_in_queue(chat.delta)
             if self._is_function is not None:  # if loop has gone through iteration
                 memory.put(chat.message)
@@ -119,10 +121,7 @@ class StreamingAgentChatResponse:
         # try/except to prevent hanging on error
         try:
             async for chat in self.achat_stream:
-                self._is_function = (
-                    chat.message.additional_kwargs.get("function_call", None)
-                    is not None
-                )
+                self._is_function = is_function(chat.message)
                 self.aput_in_queue(chat.delta)
                 if self._is_function is False:
                     self._is_function_false_event.set()
