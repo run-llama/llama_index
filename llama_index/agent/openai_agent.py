@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from abc import abstractmethod
-from enum import Enum
+from enum import Enum, auto
 from threading import Thread
 from typing import Any, Callable, Optional, Tuple, Type
 
@@ -62,8 +62,8 @@ def call_function(
 
 
 class ChatMode(Enum):
-    default = 0
-    stream = 1
+    default = auto()
+    stream = auto()
 
 
 class ChatSession:
