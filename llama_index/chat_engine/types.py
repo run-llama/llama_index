@@ -117,7 +117,8 @@ class StreamingAgentChatResponse:
                 "achat_stream is None. Cannot asynchronously write to "
                 "history without achat_stream."
             )
-        print("awrite response")
+        # self._is_function_false_event.clear()
+
         # try/except to prevent hanging on error
         try:
             async for chat in self.achat_stream:
