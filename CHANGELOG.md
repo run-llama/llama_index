@@ -6,6 +6,7 @@
 - Added HotpotQADistractor benchmark evaluator (#7034)
 - Add metadata filter and delete support for LanceDB (#7048)
 - Use MetadataFilters in opensearch (#7005)
+- Added support for `KuzuGraphStore` (#6970)
 - Added `kg_triplet_extract_fn` to customize how KGs are built (#7068)
 
 ### Bug Fixes / Nits
