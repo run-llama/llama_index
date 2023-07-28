@@ -9,7 +9,7 @@ existing keywords in the table.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.data_structs.data_structs import KG
@@ -37,8 +37,16 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         kg_triple_extract_template (KnowledgeGraphPrompt): The prompt to use for
             extracting triplets.
         max_triplets_per_chunk (int): The maximum number of triplets to extract.
+        service_context (Optional[ServiceContext]): The service context to use.
+        storage_context (Optional[StorageContext]): The storage context to use.
         graph_store (Optional[GraphStore]): The graph store to use.
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+        include_embeddings (bool): Whether to include embeddings in the index.
+            Defaults to False.
+        max_object_length (int): The maximum length of the object in a triplet.
+            Defaults to 128.
+        kg_triplet_extract_fn (Optional[Callable]): The function to use for
+            extracting triplets. Defaults to None.
 
     """
 
@@ -54,6 +62,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         max_triplets_per_chunk: int = 10,
         include_embeddings: bool = False,
         show_progress: bool = False,
+        max_object_length: int = 128,
+        kg_triplet_extract_fn: Optional[Callable] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -69,6 +79,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
+        self._max_object_length = max_object_length
+        self._kg_triplet_extract_fn = kg_triplet_extract_fn
 
         super().__init__(
             nodes=nodes,
@@ -104,15 +116,25 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         return KGTableRetriever(self, **kwargs)
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
+        if self._kg_triplet_extract_fn is not None:
+            return self._kg_triplet_extract_fn(text)
+        else:
+            return self._llm_extract_triplets(text)
+
+    def _llm_extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
         response = self._service_context.llm_predictor.predict(
             self.kg_triple_extract_template,
             text=text,
         )
-        return self._parse_triplet_response(response)
+        return self._parse_triplet_response(
+            response, max_length=self._max_object_length
+        )
 
     @staticmethod
-    def _parse_triplet_response(response: str) -> List[Tuple[str, str, str]]:
+    def _parse_triplet_response(
+        response: str, max_length: int = 128
+    ) -> List[Tuple[str, str, str]]:
         knowledge_strs = response.strip().split("\n")
         results = []
         for text in knowledge_strs:
@@ -122,6 +144,15 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             tokens = text[1:-1].split(",")
             if len(tokens) != 3:
                 continue
+
+            if any(len(s.encode("utf-8")) > max_length for s in tokens):
+                # We count byte-length instead of len() for UTF-8 chars,
+                # will skip if any of the tokens are too long.
+                # This is normally due to a poorly formatted triplet
+                # extraction, in more serious KG building cases
+                # we'll need NLP models to better extract triplets.
+                continue
+
             subj, pred, obj = map(str.strip, tokens)
             if not subj or not pred or not obj:
                 # skip partial triplets
