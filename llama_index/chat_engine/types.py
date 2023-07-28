@@ -24,7 +24,7 @@ class AgentChatResponse:
 
     @property
     def source_nodes(self) -> List[NodeWithScore]:
-        if self._nodes is None:
+        if not self._nodes:
             self._nodes = []
             for tool_output in self.sources:
                 if isinstance(tool_output.raw_output, RESPONSE_TYPE):
@@ -50,7 +50,7 @@ class StreamingAgentChatResponse:
 
     @property
     def source_nodes(self) -> List[NodeWithScore]:
-        if self._nodes is None:
+        if not self._nodes:
             self._nodes = []
             for tool_output in self.sources:
                 if isinstance(tool_output.raw_output, RESPONSE_TYPE):
