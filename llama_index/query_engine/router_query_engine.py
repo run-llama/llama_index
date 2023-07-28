@@ -115,80 +115,76 @@ class RouterQueryEngine(BaseQueryEngine):
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        event_id = self.callback_manager.on_event_start(
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        ) as query_event:
+            result = self._selector.select(self._metadatas, query_bundle)
 
-        result = self._selector.select(self._metadatas, query_bundle)
+            if len(result.inds) > 1:
+                responses = []
+                for i, engine_ind in enumerate(result.inds):
+                    logger.info(
+                        f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
+                    )
+                    selected_query_engine = self._query_engines[engine_ind]
+                    responses.append(selected_query_engine.query(query_bundle))
 
-        if len(result.inds) > 1:
-            responses = []
-            for i, engine_ind in enumerate(result.inds):
-                logger.info(
-                    f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
-                )
-                selected_query_engine = self._query_engines[engine_ind]
-                responses.append(selected_query_engine.query(query_bundle))
-
-            if len(responses) > 1:
-                final_response = combine_responses(
-                    self._summarizer, responses, query_bundle
-                )
+                if len(responses) > 1:
+                    final_response = combine_responses(
+                        self._summarizer, responses, query_bundle
+                    )
+                else:
+                    final_response = responses[0]
             else:
-                final_response = responses[0]
-        else:
-            try:
-                selected_query_engine = self._query_engines[result.ind]
-                logger.info(f"Selecting query engine {result.ind}: {result.reason}.")
-            except ValueError as e:
-                raise ValueError("Failed to select query engine") from e
+                try:
+                    selected_query_engine = self._query_engines[result.ind]
+                    logger.info(
+                        f"Selecting query engine {result.ind}: {result.reason}."
+                    )
+                except ValueError as e:
+                    raise ValueError("Failed to select query engine") from e
 
-            final_response = selected_query_engine.query(query_bundle)
+                final_response = selected_query_engine.query(query_bundle)
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: final_response},
-            event_id=event_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: final_response})
+
         return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        event_id = self.callback_manager.on_event_start(
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        ) as query_event:
+            result = await self._selector.aselect(self._metadatas, query_bundle)
 
-        result = await self._selector.aselect(self._metadatas, query_bundle)
+            if len(result.inds) > 1:
+                tasks = []
+                for i, engine_ind in enumerate(result.inds):
+                    logger.info(
+                        f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
+                    )
+                    selected_query_engine = self._query_engines[engine_ind]
+                    tasks.append(selected_query_engine.aquery(query_bundle))
 
-        if len(result.inds) > 1:
-            tasks = []
-            for i, engine_ind in enumerate(result.inds):
-                logger.info(
-                    f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
-                )
-                selected_query_engine = self._query_engines[engine_ind]
-                tasks.append(selected_query_engine.aquery(query_bundle))
-
-            responses = run_async_tasks(tasks)
-            if len(responses) > 1:
-                final_response = await acombine_responses(
-                    self._summarizer, responses, query_bundle
-                )
+                responses = run_async_tasks(tasks)
+                if len(responses) > 1:
+                    final_response = await acombine_responses(
+                        self._summarizer, responses, query_bundle
+                    )
+                else:
+                    final_response = responses[0]
             else:
-                final_response = responses[0]
-        else:
-            try:
-                selected_query_engine = self._query_engines[result.ind]
-                logger.info(f"Selecting query engine {result.ind}: {result.reason}.")
-            except ValueError as e:
-                raise ValueError("Failed to select query engine") from e
+                try:
+                    selected_query_engine = self._query_engines[result.ind]
+                    logger.info(
+                        f"Selecting query engine {result.ind}: {result.reason}."
+                    )
+                except ValueError as e:
+                    raise ValueError("Failed to select query engine") from e
 
-            final_response = await selected_query_engine.aquery(query_bundle)
+                final_response = await selected_query_engine.aquery(query_bundle)
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: final_response},
-            event_id=event_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: final_response})
+
         return final_response
 
 
@@ -280,52 +276,44 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         super().__init__(self.service_context.callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        event_id = self.callback_manager.on_event_start(
+
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        ) as query_event:
+            query_engine_tools = self._retriever.retrieve(query_bundle)
+            responses = []
+            for query_engine_tool in query_engine_tools:
+                query_engine = query_engine_tool.query_engine
+                responses.append(query_engine.query(query_bundle))
 
-        query_engine_tools = self._retriever.retrieve(query_bundle)
-        responses = []
-        for query_engine_tool in query_engine_tools:
-            query_engine = query_engine_tool.query_engine
-            responses.append(query_engine.query(query_bundle))
+            if len(responses) > 1:
+                final_response = combine_responses(
+                    self._summarizer, responses, query_bundle
+                )
+            else:
+                final_response = responses[0]
 
-        if len(responses) > 1:
-            final_response = combine_responses(
-                self._summarizer, responses, query_bundle
-            )
-        else:
-            final_response = responses[0]
+            query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: final_response},
-            event_id=event_id,
-        )
         return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        event_id = self.callback_manager.on_event_start(
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        ) as query_event:
+            query_engine_tools = self._retriever.retrieve(query_bundle)
+            tasks = []
+            for query_engine_tool in query_engine_tools:
+                query_engine = query_engine_tool.query_engine
+                tasks.append(query_engine.aquery(query_bundle))
+            responses = run_async_tasks(tasks)
+            if len(responses) > 1:
+                final_response = await acombine_responses(
+                    self._summarizer, responses, query_bundle
+                )
+            else:
+                final_response = responses[0]
 
-        query_engine_tools = self._retriever.retrieve(query_bundle)
-        tasks = []
-        for query_engine_tool in query_engine_tools:
-            query_engine = query_engine_tool.query_engine
-            tasks.append(query_engine.aquery(query_bundle))
-        responses = run_async_tasks(tasks)
-        if len(responses) > 1:
-            final_response = await acombine_responses(
-                self._summarizer, responses, query_bundle
-            )
-        else:
-            final_response = responses[0]
-
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: final_response},
-            event_id=event_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
         return final_response
