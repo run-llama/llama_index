@@ -128,6 +128,7 @@ class StreamingAgentChatResponse:
 
         # These act as is_done events for any consumers waiting
         self._is_function_false_event.set()
+        self._new_item_event.set()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
