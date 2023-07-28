@@ -112,20 +112,20 @@ class SQLDocumentContextBuilder:
             text_qa_template=prompt_with_schema,
             refine_template=refine_prompt_with_schema,
         )
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={EventPayload.DOCUMENTS: documents}
-        )
-        text_chunks = []
-        for doc in documents:
-            chunks = text_splitter.split_text(
-                doc.get_content(metadata_mode=MetadataMode.LLM)
-            )
-            text_chunks.extend(chunks)
-        self._service_context.callback_manager.on_event_end(
+        with self._service_context.callback_manager.event(
             CBEventType.CHUNKING,
-            payload={EventPayload.CHUNKS: text_chunks},
-            event_id=event_id,
-        )
+            payload={EventPayload.DOCUMENTS: documents},
+        ) as event:
+            text_chunks = []
+            for doc in documents:
+                chunks = text_splitter.split_text(
+                    doc.get_content(metadata_mode=MetadataMode.LLM)
+                )
+                text_chunks.extend(chunks)
+
+            event.on_end(
+                payload={EventPayload.CHUNKS: text_chunks},
+            )
 
         # feed in the "query_str" or the task
         table_context = response_builder.get_response(
