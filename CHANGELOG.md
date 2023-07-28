@@ -12,6 +12,7 @@
 - Less strict triplet extraction for KGs (#7059)
 - Add configurable limit to KG data retrieved (#7059)
 - Nebula connection improvements (#7059)
+- Bug fix in building source nodes for agent response (#7067)
 
 ## [0.7.13] - 2023-07-26
 
