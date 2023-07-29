@@ -287,21 +287,6 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
-    # ===== Query Engine Interface =====
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        agent_response = self.chat(
-            query_bundle.query_str,
-            chat_history=[],
-        )
-        return Response(response=str(agent_response))
-
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        agent_response = await self.achat(
-            query_bundle.query_str,
-            chat_history=[],
-        )
-        return Response(response=str(agent_response))
-
 
 class OpenAIAgent(BaseOpenAIAgent):
     def __init__(
