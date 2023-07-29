@@ -33,6 +33,7 @@ class Anthropic(LLM):
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
         max_retries: int = 10,
+        api_key: Optional[str] = None,
         additional_kwargs: Dict[str, Any] = {},
     ) -> None:
         try:
@@ -49,10 +50,10 @@ class Anthropic(LLM):
         self._additional_kwargs = additional_kwargs
 
         self._client = anthropic.Anthropic(
-            base_url=base_url, timeout=timeout, max_retries=max_retries
+            api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
         )
         self._aclient = anthropic.AsyncAnthropic(
-            base_url=base_url, timeout=timeout, max_retries=max_retries
+            api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
         )
 
     @property
