@@ -323,7 +323,7 @@ class OpenAIAgent(BaseOpenAIAgent):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[list[ChatMessage]] = None,
         **kwargs: Any,
-    ) -> "ExperimentalOpenAIAgent":
+    ) -> "OpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history)
