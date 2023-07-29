@@ -13,7 +13,7 @@ from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.schema import MetadataMode
+from llama_index.schema import MetadataMode, NodeWithScore
 
 
 DEFAULT_CONTEXT_TEMPALTE = (
@@ -79,23 +79,23 @@ class ContextChatEngine(BaseChatEngine):
 
         return cls(retriever, llm=llm, memory=memory, prefix_messages=prefix_messages)
 
-    def _generate_context(self, message: str) -> str:
+    def _generate_context(self, message: str) -> (str, List[NodeWithScore]):
         """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
         )
 
-        return self._context_template.format(context_str=context_str)
+        return self._context_template.format(context_str=context_str), nodes
 
-    async def _agenerate_context(self, message: str) -> str:
+    async def _agenerate_context(self, message: str) -> (str, List[NodeWithScore]):
         """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
         )
 
-        return self._context_template.format(context_str=context_str)
+        return self._context_template.format(context_str=context_str), nodes
 
     def _get_prefix_messages_with_context(self, context_str: str) -> List[ChatMessage]:
         """Get the prefix messages with context"""
@@ -122,7 +122,7 @@ class ContextChatEngine(BaseChatEngine):
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
 
-        context_str_template = self._generate_context(message)
+        context_str_template, nodes = self._generate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
         all_messages = prefix_messages + self._memory.get()
 
@@ -140,6 +140,7 @@ class ContextChatEngine(BaseChatEngine):
                     raw_output=prefix_messages[0],
                 )
             ],
+            source_nodes=nodes,
         )
 
     def stream_chat(
@@ -149,7 +150,7 @@ class ContextChatEngine(BaseChatEngine):
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
 
-        context_str_template = self._generate_context(message)
+        context_str_template, nodes = self._generate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
         all_messages = prefix_messages + self._memory.get()
 
@@ -163,6 +164,7 @@ class ContextChatEngine(BaseChatEngine):
                     raw_output=prefix_messages[0],
                 )
             ],
+            source_nodes=nodes,
         )
         thread = Thread(
             target=chat_response.write_response_to_history, args=(self._memory,)
@@ -178,7 +180,7 @@ class ContextChatEngine(BaseChatEngine):
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
 
-        context_str_template = await self._agenerate_context(message)
+        context_str_template, nodes = await self._agenerate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
         all_messages = prefix_messages + self._memory.get()
 
@@ -196,6 +198,7 @@ class ContextChatEngine(BaseChatEngine):
                     raw_output=prefix_messages[0],
                 )
             ],
+            source_nodes=nodes,
         )
 
     async def astream_chat(
@@ -205,7 +208,7 @@ class ContextChatEngine(BaseChatEngine):
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
 
-        context_str_template = await self._agenerate_context(message)
+        context_str_template, nodes = await self._agenerate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
         all_messages = prefix_messages + self._memory.get()
 
@@ -219,6 +222,7 @@ class ContextChatEngine(BaseChatEngine):
                     raw_output=prefix_messages[0],
                 )
             ],
+            source_nodes=nodes,
         )
         thread = Thread(
             target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
