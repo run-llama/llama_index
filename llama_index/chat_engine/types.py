@@ -16,8 +16,6 @@ from llama_index.tools import ToolOutput
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
-AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
-
 
 def is_function(message: ChatMessage) -> bool:
     """Utility for ChatMessage responses from OpenAI models"""
@@ -162,6 +160,9 @@ class StreamingAgentChatResponse:
     def print_response_stream(self) -> None:
         for token in self.response_gen:
             print(token, end="")
+
+
+AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
 
 
 class BaseChatEngine(ABC):
