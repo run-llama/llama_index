@@ -8,7 +8,7 @@ from typing import Generator, List, Optional
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.tools import ToolOutput
-from llama_index.response.schema import Response, StreamingResponse
+from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
@@ -20,16 +20,13 @@ class AgentChatResponse:
 
     response: str = ""
     sources: List[ToolOutput] = field(default_factory=list)
-    _nodes: List[NodeWithScore] = field(default_factory=list)
+    source_nodes: List[NodeWithScore] = field(default_factory=list)
 
-    @property
-    def source_nodes(self) -> List[NodeWithScore]:
-        if not self._nodes:
-            self._nodes = []
+    def __post_init__(self):
+        if self.sources and not self.source_nodes:
             for tool_output in self.sources:
-                if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
-                    self._nodes.extend(tool_output.raw_output.source_nodes)
-        return self._nodes
+                if isinstance(tool_output.raw_output, RESPONSE_TYPE):
+                    self.source_nodes.extend(tool_output.raw_output.source_nodes)
 
     def __str__(self) -> str:
         return self.response
@@ -43,19 +40,16 @@ class StreamingAgentChatResponse:
     sources: List[ToolOutput] = field(default_factory=list)
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
-    _nodes: List[NodeWithScore] = field(default_factory=list)
+    source_nodes: List[NodeWithScore] = field(default_factory=list)
     _queue: queue.Queue = queue.Queue()
     _is_done = False
     _is_function: Optional[bool] = None
 
-    @property
-    def source_nodes(self) -> List[NodeWithScore]:
-        if not self._nodes:
-            self._nodes = []
+    def __post_init__(self):
+        if self.sources and not self.source_nodes:
             for tool_output in self.sources:
-                if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
-                    self._nodes.extend(tool_output.raw_output.source_nodes)
-        return self._nodes
+                if isinstance(tool_output.raw_output, RESPONSE_TYPE):
+                    self.source_nodes.extend(tool_output.raw_output.source_nodes)
 
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
