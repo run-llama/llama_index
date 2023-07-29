@@ -8,7 +8,11 @@ from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
+from llama_index.chat_engine.types import (
+    AGENT_CHAT_RESPONSE_TYPE,
+    AgentChatResponse,
+    StreamingAgentChatResponse,
+)
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
@@ -204,7 +208,7 @@ class BaseOpenAIAgent(BaseAgent):
 
     def _get_agent_response(
         self, mode: ChatMode, functions: List[dict]
-    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         if mode == ChatMode.default:
             chat_response: ChatResponse = self._llm.chat(
                 self.all_messages, functions=functions
@@ -217,7 +221,7 @@ class BaseOpenAIAgent(BaseAgent):
 
     async def _get_async_agent_response(
         self, mode: ChatMode, functions: List[dict]
-    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         if mode == ChatMode.default:
             chat_response: ChatResponse = await self._llm.achat(
                 self.all_messages, functions=functions
@@ -234,7 +238,7 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         *,
         mode: ChatMode = ChatMode.default,
-    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 
@@ -257,7 +261,7 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         *,
         mode: ChatMode = ChatMode.default,
-    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 

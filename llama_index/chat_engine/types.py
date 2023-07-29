@@ -16,6 +16,8 @@ from llama_index.tools import ToolOutput
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
+AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
+
 
 def is_function(message: ChatMessage) -> bool:
     """Utility for ChatMessage responses from OpenAI models"""
@@ -173,7 +175,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Main chat interface."""
         pass
 
@@ -187,7 +189,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Async version of main chat interface."""
         pass
 
