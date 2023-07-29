@@ -200,7 +200,8 @@ class BaseChatEngine(ABC):
 
     def chat_repl(self) -> None:
         """Enter interactive chat REPL."""
-
+        print("===== Entering Chat REPL =====")
+        print('Type "exit" to exit.\n')
         self.reset()
         message = input("Human: ")
         while message != "exit":
