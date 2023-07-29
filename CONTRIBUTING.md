@@ -50,7 +50,7 @@ The preferred way to contribute is making a PR at [LlamaHub Github](https://gith
 ---
 #### Node Parser
 A node parser parses `Document` objects into `Node` objects (atomic unit of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
-It is responsible for splitting text (via text splitters) and explicitly modeling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
+It is responsible for splitting text (via text splitters) and explicitly modelling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
 
 **Interface**: `get_nodes_from_documents` takes a sequence of `Document` objects as input, and outputs a sequence of `Node` objects.
 
