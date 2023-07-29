@@ -1,6 +1,6 @@
 import asyncio
 from threading import Thread
-from typing import Any, List, Optional, Type
+from typing import Any, List, Optional, Tuple, Type
 
 from llama_index.chat_engine.types import (
     AgentChatResponse,
@@ -79,7 +79,7 @@ class ContextChatEngine(BaseChatEngine):
 
         return cls(retriever, llm=llm, memory=memory, prefix_messages=prefix_messages)
 
-    def _generate_context(self, message: str) -> [str, List[NodeWithScore]]:
+    def _generate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
         context_str = "\n\n".join(
@@ -88,7 +88,7 @@ class ContextChatEngine(BaseChatEngine):
 
         return self._context_template.format(context_str=context_str), nodes
 
-    async def _agenerate_context(self, message: str) -> [str, List[NodeWithScore]]:
+    async def _agenerate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
         context_str = "\n\n".join(
