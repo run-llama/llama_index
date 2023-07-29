@@ -50,14 +50,14 @@ The preferred way to contribute is making a PR at [LlamaHub Github](https://gith
 ---
 #### Node Parser
 A node parser parses `Document` objects into `Node` objects (atomic unit of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
-It is responsible for splitting text (via text splitters) and explicitly modelling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
+It is responsible for splitting text (via text splitters) and explicitly modeling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
 
 **Interface**: `get_nodes_from_documents` takes a sequence of `Document` objects as input, and outputs a sequence of `Node` objects.
 
 **Examples**:
 * [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/simple.py)
 
-See [the API reference](https://gpt-index.readthedocs.io/en/latest/reference/node_parser.html) for full details.
+See [the API reference](https://gpt-index.readthedocs.io/en/latest/api_reference/index.html) for full details.
 
 **Ideas**:
 * Add new `Node` relationships to model to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
