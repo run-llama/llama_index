@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 from enum import Enum, auto
 from threading import Thread
-from typing import Any, Callable, Optional, Tuple, Type, Union
+from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -26,7 +26,7 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
-def get_function_by_name(tools: list[BaseTool], name: str) -> BaseTool:
+def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
     """Get function by name."""
     name_to_tool = {tool.metadata.name: tool for tool in tools}
     if name not in name_to_tool:
@@ -35,7 +35,7 @@ def get_function_by_name(tools: list[BaseTool], name: str) -> BaseTool:
 
 
 def call_function(
-    tools: list[BaseTool], function_call: dict, verbose: bool = False
+    tools: List[BaseTool], function_call: dict, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     name = function_call["name"]
@@ -70,29 +70,29 @@ class ChatSession:
     def __init__(
         self,
         memory: BaseMemory,
-        prefix_messages: list[ChatMessage],
-        get_tools_callback: Callable[[str], list[BaseTool]],
+        prefix_messages: List[ChatMessage],
+        get_tools_callback: Callable[[str], List[BaseTool]],
     ):
         self.memory = memory
         self.prefix_messages = prefix_messages
         self.get_tools_callback = get_tools_callback
-        self.tools: list[BaseTool] = []
-        self.functions: list[dict[str, Any]] = []
+        self.tools: List[BaseTool] = []
+        self.functions: List[dict[str, Any]] = []
 
     @property
-    def chat_history(self) -> list[ChatMessage]:
+    def chat_history(self) -> List[ChatMessage]:
         return self.memory.get_all()
 
     def reset(self) -> None:
         self.memory.reset()
 
-    def prepare_message(self, message: str) -> Tuple[list[BaseTool], list[dict]]:
+    def prepare_message(self, message: str) -> Tuple[List[BaseTool], List[dict]]:
         """Prepare tools and functions for the message."""
         self.tools = self.get_tools_callback(message)
         self.functions = [tool.metadata.to_openai_function() for tool in self.tools]
         return self.tools, self.functions
 
-    def get_all_messages(self) -> list[ChatMessage]:
+    def get_all_messages(self) -> List[ChatMessage]:
         return self.prefix_messages + self.memory.get()
 
     def get_latest_function_call(self) -> Optional[dict]:
@@ -104,7 +104,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         llm: OpenAI,
         memory: BaseMemory,
-        prefix_messages: list[ChatMessage],
+        prefix_messages: List[ChatMessage],
         verbose: bool,
         max_function_calls: int,
         callback_manager: Optional[CallbackManager],
@@ -114,21 +114,21 @@ class BaseOpenAIAgent(BaseAgent):
         self._max_function_calls = max_function_calls
         self.callback_manager = callback_manager or CallbackManager([])
         self.session = ChatSession(memory, prefix_messages, self._get_tools)
-        self.sources: list[ToolOutput] = []
+        self.sources: List[ToolOutput] = []
 
     @property
-    def chat_history(self) -> list[ChatMessage]:
+    def chat_history(self) -> List[ChatMessage]:
         return self.session.chat_history
 
     @property
-    def all_messages(self) -> list[ChatMessage]:
+    def all_messages(self) -> List[ChatMessage]:
         return self.session.get_all_messages()
 
     def reset(self) -> None:
         self.session.reset()
 
     @abstractmethod
-    def _get_tools(self, message: str) -> list[BaseTool]:
+    def _get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
         pass
 
@@ -142,8 +142,8 @@ class BaseOpenAIAgent(BaseAgent):
         return True
 
     def init_chat(
-        self, message: str, chat_history: Optional[list[ChatMessage]] = None
-    ) -> tuple[list[BaseTool], list[dict]]:
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> tuple[List[BaseTool], List[dict]]:
         if chat_history is not None:
             self.session.memory.set(chat_history)
         self.sources = []
@@ -157,7 +157,7 @@ class BaseOpenAIAgent(BaseAgent):
         return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
 
     def _get_stream_ai_response(
-        self, functions: list[dict]
+        self, functions: List[dict]
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             chat_stream=self._llm.stream_chat(self.all_messages, functions=functions),
@@ -178,7 +178,7 @@ class BaseOpenAIAgent(BaseAgent):
         return chat_stream_response
 
     async def _get_async_stream_ai_response(
-        self, functions: list[dict]
+        self, functions: List[dict]
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             achat_stream=await self._llm.astream_chat(
@@ -195,7 +195,7 @@ class BaseOpenAIAgent(BaseAgent):
         # return response stream
         return chat_stream_response
 
-    def _call_function(self, tools: list[BaseTool], function_call: dict) -> None:
+    def _call_function(self, tools: List[BaseTool], function_call: dict) -> None:
         function_message, tool_output = call_function(
             tools, function_call, verbose=self._verbose
         )
@@ -203,7 +203,7 @@ class BaseOpenAIAgent(BaseAgent):
         self.session.memory.put(function_message)
 
     def _get_agent_response(
-        self, mode: ChatMode, functions: list[dict]
+        self, mode: ChatMode, functions: List[dict]
     ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
         if mode == ChatMode.default:
             chat_response: ChatResponse = self._llm.chat(
@@ -216,7 +216,7 @@ class BaseOpenAIAgent(BaseAgent):
             raise NotImplementedError
 
     async def _get_async_agent_response(
-        self, mode: ChatMode, functions: list[dict]
+        self, mode: ChatMode, functions: List[dict]
     ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
         if mode == ChatMode.default:
             chat_response: ChatResponse = await self._llm.achat(
@@ -231,7 +231,7 @@ class BaseOpenAIAgent(BaseAgent):
     def chat(
         self,
         message: str,
-        chat_history: Optional[list[ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         *,
         mode: ChatMode = ChatMode.default,
     ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
@@ -254,7 +254,7 @@ class BaseOpenAIAgent(BaseAgent):
     async def achat(
         self,
         message: str,
-        chat_history: Optional[list[ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         *,
         mode: ChatMode = ChatMode.default,
     ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
@@ -274,14 +274,14 @@ class BaseOpenAIAgent(BaseAgent):
         return agent_chat_response
 
     def stream_chat(
-        self, message: str, chat_history: Optional[list[ChatMessage]] = None
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         chat_response = self.chat(message, chat_history, mode=ChatMode.stream)
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
     async def astream_chat(
-        self, message: str, chat_history: Optional[list[ChatMessage]] = None
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         chat_response = await self.achat(message, chat_history, mode=ChatMode.stream)
         assert isinstance(chat_response, StreamingAgentChatResponse)
@@ -291,10 +291,10 @@ class BaseOpenAIAgent(BaseAgent):
 class OpenAIAgent(BaseOpenAIAgent):
     def __init__(
         self,
-        tools: list[BaseTool],
+        tools: List[BaseTool],
         llm: OpenAI,
         memory: BaseMemory,
-        prefix_messages: list[ChatMessage],
+        prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -312,16 +312,16 @@ class OpenAIAgent(BaseOpenAIAgent):
     @classmethod
     def from_tools(
         cls,
-        tools: Optional[list[BaseTool]] = None,
+        tools: Optional[List[BaseTool]] = None,
         llm: Optional[LLM] = None,
-        chat_history: Optional[list[ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
-        prefix_messages: Optional[list[ChatMessage]] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgent":
         tools = tools or []
@@ -355,7 +355,7 @@ class OpenAIAgent(BaseOpenAIAgent):
             callback_manager=callback_manager,
         )
 
-    def _get_tools(self, message: str) -> list[BaseTool]:
+    def _get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
         return self._tools
 
@@ -380,7 +380,7 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         node_to_tool_fn: Callable[[BaseNode], BaseTool],
         llm: OpenAI,
         memory: BaseMemory,
-        prefix_messages: list[ChatMessage],
+        prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -402,14 +402,14 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         retriever: BaseRetriever,
         node_to_tool_fn: Callable[[BaseNode], BaseTool],
         llm: Optional[OpenAI] = None,
-        chat_history: Optional[list[ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
-        prefix_messages: Optional[list[ChatMessage]] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
     ) -> "RetrieverOpenAIAgent":
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history)
@@ -443,12 +443,12 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
             callback_manager=callback_manager,
         )
 
-    def _get_tools(self, message: str) -> list[BaseTool]:
-        retrieved_nodes_w_scores: list[NodeWithScore] = self._retriever.retrieve(
+    def _get_tools(self, message: str) -> List[BaseTool]:
+        retrieved_nodes_w_scores: List[NodeWithScore] = self._retriever.retrieve(
             message
         )
         retrieved_nodes = [node.node for node in retrieved_nodes_w_scores]
-        retrieved_tools: list[BaseTool] = [
+        retrieved_tools: List[BaseTool] = [
             self._node_to_tool_fn(n) for n in retrieved_nodes
         ]
         return retrieved_tools
