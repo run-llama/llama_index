@@ -14,7 +14,6 @@ Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.g
 
 - `pip install -e .` if you want to do an editable install (you can modify source files) of just the package itself.
 - `pip install -r requirements.txt` if you want to install optional dependencies + dependencies used for development (e.g. unit testing).
-<!-- - `pip install -r data_requirements.txt` if you want to install vellum -->
 
 ### Environment Setup
 
