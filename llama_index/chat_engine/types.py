@@ -3,7 +3,7 @@ import logging
 import queue
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, auto
 from threading import Event
 from typing import AsyncGenerator, Generator, List, Optional, Union
 
@@ -41,6 +41,13 @@ class AgentChatResponse:
 
     def __str__(self) -> str:
         return self.response
+
+
+class ChatResponseMode(Enum):
+    """Flag toggling blocking/streaming in `Agent.chat`"""
+
+    default = auto()
+    stream = auto()
 
 
 @dataclass
@@ -82,11 +89,11 @@ class StreamingAgentChatResponse:
                 self.response += delta
         return self.response
 
-    def put_in_queue(self, delta):
+    def put_in_queue(self, delta: Optional[str]) -> None:
         self._queue.put_nowait(delta)
         self._is_function_not_none_thread_event.set()
 
-    def aput_in_queue(self, delta):
+    def aput_in_queue(self, delta: Optional[str]) -> None:
         self._aqueue.put_nowait(delta)
         self._new_item_event.set()
 
@@ -127,7 +134,7 @@ class StreamingAgentChatResponse:
                     self._is_function_false_event.set()
             if self._is_function is not None:  # if loop has gone through iteration
                 memory.put(chat.message)
-        except Exception:
+        except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
 
         self._is_done = True

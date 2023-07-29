@@ -2,24 +2,22 @@ import asyncio
 import json
 import logging
 from abc import abstractmethod
-from enum import Enum, auto
 from threading import Thread
-from typing import Any, Callable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, List, Optional, Tuple, Type
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
+    ChatResponseMode,
     StreamingAgentChatResponse,
 )
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool, ToolOutput
 
@@ -63,11 +61,6 @@ def call_function(
         ),
         output,
     )
-
-
-class ChatMode(Enum):
-    default = auto()
-    stream = auto()
 
 
 class ChatSession:
@@ -207,27 +200,27 @@ class BaseOpenAIAgent(BaseAgent):
         self.session.memory.put(function_message)
 
     def _get_agent_response(
-        self, mode: ChatMode, functions: List[dict]
+        self, mode: ChatResponseMode, functions: List[dict]
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        if mode == ChatMode.default:
+        if mode == ChatResponseMode.default:
             chat_response: ChatResponse = self._llm.chat(
                 self.all_messages, functions=functions
             )
             return self._process_message(chat_response)
-        elif mode == ChatMode.stream:
+        elif mode == ChatResponseMode.stream:
             return self._get_stream_ai_response(functions)
         else:
             raise NotImplementedError
 
     async def _get_async_agent_response(
-        self, mode: ChatMode, functions: List[dict]
+        self, mode: ChatResponseMode, functions: List[dict]
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        if mode == ChatMode.default:
+        if mode == ChatResponseMode.default:
             chat_response: ChatResponse = await self._llm.achat(
                 self.all_messages, functions=functions
             )
             return self._process_message(chat_response)
-        elif mode == ChatMode.stream:
+        elif mode == ChatResponseMode.stream:
             return await self._get_async_stream_ai_response(functions)
         else:
             raise NotImplementedError
@@ -237,7 +230,7 @@ class BaseOpenAIAgent(BaseAgent):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         *,
-        mode: ChatMode = ChatMode.default,
+        mode: ChatResponseMode = ChatResponseMode.default,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
@@ -260,7 +253,7 @@ class BaseOpenAIAgent(BaseAgent):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         *,
-        mode: ChatMode = ChatMode.default,
+        mode: ChatResponseMode = ChatResponseMode.default,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
@@ -280,14 +273,16 @@ class BaseOpenAIAgent(BaseAgent):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_response = self.chat(message, chat_history, mode=ChatMode.stream)
+        chat_response = self.chat(message, chat_history, mode=ChatResponseMode.stream)
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_response = await self.achat(message, chat_history, mode=ChatMode.stream)
+        chat_response = await self.achat(
+            message, chat_history, mode=ChatResponseMode.stream
+        )
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
