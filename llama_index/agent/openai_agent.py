@@ -140,7 +140,7 @@ class BaseOpenAIAgent(BaseAgent):
 
     def init_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> tuple[List[BaseTool], List[dict]]:
+    ) -> Tuple[List[BaseTool], List[dict]]:
         if chat_history is not None:
             self.session.memory.set(chat_history)
         self.sources = []
@@ -229,7 +229,6 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        *,
         mode: ChatResponseMode = ChatResponseMode.default,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
@@ -252,7 +251,6 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        *,
         mode: ChatResponseMode = ChatResponseMode.default,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
