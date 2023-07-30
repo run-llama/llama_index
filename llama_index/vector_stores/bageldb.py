@@ -17,6 +17,7 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+import bagel
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ class BagelDBVectorStore(VectorStore):
             import bagel  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
-        from bagel.api.models.Cluster import Cluster
+        from bagel.api.Cluster import Cluster
 
         self._cluster = cast(Cluster, bageldb_collection)
 
