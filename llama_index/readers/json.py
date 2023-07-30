@@ -81,7 +81,7 @@ class JSONReader(BaseReader):
             if self.levels_back is None:
                 # If levels_back isn't set, we just format and make each
                 # line an embedding
-                json_output = json.dumps(data, indent=0)
+                json_output = json.dumps(data, indent=0, ensure_ascii=False)
                 lines = json_output.split("\n")
                 useful_lines = [
                     line for line in lines if not re.match(r"^[{}\[\],]*$", line)
