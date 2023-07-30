@@ -57,7 +57,7 @@ It is responsible for splitting text (via text splitters) and explicitly modelli
 **Examples**:
 * [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/simple.py)
 
-See [the API reference](https://gpt-index.readthedocs.io/en/latest/reference/node_parser.html) for full details.
+See [the API reference](https://gpt-index.readthedocs.io/en/latest/api_reference/index.html) for full details.
 
 **Ideas**:
 * Add new `Node` relationships to model to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
