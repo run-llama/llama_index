@@ -63,33 +63,6 @@ def call_function(
     )
 
 
-class ChatSession:
-    def __init__(
-        self,
-        memory: BaseMemory,
-        prefix_messages: List[ChatMessage],
-        get_tools_callback: Callable[[str], List[BaseTool]],
-    ):
-        self.memory = memory
-        self.prefix_messages = prefix_messages
-        self.get_tools_callback = get_tools_callback
-        self.tools: List[BaseTool] = []
-        self.functions: List[dict[str, Any]] = []
-
-    @property
-    def chat_history(self) -> List[ChatMessage]:
-        return self.memory.get_all()
-
-    def reset(self) -> None:
-        self.memory.reset()
-
-    def get_all_messages(self) -> List[ChatMessage]:
-        return self.prefix_messages + self.memory.get()
-
-    def get_latest_function_call(self) -> Optional[dict]:
-        return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
-
-
 class BaseOpenAIAgent(BaseAgent):
     def __init__(
         self,
@@ -103,20 +76,25 @@ class BaseOpenAIAgent(BaseAgent):
         self._llm = llm
         self._verbose = verbose
         self._max_function_calls = max_function_calls
+        self.prefix_messages = prefix_messages
+        self.memory = memory
         self.callback_manager = callback_manager or CallbackManager([])
-        self.session = ChatSession(memory, prefix_messages, self._get_tools)
         self.sources: List[ToolOutput] = []
 
     @property
     def chat_history(self) -> List[ChatMessage]:
-        return self.session.chat_history
+        return self.memory.get_all()
 
     @property
     def all_messages(self) -> List[ChatMessage]:
-        return self.session.get_all_messages()
+        return self.prefix_messages + self.memory.get()
+
+    @property
+    def latest_function_call(self) -> Optional[dict]:
+        return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
 
     def reset(self) -> None:
-        self.session.reset()
+        self.memory.reset()
 
     @abstractmethod
     def _get_tools(self, message: str) -> List[BaseTool]:
@@ -136,16 +114,16 @@ class BaseOpenAIAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> Tuple[List[BaseTool], List[dict]]:
         if chat_history is not None:
-            self.session.memory.set(chat_history)
+            self.memory.set(chat_history)
         self.sources = []
-        self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        self.memory.put(ChatMessage(content=message, role=MessageRole.USER))
         tools = self._get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
         return tools, functions
 
     def _process_message(self, chat_response: ChatResponse) -> AgentChatResponse:
         ai_message = chat_response.message
-        self.session.memory.put(ai_message)
+        self.memory.put(ai_message)
         return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
 
     def _get_stream_ai_response(
@@ -158,7 +136,7 @@ class BaseOpenAIAgent(BaseAgent):
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
-            args=(self.session.memory,),
+            args=(self.memory,),
         )
         thread.start()
         # Wait for the event to be set
@@ -180,7 +158,7 @@ class BaseOpenAIAgent(BaseAgent):
         )
         # create task to write chat response to history
         asyncio.create_task(
-            chat_stream_response.awrite_response_to_history(self.session.memory)
+            chat_stream_response.awrite_response_to_history(self.memory)
         )
         # wait until openAI functions stop executing
         await chat_stream_response._is_function_false_event.wait()
@@ -192,7 +170,7 @@ class BaseOpenAIAgent(BaseAgent):
             tools, function_call, verbose=self._verbose
         )
         self.sources.append(tool_output)
-        self.session.memory.put(function_message)
+        self.memory.put(function_message)
 
     def _get_agent_response(
         self, mode: ChatResponseMode, functions: List[dict]
@@ -232,12 +210,11 @@ class BaseOpenAIAgent(BaseAgent):
         # Loop until no more function calls or max_function_calls is reached
         while True:
             agent_chat_response = self._get_agent_response(mode, functions)
-            latest_function = self.session.get_latest_function_call()
-            if not self._should_continue(latest_function, n_function_calls):
+            if not self._should_continue(self.latest_function_call, n_function_calls):
                 logger.debug("Break: should continue False")
                 break
-            assert isinstance(latest_function, dict)
-            self._call_function(tools, latest_function)
+            assert isinstance(self.latest_function_call, dict)
+            self._call_function(tools, self.latest_function_call)
             n_function_calls += 1
 
         return agent_chat_response
@@ -254,11 +231,10 @@ class BaseOpenAIAgent(BaseAgent):
         # Loop until no more function calls or max_function_calls is reached
         while True:
             agent_chat_response = await self._get_async_agent_response(mode, functions)
-            latest_function = self.session.get_latest_function_call()
-            if not self._should_continue(latest_function, n_function_calls):
+            if not self._should_continue(self.latest_function_call, n_function_calls):
                 break
-            assert isinstance(latest_function, dict)
-            self._call_function(tools, latest_function)
+            assert isinstance(self.latest_function_call, dict)
+            self._call_function(tools, self.latest_function_call)
             n_function_calls += 1
 
         return agent_chat_response
