@@ -211,6 +211,7 @@ class BaseChatEngine(ABC):
         while message != "exit":
             response = self.chat(message)
             print(f"Assistant: {response}\n")
+            message = input("Human: ")
 
     @property
     @abstractmethod
