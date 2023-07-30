@@ -3,7 +3,7 @@ import logging
 import queue
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum
 from threading import Event
 from typing import AsyncGenerator, Generator, List, Optional, Union
 
@@ -40,11 +40,11 @@ class AgentChatResponse:
         return self.response
 
 
-class ChatResponseMode(Enum):
+class ChatResponseMode(str, Enum):
     """Flag toggling blocking/streaming in `Agent.chat`"""
 
-    default = auto()
-    stream = auto()
+    DEFAULT = "default"
+    STREAM = "stream"
 
 
 @dataclass

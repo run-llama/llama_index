@@ -150,7 +150,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        mode: ChatResponseMode = ChatResponseMode.default,
+        mode: ChatResponseMode = ChatResponseMode.DEFAULT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat."""
         # augment user message
@@ -168,4 +168,4 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         if self._verbose:
             print_text(formatted_message + "\n", color="yellow")
 
-        return super().chat(formatted_message, chat_history=chat_history)
+        return super().chat(formatted_message, chat_history=chat_history, mode=mode)

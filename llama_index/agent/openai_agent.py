@@ -202,12 +202,12 @@ class BaseOpenAIAgent(BaseAgent):
     def _get_agent_response(
         self, mode: ChatResponseMode, functions: List[dict]
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        if mode == ChatResponseMode.default:
+        if mode == ChatResponseMode.DEFAULT:
             chat_response: ChatResponse = self._llm.chat(
                 self.all_messages, functions=functions
             )
             return self._process_message(chat_response)
-        elif mode == ChatResponseMode.stream:
+        elif mode == ChatResponseMode.STREAM:
             return self._get_stream_ai_response(functions)
         else:
             raise NotImplementedError
@@ -215,12 +215,12 @@ class BaseOpenAIAgent(BaseAgent):
     async def _get_async_agent_response(
         self, mode: ChatResponseMode, functions: List[dict]
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        if mode == ChatResponseMode.default:
+        if mode == ChatResponseMode.DEFAULT:
             chat_response: ChatResponse = await self._llm.achat(
                 self.all_messages, functions=functions
             )
             return self._process_message(chat_response)
-        elif mode == ChatResponseMode.stream:
+        elif mode == ChatResponseMode.STREAM:
             return await self._get_async_stream_ai_response(functions)
         else:
             raise NotImplementedError
@@ -229,7 +229,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        mode: ChatResponseMode = ChatResponseMode.default,
+        mode: ChatResponseMode = ChatResponseMode.DEFAULT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
@@ -251,7 +251,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        mode: ChatResponseMode = ChatResponseMode.default,
+        mode: ChatResponseMode = ChatResponseMode.DEFAULT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
@@ -271,7 +271,7 @@ class BaseOpenAIAgent(BaseAgent):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_response = self.chat(message, chat_history, mode=ChatResponseMode.stream)
+        chat_response = self.chat(message, chat_history, mode=ChatResponseMode.STREAM)
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
@@ -279,7 +279,7 @@ class BaseOpenAIAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         chat_response = await self.achat(
-            message, chat_history, mode=ChatResponseMode.stream
+            message, chat_history, mode=ChatResponseMode.STREAM
         )
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
