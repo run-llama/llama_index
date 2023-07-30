@@ -83,12 +83,6 @@ class ChatSession:
     def reset(self) -> None:
         self.memory.reset()
 
-    def prepare_message(self, message: str) -> Tuple[List[BaseTool], List[dict]]:
-        """Prepare tools and functions for the message."""
-        self.tools = self.get_tools_callback(message)
-        self.functions = [tool.metadata.to_openai_function() for tool in self.tools]
-        return self.tools, self.functions
-
     def get_all_messages(self) -> List[ChatMessage]:
         return self.prefix_messages + self.memory.get()
 
@@ -145,7 +139,8 @@ class BaseOpenAIAgent(BaseAgent):
             self.session.memory.set(chat_history)
         self.sources = []
         self.session.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        tools, functions = self.session.prepare_message(message)
+        tools = self._get_tools(message)
+        functions = [tool.metadata.to_openai_function() for tool in tools]
         return tools, functions
 
     def _process_message(self, chat_response: ChatResponse) -> AgentChatResponse:
