@@ -19,7 +19,7 @@ logger.setLevel(logging.WARNING)
 
 def is_function(message: ChatMessage) -> bool:
     """Utility for ChatMessage responses from OpenAI models"""
-    return message.additional_kwargs.get("function_call", None) is not None
+    return "function_call" in message.additional_kwargs
 
 
 @dataclass
