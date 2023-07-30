@@ -150,7 +150,6 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        *,
         mode: ChatResponseMode = ChatResponseMode.default,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat."""
