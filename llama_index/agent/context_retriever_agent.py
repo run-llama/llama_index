@@ -1,6 +1,6 @@
 """Context retriever agent."""
 
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
 from llama_index.agent.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
@@ -147,7 +147,10 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         return self._tools
 
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         """Chat."""
         # augment user message
@@ -165,4 +168,6 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         if self._verbose:
             print_text(formatted_message + "\n", color="yellow")
 
-        return super().chat(formatted_message, chat_history=chat_history)
+        return super().chat(
+            formatted_message, chat_history=chat_history, function_call=function_call
+        )

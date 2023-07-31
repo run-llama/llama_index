@@ -5,7 +5,7 @@ from pytest import MonkeyPatch
 
 from llama_index.agent.openai_agent import OpenAIAgent
 from llama_index.chat_engine.types import AgentChatResponse
-from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.tools.function_tool import FunctionTool

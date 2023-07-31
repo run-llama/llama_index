@@ -7,8 +7,7 @@ from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import (AgentChatResponse,
-                                           StreamingAgentChatResponse)
+from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
@@ -60,7 +59,7 @@ def call_function(
 
 def resolve_function_call(function_call: Union[str, dict] = "auto") -> Union[str, dict]:
     """Resolve function call.
-    
+
     If function_call is a function name string, return a dict with the name.
     """
     if isinstance(function_call, str) and function_call not in ["none", "auto"]:
@@ -137,14 +136,14 @@ class BaseOpenAIAgent(BaseAgent):
         self._memory.put(ai_message)
 
         n_function_calls = 0
-        function_call = self._get_latest_function_call(self._memory.get_all())
-        while function_call is not None:
+        function_call_ = self._get_latest_function_call(self._memory.get_all())
+        while function_call_ is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 break
 
             function_message, tool_output = call_function(
-                tools, function_call, verbose=self._verbose
+                tools, function_call_, verbose=self._verbose
             )
             sources.append(tool_output)
             self._memory.put(function_message)
@@ -155,7 +154,7 @@ class BaseOpenAIAgent(BaseAgent):
             chat_response = self._llm.chat(all_messages, functions=functions)
             ai_message = chat_response.message
             self._memory.put(ai_message)
-            function_call = self._get_latest_function_call(self._memory.get_all())
+            function_call_ = self._get_latest_function_call(self._memory.get_all())
 
         return AgentChatResponse(response=str(ai_message.content), sources=sources)
 
@@ -197,14 +196,14 @@ class BaseOpenAIAgent(BaseAgent):
         thread.join()
 
         n_function_calls = 0
-        function_call = self._get_latest_function_call(self._memory.get_all())
-        while function_call is not None:
+        function_call_ = self._get_latest_function_call(self._memory.get_all())
+        while function_call_ is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 break
 
             function_message, tool_output = call_function(
-                tools, function_call, verbose=self._verbose
+                tools, function_call_, verbose=self._verbose
             )
             sources.append(tool_output)
             self._memory.put(function_message)
@@ -230,7 +229,7 @@ class BaseOpenAIAgent(BaseAgent):
                     return chat_stream_response
 
             thread.join()
-            function_call = self._get_latest_function_call(self._memory.get_all())
+            function_call_ = self._get_latest_function_call(self._memory.get_all())
 
         return chat_stream_response
 
@@ -260,14 +259,14 @@ class BaseOpenAIAgent(BaseAgent):
         self._memory.put(ai_message)
 
         n_function_calls = 0
-        function_call = self._get_latest_function_call(self._memory.get_all())
-        while function_call is not None:
+        function_call_ = self._get_latest_function_call(self._memory.get_all())
+        while function_call_ is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 continue
 
             function_message, tool_output = call_function(
-                tools, function_call, verbose=self._verbose
+                tools, function_call_, verbose=self._verbose
             )
             sources.append(tool_output)
             self._memory.put(function_message)
@@ -279,7 +278,7 @@ class BaseOpenAIAgent(BaseAgent):
             )
             ai_message = response.message
             self._memory.put(ai_message)
-            function_call = self._get_latest_function_call(self._memory.get_all())
+            function_call_ = self._get_latest_function_call(self._memory.get_all())
 
         return AgentChatResponse(response=str(ai_message.content), sources=sources)
 
@@ -323,14 +322,14 @@ class BaseOpenAIAgent(BaseAgent):
         thread.join()
 
         n_function_calls = 0
-        function_call = self._get_latest_function_call(self._memory.get_all())
-        while function_call is not None:
+        function_call_ = self._get_latest_function_call(self._memory.get_all())
+        while function_call_ is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 break
 
             function_message, tool_output = call_function(
-                tools, function_call, verbose=self._verbose
+                tools, function_call_, verbose=self._verbose
             )
             sources.append(tool_output)
             self._memory.put(function_message)
@@ -361,7 +360,7 @@ class BaseOpenAIAgent(BaseAgent):
                     return chat_stream_response
 
             thread.join()
-            function_call = self._get_latest_function_call(self._memory.get_all())
+            function_call_ = self._get_latest_function_call(self._memory.get_all())
 
         return chat_stream_response
 
