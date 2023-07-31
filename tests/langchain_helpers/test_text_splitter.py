@@ -1,5 +1,6 @@
 """Test text splitter."""
 from llama_index.langchain_helpers.text_splitter import (
+    CodeSplitter,
     SentenceSplitter,
     TokenTextSplitter,
 )
@@ -85,3 +86,71 @@ def test_split_diff_sentence_token2() -> None:
     assert token_split[1] == " ".join(["bar"] * 11)
     assert sentence_split[0] == " ".join(["foo"] * 15) + "."
     assert sentence_split[1] == " ".join(["bar"] * 15)
+
+
+def test_python_code_splitter() -> None:
+    """Test case for code splitting using python"""
+    code_splitter = CodeSplitter(chunk_lines=4, chunk_lines_overlap=1, max_chars=30)
+
+    text = """\
+def foo():
+    print("bar")
+
+def baz():
+    print("bbq")"""
+
+    chunks = code_splitter.split_text(text, "python")
+    assert chunks[0].startswith("def foo():")
+    assert chunks[1].startswith("def baz():")
+
+
+def test_typescript_code_splitter() -> None:
+    """Test case for code splitting using typescript"""
+    code_splitter = CodeSplitter(chunk_lines=4, chunk_lines_overlap=1, max_chars=50)
+
+    text = """\
+function foo() {
+    console.log("bar");
+}
+
+function baz() {
+    console.log("bbq");
+}"""
+
+    chunks = code_splitter.split_text(text, "typescript")
+    print("CHUNKS!!", chunks)
+    assert chunks[0].startswith("function foo()")
+    assert chunks[1].startswith("function baz()")
+
+
+# def test_autolang_code_splitter() -> None:
+#     """Test case for code splitting"""
+#     code_splitter = CodeSplitter(chunk_lines=4, chunk_lines_overlap=1, max_chars=40)
+
+#     text = """\
+# function foo() {
+#     print("bar")
+# }
+
+# function baz() {
+#     print("bbq")
+# }"""
+
+#     chunks = code_splitter.split_text(text)
+#     assert chunks[0].startswith("function foo()")
+#     assert chunks[1].startswith("function baz()")
+
+#     code_splitter = CodeSplitter(chunk_lines=4, chunk_lines_overlap=1, max_chars=40)
+
+#     text = """\
+# void foo() {
+#     std::cout << "foo" << std::endl;
+# }
+
+# void baz() {
+#     std::cout << "bbq" << std::endl;
+# }"""
+
+#     chunks = code_splitter.split_text(text)
+#     assert chunks[0].startswith("void foo()")
+#     assert chunks[1].startswith("void baz()")

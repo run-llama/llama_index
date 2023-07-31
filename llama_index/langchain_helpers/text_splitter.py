@@ -473,4 +473,106 @@ class SentenceSplitter(TextSplitter):
         return chunks
 
 
-__all__ = ["TextSplitter", "TokenTextSplitter", "SentenceSplitter"]
+class CodeSplitter(TextSplitter):
+    """Split code using a AST parser.
+
+    Thank you to Kevin Lu / SweepAI for suggesting this elegant code splitting solution.
+    https://docs.sweep.dev/blogs/chunking-2m-files
+    """
+
+    LANGUAGE_NAMES = ["python", "java", "cpp", "go", "rust", "ruby", "typescript"]
+
+    def __init__(
+        self,
+        chunk_lines: int = 40,
+        chunk_lines_overlap: int = 15,
+        max_chars: int = 1500,
+        callback_manager: Optional[CallbackManager] = None,
+    ):
+        self.chunk_lines = chunk_lines
+        self.chunk_lines_overlap = chunk_lines_overlap
+        self.max_chars = max_chars
+        self.callback_manager = callback_manager or CallbackManager([])
+
+    def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
+        new_chunks = []
+        current_chunk = ""
+        for child in node.children:
+            if child.end_byte - child.start_byte > self.max_chars:
+                # Child is too big, recursively chunk the child
+                if len(current_chunk) > 0:
+                    new_chunks.append(current_chunk)
+                current_chunk = ""
+                new_chunks.extend(self._chunk_node(child, text, last_end))
+            elif (
+                len(current_chunk) + child.end_byte - child.start_byte > self.max_chars
+            ):
+                # Child would make the current chunk too big, so start a new chunk
+                new_chunks.append(current_chunk)
+                current_chunk = text[last_end : child.end_byte]
+            else:
+                current_chunk += text[last_end : child.end_byte]
+            last_end = child.end_byte
+        if len(current_chunk) > 0:
+            new_chunks.append(current_chunk)
+        return new_chunks
+
+    def split_text(self, text: str, language: str) -> List[str]:
+        """Split incoming code and return chunks using the AST."""
+        # def split_text(self, text: str, language: Optional[str] = None) -> List[str]:
+        with self.callback_manager.event(
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
+        ) as event:
+            try:
+                import tree_sitter_languages
+            except ImportError:
+                raise ImportError(
+                    "Please install tree_sitter_languages to use the code splitting feature."
+                )
+
+            # if language is not None:
+            parser = tree_sitter_languages.get_parser(language)
+
+            tree = parser.parse(bytes(text, "utf-8"))
+
+            if (
+                not tree.root_node.children
+                or tree.root_node.children[0].type != "ERROR"
+            ):
+                return [
+                    chunk.strip() for chunk in self._chunk_node(tree.root_node, text)
+                ]
+            else:
+                raise ValueError(
+                    f"Could not parse code with language {language}. "
+                    "Please try another language."
+                )
+
+            # else:
+            #     # If no language given, try default languages in order.
+            #     for language_name in self.LANGUAGE_NAMES:
+            #         parser = tree_sitter_languages.get_parser(language_name)
+
+            #         tree = parser.parse(bytes(text, "utf-8"))
+            #         if (
+            #             not tree.root_node.children
+            #             or tree.root_node.children[0].type != "ERROR"
+            #         ):
+            #             print("LANGUAGE", language_name)
+            #             return self._chunk_node(tree.root_node, text)
+
+            # # If no language is given and we can't find an appropriate parser in the
+            # # default languages, then just split by lines.
+            # source_lines = text.split("\n")
+            # num_lines = len(source_lines)
+            # chunks: List[str] = []
+            # start_line = 0
+            # while start_line < num_lines and num_lines > self.chunk_lines:
+            #     end_line = min(start_line + self.chunk_lines, num_lines)
+            #     chunk = "\n".join(source_lines[start_line:end_line])
+            #     chunks.append(chunk)
+            #     start_line += self.chunk_lines - self.chunk_lines_overlap
+            # return chunks
+
+
+__all__ = ["TextSplitter", "TokenTextSplitter", "SentenceSplitter", "CodeSplitter"]
