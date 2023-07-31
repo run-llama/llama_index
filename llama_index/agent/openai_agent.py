@@ -3,11 +3,12 @@ import json
 import time
 from abc import abstractmethod
 from threading import Thread
-from typing import Any, Callable, List, Optional, Tuple, Type
+from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
+from llama_index.chat_engine.types import (AgentChatResponse,
+                                           StreamingAgentChatResponse)
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
@@ -57,6 +58,17 @@ def call_function(
     )
 
 
+def resolve_function_call(function_call: Union[str, dict] = "auto") -> Union[str, dict]:
+    """Resolve function call.
+    
+    If function_call is a function name string, return a dict with the name.
+    """
+    if isinstance(function_call, str) and function_call not in ["none", "auto"]:
+        return {"name": function_call}
+
+    return function_call
+
+
 class BaseOpenAIAgent(BaseAgent):
     """Base OpenAI Agent."""
 
@@ -104,7 +116,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Optional[str] = None,
+        function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -114,10 +126,10 @@ class BaseOpenAIAgent(BaseAgent):
 
         all_messages = self._prefix_messages + self._memory.get()
         if functions:
-            if function_call is not None:
-                function_call_dict = {"name": function_call}
             chat_response = self._llm.chat(
-                all_messages, functions=functions, function_call=function_call_dict
+                all_messages,
+                functions=functions,
+                function_call=resolve_function_call(function_call),
             )
         else:
             chat_response = self._llm.chat(all_messages)
@@ -151,7 +163,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Optional[str] = None,
+        function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -159,12 +171,11 @@ class BaseOpenAIAgent(BaseAgent):
         all_messages = self._prefix_messages + self._memory.get()
         sources = []
 
-        # TODO: Support forced function call
         if functions:
-            if function_call is not None:
-                function_call_dict = {"name": function_call}
             chat_stream = self._llm.stream_chat(
-                all_messages, functions=functions, function_call=function_call_dict
+                all_messages,
+                functions=functions,
+                function_call=resolve_function_call(function_call),
             )
         else:
             chat_stream = self._llm.stream_chat(all_messages)
@@ -227,7 +238,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Optional[str] = None,
+        function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -237,12 +248,11 @@ class BaseOpenAIAgent(BaseAgent):
 
         all_messages = self._prefix_messages + self._memory.get()
 
-        # TODO: Support forced function call
         if functions:
-            if function_call is not None:
-                function_call_dict = {"name": function_call}
             chat_response = await self._llm.achat(
-                all_messages, functions=functions, function_call=function_call_dict
+                all_messages,
+                functions=functions,
+                function_call=resolve_function_call(function_call),
             )
         else:
             chat_response = await self._llm.achat(all_messages)
@@ -277,7 +287,7 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Optional[str] = None,
+        function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -286,10 +296,10 @@ class BaseOpenAIAgent(BaseAgent):
         sources = []
 
         if functions:
-            if function_call is not None:
-                function_call_dict = {"name": function_call}
             achat_stream = await self._llm.astream_chat(
-                all_messages, functions=functions, function_call=function_call_dict
+                all_messages,
+                functions=functions,
+                function_call=resolve_function_call(function_call),
             )
         else:
             achat_stream = await self._llm.astream_chat(all_messages)
