@@ -65,7 +65,7 @@ from llama_index import SimpleDirectoryReader
 filename_fn = lambda filename: {'file_name': filename}
 
 # automatically sets the metadata of each document according to filename_fn
-documents = SimpleDirectoryReader('./data', file_metadata=filename_fn)
+documents = SimpleDirectoryReader('./data', file_metadata=filename_fn).load_data()
 ```
 
 ### Customizing the id
