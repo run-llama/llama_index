@@ -7,7 +7,8 @@ from typing import Any, Callable, List, Optional, Tuple, Type
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
+from llama_index.chat_engine.types import (AgentChatResponse,
+                                           StreamingAgentChatResponse)
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
@@ -101,7 +102,7 @@ class BaseOpenAIAgent(BaseAgent):
         return tools, functions
 
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None, function_call_name: Optional[str] = None
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
