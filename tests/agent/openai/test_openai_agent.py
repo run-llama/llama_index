@@ -2,7 +2,7 @@ from typing import Any, List, Sequence
 
 import pytest
 
-from llama_index.agent.react.base import ReActAgent
+from llama_index.agent.openai_agent import OpenAIAgent
 from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.mock import MockLLM
@@ -60,36 +60,10 @@ def test_chat_basic(
         ]
     )
 
-    agent = ReActAgent.from_tools(
+    agent = OpenAIAgent.from_tools(
         tools=[add_tool],
         llm=mock_llm,
     )
     response = agent.chat("What is 1 + 1?")
-    assert isinstance(response, AgentChatResponse)
-    assert response.response == "2"
-
-
-@pytest.mark.asyncio
-async def test_achat_basic(
-    add_tool: FunctionTool,
-) -> None:
-    mock_llm = MockChatLLM(
-        responses=[
-            ChatMessage(
-                content=MOCK_ACTION_RESPONSE,
-                role=MessageRole.ASSISTANT,
-            ),
-            ChatMessage(
-                content=MOCK_FINAL_RESPONSE,
-                role=MessageRole.ASSISTANT,
-            ),
-        ]
-    )
-
-    agent = ReActAgent.from_tools(
-        tools=[add_tool],
-        llm=mock_llm,
-    )
-    response = await agent.achat("What is 1 + 1?")
     assert isinstance(response, AgentChatResponse)
     assert response.response == "2"
