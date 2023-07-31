@@ -87,25 +87,6 @@ def test_chat_basic(
     assert response.response == "\n\nThis is a test!"
 
 
-def test_chat_basic(
-    add_tool: FunctionTool,
-    monkeypatch: MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        "llama_index.llms.openai.completion_with_retry", mock_chat_completion
-    )
-
-    llm = OpenAI(model="gpt-3.5-turbo")
-
-    agent = OpenAIAgent.from_tools(
-        tools=[add_tool],
-        llm=llm,
-    )
-    response = agent.chat("What is 1 + 1?")
-    assert isinstance(response, AgentChatResponse)
-    assert response.response == "\n\nThis is a test!"
-
-
 def test_chat_no_functions(
     monkeypatch: MonkeyPatch,
 ) -> None:
