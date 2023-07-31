@@ -1,12 +1,36 @@
 from typing import Any, List, Sequence
 
 import pytest
+from pytest import MonkeyPatch
 
 from llama_index.agent.openai_agent import OpenAIAgent
 from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.mock import MockLLM
+from llama_index.llms.openai import OpenAI
 from llama_index.tools.function_tool import FunctionTool
+
+
+def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
+    if "functions" in kwargs:
+        if not kwargs["functions"]:
+            raise ValueError("functions must not be empty")
+
+    # Example taken from https://platform.openai.com/docs/api-reference/chat/create
+    return {
+        "id": "chatcmpl-abc123",
+        "object": "chat.completion",
+        "created": 1677858242,
+        "model": "gpt-3.5-turbo-0301",
+        "usage": {"prompt_tokens": 13, "completion_tokens": 7, "total_tokens": 20},
+        "choices": [
+            {
+                "message": {"role": "assistant", "content": "\n\nThis is a test!"},
+                "finish_reason": "stop",
+                "index": 0,
+            }
+        ],
+    }
 
 
 @pytest.fixture
@@ -46,24 +70,54 @@ Answer: 2
 
 def test_chat_basic(
     add_tool: FunctionTool,
+    monkeypatch: MonkeyPatch,
 ) -> None:
-    mock_llm = MockChatLLM(
-        responses=[
-            ChatMessage(
-                content=MOCK_ACTION_RESPONSE,
-                role=MessageRole.ASSISTANT,
-            ),
-            ChatMessage(
-                content=MOCK_FINAL_RESPONSE,
-                role=MessageRole.ASSISTANT,
-            ),
-        ]
+    monkeypatch.setattr(
+        "llama_index.llms.openai.completion_with_retry", mock_chat_completion
     )
+
+    llm = OpenAI(model="gpt-3.5-turbo")
 
     agent = OpenAIAgent.from_tools(
         tools=[add_tool],
-        llm=mock_llm,
+        llm=llm,
     )
     response = agent.chat("What is 1 + 1?")
     assert isinstance(response, AgentChatResponse)
-    assert response.response == "2"
+    assert response.response == "\n\nThis is a test!"
+
+
+def test_chat_basic(
+    add_tool: FunctionTool,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "llama_index.llms.openai.completion_with_retry", mock_chat_completion
+    )
+
+    llm = OpenAI(model="gpt-3.5-turbo")
+
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    response = agent.chat("What is 1 + 1?")
+    assert isinstance(response, AgentChatResponse)
+    assert response.response == "\n\nThis is a test!"
+
+
+def test_chat_no_functions(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "llama_index.llms.openai.completion_with_retry", mock_chat_completion
+    )
+
+    llm = OpenAI(model="gpt-3.5-turbo")
+
+    agent = OpenAIAgent.from_tools(
+        llm=llm,
+    )
+    response = agent.chat("What is 1 + 1?")
+    assert isinstance(response, AgentChatResponse)
+    assert response.response == "\n\nThis is a test!"
