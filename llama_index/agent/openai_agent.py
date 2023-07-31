@@ -111,7 +111,10 @@ class BaseOpenAIAgent(BaseAgent):
 
         # TODO: Support forced function call
         all_messages = self._prefix_messages + self._memory.get()
-        chat_response = self._llm.chat(all_messages, functions=functions)
+        if functions:
+            chat_response = self._llm.chat(all_messages, functions=functions)
+        else:
+            chat_response = self._llm.chat(all_messages)
         ai_message = chat_response.message
         self._memory.put(ai_message)
 
@@ -148,9 +151,11 @@ class BaseOpenAIAgent(BaseAgent):
         sources = []
 
         # TODO: Support forced function call
-        chat_stream_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(all_messages, functions=functions)
-        )
+        if functions:
+            chat_stream = self._llm.stream_chat(all_messages, functions=functions)
+        else:
+            chat_stream = self._llm.stream_chat(all_messages)
+        chat_stream_response = StreamingAgentChatResponse(chat_stream=chat_stream)
 
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
@@ -217,7 +222,10 @@ class BaseOpenAIAgent(BaseAgent):
         all_messages = self._prefix_messages + self._memory.get()
 
         # TODO: Support forced function call
-        chat_response = await self._llm.achat(all_messages, functions=functions)
+        if functions:
+            chat_response = await self._llm.achat(all_messages, functions=functions)
+        else:
+            chat_response = await self._llm.achat(all_messages)
         ai_message = chat_response.message
         self._memory.put(ai_message)
 
@@ -255,9 +263,13 @@ class BaseOpenAIAgent(BaseAgent):
         sources = []
 
         # TODO: Support forced function call
-        chat_stream_response = StreamingAgentChatResponse(
-            achat_stream=await self._llm.astream_chat(all_messages, functions=functions)
-        )
+        if functions:
+            achat_stream = await self._llm.astream_chat(
+                all_messages, functions=functions
+            )
+        else:
+            achat_stream = await self._llm.astream_chat(all_messages)
+        chat_stream_response = StreamingAgentChatResponse(achat_stream=achat_stream)
 
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
