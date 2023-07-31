@@ -6,7 +6,7 @@ In many cases, especially with long documents, a chunk of text may lack the cont
 
 To combat this, we use LLMs to extract certain contextual information relevant to the document to better help the retrieval and language models disambiguate similar-looking passages.
 
-We show this in an [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/metadata_extraction/MetadataExtractionSEC.ipynb) and demonstrate its effectiveness in processing long documents.
+We show this in an [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/metadata_extraction/MetadataExtractionSEC.ipynb) and demonstrate its effectiveness in processing long documents.
 
 ## Usage
 
