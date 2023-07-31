@@ -13,6 +13,7 @@ def _depth_first_yield(
     levels_back: int,
     collapse_length: Optional[int],
     path: List[str],
+    ensure_ascii: bool = False,
 ) -> Generator[str, None, None]:
     """Do depth first yield of all of the leaf nodes of a JSON.
 
@@ -25,7 +26,7 @@ def _depth_first_yield(
     """
     if isinstance(json_data, dict) or isinstance(json_data, list):
         # only try to collapse if we're not at a leaf node
-        json_str = json.dumps(json_data)
+        json_str = json.dumps(json_data, ensure_ascii=ensure_ascii)
         if collapse_length is not None and len(json_str) <= collapse_length:
             new_path = path[-levels_back:]
             new_path.append(json_str)
@@ -67,12 +68,16 @@ class JSONReader(BaseReader):
     """
 
     def __init__(
-        self, levels_back: Optional[int] = None, collapse_length: Optional[int] = None
+        self,
+        levels_back: Optional[int] = None,
+        collapse_length: Optional[int] = None,
+        ensure_ascii: bool = False,
     ) -> None:
         """Initialize with arguments."""
         super().__init__()
         self.levels_back = levels_back
         self.collapse_length = collapse_length
+        self.ensure_ascii = ensure_ascii
 
     def load_data(self, input_file: str) -> List[Document]:
         """Load data from the input file."""
@@ -81,7 +86,7 @@ class JSONReader(BaseReader):
             if self.levels_back is None:
                 # If levels_back isn't set, we just format and make each
                 # line an embedding
-                json_output = json.dumps(data, indent=0, ensure_ascii=False)
+                json_output = json.dumps(data, indent=0, ensure_ascii=self.ensure_ascii)
                 lines = json_output.split("\n")
                 useful_lines = [
                     line for line in lines if not re.match(r"^[{}\[\],]*$", line)
@@ -92,7 +97,11 @@ class JSONReader(BaseReader):
                 # from further up the JSON tree
                 lines = [
                     *_depth_first_yield(
-                        data, self.levels_back, self.collapse_length, []
+                        data,
+                        self.levels_back,
+                        self.collapse_length,
+                        [],
+                        self.ensure_ascii,
                     )
                 ]
                 return [Document(text="\n".join(lines))]
