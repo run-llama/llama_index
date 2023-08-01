@@ -30,7 +30,7 @@ class AzureOpenAI(OpenAI):
 
     def __init__(
         self,
-        model: Optional[str] = None,
+        model: str = "gpt-35-turbo",
         engine: Optional[str] = None,
         temperature: float = 0.0,
         max_tokens: Optional[int] = None,
