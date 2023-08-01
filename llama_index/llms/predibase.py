@@ -1,7 +1,7 @@
 import os
 from typing import Any, Optional
 
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
 from llama_index.llms.custom import CustomLLM
 
