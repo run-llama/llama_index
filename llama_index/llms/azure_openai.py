@@ -1,6 +1,4 @@
-from typing import Any, Dict
-
-from pydantic import root_validator
+from typing import Any, Dict, Optional
 
 from llama_index.llms.openai import OpenAI
 
@@ -30,11 +28,32 @@ class AzureOpenAI(OpenAI):
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
     """
 
-    model: str  # override default specified in OpenAI
-    engine: str  # model deployment name
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        engine: Optional[str] = None,
+        temperature: float = 0.0,
+        max_tokens: Optional[int] = None,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        max_retries: int = 10,
+        **kwargs: Any,
+    ) -> None:
+        self.engine = engine
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            max_retries=max_retries,
+            **kwargs,
+        )
 
-    @root_validator()
-    def validate_env(cls, values: Dict) -> Dict:
+        if self.engine is None:
+            raise ValueError("You must specify an `engine` parameter.")
+
+        self.validate_env()
+
+    def validate_env(self) -> Dict:
         """Validate necessary environment variables are set."""
         try:
             import openai
@@ -54,7 +73,6 @@ class AzureOpenAI(OpenAI):
             raise ImportError(
                 "You must install the `openai` package to use Azure OpenAI."
             )
-        return values
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
