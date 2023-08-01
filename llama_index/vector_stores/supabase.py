@@ -127,7 +127,7 @@ class SupabaseVectorStore(VectorStore):
             filters = self._to_vecs_filters(query.filters)
 
         results = self._collection.query(
-            query_vector=query.query_embedding,
+            data=query.query_embedding,
             limit=query.similarity_top_k,
             filters=filters,
             include_value=True,
