@@ -1,6 +1,8 @@
 from os import getenv
+from time import sleep
 from enum import Enum
 from typing import List, Any, Optional
+from types import ModuleType
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -14,6 +16,27 @@ from llama_index.vector_stores.utils import (
     DEFAULT_EMBEDDING_KEY,
 )
 
+def _get_rockset() -> ModuleType:
+    """Gets the rockset module and raises an ImportError if
+    the rockset package hasn't been installed
+
+    Returns
+        rockset module (ModuleType)
+    """
+    try:
+        import rockset
+    except ImportError:
+        raise ImportError("Please install rockset with `pip install rockset`")
+    return rockset
+
+def _assert_client_type(client: Any, rockset: ModuleType) -> None:
+    """Raises a ValueError if client is not of type rockset.RocksetClient
+    Args:
+        client (Any): The RocksetClient object
+        rockset (Any): The rockset module
+    """
+    if not type(client) is rockset.RocksetClient:
+        raise ValueError("Parameter `client` must be of type rockset.RocksetClient")
 
 class RocksetVectorStore(VectorStore):
     stores_text: bool = True
@@ -40,7 +63,7 @@ class RocksetVectorStore(VectorStore):
 
         Args:
             collection (str): The name of the collection of vectors
-            client (Optional[rockset.RocksetClient]): Rockset client object
+            client (Optional[Any]): Rockset client object
             text_key (str): The key to the text of nodes
                 (default: llama_index.vector_stores.utils.DEFAULT_TEXT_KEY)
             embedding_col (str): The DB column containing embeddings
@@ -55,13 +78,9 @@ class RocksetVectorStore(VectorStore):
                 vector relationship
                 (default: RocksetVectorStore.DistanceFunc.COSINE_SIM)
         """
-        try:
-            import rockset
-        except ImportError:
-            raise ImportError("Please install rockset with `pip install rockset`")
-        if client and not type(client) is rockset.RocksetClient:
+        self.rockset = _get_rockset()
+        if client and not type(client) is self.rockset.RocksetClient:
             raise ValueError("Parameter `client` must be of type rockset.RocksetClient")
-        self.rockset = rockset
         try:
             self.rs = client or self.rockset.RocksetClient(
                 host=api_server
@@ -69,7 +88,7 @@ class RocksetVectorStore(VectorStore):
                 or "https://api.usw2a1.rockset.com",
                 api_key=api_key or getenv("ROCKSET_API_KEY"),
             )
-        except rockset.exceptions.InitializationException:
+        except self.rockset.exceptions.InitializationException:
             raise ValueError(
                 "Must either pass in `client`, `api_key`, or set ROCKSET_API_KEY env var"
             )
@@ -190,3 +209,30 @@ class RocksetVectorStore(VectorStore):
             ids.append(row["_id"])
 
         return VectorStoreQueryResult(similarities=similarities, nodes=nodes, ids=ids)
+    
+    @classmethod
+    def with_new_collection(
+        cls, 
+        client: Any,
+        collection_name: str, 
+        workspace: str="commons",
+        text_key: str = DEFAULT_TEXT_KEY,
+        embedding_col: str = DEFAULT_EMBEDDING_KEY,
+        metadata_col: str = "metadata",
+        distance_func: DistanceFunc = DistanceFunc.COSINE_SIM,
+    ):
+        _assert_client_type(client, _get_rockset()) # raise err if client is not the right type
+        client.Collections.create_s3_collection(
+            workspace=workspace, 
+            name=collection_name
+        ) # create collection
+        while not client.Collections.get(collection=collection_name).data.status == "READY": # wait until collection is ready
+            sleep(0.1)
+        return cls(
+            collection_name, 
+            client=client,
+            text_key=text_key,
+            embedding_col=embedding_col,
+            metadata_col=metadata_col,
+            distance_func=distance_func
+        )
