@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
+
 from llama_index.utils import globals_helper
 from llama_index.callbacks.base import BaseCallbackHandler
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 
 
 @dataclass
@@ -16,6 +17,41 @@ class TokenCountingEvent:
 
     def __post_init__(self) -> None:
         self.total_token_count = self.prompt_token_count + self.completion_token_count
+
+
+def get_llm_token_counts(
+    tokenizer: Callable[[str], List], payload: Dict[str, Any], event_id: str = ""
+) -> TokenCountingEvent:
+    from llama_index.llms import ChatMessage
+
+    if EventPayload.PROMPT in payload:
+        prompt = str(payload.get(EventPayload.PROMPT))
+        completion = str(payload.get(EventPayload.COMPLETION))
+
+        return TokenCountingEvent(
+            event_id=event_id,
+            prompt=prompt,
+            prompt_token_count=len(tokenizer(prompt)),
+            completion=completion,
+            completion_token_count=len(tokenizer(completion)),
+        )
+
+    elif EventPayload.MESSAGES in payload:
+        messages = cast(List[ChatMessage], payload.get(EventPayload.MESSAGES, []))
+        messages_str = "\n".join([str(x) for x in messages])
+        response = str(payload.get(EventPayload.RESPONSE))
+
+        return TokenCountingEvent(
+            event_id=event_id,
+            prompt=messages_str,
+            prompt_token_count=len(tokenizer(messages_str)),
+            completion=response,
+            completion_token_count=len(tokenizer(response)),
+        )
+    else:
+        raise ValueError(
+            "Invalid payload! Need prompt and completion or messages and response."
+        )
 
 
 class TokenCountingHandler(BaseCallbackHandler):
@@ -79,16 +115,10 @@ class TokenCountingHandler(BaseCallbackHandler):
             and payload is not None
         ):
             self.llm_token_counts.append(
-                TokenCountingEvent(
+                get_llm_token_counts(
+                    tokenizer=self.tokenizer,
+                    payload=payload,
                     event_id=event_id,
-                    prompt=payload.get("formatted_prompt", ""),
-                    prompt_token_count=len(
-                        self.tokenizer(payload.get("formatted_prompt", ""))
-                    ),
-                    completion=payload.get("response", ""),
-                    completion_token_count=len(
-                        self.tokenizer(payload.get("response", ""))
-                    ),
                 )
             )
 
@@ -106,7 +136,7 @@ class TokenCountingHandler(BaseCallbackHandler):
             and payload is not None
         ):
             total_chunk_tokens = 0
-            for chunk in payload.get("chunks", []):
+            for chunk in payload.get(EventPayload.CHUNKS, []):
                 self.embedding_token_counts.append(
                     TokenCountingEvent(
                         event_id=event_id,

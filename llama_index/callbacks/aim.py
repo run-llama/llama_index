@@ -108,15 +108,23 @@ class AimCallback(BaseCallbackHandler):
             raise ValueError("AimCallback failed to init properly.")
 
         if event_type is CBEventType.LLM and payload:
+            if EventPayload.PROMPT in payload:
+                llm_input = str(payload[EventPayload.PROMPT])
+                llm_output = str(payload[EventPayload.COMPLETION])
+            else:
+                message = payload.get(EventPayload.MESSAGES, [])
+                llm_input = "\n".join([str(x) for x in message])
+                llm_output = str(payload[EventPayload.RESPONSE])
+
             self._run.track(
-                Text(payload[EventPayload.PROMPT]),
+                Text(llm_input),
                 name="prompt",
                 step=self._llm_response_step,
                 context={"event_id": event_id},
             )
 
             self._run.track(
-                Text(payload[EventPayload.RESPONSE]),
+                Text(llm_output),
                 name="response",
                 step=self._llm_response_step,
                 context={"event_id": event_id},

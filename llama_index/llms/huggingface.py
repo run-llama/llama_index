@@ -2,7 +2,12 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional
 
-from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
+from llama_index.llms.base import (
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+    llm_callback,
+)
 from llama_index.llms.custom import CustomLLM
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
@@ -103,6 +108,7 @@ class HuggingFaceLLM(CustomLLM):
             model_name=self._model_name,
         )
 
+    @llm_callback(is_chat=False)
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
 
@@ -130,6 +136,7 @@ class HuggingFaceLLM(CustomLLM):
 
         return CompletionResponse(text=completion, raw={"model_output": tokens})
 
+    @llm_callback(is_chat=False)
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Streaming completion endpoint."""
         from transformers import TextIteratorStreamer

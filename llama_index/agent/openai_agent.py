@@ -70,11 +70,11 @@ class BaseOpenAIAgent(BaseAgent):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._llm = llm
+        self._llm.callback_manager = callback_manager or CallbackManager([])
         self._memory = memory
         self._prefix_messages = prefix_messages
         self._verbose = verbose
         self._max_function_calls = max_function_calls
-        self.callback_manager = callback_manager or CallbackManager([])
 
     @property
     def chat_history(self) -> List[ChatMessage]:

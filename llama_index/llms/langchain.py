@@ -14,6 +14,7 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    llm_callback,
 )
 from llama_index.llms.langchain_utils import (
     from_lc_messages,
@@ -36,16 +37,19 @@ class LangChainLLM(LLM):
     def metadata(self) -> LLMMetadata:
         return get_llm_metadata(self._llm)
 
+    @llm_callback(is_chat=True)
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         lc_messages = to_lc_messages(messages)
         lc_message = self._llm.predict_messages(messages=lc_messages, **kwargs)
         message = from_lc_messages([lc_message])[0]
         return ChatResponse(message=message)
 
+    @llm_callback(is_chat=False)
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         output_str = self._llm.predict(prompt, **kwargs)
         return CompletionResponse(text=output_str)
 
+    @llm_callback(is_chat=True)
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -75,6 +79,7 @@ class LangChainLLM(LLM):
 
         return gen()
 
+    @llm_callback(is_chat=False)
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         handler = StreamingGeneratorCallbackHandler()
 
@@ -99,16 +104,19 @@ class LangChainLLM(LLM):
 
         return gen()
 
+    @llm_callback(is_chat=True)
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         # TODO: Implement async chat
         return self.chat(messages, **kwargs)
 
+    @llm_callback(is_chat=False)
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         # TODO: Implement async complete
         return self.complete(prompt, **kwargs)
 
+    @llm_callback(is_chat=True)
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
@@ -120,6 +128,7 @@ class LangChainLLM(LLM):
 
         return gen()
 
+    @llm_callback(is_chat=False)
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:

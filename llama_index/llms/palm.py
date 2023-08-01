@@ -2,7 +2,12 @@
 
 from llama_index.llms.custom import CustomLLM
 from typing import Optional, Any
-from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
+from llama_index.llms.base import (
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+    llm_callback,
+)
 import os
 
 
@@ -52,6 +57,7 @@ class PaLM(CustomLLM):
             model_name=self._model_name,
         )
 
+    @llm_callback(is_chat=False)
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Predict the answer to a query.
 
@@ -72,6 +78,7 @@ class PaLM(CustomLLM):
         )
         return CompletionResponse(text=completion.result, raw=completion.candidates[0])
 
+    @llm_callback(is_chat=False)
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Stream the answer to a query.
 
@@ -86,5 +93,5 @@ class PaLM(CustomLLM):
 
         """
         raise NotImplementedError(
-            "PaLM does not support streaming completion in LlamaIndex atm."
+            "PaLM does not support streaming completion in LlamaIndex currently."
         )
