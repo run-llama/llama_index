@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union, List
 
 from pydantic import BaseModel
 
@@ -110,6 +110,37 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
+        formatted_prompt = self._prompt.format(**kwargs)
+
+        openai_fn_spec = to_openai_function(self._output_cls)
+
+        chat_response = await self._llm.achat(
+            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            functions=[openai_fn_spec],
+            function_call=self._function_call,
+        )
+        message = chat_response.message
+        if "function_call" not in message.additional_kwargs:
+            raise ValueError(
+                "Expected function call in ai_message.additional_kwargs, "
+                "but none found."
+            )
+
+        function_call = message.additional_kwargs["function_call"]
+        if self._verbose:
+            name = function_call["name"]
+            arguments_str = function_call["arguments"]
+            print(f"Function call: {name} with args: {arguments_str}")
+
+        if isinstance(function_call["arguments"], dict):
+            output = self.output_cls.parse_obj(function_call["arguments"])
+        else:
+            output = self.output_cls.parse_raw(function_call["arguments"])
+        return output
+
+    def stream_list(self, *args: Any, **kwargs: Any) -> List[BaseModel]:
+        """Streams a list of objects."""
+
         formatted_prompt = self._prompt.format(**kwargs)
 
         openai_fn_spec = to_openai_function(self._output_cls)
