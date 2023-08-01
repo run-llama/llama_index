@@ -131,7 +131,7 @@ function baz() {
     console.log("bbq");
 }"""
 
-    chunks = code_splitter.split_text(text, "typescript")
+    chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("function foo()")
     assert chunks[1].startswith("function baz()")
 
