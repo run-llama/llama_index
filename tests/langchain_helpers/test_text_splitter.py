@@ -134,36 +134,3 @@ function baz() {
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("function foo()")
     assert chunks[1].startswith("function baz()")
-
-
-# def test_autolang_code_splitter() -> None:
-#     """Test case for code splitting"""
-#     code_splitter = CodeSplitter(chunk_lines=4, chunk_lines_overlap=1, max_chars=40)
-
-#     text = """\
-# function foo() {
-#     print("bar")
-# }
-
-# function baz() {
-#     print("bbq")
-# }"""
-
-#     chunks = code_splitter.split_text(text)
-#     assert chunks[0].startswith("function foo()")
-#     assert chunks[1].startswith("function baz()")
-
-#     code_splitter = CodeSplitter(chunk_lines=4, chunk_lines_overlap=1, max_chars=40)
-
-#     text = """\
-# void foo() {
-#     std::cout << "foo" << std::endl;
-# }
-
-# void baz() {
-#     std::cout << "bbq" << std::endl;
-# }"""
-
-#     chunks = code_splitter.split_text(text)
-#     assert chunks[0].startswith("void foo()")
-#     assert chunks[1].startswith("void baz()")
