@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [0.7.16] - 2023-07-30
+
+### New Features
+
+- Chat source nodes (#7078)
+
+## [0.7.15] - 2023-07-29
+
+### Bug Fixes / Nits
+- anthropic api key  customization (#7082)
+- Fix broken link to API reference in Contributor Docs (#7080)
+- Update vector store docs (#7076)
+- Update comment (#7073)
+
 ## [0.7.14] - 2023-07-28
 
 ### New Features

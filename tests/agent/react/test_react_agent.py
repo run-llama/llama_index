@@ -1,12 +1,12 @@
 from typing import Any, List, Sequence
+
 import pytest
+
 from llama_index.agent.react.base import ReActAgent
+from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.mock import MockLLM
 from llama_index.tools.function_tool import FunctionTool
-from llama_index.chat_engine.types import (
-    AgentChatResponse,
-)
 
 
 @pytest.fixture
