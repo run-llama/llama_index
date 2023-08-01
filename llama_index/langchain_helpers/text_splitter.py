@@ -484,11 +484,13 @@ class CodeSplitter(TextSplitter):
 
     def __init__(
         self,
+        language: str,
         chunk_lines: int = 40,
         chunk_lines_overlap: int = 15,
         max_chars: int = 1500,
         callback_manager: Optional[CallbackManager] = None,
     ):
+        self.language = language
         self.chunk_lines = chunk_lines
         self.chunk_lines_overlap = chunk_lines_overlap
         self.max_chars = max_chars
@@ -517,7 +519,7 @@ class CodeSplitter(TextSplitter):
             new_chunks.append(current_chunk)
         return new_chunks
 
-    def split_text(self, text: str, language: str) -> List[str]:
+    def split_text(self, text: str) -> List[str]:
         """Split incoming code and return chunks using the AST."""
         # def split_text(self, text: str, language: Optional[str] = None) -> List[str]:
         with self.callback_manager.event(
@@ -530,8 +532,8 @@ class CodeSplitter(TextSplitter):
                     "Please install tree_sitter_languages to use the code splitting feature."
                 )
 
-            # if language is not None:
-            parser = tree_sitter_languages.get_parser(language)
+            # if self.language is not None:
+            parser = tree_sitter_languages.get_parser(self.language)
 
             tree = parser.parse(bytes(text, "utf-8"))
 
@@ -543,10 +545,7 @@ class CodeSplitter(TextSplitter):
                     chunk.strip() for chunk in self._chunk_node(tree.root_node, text)
                 ]
             else:
-                raise ValueError(
-                    f"Could not parse code with language {language}. "
-                    "Please try another language."
-                )
+                raise ValueError(f"Could not parse code with language {self.language}.")
 
             # else:
             #     # If no language given, try default languages in order.
