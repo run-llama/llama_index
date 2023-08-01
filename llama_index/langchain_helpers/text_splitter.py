@@ -529,7 +529,7 @@ class CodeSplitter(TextSplitter):
                 import tree_sitter_languages
             except ImportError:
                 raise ImportError(
-                    "Please install tree_sitter_languages to use the code splitting feature."
+                    "Please install tree_sitter_languages to use CodeSplitter."
                 )
 
             # if self.language is not None:
@@ -541,9 +541,14 @@ class CodeSplitter(TextSplitter):
                 not tree.root_node.children
                 or tree.root_node.children[0].type != "ERROR"
             ):
-                return [
+                chunks = [
                     chunk.strip() for chunk in self._chunk_node(tree.root_node, text)
                 ]
+                event.on_end(
+                    payload={EventPayload.CHUNKS: chunks},
+                )
+
+                return chunks
             else:
                 raise ValueError(f"Could not parse code with language {self.language}.")
 
