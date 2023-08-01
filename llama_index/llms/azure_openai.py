@@ -53,7 +53,7 @@ class AzureOpenAI(OpenAI):
 
         self.validate_env()
 
-    def validate_env(self) -> Dict:
+    def validate_env(self) -> None:
         """Validate necessary environment variables are set."""
         try:
             import openai
