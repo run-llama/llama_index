@@ -32,7 +32,7 @@ Or used as a standalone object for filtering retrieved nodes:
 ```python
 from llama_index.indices.postprocessor import SimilarityPostprocessor
 
-nodes = index.as_retriever().query("query string")
+nodes = index.as_retriever().retrieve("test query str")
 
 # filter nodes below 0.75 similarity score
 processor = SimilarityPostprocessor(similarity_cutoff=0.75)
