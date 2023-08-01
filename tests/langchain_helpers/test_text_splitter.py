@@ -132,7 +132,6 @@ function baz() {
 }"""
 
     chunks = code_splitter.split_text(text, "typescript")
-    print("CHUNKS!!", chunks)
     assert chunks[0].startswith("function foo()")
     assert chunks[1].startswith("function baz()")
 
