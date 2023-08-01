@@ -480,7 +480,6 @@ class CodeSplitter(TextSplitter):
     https://docs.sweep.dev/blogs/chunking-2m-files
     """
 
-    LANGUAGE_NAMES = ["python", "java", "cpp", "go", "rust", "ruby", "typescript"]
 
     def __init__(
         self,
@@ -521,7 +520,6 @@ class CodeSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming code and return chunks using the AST."""
-        # def split_text(self, text: str, language: Optional[str] = None) -> List[str]:
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
@@ -532,8 +530,11 @@ class CodeSplitter(TextSplitter):
                     "Please install tree_sitter_languages to use CodeSplitter."
                 )
 
-            # if self.language is not None:
-            parser = tree_sitter_languages.get_parser(self.language)
+            try:
+                parser = tree_sitter_languages.get_parser(self.language)
+            except Exception as e:
+                print(f"Could not get parser for language {self.language}. Check https://github.com/grantjenks/py-tree-sitter-languages#license for a list of valid languages.")
+                raise e
 
             tree = parser.parse(bytes(text, "utf-8"))
 
@@ -552,31 +553,7 @@ class CodeSplitter(TextSplitter):
             else:
                 raise ValueError(f"Could not parse code with language {self.language}.")
 
-            # else:
-            #     # If no language given, try default languages in order.
-            #     for language_name in self.LANGUAGE_NAMES:
-            #         parser = tree_sitter_languages.get_parser(language_name)
-
-            #         tree = parser.parse(bytes(text, "utf-8"))
-            #         if (
-            #             not tree.root_node.children
-            #             or tree.root_node.children[0].type != "ERROR"
-            #         ):
-            #             print("LANGUAGE", language_name)
-            #             return self._chunk_node(tree.root_node, text)
-
-            # # If no language is given and we can't find an appropriate parser in the
-            # # default languages, then just split by lines.
-            # source_lines = text.split("\n")
-            # num_lines = len(source_lines)
-            # chunks: List[str] = []
-            # start_line = 0
-            # while start_line < num_lines and num_lines > self.chunk_lines:
-            #     end_line = min(start_line + self.chunk_lines, num_lines)
-            #     chunk = "\n".join(source_lines[start_line:end_line])
-            #     chunks.append(chunk)
-            #     start_line += self.chunk_lines - self.chunk_lines_overlap
-            # return chunks
+        # TODO: set up auto-language detection using something like https://github.com/yoeo/guesslang.
 
 
 __all__ = ["TextSplitter", "TokenTextSplitter", "SentenceSplitter", "CodeSplitter"]
