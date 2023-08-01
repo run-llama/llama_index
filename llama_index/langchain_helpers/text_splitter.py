@@ -480,7 +480,6 @@ class CodeSplitter(TextSplitter):
     https://docs.sweep.dev/blogs/chunking-2m-files
     """
 
-
     def __init__(
         self,
         language: str,
@@ -533,7 +532,11 @@ class CodeSplitter(TextSplitter):
             try:
                 parser = tree_sitter_languages.get_parser(self.language)
             except Exception as e:
-                print(f"Could not get parser for language {self.language}. Check https://github.com/grantjenks/py-tree-sitter-languages#license for a list of valid languages.")
+                print(
+                    f"Could not get parser for language {self.language}. Check "
+                    "https://github.com/grantjenks/py-tree-sitter-languages#license "
+                    "for a list of valid languages."
+                )
                 raise e
 
             tree = parser.parse(bytes(text, "utf-8"))
