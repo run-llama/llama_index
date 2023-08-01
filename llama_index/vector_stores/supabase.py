@@ -4,18 +4,13 @@ from typing import Any, List
 
 from llama_index.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.schema import TextNode
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
-from llama_index.vector_stores.utils import (
-    metadata_dict_to_node,
-    node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
-)
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (legacy_metadata_dict_to_node,
+                                             metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +98,7 @@ class SupabaseVectorStore(VectorStore):
             data.append((result.id, result.embedding, metadata_dict))
             ids.append(result.id)
 
-        self._collection.upsert(vectors=data)
+        self._collection.upsert(records=data)
 
         return ids
 
