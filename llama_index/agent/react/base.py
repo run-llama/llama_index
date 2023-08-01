@@ -1,5 +1,6 @@
 # ReAct agent
 
+from threading import Thread
 from typing import Any, List, Optional, Sequence, Tuple, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
@@ -13,9 +14,10 @@ from llama_index.agent.react.types import (
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AgentChatResponse
+from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
+from llama_index.memory.types import BaseMemory
 from llama_index.tools import BaseTool
 
 
@@ -33,7 +35,7 @@ class ReActAgent(BaseAgent):
         self,
         tools: Sequence[BaseTool],
         llm: LLM,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
@@ -43,7 +45,7 @@ class ReActAgent(BaseAgent):
         self._llm = llm
         self._tools = tools
         self._tools_dict = {tool.metadata.name: tool for tool in tools}
-        self._chat_history = chat_history
+        self._memory = memory
         self._max_iterations = max_iterations
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter(
             tools=tools
@@ -51,9 +53,6 @@ class ReActAgent(BaseAgent):
         self._output_parser = output_parser or ReActOutputParser()
         self.callback_manager = callback_manager or CallbackManager([])
         self._verbose = verbose
-
-    def reset(self) -> None:
-        self._chat_history.clear()
 
     @classmethod
     def from_tools(
@@ -86,7 +85,10 @@ class ReActAgent(BaseAgent):
     @property
     def chat_history(self) -> List[ChatMessage]:
         """Chat history."""
-        return self._chat_history
+        return self._memory.get_all()
+
+    def reset(self) -> None:
+        self._memory.reset()
 
     def _process_actions(
         self, output: ChatResponse
@@ -140,8 +142,10 @@ class ReActAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.set(ChatMessage(content=message, role="user"))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -159,7 +163,7 @@ class ReActAgent(BaseAgent):
                 break
 
         response = self._get_response(current_reasoning)
-        chat_history.append(
+        self._memory.set(
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
@@ -167,8 +171,10 @@ class ReActAgent(BaseAgent):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.set(ChatMessage(content=message, role="user"))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -186,7 +192,7 @@ class ReActAgent(BaseAgent):
                 break
 
         response = self._get_response(current_reasoning)
-        chat_history.append(
+        self._memory.set(
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
