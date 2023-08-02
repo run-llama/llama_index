@@ -13,7 +13,7 @@ def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
 
     name = f"{base_cls.__name__}List"
     list_items = (
-        List[base_cls],
+        List[base_cls],  # type: ignore
         Field(
             default_factory=list,
             repr=False,
