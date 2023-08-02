@@ -207,6 +207,39 @@ class ReActAgent(BaseAgent):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.put(ChatMessage(content=message, role="user"))
+
+        current_reasoning: List[BaseReasoningStep] = []
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
+            )
+            # send prompt
+            response_gen = self._llm.stream_chat(input_chat)
+
+            chat_response: Optional[ChatResponse] = None
+            for r in response_gen:
+                if "Answer:" in r.message.content:
+                    break
+                chat_response = r
+
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, is_done = self._process_actions(output=chat_response)
+            current_reasoning.extend(reasoning_steps)
+            if is_done:
+                break
+
+        response = self._get_response(current_reasoning)
+        self._memory.put(
+            ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
+        )
+        return response
+
         # chat_history = chat_history or self._chat_history
         # chat_history.append(ChatMessage(content=message, role="user"))
 
