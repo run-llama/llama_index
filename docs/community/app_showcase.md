@@ -22,6 +22,22 @@ Interface that allows users to upload long docs and chat with the bot.
 
 A web tool to build agents, interacting with LlamaIndex data structures.[[Website]](https://app.agent-hq.io/)
 
+###### SiteChatAI
+
+SiteChatAi is ChatGPT powered that can be integrated into any website. It is a simple chatbot that can be used to answer simple questions and can be trained to answer more complex questions. It provides human like conversation experience to the users. It can be used to answer questions related to the website or the business. It uses Llamma Index and LangChain
+  
+Current version of SiteChatAI support following features:  
+- Multi-lingual support  
+- Real time chat  
+- Easy to integrate  
+- Customizable  
+- Human like conversation experience  
+- Can be trained to answer complex questions
+- and more.
+
+  
+[[Website]](https://sitechatai.com/?utm_source=llama-index&utm_medium=app%20showcase&utm_campaign=promotion)
+
 
 ###### PapersGPT
 
