@@ -7,9 +7,9 @@ from typing import Generator, List, Optional
 
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
-from llama_index.tools import ToolOutput
 from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore
+from llama_index.tools import ToolOutput
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +66,7 @@ class StreamingAgentChatResponse:
         # try/except to prevent hanging on error
         try:
             final_message = None
+            final_text = ""
             for chat in self.chat_stream:
                 final_message = chat.message
                 self._is_function = (
@@ -73,8 +74,12 @@ class StreamingAgentChatResponse:
                     is not None
                 )
                 self._queue.put_nowait(chat.delta)
+                final_text += chat.delta or ""
 
             if final_message is not None:
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                final_message.content = final_text
                 memory.put(final_message)
         except Exception as e:
             print("Error reading response: ", e)
@@ -92,6 +97,7 @@ class StreamingAgentChatResponse:
         # try/except to prevent hanging on error
         try:
             final_message = None
+            final_text = ""
             async for chat in self.achat_stream:
                 final_message = chat.message
                 self._is_function = (
@@ -99,8 +105,12 @@ class StreamingAgentChatResponse:
                     is not None
                 )
                 self._queue.put_nowait(chat.delta)
+                final_text += chat.delta or ""
 
             if final_message is not None:
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                final_message.content = final_text
                 memory.put(final_message)
         except Exception as e:
             print("Error reading response: ", e)
@@ -121,7 +131,7 @@ class StreamingAgentChatResponse:
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:
-            print(token, end="")
+            print(token, end="", flush=True)
 
 
 class BaseChatEngine(ABC):

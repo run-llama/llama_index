@@ -48,7 +48,7 @@ class SimpleChatEngine(BaseChatEngine):
         llm = service_context.llm_predictor.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if system_prompt is not None:
             if prefix_messages is not None:

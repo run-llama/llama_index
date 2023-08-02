@@ -19,7 +19,7 @@ class AzureOpenAI(OpenAI):
         for your deployment when you deployed a model.
 
     You must have the following environment variables set:
-    - `OPENAI_API_TYPE`: set this to `azure`
+    - `OPENAI_API_TYPE`: set this to `azure`, `azure_ad`, or `azuread`
     - `OPENAI_API_VERSION`: set this to `2023-05-15`
         This may change in the future.
     - `OPENAI_API_BASE`: your endpoint should look like the following
@@ -44,9 +44,10 @@ class AzureOpenAI(OpenAI):
                     "You must set OPENAI_API_BASE to your Azure endpoint. "
                     "It should look like https://YOUR_RESOURCE_NAME.openai.azure.com/"
                 )
-            if openai.api_type != "azure":
+            if openai.api_type not in ("azure", "azure_ad", "azuread"):
                 raise ValueError(
-                    "You must set OPENAI_API_TYPE to `azure` for Azure OpenAI."
+                    "You must set OPENAI_API_TYPE to one of "
+                    "(`azure`, `azuread`, `azure_ad`) for Azure OpenAI."
                 )
             if openai.api_version is None:
                 raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
