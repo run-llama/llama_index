@@ -1,20 +1,20 @@
 # ReAct agent
 
+import time
 from threading import Thread
 from typing import Any, List, Optional, Sequence, Tuple, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.types import (
-    ActionReasoningStep,
-    BaseReasoningStep,
-    ObservationReasoningStep,
-    ResponseReasoningStep,
-)
+from llama_index.agent.react.types import (ActionReasoningStep,
+                                           BaseReasoningStep,
+                                           ObservationReasoningStep,
+                                           ResponseReasoningStep)
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
+from llama_index.chat_engine.types import (AgentChatResponse,
+                                           StreamingAgentChatResponse)
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.types import BaseMemory
@@ -196,3 +196,113 @@ class ReActAgent(BaseAgent):
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        # chat_history = chat_history or self._chat_history
+        # chat_history.append(ChatMessage(content=message, role="user"))
+
+        # current_reasoning: List[BaseReasoningStep] = []
+        # # start loop
+        # for _ in range(self._max_iterations):
+        #     # prepare inputs
+        #     input_chat = self._react_chat_formatter.format(
+        #         chat_history=chat_history, current_reasoning=current_reasoning
+        #     )
+        #     # send prompt
+        #     chat_response = self._llm.chat(input_chat)
+        #     # given react prompt outputs, call tools or return response
+        #     reasoning_steps, is_done = self._process_actions(output=chat_response)
+        #     current_reasoning.extend(reasoning_steps)
+        #     if is_done:
+        #         break
+
+        # response = self._get_response(current_reasoning)
+        # chat_history.append(
+        #     ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
+        # )
+        ########
+
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        all_messages = self._memory.get()
+        sources = []
+
+        current_reasoning: List[BaseReasoningStep] = []
+        # prepare inputs
+        input_chat = self._react_chat_formatter.format(
+            chat_history=self._memory.get(), current_reasoning=current_reasoning
+        )
+        chat_stream = self._llm.stream_chat(input_chat)
+        chat_stream_response = StreamingAgentChatResponse(chat_stream=chat_stream)
+
+        # Get the response in a separate thread so we can yield the response
+        thread = Thread(
+            target=chat_stream_response.write_response_to_history,
+            args=(self._memory,),
+        )
+        thread.start()
+
+        while chat_stream_response._is_final is None:
+            # Wait until we know if the response is a function call or not
+            time.sleep(0.05)
+            if chat_stream_response._is_final is True:
+                return chat_stream_response
+
+        thread.join()
+
+        n_function_calls = 0
+        function_call_ = self._get_latest_function_call(self._memory.get_all())
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=chat_history, current_reasoning=current_reasoning
+            )
+            # send prompt
+            chat_response = self._llm.chat(input_chat)
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, is_done = self._process_actions(output=chat_response)
+            current_reasoning.extend(reasoning_steps)
+            if is_done:
+                break
+
+        while function_call_ is not None:
+            if n_function_calls >= self._max_function_calls:
+                print(f"Exceeded max function calls: {self._max_function_calls}.")
+                break
+
+            function_message, tool_output = call_function(
+                tools, function_call_, verbose=self._verbose
+            )
+            sources.append(tool_output)
+            self._memory.put(function_message)
+            n_function_calls += 1
+
+            # send function call & output back to get another response
+            all_messages = self._prefix_messages + self._memory.get()
+            chat_stream_response = StreamingAgentChatResponse(
+                chat_stream=self._llm.stream_chat(all_messages, functions=functions),
+                sources=sources,
+            )
+
+            # Get the response in a separate thread so we can yield the response
+            thread = Thread(
+                target=chat_stream_response.write_response_to_history,
+                args=(self._memory,),
+            )
+            thread.start()
+            while chat_stream_response._is_function is None:
+                # Wait until we know if the response is a function call or not
+                time.sleep(0.05)
+                if chat_stream_response._is_function is False:
+                    return chat_stream_response
+
+            thread.join()
+            function_call_ = self._get_latest_function_call(self._memory.get_all())
+
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        raise NotImplementedError("astream_chat not implemented")
