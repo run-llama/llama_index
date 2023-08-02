@@ -74,21 +74,19 @@ class Neo4jGraphStore(GraphStore):
             )
         # Create constraint for faster insert and retrieval
         try:  # Using Neo4j 5
-            with self._driver.session() as session:
-                session.run(
-                    """
+            self.query(
+                """
                 CREATE CONSTRAINT IF NOT EXISTS FOR (n:%s) REQUIRE n.id IS UNIQUE; 
                 """
-                    % (self.node_label)
-                )
+                % (self.node_label)
+            )
         except:  # Using Neo4j <5
-            with self._driver.session() as session:
-                session.run(
-                    """
+            self.query(
+                """
                 CREATE CONSTRAINT IF NOT EXISTS ON (n:%s) ASSERT n.id IS UNIQUE; 
                 """
-                    % (self.node_label)
-                )
+                % (self.node_label)
+            )
 
     @property
     def client(self) -> Any:
@@ -103,16 +101,15 @@ class Neo4jGraphStore(GraphStore):
         """
 
         prepared_statement = query % (self.node_label, self.node_label)
-        
+
         with self._driver.session() as session:
             data = session.run(prepared_statement, {"subj": subj})
-
-        retval = [record.value() for record in data]
+            retval = [record.values() for record in data]
         return retval
-    
+
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2
-     ) -> Dict[str, List[List[str]]]:
+    ) -> Dict[str, List[List[str]]]:
         return {"test": [["123", "123"]]}
 
     # def get_rel_map(
@@ -177,45 +174,46 @@ class Neo4jGraphStore(GraphStore):
             MERGE (n1)-[:%s]->(n2)
         """
 
-        prepared_statement = query % (self.node_label, rel, self.node_label)
+        prepared_statement = query % (self.node_label, self.node_label, rel)
 
         with self._driver.session() as session:
-            session.run(prepared_statement)
+            session.run(prepared_statement, {"subj": subj, "obj": obj})
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
 
-        def delete_rel(connection: Any, subj: str, obj: str, rel: str) -> None:
+        def delete_rel(subj: str, obj: str, rel: str) -> None:
             with self._driver.session() as session:
-                connection.run(
+                session.run(
                     (
                         "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.id = $subj AND n2.id"
-                        " = $obj AND r.predicate = $pred DELETE r"
+                        " = $obj DELETE r"
                     )
                     % (self.node_label, rel, self.node_label),
                     {"subj": subj, "obj": obj},
                 )
 
-        def delete_entity(connection: Any, entity: str) -> None:
+        def delete_entity(entity: str) -> None:
             with self._driver.session() as session:
-                connection.run(
+                session.run(
                     "MATCH (n:%s) WHERE n.id = $entity DELETE n" % self.node_label,
                     {"entity": entity},
                 )
 
-        def check_edges(connection: Any, entity: str) -> bool:
-            is_exists_result = connection.execute(
-                "MATCH (n1:%s) WHERE n1.id = $entity RETURN count(*)"
-                % (self.node_label),
-                {"entity": entity},
-            )
-            return bool(list(is_exists_result))
+        def check_edges(entity: str) -> bool:
+            with self._driver.session() as session:
+                is_exists_result = session.run(
+                    "MATCH (n1:%s)--() WHERE n1.id = $entity RETURN count(*)"
+                    % (self.node_label),
+                    {"entity": entity},
+                )
+                return bool(list(is_exists_result))
 
-        delete_rel(self._driver, subj, obj, rel)
-        if not check_edges(self._driver, subj):
-            delete_entity(self._driver, subj)
-        if not check_edges(self._driver, obj):
-            delete_entity(self._driver, obj)
+        delete_rel(subj, obj, rel)
+        if not check_edges(subj):
+            delete_entity(subj)
+        if not check_edges(obj):
+            delete_entity(obj)
 
     def refresh_schema(self) -> None:
         """
@@ -243,8 +241,6 @@ class Neo4jGraphStore(GraphStore):
         return self.schema
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-
         with self._driver.session() as session:
             result = session.run(query, param_map)
-
-        return [d.data() for d in result]
+            return [d.data() for d in result]
