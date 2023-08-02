@@ -1,60 +1,17 @@
 import logging
 import uuid
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Generator
 
+import llama_index
+from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_EVENT
 
 logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
-
-
-class BaseCallbackHandler(ABC):
-    """Base callback handler that can be used to track event starts and ends."""
-
-    def __init__(
-        self,
-        event_starts_to_ignore: List[CBEventType],
-        event_ends_to_ignore: List[CBEventType],
-    ) -> None:
-        """Initialize the base callback handler."""
-        self.event_starts_to_ignore = tuple(event_starts_to_ignore)
-        self.event_ends_to_ignore = tuple(event_ends_to_ignore)
-
-    @abstractmethod
-    def on_event_start(
-        self,
-        event_type: CBEventType,
-        payload: Optional[Dict[str, Any]] = None,
-        event_id: str = "",
-        **kwargs: Any,
-    ) -> str:
-        """Run when an event starts and return id of event."""
-
-    @abstractmethod
-    def on_event_end(
-        self,
-        event_type: CBEventType,
-        payload: Optional[Dict[str, Any]] = None,
-        event_id: str = "",
-        **kwargs: Any,
-    ) -> None:
-        """Run when an event ends."""
-
-    @abstractmethod
-    def start_trace(self, trace_id: Optional[str] = None) -> None:
-        """Run when an overall trace is launched."""
-
-    @abstractmethod
-    def end_trace(
-        self,
-        trace_id: Optional[str] = None,
-        trace_map: Optional[Dict[str, List[str]]] = None,
-    ) -> None:
-        """Run when an overall trace is exited."""
 
 
 class CallbackManager(BaseCallbackHandler, ABC):
@@ -88,6 +45,20 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     def __init__(self, handlers: List[BaseCallbackHandler]):
         """Initialize the manager with a list of handlers."""
+
+        # add eval handlers based on global defaults
+        if llama_index.global_eval_handler is not None:
+            new_handler = llama_index.global_eval_handler
+            # go through existing handlers, check if any are same type as new handler
+            # if so, error
+            for existing_handler in handlers:
+                if isinstance(existing_handler, type(new_handler)):
+                    raise ValueError(
+                        "Cannot add two handlers of the same type "
+                        f"{type(new_handler)} to the callback manager."
+                    )
+            handlers.append(new_handler)
+
         self.handlers = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
         self._trace_id_stack: List[str] = []
