@@ -47,8 +47,8 @@ class CallbackManager(BaseCallbackHandler, ABC):
         """Initialize the manager with a list of handlers."""
 
         # add eval handlers based on global defaults
-        if llama_index.global_eval_handler is not None:
-            new_handler = llama_index.global_eval_handler
+        if llama_index.global_handler is not None:
+            new_handler = llama_index.global_handler
             # go through existing handlers, check if any are same type as new handler
             # if so, error
             for existing_handler in handlers:
