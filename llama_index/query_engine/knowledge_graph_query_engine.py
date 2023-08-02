@@ -6,15 +6,14 @@ from typing import Any, Optional, Sequence
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.graph_stores.registery import (
-    GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE,
-    GraphStoreType,
-)
+    GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE, GraphStoreType)
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt, PromptType
 from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
+from llama_index.response_synthesizers import (BaseSynthesizer,
+                                               get_response_synthesizer)
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.storage.storage_context import StorageContext
 
@@ -54,8 +53,30 @@ DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT = Prompt(
     prompt_type=PromptType.TEXT_TO_GRAPH_QUERY,
 )
 
+# Prompt
+DEFAULT_NEO4J_NL2CYPHER_PROMPT_TMPL = """
+Task:Generate Cypher statement to query a graph database.
+Instructions:
+Use only the provided relationship types and properties in the schema.
+Do not use any other relationship types or properties that are not provided.
+Schema:
+{schema}
+Note: Do not include any explanations or apologies in your responses.
+Do not respond to any questions that might ask anything else than for you to construct a Cypher statement.
+Do not include any text except the generated Cypher statement.
+
+The question is:
+{query_str}
+"""
+
+DEFAULT_NEO4J_NL2CYPHER_PROMPT = Prompt(
+    DEFAULT_NEO4J_NL2CYPHER_PROMPT_TMPL,
+    prompt_type=PromptType.TEXT_TO_GRAPH_QUERY,
+)
+
 DEFAULT_NL2GRAPH_PROMPT_MAP = {
     GraphStoreType.NEBULA: DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT,
+    GraphStoreType.NEO4J: DEFAULT_NEO4J_NL2CYPHER_PROMPT,
 }
 
 DEFAULT_KG_RESPONSE_ANSWER_PROMPT_TMPL = """
