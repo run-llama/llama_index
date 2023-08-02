@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added `to/from_string` and `to/from_dict` methods to memory objects (#7128)
+
 ## [0.7.17] - 2023-08-02
 
 ### New Features
