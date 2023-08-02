@@ -1,7 +1,8 @@
+from __future__ import annotations
 from os import getenv
 from time import sleep
 from enum import Enum
-from typing import List, Any, Optional
+from typing import List, Any, Optional, TypeVar, Type
 from types import ModuleType
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
@@ -16,6 +17,8 @@ from llama_index.vector_stores.utils import (
     DEFAULT_EMBEDDING_KEY,
 )
 
+T = TypeVar("T", bound="RocksetVectorStore")
+
 def _get_rockset() -> ModuleType:
     """Gets the rockset module and raises an ImportError if
     the rockset package hasn't been installed
@@ -29,14 +32,31 @@ def _get_rockset() -> ModuleType:
         raise ImportError("Please install rockset with `pip install rockset`")
     return rockset
 
-def _assert_client_type(client: Any, rockset: ModuleType) -> None:
-    """Raises a ValueError if client is not of type rockset.RocksetClient
-    Args:
-        client (Any): The RocksetClient object
-        rockset (Any): The rockset module
+
+def _get_client(
+    api_key: Optional[str], api_server: Optional[str], client: Optional[Any]
+) -> Any:
+    """Returns the passed in client object if valid, else
+    constructs and returns one.
+
+    Returns
+        The rockset client object (rockset.RocksetClient)
     """
-    if not type(client) is rockset.RocksetClient:
-        raise ValueError("Parameter `client` must be of type rockset.RocksetClient")
+    rockset = _get_rockset()
+    if client:
+        if not type(client) is rockset.RocksetClient:
+            raise ValueError("Parameter `client` must be of type rockset.RocksetClient")
+    elif not api_key and not getenv("ROCKSET_API_KEY"):
+        raise ValueError(
+            "Parameter `client`, `api_key` or env var `ROCKSET_API_KEY` must be set"
+        )
+    else:
+        client = rockset.RocksetClient(
+            api_key=api_key or getenv("ROCKSET_API_KEY"),
+            host=api_server or getenv("ROCKSET_API_SERVER"),
+        )
+    return client
+
 
 class RocksetVectorStore(VectorStore):
     stores_text: bool = True
@@ -79,19 +99,7 @@ class RocksetVectorStore(VectorStore):
                 (default: RocksetVectorStore.DistanceFunc.COSINE_SIM)
         """
         self.rockset = _get_rockset()
-        if client and not type(client) is self.rockset.RocksetClient:
-            raise ValueError("Parameter `client` must be of type rockset.RocksetClient")
-        try:
-            self.rs = client or self.rockset.RocksetClient(
-                host=api_server
-                or getenv("ROCKSET_API_SERVER")
-                or "https://api.usw2a1.rockset.com",
-                api_key=api_key or getenv("ROCKSET_API_KEY"),
-            )
-        except self.rockset.exceptions.InitializationException:
-            raise ValueError(
-                "Must either pass in `client`, `api_key`, or set ROCKSET_API_KEY env var"
-            )
+        self.rs = _get_client(api_key, api_server, client)
         self.workspace = workspace
         self.collection = collection
         self.text_key = text_key
@@ -170,13 +178,15 @@ class RocksetVectorStore(VectorStore):
         Returns:
             query results (llama_index.vector_stores.types.VectorStoreQueryResult)
         """
-        similarity_col = kwargs.get("similarity_col") or "_similarity"
+        similarity_col = kwargs.get("similarity_col", "_similarity")
         res = self.rs.sql(
             f"""
                 SELECT 
                     _id, 
-                    {self.distance_func.value}({query.query_embedding}, {self.embedding_col}) AS {similarity_col},
                     {self.metadata_col}
+                    {
+                        f', {self.distance_func.value}({query.query_embedding}, {self.embedding_col}) AS {similarity_col}' if query.query_embedding else ''
+                    }
                 FROM 
                     "{self.workspace}"."{self.collection}" x
                 {"WHERE" if query.node_ids or query.filters else ""} {
@@ -209,30 +219,52 @@ class RocksetVectorStore(VectorStore):
             ids.append(row["_id"])
 
         return VectorStoreQueryResult(similarities=similarities, nodes=nodes, ids=ids)
-    
+
     @classmethod
     def with_new_collection(
-        cls, 
-        client: Any,
-        collection_name: str, 
-        workspace: str="commons",
-        text_key: str = DEFAULT_TEXT_KEY,
-        embedding_col: str = DEFAULT_EMBEDDING_KEY,
-        metadata_col: str = "metadata",
-        distance_func: DistanceFunc = DistanceFunc.COSINE_SIM,
-    ):
-        _assert_client_type(client, _get_rockset()) # raise err if client is not the right type
-        client.Collections.create_s3_collection(
-            workspace=workspace, 
-            name=collection_name
-        ) # create collection
-        while not client.Collections.get(collection=collection_name).data.status == "READY": # wait until collection is ready
-            sleep(0.1)
-        return cls(
-            collection_name, 
-            client=client,
-            text_key=text_key,
-            embedding_col=embedding_col,
-            metadata_col=metadata_col,
-            distance_func=distance_func
+        cls: Type[T], dimensions: Optional[int] = None, **rockset_vector_store_args: Any
+    ) -> RocksetVectorStore:
+        client = rockset_vector_store_args["client"] = _get_client(
+            api_key=rockset_vector_store_args.get("api_key"),
+            api_server=rockset_vector_store_args.get("api_server"),
+            client=rockset_vector_store_args.get("client"),
         )
+        rockset_vector_store_args = dict(
+            filter(  # filter out None args
+                lambda arg: arg[1] is not None, rockset_vector_store_args.items()
+            )
+        )
+        collection_args = {
+            "workspace": rockset_vector_store_args.get("workspace", "commons"),
+            "name": rockset_vector_store_args.get("collection"),
+        }
+        embeddings_col = rockset_vector_store_args.get(
+            "embeddings_col", DEFAULT_EMBEDDING_KEY
+        )
+        if dimensions:
+            collection_args[
+                "field_mapping_query"
+            ] = _get_rockset().model.field_mapping_query.FieldMappingQuery(
+                sql=f"""
+                    SELECT
+                        *, VECTOR_ENFORCE(
+                            {embeddings_col}, 
+                            {dimensions}, 
+                            'float'
+                        ) AS {embeddings_col}
+                    FROM
+                        _input
+                """
+            )
+
+        client.Collections.create_s3_collection(**collection_args)  # create collection
+        while (
+            not client.Collections.get(
+                collection=rockset_vector_store_args.get("collection")
+            ).data.status
+            == "READY"
+        ):  # wait until collection is ready
+            sleep(0.1)
+            # TODO: add async, non-blocking method collection creation
+
+        return cls(**rockset_vector_store_args)
