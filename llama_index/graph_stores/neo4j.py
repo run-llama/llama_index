@@ -102,7 +102,7 @@ class Neo4jGraphStore(GraphStore):
 
         prepared_statement = query % (self.node_label, self.node_label)
 
-        with self._driver.session() as session:
+        with self._driver.session(database=self._database) as session:
             data = session.run(prepared_statement, {"subj": subj})
             retval = [record.values() for record in data]
         return retval
@@ -121,36 +121,51 @@ class Neo4jGraphStore(GraphStore):
         # | "player100" | [1997, "team204"]                  |
         # ...
         # +-------------+------------------------------------+
+
+        rel_map: Dict[Any, List[Any]] = {}
+        if subjs is None or len(subjs) == 0:
+            # unlike simple graph_store, we don't do get_all here
+            return rel_map
+
         query = f"""
         MATCH p=(n1:{self.node_label})-[*1..{depth}]->()
         {"WHERE n1.id IN $subjs" if subjs else ""}
         UNWIND relationships(p) AS rel
-        RETURN n1.id AS subj, apoc.coll.flatten(apoc.coll.toSet(collect([type(rel), endNode(rel).id]))) AS flattened_rels
+        WITH n1.id AS subj, p, apoc.coll.flatten(apoc.coll.toSet(collect([type(rel), endNode(rel).id]))) AS flattened_rels
+        RETURN subj, collect(flattened_rels) AS flattened_rels
         """
 
-        data = self.query(query, {"subjs": subjs})
-        return data
-        
+        data = list(self.query(query, {"subjs": subjs}))
+        if not data:
+            return rel_map
+
+        for record in data:
+            rel_map[record["subj"]] = record["flattened_rels"]
+        return rel_map
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
 
         query = """
-            MERGE (n1:%s {id:$subj})
-            MERGE (n2:%s {id:$obj})
-            MERGE (n1)-[:%s]->(n2)
+            MERGE (n1:`%s` {id:$subj})
+            MERGE (n2:`%s` {id:$obj})
+            MERGE (n1)-[:`%s`]->(n2)
         """
 
-        prepared_statement = query % (self.node_label, self.node_label, rel)
+        prepared_statement = query % (
+            self.node_label,
+            self.node_label,
+            rel.replace(" ", "_").upper(),
+        )
 
-        with self._driver.session() as session:
+        with self._driver.session(database=self._database) as session:
             session.run(prepared_statement, {"subj": subj, "obj": obj})
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
 
         def delete_rel(subj: str, obj: str, rel: str) -> None:
-            with self._driver.session() as session:
+            with self._driver.session(database=self._database) as session:
                 session.run(
                     (
                         "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.id = $subj AND n2.id"
@@ -161,14 +176,14 @@ class Neo4jGraphStore(GraphStore):
                 )
 
         def delete_entity(entity: str) -> None:
-            with self._driver.session() as session:
+            with self._driver.session(database=self._database) as session:
                 session.run(
                     "MATCH (n:%s) WHERE n.id = $entity DELETE n" % self.node_label,
                     {"entity": entity},
                 )
 
         def check_edges(entity: str) -> bool:
-            with self._driver.session() as session:
+            with self._driver.session(database=self._database) as session:
                 is_exists_result = session.run(
                     "MATCH (n1:%s)--() WHERE n1.id = $entity RETURN count(*)"
                     % (self.node_label),
@@ -208,6 +223,6 @@ class Neo4jGraphStore(GraphStore):
         return self.schema
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        with self._driver.session() as session:
+        with self._driver.session(database=self._database) as session:
             result = session.run(query, param_map)
             return [d.data() for d in result]
