@@ -75,8 +75,8 @@ class ReActAgent(BaseAgent):
     ) -> "ReActAgent":
         tools = tools or []
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history)
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         return cls(
             tools=tools,
