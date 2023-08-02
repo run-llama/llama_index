@@ -6,15 +6,16 @@ from typing import Any, List, Optional, Sequence, Tuple, Type, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.types import (ActionReasoningStep,
-                                           BaseReasoningStep,
-                                           ObservationReasoningStep,
-                                           ResponseReasoningStep)
+from llama_index.agent.react.types import (
+    ActionReasoningStep,
+    BaseReasoningStep,
+    ObservationReasoningStep,
+    ResponseReasoningStep,
+)
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import (AgentChatResponse,
-                                           StreamingAgentChatResponse)
+from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
