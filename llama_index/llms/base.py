@@ -2,7 +2,7 @@ import asyncio
 from contextlib import contextmanager
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, AsyncGenerator, Callable, Generator, Optional, Sequence
+from typing import Any, AsyncGenerator, Callable, Generator, Optional, Sequence, cast
 
 from pydantic import BaseModel, Field
 
@@ -95,60 +95,149 @@ def llm_callback(is_chat: bool = False) -> Callable:
             _self: Any, *args: Any, **kwargs: Any
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
-                with callback_manager.event(
-                    CBEventType.LLM, payload={EventPayload.MESSAGES: args[0]}
-                ) as event:
-                    f_return_val = await f(_self, *args, **kwargs)
-                    event.on_end(
+                event_id = callback_manager.on_event_start(
+                    CBEventType.LLM, payload={EventPayload.PROMPT: args[0]}
+                )
+
+                f_return_val = await f(_self, *args, **kwargs)
+
+                if isinstance(f_return_val, AsyncGenerator):
+                    # intercept the generator and add a callback to the end
+                    async def wrapped_gen() -> CompletionResponseAsyncGen:
+                        last_response = None
+                        async for x in f_return_val:
+                            yield cast(CompletionResponse, x)
+                            last_response = x
+
+                        callback_manager.on_event_end(
+                            CBEventType.LLM,
+                            payload={
+                                EventPayload.MESSAGES: args[0],
+                                EventPayload.COMPLETION: last_response,
+                            },
+                            event_id=event_id,
+                        )
+
+                    return wrapped_gen()
+                else:
+                    callback_manager.on_event_end(
+                        CBEventType.LLM,
                         payload={
                             EventPayload.MESSAGES: args[0],
                             EventPayload.RESPONSE: f_return_val,
-                        }
+                        },
+                        event_id=event_id,
                     )
 
             return f_return_val
 
         async def wrapped_async_llm_chat(_self: Any, *args: Any, **kwargs: Any) -> Any:
             with wrapper_logic(_self) as callback_manager:
-                with callback_manager.event(
+                event_id = callback_manager.on_event_start(
                     CBEventType.LLM, payload={EventPayload.MESSAGES: args[0]}
-                ) as event:
-                    f_return_val = await f(_self, *args, **kwargs)
-                    event.on_end(
+                )
+
+                f_return_val = await f(_self, *args, **kwargs)
+                if isinstance(f_return_val, AsyncGenerator):
+                    # intercept the generator and add a callback to the end
+                    async def wrapped_gen() -> ChatResponseAsyncGen:
+                        last_response = None
+                        async for x in f_return_val:
+                            yield cast(ChatResponse, x)
+                            last_response = x
+
+                        callback_manager.on_event_end(
+                            CBEventType.LLM,
+                            payload={
+                                EventPayload.MESSAGES: args[0],
+                                EventPayload.RESPONSE: last_response,
+                            },
+                            event_id=event_id,
+                        )
+
+                    return wrapped_gen()
+                else:
+                    callback_manager.on_event_end(
+                        CBEventType.LLM,
                         payload={
                             EventPayload.MESSAGES: args[0],
                             EventPayload.RESPONSE: f_return_val,
-                        }
+                        },
+                        event_id=event_id,
                     )
 
             return f_return_val
 
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             with wrapper_logic(_self) as callback_manager:
-                with callback_manager.event(
+                event_id = callback_manager.on_event_start(
                     CBEventType.LLM, payload={EventPayload.PROMPT: args[0]}
-                ) as event:
-                    f_return_val = f(_self, *args, **kwargs)
-                    event.on_end(
+                )
+
+                f_return_val = f(_self, *args, **kwargs)
+                if isinstance(f_return_val, Generator):
+                    # intercept the generator and add a callback to the end
+                    def wrapped_gen() -> CompletionResponseGen:
+                        last_response = None
+                        for x in f_return_val:
+                            yield cast(CompletionResponse, x)
+                            last_response = x
+
+                        callback_manager.on_event_end(
+                            CBEventType.LLM,
+                            payload={
+                                EventPayload.PROMPT: args[0],
+                                EventPayload.COMPLETION: last_response,
+                            },
+                            event_id=event_id,
+                        )
+
+                    return wrapped_gen()
+                else:
+                    callback_manager.on_event_end(
+                        CBEventType.LLM,
                         payload={
                             EventPayload.PROMPT: args[0],
                             EventPayload.COMPLETION: f_return_val,
-                        }
+                        },
+                        event_id=event_id,
                     )
 
             return f_return_val
 
         def wrapped_llm_chat(_self: Any, *args: Any, **kwargs: Any) -> Any:
             with wrapper_logic(_self) as callback_manager:
-                with callback_manager.event(
+                event_id = callback_manager.on_event_start(
                     CBEventType.LLM, payload={EventPayload.MESSAGES: args[0]}
-                ) as event:
-                    f_return_val = f(_self, *args, **kwargs)
-                    event.on_end(
+                )
+                f_return_val = f(_self, *args, **kwargs)
+
+                if isinstance(f_return_val, Generator):
+                    # intercept the generator and add a callback to the end
+                    def wrapped_gen() -> ChatResponseGen:
+                        last_response = None
+                        for x in f_return_val:
+                            yield cast(ChatResponse, x)
+                            last_response = x
+
+                        callback_manager.on_event_end(
+                            CBEventType.LLM,
+                            payload={
+                                EventPayload.MESSAGES: args[0],
+                                EventPayload.RESPONSE: last_response,
+                            },
+                            event_id=event_id,
+                        )
+
+                    return wrapped_gen()
+                else:
+                    callback_manager.on_event_end(
+                        CBEventType.LLM,
                         payload={
                             EventPayload.MESSAGES: args[0],
                             EventPayload.RESPONSE: f_return_val,
-                        }
+                        },
+                        event_id=event_id,
                     )
 
             return f_return_val
