@@ -1,10 +1,11 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.17] - 2023-08-02
 
 ### New Features
 - Update `ReActAgent` to support memory modules (minor breaking change since the constructor takes `memory` instead of `chat_history`, but the main `from_tools` method remains backward compatible.) (#7116)
 - Update `ReActAgent` to support streaming (#7119)
+- add object streaming (#7117)
 
 ## [0.7.16] - 2023-07-30
 
