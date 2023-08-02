@@ -1,5 +1,5 @@
-from pydantic import Field
-from typing import Callable, List, Optional
+from pydantic import Field, root_validator
+from typing import Any, Callable, List, Optional, cast
 
 from llama_index.llms.base import ChatMessage, LLM
 from llama_index.memory.types import BaseMemory
@@ -13,8 +13,26 @@ class ChatMemoryBuffer(BaseMemory):
     """Simple buffer for storing chat history."""
 
     token_limit: int
-    tokenizer_fn: Callable[[str], List]
+    tokenizer_fn: Callable[[str], List] = Field(
+        # NOTE: mypy does not handle the typing here well, hence the cast
+        default_factory=cast(Callable[[], Any], GlobalsHelper().tokenizer),
+        exclude=True,
+    )
     chat_history: List[ChatMessage] = Field(default_factory=list)
+
+    @root_validator(pre=True)
+    def validate_memory(cls, values: dict) -> dict:
+        # Validate token limit
+        token_limit = values.get("token_limit", -1)
+        if token_limit < 1:
+            raise ValueError("Token limit must be set and greater than 0.")
+
+        # Validate tokenizer -- this avoids errors when loading from json/dict
+        tokenizer_fn = values.get("tokenizer_fn", None)
+        if tokenizer_fn is None:
+            values["tokenizer_fn"] = GlobalsHelper().tokenizer
+
+        return values
 
     @classmethod
     def from_defaults(
