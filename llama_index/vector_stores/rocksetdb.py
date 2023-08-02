@@ -19,6 +19,7 @@ from llama_index.vector_stores.utils import (
 
 T = TypeVar("T", bound="RocksetVectorStore")
 
+
 def _get_rockset() -> ModuleType:
     """Gets the rockset module and raises an ImportError if
     the rockset package hasn't been installed
@@ -90,7 +91,7 @@ class RocksetVectorStore(VectorStore):
                 (default: llama_index.vector_stores.utils.DEFAULT_EMBEDDING_KEY))
             metadata_col (str): The DB column containing node metadata
                 (default: "metadata")
-            workspace (str): The workspace containing the colection of vectors
+            workspace (str): The workspace containing the collection of vectors
                 (default: "commons")
             api_server (Optional[str]): The Rockset API server to use
             api_key (Optional[str]): The Rockset API key to use
@@ -160,9 +161,9 @@ class RocksetVectorStore(VectorStore):
                         FROM 
                             "{self.workspace}"."{self.collection}" x
                         WHERE
-                            x.{self.metadata_col}.ref_doc_id=:doc_id
+                            x.{self.metadata_col}.ref_doc_id=:ref_doc_id
                     """,
-                    params={"doc_id": ref_doc_id},
+                    params={"ref_doc_id": ref_doc_id},
                 ).results
             ],
         )
@@ -212,9 +213,11 @@ class RocksetVectorStore(VectorStore):
             else {},
         )
 
-        similarities, nodes, ids = [], [], []
+        similarities: Optional[list[float]] = [] if query.query_embedding else None
+        nodes, ids = [], []
         for row in res.results:
-            similarities.append(row[similarity_col])
+            if similarities is not None:
+                similarities.append(row[similarity_col])
             nodes.append(metadata_dict_to_node(row[self.metadata_col]))
             ids.append(row["_id"])
 
@@ -224,15 +227,32 @@ class RocksetVectorStore(VectorStore):
     def with_new_collection(
         cls: Type[T], dimensions: Optional[int] = None, **rockset_vector_store_args: Any
     ) -> RocksetVectorStore:
+        """Creates a new collection and returns its RocksetVectorStore.
+
+        Args:
+            dimensions (Optional[int]): The length of the vectors to enforce
+                in the collection's ingest transformation. By default, the
+                collection will do no vector enforcement.
+            collection (str): The name of the collection to be created
+            client (Optional[Any]): Rockset client object
+            workspace (str): The workspace containing the colleciton to be
+                created (default: "commons")
+            text_key (str): The key to the text of nodes
+                (default: llama_index.vector_stores.utils.DEFAULT_TEXT_KEY)
+            embedding_col (str): The DB column containing embeddings
+                (default: llama_index.vector_stores.utils.DEFAULT_EMBEDDING_KEY))
+            metadata_col (str): The DB column containing node metadata
+                (default: "metadata")
+            api_server (Optional[str]): The Rockset API server to use
+            api_key (Optional[str]): The Rockset API key to use
+            distance_func (RocksetVectorStore.DistanceFunc): The metric to measure
+                vector relationship
+                (default: RocksetVectorStore.DistanceFunc.COSINE_SIM)
+        """
         client = rockset_vector_store_args["client"] = _get_client(
             api_key=rockset_vector_store_args.get("api_key"),
             api_server=rockset_vector_store_args.get("api_server"),
             client=rockset_vector_store_args.get("client"),
-        )
-        rockset_vector_store_args = dict(
-            filter(  # filter out None args
-                lambda arg: arg[1] is not None, rockset_vector_store_args.items()
-            )
         )
         collection_args = {
             "workspace": rockset_vector_store_args.get("workspace", "commons"),
@@ -267,4 +287,10 @@ class RocksetVectorStore(VectorStore):
             sleep(0.1)
             # TODO: add async, non-blocking method collection creation
 
-        return cls(**rockset_vector_store_args)
+        return cls(
+            **dict(
+                filter(  # filter out None args
+                    lambda arg: arg[1] is not None, rockset_vector_store_args.items()
+                )
+            )
+        )
