@@ -20,7 +20,7 @@ def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
     }
 
 
-def _get_json_str(raw_str: str, start_idx: int) -> Tuple[str, int]:
+def _get_json_str(raw_str: str, start_idx: int) -> Tuple[Optional[str], int]:
     """Extract JSON str from raw string and start index."""
     raw_str = raw_str[start_idx:]
     stack_count = 0
@@ -176,19 +176,19 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         obj_start_idx: int = -1  # NOTE: uninitialized
         for stream_resp in chat_response_gen:
             kwargs = stream_resp.message.additional_kwargs
-            args = kwargs["function_call"]["arguments"]
+            fn_args = kwargs["function_call"]["arguments"]
 
             # this is inspired by `get_object` from `MultiTaskBase` in
             # the openai_function_call repo
 
-            if args.find("[") != -1:
+            if fn_args.find("[") != -1:
                 if obj_start_idx == -1:
-                    obj_start_idx = args.find("[") + 1
+                    obj_start_idx = fn_args.find("[") + 1
             else:
                 # keep going until we find the start position
                 continue
 
-            new_obj_json_str, obj_start_idx = _get_json_str(args, obj_start_idx)
+            new_obj_json_str, obj_start_idx = _get_json_str(fn_args, obj_start_idx)
             if new_obj_json_str is not None:
                 obj_json_str = new_obj_json_str
                 obj = self._output_cls.parse_raw(obj_json_str)
