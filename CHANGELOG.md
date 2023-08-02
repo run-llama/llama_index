@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+### New Features
+- Added `to/from_string` and `to/from_dict` methods to memory objects (#7128)
+
 ### Bug Fixes / Nits
+- Added `Azure AD` validation support to the `AzureOpenAI` class (#7127)
 - add `flush=True` when printing agent/chat engine response stream (#7129)
 - Added `Azure AD` support to the `AzureOpenAI` class (#7127)
 
