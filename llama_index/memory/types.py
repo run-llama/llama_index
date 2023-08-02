@@ -11,22 +11,6 @@ class BaseMemory(BaseModel):
     NOTE: The interface for memory is not yet finalized and is subject to change.
     """
 
-    def to_string(self) -> str:
-        """Convert memory to string."""
-        return self.json()
-
-    @classmethod
-    def from_string(cls, json_str: str) -> "BaseMemory":
-        return cls.parse_raw(json_str)
-
-    def to_dict(self) -> dict:
-        """Convert memory to dict."""
-        return self.dict()
-
-    @classmethod
-    def from_dict(cls, json_dict: dict) -> "BaseMemory":
-        return cls.parse_obj(json_dict)
-
     @classmethod
     @abstractmethod
     def from_defaults(

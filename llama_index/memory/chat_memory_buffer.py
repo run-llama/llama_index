@@ -55,6 +55,22 @@ class ChatMemoryBuffer(BaseMemory):
             chat_history=chat_history or [],
         )
 
+    def to_string(self) -> str:
+        """Convert memory to string."""
+        return self.json()
+
+    @classmethod
+    def from_string(cls, json_str: str) -> "ChatMemoryBuffer":
+        return cls.parse_raw(json_str)
+
+    def to_dict(self) -> dict:
+        """Convert memory to dict."""
+        return self.dict()
+
+    @classmethod
+    def from_dict(cls, json_dict: dict) -> "ChatMemoryBuffer":
+        return cls.parse_obj(json_dict)
+
     def get(self) -> List[ChatMessage]:
         """Get chat history."""
         message_count = len(self.chat_history)
