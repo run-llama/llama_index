@@ -1,7 +1,6 @@
 """Kùzu graph store index."""
 from typing import Any, Dict, List, Optional
 
-
 from llama_index.graph_stores.types import GraphStore
 
 
