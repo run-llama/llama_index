@@ -111,10 +111,10 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         """
         qa_prompt = qa_prompt or DEFAULT_QA_PROMPT
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):
             raise ValueError(
