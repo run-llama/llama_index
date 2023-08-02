@@ -23,6 +23,8 @@ class MockChatLLM(MockLLM):
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
 
+        super().__init__()
+
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         del messages  # unused
         response = ChatResponse(
@@ -68,6 +70,18 @@ def test_chat_basic(
     assert isinstance(response, AgentChatResponse)
     assert response.response == "2"
 
+    chat_history = agent.chat_history
+    assert chat_history == [
+        ChatMessage(
+            content="What is 1 + 1?",
+            role=MessageRole.USER,
+        ),
+        ChatMessage(
+            content="2",
+            role=MessageRole.ASSISTANT,
+        ),
+    ]
+
 
 @pytest.mark.asyncio
 async def test_achat_basic(
@@ -93,3 +107,15 @@ async def test_achat_basic(
     response = await agent.achat("What is 1 + 1?")
     assert isinstance(response, AgentChatResponse)
     assert response.response == "2"
+
+    chat_history = agent.chat_history
+    assert chat_history == [
+        ChatMessage(
+            content="What is 1 + 1?",
+            role=MessageRole.USER,
+        ),
+        ChatMessage(
+            content="2",
+            role=MessageRole.ASSISTANT,
+        ),
+    ]
