@@ -7,6 +7,8 @@
 
 ### Bug Fixes / Nits
 - Added `Azure AD` validation support to the `AzureOpenAI` class (#7127)
+- add `flush=True` when printing agent/chat engine response stream (#7129)
+- Added `Azure AD` support to the `AzureOpenAI` class (#7127)
 
 ## [0.7.17] - 2023-08-02
 
