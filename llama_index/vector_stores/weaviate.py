@@ -8,25 +8,42 @@ import logging
 from typing import Any, List, Optional, cast
 from uuid import uuid4
 
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryMode,
+                                             VectorStoreQueryResult)
 from llama_index.vector_stores.utils import DEFAULT_TEXT_KEY
-from llama_index.vector_stores.weaviate_utils import (
-    add_node,
-    class_schema_exists,
-    create_default_schema,
-    get_all_properties,
-    parse_get_response,
-    to_node,
-    get_node_similarity,
-)
+from llama_index.vector_stores.weaviate_utils import (add_node,
+                                                      class_schema_exists,
+                                                      create_default_schema,
+                                                      get_all_properties,
+                                                      get_node_similarity,
+                                                      parse_get_response,
+                                                      to_node)
 
 logger = logging.getLogger(__name__)
+
+def _to_weaviate_filter(standard_filters: MetadataFilters) -> dict:
+    if len(standard_filters) == 1:
+        filters = {
+            "path": standard_filters.filters[0].key,
+            "operator": "Equal",
+            "valueText": standard_filters.filters[0].value
+        }
+    else:
+        filters = {
+            "operator": "And"
+        }
+        operands = []
+        for filter in standard_filters.filters:
+            operands.append({
+                "path": filter.key,
+                "operator": "Equal",
+                "valueText": filter.value
+            })
+        filters["operands"] = operands
+    return filters
 
 
 class WeaviateVectorStore(VectorStore):
@@ -198,6 +215,13 @@ class WeaviateVectorStore(VectorStore):
                 alpha=query.alpha,
                 vector=vector,
             )
+        
+        if query.filters is not None:
+            filter = _to_weaviate_filter(query.filters)
+            query_builder = query_builder.with_where(filter)
+        else:
+            filter = kwargs.pop("filter", {})
+
         query_builder = query_builder.with_limit(query.similarity_top_k)
         logger.debug(f"Using limit of {query.similarity_top_k}")
 
