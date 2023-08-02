@@ -42,6 +42,16 @@ maxdepth: 1
 
 ```
 
+## Predibase
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/predibase.ipynb
+
+```
+
 
 ## Replicate
 

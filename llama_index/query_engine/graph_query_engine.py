@@ -55,47 +55,43 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         """Query a single index."""
         index_id = index_id or self._graph.root_id
-        event_id = self.callback_manager.on_event_start(
+
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
-
-        # get query engine
-        if index_id in self._custom_query_engines:
-            query_engine = self._custom_query_engines[index_id]
-        else:
-            query_engine = self._graph.get_index(index_id).as_query_engine(
-                **self._kwargs
-            )
-
-        retrieve_event_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = query_engine.retrieve(query_bundle)
-        self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.NODES: nodes},
-            event_id=retrieve_event_id,
-        )
-
-        if self._recursive:
-            # do recursion here
-            nodes_for_synthesis = []
-            additional_source_nodes = []
-            for node_with_score in nodes:
-                node_with_score, source_nodes = self._fetch_recursive_nodes(
-                    node_with_score, query_bundle, level
+        ) as query_event:
+            # get query engine
+            if index_id in self._custom_query_engines:
+                query_engine = self._custom_query_engines[index_id]
+            else:
+                query_engine = self._graph.get_index(index_id).as_query_engine(
+                    **self._kwargs
                 )
-                nodes_for_synthesis.append(node_with_score)
-                additional_source_nodes.extend(source_nodes)
-            response = query_engine.synthesize(
-                query_bundle, nodes_for_synthesis, additional_source_nodes
-            )
-        else:
-            response = query_engine.synthesize(query_bundle, nodes)
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=event_id,
-        )
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = query_engine.retrieve(query_bundle)
+                retrieve_event.on_end(payload={EventPayload.NODES: nodes})
+
+            if self._recursive:
+                # do recursion here
+                nodes_for_synthesis = []
+                additional_source_nodes = []
+                for node_with_score in nodes:
+                    node_with_score, source_nodes = self._fetch_recursive_nodes(
+                        node_with_score, query_bundle, level
+                    )
+                    nodes_for_synthesis.append(node_with_score)
+                    additional_source_nodes.extend(source_nodes)
+                response = query_engine.synthesize(
+                    query_bundle, nodes_for_synthesis, additional_source_nodes
+                )
+            else:
+                response = query_engine.synthesize(query_bundle, nodes)
+
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+
         return response
 
     def _fetch_recursive_nodes(

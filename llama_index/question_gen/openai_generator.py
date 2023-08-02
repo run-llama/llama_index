@@ -18,7 +18,9 @@ DEFAULT_OPENAI_SUB_QUESTION_PROMPT_TMPL = """\
 You are a world class state of the art agent.
 
 You have access to multiple tools, each representing a different data source or API.
-Each of the tools has a name and a description, formatted as JSON.
+Each of the tools has a name and a description, formatted as a JSON dictionary.
+The keys of the dictionary are the names of the tools and the values are the \
+descriptions.
 Your purpose is to help answer a complex user question by generating a list of sub \
 questions that can be answered by the tools.
 
@@ -27,6 +29,7 @@ These are the guidelines you consider when completing your task:
 * The sub questions should be relevant to the user question 
 * The sub questions should be answerable by the tools provided
 * You can generate multiple sub questions for each tool
+* Tools must be specified by their name, not their description
 * You don't need to use a tool if you don't think it's relevant
 
 Output the list of sub questions by calling the SubQuestionList function.

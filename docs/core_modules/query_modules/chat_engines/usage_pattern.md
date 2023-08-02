@@ -38,9 +38,18 @@ chat_engine = index.as_chat_engine(
     verbose=True
 )
 ```
-> Note: you can access different chat engines by specifying the `chat_mode` as a kwarg. `condense_question` corresponds to `CondenseQuestionChatEngine`, `react` corresponds to `ReActChatEngine`.
+> Note: you can access different chat engines by specifying the `chat_mode` as a kwarg. `condense_question` corresponds to `CondenseQuestionChatEngine`, `react` corresponds to `ReActChatEngine`, `context` corresponds to a `ContextChatEngine`.
 
 > Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.  
+
+#### Available Chat Modes
+
+- `best` - Turn the query engine into a tool, for use with a `ReAct` data agent or an `OpenAI` data agent, depending on what your LLM supports. `OpenAI` data agents require `gpt-3.5-turbo` or `gpt-4` as they use the function calling API from OpenAI.
+- `context` - Retrieve nodes from the index using every user message. The retrieved text is inserted into the system prompt, so that the chat engine can either respond naturally or use the context from the query engine.
+- `condense_question` - Look at the chat history and re-write the user message to be a query for the index. Return the response after reading the response from the query engine.
+- `simple` - A simple chat with the LLM directly, no query engine involved.
+- `react` - Same as `best`, but forces a `ReAct` data agent.
+- `openai` - Same as `best`, but forces an `OpenAI` data agent.
 
 ### Low-Level Composition API
 
@@ -55,6 +64,7 @@ Here's an example where we configure the following:
 
 ```python
 from llama_index.prompts  import Prompt
+from llama_index.llms import ChatMessage, MessageRole
 
 custom_prompt = Prompt("""\
 Given a conversation (between Human and Assistant) and a follow up message from Human, \
@@ -70,11 +80,15 @@ from the conversation.
 <Standalone question>
 """)
 
-# list of (human_message, ai_message) tuples
+# list of `ChatMessage` objects
 custom_chat_history = [
-    (
-        'Hello assistant, we are having a insightful discussion about Paul Graham today.', 
-        'Okay, sounds good.'
+    ChatMessage(
+        role=MessageRole.USER, 
+        content='Hello assistant, we are having a insightful discussion about Paul Graham today.'
+    ), 
+    ChatMessage(
+        role=MessageRole.ASSISTANT, 
+        content='Okay, sounds good.'
     )
 ]
 
@@ -86,8 +100,6 @@ chat_engine = CondenseQuestionChatEngine.from_defaults(
     verbose=True
 )
 ```
-
-
 
 ### Streaming
 To enable streaming, you simply need to call the `stream_chat` endpoint instead of the `chat` endpoint. 

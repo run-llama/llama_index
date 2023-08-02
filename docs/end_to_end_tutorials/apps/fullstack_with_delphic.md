@@ -361,10 +361,8 @@ async def load_collection_model(collection_id: str | int) -> VectorStoreIndex:
             f"load_collection_model() - Setup service context with tokens {settings.MAX_TOKENS} and "
             f"model {settings.MODEL_NAME}"
         )
-        llm_predictor = LLMPredictor(
-            llm=OpenAI(temperature=0, model_name="text-davinci-003", max_tokens=512)
-        )
-        service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+        llm = OpenAI(temperature=0, model="text-davinci-003", max_tokens=512)
+        service_context = ServiceContext.from_defaults(llm=llm)
 
         # Call VectorStoreIndex.load_from_disk
         logger.info("load_collection_model() - Load llama index")

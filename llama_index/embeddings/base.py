@@ -72,20 +72,38 @@ class BaseEmbedding:
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
 
+    @abstractmethod
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding asynchronously."""
+
     def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
-        query_embedding = self._get_query_embedding(query)
-        query_tokens_count = len(self._tokenizer(query))
-        self._total_tokens_used += query_tokens_count
-        self.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={
-                EventPayload.CHUNKS: [query],
-                EventPayload.EMBEDDINGS: [query_embedding],
-            },
-            event_id=event_id,
-        )
+        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+            query_embedding = self._get_query_embedding(query)
+            query_tokens_count = len(self._tokenizer(query))
+            self._total_tokens_used += query_tokens_count
+
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [query],
+                    EventPayload.EMBEDDINGS: [query_embedding],
+                },
+            )
+        return query_embedding
+
+    async def aget_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding."""
+        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+            query_embedding = await self._aget_query_embedding(query)
+            query_tokens_count = len(self._tokenizer(query))
+            self._total_tokens_used += query_tokens_count
+
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [query],
+                    EventPayload.EMBEDDINGS: [query_embedding],
+                },
+            )
         return query_embedding
 
     def get_agg_embedding_from_queries(
@@ -95,6 +113,16 @@ class BaseEmbedding:
     ) -> List[float]:
         """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
+        agg_fn = agg_fn or mean_agg
+        return agg_fn(query_embeddings)
+
+    async def aget_agg_embedding_from_queries(
+        self,
+        queries: List[str],
+        agg_fn: Optional[Callable[..., List[float]]] = None,
+    ) -> List[float]:
+        """Get aggregated embedding from multiple queries."""
+        query_embeddings = [await self.aget_query_embedding(query) for query in queries]
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
@@ -135,18 +163,18 @@ class BaseEmbedding:
 
     def get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
-        text_embedding = self._get_text_embedding(text)
-        text_tokens_count = len(self._tokenizer(text))
-        self._total_tokens_used += text_tokens_count
-        self.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={
-                EventPayload.CHUNKS: [text],
-                EventPayload.EMBEDDINGS: [text_embedding],
-            },
-            event_id=event_id,
-        )
+        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+            text_embedding = self._get_text_embedding(text)
+            text_tokens_count = len(self._tokenizer(text))
+            self._total_tokens_used += text_tokens_count
+
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [text],
+                    EventPayload.EMBEDDINGS: [text_embedding],
+                }
+            )
+
         return text_embedding
 
     def queue_text_for_embedding(self, text_id: str, text: str) -> None:
@@ -180,20 +208,18 @@ class BaseEmbedding:
             self._total_tokens_used += text_tokens_count
             if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
                 # flush
-                event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
-                cur_batch_ids = [text_id for text_id, _ in cur_batch]
-                cur_batch_texts = [text for _, text in cur_batch]
-                embeddings = self._get_text_embeddings(cur_batch_texts)
-                result_ids.extend(cur_batch_ids)
-                result_embeddings.extend(embeddings)
-                self.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING,
-                    payload={
-                        EventPayload.CHUNKS: cur_batch_texts,
-                        EventPayload.EMBEDDINGS: embeddings,
-                    },
-                    event_id=event_id,
-                )
+                with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+                    cur_batch_ids = [text_id for text_id, _ in cur_batch]
+                    cur_batch_texts = [text for _, text in cur_batch]
+                    embeddings = self._get_text_embeddings(cur_batch_texts)
+                    result_ids.extend(cur_batch_ids)
+                    result_embeddings.extend(embeddings)
+                    event.on_end(
+                        payload={
+                            EventPayload.CHUNKS: cur_batch_texts,
+                            EventPayload.EMBEDDINGS: embeddings,
+                        },
+                    )
                 cur_batch = []
 
         # reset queue

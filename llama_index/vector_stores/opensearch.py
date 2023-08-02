@@ -1,6 +1,8 @@
 """Elasticsearch/Opensearch vector store."""
+from typing import Any, Dict, List, Optional, cast, Iterable, Union
+
 import json
-from typing import Any, Dict, List, Optional, cast
+import uuid
 
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
@@ -8,8 +10,152 @@ from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    MetadataFilters,
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+
+IMPORT_OPENSEARCH_PY_ERROR = (
+    "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
+)
+MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
+
+
+def _import_opensearch() -> Any:
+    """Import OpenSearch if available, otherwise raise error."""
+    try:
+        from opensearchpy import OpenSearch
+    except ImportError:
+        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+    return OpenSearch
+
+
+def _import_bulk() -> Any:
+    """Import bulk if available, otherwise raise error."""
+    try:
+        from opensearchpy.helpers import bulk
+    except ImportError:
+        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+    return bulk
+
+
+def _import_not_found_error() -> Any:
+    """Import not found error if available, otherwise raise error."""
+    try:
+        from opensearchpy.exceptions import NotFoundError
+    except ImportError:
+        raise ValueError(IMPORT_OPENSEARCH_PY_ERROR)
+    return NotFoundError
+
+
+def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
+    """Get OpenSearch client from the opensearch_url, otherwise raise error."""
+    try:
+        opensearch = _import_opensearch()
+        client = opensearch(opensearch_url, **kwargs)
+    except ValueError as e:
+        raise ValueError(
+            f"OpenSearch client string provided is not in proper format. "
+            f"Got error: {e} "
+        )
+    return client
+
+
+def _bulk_ingest_embeddings(
+    client: Any,
+    index_name: str,
+    embeddings: List[List[float]],
+    texts: Iterable[str],
+    metadatas: Optional[List[dict]] = None,
+    ids: Optional[List[str]] = None,
+    vector_field: str = "embedding",
+    text_field: str = "content",
+    mapping: Optional[Dict] = None,
+    max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
+) -> List[str]:
+    """Bulk Ingest Embeddings into given index."""
+    if not mapping:
+        mapping = dict()
+
+    bulk = _import_bulk()
+    not_found_error = _import_not_found_error()
+    requests = []
+    return_ids = []
+    mapping = mapping
+
+    try:
+        client.indices.get(index=index_name)
+    except not_found_error:
+        client.indices.create(index=index_name, body=mapping)
+
+    for i, text in enumerate(texts):
+        metadata = metadatas[i] if metadatas else {}
+        _id = ids[i] if ids else str(uuid.uuid4())
+        request = {
+            "_op_type": "index",
+            "_index": index_name,
+            vector_field: embeddings[i],
+            text_field: text,
+            "metadata": metadata,
+            "_id": _id,
+        }
+        requests.append(request)
+        return_ids.append(_id)
+    bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
+    client.indices.refresh(index=index_name)
+    return return_ids
+
+
+def _default_approximate_search_query(
+    query_vector: List[float],
+    k: int = 4,
+    vector_field: str = "embedding",
+) -> Dict:
+    """For Approximate k-NN Search, this is the default query."""
+    return {
+        "size": k,
+        "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
+    }
+
+
+def __get_painless_scripting_source(
+    space_type: str, vector_field: str = "embedding"
+) -> str:
+    """For Painless Scripting, it returns the script source based on space type."""
+    source_value = f"(1.0 + {space_type}(params.query_value, doc['{vector_field}']))"
+    if space_type == "cosineSimilarity":
+        return source_value
+    else:
+        return f"1/{source_value}"
+
+
+def _default_painless_scripting_query(
+    query_vector: List[float],
+    k: int = 4,
+    space_type: str = "l2Squared",
+    pre_filter: Optional[Union[Dict, List]] = None,
+    vector_field: str = "embedding",
+) -> Dict:
+    """For Painless Scripting Search, this is the default query."""
+
+    if not pre_filter:
+        pre_filter = MATCH_ALL_QUERY
+
+    source = __get_painless_scripting_source(space_type, vector_field)
+    return {
+        "size": k,
+        "query": {
+            "script_score": {
+                "query": pre_filter,
+                "script": {
+                    "source": source,
+                    "params": {
+                        "field": vector_field,
+                        "query_value": query_vector,
+                    },
+                },
+            }
+        },
+    }
 
 
 class OpensearchVectorClient:
@@ -31,6 +177,7 @@ class OpensearchVectorClient:
             This includes engine, metric, and other config params. Defaults to:
             {"name": "hnsw", "space_type": "l2", "engine": "faiss",
             "parameters": {"ef_construction": 256, "m": 48}}
+        **kwargs: Optional arguments passed to the OpenSearch client from opensearch-py.
 
     """
 
@@ -41,9 +188,8 @@ class OpensearchVectorClient:
         dim: int,
         embedding_field: str = "embedding",
         text_field: str = "content",
-        metadata_field: str = "metadata",
         method: Optional[dict] = None,
-        auth: Optional[dict] = None,
+        **kwargs: Any,
     ):
         """Init params."""
         if method is None:
@@ -53,37 +199,14 @@ class OpensearchVectorClient:
                 "engine": "nmslib",
                 "parameters": {"ef_construction": 256, "m": 48},
             }
-        import_err_msg = "`httpx` package not found, please run `pip install httpx`"
         if embedding_field is None:
             embedding_field = "embedding"
-        try:
-            import httpx  # noqa: F401
-        except ImportError:
-            raise ImportError(import_err_msg)
         self._embedding_field = embedding_field
-
-        if auth is None:
-            self._client = httpx.Client(base_url=endpoint)
-        else:
-            if "verify" not in auth:
-                # "Open search" docker image for Dev/Test requires SSL verification
-                # when accessing with HTTPS, https://localhost:9200.
-                auth["verify"] = False
-            if "basic_auth" not in auth:
-                # 'admin:admin' is the default username/password for the "Open search"
-                # docker image.
-                auth["basic_auth"] = ("admin", "admin")
-            self._client = httpx.Client(
-                base_url=endpoint,
-                verify=auth["verify"],
-                auth=auth["basic_auth"],
-            )
 
         self._endpoint = endpoint
         self._dim = dim
         self._index = index
         self._text_field = text_field
-        self._metadata_field = metadata_field
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -97,35 +220,43 @@ class OpensearchVectorClient:
                 }
             },
         }
-        res = self._client.put(f"/{self._index}", json=idx_conf)
-        # will 400 if the index already existed, so allow 400 errors right here
-        assert res.status_code == 200 or res.status_code == 400
+        self._os_client = _get_opensearch_client(self._endpoint, **kwargs)
+        not_found_error = _import_not_found_error()
+        try:
+            self._os_client.indices.get(index=self._index)
+        except not_found_error:
+            self._os_client.indices.create(index=self._index, body=idx_conf)
+            self._os_client.indices.refresh(index=self._index)
 
-    def index_results(self, results: List[NodeWithEmbedding]) -> List[str]:
+    def index_results(
+        self, results: List[NodeWithEmbedding], **kwargs: Any
+    ) -> List[str]:
         """Store results in the index."""
-        bulk_req: List[Dict[Any, Any]] = []
-        for result in results:
-            bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
 
-            metadata = node_to_metadata_dict(result.node, remove_text=True)
-            bulk_req.append(
-                {
-                    self._text_field: result.node.get_content(
-                        metadata_mode=MetadataMode.NONE
-                    ),
-                    self._embedding_field: result.embedding,
-                    self._metadata_field: metadata,
-                }
-            )
-        bulk = "\n".join([json.dumps(v) for v in bulk_req]) + "\n"
-        res = self._client.post(
-            "/_bulk",
-            headers={"Content-Type": "application/x-ndjson"},
-            content=bulk,
+        embeddings: List[List[float]] = []
+        texts: List[str] = []
+        metadatas: List[dict] = []
+        ids: List[str] = []
+        for node in results:
+            ids.append(node.id)
+            embeddings.append(node.embedding)
+            texts.append(node.node.get_content(metadata_mode=MetadataMode.NONE))
+            metadatas.append(node_to_metadata_dict(node.node, remove_text=True))
+
+        max_chunk_bytes = kwargs.get("max_chunk_bytes", 1 * 1024 * 1024)
+
+        return _bulk_ingest_embeddings(
+            self._os_client,
+            self._index,
+            embeddings,
+            texts,
+            metadatas=metadatas,
+            ids=ids,
+            vector_field=self._embedding_field,
+            text_field=self._text_field,
+            mapping=None,
+            max_chunk_bytes=max_chunk_bytes,
         )
-        assert res.status_code == 200
-        assert not res.json()["errors"], "expected no errors while indexing docs"
-        return [r.id for r in results]
 
     def delete_doc_id(self, doc_id: str) -> None:
         """Delete a document.
@@ -133,34 +264,59 @@ class OpensearchVectorClient:
         Args:
             doc_id (str): document id
         """
-        self._client.delete(f"{self._index}/_doc/{doc_id}")
+        self._os_client.delete(index=self._index, id=doc_id)
 
-    def do_approx_knn(
-        self, query_embedding: List[float], k: int
+    def knn(
+        self,
+        query_embedding: List[float],
+        k: int,
+        filters: Optional[MetadataFilters] = None,
     ) -> VectorStoreQueryResult:
-        """Do approximate knn."""
-        res = self._client.post(
-            f"{self._index}/_search",
-            json={
-                "size": k,
-                "query": {
-                    "knn": {
-                        self._embedding_field: {
-                            "vector": query_embedding,
-                            "k": k,
-                        }
-                    }
-                },
-            },
-        )
+        """Do knn search.
+
+        If there are no filters do approx-knn search.
+        If there are (pre)-filters, do an exhaustive exact knn search using 'painless
+            scripting'.
+
+        Note that approximate knn search does not support pre-filtering.
+
+        Args:
+            query_embedding: Vector embedding to query.
+            k: Maximum number of results.
+            filters: Optional filters to apply before the search.
+                Supports filter-context queries documented at
+                https://opensearch.org/docs/latest/query-dsl/query-filter-context/
+
+        Returns:
+            Up to k docs closest to query_embedding
+        """
+
+        if filters is None:
+            search_query = _default_approximate_search_query(
+                query_embedding, k, vector_field=self._embedding_field
+            )
+        else:
+            pre_filter = []
+            for f in filters.filters:
+                pre_filter.append({f.key: json.loads(str(f.value))})
+            # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
+            search_query = _default_painless_scripting_query(
+                query_embedding,
+                k,
+                space_type="l2Squared",
+                pre_filter={"bool": {"filter": pre_filter}},
+                vector_field=self._embedding_field,
+            )
+
+        res = self._os_client.search(index=self._index, body=search_query)
         nodes = []
         ids = []
         scores = []
-        for hit in res.json()["hits"]["hits"]:
+        for hit in res["hits"]["hits"]:
             source = hit["_source"]
             node_id = hit["_id"]
             text = source[self._text_field]
-            metadata = source.get(self._metadata_field, None)
+            metadata = source.get("metadata", None)
 
             try:
                 node = metadata_dict_to_node(metadata)
@@ -195,7 +351,6 @@ class OpensearchVectorStore(VectorStore):
     Args:
         client (OpensearchVectorClient): Vector index client to use
             for data insertion/querying.
-
     """
 
     stores_text: bool = True
@@ -205,11 +360,6 @@ class OpensearchVectorStore(VectorStore):
         client: OpensearchVectorClient,
     ) -> None:
         """Initialize params."""
-        import_err_msg = "`httpx` package not found, please run `pip install httpx`"
-        try:
-            import httpx  # noqa: F401
-        except ImportError:
-            raise ImportError(import_err_msg)
         self._client = client
 
     @property
@@ -245,11 +395,9 @@ class OpensearchVectorStore(VectorStore):
 
         Args:
             query_embedding (List[float]): query embedding
-            similarity_top_k (int): top k most similar nodes
 
         """
-        if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for OpenSearch yet.")
-
         query_embedding = cast(List[float], query.query_embedding)
-        return self._client.do_approx_knn(query_embedding, query.similarity_top_k)
+        return self._client.knn(
+            query_embedding, query.similarity_top_k, filters=query.filters
+        )
