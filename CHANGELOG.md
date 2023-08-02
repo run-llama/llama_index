@@ -5,6 +5,9 @@
 ### New Features
 - Added `to/from_string` and `to/from_dict` methods to memory objects (#7128)
 
+### Bug Fixes / Nits
+- Added `Azure AD` support to the `AzureOpenAI` class (#7127)
+
 ## [0.7.17] - 2023-08-02
 
 ### New Features
