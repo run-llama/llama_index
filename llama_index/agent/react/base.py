@@ -1,5 +1,7 @@
 # ReAct agent
 
+import asyncio
+from threading import Thread
 from typing import Any, List, Optional, Sequence, Tuple, Type, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
@@ -13,7 +15,7 @@ from llama_index.agent.react.types import (
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AgentChatResponse
+from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
@@ -201,3 +203,93 @@ class ReActAgent(BaseAgent):
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.put(ChatMessage(content=message, role="user"))
+
+        current_reasoning: List[BaseReasoningStep] = []
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
+            )
+            # send prompt
+            chat_stream = self._llm.stream_chat(input_chat)
+
+            # iterate over stream, break out if is final answer after the "Answer: "
+            is_done = False
+            full_response = ChatResponse(
+                message=ChatMessage(content=None, role="assistant")
+            )
+            for r in chat_stream:
+                if "Answer: " in (r.message.content or ""):
+                    is_done = True
+                    break
+                full_response = r
+            if is_done:
+                break
+
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, _ = self._process_actions(output=full_response)
+            current_reasoning.extend(reasoning_steps)
+
+        # Get the response in a separate thread so we can yield the response
+        chat_stream_response = StreamingAgentChatResponse(chat_stream=chat_stream)
+        thread = Thread(
+            target=chat_stream_response.write_response_to_history,
+            args=(self._memory,),
+        )
+        thread.start()
+        return chat_stream_response
+
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.put(ChatMessage(content=message, role="user"))
+
+        current_reasoning: List[BaseReasoningStep] = []
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
+            )
+            # send prompt
+            chat_stream = await self._llm.astream_chat(input_chat)
+
+            # iterate over stream, break out if is final answer
+            is_done = False
+            full_response = ChatResponse(
+                message=ChatMessage(content=None, role="assistant")
+            )
+            async for r in chat_stream:
+                if "Answer: " in (r.message.content or ""):
+                    is_done = True
+                    break
+                full_response = r
+            if is_done:
+                break
+
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, _ = self._process_actions(output=full_response)
+            current_reasoning.extend(reasoning_steps)
+
+        # Get the response in a separate thread so we can yield the response
+        chat_stream_response = StreamingAgentChatResponse(achat_stream=chat_stream)
+        thread = Thread(
+            target=lambda x: asyncio.run(
+                chat_stream_response.awrite_response_to_history(x)
+            ),
+            args=(self._memory,),
+        )
+        thread.start()
+        return chat_stream_response
