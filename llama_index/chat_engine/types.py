@@ -5,8 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Generator, List, Optional
 
-from llama_index.llms.base import (ChatMessage, ChatResponseAsyncGen,
-                                   ChatResponseGen)
+from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore
@@ -44,7 +43,7 @@ class StreamingAgentChatResponse:
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     _queue: queue.Queue = queue.Queue()
     _is_done = False
-    _is_final: Optional[bool] = None
+    _is_function: Optional[bool] = None
 
     def __post_init__(self) -> None:
         if self.sources and not self.source_nodes:
@@ -53,7 +52,7 @@ class StreamingAgentChatResponse:
                     self.source_nodes.extend(tool_output.raw_output.source_nodes)
 
     def __str__(self) -> str:
-        if self._is_done and not self._queue.empty() and self._is_final:
+        if self._is_done and not self._queue.empty() and not self._is_function:
             for delta in self._queue.queue:
                 self.response += delta
         return self.response
@@ -69,8 +68,9 @@ class StreamingAgentChatResponse:
             final_message = None
             for chat in self.chat_stream:
                 final_message = chat.message
-                self._is_final = (
-                    final_message.additional_kwargs.get("function_call", None) is None
+                self._is_function = (
+                    final_message.additional_kwargs.get("function_call", None)
+                    is not None
                 )
                 self._queue.put_nowait(chat.delta)
 
@@ -94,9 +94,8 @@ class StreamingAgentChatResponse:
             final_message = None
             async for chat in self.achat_stream:
                 final_message = chat.message
-                self._is_final = (
-                    final_message.additional_kwargs.get("function_call", None)
-                    is None
+                self._is_function = (
+                    final_message.additional_kwargs.get("function_call", None) is None
                 )
                 self._queue.put_nowait(chat.delta)
 

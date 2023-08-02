@@ -1,22 +1,20 @@
 # ReAct agent
 
 import asyncio
-import time
 from threading import Thread
-from typing import Any, List, Optional, Sequence, Tuple, cast
+from typing import Any, List, Optional, Sequence, Tuple, Type, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.types import (
-    ActionReasoningStep,
-    BaseReasoningStep,
-    ObservationReasoningStep,
-    ResponseReasoningStep,
-)
+from llama_index.agent.react.types import (ActionReasoningStep,
+                                           BaseReasoningStep,
+                                           ObservationReasoningStep,
+                                           ResponseReasoningStep)
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
+from llama_index.chat_engine.types import (AgentChatResponse,
+                                           StreamingAgentChatResponse)
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
@@ -228,7 +226,7 @@ class ReActAgent(BaseAgent):
                 message=ChatMessage(content=None, role="assistant")
             )
             for r in chat_stream:
-                if "Answer:" in r.message.content:
+                if "Answer:" in (r.message.content or ""):
                     break
                 chat_response = r
 
@@ -270,7 +268,7 @@ class ReActAgent(BaseAgent):
                 message=ChatMessage(content=None, role="assistant")
             )
             async for r in chat_stream:
-                if "Answer:" in r.message.content:
+                if "Answer:" in (r.message.content or ""):
                     break
                 chat_response = r
 
@@ -281,10 +279,10 @@ class ReActAgent(BaseAgent):
                 break
 
         # Get the response in a separate thread so we can yield the response
-        chat_stream_response = StreamingAgentChatResponse(chat_stream=chat_stream)
+        chat_stream_response = StreamingAgentChatResponse(achat_stream=chat_stream)
         thread = Thread(
             target=lambda x: asyncio.run(
-                chat_stream_response.write_response_to_history(x)
+                chat_stream_response.awrite_response_to_history(x)
             ),
             args=(self._memory,),
         )
