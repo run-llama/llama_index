@@ -110,60 +110,27 @@ class Neo4jGraphStore(GraphStore):
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2
     ) -> Dict[str, List[List[str]]]:
-        return {"test": [["123", "123"]]}
+        """Get flat rel map."""
+        # The flat means for multi-hop relation path, we could get
+        # knowledge like: subj -> rel -> obj -> rel -> obj -> rel -> obj.
+        # This type of knowledge is useful for some tasks.
+        # +-------------+------------------------------------+
+        # | subj        | flattened_rels                     |
+        # +-------------+------------------------------------+
+        # | "player101" | [95, "player125", 2002, "team204"] |
+        # | "player100" | [1997, "team204"]                  |
+        # ...
+        # +-------------+------------------------------------+
+        query = f"""
+        MATCH p=(n1:{self.node_label})-[*1..{depth}]->()
+        {"WHERE n1.id IN $subjs" if subjs else ""}
+        UNWIND relationships(p) AS rel
+        RETURN n1.id AS subj, apoc.coll.flatten(apoc.coll.toSet(collect([type(rel), endNode(rel).id]))) AS flattened_rels
+        """
 
-    # def get_rel_map(
-    #    self, subjs: Optional[List[str]] = None, depth: int = 2
-    # ) -> Dict[str, List[List[str]]]:
-    #    """Get depth-aware rel map."""
-    #    rel_wildcard = "r:%s*1..%d" % (self.rel_table_name, depth)
-    #    match_clause = "MATCH (n1:%s)-[%s]->(n2:%s)" % (
-    #        self.node_label,
-    #        rel_wildcard,
-    #        self.node_label,
-    #    )
-    #    return_clause = "RETURN n1, r, n2"
-    #    params = []
-    #    if subjs is not None:
-    #        for i, curr_subj in enumerate(subjs):
-    #            if i == 0:
-    #                where_clause = "WHERE n1.ID = $%d" % i
-    #            else:
-    #                where_clause += " OR n1.ID = $%d" % i
-    #            params.append((str(i), curr_subj))
-    #    else:
-    #        where_clause = ""
-    #    query = "%s %s %s" % (match_clause, where_clause, return_clause)
-    #    prepared_statement = self.connection.prepare(query)
-    #    if subjs is not None:
-    #        query_result = self.connection.execute(prepared_statement, params)
-    #    else:
-    #        query_result = self.connection.execute(prepared_statement)
-    #    retval: Dict[str, List[List[str]]] = {}
-    #    while query_result.has_next():
-    #        row = query_result.get_next()
-    #        curr_path = []
-    #        subj = row[0]
-    #        recursive_rel = row[1]
-    #        obj = row[2]
-    #        nodes_map = {}
-    #        nodes_map[(subj["_id"]["table"], subj["_id"]["offset"])] = subj["ID"]
-    #        nodes_map[(obj["_id"]["table"], obj["_id"]["offset"])] = obj["ID"]
-    #        for node in recursive_rel["_nodes"]:
-    #            nodes_map[(node["_id"]["table"], node["_id"]["offset"])] = node["ID"]
-    #        for rel in recursive_rel["_rels"]:
-    #            predicate = rel["predicate"]
-    #            curr_subj_id = nodes_map[(rel["_src"]["table"], rel["_src"]["offset"])]
-    #            curr_path.append(curr_subj_id)
-    #            curr_path.append(predicate)
-    #        # Add the last node
-    #        curr_path.append(obj["ID"])
-    #        # Remove subject as it is the key of the map
-    #        curr_path = curr_path[1:]
-    #        if subj["ID"] not in retval:
-    #            retval[subj["ID"]] = []
-    #        retval[subj["ID"]].append(curr_path)
-    #    return retval
+        data = self.query(query, {"subjs": subjs})
+        return data
+        
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
