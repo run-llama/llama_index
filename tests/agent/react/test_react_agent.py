@@ -195,6 +195,17 @@ def test_stream_chat_basic(
     assert text_so_far == expected_answer
     assert counter == len(expected_answer)
 
+    assert agent.chat_history == [
+        ChatMessage(
+            content="What is 1 + 1?",
+            role=MessageRole.USER,
+        ),
+        ChatMessage(
+            content="2 is the final answer.\n",
+            role=MessageRole.ASSISTANT,
+        ),
+    ]
+
 
 @pytest.mark.asyncio
 async def test_astream_chat_basic(
@@ -229,3 +240,14 @@ async def test_astream_chat_basic(
     expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1]
     assert text_so_far == expected_answer
     assert counter == len(expected_answer)
+
+    assert agent.chat_history == [
+        ChatMessage(
+            content="What is 1 + 1?",
+            role=MessageRole.USER,
+        ),
+        ChatMessage(
+            content="2 is the final answer.\n",
+            role=MessageRole.ASSISTANT,
+        ),
+    ]

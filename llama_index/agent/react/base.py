@@ -222,21 +222,21 @@ class ReActAgent(BaseAgent):
             # send prompt
             chat_stream = self._llm.stream_chat(input_chat)
 
-            # iterate over stream, break out if is final answer
+            # iterate over stream, break out if is final answer after the "Answer: "
             is_done = False
-            chat_response = ChatResponse(
+            full_response = ChatResponse(
                 message=ChatMessage(content=None, role="assistant")
             )
             for r in chat_stream:
                 if "Answer: " in (r.message.content or ""):
                     is_done = True
                     break
-                chat_response = r
+                full_response = r
             if is_done:
                 break
 
             # given react prompt outputs, call tools or return response
-            reasoning_steps, _ = self._process_actions(output=chat_response)
+            reasoning_steps, _ = self._process_actions(output=full_response)
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
@@ -268,19 +268,19 @@ class ReActAgent(BaseAgent):
 
             # iterate over stream, break out if is final answer
             is_done = False
-            chat_response = ChatResponse(
+            full_response = ChatResponse(
                 message=ChatMessage(content=None, role="assistant")
             )
             async for r in chat_stream:
                 if "Answer: " in (r.message.content or ""):
                     is_done = True
                     break
-                chat_response = r
+                full_response = r
             if is_done:
                 break
 
             # given react prompt outputs, call tools or return response
-            reasoning_steps, _ = self._process_actions(output=chat_response)
+            reasoning_steps, _ = self._process_actions(output=full_response)
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
