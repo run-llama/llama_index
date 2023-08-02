@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- add `flush=True` when printing agent/chat engine response stream (#7129)
+
 ## [0.7.17] - 2023-08-02
 
 ### New Features
