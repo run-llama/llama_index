@@ -2,7 +2,7 @@
 import logging
 import math
 from typing import Any, List, cast
-
+import bagel
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
@@ -17,26 +17,21 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-import bagel
 
 logger = logging.getLogger(__name__)
 
-
 def _to_bageldb_filter(standard_filters: MetadataFilters) -> dict:
     """Translate standard metadata filters to BagelDB specific spec."""
-    filters = {}
+    filters_map = {}
     for filter in standard_filters.filters:
-        filters[filter.key] = filter.value
-    return filters
-
+        filters_map[filter.key] = filter.value
+    return filters_map
 
 class BagelDBVectorStore(VectorStore):
     """BagelDB vector store.
 
     In this vector store, embeddings are stored within a BagelDB cluster.
-
-    During query time, the index uses BagelDB to query for the top
-    k most similar nodes.
+    During query time, the index uses BagelDB to query for the top k most similar nodes.
 
     Args:
         bageldb_cluster (bagel.api.models.Cluster.Cluster):
@@ -50,7 +45,7 @@ class BagelDBVectorStore(VectorStore):
     def __init__(self, bageldb_collection: Any, **kwargs: Any) -> None:
         """Init params."""
         import_err_msg = (
-            "`bageldb_collection` package not found, please run `pip install betabageldb`"
+            "`bageldb_collection` package not found, please run `pip install betabageldb` to install"
         )
         try:
             import bagel  # noqa: F401
@@ -70,33 +65,33 @@ class BagelDBVectorStore(VectorStore):
         if not self._cluster:
             raise ValueError("Cluster not initialized")
 
-        embeddings = []
-        metadatas = []
-        ids = []
-        documents = []
+        embedding_array = []
+        metadata_array = []
+        id_array = []
+        document_array = []
         for result in embedding_results:
-            embeddings.append(result.embedding)
-            metadatas.append(
+            embedding_array.append(result.embedding)
+            metadata_array.append(
                 node_to_metadata_dict(
                     result.node, remove_text=True, flat_metadata=self.flat_metadata
                 )
             )
-            ids.append(result.id)
-            documents.append(
+            id_array.append(result.id)
+            document_array.append(
                 result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
             )
 
         self._cluster.add(
-            embeddings=embeddings,
-            ids=ids,
-            metadatas=metadatas,
-            documents=documents,
+            embeddings=embedding_array,
+            ids=id_array,
+            metadatas=metadata_array,
+            documents=document_array,
         )
-        return ids
+        return id_array
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Delete nodes based on ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
@@ -113,7 +108,7 @@ class BagelDBVectorStore(VectorStore):
         """Query index for top k most similar nodes.
 
         Args:
-            query_embedding (List[float]): query embedding
+            query_embedding (List[float]): query the embedding
             similarity_top_k (int): top k most similar nodes
 
         """
@@ -165,7 +160,7 @@ class BagelDBVectorStore(VectorStore):
 
             nodes.append(node)
 
-            similarity_score = 1.0 - math.exp(-distance)
+            similarity_score = 1.0 - math.exp(-1 * distance)
             similarities.append(similarity_score)
 
             logger.debug(
