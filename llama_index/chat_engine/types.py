@@ -95,7 +95,8 @@ class StreamingAgentChatResponse:
             async for chat in self.achat_stream:
                 final_message = chat.message
                 self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None) is None
+                    final_message.additional_kwargs.get("function_call", None)
+                    is not None
                 )
                 self._queue.put_nowait(chat.delta)
 
