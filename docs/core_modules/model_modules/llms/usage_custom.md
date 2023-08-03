@@ -18,7 +18,7 @@ In this example, we use `text-davinci-002` instead of `text-davinci-003`. Availa
 
 Note that
 you may also plug in any LLM shown on Langchain's
-[LLM](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) page.
+[LLM](https://python.langchain.com/docs/integrations/llms/) page.
 
 ```python
 
@@ -162,7 +162,7 @@ HuggingFaceLLM(
 )
 ```
 
-A full API reference can be found [here](../../reference/llm_predictor.rst).
+A full API reference can be found [here](../../../api_reference/llms/huggingface.rst).
 
 Several example notebooks are also listed below:
 
@@ -207,7 +207,9 @@ class OurLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=context_window, num_output=num_output
+            context_window=context_window,
+            num_output=num_output,
+            model_name=model_name
         )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:

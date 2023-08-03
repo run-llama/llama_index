@@ -7,6 +7,8 @@ from typing import Generator, List, Optional
 
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
+from llama_index.response.schema import Response, StreamingResponse
+from llama_index.schema import NodeWithScore
 from llama_index.tools import ToolOutput
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,13 @@ class AgentChatResponse:
 
     response: str = ""
     sources: List[ToolOutput] = field(default_factory=list)
+    source_nodes: List[NodeWithScore] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.sources and not self.source_nodes:
+            for tool_output in self.sources:
+                if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
+                    self.source_nodes.extend(tool_output.raw_output.source_nodes)
 
     def __str__(self) -> str:
         return self.response
@@ -31,9 +40,16 @@ class StreamingAgentChatResponse:
     sources: List[ToolOutput] = field(default_factory=list)
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
+    source_nodes: List[NodeWithScore] = field(default_factory=list)
     _queue: queue.Queue = queue.Queue()
     _is_done = False
     _is_function: Optional[bool] = None
+
+    def __post_init__(self) -> None:
+        if self.sources and not self.source_nodes:
+            for tool_output in self.sources:
+                if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
+                    self.source_nodes.extend(tool_output.raw_output.source_nodes)
 
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
@@ -47,16 +63,27 @@ class StreamingAgentChatResponse:
                 "chat_stream is None. Cannot write to history without chat_stream."
             )
 
-        final_message = None
-        for chat in self.chat_stream:
-            final_message = chat.message
-            self._is_function = (
-                final_message.additional_kwargs.get("function_call", None) is not None
-            )
-            self._queue.put_nowait(chat.delta)
+        # try/except to prevent hanging on error
+        try:
+            final_message = None
+            final_text = ""
+            for chat in self.chat_stream:
+                final_message = chat.message
+                self._is_function = (
+                    final_message.additional_kwargs.get("function_call", None)
+                    is not None
+                )
+                self._queue.put_nowait(chat.delta)
+                final_text += chat.delta or ""
 
-        if final_message is not None:
-            memory.put(final_message)
+            if final_message is not None:
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                final_message.content = final_text
+                memory.put(final_message)
+        except Exception as e:
+            print("Error reading response: ", e)
+            pass
 
         self._is_done = True
 
@@ -67,16 +94,27 @@ class StreamingAgentChatResponse:
                 "history without achat_stream."
             )
 
-        final_message = None
-        async for chat in self.achat_stream:
-            final_message = chat.message
-            self._is_function = (
-                final_message.additional_kwargs.get("function_call", None) is not None
-            )
-            self._queue.put_nowait(chat.delta)
+        # try/except to prevent hanging on error
+        try:
+            final_message = None
+            final_text = ""
+            async for chat in self.achat_stream:
+                final_message = chat.message
+                self._is_function = (
+                    final_message.additional_kwargs.get("function_call", None)
+                    is not None
+                )
+                self._queue.put_nowait(chat.delta)
+                final_text += chat.delta or ""
 
-        if final_message is not None:
-            memory.put(final_message)
+            if final_message is not None:
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                final_message.content = final_text
+                memory.put(final_message)
+        except Exception as e:
+            print("Error reading response: ", e)
+            pass
 
         self._is_done = True
 
@@ -90,6 +128,10 @@ class StreamingAgentChatResponse:
             except queue.Empty:
                 # Queue is empty, but we're not done yet
                 continue
+
+    def print_response_stream(self) -> None:
+        for token in self.response_gen:
+            print(token, end="", flush=True)
 
 
 class BaseChatEngine(ABC):
@@ -160,6 +202,13 @@ class ChatMode(str, Enum):
     
     First generate a standalone question from conversation context and last message,
     then query the query engine for a response.
+    """
+
+    CONTEXT = "context"
+    """Corresponds to `ContextChatEngine`.
+    
+    First retrieve text from the index using the user's message, then use the context
+    in the system prompt to generate a response.
     """
 
     REACT = "react"

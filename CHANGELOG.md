@@ -1,5 +1,118 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added `to/from_string` and `to/from_dict` methods to memory objects (#7128)
+
+### Bug Fixes / Nits
+- Added `Azure AD` validation support to the `AzureOpenAI` class (#7127)
+- add `flush=True` when printing agent/chat engine response stream (#7129)
+- Added `Azure AD` support to the `AzureOpenAI` class (#7127)
+- Update LLM question generator prompt to mention JSON markdown (#7105)
+- Fixed `astream_chat` in chat engines (#7139)
+
+## [0.7.17] - 2023-08-02
+
+### New Features
+- Update `ReActAgent` to support memory modules (minor breaking change since the constructor takes `memory` instead of `chat_history`, but the main `from_tools` method remains backward compatible.) (#7116)
+- Update `ReActAgent` to support streaming (#7119)
+- Added Neo4j graph store and query engine integrations (#7122)
+- add object streaming (#7117)
+
+## [0.7.16] - 2023-07-30
+
+### New Features
+
+- Chat source nodes (#7078)
+
+## [0.7.15] - 2023-07-29
+
+### Bug Fixes / Nits
+- anthropic api key  customization (#7082)
+- Fix broken link to API reference in Contributor Docs (#7080)
+- Update vector store docs (#7076)
+- Update comment (#7073)
+
+## [0.7.14] - 2023-07-28
+
+### New Features
+- Added HotpotQADistractor benchmark evaluator (#7034)
+- Add metadata filter and delete support for LanceDB (#7048)
+- Use MetadataFilters in opensearch (#7005)
+- Added support for `KuzuGraphStore` (#6970)
+- Added `kg_triplet_extract_fn` to customize how KGs are built (#7068)
+
+### Bug Fixes / Nits
+- Fix string formatting in context chat engine (#7050)
+- Fixed tracing for async events (#7052)
+- Less strict triplet extraction for KGs (#7059)
+- Add configurable limit to KG data retrieved (#7059)
+- Nebula connection improvements (#7059)
+- Bug fix in building source nodes for agent response (#7067)
+
+## [0.7.13] - 2023-07-26
+
+### New Features
+- Support function calling api for AzureOpenAI (#7041)
+
+### Bug Fixes / Nits
+- tune prompt to get rid of KeyError in SubQ engine (#7039)
+- Fix validation of Azure OpenAI keys (#7042)
+
+## [0.7.12] - 2023-07-25
+
+### New Features
+- Added `kwargs` to `ComposableGraph` for the underlying query engines (#6990)
+- Validate openai key on init (#6940)
+- Added async embeddings and async RetrieverQueryEngine (#6587)
+- Added async `aquery` and `async_add` to PGVectorStore (#7031)
+- Added `.source_nodes` attribute to chat engine and agent responses (#7029)
+- Added `OpenInferenceCallback` for storing generation data in OpenInference format (#6998)
+
+### Bug Fixes / Nits
+- Fix achat memory initialization for data agents (#7000)
+- Add `print_response_stream()` to agengt/chat engine response class (#7018)
+
+## [v0.7.11.post1] - 2023-07-20
+
+### New Features
+- Default to pydantic question generation when possible for sub-question query engine (#6979)
+
+### Bug Fixes / Nits
+- Fix returned order of messages in large chat memory (#6979) 
+
+## [v0.7.11] - 2023-07-19
+
+### New Features
+- Added a `SentenceTransformerRerank` node post-processor for fast local re-ranking (#6934)
+- Add numpy support for evaluating queries in pandas query engine (#6935)
+- Add metadata filtering support for Postgres Vector Storage integration (#6968)
+- Proper llama2 support for agents and query engines (#6969)
+
+### Bug Fixes / Nits
+- Added `model_name` to LLMMetadata (#6911)
+- Fallback to retriever service context in query engines (#6911)
+- Fixed `as_chat_engine()` ValueError with extra kwargs (#6971
+
+## [v0.7.10.post1] - 2023-07-18
+
+### New Features
+- Add support for Replicate LLM (vicuna & llama 2!)
+
+### Bug Fixes / Nits
+- fix streaming for condense chat engine (#6958)
+
+## [v0.7.10] - 2023-07-17
+
+### New Features
+- Add support for chroma v0.4.0 (#6937)
+- Log embedding vectors to callback manager (#6962)
+
+### Bug Fixes / Nits
+- add more robust embedding timeouts (#6779)
+- improved connection session management on postgres vector store (#6843)
+
 ## [v0.7.9] - 2023-07-15
 
 ### New Features

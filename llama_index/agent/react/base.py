@@ -1,26 +1,28 @@
 # ReAct agent
 
+import asyncio
+from threading import Thread
+from typing import Any, List, Optional, Sequence, Tuple, Type, cast
+
 from llama_index.agent.react.formatter import ReActChatFormatter
-from llama_index.llms.base import LLM
-from typing import Sequence, cast, Tuple
-from llama_index.llms.openai import OpenAI
-from llama_index.tools import BaseTool
-from llama_index.agent.types import BaseAgent
-from typing import List, Optional
-from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
+from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.agent.react.types import (
-    BaseReasoningStep,
     ActionReasoningStep,
+    BaseReasoningStep,
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
-from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import (
-    AgentChatResponse,
-)
-
-from llama_index.agent.react.output_parser import ReActOutputParser
+from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
+from llama_index.callbacks.base import CallbackManager
+from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
+from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.openai import OpenAI
+from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
+from llama_index.memory.types import BaseMemory
+from llama_index.tools import BaseTool
+
+DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
 class ReActAgent(BaseAgent):
@@ -37,7 +39,7 @@ class ReActAgent(BaseAgent):
         self,
         tools: Sequence[BaseTool],
         llm: LLM,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
@@ -47,7 +49,7 @@ class ReActAgent(BaseAgent):
         self._llm = llm
         self._tools = tools
         self._tools_dict = {tool.metadata.name: tool for tool in tools}
-        self._chat_history = chat_history
+        self._memory = memory
         self._max_iterations = max_iterations
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter(
             tools=tools
@@ -56,29 +58,30 @@ class ReActAgent(BaseAgent):
         self.callback_manager = callback_manager or CallbackManager([])
         self._verbose = verbose
 
-    def reset(self) -> None:
-        self._chat_history.clear()
-
     @classmethod
     def from_tools(
         cls,
         tools: Optional[List[BaseTool]] = None,
         llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        **kwargs: Any,
     ) -> "ReActAgent":
         tools = tools or []
         chat_history = chat_history or []
-        llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
+        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         return cls(
             tools=tools,
             llm=llm,
-            chat_history=chat_history,
+            memory=memory,
             max_iterations=max_iterations,
             react_chat_formatter=react_chat_formatter,
             output_parser=output_parser,
@@ -89,7 +92,10 @@ class ReActAgent(BaseAgent):
     @property
     def chat_history(self) -> List[ChatMessage]:
         """Chat history."""
-        return self._chat_history
+        return self._memory.get_all()
+
+    def reset(self) -> None:
+        self._memory.reset()
 
     def _process_actions(
         self, output: ChatResponse
@@ -143,15 +149,17 @@ class ReActAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.put(ChatMessage(content=message, role="user"))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
         for _ in range(self._max_iterations):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
-                chat_history=chat_history, current_reasoning=current_reasoning
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
             )
             # send prompt
             chat_response = self._llm.chat(input_chat)
@@ -162,7 +170,7 @@ class ReActAgent(BaseAgent):
                 break
 
         response = self._get_response(current_reasoning)
-        chat_history.append(
+        self._memory.put(
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
@@ -170,15 +178,17 @@ class ReActAgent(BaseAgent):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._chat_history
-        chat_history.append(ChatMessage(content=message, role="user"))
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.put(ChatMessage(content=message, role="user"))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
         for _ in range(self._max_iterations):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
-                chat_history=chat_history, current_reasoning=current_reasoning
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
             )
             # send prompt
             chat_response = await self._llm.achat(input_chat)
@@ -189,7 +199,97 @@ class ReActAgent(BaseAgent):
                 break
 
         response = self._get_response(current_reasoning)
-        chat_history.append(
+        self._memory.put(
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
+
+    def stream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.put(ChatMessage(content=message, role="user"))
+
+        current_reasoning: List[BaseReasoningStep] = []
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
+            )
+            # send prompt
+            chat_stream = self._llm.stream_chat(input_chat)
+
+            # iterate over stream, break out if is final answer after the "Answer: "
+            is_done = False
+            full_response = ChatResponse(
+                message=ChatMessage(content=None, role="assistant")
+            )
+            for r in chat_stream:
+                if "Answer: " in (r.message.content or ""):
+                    is_done = True
+                    break
+                full_response = r
+            if is_done:
+                break
+
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, _ = self._process_actions(output=full_response)
+            current_reasoning.extend(reasoning_steps)
+
+        # Get the response in a separate thread so we can yield the response
+        chat_stream_response = StreamingAgentChatResponse(chat_stream=chat_stream)
+        thread = Thread(
+            target=chat_stream_response.write_response_to_history,
+            args=(self._memory,),
+        )
+        thread.start()
+        return chat_stream_response
+
+    async def astream_chat(
+        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+    ) -> StreamingAgentChatResponse:
+        if chat_history is not None:
+            self._memory.set(chat_history)
+
+        self._memory.put(ChatMessage(content=message, role="user"))
+
+        current_reasoning: List[BaseReasoningStep] = []
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
+            )
+            # send prompt
+            chat_stream = await self._llm.astream_chat(input_chat)
+
+            # iterate over stream, break out if is final answer
+            is_done = False
+            full_response = ChatResponse(
+                message=ChatMessage(content=None, role="assistant")
+            )
+            async for r in chat_stream:
+                if "Answer: " in (r.message.content or ""):
+                    is_done = True
+                    break
+                full_response = r
+            if is_done:
+                break
+
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, _ = self._process_actions(output=full_response)
+            current_reasoning.extend(reasoning_steps)
+
+        # Get the response in a separate thread so we can yield the response
+        chat_stream_response = StreamingAgentChatResponse(achat_stream=chat_stream)
+        thread = Thread(
+            target=lambda x: asyncio.run(
+                chat_stream_response.awrite_response_to_history(x)
+            ),
+            args=(self._memory,),
+        )
+        thread.start()
+        return chat_stream_response

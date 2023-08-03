@@ -67,6 +67,12 @@ class LLMMetadata(BaseModel):
     context_window: int = DEFAULT_CONTEXT_WINDOW
     num_output: int = DEFAULT_NUM_OUTPUTS
     is_chat_model: bool = False
+    is_function_calling_model: bool = False
+    # By default we don't know the model name. We can set it automatically for
+    # some types, but custom predictors (like locally loaded models) we won't
+    # know.
+    # Used for tests, logging, and sanity checks
+    model_name: str = "unknown"
 
 
 class LLM(ABC):

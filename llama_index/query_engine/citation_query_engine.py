@@ -110,7 +110,8 @@ class CitationQueryEngine(BaseQueryEngine):
         )
         self._retriever = retriever
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            callback_manager=callback_manager
+            service_context=retriever.get_service_context(),
+            callback_manager=callback_manager,
         )
         self._node_postprocessors = node_postprocessors or []
 
@@ -261,54 +262,46 @@ class CitationQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        query_id = self.callback_manager.on_event_start(
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        ) as query_event:
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = self.retrieve(query_bundle)
+                nodes = self._create_citation_nodes(nodes)
 
-        retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self.retrieve(query_bundle)
-        nodes = self._create_citation_nodes(nodes)
-        self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.NODES: nodes},
-            event_id=retrieve_id,
-        )
+                retrieve_event.on_end(payload={EventPayload.NODES: nodes})
 
-        response = self._response_synthesizer.synthesize(
-            query=query_bundle,
-            nodes=nodes,
-        )
+            response = self._response_synthesizer.synthesize(
+                query=query_bundle,
+                nodes=nodes,
+            )
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=query_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        query_id = self.callback_manager.on_event_start(
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        ) as query_event:
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = self.retrieve(query_bundle)
+                nodes = self._create_citation_nodes(nodes)
 
-        retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self.retrieve(query_bundle)
-        nodes = self._create_citation_nodes(nodes)
-        self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.NODES: nodes},
-            event_id=retrieve_id,
-        )
+                retrieve_event.on_end(payload={EventPayload.NODES: nodes})
 
-        response = await self._response_synthesizer.asynthesize(
-            query=query_bundle,
-            nodes=nodes,
-        )
+            response = await self._response_synthesizer.asynthesize(
+                query=query_bundle,
+                nodes=nodes,
+            )
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=query_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+
         return response

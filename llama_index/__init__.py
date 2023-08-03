@@ -132,10 +132,12 @@ from llama_index.token_counter.mock_embed_model import MockEmbedding
 # vellum
 from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
+# import global eval handler
+from llama_index.callbacks.global_handlers import set_global_handler
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
-
 
 __all__ = [
     "StorageContext",
@@ -221,7 +223,13 @@ __all__ = [
     "QueryBundle",
     "get_response_synthesizer",
     "set_global_service_context",
+    "set_global_handler",
 ]
+
+# eval global toggle
+from llama_index.callbacks.base_handler import BaseCallbackHandler  # noqa: E402
+
+global_handler: Optional[BaseCallbackHandler] = None
 
 # NOTE: keep for backwards compatibility
 SQLContextBuilder = SQLDocumentContextBuilder

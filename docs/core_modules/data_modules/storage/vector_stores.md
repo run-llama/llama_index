@@ -7,31 +7,33 @@ Vector stores contain embedding vectors of ingested document chunks
 By default, LlamaIndex uses a simple in-memory vector store that's great for quick experimentation.
 They can be persisted to (and loaded from) disk by calling `vector_store.persist()` (and `SimpleVectorStore.from_persist_path(...)` respectively).
 
-## Third-Party Vector Store Integrations
-We also integrate with a wide range of vector store implementations. 
-They mainly differ in 2 aspects:
-1. in-memory vs. hosted
-2. stores only vector embeddings vs. also stores documents
+## Vector Store Options & Feature Support
+LlamaIndex supports over 20 different vector store options.
+We are actively adding more integrations and improving feature coverage for each.
 
-### In-Memory Vector Stores
-* Faiss
-* Chroma
-
-### (Self) Hosted Vector Stores
-* Pinecone
-* Weaviate
-* Milvus/Zilliz
-* Qdrant
-* Chroma
-* Opensearch
-* DeepLake
-* MyScale
-* Tair
-* DocArray
-* MongoDB Atlas
-
-### Others
-* ChatGPTRetrievalPlugin
+| Vector Store             | Type                | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
+|--------------------------|---------------------|--------------------|---------------|--------|-----------------|-------|
+| Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
+| Weaviate                 | self-hosted / cloud |                    | ✓             | ✓      | ✓               |       |
+| Postgres                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
+| Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
+| Milvus / Zilliz          | self-hosted / cloud |                    |               | ✓      | ✓               |       |
+| Typesense                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Supabase                 | self-hosted / cloud | ✓                  |               |        | ✓               |       |
+| MongoDB Atlas            | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Deeplake                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
+| LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
+| Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
+| MyScale                  | cloud               |                    |               |        | ✓               |       |
+| Tair                     | cloud               | ✓                  |               | ✓      | ✓               |       |
+| Simple                   | in-memory           |                    |               | ✓      |                 |       |
+| FAISS                    | in-memory           |                    |               |        |                 |       |
+| ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
+| DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 
