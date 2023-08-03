@@ -168,8 +168,6 @@ class WeaviateVectorStore(VectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
-        if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for Weaviate yet.")
 
         all_properties = get_all_properties(self._client, self._index_name)
 
