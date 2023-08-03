@@ -36,11 +36,11 @@ def test_add_documents(
     documents = [
         NodeWithEmbedding(
             node=TextNode(id_="doc1", text="This is a test document about cats."),
-            embedding=[1,2,3],
+            embedding=[1, 2, 3],
         ),
         NodeWithEmbedding(
             node=TextNode(id_="doc2", text="This is a test document about dogs."),
-            embedding=[3,2,4],
+            embedding=[3, 2, 4],
         ),
     ]
     ids = marqo_vector_store.add(documents=documents)
@@ -55,11 +55,11 @@ def test_query(marqo_vector_store: MarqoVectorStore) -> None:
     documents = [
         NodeWithEmbedding(
             node=TextNode(id_="doc1", text="This is a test document about cats."),
-            embedding=[1,2,5],
+            embedding=[1, 2, 5],
         ),
         NodeWithEmbedding(
             node=TextNode(id_="doc2", text="This is a test document about dogs."),
-            embedding=[6,5,2],
+            embedding=[6, 5, 2],
         ),
     ]
     marqo_vector_store.add(documents=documents)
@@ -79,8 +79,12 @@ def test_add_nodes_to_index(marqo_vector_store: MarqoVectorStore) -> None:
 
     # Create some nodes to add to the index
     nodes = [
-        TextNode(text="This is a test document about cats.", id_="doc1", embedding=[1,2,3]),
-        TextNode(text="This is a test document about dogs.", id_="doc2", embedding=[3,2,4]),
+        TextNode(
+            text="This is a test document about cats.", id_="doc1", embedding=[1, 2, 3]
+        ),
+        TextNode(
+            text="This is a test document about dogs.", id_="doc2", embedding=[3, 2, 4]
+        ),
     ]
 
     marqo_vector_store_index = MarqoVectorStoreIndex(
