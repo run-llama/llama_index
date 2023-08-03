@@ -1,8 +1,8 @@
 """Text splitter implementations."""
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 
-from llama_index.bridge.langchain import TextSplitter
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
@@ -21,6 +21,12 @@ class TextSplit:
     text_chunk: str
     num_char_overlap: Optional[int] = None
     metadata: Optional[Dict[str, Any]] = None
+
+
+class TextSplitter(ABC):
+    @abstractmethod
+    def split_text(self, text: str) -> List[str]:
+        ...
 
 
 class TokenTextSplitter(TextSplitter):
