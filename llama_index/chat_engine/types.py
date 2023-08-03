@@ -131,7 +131,7 @@ class StreamingAgentChatResponse:
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:
-            print(token, end="")
+            print(token, end="", flush=True)
 
 
 class BaseChatEngine(ABC):
