@@ -8,7 +8,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from llama_index.prompts.default_prompt_selectors import DEFAULT_TEXT_QA_PROMPT_SEL
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.response_synthesizers import TreeSummarize
 from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
@@ -86,7 +86,7 @@ class RouterQueryEngine(BaseQueryEngine):
         self._metadatas = [x.metadata for x in query_engine_tools]
         self._summarizer = summarizer or TreeSummarize(
             service_context=self.service_context,
-            text_qa_template=DEFAULT_TEXT_QA_PROMPT,
+            text_qa_template=DEFAULT_TEXT_QA_PROMPT_SEL,
         )
 
         super().__init__(self.service_context.callback_manager)
