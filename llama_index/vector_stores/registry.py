@@ -3,6 +3,7 @@ from typing import Dict, Type
 
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.vector_stores.bageldb import BagelDBVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
@@ -27,6 +28,7 @@ class VectorStoreType(str, Enum):
     OPENSEARCH = "opensearch"
     FAISS = "faiss"
     CHROMA = "chroma"
+    BAGEL = "bagel"
     CHATGPT_PLUGIN = "chatgpt_plugin"
     LANCEDB = "lancedb"
     MILVUS = "milvus"
@@ -47,6 +49,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.OPENSEARCH: OpensearchVectorStore,
     VectorStoreType.FAISS: FaissVectorStore,
     VectorStoreType.CHROMA: ChromaVectorStore,
+    VectorStoreType.BAGEL: BagelDBVectorStore,
     VectorStoreType.CHATGPT_PLUGIN: ChatGPTRetrievalPluginClient,
     VectorStoreType.DEEPLAKE: DeepLakeVectorStore,
     VectorStoreType.MYSCALE: MyScaleVectorStore,
