@@ -1,7 +1,7 @@
 """Text splitter implementations."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -23,8 +23,7 @@ class TextSplit:
     metadata: Optional[Dict[str, Any]] = None
 
 
-class TextSplitter(ABC):
-    @abstractmethod
+class TextSplitter(Protocol):
     def split_text(self, text: str) -> List[str]:
         ...
 
