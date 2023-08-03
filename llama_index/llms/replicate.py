@@ -8,7 +8,8 @@ from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_callback,
+    llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import completion_response_to_chat_response
@@ -63,13 +64,13 @@ class Replicate(CustomLLM):
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {self._prompt_key: prompt, **self._model_kwargs, **kwargs}
 
-    @llm_callback(is_chat=True)
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = self._messages_to_prompt(messages)
         completion_response = self.complete(prompt, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
-    @llm_callback(is_chat=True)
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -77,7 +78,7 @@ class Replicate(CustomLLM):
         completion_response = self.stream_complete(prompt, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
-    @llm_callback(is_chat=False)
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         response_gen = self.stream_complete(prompt, **kwargs)
         response_list = list(response_gen)
@@ -85,7 +86,7 @@ class Replicate(CustomLLM):
         final_response.delta = None
         return final_response
 
-    @llm_callback(is_chat=False)
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         try:
             import replicate

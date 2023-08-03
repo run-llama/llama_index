@@ -8,7 +8,8 @@ from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_callback,
+    llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import chat_to_completion_decorator
@@ -64,7 +65,7 @@ class LlamaAPI(CustomLLM):
             model_name="llama-api",
         )
 
-    @llm_callback(is_chat=True)
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         message_dicts = to_openai_message_dicts(messages)
         json_dict = {
@@ -78,16 +79,16 @@ class LlamaAPI(CustomLLM):
 
         return ChatResponse(message=message, raw=response)
 
-    @llm_callback(is_chat=False)
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         complete_fn = chat_to_completion_decorator(self.chat)
         return complete_fn(prompt, **kwargs)
 
-    @llm_callback(is_chat=False)
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         raise NotImplementedError("stream_complete is not supported for LlamaAPI")
 
-    @llm_callback(is_chat=True)
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:

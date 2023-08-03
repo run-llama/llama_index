@@ -6,7 +6,7 @@ from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_callback,
+    llm_completion_callback,
 )
 import os
 
@@ -57,7 +57,7 @@ class PaLM(CustomLLM):
             model_name=self._model_name,
         )
 
-    @llm_callback(is_chat=False)
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Predict the answer to a query.
 
@@ -78,7 +78,7 @@ class PaLM(CustomLLM):
         )
         return CompletionResponse(text=completion.result, raw=completion.candidates[0])
 
-    @llm_callback(is_chat=False)
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Stream the answer to a query.
 
