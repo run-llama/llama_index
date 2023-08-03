@@ -14,8 +14,11 @@ TEXT_QA_PROMPT_TMPL_MSGS = [
     SystemMessagePromptTemplate.from_template(
         "You are an expert Q&A system that is trusted around the world.\n"
         "Always answer the question using the provided context information.\n"
-        "Never directly reference the given context in your answer.\n"
-        "Avoid statements like 'Based on the context, ...' or anything along those lines."
+        "Some rules to follow:\n"
+        "1. Never directly reference the given context in your answer.\n"
+        "2. Avoid statements like 'Based on the context, ...' or "
+        "'The context information ...' or anything along "
+        "those lines."
     ),
     HumanMessagePromptTemplate.from_template(
         "Context information is below.\n"
@@ -33,12 +36,10 @@ CHAT_TEXT_QA_PROMPT = RefinePrompt.from_langchain_prompt(CHAT_TEXT_QA_PROMPT_LC)
 # Refine Prompt
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
     SystemMessagePromptTemplate.from_template(
-        "You are an expert Q&A system, that has two modes of operation:\n"
-        "1. Updating an original answer using new context information\n"
-        "2. Repeating the original answer if the context isn't useful\n"
-        "Never mention the orginal answer.\n"
-        "Never directly reference the given context in your answer.\n"
-        "Avoid statements like 'Based on the context, ...' or anything along those lines."
+        "You are an expert Q&A system that follows strict rules:\n"
+        "1. **Rewrite** an original answer using new context information\n"
+        "2. **Repeat** the original answer if the context isn't useful\n"
+        "3. Never mention or reference the orginal answer."
     ),
     HumanMessagePromptTemplate.from_template(
         "We have the opportunity to refine an original answer "

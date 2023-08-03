@@ -235,8 +235,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 if self._wandb.run:
                     self._wandb.run.log({"trace": root_trace})
                 self._wandb.termlog("Logged trace tree to W&B.")
-        except:  # noqa
-            # Silently ignore errors to not break user code
+        except Exception as e:
+            print(f"Failed to log trace tree to W&B: {e}")
+            # ignore errors to not break user code
             pass
 
     def persist_index(
@@ -435,8 +436,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
         inputs["formatted_prompt"] = outputs.get("formatted_prompt", None)
         outputs.pop("formatted_prompt", None)
 
-        # Get `original_template` from Prompt
-        inputs["template"] = inputs["template"].original_template
+        # Remove template
+        inputs.pop("template", None)
 
         # Make token counts part of span's `metadata`
         def filterByKey(keys: List[str]) -> Dict[str, int]:
