@@ -4,6 +4,7 @@
 
 ### New Features
 - Added `to/from_string` and `to/from_dict` methods to memory objects (#7128)
+- Include columns comments from db tables in table info for SQL queries (#7124)
 
 ### Bug Fixes / Nits
 - Added `Azure AD` validation support to the `AzureOpenAI` class (#7127)
