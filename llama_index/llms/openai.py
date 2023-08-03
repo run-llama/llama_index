@@ -1,6 +1,6 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
-
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -44,6 +44,7 @@ class OpenAI(LLM):
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         validate_openai_api_key(
@@ -55,6 +56,7 @@ class OpenAI(LLM):
         self.max_tokens = max_tokens
         self.additional_kwargs = additional_kwargs or {}
         self.max_retries = max_retries
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @property
     def metadata(self) -> LLMMetadata:

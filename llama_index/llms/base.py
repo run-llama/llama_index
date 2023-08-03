@@ -308,8 +308,6 @@ def llm_completion_callback() -> Callable:
 class LLM(ABC):
     """LLM interface."""
 
-    callback_manager: CallbackManager = CallbackManager([])
-
     @property
     @abstractmethod
     def metadata(self) -> LLMMetadata:

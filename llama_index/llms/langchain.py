@@ -1,8 +1,9 @@
 from threading import Thread
-from typing import Any, Generator, Sequence
+from typing import Any, Generator, Optional, Sequence
 
 from langchain.base_language import BaseLanguageModel
 
+from llama_index.callbacks import CallbackManager
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.llms.base import (
     LLM,
@@ -27,8 +28,11 @@ from llama_index.llms.langchain_utils import (
 class LangChainLLM(LLM):
     """Adapter for a LangChain LLM."""
 
-    def __init__(self, llm: BaseLanguageModel) -> None:
+    def __init__(
+        self, llm: BaseLanguageModel, callback_manager: Optional[CallbackManager] = None
+    ) -> None:
         self._llm = llm
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @property
     def llm(self) -> BaseLanguageModel:

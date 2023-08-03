@@ -1,5 +1,6 @@
 """Palm API."""
 
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.custom import CustomLLM
 from typing import Optional, Any
 from llama_index.llms.base import (
@@ -19,6 +20,7 @@ class PaLM(CustomLLM):
         api_key: Optional[str] = None,
         model_name: Optional[str] = "models/text-bison-001",
         num_output: Optional[int] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **generate_kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -45,6 +47,7 @@ class PaLM(CustomLLM):
         self._num_output = num_output or self._model.output_token_limit
 
         self._generate_kwargs = generate_kwargs
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @property
     def metadata(self) -> LLMMetadata:

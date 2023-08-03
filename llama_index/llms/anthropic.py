@@ -4,6 +4,7 @@ from llama_index.llms.anthropic_utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_prompt,
 )
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -37,6 +38,7 @@ class Anthropic(LLM):
         max_retries: int = 10,
         api_key: Optional[str] = None,
         additional_kwargs: Dict[str, Any] = {},
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         try:
             import anthropic
@@ -50,6 +52,7 @@ class Anthropic(LLM):
         self._temperature = temperature
         self._max_tokens = max_tokens
         self._additional_kwargs = additional_kwargs
+        self.callback_manager = callback_manager or CallbackManager([])
 
         self._client = anthropic.Anthropic(
             api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries

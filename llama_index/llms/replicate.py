@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
+from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
     ChatMessage,
@@ -29,12 +30,14 @@ class Replicate(CustomLLM):
         prompt_key: str = "prompt",
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._model = model
         self._context_window = context_window
         self._prompt_key = prompt_key
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
+        self.callback_manager = callback_manager or CallbackManager([])
 
         # model kwargs
         self._temperature = temperature

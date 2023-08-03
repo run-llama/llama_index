@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Sequence
 
+from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
     ChatMessage,
@@ -27,6 +28,7 @@ class LlamaAPI(CustomLLM):
         max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         try:
             from llamaapi import LlamaAPI as Client
@@ -41,6 +43,7 @@ class LlamaAPI(CustomLLM):
         self._temperature = temperature
         self._max_tokens = max_tokens
         self._additional_kwargs = additional_kwargs or {}
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:

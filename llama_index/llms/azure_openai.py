@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional
 
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
 
 
@@ -36,6 +37,7 @@ class AzureOpenAI(OpenAI):
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         self.engine = engine
@@ -45,6 +47,7 @@ class AzureOpenAI(OpenAI):
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
+            callback_manager=callback_manager,
             **kwargs,
         )
 
