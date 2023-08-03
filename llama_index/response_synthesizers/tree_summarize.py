@@ -5,7 +5,7 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompt_selectors import DEFAULT_TEXT_QA_PROMPT_SEL
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt
+from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -43,15 +43,11 @@ class TreeSummarize(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
-
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
-        summary_template = SummaryPrompt.from_prompt(
-            text_qa_template, prompt_type=PromptType.SUMMARY
-        )
-
+        text_qa_template.prompt_type = PromptType.SUMMARY
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._service_context.prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            text_qa_template, text_chunks=text_chunks
         )
 
         if self._verbose:
@@ -62,12 +58,12 @@ class TreeSummarize(BaseSynthesizer):
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
                 response = self._service_context.llm_predictor.stream(
-                    summary_template,
+                    text_qa_template,
                     context_str=text_chunks[0],
                 )
             else:
                 response = await self._service_context.llm_predictor.apredict(
-                    summary_template,
+                    text_qa_template,
                     context_str=text_chunks[0],
                 )
             return response
@@ -76,7 +72,7 @@ class TreeSummarize(BaseSynthesizer):
             # summarize each chunk
             tasks = [
                 self._service_context.llm_predictor.apredict(
-                    summary_template,
+                    text_qa_template,
                     context_str=text_chunk,
                 )
                 for text_chunk in text_chunks
@@ -98,12 +94,10 @@ class TreeSummarize(BaseSynthesizer):
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
-        summary_template = SummaryPrompt.from_prompt(
-            text_qa_template, prompt_type=PromptType.SUMMARY
-        )
+        text_qa_template.prompt_type = PromptType.SUMMARY
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._service_context.prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            text_qa_template, text_chunks=text_chunks
         )
 
         if self._verbose:
@@ -114,12 +108,12 @@ class TreeSummarize(BaseSynthesizer):
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
                 response = self._service_context.llm_predictor.stream(
-                    summary_template,
+                    text_qa_template,
                     context_str=text_chunks[0],
                 )
             else:
                 response = self._service_context.llm_predictor.predict(
-                    summary_template,
+                    text_qa_template,
                     context_str=text_chunks[0],
                 )
             return response
@@ -129,7 +123,7 @@ class TreeSummarize(BaseSynthesizer):
             if self._use_async:
                 tasks = [
                     self._service_context.llm_predictor.apredict(
-                        summary_template,
+                        text_qa_template,
                         context_str=text_chunk,
                     )
                     for text_chunk in text_chunks
@@ -139,7 +133,7 @@ class TreeSummarize(BaseSynthesizer):
             else:
                 summaries = [
                     self._service_context.llm_predictor.predict(
-                        summary_template,
+                        text_qa_template,
                         context_str=text_chunk,
                     )
                     for text_chunk in text_chunks
