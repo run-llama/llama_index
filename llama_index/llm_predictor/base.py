@@ -1,8 +1,9 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
+import asyncio
 from abc import abstractmethod
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable, Callable
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -18,6 +19,7 @@ from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import Prompt
 from llama_index.types import TokenAsyncGen, TokenGen
 from llama_index.utils import count_tokens
+from llama_index.retry import RetryStrategy, NoRetryStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +52,32 @@ class BaseLLMPredictor(Protocol):
         """Async predict the answer to a query."""
 
 
+def _llm_predictor_retry(func: Callable) -> Callable:
+    """Retry decorator for LLM predictor methods."""
+
+    if asyncio.iscoroutinefunction(func):
+
+        async def async_wrapper(self: "LLMPredictor", *args: Any, **kwargs: Any) -> Any:
+            """Wrap LLM predictor methods with retry logic."""
+            retry_strategy = self.retry_strategy
+            if retry_strategy is None:
+                return await func(self, *args, **kwargs)
+
+            return await retry_strategy.decorate(func)(self, *args, **kwargs)
+
+        return async_wrapper
+
+    def wrapper(self: "LLMPredictor", *args: Any, **kwargs: Any) -> Any:
+        """Wrap LLM predictor methods with retry logic."""
+        retry_strategy = self.retry_strategy
+        if retry_strategy is None:
+            return func(self, *args, **kwargs)
+
+        return retry_strategy.decorate(func)(self, *args, **kwargs)
+
+    return wrapper
+
+
 class LLMPredictor(BaseLLMPredictor):
     """LLM predictor class.
 
@@ -65,10 +93,12 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         llm: Optional[LLMType] = None,
         callback_manager: Optional[CallbackManager] = None,
+        retry_strategy: Optional[RetryStrategy] = None,
     ) -> None:
         """Initialize params."""
         self._llm = resolve_llm(llm)
         self.callback_manager = callback_manager or CallbackManager([])
+        self.retry_strategy = retry_strategy or NoRetryStrategy()
 
     @property
     def llm(self) -> LLM:
@@ -100,6 +130,7 @@ class LLMPredictor(BaseLLMPredictor):
             "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
         }
 
+    @_llm_predictor_retry
     def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Predict."""
         with self.callback_manager.event(
@@ -122,6 +153,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         return output
 
+    @_llm_predictor_retry
     def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
         """Stream."""
         if self._llm.metadata.is_chat_model:
@@ -134,6 +166,7 @@ class LLMPredictor(BaseLLMPredictor):
             stream_tokens = stream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
+    @_llm_predictor_retry
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Async predict."""
         with self.callback_manager.event(
@@ -156,6 +189,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         return output
 
+    @_llm_predictor_retry
     async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
         """Async stream."""
         if self._llm.metadata.is_chat_model:
