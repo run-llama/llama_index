@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+## New Features
+- Added metadata filtering to weaviate (#7130)
+
 ## [0.7.18] - 2023-08-03
 
 ### New Features
