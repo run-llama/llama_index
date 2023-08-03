@@ -80,7 +80,7 @@ class Neo4jGraphStore(GraphStore):
                 """
                 % (self.node_label)
             )
-        except:  # Using Neo4j <5
+        except Exception:  # Using Neo4j <5
             self.query(
                 """
                 CREATE CONSTRAINT IF NOT EXISTS ON (n:%s) ASSERT n.id IS UNIQUE; 
@@ -127,13 +127,14 @@ class Neo4jGraphStore(GraphStore):
             # unlike simple graph_store, we don't do get_all here
             return rel_map
 
-        query = f"""
-        MATCH p=(n1:{self.node_label})-[*1..{depth}]->()
-        {"WHERE n1.id IN $subjs" if subjs else ""}
-        UNWIND relationships(p) AS rel
-        WITH n1.id AS subj, p, apoc.coll.flatten(apoc.coll.toSet(collect([type(rel), endNode(rel).id]))) AS flattened_rels
-        RETURN subj, collect(flattened_rels) AS flattened_rels
-        """
+        query = (
+            f"""MATCH p=(n1:{self.node_label})-[*1..{depth}]->() """
+            f"""{"WHERE n1.id IN $subjs" if subjs else ""} """
+            "UNWIND relationships(p) AS rel "
+            "WITH n1.id AS subj, p, apoc.coll.flatten(apoc.coll.toSet("
+            "collect([type(rel), endNode(rel).id]))) AS flattened_rels "
+            "RETURN subj, collect(flattened_rels) AS flattened_rels "
+        )
 
         data = list(self.query(query, {"subjs": subjs}))
         if not data:
