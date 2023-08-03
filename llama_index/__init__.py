@@ -107,6 +107,8 @@ from llama_index.readers import (
     PsychicReader,
     QdrantReader,
     RssReader,
+    NewsArticleReader,
+    RssNewsReader,
     SimpleDirectoryReader,
     SimpleMongoReader,
     SimpleWebPageReader,
@@ -201,6 +203,8 @@ __all__ = [
     "DiscordReader",
     "SimpleWebPageReader",
     "RssReader",
+    "NewsArticleReader",
+    "RssNewsReader"
     "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "LLMPredictor",

@@ -47,6 +47,10 @@ from llama_index.readers.web import (
     SimpleWebPageReader,
     TrafilaturaWebReader,
 )
+from llama_index.readers.news import (
+    NewsArticleReader,
+    RssNewsReader,
+)
 from llama_index.readers.wikipedia import WikipediaReader
 from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
 
@@ -76,6 +80,8 @@ __all__ = [
     "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "RssReader",
+    "NewsArticleReader",
+    "RssNewsReader",
     "MakeWrapper",
     "TwitterTweetReader",
     "ObsidianReader",
