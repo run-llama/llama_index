@@ -25,6 +25,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Redis           | self-hosted / cloud | ✓                  | ✓      | ✓               |       |         |
 | Deeplake        | self-hosted / cloud | ✓                  | ✓      | ✓               |       |         |
 | OpenSearch      | self-hosted / cloud | ✓                  | ✓      | ✓               |       |         |
+| Rockset         | cloud               | ✓                  | ✓      | ✓               |       |         |
 | DynamoDB        | cloud               |                    | ✓      |                 |       |         |
 | LanceDB         | cloud               | ✓                  | ✓      | ✓               |       |         |
 | Metal           | cloud               | ✓                  | ✓      | ✓               |       |         |
@@ -43,6 +44,7 @@ caption: Examples
 maxdepth: 1
 ---
 /examples/vector_stores/SimpleIndexDemo.ipynb
+/examples/vector_stores/RocksetIndexDemo.ipynb
 /examples/vector_stores/QdrantIndexDemo.ipynb
 /examples/vector_stores/FaissIndexDemo.ipynb
 /examples/vector_stores/DeepLakeIndexDemo.ipynb
@@ -64,4 +66,3 @@ maxdepth: 1
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 /examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 ```
-
