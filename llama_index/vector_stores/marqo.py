@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 class MarqoVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
+    is_embedding_query: bool = False
 
     def __init__(
         self,
@@ -71,7 +72,7 @@ class MarqoVectorStore(VectorStore):
                 ID_KEY: doc.node.node_id,  # Use the node id
                 self._text_key: doc.node.get_content(),
                 # VECTOR_KEY: doc.embedding,
-                # Marqo can't accept embeddings directly yet
+                # Marqo can't accept embeddings directly
                 # METADATA_KEY: doc_text,  # Implement getting metadata in the future
             }
             entries.append(entry)
