@@ -2,7 +2,7 @@
 
 from typing import Any, List, Optional
 
-from llama_index.langchain_helpers.text_splitter import TextSplit
+from llama_index.text_splitter import TextSplit
 
 
 def patch_token_splitter_newline(

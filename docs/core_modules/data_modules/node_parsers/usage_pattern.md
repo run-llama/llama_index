@@ -51,7 +51,7 @@ If you do customize the `text_splitter` from the default `TokenTextSplitter`, yo
 `TokenTextSplitter` configuration:
 
 ```python
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.text_splitter import TokenTextSplitter
 
 text_splitter = TokenTextSplitter(
   separator=" ",
@@ -66,7 +66,7 @@ node_parser = SimpleNodeParser(text_splitter=text_splitter)
 `SentenceSplitter` configuration:
 
 ```python
-from llama_index.langchain_helpers.text_splitter import SentenceSplitter
+from llama_index.text_splitter import SentenceSplitter
 
 text_splitter = SentenceSplitter(
   separator=" ",
