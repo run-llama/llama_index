@@ -17,6 +17,7 @@ from langchain.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     BaseMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
 
 # chat and memory
@@ -74,6 +75,7 @@ __all__ = [
     "ChatPromptTemplate",
     "HumanMessagePromptTemplate",
     "BaseMessagePromptTemplate",
+    "SystemMessagePromptTemplate",
     "BaseChatMemory",
     "ConversationBufferMemory",
     "ChatMessageHistory",
