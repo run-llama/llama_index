@@ -105,9 +105,6 @@ class LLMPredictor(BaseLLMPredictor):
         with self.callback_manager.event(
             CBEventType.LLM, payload=self._get_start_payload(prompt, prompt_args)
         ) as event:
-            import pdb
-
-            pdb.set_trace()
             if self._llm.metadata.is_chat_model:
                 messages = prompt.format_messages(llm=self._llm, **prompt_args)
                 chat_response = self._llm.chat(messages=messages)
