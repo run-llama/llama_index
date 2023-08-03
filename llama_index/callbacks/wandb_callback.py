@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING, Tu
 from collections import defaultdict
 from datetime import datetime
 
-from llama_index.callbacks.base import BaseCallbackHandler
+from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import (
     CBEvent,
     CBEventType,
