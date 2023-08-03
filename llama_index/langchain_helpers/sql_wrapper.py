@@ -52,7 +52,10 @@ class SQLDatabase(LangchainSQLDatabase):
         for column in self._inspector.get_columns(table_name):
             if column.get("comment"):
                 columns.append(
-                    f"{column['name']} ({str(column['type'])}): '{column.get('comment')}'"
+                    (
+                        f"{column['name']} ({str(column['type'])}): "
+                        f"'{column.get('comment')}'"
+                    )
                 )
             else:
                 columns.append(f"{column['name']} ({str(column['type'])})")
