@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.utils import globals_helper
-from llama_index.callbacks.base import BaseCallbackHandler
+from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
 
 

@@ -19,7 +19,7 @@ def build_tools_text(tools: Sequence[ToolMetadata]) -> str:
 
 PREFIX = """\
 Given a user question, and a list of tools, output a list of relevant sub-questions \
-that when composed can help answer the full user question:
+in json markdown that when composed can help answer the full user question:
 
 """
 

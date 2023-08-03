@@ -116,7 +116,7 @@ class SimpleChatEngine(BaseChatEngine):
         all_messages = self._prefix_messages + self._memory.get()
 
         chat_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(all_messages)
+            achat_stream=await self._llm.astream_chat(all_messages)
         )
         thread = Thread(
             target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),

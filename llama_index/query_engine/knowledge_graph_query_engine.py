@@ -54,8 +54,31 @@ DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT = Prompt(
     prompt_type=PromptType.TEXT_TO_GRAPH_QUERY,
 )
 
+# Prompt
+DEFAULT_NEO4J_NL2CYPHER_PROMPT_TMPL = (
+    "Task:Generate Cypher statement to query a graph database.\n"
+    "Instructions:\n"
+    "Use only the provided relationship types and properties in the schema.\n"
+    "Do not use any other relationship types or properties that are not provided.\n"
+    "Schema:\n"
+    "{schema}\n"
+    "Note: Do not include any explanations or apologies in your responses.\n"
+    "Do not respond to any questions that might ask anything else than for you "
+    "to construct a Cypher statement. \n"
+    "Do not include any text except the generated Cypher statement.\n"
+    "\n"
+    "The question is:\n"
+    "{query_str}\n"
+)
+
+DEFAULT_NEO4J_NL2CYPHER_PROMPT = Prompt(
+    DEFAULT_NEO4J_NL2CYPHER_PROMPT_TMPL,
+    prompt_type=PromptType.TEXT_TO_GRAPH_QUERY,
+)
+
 DEFAULT_NL2GRAPH_PROMPT_MAP = {
     GraphStoreType.NEBULA: DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT,
+    GraphStoreType.NEO4J: DEFAULT_NEO4J_NL2CYPHER_PROMPT,
 }
 
 DEFAULT_KG_RESPONSE_ANSWER_PROMPT_TMPL = """

@@ -15,7 +15,7 @@ from typing import (
 from collections import defaultdict
 from datetime import datetime
 
-from llama_index.callbacks.base import BaseCallbackHandler
+from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.token_counting import get_llm_token_counts
 from llama_index.callbacks.schema import (
     CBEvent,
@@ -448,7 +448,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         # Get `original_template` from Prompt
         if EventPayload.PROMPT in inputs:
-            inputs[EventPayload.PROMPT] = inputs[EventPayload.PROMPT].original_template
+            inputs[EventPayload.PROMPT] = inputs[EventPayload.PROMPT]
 
         # Format messages
         if EventPayload.MESSAGES in inputs:
