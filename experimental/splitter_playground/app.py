@@ -67,6 +67,7 @@ for ind, col in enumerate(cols):
                 "LC:RecursiveCharacterTextSplitter",
                 "LC:CharacterTextSplitter",
             ],
+            index=ind,
             key=f"splitter_cls_{ind}",
         )
 
