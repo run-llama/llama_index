@@ -208,11 +208,11 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
             for node_with_score in payload[EventPayload.NODES]:
                 node = node_with_score.node
                 score = node_with_score.score
-                self._trace_data.query_data.node_ids.append(node.hash)
+                self._trace_data.query_data.node_ids.append(node.node_id)
                 self._trace_data.query_data.scores.append(score)
                 self._trace_data.node_datas.append(
                     NodeData(
-                        id=node.hash,
+                        id=node.node_id,
                         node_text=node.text,
                     )
                 )
