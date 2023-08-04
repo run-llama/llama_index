@@ -1,5 +1,4 @@
 import os
-
 # import socket
 from typing import Any, Optional
 
@@ -12,14 +11,10 @@ from llama_index.llms.base import LLMMetadata
 from llama_index.llms.mock import MockLLM
 from llama_index.text_splitter import TokenTextSplitter
 from tests.indices.vector_store.mock_services import MockEmbedding
-from tests.mock_utils.mock_predict import (
-    patch_llmpredictor_apredict,
-    patch_llmpredictor_predict,
-)
+from tests.mock_utils.mock_predict import (patch_llmpredictor_apredict,
+                                           patch_llmpredictor_predict)
 from tests.mock_utils.mock_text_splitter import (
-    patch_token_splitter_newline,
-    patch_token_splitter_newline_with_overlaps,
-)
+    patch_token_splitter_newline, patch_token_splitter_newline_with_overlaps)
 
 # @pytest.fixture(autouse=True)
 # def no_networking(monkeypatch: pytest.MonkeyPatch) -> None:

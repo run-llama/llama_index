@@ -9,11 +9,8 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response_synthesizers import (
-    BaseSynthesizer,
-    ResponseMode,
-    get_response_synthesizer,
-)
+from llama_index.response_synthesizers import (BaseSynthesizer, ResponseMode,
+                                               get_response_synthesizer)
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.text_splitter import SentenceSplitter, TokenTextSplitter
 
