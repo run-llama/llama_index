@@ -43,6 +43,19 @@ if uploaded_files:
     text = "\n".join([doc.text for doc in docs])
 
 
+chunk_size = st.slider(
+    "Chunk Size",
+    value=512,
+    min_value=1,
+    max_value=4096,
+)
+chunk_overlap = st.slider(
+    "Chunk Overlap",
+    value=0,
+    min_value=0,
+    max_value=4096,
+)
+
 cols = st.columns(n_cols)
 for ind, col in enumerate(cols):
     if type == "Text":
@@ -55,21 +68,6 @@ for ind, col in enumerate(cols):
                 "LC:CharacterTextSplitter",
             ],
             key=f"splitter_cls_{ind}",
-        )
-
-        chunk_size = col.slider(
-            "Chunk Size",
-            value=512,
-            min_value=1,
-            max_value=4096,
-            key=f"chunk_size_{ind}",
-        )
-        chunk_overlap = col.slider(
-            "Chunk Overlap",
-            value=0,
-            min_value=0,
-            max_value=4096,
-            key=f"chunk_overlap_{ind}",
         )
 
         if text_splitter_cls == "TokenTextSplitter":
