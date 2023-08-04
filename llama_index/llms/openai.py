@@ -39,7 +39,7 @@ from llama_index.llms.openai_utils import (
 class OpenAI(LLM):
     def __init__(
         self,
-        model: str = "text-davinci-003",
+        model: str = "gpt-3.5-turbo",
         temperature: float = 0.0,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
