@@ -109,7 +109,7 @@ class RouterQueryEngine(BaseQueryEngine):
         if selector is None and select_multi:
             try:
                 selector = PydanticMultiSelector.from_defaults(
-                    llm=service_context.llm_predictor.llm
+                    llm=service_context.llm_predictor.llm  # type: ignore
                 )
             except ValueError:
                 selector = LLMMultiSelector.from_defaults(
@@ -118,7 +118,7 @@ class RouterQueryEngine(BaseQueryEngine):
         elif selector is None and not select_multi:
             try:
                 selector = PydanticSingleSelector.from_defaults(
-                    llm=service_context.llm_predictor.llm
+                    llm=service_context.llm_predictor.llm  # type: ignore
                 )
             except ValueError:
                 selector = LLMSingleSelector.from_defaults(
