@@ -6,7 +6,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.llms.base import LLMMetadata
+from llama_index.llms.base import LLMMetadata, LLM
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import (
@@ -94,6 +94,10 @@ class MockLLMPredictor(BaseLLMPredictor):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata()
+
+    @property
+    def llm(self) -> LLM:
+        raise NotImplementedError("MockLLMPredictor does not have an LLM model.")
 
     def _log_start(self, prompt: Prompt, prompt_args: dict) -> str:
         """Log start of an LLM event."""
