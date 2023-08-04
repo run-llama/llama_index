@@ -1,8 +1,8 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.19] - 2023-08-04
 
-## New Features
+### New Features
 - Added metadata filtering to weaviate (#7130)
 - Added token counting (and all callbacks) to agents and streaming (#7122)
 
