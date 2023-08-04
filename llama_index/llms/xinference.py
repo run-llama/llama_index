@@ -22,12 +22,11 @@ TOKEN_RATIO = 2.5
 
 class Xinference(CustomLLM):
     def __init__(
-            self,
-            model_uid: str,
-            endpoint: str,
-            temperature: float = 1.0,
+        self,
+        model_uid: str,
+        endpoint: str,
+        temperature: float = 1.0,
     ) -> None:
-
         self.temperature = temperature
         self.model_uid = model_uid
         self.endpoint = endpoint
@@ -40,12 +39,11 @@ class Xinference(CustomLLM):
         self.load()
 
     def load(self) -> None:
-
         try:
             from xinference.client import RESTfulClient
         except ImportError:
             raise ImportError(
-                'Could not import Xinference library.'
+                "Could not import Xinference library."
                 'Please install Xinference with `pip install "xinference[all]"`'
             )
 
@@ -86,11 +84,8 @@ class Xinference(CustomLLM):
         response_text = self._generator.chat(
             prompt=prompt,
             chat_history=history,
-            generate_config={
-                "stream": False,
-                "temperature": self.temperature
-            }
-        )['choices'][0]['message']['content']
+            generate_config={"stream": False, "temperature": self.temperature},
+        )["choices"][0]["message"]["content"]
         response = ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
@@ -101,23 +96,20 @@ class Xinference(CustomLLM):
         return response
 
     def stream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         prompt = messages[-1].content if len(messages) > 0 else ""
         history = [xinference_message_to_history(message) for message in messages[:-1]]
         response_iter = self._generator.chat(
             prompt=prompt,
             chat_history=history,
-            generate_config={
-                "stream": True,
-                "temperature": self.temperature
-            }
+            generate_config={"stream": True, "temperature": self.temperature},
         )
 
         def gen() -> ChatResponseGen:
             text = ""
             for c in response_iter:
-                delta = c['choices'][0]['delta'].get('content', '')
+                delta = c["choices"][0]["delta"].get("content", "")
                 text += delta
                 yield ChatResponse(
                     message=ChatMessage(
@@ -133,11 +125,8 @@ class Xinference(CustomLLM):
         response_text = self._generator.chat(
             prompt=prompt,
             chat_history=None,
-            generate_config={
-                "stream": False,
-                "temperature": self.temperature
-            }
-        )['choices'][0]['message']['content']
+            generate_config={"stream": False, "temperature": self.temperature},
+        )["choices"][0]["message"]["content"]
         response = CompletionResponse(
             delta=None,
             text=response_text,
@@ -148,16 +137,13 @@ class Xinference(CustomLLM):
         response_iter = self._generator.chat(
             prompt=prompt,
             chat_history=None,
-            generate_config={
-                "stream": True,
-                "temperature": self.temperature
-            }
+            generate_config={"stream": True, "temperature": self.temperature},
         )
 
         def gen() -> CompletionResponseGen:
             text = ""
             for c in response_iter:
-                delta = c['choices'][0]['delta'].get('content', '')
+                delta = c["choices"][0]["delta"].get("content", "")
                 text += delta
                 yield CompletionResponse(
                     delta=delta,

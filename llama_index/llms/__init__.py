@@ -41,5 +41,5 @@ __all__ = [
     "CompletionResponseGen",
     "CompletionResponseAsyncGen",
     "LLMMetadata",
-    "Xinference"
+    "Xinference",
 ]

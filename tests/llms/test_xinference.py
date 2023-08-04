@@ -26,64 +26,49 @@ mock_chat_history = [
 ]
 
 mock_chat = {
-    'id': 'test_id',
-    'object': 'chat.completion',
-    'created': 0,
-    'model': 'test_model',
-    'choices': [{
-        'index': 0,
-        'message': {
-            'role': 'assistant',
-            'content': 'test_response'
-        },
-        'finish_reason': 'stop'
-    }],
-    'usage': {
-        'prompt_tokens': 0,
-        'completion_tokens': 0,
-        'total_tokens': 0
-    }
+    "id": "test_id",
+    "object": "chat.completion",
+    "created": 0,
+    "model": "test_model",
+    "choices": [
+        {
+            "index": 0,
+            "message": {"role": "assistant", "content": "test_response"},
+            "finish_reason": "stop",
+        }
+    ],
+    "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
 }
 
 mock_chat_stream = [
     {
-        'id': 'test_id',
-        'model': 'test_model',
-        'created': 1,
-        'object': 'chat.completion.chunk',
-        'choices': [{
-            'index': 0,
-            'delta': {
-                'role': 'assistant'
-            },
-            'finish_reason': None
-        }]
+        "id": "test_id",
+        "model": "test_model",
+        "created": 1,
+        "object": "chat.completion.chunk",
+        "choices": [
+            {"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}
+        ],
     },
     {
-        'id': 'test_id',
-        'model': 'test_model',
-        'created': 1,
-        'object': 'chat.completion.chunk',
-        'choices': [{
-            'index': 0,
-            'delta': {
-                'content': 'test_response_stream'
-            },
-            'finish_reason': None
-        }]
+        "id": "test_id",
+        "model": "test_model",
+        "created": 1,
+        "object": "chat.completion.chunk",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"content": "test_response_stream"},
+                "finish_reason": None,
+            }
+        ],
     },
     {
-        'id': 'test_id',
-        'model': 'test_model',
-        'created': 1,
-        'object': 'chat.completion.chunk',
-        'choices': [{
-            'index': 0,
-            'delta': {
-                'content': ' '
-            },
-            'finish_reason': "length"
-        }]
+        "id": "test_id",
+        "model": "test_model",
+        "created": 1,
+        "object": "chat.completion.chunk",
+        "choices": [{"index": 0, "delta": {"content": " "}, "finish_reason": "length"}],
     },
 ]
 
@@ -95,12 +80,11 @@ def mock_chat_stream_iterator():
 
 class MockXinferenceModel:
     def chat(
-            self,
-            prompt: str,
-            chat_history: List[TypedDict],
-            generate_config: Dict[str, Any]
+        self,
+        prompt: str,
+        chat_history: List[TypedDict],
+        generate_config: Dict[str, Any],
     ) -> Union[Iterator[Dict[str, Any]], Dict[str, Any]]:
-
         assert isinstance(prompt, str)
         if chat_history is not None:
             for chat_item in chat_history:
@@ -122,12 +106,11 @@ class MockRESTfulClient:
 
 class MockXinference(Xinference):
     def load(self) -> None:
-
         try:
             from xinference.client import RESTfulClient
         except ImportError:
             raise ImportError(
-                'Could not import Xinference library.'
+                "Could not import Xinference library."
                 'Please install Xinference with `pip install "xinference[all]"`'
             )
 
@@ -140,7 +123,7 @@ def test_init():
         from xinference.client import RESTfulClient
     except ImportError:
         raise ImportError(
-            'Could not import Xinference library.'
+            "Could not import Xinference library."
             'Please install Xinference with `pip install "xinference[all]"`'
         )
 
@@ -171,10 +154,12 @@ def test_stream_chat(chat_history):
     for i, res in enumerate(response_gen):
         assert i < len(mock_chat_stream)
         assert isinstance(res, ChatResponse)
-        assert res.delta == mock_chat_stream[i]['choices'][0]['delta'].get('content', '')
+        assert res.delta == mock_chat_stream[i]["choices"][0]["delta"].get(
+            "content", ""
+        )
         assert res.message.role == MessageRole.ASSISTANT
 
-        total_text += mock_chat_stream[i]['choices'][0]['delta'].get('content', '')
+        total_text += mock_chat_stream[i]["choices"][0]["delta"].get("content", "")
         assert total_text == res.message.content
 
 
@@ -195,7 +180,9 @@ def test_stream_complete():
     for i, res in enumerate(response_gen):
         assert i < len(mock_chat_stream)
         assert isinstance(res, CompletionResponse)
-        assert res.delta == mock_chat_stream[i]['choices'][0]['delta'].get('content', '')
+        assert res.delta == mock_chat_stream[i]["choices"][0]["delta"].get(
+            "content", ""
+        )
 
-        total_text += mock_chat_stream[i]['choices'][0]['delta'].get('content', '')
+        total_text += mock_chat_stream[i]["choices"][0]["delta"].get("content", "")
         assert total_text == res.text
