@@ -12,6 +12,10 @@ from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.response_synthesizers import TreeSummarize
 from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
+from llama_index.selectors.pydantic_selectors import (
+    PydanticMultiSelector,
+    PydanticSingleSelector,
+)
 from llama_index.selectors.types import BaseSelector
 from llama_index.schema import BaseNode
 from llama_index.tools.query_engine import QueryEngineTool
@@ -100,10 +104,26 @@ class RouterQueryEngine(BaseQueryEngine):
         summarizer: Optional[TreeSummarize] = None,
         select_multi: bool = False,
     ) -> "RouterQueryEngine":
+        service_context = service_context or ServiceContext.from_defaults()
+
         if selector is None and select_multi:
-            selector = LLMMultiSelector.from_defaults(service_context=service_context)
+            try:
+                selector = PydanticMultiSelector.from_defaults(
+                    llm=service_context.llm_predictor.llm  # type: ignore
+                )
+            except ValueError:
+                selector = LLMMultiSelector.from_defaults(
+                    service_context=service_context
+                )
         elif selector is None and not select_multi:
-            selector = LLMSingleSelector.from_defaults(service_context=service_context)
+            try:
+                selector = PydanticSingleSelector.from_defaults(
+                    llm=service_context.llm_predictor.llm  # type: ignore
+                )
+            except ValueError:
+                selector = LLMSingleSelector.from_defaults(
+                    service_context=service_context
+                )
 
         assert selector is not None
 
