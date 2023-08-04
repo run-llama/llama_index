@@ -8,6 +8,7 @@ from langchain.base_language import BaseLanguageModel
 
 # embeddings
 from langchain.embeddings.base import Embeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 
 # prompts
 from langchain import PromptTemplate, BasePromptTemplate
@@ -66,6 +67,7 @@ __all__ = [
     "ChatOpenAI",
     "BaseLanguageModel",
     "Embeddings",
+    "HuggingFaceEmbeddings",
     "PromptTemplate",
     "BasePromptTemplate",
     "ConditionalPromptSelector",
