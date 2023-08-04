@@ -2,11 +2,11 @@ from typing import Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
-from llama_index.prompts.default_prompts import (
-    DEFAULT_SIMPLE_INPUT_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
+from llama_index.prompts.default_prompt_selectors import (
+    DEFAULT_TEXT_QA_PROMPT_SEL,
+    DEFAULT_REFINE_PROMPT_SEL,
 )
+from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import (
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -38,7 +38,7 @@ def get_response_synthesizer(
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
 
-    text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+    text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
     refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
     simple_template = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
