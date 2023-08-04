@@ -32,14 +32,23 @@ Response synthesizers are typically specified through a `response_mode` kwarg se
 
 Several response synthesizers are implemented already in LlamaIndex:
 
-- `refine`: "create and refine" an answer by sequentially going through each retrieved text chunk. 
-    This makes a separate LLM call per Node. Good for more detailed answers.
-- `compact` (default): "compact" the prompt during each LLM call by stuffing as 
-    many text chunks that can fit within the maximum prompt size. If there are 
-    too many chunks to stuff in one prompt, "create and refine" an answer by going through
-    multiple compact prompts. The same as `refine`, but should result in less LLM calls.
+- `refine`: ***create and refine*** an answer by sequentially going through each retrieved text chunk. 
+    This makes a separate LLM call per Node/retrieved chunk. The first chunk is used in a query using the 
+    `text_qa_template` prompt. Then the answer and the next chunk (and the original question) are used 
+    in another query with the `refine_template` prompt. And so on until all chunks have been parsed.
+    Good for more detailed answers.
+- `compact` (default): ***compact*** the prompt during each LLM call by stuffing as 
+    many text (concatenated from the retrieved chunks) that can fit within the maximum prompt size. 
+    If the text is too long to fit in one prompt, it is splitted in as many parts as needed 
+    (using a `TokenTextSplitter`). Each text part is considered a "chunk" and is sent to the 
+    ***create and refine*** synthesizer. In short, it is like `refine`, but with less LLM calls.
 - `tree_summarize`: Given a set of text chunks and the query, recursively construct a tree 
-    and return the root node as the response. Good for summarization purposes.
+    and return the root node as the response. All retrieved chunks/nodes are concatenated and then
+    splitted to fit the context window using the `text_qa_template` prompt, resulting in as many new "chunks".
+    Each of these chunks are queried against the `text_qa_template` prompt, giving as many answers. If there is
+    only one answer, then it's the final answer. If there are more than one answer, these themselves are 
+    considered as chunks and sent recursively to the `tree_summarize` process (concatenated/splitted-to-fit/queried).
+    Good for summarization purposes.
 - `simple_summarize`: Truncates all text chunks to fit into a single LLM prompt. Good for quick
     summarization purposes, but may lose detail due to truncation.
 - `no_text`: Only runs the retriever to fetch the nodes that would have been sent to the LLM, 
