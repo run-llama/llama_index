@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Sequence
 
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -11,7 +11,13 @@ from llama_index.llms.base import (
     MessageRole,
 )
 from llama_index.llms.custom import CustomLLM
-from llama_index.llms.xinference_utils import message_to_history
+from llama_index.llms.xinference_utils import (
+    xinference_message_to_history,
+    xinference_modelname_to_contextsize,
+)
+
+# an approximation of the ratio between llama and GPT2 tokens
+TOKEN_RATIO = 2.5
 
 
 class Xinference(CustomLLM):
@@ -19,20 +25,17 @@ class Xinference(CustomLLM):
             self,
             model_uid: str,
             endpoint: str,
-            context_window: int = 2048,
             temperature: float = 1.0,
     ) -> None:
 
+        self.temperature = temperature
         self.model_uid = model_uid
         self.endpoint = endpoint
-        self.temperature = temperature
 
-        self._context_window = context_window
-
-        # set in load for testing
         self._model_description = None
-        self._client = None
+        self._context_window = None
         self._generator = None
+        self._client = None
         self._model = None
         self.load()
 
@@ -49,13 +52,15 @@ class Xinference(CustomLLM):
         self._client = RESTfulClient(self.endpoint)
         self._generator = self._client.get_model(self.model_uid)
         self._model_description = self._client.list_models()[self.model_uid]
+
         self._model = self._model_description["model_name"]
+        self._context_window = xinference_modelname_to_contextsize(self._model)
 
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=int(self._context_window // 2.5),
+            context_window=int(self._context_window // TOKEN_RATIO),
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self._model,
         )
@@ -77,7 +82,7 @@ class Xinference(CustomLLM):
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = messages[-1].content if len(messages) > 0 else ""
-        history = [message_to_history(message) for message in messages[:-1]]
+        history = [xinference_message_to_history(message) for message in messages[:-1]]
         response_text = self._generator.chat(
             prompt=prompt,
             chat_history=history,
@@ -99,7 +104,7 @@ class Xinference(CustomLLM):
             self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         prompt = messages[-1].content if len(messages) > 0 else ""
-        history = [message_to_history(message) for message in messages[:-1]]
+        history = [xinference_message_to_history(message) for message in messages[:-1]]
         response_iter = self._generator.chat(
             prompt=prompt,
             chat_history=history,
