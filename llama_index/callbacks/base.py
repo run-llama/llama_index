@@ -6,7 +6,6 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Generator
 
-import llama_index
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_EVENT
 
@@ -45,10 +44,11 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     def __init__(self, handlers: List[BaseCallbackHandler]):
         """Initialize the manager with a list of handlers."""
+        from llama_index import global_handler
 
         # add eval handlers based on global defaults
-        if llama_index.global_handler is not None:
-            new_handler = llama_index.global_handler
+        if global_handler is not None:
+            new_handler = global_handler
             # go through existing handlers, check if any are same type as new handler
             # if so, error
             for existing_handler in handlers:

@@ -1,8 +1,14 @@
 import os
 from typing import Any, Optional
 
+from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
+from llama_index.llms.base import (
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+    llm_completion_callback,
+)
 from llama_index.llms.custom import CustomLLM
 
 
@@ -16,6 +22,7 @@ class PredibaseLLM(CustomLLM):
         max_new_tokens: int = 256,
         temperature: float = 0.1,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self.predibase_api_key = (
             predibase_api_key
@@ -27,6 +34,7 @@ class PredibaseLLM(CustomLLM):
         self.temperature = temperature
         self.context_window = context_window
         self.client = self.initialize_client()
+        self.callback_manager = callback_manager or CallbackManager([])
 
     def initialize_client(self) -> Any:
         try:
@@ -52,6 +60,7 @@ class PredibaseLLM(CustomLLM):
         )
 
     # "CompletionResponse"
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> "CompletionResponse":
         model_kwargs = {
             "temperature": self.temperature,
@@ -62,5 +71,6 @@ class PredibaseLLM(CustomLLM):
             text=results.loc[0, "response"], additional_kwargs=model_kwargs
         )
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> "CompletionResponseGen":
         raise NotImplementedError()
