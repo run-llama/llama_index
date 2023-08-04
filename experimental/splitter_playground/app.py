@@ -4,14 +4,13 @@ from typing import List
 
 import streamlit as st
 import tiktoken
-from langchain.text_splitter import (
-    CharacterTextSplitter,
-    RecursiveCharacterTextSplitter,
-)
+from langchain.text_splitter import (CharacterTextSplitter,
+                                     RecursiveCharacterTextSplitter)
 
 from llama_index import SimpleDirectoryReader
 from llama_index.schema import Document
-from llama_index.text_splitter import CodeSplitter, SentenceSplitter, TokenTextSplitter
+from llama_index.text_splitter import (CodeSplitter, SentenceSplitter,
+                                       TokenTextSplitter)
 
 DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog."
 

@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.text_splitter.types import TextSplitter
 
 
 class CodeSplitter(TextSplitter):
