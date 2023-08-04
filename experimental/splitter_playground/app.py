@@ -17,6 +17,8 @@ DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog."
 
 text = st.sidebar.text_area("Enter text", value=DEFAULT_TEXT)
 uploaded_files = st.sidebar.file_uploader("Upload file", accept_multiple_files=True)
+type = st.sidebar.radio("Document Type", options=["Text", "Code"])
+n_cols = st.sidebar.number_input("Columns", value=2, min_value=1, max_value=3)
 
 
 @st.cache_resource(ttl="1h")
@@ -41,55 +43,72 @@ if uploaded_files:
     text = "\n".join([doc.text for doc in docs])
 
 
-type = st.sidebar.radio("Document Type", options=["Text", "Code"])
-if type == "Text":
-    text_splitter_cls = st.sidebar.selectbox(
-        "Text Splitter",
-        options=[
-            "TokenTextSplitter",
-            "SentenceSplitter",
-            "LC:RecursiveCharacterTextSplitter",
-            "LC:CharacterTextSplitter",
-        ],
-    )
-
-    chunk_size = st.sidebar.slider("Chunk Size", value=512, min_value=1, max_value=4096)
-    chunk_overlap = st.sidebar.slider(
-        "Chunk Overlap", value=0, min_value=0, max_value=4096
-    )
-
-    if text_splitter_cls == "TokenTextSplitter":
-        text_splitter = TokenTextSplitter(
-            chunk_size=chunk_size, chunk_overlap=chunk_overlap
+cols = st.columns(n_cols)
+for ind, col in enumerate(cols):
+    if type == "Text":
+        text_splitter_cls = col.selectbox(
+            "Text Splitter",
+            options=[
+                "TokenTextSplitter",
+                "SentenceSplitter",
+                "LC:RecursiveCharacterTextSplitter",
+                "LC:CharacterTextSplitter",
+            ],
+            key=f"splitter_cls_{ind}",
         )
-    elif text_splitter_cls == "SentenceSplitter":
-        text_splitter = SentenceSplitter(
-            chunk_size=chunk_size, chunk_overlap=chunk_overlap
-        )
-    elif text_splitter_cls == "LC:RecursiveCharacterTextSplitter":
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size, chunk_overlap=chunk_overlap
-        )
-    elif text_splitter_cls == "LC:CharacterTextSplitter":
-        text_splitter = CharacterTextSplitter(
-            chunk_size=chunk_size, chunk_overlap=chunk_overlap
-        )
-    else:
-        raise ValueError("Unknown text splitter")
-elif type == "Code":
-    text_splitter_cls = st.sidebar.selectbox("Text Splitter", options=["CodeSplitter"])
-    if text_splitter_cls == "CodeSplitter":
-        language = st.sidebar.text_input("Language", value="python")
-        max_chars = st.sidebar.slider("Max Chars", value=1500)
 
-        text_splitter = CodeSplitter(language=language, max_chars=max_chars)
-    else:
-        raise ValueError("Unknown text splitter")
+        chunk_size = col.slider(
+            "Chunk Size",
+            value=512,
+            min_value=1,
+            max_value=4096,
+            key=f"chunk_size_{ind}",
+        )
+        chunk_overlap = col.slider(
+            "Chunk Overlap",
+            value=0,
+            min_value=0,
+            max_value=4096,
+            key=f"chunk_overlap_{ind}",
+        )
 
-chunks = text_splitter.split_text(text)
-tokenizer = tiktoken.get_encoding("gpt2").encode
+        if text_splitter_cls == "TokenTextSplitter":
+            text_splitter = TokenTextSplitter(
+                chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
+        elif text_splitter_cls == "SentenceSplitter":
+            text_splitter = SentenceSplitter(
+                chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
+        elif text_splitter_cls == "LC:RecursiveCharacterTextSplitter":
+            text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
+        elif text_splitter_cls == "LC:CharacterTextSplitter":
+            text_splitter = CharacterTextSplitter(
+                chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
+        else:
+            raise ValueError("Unknown text splitter")
+    elif type == "Code":
+        text_splitter_cls = col.selectbox("Text Splitter", options=["CodeSplitter"])
+        if text_splitter_cls == "CodeSplitter":
+            language = col.text_input("Language", value="python")
+            max_chars = col.slider("Max Chars", value=1500)
 
-for ind, chunk in enumerate(chunks):
-    n_tokens = len(tokenizer(chunk))
-    n_chars = len(chunk)
-    st.text_area(f"Chunk {ind} - {n_tokens} tokens - {n_chars} chars", chunk)
+            text_splitter = CodeSplitter(language=language, max_chars=max_chars)
+        else:
+            raise ValueError("Unknown text splitter")
+
+    chunks = text_splitter.split_text(text)
+    tokenizer = tiktoken.get_encoding("gpt2").encode
+
+    for chunk_ind, chunk in enumerate(chunks):
+        n_tokens = len(tokenizer(chunk))
+        n_chars = len(chunk)
+        col.text_area(
+            f"Chunk {chunk_ind} - {n_tokens} tokens - {n_chars} chars",
+            chunk,
+            key=f"text_area_{ind}_{chunk_ind}",
+            height=500,
+        )
