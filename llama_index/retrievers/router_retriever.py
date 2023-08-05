@@ -29,7 +29,6 @@ class RouterRetriever(BaseRetriever):
             retrievers. They must be wrapped as tools to expose metadata to
             the selector.
         service_context (Optional[ServiceContext]): A service context.
-        summarizer (Optional[TreeSummarize]): Tree summarizer to summarize sub-results.
 
     """
 
@@ -53,9 +52,8 @@ class RouterRetriever(BaseRetriever):
         retriever_tools: Sequence[RetrieverTool],
         service_context: Optional[ServiceContext] = None,
         selector: Optional[BaseSelector] = None,
-        summarizer: Optional[TreeSummarize] = None,
         select_multi: bool = False,
-    ) -> "RetrieverTool":
+    ) -> "RouterRetriever":
         if selector is None and select_multi:
             selector = LLMMultiSelector.from_defaults(service_context=service_context)
         elif selector is None and not select_multi:
@@ -67,7 +65,6 @@ class RouterRetriever(BaseRetriever):
             selector,
             retriever_tools,
             service_context=service_context,
-            summarizer=summarizer,
         )
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
