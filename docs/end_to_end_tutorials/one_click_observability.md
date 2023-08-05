@@ -72,11 +72,13 @@ set_global_handler("arize_phoenix")
 ```
 
 #### Guides
-TODO
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/OpenInferenceCallback.ipynb
+```
 
-
-#### Guides
-TODO
 
 ### TruEra TruLens
 
