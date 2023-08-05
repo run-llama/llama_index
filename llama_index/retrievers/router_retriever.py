@@ -3,6 +3,7 @@
 import logging
 from typing import List, Optional, Sequence
 
+from llama_index.schema import NodeWithScore
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
@@ -37,18 +38,14 @@ class RouterRetriever(BaseRetriever):
         selector: BaseSelector,
         retriever_tools: Sequence[RetrieverTool],
         service_context: Optional[ServiceContext] = None,
-        summarizer: Optional[TreeSummarize] = None,
+        combine_mode: str = "OR",
     ) -> None:
         self.service_context = service_context or ServiceContext.from_defaults()
         self._selector = selector
         self._retrievers: List[BaseRetriever] = [x.retriever for x in retriever_tools]
         self._metadatas = [x.metadata for x in retriever_tools]
-        self._summarizer = summarizer or TreeSummarize(
-            service_context=self.service_context,
-            text_qa_template=DEFAULT_TEXT_QA_PROMPT,
-        )
-
-        super().__init__(self.service_context.callback_manager)
+        self.callback_manager = self.service_context.callback_manager
+        self._combine_mode = combine_mode
 
     @classmethod
     def from_defaults(
@@ -73,7 +70,7 @@ class RouterRetriever(BaseRetriever):
             summarizer=summarizer,
         )
 
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         with self.callback_manager.event(
             CBEventType.RETRIEVE,
             payload={EventPayload.QUERY_STR: query_bundle.query_str},
@@ -101,7 +98,7 @@ class RouterRetriever(BaseRetriever):
 
         return final_response
 
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         with self.callback_manager.event(
             CBEventType.RETRIEVE,
             payload={EventPayload.QUERY_STR: query_bundle.query_str},
