@@ -48,6 +48,8 @@ Our documentation includes detailed `Installation Instructions <./getting_starte
 
 Once you're up and running, `High-Level Concepts <./getting_started/concepts.html>`_ has an overview of LlamaIndex's modular architecture. For more hands-on practical examples, look through our `End-to-End Tutorials <./end_to_end_tutorials/use_cases.html>`_ or learn how to `customize <./getting_started/customization.html>`_ components to fit your specific needs.
 
+**NOTE**: We have a Typescript package too! [[Repo]](https://github.com/run-llama/LlamaIndexTS) [[Docs]](https://ts.llamaindex.ai/)
+
 🗺️ Ecosystem
 ************
 
@@ -58,6 +60,11 @@ To download or contribute, find LlamaIndex on:
 
   - LlamaIndex: https://pypi.org/project/llama-index/.
   - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
+
+- NPM (Typescript/Javascript):
+   - Github: https://github.com/run-llama/LlamaIndexTS
+   - Docs: https://ts.llamaindex.ai/
+   - LlamaIndex.TS: https://www.npmjs.com/package/llamaindex
 
 Community
 ---------

@@ -91,13 +91,15 @@ def llm_chat_callback() -> Callable:
 
             yield callback_manager
 
-        async def wrapped_async_llm_chat(_self: Any, *args: Any, **kwargs: Any) -> Any:
+        async def wrapped_async_llm_chat(
+            _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 event_id = callback_manager.on_event_start(
-                    CBEventType.LLM, payload={EventPayload.MESSAGES: args[0]}
+                    CBEventType.LLM, payload={EventPayload.MESSAGES: messages}
                 )
 
-                f_return_val = await f(_self, *args, **kwargs)
+                f_return_val = await f(_self, messages, **kwargs)
                 if isinstance(f_return_val, AsyncGenerator):
                     # intercept the generator and add a callback to the end
                     async def wrapped_gen() -> ChatResponseAsyncGen:
@@ -109,7 +111,7 @@ def llm_chat_callback() -> Callable:
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
-                                EventPayload.MESSAGES: args[0],
+                                EventPayload.MESSAGES: messages,
                                 EventPayload.RESPONSE: last_response,
                             },
                             event_id=event_id,
@@ -120,7 +122,7 @@ def llm_chat_callback() -> Callable:
                     callback_manager.on_event_end(
                         CBEventType.LLM,
                         payload={
-                            EventPayload.MESSAGES: args[0],
+                            EventPayload.MESSAGES: messages,
                             EventPayload.RESPONSE: f_return_val,
                         },
                         event_id=event_id,
@@ -128,12 +130,14 @@ def llm_chat_callback() -> Callable:
 
             return f_return_val
 
-        def wrapped_llm_chat(_self: Any, *args: Any, **kwargs: Any) -> Any:
+        def wrapped_llm_chat(
+            _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 event_id = callback_manager.on_event_start(
-                    CBEventType.LLM, payload={EventPayload.MESSAGES: args[0]}
+                    CBEventType.LLM, payload={EventPayload.MESSAGES: messages}
                 )
-                f_return_val = f(_self, *args, **kwargs)
+                f_return_val = f(_self, messages, **kwargs)
 
                 if isinstance(f_return_val, Generator):
                     # intercept the generator and add a callback to the end
@@ -146,7 +150,7 @@ def llm_chat_callback() -> Callable:
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
-                                EventPayload.MESSAGES: args[0],
+                                EventPayload.MESSAGES: messages,
                                 EventPayload.RESPONSE: last_response,
                             },
                             event_id=event_id,
@@ -157,7 +161,7 @@ def llm_chat_callback() -> Callable:
                     callback_manager.on_event_end(
                         CBEventType.LLM,
                         payload={
-                            EventPayload.MESSAGES: args[0],
+                            EventPayload.MESSAGES: messages,
                             EventPayload.RESPONSE: f_return_val,
                         },
                         event_id=event_id,
