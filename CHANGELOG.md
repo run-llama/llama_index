@@ -1,9 +1,14 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.20] - 2023-08-06
+
+### New Features
+- add router module docs (#7171)
+- add retriever router (#7166)
 
 ### Bug Fixes / Nits
 - Fix for issue where having multiple concurrent streamed responses from `OpenAIAgent` would result in interleaving of tokens across each response stream. (#7164)
+- fix llms callbacks issue (args[0] error) (#7165)
 
 ## [0.7.19] - 2023-08-04
 
