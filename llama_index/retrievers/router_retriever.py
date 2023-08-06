@@ -2,6 +2,7 @@
 
 import logging
 from typing import List, Optional, Sequence
+import asyncio
 
 from llama_index.schema import NodeWithScore
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -102,13 +103,19 @@ class RouterRetriever(BaseRetriever):
 
             if len(result.inds) > 1:
                 retrieved_results = {}
+                tasks = []
                 for i, engine_ind in enumerate(result.inds):
                     logger.info(
                         f"Selecting retriever {engine_ind}: " f"{result.reasons[i]}."
                     )
                     selected_retriever = self._retrievers[engine_ind]
-                    cur_results = await selected_retriever.aretrieve(query_bundle)
-                    retrieved_results.update({n.node.node_id: n for n in cur_results})
+                    tasks.append(selected_retriever.aretrieve(query_bundle))
+
+                results_of_results = await asyncio.gather(*tasks)
+                cur_results = [
+                    item for sublist in results_of_results for item in sublist
+                ]
+                retrieved_results.update({n.node.node_id: n for n in cur_results})
             else:
                 try:
                     selected_retriever = self._retrievers[result.ind]
