@@ -334,6 +334,25 @@ class SummaryExtractor(MetadataFeatureExtractor):
         return metadata_list
 
 
+DEFAULT_ENTITY_MAP = {
+    "PER": "persons",
+    "ORG": "organizations",
+    "LOC": "locations",
+    "ANIM": "animals",
+    "BIO": "biological",
+    "CEL": "celestial",
+    "DIS": "diseases",
+    "EVE": "events",
+    "FOOD": "foods",
+    "INST": "instruments",
+    "MEDIA": "media",
+    "PLANT": "plants",
+    "MYTH": "mythological",
+    "TIME": "times",
+    "VEHI": "vehicles",
+}
+
+
 class EntityExtractor(MetadataFeatureExtractor):
     """
     Entity extractor. Extracts `entities` into a metadata field using a default model
@@ -351,6 +370,9 @@ class EntityExtractor(MetadataFeatureExtractor):
         model_name: str = "tomaarsen/span-marker-xlm-roberta-base-multinerd",
         prediction_threshold: float = 0.5,
         span_joiner: str = " ",
+        label_entities: bool = False,
+        device: Optional[str] = None,
+        entity_map: Optional[Dict[str, str]] = None,
         tokenizer: Optional[Callable[[str], List[str]]] = None,
     ):
         try:
@@ -366,9 +388,16 @@ class EntityExtractor(MetadataFeatureExtractor):
             raise ImportError("NLTK is not installed. Install with `pip install nltk`.")
 
         self._model = SpanMarkerModel.from_pretrained(model_name)
+        if device is not None:
+            self._model = self._model.to(device)
+
         self._tokenizer = tokenizer or word_tokenize
         self._prediction_threshold = prediction_threshold
         self._span_joiner = span_joiner
+        self._label_entities = label_entities
+        self._entity_map = DEFAULT_ENTITY_MAP
+        if entity_map is not None:
+            self._entity_map.update(entity_map)
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         # Extract node-level entity metadata
@@ -377,9 +406,14 @@ class EntityExtractor(MetadataFeatureExtractor):
             node_text = nodes[i].get_content()
             words = self._tokenizer(node_text)
             spans = self._model.predict(words)
-            metadata["entities"] = []
             for span in spans:
                 if span["score"] > self._prediction_threshold:
-                    metadata["entities"].append(self._span_joiner.join(span["span"]))
+                    ent_label = self._entity_map.get(span["label"], span["label"])
+                    metadata_label = ent_label if self._label_entities else "entities"
+
+                    if metadata_label not in metadata:
+                        metadata[metadata_label] = set()
+
+                    metadata[metadata_label].add(self._span_joiner.join(span["span"]))
 
         return metadata_list
