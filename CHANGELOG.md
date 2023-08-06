@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added an `EntityExtractor` for metadata extraction (#7163)
+- Added a `RouterRetriever` for routing queries to specific retrievers (#7166)
+
 ## [0.7.19] - 2023-08-04
 
 ### New Features
