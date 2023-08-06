@@ -22,7 +22,7 @@ disambiguate the document or subsection from other similar documents or subsecti
 
 from abc import abstractmethod
 import json
-from typing import List, Optional, Sequence, cast, Dict
+from typing import List, Optional, Sequence, cast, Dict, Callable
 from functools import reduce
 
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
@@ -330,5 +330,56 @@ class SummaryExtractor(MetadataFeatureExtractor):
                 metadata["next_section_summary"] = node_summaries[i + 1]
             if self._self_summary:
                 metadata["section_summary"] = node_summaries[i]
+
+        return metadata_list
+
+
+class EntityExtractor(MetadataFeatureExtractor):
+    """
+    Entity extractor. Extracts `entities` into a metadata field using a default model
+    `tomaarsen/span-marker-xlm-roberta-base-multinerd` and the SpanMarker library.
+
+    Install SpanMarker with `pip install span-marker`.
+
+    Args:
+        model_name: (Optional[Str]): The name of the SpanMarker model.
+        Default is `tomaarsen/span-marker-xlm-roberta-base-multinerd`.
+    """
+
+    def __init__(
+        self,
+        model_name: str = "tomaarsen/span-marker-xlm-roberta-base-multinerd",
+        prediction_threshold: float = 0.5,
+        span_joiner: str = " ",
+        tokenizer: Optional[Callable[[str], List[str]]] = None,
+    ):
+        try:
+            from span_marker import SpanMarkerModel
+        except ImportError:
+            raise ImportError(
+                "SpanMarker is not installed. Install with `pip install span-marker`."
+            )
+
+        try:
+            from nltk.tokenize import word_tokenize
+        except ImportError:
+            raise ImportError("NLTK is not installed. Install with `pip install nltk`.")
+
+        self._model = SpanMarkerModel.from_pretrained(model_name)
+        self._tokenizer = tokenizer or word_tokenize
+        self._prediction_threshold = prediction_threshold
+        self._span_joiner = span_joiner
+
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        # Extract node-level entity metadata
+        metadata_list: List[Dict] = [{} for _ in nodes]
+        for i, metadata in enumerate(metadata_list):
+            node_text = nodes[i].get_content()
+            words = self._tokenizer(node_text)
+            spans = self._model.predict(words)
+            metadata["entities"] = []
+            for span in spans:
+                if span["score"] > self._prediction_threshold:
+                    metadata["entities"].append(self._span_joiner.join(span["span"]))
 
         return metadata_list
