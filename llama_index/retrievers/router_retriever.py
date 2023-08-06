@@ -35,14 +35,12 @@ class RouterRetriever(BaseRetriever):
         selector: BaseSelector,
         retriever_tools: Sequence[RetrieverTool],
         service_context: Optional[ServiceContext] = None,
-        combine_mode: str = "OR",
     ) -> None:
         self.service_context = service_context or ServiceContext.from_defaults()
         self._selector = selector
         self._retrievers: List[BaseRetriever] = [x.retriever for x in retriever_tools]
         self._metadatas = [x.metadata for x in retriever_tools]
         self.callback_manager = self.service_context.callback_manager
-        self._combine_mode = combine_mode
 
     @classmethod
     def from_defaults(
@@ -73,13 +71,14 @@ class RouterRetriever(BaseRetriever):
             result = self._selector.select(self._metadatas, query_bundle)
 
             if len(result.inds) > 1:
-                results = []
+                retrieved_results = {}
                 for i, engine_ind in enumerate(result.inds):
                     logger.info(
                         f"Selecting retriever {engine_ind}: " f"{result.reasons[i]}."
                     )
                     selected_retriever = self._retrievers[engine_ind]
-                    results.extend(selected_retriever.retrieve(query_bundle))
+                    cur_results = selected_retriever.retrieve(query_bundle)
+                    retrieved_results.update({n.node.node_id: n for n in cur_results})
             else:
                 try:
                     selected_retriever = self._retrievers[result.ind]
@@ -87,11 +86,12 @@ class RouterRetriever(BaseRetriever):
                 except ValueError as e:
                     raise ValueError("Failed to select retriever") from e
 
-                final_response = selected_retriever.retrieve(query_bundle)
+                cur_results = selected_retriever.retrieve(query_bundle)
+                retrieved_results = {n.node.node_id: n for n in cur_results}
 
-            query_event.on_end(payload={EventPayload.RESPONSE: final_response})
+            query_event.on_end(payload={EventPayload.NODES: retrieved_results})
 
-        return final_response
+        return list(retrieved_results.values())
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         with self.callback_manager.event(
@@ -101,13 +101,14 @@ class RouterRetriever(BaseRetriever):
             result = await self._selector.aselect(self._metadatas, query_bundle)
 
             if len(result.inds) > 1:
-                results = []
+                retrieved_results = {}
                 for i, engine_ind in enumerate(result.inds):
                     logger.info(
                         f"Selecting retriever {engine_ind}: " f"{result.reasons[i]}."
                     )
                     selected_retriever = self._retrievers[engine_ind]
-                    results.extend(await selected_retriever.aretrieve(query_bundle))
+                    cur_results = await selected_retriever.aretrieve(query_bundle)
+                    retrieved_results.update({n.node.node_id: n for n in cur_results})
             else:
                 try:
                     selected_retriever = self._retrievers[result.ind]
@@ -115,8 +116,9 @@ class RouterRetriever(BaseRetriever):
                 except ValueError as e:
                     raise ValueError("Failed to select retriever") from e
 
-                final_response = await selected_retriever.aretrieve(query_bundle)
+                cur_results = await selected_retriever.aretrieve(query_bundle)
+                retrieved_results = {n.node.node_id: n for n in cur_results}
 
-            query_event.on_end(payload={EventPayload.RESPONSE: final_response})
+            query_event.on_end(payload={EventPayload.NODES: retrieved_results})
 
-        return final_response
+        return list(retrieved_results.values())
