@@ -63,6 +63,7 @@ class TokenTextSplitter(TextSplitter):
         2. split by backup separators (if any)
         3. split by characters
 
+        NOTE: the splits contain the separators.
         """
         done_splitting = False
         if self._separator in text:
@@ -117,7 +118,7 @@ class TokenTextSplitter(TextSplitter):
             # we need to end the current chunk and start a new one
             if cur_len + split_len > self._chunk_size:
                 # end the previous chunk
-                chunk = self._separator.join(cur_chunk).strip()
+                chunk = "".join(cur_chunk).strip()
                 if chunk:
                     chunks.append(chunk)
 
@@ -137,7 +138,7 @@ class TokenTextSplitter(TextSplitter):
             cur_len += split_len
 
         # handle the last chunk
-        chunk = self._separator.join(cur_chunk).strip()
+        chunk = "".join(cur_chunk).strip()
         if chunk:
             chunks.append(chunk)
 
