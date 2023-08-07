@@ -111,12 +111,12 @@ class TokenTextSplitter(TextSplitter):
             new_docs.append(doc)
         return new_docs
 
-    def split_text(self, text: str, metadata_str: Optional[str] = None) -> List[str]:
+    def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            chunks = self._split_text(text, metadata_str=metadata_str)
+            chunks = self._split_text(text)
 
             event.on_end(
                 payload={EventPayload.CHUNKS: chunks},
