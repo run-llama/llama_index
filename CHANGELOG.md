@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [0.7.21] - 2023-08-07
+
+### New Features
+- Add entity metadata extractor (#7163)
+
 ## [0.7.20] - 2023-08-06
 
 ### New Features
