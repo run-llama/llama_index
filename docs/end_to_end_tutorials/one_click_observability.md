@@ -31,7 +31,7 @@ set_global_handler("<handler_name>", **kwargs)
 
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
 
-And that's it! Everything will get seamlessly piped to W&B Prompts and you'll be able to view rich traces of your application.
+And that's it! Executions will get seamlessly piped to downstream service (e.g. W&B Prompts) and you'll be able to access features such as viewing execution traces of your application.
 
 ## Partners
 
@@ -47,8 +47,18 @@ Prompts allows users to log/trace/inspect the execution flow of LlamaIndex durin
 ```python
 from llama_index import set_global_handler
 set_global_handler("wandb", run_args={"project": "llamaindex"})
+
+# NOTE: No need to do the following
+# from llama_index.callbacks import WandbCallbackHandler, CallbackManager
+# wandb_callback = WandbCallbackHandler(run_args={"project": "llamaindex"})
+# callback_manager = CallbackManager([wandb_callback])
+# service_context = ServiceContext.from_defaults(
+#     callback_manager=callback_manager
+# )
+
 ```
 
+![](/_static/integrations/wandb.png)
 
 #### Guides
 ```{toctree}
@@ -69,7 +79,24 @@ LlamaIndex integrates with Phoenix through their OpenInference standard.
 ```python
 from llama_index import set_global_handler
 set_global_handler("arize_phoenix")
+
+# NOTE: No need to do the following
+# from llama_index.callbacks import OpenInferenceCallbackHandler, CallbackManager
+# callback_handler = OpenInferenceCallbackHandler()
+# callback_manager = CallbackManager([callback_handler])
+# service_context = ServiceContext.from_defaults(
+#     callback_manager=callback_manager
+# )
+
+
+# view data as dataframe
+from llama_index.callbacks.open_inference_callback import as_dataframe
+query_data_buffer = callback_handler.flush_query_data_buffer()
+query_dataframe = as_dataframe(query_data_buffer)
+
 ```
+
+**NOTE**: to unlock capabilities of Phoenix you will need to define additional steps to feed in query/context dataframes. See below!
 
 #### Guides
 ```{toctree}
@@ -77,6 +104,7 @@ set_global_handler("arize_phoenix")
 maxdepth: 1
 ---
 /examples/callbacks/OpenInferenceCallback.ipynb
+Evaluating and Improving a LlamaIndex Search and Retrieval Application <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/llama_index_search_and_retrieval_tutorial.ipynb>
 ```
 
 
@@ -86,8 +114,9 @@ TruLens allows users to instrument/evaluate LlamaIndex applications, through fea
 
 #### Usage Pattern
 
-TODO:
+**NOTE**: We're currently still working on the "one-click" portion but see below for using TruLens + LlamaIndex.
 
+TODO:
 
 #### Guides
 
