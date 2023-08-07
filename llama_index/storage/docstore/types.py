@@ -116,11 +116,17 @@ class BaseDocumentStore(Pipeline):
             index: self.get_node(node_id) for index, node_id in node_id_dict.items()
         }
 
-    def schema(self) -> PipelineSchema:
+    def schema(
+        self,
+        include_children: bool = True,
+        omit_metadata: bool = False,
+    ) -> PipelineSchema:
         """Get schema."""
         return PipelineSchema(
             name="DocumentStore",
-            metadata={
+            metadata=None
+            if omit_metadata
+            else {
                 # "document_hash": self.get_document_hash(),
                 "doc_store_class": type(self).__name__,
                 "num_documents": len(self.docs),

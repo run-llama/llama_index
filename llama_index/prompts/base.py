@@ -173,10 +173,16 @@ class Prompt(Pipeline):
         kwargs.update(self.partial_dict)
         return kwargs
 
-    def schema(self):
+    def schema(
+        self,
+        include_children: bool = True,
+        omit_metadata: bool = False,
+    ) -> PipelineSchema:
         return PipelineSchema(
             name="Prompt",
-            metadata={
+            metadata=None
+            if omit_metadata
+            else {
                 "type": self.prompt_type,
                 "template": self.prompt.template,
                 "input_variables": self.prompt.input_variables,

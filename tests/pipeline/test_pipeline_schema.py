@@ -4,7 +4,7 @@ from llama_index.storage.docstore import SimpleDocumentStore
 from llama_index.llms import OpenAI
 
 
-def test_llm_schema():
+def test_llm_schema() -> None:
     llm = OpenAI("text-davinci-003")
     schema = llm.schema()
     assert (
@@ -24,7 +24,7 @@ def test_llm_schema():
     )
 
 
-def test_prompt_schema():
+def test_prompt_schema() -> None:
     prompt = Prompt(
         template="This is a {{my_var}} prompt",
     )
@@ -44,7 +44,7 @@ def test_prompt_schema():
     )
 
 
-def test_embedding_schema():
+def test_embedding_schema() -> None:
     embedding = OpenAIEmbedding()
     schema = embedding.schema()
     assert (
@@ -61,7 +61,7 @@ def test_embedding_schema():
     )
 
 
-def test_document_store_schema():
+def test_document_store_schema() -> None:
     document_store = SimpleDocumentStore()
     schema = document_store.schema()
     assert (
@@ -78,18 +78,18 @@ def test_document_store_schema():
     )
 
 
-def test_vector_index_schema():
+def test_vector_index_schema() -> None:
     pass
 
 
-def test_retriever_query_engine_schema():
+def test_retriever_query_engine_schema() -> None:
     pass
     # index = VectorStoreIndex.from_documents([Document.example()])
 
 
-def test_prompt_schema_partial_format():
+def test_prompt_schema_partial_format() -> None:
     pass
 
 
-def test_prompt_schema_prompt_selector():
+def test_prompt_schema_prompt_selector() -> None:
     pass

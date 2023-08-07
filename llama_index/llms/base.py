@@ -370,9 +370,13 @@ class LLM(Pipeline):
         """Async streaming completion endpoint for LLM."""
         pass
 
-    def schema(self) -> PipelineSchema:
+    def schema(
+        self,
+        include_children: bool = True,
+        omit_metadata: bool = False,
+    ) -> PipelineSchema:
         """Get pipeline schema."""
         return PipelineSchema(
             name="LLM",
-            metadata=self.metadata.dict(),
+            metadata=None if omit_metadata else self.metadata.dict(),
         )

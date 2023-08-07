@@ -320,10 +320,16 @@ class BaseEmbedding(Pipeline):
         """Set the last token usage."""
         self._last_token_usage = value
 
-    def schema(self) -> PipelineSchema:
+    def schema(
+        self,
+        include_children: bool = True,
+        omit_metadata: bool = False,
+    ) -> PipelineSchema:
         return PipelineSchema(
             name="Embedding",
-            metadata={
+            metadata=None
+            if omit_metadata
+            else {
                 "batch_size": self._embed_batch_size,
                 "embedding_class": type(self).__name__,
                 # TODO (jon-chuang): add more fields (e.g. model name)

@@ -27,7 +27,11 @@ class Pipeline(ABC):
     """
 
     @abstractmethod
-    def schema(self, include_children: bool=True) -> PipelineSchema:
+    def schema(
+        self,
+        include_children: bool = True,
+        omit_metadata: bool = False,
+    ) -> PipelineSchema:
         pass
 
     def children(self) -> List[PipelineSchema]:  # Which?
