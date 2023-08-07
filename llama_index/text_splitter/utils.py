@@ -28,3 +28,9 @@ def get_default_text_splitter(
         chunk_overlap=chunk_overlap,
         callback_manager=callback_manager,
     )
+
+def split_text_keep_separator(text: str, separator: str):
+    """Split text with separator and keep the separator at the end of each split."""
+    parts = text.split(separator)
+    result = [s + separator if i < len(parts) - 1 else s for i, s in enumerate(parts)]
+    return result

@@ -6,6 +6,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.text_splitter.types import TextSplitter
+from llama_index.text_splitter.utils import split_text_keep_separator
 from llama_index.utils import globals_helper
 
 _logger = logging.getLogger(__name__)
@@ -65,20 +66,20 @@ class TokenTextSplitter(TextSplitter):
         """
         done_splitting = False
         if self._separator in text:
-            # split by main separator
-            splits = text.split(self._separator)
+            # try split by main separator
+            splits = split_text_keep_separator(text, self._separator)
             done_splitting = True
 
         if not done_splitting and self._backup_separators is not None:
-            # split by any backup separators
+            # try split by any backup separators
             for sep in self._backup_separators:
                 if sep in text:
-                    splits = text.split(sep)
+                    splits = split_text_keep_separator(text, sep)
                     done_splitting = True
                     break
 
         if not done_splitting:
-            # split by characters
+            # split by characters if all else fails
             splits = list(text)
 
         new_splits = []
@@ -100,7 +101,6 @@ class TokenTextSplitter(TextSplitter):
         When we start a new chunk, we pop off the first element of the previous
         chunk until the total length is less than the chunk size.
         """
-        sep_len = len(self.tokenizer(self._separator))
         chunks: List[str] = []
 
         cur_chunk: List[str] = []
@@ -113,10 +113,9 @@ class TokenTextSplitter(TextSplitter):
                     f"larger than chunk size {self._chunk_size}.",
                 )
 
-            added_len = split_len + (sep_len if len(cur_chunk) > 0 else 0)
             # if we exceed the chunk size after adding the new split, then
             # we need to end the current chunk and start a new one
-            if cur_len + added_len > self._chunk_size:
+            if cur_len + split_len > self._chunk_size:
                 # end the previous chunk
                 chunk = self._separator.join(cur_chunk).strip()
                 if chunk:
@@ -128,14 +127,14 @@ class TokenTextSplitter(TextSplitter):
                 #   2. the total length is less than chunk size
                 while (
                     cur_len > self._chunk_overlap
-                    or cur_len + added_len > self._chunk_size
+                    or cur_len + split_len > self._chunk_size
                 ):
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)
-                    cur_len -= len(self.tokenizer(first_chunk)) + sep_len
+                    cur_len -= len(self.tokenizer(first_chunk))
 
             cur_chunk.append(split)
-            cur_len += added_len
+            cur_len += split_len
 
         # handle the last chunk
         chunk = self._separator.join(cur_chunk).strip()
