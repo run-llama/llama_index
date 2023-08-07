@@ -7,7 +7,7 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2"
 
 
 def save_embedding(embedding: List[float], file_path: str) -> None:
@@ -30,8 +30,17 @@ def resolve_embed_model(
 ) -> BaseEmbedding:
     """Resolve embed model."""
     if embed_model is None:
-        embed_model = OpenAIEmbedding()
-    elif isinstance(embed_model, str):
+        try:
+            return OpenAIEmbedding()
+        except ValueError:
+            embed_model = "local"
+            print(
+                "Could not load OpenAIEmbedding. Using default HuggingFaceEmbedding "
+                "with model_name=sentence-transformers/all-mpnet-base-v2. "
+                "Please check your API key if you intended to use OpenAI embeddings."
+            )
+
+    if isinstance(embed_model, str):
         splits = embed_model.split(":", 1)
         is_local = splits[0]
         model_name = splits[1] if len(splits) > 1 else None
@@ -52,7 +61,8 @@ def resolve_embed_model(
                 model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
         )
-    elif isinstance(embed_model, LCEmbeddings):
+
+    if isinstance(embed_model, LCEmbeddings):
         embed_model = LangchainEmbedding(embed_model)
 
     return embed_model
