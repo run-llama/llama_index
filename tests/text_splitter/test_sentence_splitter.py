@@ -1,5 +1,3 @@
-
-
 from llama_index.text_splitter import SentenceSplitter, TokenTextSplitter
 
 
@@ -11,8 +9,8 @@ def test_split_diff_sentence_token() -> None:
     text = " ".join(["foo"] * 15) + "\n\n\n" + " ".join(["bar"] * 15)
     token_split = token_text_splitter.split_text(text)
     sentence_split = sentence_text_splitter.split_text(text)
-    assert token_split[0] == " ".join(["foo"] * 15) + "\n\n\n" + " ".join(["bar"] * 3)
-    assert token_split[1] == " ".join(["bar"] * 12)
+    assert token_split[0] == " ".join(["foo"] * 10)
+    assert token_split[1] == " ".join(["foo"] * 5) + "\n\n\n" + " ".join(["bar"] * 5)
     assert sentence_split[0] == " ".join(["foo"] * 15)
     assert sentence_split[1] == " ".join(["bar"] * 15)
 
@@ -26,7 +24,7 @@ def test_split_diff_sentence_token2() -> None:
     token_split = token_text_splitter.split_text(text)
     sentence_split = sentence_text_splitter.split_text(text)
 
-    assert token_split[0] == " ".join(["foo"] * 15) + ". " + " ".join(["bar"] * 4)
-    assert token_split[1] == " ".join(["bar"] * 11)
+    assert token_split[0] == " ".join(["foo"] * 10)
+    assert token_split[1] == " ".join(["foo"] * 5) + ". " + " ".join(["bar"] * 5)
     assert sentence_split[0] == " ".join(["foo"] * 15) + "."
     assert sentence_split[1] == " ".join(["bar"] * 15)

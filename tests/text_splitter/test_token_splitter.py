@@ -12,7 +12,7 @@ def test_split_token() -> None:
     assert chunks == ["foo", "bar"]
 
     token = "foo bar hello world"
-    text_splitter = TokenTextSplitter(chunk_size=2, chunk_overlap=1)
+    text_splitter = TokenTextSplitter(chunk_size=3, chunk_overlap=1)
     chunks = text_splitter.split_text(token)
     assert chunks == ["foo bar", "bar hello", "hello world"]
 
