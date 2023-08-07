@@ -1,3 +1,4 @@
+from typing import Optional
 from typing_extensions import NotRequired, TypedDict
 
 from llama_index.llms.base import ChatMessage
@@ -17,12 +18,12 @@ XINFERENCE_MODEL_SIZES = {
 
 class ChatCompletionMessage(TypedDict):
     role: str
-    content: str
+    content: Optional[str]
     user: NotRequired[str]
 
 
 def xinference_message_to_history(message: ChatMessage) -> ChatCompletionMessage:
-    return ChatCompletionMessage(role=str(message.role), content=message.content)
+    return ChatCompletionMessage(role=message.role, content=message.content)
 
 
 def xinference_modelname_to_contextsize(modelname: str) -> int:

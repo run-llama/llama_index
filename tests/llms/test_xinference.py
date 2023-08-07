@@ -1,5 +1,4 @@
-from typing import List, Dict, Any, Union, Iterator
-from typing_extensions import NotRequired, TypedDict
+from typing import List, Dict, Any, Union, Iterator, Generator, Mapping, Sequence
 
 import pytest
 from llama_index.llms.base import (
@@ -10,7 +9,7 @@ from llama_index.llms.base import (
 )
 from llama_index.llms.xinference import Xinference
 
-mock_chat_history = [
+mock_chat_history: List[ChatMessage] = [
     ChatMessage(
         role=MessageRole.USER,
         message="mock_chat_history_0",
@@ -25,7 +24,7 @@ mock_chat_history = [
     ),
 ]
 
-mock_chat = {
+mock_chat: Dict[str, Any] = {
     "id": "test_id",
     "object": "chat.completion",
     "created": 0,
@@ -40,7 +39,7 @@ mock_chat = {
     "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
 }
 
-mock_chat_stream = [
+mock_chat_stream: List[Dict[str, Any]] = [
     {
         "id": "test_id",
         "model": "test_model",
@@ -73,7 +72,7 @@ mock_chat_stream = [
 ]
 
 
-def mock_chat_stream_iterator():
+def mock_chat_stream_iterator() -> Generator:
     for i in mock_chat_stream:
         yield i
 
@@ -82,7 +81,7 @@ class MockXinferenceModel:
     def chat(
         self,
         prompt: str,
-        chat_history: List[TypedDict],
+        chat_history: List[Mapping[str, Any]],
         generate_config: Dict[str, Any],
     ) -> Union[Iterator[Dict[str, Any]], Dict[str, Any]]:
         assert isinstance(prompt, str)
@@ -100,33 +99,19 @@ class MockXinferenceModel:
 
 
 class MockRESTfulClient:
-    def get_model(self) -> None:
+    def get_model(self) -> MockXinferenceModel:
         return MockXinferenceModel()
 
 
 class MockXinference(Xinference):
     def load(self) -> None:
-        try:
-            from xinference.client import RESTfulClient
-        except ImportError:
-            raise ImportError(
-                "Could not import Xinference library."
-                'Please install Xinference with `pip install "xinference[all]"`'
-            )
+        self._client = MockRESTfulClient()  # type: ignore[assignment]
 
-        self._client = MockRESTfulClient()
+        assert self._client is not None
         self._generator = self._client.get_model()
 
 
-def test_init():
-    try:
-        from xinference.client import RESTfulClient
-    except ImportError:
-        raise ImportError(
-            "Could not import Xinference library."
-            'Please install Xinference with `pip install "xinference[all]"`'
-        )
-
+def test_init() -> None:
     dummy = MockXinference(
         model_uid="uid",
         endpoint="endpoint",
@@ -137,7 +122,9 @@ def test_init():
 
 
 @pytest.mark.parametrize("chat_history", [mock_chat_history, tuple(mock_chat_history)])
-def test_chat(chat_history):
+def test_chat(
+        chat_history: Sequence[ChatMessage]
+) -> None:
     dummy = MockXinference("uid", "endpoint")
     response = dummy.chat(chat_history)
     assert isinstance(response, ChatResponse)
@@ -147,13 +134,18 @@ def test_chat(chat_history):
 
 
 @pytest.mark.parametrize("chat_history", [mock_chat_history, tuple(mock_chat_history)])
-def test_stream_chat(chat_history):
+def test_stream_chat(
+        chat_history: Sequence[ChatMessage]
+) -> None:
     dummy = MockXinference("uid", "endpoint")
     response_gen = dummy.stream_chat(chat_history)
     total_text = ""
     for i, res in enumerate(response_gen):
         assert i < len(mock_chat_stream)
         assert isinstance(res, ChatResponse)
+        assert isinstance(mock_chat_stream[i]["choices"], List)
+        assert isinstance(mock_chat_stream[i]["choices"][0], Dict)
+        assert isinstance(mock_chat_stream[i]["choices"][0]["delta"], Dict)
         assert res.delta == mock_chat_stream[i]["choices"][0]["delta"].get(
             "content", ""
         )
@@ -163,7 +155,7 @@ def test_stream_chat(chat_history):
         assert total_text == res.message.content
 
 
-def test_complete():
+def test_complete() -> None:
     messages = "test_input"
     dummy = MockXinference("uid", "endpoint")
     response = dummy.complete(messages)
@@ -172,7 +164,7 @@ def test_complete():
     assert response.text == "test_response"
 
 
-def test_stream_complete():
+def test_stream_complete() -> None:
     message = "test_input"
     dummy = MockXinference("uid", "endpoint")
     response_gen = dummy.stream_complete(prompt=message)

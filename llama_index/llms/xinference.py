@@ -48,8 +48,26 @@ class Xinference(CustomLLM):
             )
 
         self._client = RESTfulClient(self.endpoint)
+
+        try:
+            assert isinstance(self._client, RESTfulClient)
+        except AssertionError:
+            raise RuntimeError(
+                "Could not create RESTfulClient instance."
+                "Please make sure Xinference endpoint is running at the correct port."
+            )
+
         self._generator = self._client.get_model(self.model_uid)
         self._model_description = self._client.list_models()[self.model_uid]
+
+        try:
+            assert self._generator is not None
+            assert self._model_description is not None
+        except AssertionError:
+            raise RuntimeError(
+                "Could not get model from endpoint."
+                "Please make sure Xinference endpoint is running at the correct port."
+            )
 
         self._model = self._model_description["model_name"]
         self._context_window = xinference_modelname_to_contextsize(self._model)
@@ -57,6 +75,7 @@ class Xinference(CustomLLM):
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
+        assert isinstance(self._context_window, int)
         return LLMMetadata(
             context_window=int(self._context_window // TOKEN_RATIO),
             num_output=DEFAULT_NUM_OUTPUTS,
@@ -65,6 +84,7 @@ class Xinference(CustomLLM):
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
+        assert self._context_window is not None
         base_kwargs = {
             "temperature": self.temperature,
             "max_length": self._context_window,
@@ -79,6 +99,7 @@ class Xinference(CustomLLM):
         return {"prompt": prompt, **self._model_kwargs, **kwargs}
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        assert self._generator is not None
         prompt = messages[-1].content if len(messages) > 0 else ""
         history = [xinference_message_to_history(message) for message in messages[:-1]]
         response_text = self._generator.chat(
@@ -98,6 +119,7 @@ class Xinference(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        assert self._generator is not None
         prompt = messages[-1].content if len(messages) > 0 else ""
         history = [xinference_message_to_history(message) for message in messages[:-1]]
         response_iter = self._generator.chat(
@@ -106,7 +128,7 @@ class Xinference(CustomLLM):
             generate_config={"stream": True, "temperature": self.temperature},
         )
 
-        def gen() -> ChatResponseGen:
+        def gen() -> None:
             text = ""
             for c in response_iter:
                 delta = c["choices"][0]["delta"].get("content", "")
@@ -122,6 +144,7 @@ class Xinference(CustomLLM):
         return gen()
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        assert self._generator is not None
         response_text = self._generator.chat(
             prompt=prompt,
             chat_history=None,
@@ -134,6 +157,7 @@ class Xinference(CustomLLM):
         return response
 
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        assert self._generator is not None
         response_iter = self._generator.chat(
             prompt=prompt,
             chat_history=None,
