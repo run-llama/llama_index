@@ -4,7 +4,7 @@ from typing import Callable, List, Optional
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
-from llama_index.text_splitter.types import TextSplit, TextSplitter
+from llama_index.text_splitter.types import TextSplitter
 from llama_index.utils import globals_helper
 
 
@@ -101,12 +101,12 @@ class TokenTextSplitter(TextSplitter):
                 new_splits.extend(cur_splits2)
         return new_splits
 
-    def _postprocess_splits(self, docs: List[TextSplit]) -> List[TextSplit]:
+    def _postprocess_splits(self, docs: List[str]) -> List[str]:
         """Post-process splits."""
         # TODO: prune text splits, remove empty spaces
         new_docs = []
         for doc in docs:
-            if doc.text_chunk.replace(" ", "") == "":
+            if doc.replace(" ", "") == "":
                 continue
             new_docs.append(doc)
         return new_docs
@@ -116,8 +116,7 @@ class TokenTextSplitter(TextSplitter):
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            text_splits = self.split_text_with_overlaps(text, metadata_str=metadata_str)
-            chunks = [text_split.text_chunk for text_split in text_splits]
+            chunks = self._split_text(text, metadata_str=metadata_str)
 
             event.on_end(
                 payload={EventPayload.CHUNKS: chunks},
@@ -125,9 +124,7 @@ class TokenTextSplitter(TextSplitter):
 
         return chunks
 
-    def split_text_with_overlaps(
-        self, text: str, metadata_str: Optional[str] = None
-    ) -> List[TextSplit]:
+    def _split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks with overlap size."""
         if text == "":
             return []
@@ -135,28 +132,14 @@ class TokenTextSplitter(TextSplitter):
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            # NOTE: Consider metadata info str that will be added
-            #   to the chunk at query time. This reduces the effective
-            #   chunk size that we can have
-            if metadata_str is not None:
-                # NOTE: extra 2 newline chars for formatting when prepending in query
-                num_extra_tokens = len(self.tokenizer(f"{metadata_str}\n\n")) + 1
-                effective_chunk_size = self._chunk_size - num_extra_tokens
-
-                if effective_chunk_size <= 0:
-                    raise ValueError(
-                        "Effective chunk size is non positive "
-                        "after considering metadata"
-                    )
-            else:
-                effective_chunk_size = self._chunk_size
+            self._chunk_size = self._chunk_size
 
             # First we naively split the large input into a bunch of smaller ones.
             splits = text.split(self._separator)
-            splits = self._preprocess_splits(splits, effective_chunk_size)
+            splits = self._preprocess_splits(splits, self._chunk_size)
             # We now want to combine these smaller pieces into medium size
             # chunks to send to the LLM.
-            docs: List[TextSplit] = []
+            docs: List[str] = []
 
             start_idx = 0
             cur_idx = 0
@@ -165,17 +148,17 @@ class TokenTextSplitter(TextSplitter):
             while cur_idx < len(splits):
                 cur_token = splits[cur_idx]
                 num_cur_tokens = max(len(self.tokenizer(cur_token)), 1)
-                if num_cur_tokens > effective_chunk_size:
+                if num_cur_tokens > self._chunk_size:
                     raise ValueError(
                         "A single term is larger than the allowed chunk size.\n"
                         f"Term size: {num_cur_tokens}\n"
                         f"Chunk size: {self._chunk_size}"
-                        f"Effective chunk size: {effective_chunk_size}"
+                        f"Effective chunk size: {self._chunk_size}"
                     )
                 # If adding token to current_doc would exceed the chunk size:
                 # 1. First verify with tokenizer that current_doc
                 # 1. Update the docs list
-                if cur_total + num_cur_tokens > effective_chunk_size:
+                if cur_total + num_cur_tokens > self._chunk_size:
                     # NOTE: since we use a proxy for counting tokens, we want to
                     # run tokenizer across all of current_doc first. If
                     # the chunk is too big, then we will reduce text in pieces
@@ -188,11 +171,7 @@ class TokenTextSplitter(TextSplitter):
                             [len(splits[i]) for i in range(start_idx, prev_idx)]
                         )
 
-                    docs.append(
-                        TextSplit(
-                            self._separator.join(splits[start_idx:cur_idx]), overlap
-                        )
-                    )
+                    docs.append(self._separator.join(splits[start_idx:cur_idx]))
                     prev_idx = cur_idx
                     # 2. Shrink the current_doc (from the front) until it is gets
                     # smaller than the overlap size
@@ -225,14 +204,12 @@ class TokenTextSplitter(TextSplitter):
                 overlap = sum(
                     [len(splits[i]) for i in range(start_idx, prev_idx)]
                 ) + len(range(start_idx, prev_idx))
-            docs.append(
-                TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap)
-            )
+            docs.append(self._separator.join(splits[start_idx:cur_idx]))
 
             # run postprocessing to remove blank spaces
             docs = self._postprocess_splits(docs)
 
-            event.on_end(payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]})
+            event.on_end(payload={EventPayload.CHUNKS: docs})
 
         return docs
 

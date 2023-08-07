@@ -5,7 +5,7 @@ from typing import Callable, List, Optional
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_SIZE
-from llama_index.text_splitter.types import TextSplit, TextSplitter
+from llama_index.text_splitter.types import TextSplitter
 from llama_index.utils import globals_helper
 
 
@@ -70,19 +70,17 @@ class SentenceSplitter(TextSplitter):
         delimiters themselves as separate items in the list of phrases.
         """
 
-    def _postprocess_splits(self, docs: List[TextSplit]) -> List[TextSplit]:
+    def _postprocess_splits(self, docs: List[str]) -> List[str]:
         """Post-process splits."""
         # TODO: prune text splits, remove empty spaces
         new_docs = []
         for doc in docs:
-            if doc.text_chunk.replace(" ", "") == "":
+            if doc.replace(" ", "") == "":
                 continue
             new_docs.append(doc)
         return new_docs
 
-    def split_text_with_overlaps(
-        self, text: str, metadata_str: Optional[str] = None
-    ) -> List[TextSplit]:
+    def _split_text(self, text: str) -> List[str]:
         """
         Split incoming text and return chunks with overlap size.
 
@@ -94,21 +92,6 @@ class SentenceSplitter(TextSplitter):
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            # NOTE: Consider metadata info str that will be added to the chunk at query
-            #       This reduces the effective chunk size that we can have
-            if metadata_str is not None:
-                # NOTE: extra 2 newline chars for formatting when prepending in query
-                num_extra_tokens = len(self.tokenizer(f"{metadata_str}\n\n")) + 1
-                effective_chunk_size = self._chunk_size - num_extra_tokens
-
-                if effective_chunk_size <= 0:
-                    raise ValueError(
-                        "Effective chunk size is non positive "
-                        "after considering metadata"
-                    )
-            else:
-                effective_chunk_size = self._chunk_size
-
             # First we split paragraphs using separator
             splits = text.split(self.paragraph_separator)
 
@@ -116,7 +99,7 @@ class SentenceSplitter(TextSplitter):
 
             idx = 0
             while idx < len(splits):
-                if idx < len(splits) - 1 and len(splits[idx]) < effective_chunk_size:
+                if idx < len(splits) - 1 and len(splits[idx]) < self._chunk_size:
                     splits[idx] = "\n\n".join([splits[idx], splits[idx + 1]])
                     splits.pop(idx + 1)
                 else:
@@ -138,7 +121,7 @@ class SentenceSplitter(TextSplitter):
             new_splits: List[Split] = []
             for split in splits:
                 split_len = len(self.tokenizer(split))
-                if split_len <= effective_chunk_size:
+                if split_len <= self._chunk_size:
                     new_splits.append(Split(split, True))
                 else:
                     if self.second_chunking_regex is not None:
@@ -150,7 +133,7 @@ class SentenceSplitter(TextSplitter):
                     else:
                         splits2 = [split]
                     for split2 in splits2:
-                        if len(self.tokenizer(split2)) <= effective_chunk_size:
+                        if len(self.tokenizer(split2)) <= self._chunk_size:
                             new_splits.append(Split(split2, False))
                         else:
                             splits3 = split2.split(self._separator)
@@ -159,47 +142,47 @@ class SentenceSplitter(TextSplitter):
                             )
 
             # Create the list of text splits by combining smaller chunks.
-            docs: List[TextSplit] = []
+            docs: List[str] = []
             cur_doc_list: List[str] = []
             cur_tokens = 0
             while len(new_splits) > 0:
                 cur_token = new_splits[0]
                 cur_len = len(self.tokenizer(cur_token.text))
-                if cur_len > effective_chunk_size:
+                if cur_len > self._chunk_size:
                     raise ValueError("Single token exceed chunk size")
-                if cur_tokens + cur_len > effective_chunk_size:
-                    docs.append(TextSplit("".join(cur_doc_list).strip()))
+                if cur_tokens + cur_len > self._chunk_size:
+                    docs.append("".join(cur_doc_list).strip())
                     cur_doc_list = []
                     cur_tokens = 0
                 else:
                     if (
                         cur_token.is_sentence
                         or cur_tokens + cur_len
-                        < effective_chunk_size - self._chunk_overlap
+                        < self._chunk_size - self._chunk_overlap
                     ):
                         cur_tokens += cur_len
                         cur_doc_list.append(cur_token.text)
                         new_splits.pop(0)
                     else:
-                        docs.append(TextSplit("".join(cur_doc_list).strip()))
+                        docs.append("".join(cur_doc_list).strip())
                         cur_doc_list = []
                         cur_tokens = 0
 
-            docs.append(TextSplit("".join(cur_doc_list).strip()))
+            docs.append("".join(cur_doc_list).strip())
 
             # run postprocessing to remove blank spaces
             docs = self._postprocess_splits(docs)
 
-            event.on_end(payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]})
+            event.on_end(payload={EventPayload.CHUNKS: [x for x in docs]})
 
         return docs
 
-    def split_text(self, text: str, metadata_str: Optional[str] = None) -> List[str]:
+    def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            text_splits = self.split_text_with_overlaps(text, metadata_str=metadata_str)
+            text_splits = self.split_text_with_overlaps(text)
             chunks = [text_split.text_chunk for text_split in text_splits]
 
             event.on_end(
