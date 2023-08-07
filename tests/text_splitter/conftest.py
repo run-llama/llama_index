@@ -20,3 +20,7 @@ def chinese_text() -> str:
 
 希望这篇文章对你有帮助！如果你有其他主题的需求，欢迎随时告诉我。\
 """
+
+@pytest.fixture
+def contiguous_text() -> str:
+    return "abcde" * 200
