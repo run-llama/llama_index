@@ -15,7 +15,6 @@ from llama_index.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.schema import NodeWithScore, TextNode
-from llama_index.text_splitter import SentenceSplitter
 from llama_index.text_splitter.types import TextSplitter
 from llama_index.text_splitter.utils import get_default_text_splitter
 
@@ -120,7 +119,7 @@ class CitationQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
-        text_splitter: Optional[TextSplitterType] = None,
+        text_splitter: Optional[TextSplitter] = None,
         citation_qa_template: Prompt = CITATION_QA_TEMPLATE,
         citation_refine_template: Prompt = CITATION_REFINE_TEMPLATE,
         retriever: Optional[BaseRetriever] = None,
@@ -140,7 +139,7 @@ class CitationQueryEngine(BaseQueryEngine):
                 Size of citation chunks, default=512. Useful for controlling
                 granularity of sources.
             citation_chunk_overlap (int): Overlap of citation nodes, default=20.
-            text_splitter (Optional[TextSplitterType]):
+            text_splitter (Optional[TextSplitter]):
                 A text splitter for creating citation source nodes. Default is
                 a SentenceSplitter.
             citation_qa_template (Prompt): Template for initial citation QA

@@ -157,8 +157,7 @@ class SentenceSplitter(TextSplitter):
                 else:
                     if (
                         cur_token.is_sentence
-                        or cur_tokens + cur_len
-                        < self._chunk_size - self._chunk_overlap
+                        or cur_tokens + cur_len < self._chunk_size - self._chunk_overlap
                     ):
                         cur_tokens += cur_len
                         cur_doc_list.append(cur_token.text)

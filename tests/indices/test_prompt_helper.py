@@ -61,9 +61,7 @@ def test_get_text_splitter() -> None:
     test_text = "Hello world foo Hello world bar"
     text_chunks = text_splitter.split_text(test_text)
     assert text_chunks == ["Hello world", "foo Hello", "world bar"]
-    truncated_text = truncate_text(
-        test_text,
-    )
+    truncated_text = truncate_text(test_text, text_splitter)
     assert truncated_text == "Hello world"
 
     # test with chunk_size_limit
