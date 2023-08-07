@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import contextmanager
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from enum import Enum
 from typing import Any, AsyncGenerator, Callable, Generator, Optional, Sequence, cast
 
@@ -376,4 +376,3 @@ class LLM(Pipeline):
             name="LLM",
             metadata=self.metadata.dict(),
         )
-

@@ -1,13 +1,15 @@
 from llama_index.prompts import Prompt
-from llama_index.schema import Document
 from llama_index import OpenAIEmbedding
 from llama_index.storage.docstore import SimpleDocumentStore
 from llama_index.llms import OpenAI
 
+
 def test_llm_schema():
-    llm = OpenAI('text-davinci-003')
+    llm = OpenAI("text-davinci-003")
     schema = llm.schema()
-    assert schema.json() == """\
+    assert (
+        schema.json()
+        == """\
 {
   "name": "LLM",
   "metadata": {
@@ -19,13 +21,17 @@ def test_llm_schema():
   },
   "children": []
 }"""
-  
+    )
+
+
 def test_prompt_schema():
     prompt = Prompt(
         template="This is a {{my_var}} prompt",
     )
     schema = prompt.schema()
-    assert schema.json() == """\
+    assert (
+        schema.json()
+        == """\
 {
   "name": "Prompt",
   "metadata": {
@@ -35,11 +41,15 @@ def test_prompt_schema():
   },
   "children": []
 }"""
+    )
+
 
 def test_embedding_schema():
     embedding = OpenAIEmbedding()
     schema = embedding.schema()
-    assert schema.json() == """\
+    assert (
+        schema.json()
+        == """\
 {
   "name": "Embedding",
   "metadata": {
@@ -48,11 +58,15 @@ def test_embedding_schema():
   },
   "children": []
 }"""
+    )
+
 
 def test_document_store_schema():
     document_store = SimpleDocumentStore()
     schema = document_store.schema()
-    assert schema.json() == """\
+    assert (
+        schema.json()
+        == """\
 {
   "name": "DocumentStore",
   "metadata": {
@@ -61,16 +75,21 @@ def test_document_store_schema():
   },
   "children": []
 }"""
+    )
+
 
 def test_vector_index_schema():
     pass
 
+
 def test_retriever_query_engine_schema():
     pass
-    #index = VectorStoreIndex.from_documents([Document.example()])
+    # index = VectorStoreIndex.from_documents([Document.example()])
+
 
 def test_prompt_schema_partial_format():
     pass
+
 
 def test_prompt_schema_prompt_selector():
     pass

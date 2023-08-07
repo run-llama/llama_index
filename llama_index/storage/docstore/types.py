@@ -1,6 +1,6 @@
 import os
 import fsspec
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from typing import Any, Dict, List, Optional, Sequence
@@ -115,7 +115,7 @@ class BaseDocumentStore(Pipeline):
         return {
             index: self.get_node(node_id) for index, node_id in node_id_dict.items()
         }
-    
+
     def schema(self) -> PipelineSchema:
         """Get schema."""
         return PipelineSchema(

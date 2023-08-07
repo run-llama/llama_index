@@ -327,5 +327,5 @@ class BaseEmbedding(Pipeline):
                 "batch_size": self._embed_batch_size,
                 "embedding_class": type(self).__name__,
                 # TODO (jon-chuang): add more fields (e.g. model name)
-            }
+            },
         )
