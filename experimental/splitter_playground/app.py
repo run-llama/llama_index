@@ -9,6 +9,7 @@ from langchain.text_splitter import (
     RecursiveCharacterTextSplitter,
 )
 from langchain.text_splitter import TokenTextSplitter as LCTokenTextSplitter
+from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from llama_index import SimpleDirectoryReader
 from llama_index.schema import Document
@@ -21,10 +22,11 @@ text = st.sidebar.text_area("Enter text", value=DEFAULT_TEXT)
 uploaded_files = st.sidebar.file_uploader("Upload file", accept_multiple_files=True)
 type = st.sidebar.radio("Document Type", options=["Text", "Code"])
 n_cols = st.sidebar.number_input("Columns", value=2, min_value=1, max_value=3)
+assert isinstance(n_cols, int)
 
 
 @st.cache_resource(ttl="1h")
-def load_document(uploaded_files) -> List[Document]:
+def load_document(uploaded_files: List[UploadedFile]) -> List[Document]:
     # Read documents
     docs = []
     temp_dir = tempfile.TemporaryDirectory()
