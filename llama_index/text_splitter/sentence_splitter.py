@@ -80,7 +80,7 @@ class SentenceSplitter(TextSplitter):
             new_docs.append(doc)
         return new_docs
 
-    def _split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> List[str]:
         """
         Split incoming text and return chunks with overlap size.
 
@@ -173,20 +173,6 @@ class SentenceSplitter(TextSplitter):
             # run postprocessing to remove blank spaces
             docs = self._postprocess_splits(docs)
 
-            event.on_end(payload={EventPayload.CHUNKS: [x for x in docs]})
+            event.on_end(payload={EventPayload.CHUNKS: docs})
 
         return docs
-
-    def split_text(self, text: str) -> List[str]:
-        """Split incoming text and return chunks."""
-        with self.callback_manager.event(
-            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
-        ) as event:
-            text_splits = self.split_text_with_overlaps(text)
-            chunks = [text_split.text_chunk for text_split in text_splits]
-
-            event.on_end(
-                payload={EventPayload.CHUNKS: chunks},
-            )
-
-        return chunks

@@ -1,4 +1,4 @@
-"""Text splitter implementations."""
+"""Token splitter."""
 from typing import Callable, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
@@ -132,8 +132,6 @@ class TokenTextSplitter(TextSplitter):
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            self._chunk_size = self._chunk_size
-
             # First we naively split the large input into a bunch of smaller ones.
             splits = text.split(self._separator)
             splits = self._preprocess_splits(splits, self._chunk_size)
@@ -212,24 +210,3 @@ class TokenTextSplitter(TextSplitter):
             event.on_end(payload={EventPayload.CHUNKS: docs})
 
         return docs
-
-    def truncate_text(self, text: str) -> str:
-        """Truncate text in order to fit the underlying chunk size."""
-        if text == "":
-            return ""
-        # First we naively split the large input into a bunch of smaller ones.
-        splits = text.split(self._separator)
-        splits = self._preprocess_splits(splits, self._chunk_size)
-
-        start_idx = 0
-        cur_idx = 0
-        cur_total = 0
-        while cur_idx < len(splits):
-            cur_token = splits[cur_idx]
-            num_cur_tokens = max(len(self.tokenizer(cur_token)), 1)
-            if cur_total + num_cur_tokens > self._chunk_size:
-                cur_idx = self._reduce_chunk_size(start_idx, cur_idx, splits)
-                break
-            cur_total += num_cur_tokens
-            cur_idx += 1
-        return self._separator.join(splits[start_idx:cur_idx])

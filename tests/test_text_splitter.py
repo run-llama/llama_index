@@ -3,6 +3,7 @@ import os
 
 from llama_index.text_splitter import (CodeSplitter, SentenceSplitter,
                                        TokenTextSplitter)
+from llama_index.text_splitter.utils import truncate_text
 
 
 def test_split_token() -> None:
@@ -24,7 +25,7 @@ def test_truncate_token() -> None:
     # tiktoken will say length is ~5k
     token = "foo bar"
     text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
-    chunks = text_splitter.truncate_text(token)
+    chunks = truncate_text(token, text_splitter)
     assert chunks == "foo"
 
 

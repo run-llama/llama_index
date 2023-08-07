@@ -2,12 +2,12 @@
 from typing import cast
 
 from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
-
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
-from llama_index.prompts.utils import get_biggest_prompt, get_empty_prompt_txt
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.utils import get_biggest_prompt, get_empty_prompt_txt
 from llama_index.schema import TextNode
+from llama_index.text_splitter.utils import truncate_text
 from tests.mock_utils.mock_utils import mock_tokenizer
 
 
@@ -61,7 +61,9 @@ def test_get_text_splitter() -> None:
     test_text = "Hello world foo Hello world bar"
     text_chunks = text_splitter.split_text(test_text)
     assert text_chunks == ["Hello world", "foo Hello", "world bar"]
-    truncated_text = text_splitter.truncate_text(test_text)
+    truncated_text = truncate_text(
+        test_text,
+    )
     assert truncated_text == "Hello world"
 
     # test with chunk_size_limit
@@ -94,7 +96,7 @@ def test_get_text_splitter_partial() -> None:
     test_text = "Hello world foo Hello world bar"
     text_chunks = text_splitter.split_text(test_text)
     assert text_chunks == ["Hello world", "foo Hello", "world bar"]
-    truncated_text = text_splitter.truncate_text(test_text)
+    truncated_text = truncate_text(test_text, text_splitter)
     assert truncated_text == "Hello world"
 
     # test with partially formatting
@@ -110,7 +112,7 @@ def test_get_text_splitter_partial() -> None:
     test_text = "Hello world foo Hello world bar"
     text_chunks = text_splitter.split_text(test_text)
     assert text_chunks == ["Hello world", "foo Hello", "world bar"]
-    truncated_text = text_splitter.truncate_text(test_text)
+    truncated_text = truncate_text(test_text, text_splitter)
     assert truncated_text == "Hello world"
 
 
