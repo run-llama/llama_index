@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-from llama_index.callbacks.base import BaseCallbackHandler
+from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import (
     CBEvent,
     CBEventType,

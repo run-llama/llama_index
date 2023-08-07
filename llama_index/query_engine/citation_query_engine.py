@@ -17,6 +17,7 @@ from llama_index.response_synthesizers import (
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.text_splitter import SentenceSplitter
 from llama_index.text_splitter.types import TextSplitter
+from llama_index.text_splitter.utils import get_default_text_splitter
 
 CITATION_QA_TEMPLATE = Prompt(
     "Please provide an answer based solely on the provided sources. "
@@ -100,7 +101,7 @@ class CitationQueryEngine(BaseQueryEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.text_splitter = text_splitter or SentenceSplitter(
+        self.text_splitter = text_splitter or get_default_text_splitter(
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
         )
         self._retriever = retriever

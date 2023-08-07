@@ -2,20 +2,54 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+- Fix for `AttributeError: 'OpenAIAgent' object has no attribute 'callback_manager'` by calling super constructor within `BaseOpenAIAgent`
+
+## [0.7.21] - 2023-08-07
+
+### New Features
+- Add entity metadata extractor (#7163)
+
+## [0.7.20] - 2023-08-06
+
+### New Features
+- add router module docs (#7171)
+- add retriever router (#7166)
+
+### New Features
+- Added an `EntityExtractor` for metadata extraction (#7163)
+- Added a `RouterRetriever` for routing queries to specific retrievers (#7166)
+
+### Bug Fixes / Nits
+- Fix for issue where having multiple concurrent streamed responses from `OpenAIAgent` would result in interleaving of tokens across each response stream. (#7164)
+- fix llms callbacks issue (args[0] error) (#7165)
+
+## [0.7.19] - 2023-08-04
+
+### New Features
+- Added metadata filtering to weaviate (#7130)
+- Added token counting (and all callbacks) to agents and streaming (#7122)
+
+## [0.7.18] - 2023-08-03
+
 ### New Features
 - Added `to/from_string` and `to/from_dict` methods to memory objects (#7128)
+- Include columns comments from db tables in table info for SQL queries (#7124)
+- Add Neo4j support (#7122)
 
 ### Bug Fixes / Nits
 - Added `Azure AD` validation support to the `AzureOpenAI` class (#7127)
 - add `flush=True` when printing agent/chat engine response stream (#7129)
 - Added `Azure AD` support to the `AzureOpenAI` class (#7127)
 - Update LLM question generator prompt to mention JSON markdown (#7105)
+- Fixed `astream_chat` in chat engines (#7139)
 
 ## [0.7.17] - 2023-08-02
 
 ### New Features
 - Update `ReActAgent` to support memory modules (minor breaking change since the constructor takes `memory` instead of `chat_history`, but the main `from_tools` method remains backward compatible.) (#7116)
 - Update `ReActAgent` to support streaming (#7119)
+- Added Neo4j graph store and query engine integrations (#7122)
 - add object streaming (#7117)
 
 ## [0.7.16] - 2023-07-30
