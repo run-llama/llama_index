@@ -6,6 +6,7 @@ import streamlit as st
 import tiktoken
 from langchain.text_splitter import (CharacterTextSplitter,
                                      RecursiveCharacterTextSplitter)
+from langchain.text_splitter import TokenTextSplitter as LCTokenTextSplitter
 
 from llama_index import SimpleDirectoryReader
 from llama_index.schema import Document
@@ -65,6 +66,7 @@ for ind, col in enumerate(cols):
                 "SentenceSplitter",
                 "LC:RecursiveCharacterTextSplitter",
                 "LC:CharacterTextSplitter",
+                "LC:TokenTextSplitter",
             ],
             index=ind,
             key=f"splitter_cls_{ind}",
@@ -83,7 +85,11 @@ for ind, col in enumerate(cols):
                 chunk_size=chunk_size, chunk_overlap=chunk_overlap
             )
         elif text_splitter_cls == "LC:CharacterTextSplitter":
-            text_splitter = CharacterTextSplitter(
+            text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+                chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
+        elif text_splitter_cls == "LC:TokenTextSplitter":
+            text_splitter = LCTokenTextSplitter(
                 chunk_size=chunk_size, chunk_overlap=chunk_overlap
             )
         else:
