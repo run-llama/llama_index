@@ -10,6 +10,7 @@ import numpy as np
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.utils import get_tqdm_iterable, globals_helper
+from llama_index.pipeline import Pipeline, PipelineSchema
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -48,7 +49,7 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding:
+class BaseEmbedding(Pipeline):
     """Base class for embeddings."""
 
     def __init__(
@@ -318,3 +319,13 @@ class BaseEmbedding:
     def last_token_usage(self, value: int) -> None:
         """Set the last token usage."""
         self._last_token_usage = value
+
+    def schema(self) -> PipelineSchema:
+        return PipelineSchema(
+            name="Embedding",
+            metadata={
+                "batch_size": self._embed_batch_size,
+                "embedding_class": type(self).__name__,
+                # TODO (jon-chuang): add more fields (e.g. model name)
+            }
+        )

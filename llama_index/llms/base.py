@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.pipeline import Pipeline, PipelineSchema
 
 
 class MessageRole(str, Enum):
@@ -309,7 +310,7 @@ def llm_completion_callback() -> Callable:
     return wrap
 
 
-class LLM(ABC):
+class LLM(Pipeline):
     """LLM interface."""
 
     callback_manager: Optional[CallbackManager] = None
@@ -368,3 +369,11 @@ class LLM(ABC):
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
         pass
+
+    def schema(self) -> PipelineSchema:
+        """Get pipeline schema."""
+        return PipelineSchema(
+            name="LLM",
+            metadata=self.metadata.dict(),
+        )
+

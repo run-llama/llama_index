@@ -9,9 +9,10 @@ from llama_index.llms.langchain_utils import from_lc_messages
 from llama_index.prompts.prompt_selector import PromptSelector
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.types import BaseOutputParser
+from llama_index.pipeline import Pipeline, PipelineSchema
 
 
-class Prompt:
+class Prompt(Pipeline):
     """Prompt class for LlamaIndex.
 
     Wrapper around langchain's prompt class. Adds ability to:
@@ -171,3 +172,14 @@ class Prompt:
         """
         kwargs.update(self.partial_dict)
         return kwargs
+
+    def schema(self):
+        return PipelineSchema(
+            name="Prompt",
+            metadata={
+                "type": self.prompt_type,
+                "template": self.prompt.template,
+                "input_variables": self.prompt.input_variables,
+            },
+            children=[],
+        )

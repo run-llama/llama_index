@@ -6,6 +6,7 @@ from dataclasses_json import DataClassJsonMixin
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.schema import BaseNode
+from llama_index.pipeline import PipelineSchema, Pipeline
 
 
 DEFAULT_PERSIST_FNAME = "docstore.json"
@@ -21,7 +22,7 @@ class RefDocInfo(DataClassJsonMixin):
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
-class BaseDocumentStore(ABC):
+class BaseDocumentStore(Pipeline):
     # ===== Save/load =====
     def persist(
         self,
@@ -114,3 +115,14 @@ class BaseDocumentStore(ABC):
         return {
             index: self.get_node(node_id) for index, node_id in node_id_dict.items()
         }
+    
+    def schema(self) -> PipelineSchema:
+        """Get schema."""
+        return PipelineSchema(
+            name="DocumentStore",
+            metadata={
+                # "document_hash": self.get_document_hash(),
+                "doc_store_class": type(self).__name__,
+                "num_documents": len(self.docs),
+            },
+        )
