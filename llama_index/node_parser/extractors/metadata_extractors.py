@@ -359,10 +359,6 @@ class EntityExtractor(MetadataFeatureExtractor):
     `tomaarsen/span-marker-xlm-roberta-base-multinerd` and the SpanMarker library.
 
     Install SpanMarker with `pip install span-marker`.
-
-    Args:
-        model_name: (Optional[Str]): The name of the SpanMarker model.
-        Default is `tomaarsen/span-marker-xlm-roberta-base-multinerd`.
     """
 
     def __init__(
@@ -375,6 +371,30 @@ class EntityExtractor(MetadataFeatureExtractor):
         entity_map: Optional[Dict[str, str]] = None,
         tokenizer: Optional[Callable[[str], List[str]]] = None,
     ):
+        """
+        Entity extractor for extracting entities from text and inserting
+        into node metadata.
+
+        Args:
+            model_name (str):
+                Name of the SpanMarker model to use.
+            prediction_threshold (float):
+                Minimum prediction threshold for entities. Defaults to 0.5.
+            span_joiner (str):
+                String to join spans with. Defaults to " ".
+            label_entities (bool):
+                Whether to label entities with their type. Setting to true can be
+                slightly error prone, but can be useful for downstream tasks.
+                Defaults to False.
+            device (Optional[str]):
+                Device to use for SpanMarker model, i.e. "cpu" or "cuda".
+                Loads onto "cpu" by default.
+            entity_map (Optional[Dict[str, str]]):
+                Mapping from entity class name to label.
+            tokenizer (Optional[Callable[[str], List[str]]]):
+                Tokenizer to use for splitting text into words.
+                Defaults to NLTK word_tokenize.
+        """
         try:
             from span_marker import SpanMarkerModel
         except ImportError:
