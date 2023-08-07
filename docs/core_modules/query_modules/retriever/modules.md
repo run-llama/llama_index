@@ -49,4 +49,5 @@ Custom Retriever (KG Index and Vector Store Index) </examples/index_structs/know
 maxdepth: 1
 ---
 /examples/query_engine/pdf_tables/recursive_retriever.ipynb
+/examples/retrievers/router_retriever.ipynb
 ```

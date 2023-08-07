@@ -127,6 +127,4 @@ class PydanticMultiSelector(BaseSelector):
     async def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
-        raise NotImplementedError(
-            "Async selection not supported for Pydantic Selectors."
-        )
+        return self._select(choices, query)

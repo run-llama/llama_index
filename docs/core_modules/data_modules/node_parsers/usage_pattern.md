@@ -31,7 +31,7 @@ index = VectorStoreIndex.from_documents(documents, service_context=service_conte
 
 There are several options available to customize:
 
-- `text_spliiter` (defaults to `TokenTextSplitter`) - the text splitter used to split text into chunks.
+- `text_splitter` (defaults to `TokenTextSplitter`) - the text splitter used to split text into chunks.
 - `include_metadata` (defaults to `True`) - whether or not `Node`s should inherit the document metadata.
 - `include_prev_next_rel` (defaults to `True`) - whether or not to include previous/next relationships between chunked `Node`s
 - `metadata_extractor` (defaults to `None`) - extra processing to extract helpful metadata. See [here for details](/core_modules/data_modules/documents_and_nodes/usage_metadata_extractor.md).
