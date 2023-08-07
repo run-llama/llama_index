@@ -40,3 +40,9 @@ def test_split_long_token() -> None:
     chunks = text_splitter.split_text(token)
     assert len(chunks[0]) == 49
     assert len(chunks[1]) == 50
+
+
+def test_split_chinese(chinese_text: str) -> None:
+    text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=0)
+    chunks = text_splitter.split_text(chinese_text)
+    assert len(chunks) == 3
