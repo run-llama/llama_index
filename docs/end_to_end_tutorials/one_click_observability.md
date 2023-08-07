@@ -112,13 +112,9 @@ Evaluating and Improving a LlamaIndex Search and Retrieval Application <https://
 
 TruLens allows users to instrument/evaluate LlamaIndex applications, through features such as feedback functions and tracing.
 
-#### Usage Pattern
+#### Usage Pattern + Guides
 
 **NOTE**: We're currently still working on the "one-click" portion but see below for using TruLens + LlamaIndex.
-
-TODO:
-
-#### Guides
 
 ```{toctree}
 ---
