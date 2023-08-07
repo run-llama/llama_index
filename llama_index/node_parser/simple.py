@@ -54,13 +54,13 @@ class SimpleNodeParser(NodeParser):
     ) -> "SimpleNodeParser":
         callback_manager = callback_manager or CallbackManager([])
 
-        token_text_splitter = get_default_text_splitter(
+        text_splitter = get_default_text_splitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             callback_manager=callback_manager,
         )
         return cls(
-            text_splitter=token_text_splitter,
+            text_splitter=text_splitter,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
             callback_manager=callback_manager,
