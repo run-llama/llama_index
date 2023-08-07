@@ -12,7 +12,8 @@ from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (BaseSynthesizer, ResponseMode,
                                                get_response_synthesizer)
 from llama_index.schema import NodeWithScore, TextNode
-from llama_index.text_splitter import SentenceSplitter, TokenTextSplitter
+from llama_index.text_splitter import SentenceSplitter
+from llama_index.text_splitter.types import TextSplitter
 
 CITATION_QA_TEMPLATE = Prompt(
     "Please provide an answer based solely on the provided sources. "
@@ -68,8 +69,6 @@ CITATION_REFINE_TEMPLATE = Prompt(
 DEFAULT_CITATION_CHUNK_SIZE = 512
 DEFAULT_CITATION_CHUNK_OVERLAP = 20
 
-TextSplitterType = Union[SentenceSplitter, TokenTextSplitter]
-
 
 class CitationQueryEngine(BaseQueryEngine):
     """Citation query engine.
@@ -94,7 +93,7 @@ class CitationQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
-        text_splitter: Optional[TextSplitterType] = None,
+        text_splitter: Optional[TextSplitter] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -179,7 +178,7 @@ class CitationQueryEngine(BaseQueryEngine):
         """Modify retrieved nodes to be granular sources."""
         new_nodes: List[NodeWithScore] = []
         for node in nodes:
-            splits = self.text_splitter.split_text_with_overlaps(
+            splits = self.text_splitter.split_text(
                 node.node.get_content()
             )
 
