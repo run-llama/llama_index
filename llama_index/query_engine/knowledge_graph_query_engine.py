@@ -6,15 +6,14 @@ from typing import Any, Optional, Sequence
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.graph_stores.registery import (
-    GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE,
-    GraphStoreType,
-)
+    GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE, GraphStoreType)
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt, PromptType
 from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
+from llama_index.response_synthesizers import (BaseSynthesizer,
+                                               get_response_synthesizer)
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.storage.storage_context import StorageContext
 
@@ -39,10 +38,10 @@ while v.name is not.
 For example, see this diff between standard and NebulaGraph Cypher dialect:
 ```diff
 < MATCH (p:person)-[:directed]->(m:movie) WHERE m.name = 'The Godfather'
-< RETURN p.name;
+< RETURN m.name;
 ---
 > MATCH (p:`person`)-[:directed]->(m:`movie`) WHERE m.`movie`.`name` == 'The Godfather'
-> RETURN p.`person`.`name`;
+> RETURN m.`person`.`name`;
 ```
 
 Question: {query_str}
