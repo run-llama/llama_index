@@ -12,7 +12,7 @@ def test_split_token() -> None:
     assert chunks == ["foo", "bar"]
 
     token = "foo bar hello world"
-    text_splitter = TokenTextSplitter(chunk_size=3, chunk_overlap=1)
+    text_splitter = TokenTextSplitter(chunk_size=2, chunk_overlap=1)
     chunks = text_splitter.split_text(token)
     assert chunks == ["foo bar", "bar hello", "hello world"]
 
@@ -22,8 +22,8 @@ def test_truncate_token() -> None:
     # tiktoken will say length is ~5k
     token = "foo bar"
     text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
-    chunks = truncate_text(token, text_splitter)
-    assert chunks == "foo"
+    text = truncate_text(token, text_splitter)
+    assert text == "foo"
 
 
 def test_split_long_token() -> None:
