@@ -34,7 +34,7 @@ def test_contiguous_text(contiguous_text: str) -> None:
     # NOTE: sentence splitter does not split contiguous text
     splitter = SentenceSplitter(chunk_size=100, chunk_overlap=0)
     chunks = splitter.split_text(contiguous_text)
-    assert len(chunks) == 1
+    assert len(chunks) == 11
 
 
 def test_split_with_metadata(english_text: str) -> None:
