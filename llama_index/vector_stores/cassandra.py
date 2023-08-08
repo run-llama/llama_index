@@ -9,8 +9,8 @@ import logging
 from typing import Any, List, Optional, cast
 
 
+from llama_index.schema import MetadataMode
 from llama_index.vector_stores.utils import (
-    DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -96,38 +96,35 @@ class CassandraVectorStore(VectorStore):
             embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
-        (document_ids0, documents, document_metadatas, embeddings,) = zip(
-            *(
-                (
-                    result.id,
-                    # The name of the key containing the text is a constant, so:
-                    getattr(result.node, DEFAULT_TEXT_KEY, ""),
-                    node_to_metadata_dict(
-                        result.node,
-                        remove_text=False,  # must keep the text here for retrieval
-                        flat_metadata=self.flat_metadata,
-                    ),
-                    result.embedding,
-                )
-                for result in embedding_results
+        node_ids = []
+        node_contents = []
+        node_metadatas = []
+        node_embeddings = []
+        for result in embedding_results:
+            metadata = node_to_metadata_dict(
+                result.node,
+                remove_text=False,  # must keep the text here for retrieval
+                flat_metadata=self.flat_metadata,
             )
-        )
-        document_ids = list(document_ids0)
+            node_ids.append(result.id)
+            node_contents.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
+            node_metadatas.append(metadata)
+            node_embeddings.append(result.embedding)
 
         # TODO: batching or concurrent inserts
-        _logger.debug(f"Adding {len(document_ids)} rows to table")
-        for (doc_id, doc, md, emb) in zip(
-            document_ids, documents, document_metadatas, embeddings
+        _logger.debug(f"Adding {len(node_ids)} rows to table")
+        for (node_id, node_content, node_metadata, node_embedding) in zip(
+            node_ids, node_contents, node_metadatas, node_embeddings
         ):
             self.vector_table.put(
-                document=doc,
-                embedding_vector=emb,
-                document_id=doc_id,
-                metadata=md,
+                document=node_content,
+                embedding_vector=node_embedding,
+                document_id=node_id,
+                metadata=node_metadata,
                 ttl_seconds=self._ttl_seconds,
             )
 
-        return document_ids
+        return node_ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
