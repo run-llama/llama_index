@@ -65,6 +65,9 @@ class TokenTextSplitter(TextSplitter):
 
         NOTE: the splits contain the separators.
         """
+        if len(self.tokenizer(text)) <= self._chunk_size:
+            return [text]
+
         done_splitting = False
         if self._separator in text:
             # try split by main separator
