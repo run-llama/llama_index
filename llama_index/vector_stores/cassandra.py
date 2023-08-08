@@ -76,14 +76,16 @@ class CassandraVectorStore(VectorStore):
         self._embedding_dimension = embedding_dimension
         self._ttl_seconds = ttl_seconds
 
-        _logger.debug("Creating Cassandra table")
-        self.table = ClusteredMetadataVectorCassandraTable(
+        _logger.debug("Creating the Cassandra table")
+        self.vector_table = ClusteredMetadataVectorCassandraTable(
             session=self._session,
             keyspace=self._keyspace,
             table=self._table,
             vector_dimension=self._embedding_dimension,
             primary_key_type=["TEXT", "TEXT"],
-            metadata_indexing=1/0,
+            # probably just "ref_doc_id" is fine, but that would be improved later
+            # (see `node_to_metadata_dict` comments).
+            metadata_indexing=("allow_list", ["document_id", "doc_id", "ref_doc_id"]),
         )
 
     def add(
@@ -116,11 +118,13 @@ class CassandraVectorStore(VectorStore):
         for (node_id, node_content, node_metadata, node_embedding) in zip(
             node_ids, node_contents, node_metadatas, node_embeddings
         ):
+            node_ref_doc_id = node_metadata["ref_doc_id"]
             self.vector_table.put(
-                document=node_content,
-                embedding_vector=node_embedding,
-                document_id=node_id,
+                row_id=node_id,
+                body_blob=node_content,
+                vector=node_embedding,
                 metadata=node_metadata,
+                partition_id=node_ref_doc_id,
                 ttl_seconds=self._ttl_seconds,
             )
 
@@ -134,9 +138,9 @@ class CassandraVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        _logger.debug("Deleting a row from VectorTable")
-        self.vector_table.delete(
-            document_id=ref_doc_id,
+        _logger.debug("Deleting a document from the Cassandra table")
+        self.vector_table.delete_partition(
+            partition_id=ref_doc_id,
         )
 
     @property
@@ -176,14 +180,14 @@ class CassandraVectorStore(VectorStore):
         #
         query_embedding = cast(List[float], query.query_embedding)
 
-        _logger.debug(f"Running ANN search on VectorTable (query mode: {query.mode})")
+        _logger.debug(f"Running ANN search on the Cassandra table (query mode: {query.mode})")
         if query.mode == VectorStoreQueryMode.DEFAULT:
-            matches = self.vector_table.search(
-                embedding_vector=query_embedding,
+            matches = list(self.vector_table.metric_ann_search(
+                vector=query_embedding,
                 top_k=query.similarity_top_k,
                 metric="cos",
                 metric_threshold=None,
-            )
+            ))
             top_k_scores = [match["distance"] for match in matches]
         elif query.mode == VectorStoreQueryMode.MMR:
             # Querying a larger number of vectors and then doing MMR on them.
@@ -205,8 +209,8 @@ class CassandraVectorStore(VectorStore):
                     )
             prefetch_k = max(prefetch_k0, query.similarity_top_k)
             #
-            prefetch_matches = list(self.vector_table.search(
-                embedding_vector=query_embedding,
+            prefetch_matches = list(self.vector_table.metric_ann_search(
+                vector=query_embedding,
                 top_k=prefetch_k,
                 metric="cos",
                 metric_threshold=None,  # this is not `mmr_threshold`
@@ -215,7 +219,7 @@ class CassandraVectorStore(VectorStore):
             mmr_threshold = query.mmr_threshold or kwargs.get("mmr_threshold")
             if prefetch_matches:
                 pf_match_indices, pf_match_embeddings = zip(
-                    *enumerate(match["embedding_vector"] for match in prefetch_matches)
+                    *enumerate(match["vector"] for match in prefetch_matches)
                 )
             else:
                 pf_match_indices, pf_match_embeddings = [], []
@@ -237,7 +241,7 @@ class CassandraVectorStore(VectorStore):
         for match in matches:
             node = metadata_dict_to_node(match["metadata"])
             top_k_nodes.append(node)
-            top_k_ids.append(match["document_id"])
+            top_k_ids.append(match["row_id"])
 
         return VectorStoreQueryResult(
             nodes=top_k_nodes,

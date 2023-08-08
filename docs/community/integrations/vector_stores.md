@@ -24,7 +24,7 @@ as the storage backend for `VectorStoreIndex`.
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
-- MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart] (https://www.mongodb.com/atlas/database).
+- MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
@@ -201,7 +201,7 @@ vector_store = QdrantVectorStore(
 )
 ```
 
-**Cassandra** (covering DataStax Astra DB as well, which is build on Cassandra)
+**Cassandra** (covering DataStax Astra DB as well, which is built on Cassandra)
 
 ```python
 from cassandra.cluster import Cluster
