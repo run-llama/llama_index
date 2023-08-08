@@ -11,6 +11,9 @@ from llama_index.utils import globals_helper
 
 _logger = logging.getLogger(__name__)
 
+# NOTE: this is the number of tokens we reserve for metadata formatting
+DEFAULT_METADATA_FORMAT_LEN = 2
+
 
 class TokenTextSplitter(MetadataAwareTextSplitter):
     """Implementation of splitting text that looks at word tokens."""
@@ -40,7 +43,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text into chunks, reserving space required for metadata str."""
-        metadata_len = len(self.tokenizer(metadata_str))
+        metadata_len = len(self.tokenizer(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN
         effective_chunk_size = self._chunk_size - metadata_len
         return self._split_text(text, chunk_size=effective_chunk_size)
 

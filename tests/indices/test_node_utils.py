@@ -59,7 +59,8 @@ def test_get_nodes_from_document_with_metadata(
     )
     assert len(nodes) == 3
     actual_chunk_sizes = [
-        len(text_splitter.tokenizer(node.get_content())) for node in nodes
+        len(text_splitter.tokenizer(node.get_content(metadata_mode=MetadataMode.ALL)))
+        for node in nodes
     ]
     assert all(
         chunk_size <= text_splitter._chunk_size for chunk_size in actual_chunk_sizes
