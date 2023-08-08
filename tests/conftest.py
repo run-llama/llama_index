@@ -10,7 +10,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.mock import MockLLM
-from llama_index.text_splitter import SentenceSplitter
+from llama_index.text_splitter import SentenceSplitter, TokenTextSplitter
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_predict import (
     patch_llmpredictor_apredict,
@@ -36,6 +36,10 @@ def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(SentenceSplitter, "split_text", patch_token_splitter_newline)
     monkeypatch.setattr(
         SentenceSplitter, "split_text_metadata_aware", patch_token_splitter_newline
+    )
+    monkeypatch.setattr(TokenTextSplitter, "split_text", patch_token_splitter_newline)
+    monkeypatch.setattr(
+        TokenTextSplitter, "split_text_metadata_aware", patch_token_splitter_newline
     )
 
 
