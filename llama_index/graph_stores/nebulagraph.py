@@ -184,7 +184,6 @@ class NebulaGraphStore(GraphStore):
         query = query.replace("```", "").strip()
 
         try:
-            logger.info(f"!!!!!! DEBUG DEBUG DEBUG Executing query: {query}, Param: {param_map}")
             result = self._session_pool.execute_parameter(query, param_map)
             if result is None:
                 raise ValueError(f"Query failed. Query: {query}, Param: {param_map}")
