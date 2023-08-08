@@ -188,10 +188,12 @@ def test_stream_chat_basic(
     text_so_far = ""
     counter = 0
     for delta in response.response_gen:
+        print(f"{delta=}")
         text_so_far += delta
         counter += 1
-
+    print(f"{MOCK_STREAM_FINAL_RESPONSE=}")
     expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1]
+    print(f"{expected_answer=}")
     assert text_so_far == expected_answer
     assert counter == len(expected_answer)
 
