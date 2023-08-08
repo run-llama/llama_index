@@ -194,7 +194,7 @@ def test_stream_chat_basic(
     print(f"{MOCK_STREAM_FINAL_RESPONSE=}")
     expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1]
     print(f"{expected_answer=}")
-    print(f"{text_so_far}")
+    print(f"{text_so_far=}")
     assert text_so_far == expected_answer
     assert counter == len(expected_answer)
 
