@@ -18,7 +18,11 @@ def display_image(img_str: str, size: Tuple[int, int] = DEFAULT_THUMBNAIL_SIZE) 
     display(img)
 
 
-def display_source_node(source_node: NodeWithScore, source_length: int = 100) -> None:
+def display_source_node(
+    source_node: NodeWithScore,
+    source_length: int = 100,
+    show_source_metadata: bool = False,
+) -> None:
     """Display source node for jupyter notebook."""
     source_text_fmt = truncate_text(
         source_node.node.get_content().strip(), source_length
@@ -28,6 +32,8 @@ def display_source_node(source_node: NodeWithScore, source_length: int = 100) ->
         f"**Similarity:** {source_node.score}<br>"
         f"**Text:** {source_text_fmt}<br>"
     )
+    if show_source_metadata:
+        text_md += f"**Metadata:** {source_node.node.metadata}<br>"
     if isinstance(source_node.node, ImageNode):
         text_md += "**Image:**"
 
@@ -46,6 +52,7 @@ def display_response(
     source_length: int = 100,
     show_source: bool = False,
     show_metadata: bool = False,
+    show_source_metadata: bool = False,
 ) -> None:
     """Display response for jupyter notebook."""
     if response.response is None:
@@ -60,7 +67,11 @@ def display_response(
             display(
                 Markdown(f"**`Source Node {ind + 1}/{len(response.source_nodes)}`**")
             )
-            display_source_node(source_node, source_length=source_length)
+            display_source_node(
+                source_node,
+                source_length=source_length,
+                show_source_metadata=show_source_metadata,
+            )
     if show_metadata:
         if response.metadata is not None:
             display_metadata(response.metadata)
