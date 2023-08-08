@@ -66,7 +66,7 @@ class CassandraVectorStore(VectorStore):
     ) -> None:
         import_err_msg = "`cassio` package not found, please run `pip install cassio`"
         try:
-            import cassio  # noqa: F401
+            from cassio.table import ClusteredMetadataVectorCassandraTable  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -76,13 +76,14 @@ class CassandraVectorStore(VectorStore):
         self._embedding_dimension = embedding_dimension
         self._ttl_seconds = ttl_seconds
 
-        _logger.debug("Creating VectorTable")
-        self.vector_table = cassio.vector.VectorTable(
+        _logger.debug("Creating Cassandra table")
+        self.table = ClusteredMetadataVectorCassandraTable(
             session=self._session,
             keyspace=self._keyspace,
             table=self._table,
-            embedding_dimension=self._embedding_dimension,
-            primary_key_type="TEXT",
+            vector_dimension=self._embedding_dimension,
+            primary_key_type=["TEXT", "TEXT"],
+            metadata_indexing=1/0,
         )
 
     def add(

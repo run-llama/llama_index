@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 TIMESTAMP_FORMAT = "%m/%d/%Y, %H:%M:%S.%f"
 
 # base trace_id for the tracemap in callback_manager
-BASE_TRACE_ID = "root"
+BASE_TRACE_EVENT = "root"
 
 
 class CBEventType(str, Enum):
@@ -24,7 +24,7 @@ class CBEventType(str, Enum):
         RETRIEVE: Logs for the nodes retrieved for a query.
         SYNTHESIZE: Logs for the result for synthesize calls.
         TREE: Logs for the summary and level of summaries generated.
-        SUB_QUESTIONS: Logs for the sub questions and answers generated.
+        SUB_QUESTION: Logs for a generated sub question and answer.
     """
 
     CHUNKING = "chunking"
@@ -35,7 +35,7 @@ class CBEventType(str, Enum):
     RETRIEVE = "retrieve"
     SYNTHESIZE = "synthesize"
     TREE = "tree"
-    SUB_QUESTIONS = "sub_questions"
+    SUB_QUESTION = "sub_question"
 
 
 class EventPayload(str, Enum):
@@ -43,10 +43,13 @@ class EventPayload(str, Enum):
     CHUNKS = "chunks"  # list of text chunks
     NODES = "nodes"  # list of nodes
     PROMPT = "formatted_prompt"  # formatted prompt sent to LLM
-    RESPONSE = "response"  # response from LLM
+    MESSAGES = "messages"  # list of messages sent to LLM
+    COMPLETION = "completion"  # completion from LLM
+    RESPONSE = "response"  # message response from LLM
     TEMPLATE = "template"  # template used in LLM call
     QUERY_STR = "query_str"  # query used for query engine
-    SUB_QUESTIONS = "sub_questions"  # list of sub question & answer pairs
+    SUB_QUESTION = "sub_question"  # a sub question & answer + sources
+    EMBEDDINGS = "embeddings"  # list of embeddings
 
 
 # events that will never have children events

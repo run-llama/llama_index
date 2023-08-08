@@ -31,11 +31,7 @@ def test_as_retriever(
     # when include_text is True, the first node is the raw text
     # the second node is the query
     rel_initial_text = (
-        "The following are knowledge triplets "
-        "in the form of (subset, predicate, object):\n"
-    )
-    rel_initial_text = (
-        f"The following are knowledge triplets in max depth"
+        f"The following are knowledge sequence in max depth"
         f" {retriever.graph_store_query_depth} "
         f"in the form of "
         f"`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
@@ -70,7 +66,7 @@ def test_retrievers(
     nodes = retriever.retrieve(query_bundle)
     assert (
         nodes[1].node.get_content()
-        == "The following are knowledge triplets in max depth 2"
+        == "The following are knowledge sequence in max depth 2"
         " in the form of "
         "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
         "\nfoo ['is', 'bar']"
@@ -102,7 +98,7 @@ def test_retriever_no_text(
     nodes = retriever.retrieve(query_bundle)
     assert (
         nodes[0].node.get_content()
-        == "The following are knowledge triplets in max depth 2"
+        == "The following are knowledge sequence in max depth 2"
         " in the form of "
         "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
         "\nfoo ['is', 'bar']"
@@ -135,7 +131,7 @@ def test_retrieve_similarity(
     nodes = retriever.retrieve(QueryBundle("foo"))
     assert (
         nodes[1].node.get_content()
-        == "The following are knowledge triplets in max depth 2"
+        == "The following are knowledge sequence in max depth 2"
         " in the form of "
         "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
         "\nfoo ['is', 'bar']"

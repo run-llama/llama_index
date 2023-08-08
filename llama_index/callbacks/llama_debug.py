@@ -2,13 +2,13 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-from llama_index.callbacks.base import BaseCallbackHandler
+from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import (
     CBEvent,
     CBEventType,
     EventStats,
     TIMESTAMP_FORMAT,
-    BASE_TRACE_ID,
+    BASE_TRACE_EVENT,
 )
 
 
@@ -189,7 +189,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         """Print simple trace map to terminal for debugging of the most recent trace."""
         print("*" * 10, flush=True)
         print(f"Trace: {self._cur_trace_id}", flush=True)
-        self._print_trace_map(BASE_TRACE_ID, level=1)
+        self._print_trace_map(BASE_TRACE_EVENT, level=1)
         print("*" * 10, flush=True)
 
     @property

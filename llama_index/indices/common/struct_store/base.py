@@ -8,7 +8,6 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.table import StructDatapoint
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-from llama_index.langchain_helpers.text_splitter import TextSplitter
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
@@ -27,6 +26,7 @@ from llama_index.prompts.prompts import (
 )
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode
+from llama_index.text_splitter import TextSplitter
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -112,20 +112,20 @@ class SQLDocumentContextBuilder:
             text_qa_template=prompt_with_schema,
             refine_template=refine_prompt_with_schema,
         )
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={EventPayload.DOCUMENTS: documents}
-        )
-        text_chunks = []
-        for doc in documents:
-            chunks = text_splitter.split_text(
-                doc.get_content(metadata_mode=MetadataMode.LLM)
-            )
-            text_chunks.extend(chunks)
-        self._service_context.callback_manager.on_event_end(
+        with self._service_context.callback_manager.event(
             CBEventType.CHUNKING,
-            payload={EventPayload.CHUNKS: text_chunks},
-            event_id=event_id,
-        )
+            payload={EventPayload.DOCUMENTS: documents},
+        ) as event:
+            text_chunks = []
+            for doc in documents:
+                chunks = text_splitter.split_text(
+                    doc.get_content(metadata_mode=MetadataMode.LLM)
+                )
+                text_chunks.extend(chunks)
+
+            event.on_end(
+                payload={EventPayload.CHUNKS: text_chunks},
+            )
 
         # feed in the "query_str" or the task
         table_context = response_builder.get_response(

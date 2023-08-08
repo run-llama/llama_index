@@ -4,19 +4,16 @@
 import logging
 from typing import List
 
-from llama_index.langchain_helpers.text_splitter import (
-    TextSplit,
-    TextSplitter,
-    TokenTextSplitter,
-)
-from llama_index.schema import Document, ImageDocument
 from llama_index.schema import (
     BaseNode,
-    NodeRelationship,
+    Document,
+    ImageDocument,
     ImageNode,
-    TextNode,
     MetadataMode,
+    NodeRelationship,
+    TextNode,
 )
+from llama_index.text_splitter import TextSplit, TextSplitter, TokenTextSplitter
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -69,11 +66,17 @@ def get_nodes_from_document(
             end_char_idx = index_counter - text_split.num_char_overlap + len(text_chunk)
         index_counter += len(text_chunk) + 1
 
+        node_metadata = {}
+        if include_metadata:
+            node_metadata = document.metadata
+            if text_split.metadata is not None:
+                node_metadata.update(text_split.metadata)
+
         if isinstance(document, ImageDocument):
             image_node = ImageNode(
                 text=text_chunk,
                 embedding=document.embedding,
-                metadata=document.metadata if include_metadata else {},
+                metadata=node_metadata,
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
                 image=document.image,
@@ -88,7 +91,7 @@ def get_nodes_from_document(
                 embedding=document.embedding,
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
-                metadata=document.metadata if include_metadata else {},
+                metadata=node_metadata,
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
                 excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
                 metadata_seperator=document.metadata_seperator,

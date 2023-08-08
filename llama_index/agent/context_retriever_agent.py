@@ -1,20 +1,21 @@
 """Context retriever agent."""
 
-from typing import List, Optional
+from typing import List, Optional, Type, Union
 
 from llama_index.agent.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
     DEFAULT_MODEL_NAME,
-    SUPPORTED_MODEL_NAMES,
     BaseOpenAIAgent,
 )
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
+from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import is_function_calling_model
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts.prompts import QuestionAnswerPrompt
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
 from llama_index.tools import BaseTool
 
@@ -59,7 +60,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         qa_prompt: QuestionAnswerPrompt,
         context_separator: str,
         llm: OpenAI,
-        chat_history: List[ChatMessage],
+        memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
@@ -67,7 +68,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
     ) -> None:
         super().__init__(
             llm=llm,
-            chat_history=chat_history,
+            memory=memory,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
@@ -85,8 +86,10 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         retriever: BaseRetriever,
         qa_prompt: Optional[QuestionAnswerPrompt] = None,
         context_separator: str = "\n",
-        llm: Optional[OpenAI] = None,
+        llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
@@ -111,11 +114,11 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
-        if llm.model not in SUPPORTED_MODEL_NAMES:
+        if not is_function_calling_model(llm.model):
             raise ValueError(
-                f"Model name {llm.model} not supported. "
-                f"Supported model names: {SUPPORTED_MODEL_NAMES}"
+                f"Model name {llm.model} does not support function calling API."
             )
         if system_prompt is not None:
             if prefix_messages is not None:
@@ -132,7 +135,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
             qa_prompt=qa_prompt,
             context_separator=context_separator,
             llm=llm,
-            chat_history=chat_history,
+            memory=memory,
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
@@ -144,8 +147,11 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         return self._tools
 
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> RESPONSE_TYPE:
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
+    ) -> AgentChatResponse:
         """Chat."""
         # augment user message
         retrieved_nodes_w_scores: List[NodeWithScore] = self._retriever.retrieve(
@@ -162,4 +168,6 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         if self._verbose:
             print_text(formatted_message + "\n", color="yellow")
 
-        return super().chat(formatted_message, chat_history=chat_history)
+        return super().chat(
+            formatted_message, chat_history=chat_history, function_call=function_call
+        )
