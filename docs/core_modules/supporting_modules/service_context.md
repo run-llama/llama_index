@@ -13,12 +13,16 @@ The `ServiceContext` is a simple python dataclass that you can directly construc
 @dataclass
 class ServiceContext:
     # The LLM used to generate natural language responses to queries.
+    # If not provided, defaults to gpt-3.5-turbo from OpenAI
+    # If your OpenAI key is not set, defaults to llama2-chat-13B from Llama.cpp
     llm: LLM
 
     # The PromptHelper object that helps with truncating and repacking text chunks to fit in the LLM's context window.
     prompt_helper: PromptHelper
 
     # The embedding model used to generate vector representations of text.
+    # If not provided, defaults to text-embedding-ada-002
+    # If your OpenAI key is not set, defaults to sentence-transformers/all-mpnet-base-v2
     embed_model: BaseEmbedding
 
     # The parser that converts documents into nodes.
