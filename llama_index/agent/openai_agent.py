@@ -3,7 +3,7 @@ import json
 import logging
 from abc import abstractmethod
 from threading import Thread
-from typing import Any, Callable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -137,7 +137,9 @@ class BaseOpenAIAgent(BaseAgent):
         self.memory.put(ai_message)
         return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
 
-    def _get_stream_ai_response(self, **llm_chat_kwargs) -> StreamingAgentChatResponse:
+    def _get_stream_ai_response(
+        self, **llm_chat_kwargs: Any
+    ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             chat_stream=self._llm.stream_chat(**llm_chat_kwargs),
             sources=self.sources,
@@ -157,7 +159,7 @@ class BaseOpenAIAgent(BaseAgent):
         return chat_stream_response
 
     async def _get_async_stream_ai_response(
-        self, **llm_chat_kwargs
+        self, **llm_chat_kwargs: Any
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             achat_stream=await self._llm.astream_chat(**llm_chat_kwargs),
@@ -181,8 +183,8 @@ class BaseOpenAIAgent(BaseAgent):
 
     def _get_llm_chat_kwargs(
         self, functions: List[dict], function_call: Union[str, dict] = "auto"
-    ):
-        llm_chat_kwargs = dict(messages=self.all_messages)
+    ) -> Dict[str, Any]:
+        llm_chat_kwargs: dict = dict(messages=self.all_messages)
         if functions:
             llm_chat_kwargs.update(
                 functions=functions, function_call=resolve_function_call(function_call)
@@ -190,7 +192,7 @@ class BaseOpenAIAgent(BaseAgent):
         return llm_chat_kwargs
 
     def _get_agent_response(
-        self, mode: ChatResponseMode, **llm_chat_kwargs
+        self, mode: ChatResponseMode, **llm_chat_kwargs: Any
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         if mode == ChatResponseMode.WAIT:
             chat_response: ChatResponse = self._llm.chat(**llm_chat_kwargs)
@@ -201,7 +203,7 @@ class BaseOpenAIAgent(BaseAgent):
             raise NotImplementedError
 
     async def _get_async_agent_response(
-        self, mode: ChatResponseMode, **llm_chat_kwargs
+        self, mode: ChatResponseMode, **llm_chat_kwargs: Any
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         if mode == ChatResponseMode.WAIT:
             chat_response: ChatResponse = await self._llm.achat(**llm_chat_kwargs)
