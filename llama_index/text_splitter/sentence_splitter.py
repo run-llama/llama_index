@@ -111,7 +111,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             splits = split_fn(text)
             if len(splits) > 1:
                 break
-        print(split_fn, len(splits))
 
         if len(splits) > 1:
             is_sentence = True
