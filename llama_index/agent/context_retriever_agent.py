@@ -9,7 +9,11 @@ from llama_index.agent.openai_agent import (
 )
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AGENT_CHAT_RESPONSE_TYPE, ChatResponseMode
+from llama_index.chat_engine.types import (
+    AGENT_CHAT_RESPONSE_TYPE,
+    AgentChatResponse,
+    ChatResponseMode,
+)
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI

@@ -56,14 +56,9 @@ class StreamingAgentChatResponse:
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-<<<<<<< HEAD
     _queue: queue.Queue = queue.Queue()
     _aqueue: asyncio.Queue = asyncio.Queue()
     # flag when chat message is a function call
-=======
-    _queue: queue.Queue = field(default_factory=queue.Queue)
-    _is_done = False
->>>>>>> main
     _is_function: Optional[bool] = None
     # flag when processing done
     _is_done = False
@@ -104,30 +99,11 @@ class StreamingAgentChatResponse:
 
         # try/except to prevent hanging on error
         try:
-<<<<<<< HEAD
             for chat in self.chat_stream:
                 self._is_function = is_function(chat.message)
                 self.put_in_queue(chat.delta)
             if self._is_function is not None:  # if loop has gone through iteration
                 memory.put(chat.message)
-=======
-            final_message = None
-            final_text = ""
-            for chat in self.chat_stream:
-                final_message = chat.message
-                self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None)
-                    is not None
-                )
-                self._queue.put_nowait(chat.delta)
-                final_text += chat.delta or ""
-
-            if final_message is not None:
-                # NOTE: this is to handle the special case where we consume some of the
-                # chat stream, but not all of it (e.g. in react agent)
-                final_message.content = final_text
-                memory.put(final_message)
->>>>>>> main
         except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
 
@@ -145,7 +121,6 @@ class StreamingAgentChatResponse:
 
         # try/except to prevent hanging on error
         try:
-<<<<<<< HEAD
             async for chat in self.achat_stream:
                 self._is_function = is_function(chat.message)
                 self.aput_in_queue(chat.delta)
@@ -153,24 +128,6 @@ class StreamingAgentChatResponse:
                     self._is_function_false_event.set()
             if self._is_function is not None:  # if loop has gone through iteration
                 memory.put(chat.message)
-=======
-            final_message = None
-            final_text = ""
-            async for chat in self.achat_stream:
-                final_message = chat.message
-                self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None)
-                    is not None
-                )
-                self._queue.put_nowait(chat.delta)
-                final_text += chat.delta or ""
-
-            if final_message is not None:
-                # NOTE: this is to handle the special case where we consume some of the
-                # chat stream, but not all of it (e.g. in react agent)
-                final_message.content = final_text
-                memory.put(final_message)
->>>>>>> main
         except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
 
