@@ -35,9 +35,11 @@ def resolve_embed_model(
         except ValueError:
             embed_model = "local"
             print(
+                "******\n"
                 "Could not load OpenAIEmbedding. Using default HuggingFaceEmbedding "
                 "with model_name=sentence-transformers/all-mpnet-base-v2. "
                 "Please check your API key if you intended to use OpenAI embeddings."
+                "\n******"
             )
 
     if isinstance(embed_model, str):

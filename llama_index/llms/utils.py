@@ -21,7 +21,12 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
             raise ValueError(
                 "llm must start with str 'local' or of type LLM or BaseLanguageModel"
             )
-        return LlamaCPP(model_path=model_path)
+        return LlamaCPP(
+            model_path=model_path,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            model_kwargs={"n_gpu_layers": 1},
+        )
     elif isinstance(llm, BaseLanguageModel):
         # NOTE: if it's a langchain model, wrap it in a LangChainLLM
         return LangChainLLM(llm=llm)
@@ -31,12 +36,15 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
         return llm or OpenAI()
     except ValueError:
         print(
+            "******\n"
             "Could not load OpenAI model. Using default LlamaCPP=llama2-13b-chat. "
             "If you intended to use OpenAI, please check your API key."
+            "\n******"
         )
 
         # instansiate LlamaCPP with proper llama2-chat prompts
         return LlamaCPP(
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
+            model_kwargs={"n_gpu_layers": 1},
         )
