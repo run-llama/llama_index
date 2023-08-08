@@ -13,6 +13,13 @@ Build AI workflows using building blocks. Many workflows built on top of LlamaIn
 
 [[Website]](https://app.algovera.ai/workflows).
 
+###### SlideSpeak
+
+Summarize PowerPoint files and other documents with AI. SlideSpeak is an open source chatbot for presentations and other documents. Built on top of LlamaIndex, it utilizes Pinecone as a Vector Storage. We currently use ChatGPT Turbo 3.5 as a model for the chatbot. We're currently working on adding support for other document formats, which will allow you to summarize presentations, Word documents, Google Slides, PDFs and much more.
+
+[[Website]](https://slidespeak.co/?ref=llamaindex)
+[[GitHub]](https://github.com/SlideSpeak/slidespeak-backend)
+
 ###### ChatGPT LlamaIndex
 
 Interface that allows users to upload long docs and chat with the bot.
