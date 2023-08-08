@@ -35,9 +35,9 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = 200,
         tokenizer: Optional[Callable] = None,
-        paragraph_separator: Optional[str] = "\n\n\n",
+        paragraph_separator: str = "\n\n\n",
         chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
-        secondary_chunking_regex: Optional[str] = "[^,.;。]+[,.;。]?",
+        secondary_chunking_regex: str = "[^,.;。]+[,.;。]?",
         callback_manager: Optional[CallbackManager] = None,
     ):
         """Initialize with parameters."""

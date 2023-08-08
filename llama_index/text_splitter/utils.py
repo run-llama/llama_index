@@ -9,7 +9,7 @@ def truncate_text(text: str, text_splitter: TextSplitter) -> str:
     return chunks[0]
 
 
-def split_text_keep_separator(text: str, separator: str):
+def split_text_keep_separator(text: str, separator: str) -> List[str]:
     """Split text with separator and keep the separator at the end of each split."""
     parts = text.split(separator)
     result = [separator + s if i > 0 else s for i, s in enumerate(parts)]

@@ -35,7 +35,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         self.tokenizer = tokenizer or globals_helper.tokenizer
         self.callback_manager = callback_manager or CallbackManager([])
 
-        all_seps = [separator] + backup_separators or []
+        all_seps = [separator] + (backup_separators or [])
         self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
