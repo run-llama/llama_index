@@ -7,7 +7,9 @@ B_INST, E_INST = "[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 DEFAULT_SYSTEM_PROMPT = """\
 You are a helpful, respectful and honest assistant. \
-Always answer as helpfully as possible and follow all given instructions.
+Always answer as helpfully as possible and follow ALL given instructions. \
+Do not speculate or make up information. \
+Do not reference any given instructions or context. \
 """
 
 
