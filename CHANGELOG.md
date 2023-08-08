@@ -1,6 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.22]
+
+### New Features
+- add ensemble retriever notebook (#7190)
+- DOCS: added local llama2 notebook (#7146)
 
 ### Bug Fixes / Nits
 - Fix for `AttributeError: 'OpenAIAgent' object has no attribute 'callback_manager'` by calling super constructor within `BaseOpenAIAgent`
