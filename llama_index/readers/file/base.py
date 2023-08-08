@@ -1,5 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
+import os
 from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
 
@@ -37,8 +38,8 @@ logger = logging.getLogger(__name__)
 class SimpleDirectoryReader(BaseReader):
     """Simple directory reader.
 
-    Can read files into separate documents, or concatenates
-    files into one document text.
+    Load files from file directory.
+    Automatically select the best file reader given file extensions.
 
     Args:
         input_dir (str): Path to the directory.
@@ -46,9 +47,13 @@ class SimpleDirectoryReader(BaseReader):
             (Optional; overrides input_dir, exclude)
         exclude (List): glob of python file paths to exclude (Optional)
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
+        encoding (str): Encoding of the files.
+            Default is utf-8.
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
         recursive (bool): Whether to recursively search in subdirectories.
+            False by default.
+        filename_as_id (bool): Whether to use the filename as the document id.
             False by default.
         required_exts (Optional[List[str]]): List of required extensions.
             Default is None.
@@ -70,6 +75,7 @@ class SimpleDirectoryReader(BaseReader):
         exclude_hidden: bool = True,
         errors: str = "ignore",
         recursive: bool = False,
+        encoding: str = "utf-8",
         filename_as_id: bool = False,
         required_exts: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, BaseReader]] = None,
@@ -83,6 +89,7 @@ class SimpleDirectoryReader(BaseReader):
             raise ValueError("Must provide either `input_dir` or `input_files`.")
 
         self.errors = errors
+        self.encoding = encoding
 
         self.exclude = exclude
         self.recursive = recursive
@@ -93,9 +100,13 @@ class SimpleDirectoryReader(BaseReader):
         if input_files:
             self.input_files = []
             for path in input_files:
+                if not os.path.isfile(path):
+                    raise ValueError(f"File {path} does not exist.")
                 input_file = Path(path)
                 self.input_files.append(input_file)
         elif input_dir:
+            if not os.path.isdir(input_dir):
+                raise ValueError(f"Directory {input_dir} does not exist.")
             self.input_dir = Path(input_dir)
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
@@ -153,6 +164,9 @@ class SimpleDirectoryReader(BaseReader):
 
         new_input_files = sorted(list(all_files))
 
+        if len(new_input_files) == 0:
+            raise ValueError(f"No files found in {input_dir}.")
+
         if self.num_files_limit is not None and self.num_files_limit > 0:
             new_input_files = new_input_files[0 : self.num_files_limit]
 
@@ -166,14 +180,8 @@ class SimpleDirectoryReader(BaseReader):
     def load_data(self) -> List[Document]:
         """Load data from the input directory.
 
-        Args:
-            concatenate (bool): whether to concatenate all text docs into a single doc.
-                If set to True, file metadata is ignored. False by default.
-                This setting does not apply to image docs (always one doc per image).
-
         Returns:
             List[Document]: A list of documents.
-
         """
         documents = []
         for input_file in self.input_files:
@@ -202,7 +210,9 @@ class SimpleDirectoryReader(BaseReader):
                 documents.extend(docs)
             else:
                 # do standard read
-                with open(input_file, "r", errors=self.errors, encoding="utf8") as f:
+                with open(
+                    input_file, "r", errors=self.errors, encoding=self.encoding
+                ) as f:
                     data = f.read()
 
                 doc = Document(text=data, metadata=metadata or {})

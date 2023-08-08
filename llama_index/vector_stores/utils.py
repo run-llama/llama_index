@@ -4,6 +4,8 @@ from typing import Any, Dict, Tuple
 from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
 
 DEFAULT_TEXT_KEY = "text"
+DEFAULT_EMBEDDING_KEY = "embedding"
+DEFAULT_DOC_ID_KEY = "doc_id"
 
 
 def _validate_is_flat_dict(metadata_dict: dict) -> None:
@@ -67,7 +69,10 @@ def legacy_metadata_dict_to_node(
 ) -> Tuple[dict, dict, dict]:
     """Common logic for loading Node data from metadata dict."""
     # make a copy first
-    metadata = metadata.copy()
+    if metadata is None:
+        metadata = {}
+    else:
+        metadata = metadata.copy()
 
     # load node_info from json string
     node_info_str = metadata.pop("node_info", "")
@@ -95,13 +100,13 @@ def legacy_metadata_dict_to_node(
     metadata.pop("ref_doc_id", None)
 
     # remaining metadata is metadata or node_info
-    metadata = {}
+    new_metadata = {}
     for key, val in metadata.items():
         # NOTE: right now we enforce metadata to be dict of simple types.
         #       dump anything that's not a simple type into node_info.
         if isinstance(val, (str, int, float, type(None))):
-            metadata[key] = val
+            new_metadata[key] = val
         else:
             node_info[key] = val
 
-    return metadata, node_info, relationships
+    return new_metadata, node_info, relationships

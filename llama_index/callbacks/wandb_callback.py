@@ -1,16 +1,29 @@
 import os
 import shutil
 from typing import TypedDict
-from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    TYPE_CHECKING,
+    Tuple,
+)
 from collections import defaultdict
 from datetime import datetime
 
-from llama_index.callbacks.base import BaseCallbackHandler
+from llama_index.callbacks.base_handler import BaseCallbackHandler
+from llama_index.callbacks.token_counting import get_llm_token_counts
 from llama_index.callbacks.schema import (
     CBEvent,
     CBEventType,
+    EventPayload,
     TIMESTAMP_FORMAT,
 )
+from llama_index.utils import globals_helper
 
 if TYPE_CHECKING:
     from wandb.sdk.data_types import trace_tree
@@ -99,6 +112,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
         run_args: Optional[WandbRunArgs] = None,
+        tokenizer: Optional[Callable[[str], List]] = None,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
     ) -> None:
@@ -146,6 +160,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self._cur_trace_id: Optional[str] = None
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
+        self.tokenizer = tokenizer or globals_helper.tokenizer
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -197,6 +212,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         """Launch a trace."""
         self._trace_map = defaultdict(list)
         self._cur_trace_id = trace_id
+        self._start_time = datetime.now()
 
     def end_trace(
         self,
@@ -207,6 +223,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self._ensure_run()
 
         self._trace_map = trace_map or defaultdict(list)
+        self._end_time = datetime.now()
 
         # Log the trace map to wandb
         # We can control what trace ids we want to log here.
@@ -217,7 +234,17 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def log_trace_tree(self) -> None:
         """Log the trace tree to wandb."""
         try:
-            root_span = self._build_trace_tree()
+            child_nodes = self._trace_map["root"]
+            root_span = self._convert_event_pair_to_wb_span(
+                self._event_pairs_by_id[child_nodes[0]],
+                trace_id=self._cur_trace_id if len(child_nodes) > 1 else None,
+            )
+
+            if len(child_nodes) == 1:
+                child_nodes = self._trace_map[child_nodes[0]]
+                root_span = self._build_trace_tree(child_nodes, root_span)
+            else:
+                root_span = self._build_trace_tree(child_nodes, root_span)
             if root_span:
                 root_trace = self._trace_tree.WBTraceTree(root_span)
                 if self._wandb.run:
@@ -302,37 +329,20 @@ class WandbCallbackHandler(BaseCallbackHandler):
         artifact.add_dir(dir_path)
         self._wandb.run.log_artifact(artifact)  # type: ignore
 
-    def _build_trace_tree(self) -> Union[None, "trace_tree.Span"]:
+    def _build_trace_tree(
+        self, events: List[str], span: "trace_tree.Span"
+    ) -> "trace_tree.Span":
         """Build the trace tree from the trace map."""
-        root_span = None
-        id_to_wb_span_tmp = {}
-        for root_node, child_nodes in self._trace_map.items():
-            if root_node == "root":
-                # the payload for the first child node is the payload for the root_span
-                root_span = self._convert_event_pair_to_wb_span(
-                    self._event_pairs_by_id[child_nodes[0]],
-                    trace_id=self._cur_trace_id if len(child_nodes) > 1 else None,
-                )
-                # add the child nodes to the root_span
-                if len(child_nodes) > 1:
-                    for child_node in child_nodes:
-                        child_span = self._convert_event_pair_to_wb_span(
-                            self._event_pairs_by_id[child_node]
-                        )
-                        root_span.add_child_span(child_span)
-                        id_to_wb_span_tmp[child_node] = child_span
-                else:
-                    id_to_wb_span_tmp[child_nodes[0]] = root_span
-            else:
-                for child_node in child_nodes:
-                    child_span = self._convert_event_pair_to_wb_span(
-                        self._event_pairs_by_id[child_node]
-                    )
-                    id_to_wb_span_tmp[root_node].add_child_span(child_span)
-                    id_to_wb_span_tmp[child_node] = child_span
-                id_to_wb_span_tmp.pop(root_node)
+        for child_event in events:
+            child_span = self._convert_event_pair_to_wb_span(
+                self._event_pairs_by_id[child_event]
+            )
+            child_span = self._build_trace_tree(
+                self._trace_map[child_event], child_span
+            )
+            span.add_child_span(child_span)
 
-        return root_span
+        return span
 
     def _convert_event_pair_to_wb_span(
         self,
@@ -382,6 +392,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
             span_kind = self._trace_tree.SpanKind.CHAIN
         elif event_type == CBEventType.TREE:
             span_kind = self._trace_tree.SpanKind.CHAIN
+        elif event_type == CBEventType.SUB_QUESTION:
+            span_kind = self._trace_tree.SpanKind.CHAIN
         else:
             raise ValueError(f"Unknown event type: {event_type}")
 
@@ -389,9 +401,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
     def _add_payload_to_span(
         self, span: "trace_tree.Span", event_pair: List[CBEvent]
-    ) -> Tuple[
-        Union[None, Dict[str, Any]], Union[None, Dict[str, Any]], "trace_tree.Span"
-    ]:
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]], "trace_tree.Span"]:
         """Add the event's payload to the span."""
         assert len(event_pair) == 2
         event_type = event_pair[0].event_type
@@ -399,44 +409,33 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs = None
 
         if event_type == CBEventType.NODE_PARSING:
-            # parse input payload
-            input_payload = event_pair[0].payload
-            if input_payload:
-                inputs = self._handle_node_parsing_payload(input_payload)
-            # parse output payload
-            output_payload = event_pair[-1].payload
-            if output_payload:
-                outputs = self._handle_node_parsing_payload(output_payload)
+            # TODO: disabled full detailed inputs/outputs due to UI lag
+            inputs, outputs = self._handle_node_parsing_payload(event_pair)
         elif event_type == CBEventType.LLM:
             inputs, outputs, span = self._handle_llm_payload(event_pair, span)
         elif event_type == CBEventType.QUERY:
             inputs, outputs = self._handle_query_payload(event_pair)
-        else:
-            inputs = event_pair[0].payload
-            outputs = event_pair[-1].payload
+        elif event_type == CBEventType.EMBEDDING:
+            inputs, outputs = self._handle_embedding_payload(event_pair)
 
         return inputs, outputs, span
 
-    def _handle_node_parsing_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_node_parsing_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Handle the payload of a NODE_PARSING event."""
-        payload_keys = payload.keys()
-        assert "documents" or "nodes" in payload_keys
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
 
-        if "documents" in payload_keys:
-            stuffs = payload.get("documents", None)
-            stuff_name = "documents"
-        elif "nodes" in payload_keys:
-            stuffs = payload.get("nodes", None)
-            stuff_name = "nodes"
+        if inputs and EventPayload.DOCUMENTS in inputs:
+            documents = inputs.pop(EventPayload.DOCUMENTS)
+            inputs["num_documents"] = len(documents)
 
-        if stuffs:
-            tmp_str = ""
-            for idx, stuff in enumerate(stuffs):
-                tmp_str += f"**{stuff_name}**: {idx}\n" + stuff.text
-                tmp_str += "\n*************** \n"
-            return {"documents": tmp_str, "len_documents": len(stuffs)}
-        else:
-            return {}
+        if outputs and EventPayload.NODES in outputs:
+            nodes = outputs.pop(EventPayload.NODES)
+            outputs["num_nodes"] = len(nodes)
+
+        return inputs or {}, outputs or {}
 
     def _handle_llm_payload(
         self, event_pair: List[CBEvent], span: "trace_tree.Span"
@@ -447,29 +446,26 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         assert isinstance(inputs, dict) and isinstance(outputs, dict)
 
-        # Make `formatted_prompt` part of `inputs`
-        inputs["formatted_prompt"] = outputs.get("formatted_prompt", None)
-        outputs.pop("formatted_prompt", None)
-
         # Get `original_template` from Prompt
-        inputs["template"] = inputs["template"].original_template
+        if EventPayload.PROMPT in inputs:
+            inputs[EventPayload.PROMPT] = inputs[EventPayload.PROMPT]
 
-        # Make token counts part of span's `metadata`
-        def filterByKey(keys: List[str]) -> Dict[str, int]:
-            return {x: outputs[x] for x in keys}  # type: ignore
+        # Format messages
+        if EventPayload.MESSAGES in inputs:
+            inputs[EventPayload.MESSAGES] = "\n".join(
+                [str(x) for x in inputs[EventPayload.MESSAGES]]
+            )
 
-        metadata_keys = [
-            "formatted_prompt_tokens_count",
-            "prediction_tokens_count",
-            "total_tokens_used",
-        ]
-        metadata = filterByKey(metadata_keys)
+        token_counts = get_llm_token_counts(self.tokenizer, outputs)
+        metadata = {
+            "formatted_prompt_tokens_count": token_counts.prompt_token_count,
+            "prediction_tokens_count": token_counts.completion_token_count,
+            "total_tokens_used": token_counts.total_token_count,
+        }
         span.attributes = metadata
-        for meta_key in metadata_keys:
-            outputs.pop(meta_key, None)
 
         # Make `response` part of `outputs`
-        outputs = {"response": outputs["response"]}
+        outputs = {EventPayload.RESPONSE: outputs[EventPayload.RESPONSE]}
 
         return inputs, outputs, span
 
@@ -481,7 +477,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs = event_pair[-1].payload
 
         if outputs:
-            response = outputs["response"]
+            response = outputs[EventPayload.RESPONSE]
 
             if type(response).__name__ == "Response":
                 response = response.response
@@ -493,6 +489,19 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs = {"response": response}
 
         return inputs, outputs
+
+    def _handle_embedding_payload(
+        self,
+        event_pair: List[CBEvent],
+    ) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+        event_pair[0].payload
+        outputs = event_pair[-1].payload
+
+        chunks = []
+        if outputs:
+            chunks = outputs.get(EventPayload.CHUNKS, [])
+
+        return {}, {"num_chunks": len(chunks)}
 
     def _get_time_in_ms(self, event_pair: List[CBEvent]) -> Tuple[int, int]:
         """Get the start and end time of an event pair in milliseconds."""

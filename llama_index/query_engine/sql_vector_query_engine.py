@@ -1,7 +1,10 @@
 """SQL Vector query engine."""
 
-from typing import Optional, Any
-from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
+from typing import Optional, Any, Union
+from llama_index.indices.struct_store.sql_query import (
+    BaseSQLTableQueryEngine,
+    NLSQLTableQueryEngine,
+)
 from llama_index.indices.vector_store.retrievers.auto_retriever import (
     VectorIndexAutoRetriever,
 )
@@ -77,10 +80,13 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
     ) -> None:
         """Initialize params."""
         # validate that the query engines are of the right type
-        if not isinstance(sql_query_tool.query_engine, NLStructStoreQueryEngine):
+        if not isinstance(
+            sql_query_tool.query_engine,
+            (BaseSQLTableQueryEngine, NLSQLTableQueryEngine),
+        ):
             raise ValueError(
                 "sql_query_tool.query_engine must be an instance of "
-                "NLStructStoreQueryEngine"
+                "BaseSQLTableQueryEngine or NLSQLTableQueryEngine"
             )
         if not isinstance(vector_query_tool.query_engine, RetrieverQueryEngine):
             raise ValueError(
@@ -113,7 +119,7 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
     @classmethod
     def from_sql_and_vector_query_engines(
         cls,
-        sql_query_engine: NLStructStoreQueryEngine,
+        sql_query_engine: Union[BaseSQLTableQueryEngine, NLSQLTableQueryEngine],
         sql_tool_name: str,
         sql_tool_description: str,
         vector_auto_retriever: RetrieverQueryEngine,
@@ -125,7 +131,7 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         """From SQL and vector query engines.
 
         Args:
-            sql_query_engine (NLStructStoreQueryEngine): SQL query engine.
+            sql_query_engine (BaseSQLTableQueryEngine): SQL query engine.
             vector_query_engine (VectorIndexAutoRetriever): Vector retriever.
             selector (Optional[LLMSingleSelector]): Selector to use.
 
