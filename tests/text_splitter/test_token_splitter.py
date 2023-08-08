@@ -68,7 +68,7 @@ def test_split_with_metadata(english_text: str) -> None:
     assert len(chunks) == 2
 
     chunks = splitter.split_text_metadata_aware(english_text, metadata_str=metadata_str)
-    assert len(chunks) == 3
+    assert len(chunks) == 4
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
