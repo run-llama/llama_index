@@ -8,13 +8,12 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
     ToolOutput,
 )
+from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.schema import MetadataMode, NodeWithScore
-
 
 DEFAULT_CONTEXT_TEMPALTE = (
     "Context information is below."
@@ -64,7 +63,7 @@ class ContextChatEngine(BaseChatEngine):
         llm = service_context.llm_predictor.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if system_prompt is not None:
             if prefix_messages is not None:
@@ -213,7 +212,7 @@ class ContextChatEngine(BaseChatEngine):
         all_messages = prefix_messages + self._memory.get()
 
         chat_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(all_messages),
+            achat_stream=await self._llm.astream_chat(all_messages),
             sources=[
                 ToolOutput(
                     tool_name="retriever",

@@ -1,6 +1,6 @@
 """Context retriever agent."""
 
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
 from llama_index.agent.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
@@ -111,10 +111,10 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         """
         qa_prompt = qa_prompt or DEFAULT_QA_PROMPT
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):
             raise ValueError(
@@ -150,8 +150,8 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        mode: ChatResponseMode = ChatResponseMode.DEFAULT,
-    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        function_call: Union[str, dict] = "auto",
+    ) -> AgentChatResponse:
         """Chat."""
         # augment user message
         retrieved_nodes_w_scores: List[NodeWithScore] = self._retriever.retrieve(
@@ -168,4 +168,6 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         if self._verbose:
             print_text(formatted_message + "\n", color="yellow")
 
-        return super().chat(formatted_message, chat_history=chat_history, mode=mode)
+        return super().chat(
+            formatted_message, chat_history=chat_history, function_call=function_call
+        )

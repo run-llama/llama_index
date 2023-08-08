@@ -5,10 +5,11 @@ An index that that is built on top of an existing vector store.
 """
 
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
@@ -21,12 +22,28 @@ from llama_index.vector_stores.weaviate_utils import (
     class_schema_exists,
     create_default_schema,
     get_all_properties,
+    get_node_similarity,
     parse_get_response,
     to_node,
-    get_node_similarity,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
+    if len(standard_filters.filters) == 1:
+        return {
+            "path": standard_filters.filters[0].key,
+            "operator": "Equal",
+            "valueText": standard_filters.filters[0].value,
+        }
+    else:
+        operands = []
+        for filter in standard_filters.filters:
+            operands.append(
+                {"path": filter.key, "operator": "Equal", "valueText": filter.value}
+            )
+        return {"operands": operands, "operator": "And"}
 
 
 class WeaviateVectorStore(VectorStore):
@@ -151,8 +168,6 @@ class WeaviateVectorStore(VectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
-        if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for Weaviate yet.")
 
         all_properties = get_all_properties(self._client, self._index_name)
 
@@ -198,6 +213,13 @@ class WeaviateVectorStore(VectorStore):
                 alpha=query.alpha,
                 vector=vector,
             )
+
+        if query.filters is not None:
+            filter = _to_weaviate_filter(query.filters)
+            query_builder = query_builder.with_where(filter)
+        else:
+            filter = kwargs.pop("filter", {})
+
         query_builder = query_builder.with_limit(query.similarity_top_k)
         logger.debug(f"Using limit of {query.similarity_top_k}")
 

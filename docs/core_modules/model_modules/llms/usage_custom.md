@@ -189,7 +189,9 @@ from llama_index import (
     LangchainEmbedding, 
     ListIndex
 )
+from llama_index.callbacks import CallbackManager
 from llama_index.llms import CustomLLM, CompletionResponse, LLMMetadata
+from llama_index.llms.base import llm_completion_callback
 
 
 # set context window size
@@ -203,6 +205,8 @@ pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_
 
 class OurLLM(CustomLLM):
 
+    callback_manager = CallbackManager([])
+
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
@@ -212,6 +216,7 @@ class OurLLM(CustomLLM):
             model_name=model_name
         )
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         prompt_length = len(prompt)
         response = pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
@@ -220,6 +225,7 @@ class OurLLM(CustomLLM):
         text = response[prompt_length:]
         return CompletionResponse(text=text)
     
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         raise NotImplementedError()
 
@@ -243,6 +249,8 @@ print(response)
 ```
 
 Using this method, you can use any LLM. Maybe you have one running locally, or running on your own server. As long as the class is implemented and the generated tokens are returned, it should work out. Note that we need to use the prompt helper to customize the prompt sizes, since every model has a slightly different context length.
+
+The decorator is optional, but provides observability via callbacks on the LLM calls.
 
 Note that you may have to adjust the internal prompts to get good performance. Even then, you should be using a sufficiently large LLM to ensure it's capable of handling the complex queries that LlamaIndex uses internally, so your mileage may vary.
 

@@ -16,7 +16,7 @@ To learn how to load documents, see [Data Connectors](/core_modules/data_modules
 
 ### What is happening under the hood?
 
-1. Documents are chunked up and parsed into `Node` objects (which are lightweight abstraction over text str that additional keep track of metadata and relationships).
+1. Documents are chunked up and parsed into `Node` objects (which are lightweight abstractions over text str that additionally keep track of metadata and relationships).
 2. Additional computation is performed to add `Node` into index data structure
    > Note: the computation is index-specific.
    >

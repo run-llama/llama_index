@@ -157,7 +157,8 @@ class ServiceContext:
                 raise ValueError("Cannot specify both llm and llm_predictor")
             llm_predictor = LLMPredictor(llm=llm)
         llm_predictor = llm_predictor or LLMPredictor()
-        llm_predictor.callback_manager = callback_manager
+        if isinstance(llm_predictor, LLMPredictor):
+            llm_predictor.llm.callback_manager = callback_manager
 
         # NOTE: the embed_model isn't used in all indices
         embed_model = embed_model or OpenAIEmbedding()
@@ -221,7 +222,8 @@ class ServiceContext:
             llm_predictor = LLMPredictor(llm=llm)
 
         llm_predictor = llm_predictor or service_context.llm_predictor
-        llm_predictor.callback_manager = callback_manager
+        if isinstance(llm_predictor, LLMPredictor):
+            llm_predictor.llm.callback_manager = callback_manager
 
         # NOTE: the embed_model isn't used in all indices
         embed_model = embed_model or service_context.embed_model

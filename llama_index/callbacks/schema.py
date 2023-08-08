@@ -43,7 +43,9 @@ class EventPayload(str, Enum):
     CHUNKS = "chunks"  # list of text chunks
     NODES = "nodes"  # list of nodes
     PROMPT = "formatted_prompt"  # formatted prompt sent to LLM
-    RESPONSE = "response"  # response from LLM
+    MESSAGES = "messages"  # list of messages sent to LLM
+    COMPLETION = "completion"  # completion from LLM
+    RESPONSE = "response"  # message response from LLM
     TEMPLATE = "template"  # template used in LLM call
     QUERY_STR = "query_str"  # query used for query engine
     SUB_QUESTION = "sub_question"  # a sub question & answer + sources

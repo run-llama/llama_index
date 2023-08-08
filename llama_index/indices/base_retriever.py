@@ -44,7 +44,7 @@ class BaseRetriever(ABC):
         Implemented by the user.
 
         """
-        return []
+        return self._retrieve(query_bundle)
 
     def get_service_context(self) -> Optional[ServiceContext]:
         """Attempts to resolve a service context.

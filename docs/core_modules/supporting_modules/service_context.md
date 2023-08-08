@@ -62,7 +62,7 @@ Here's a complete example that sets up all objects using their default settings:
 ```python
 from llama_index import ServiceContext, LLMPredictor, OpenAIEmbedding, PromptHelper
 from llama_index.llms import OpenAI
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.text_splitter import TokenTextSplitter
 from llama_index.node_parser import SimpleNodeParser
 
 llm = OpenAI(model='text-davinci-003', temperature=0, max_tokens=256)

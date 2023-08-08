@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.schema import BaseNode
+from llama_index.text_splitter import TokenTextSplitter
 
 
 def get_numbered_text_from_nodes(

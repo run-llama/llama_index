@@ -3,7 +3,7 @@ import json
 import logging
 from abc import abstractmethod
 from threading import Thread
-from typing import Any, Callable, List, Optional, Tuple, Type
+from typing import Any, Callable, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks.base import CallbackManager
@@ -61,6 +61,17 @@ def call_function(
         ),
         output,
     )
+
+
+def resolve_function_call(function_call: Union[str, dict] = "auto") -> Union[str, dict]:
+    """Resolve function call.
+
+    If function_call is a function name string, return a dict with the name.
+    """
+    if isinstance(function_call, str) and function_call not in ["none", "auto"]:
+        return {"name": function_call}
+
+    return function_call
 
 
 class BaseOpenAIAgent(BaseAgent):
@@ -240,14 +251,20 @@ class BaseOpenAIAgent(BaseAgent):
         return agent_chat_response
 
     def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
         chat_response = self.chat(message, chat_history, mode=ChatResponseMode.STREAM)
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
     async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
         chat_response = await self.achat(
             message, chat_history, mode=ChatResponseMode.STREAM
@@ -294,10 +311,10 @@ class OpenAIAgent(BaseOpenAIAgent):
     ) -> "OpenAIAgent":
         tools = tools or []
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history)
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+        memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):
             raise ValueError(
@@ -380,11 +397,11 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         prefix_messages: Optional[List[ChatMessage]] = None,
     ) -> "RetrieverOpenAIAgent":
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history)
 
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+        memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):
             raise ValueError(

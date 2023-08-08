@@ -1,16 +1,12 @@
 from typing import Any, List, Optional, Sequence, Union
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.langchain_helpers.text_splitter import (
-    SentenceSplitter,
-    TokenTextSplitter,
-)
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (
@@ -19,7 +15,7 @@ from llama_index.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.schema import NodeWithScore, TextNode
-
+from llama_index.text_splitter import SentenceSplitter, TokenTextSplitter
 
 CITATION_QA_TEMPLATE = Prompt(
     "Please provide an answer based solely on the provided sources. "
