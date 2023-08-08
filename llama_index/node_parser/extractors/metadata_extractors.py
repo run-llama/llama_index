@@ -25,6 +25,7 @@ import json
 from typing import List, Optional, Sequence, cast, Dict, Callable
 from functools import reduce
 
+from llama_index.llms.base import LLM
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts.base import Prompt
@@ -136,6 +137,8 @@ class TitleExtractor(MetadataFeatureExtractor):
 
     def __init__(
         self,
+        llm: Optional[LLM] = None,
+        # TODO: llm_predictor arg is deprecated
         llm_predictor: Optional[BaseLLMPredictor] = None,
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
@@ -147,7 +150,7 @@ class TitleExtractor(MetadataFeatureExtractor):
         self._nodes = nodes
         self._node_template = node_template
         self._combine_template = combine_template
-        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._llm_predictor = llm_predictor or LLMPredictor(llm=llm)
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         nodes_to_extract_title: List[BaseNode] = []
@@ -197,11 +200,13 @@ class KeywordExtractor(MetadataFeatureExtractor):
 
     def __init__(
         self,
+        llm: Optional[LLM] = None,
+        # TODO: llm_predictor arg is deprecated
         llm_predictor: Optional[BaseLLMPredictor] = None,
         keywords: int = 5,
     ) -> None:
         """Init params."""
-        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._llm_predictor = llm_predictor or LLMPredictor(llm=llm)
         if keywords < 1:
             raise ValueError("num_keywords must be >= 1")
         self._keywords = keywords
@@ -240,6 +245,8 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
 
     def __init__(
         self,
+        llm: Optional[LLM] = None,
+        # TODO: llm_predictor arg is deprecated
         llm_predictor: Optional[BaseLLMPredictor] = None,
         questions: int = 5,
         prompt_template: Optional[str] = None,
@@ -248,7 +255,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         """Init params."""
         if questions < 1:
             raise ValueError("questions must be >= 1")
-        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._llm_predictor = llm_predictor or LLMPredictor(llm=llm)
         self._questions = questions
         self._prompt_template = prompt_template
         self._embedding_only = embedding_only
@@ -297,11 +304,13 @@ class SummaryExtractor(MetadataFeatureExtractor):
 
     def __init__(
         self,
+        llm: Optional[LLM] = None,
+        # TODO: llm_predictor arg is deprecated
         llm_predictor: Optional[BaseLLMPredictor] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
     ):
-        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._llm_predictor = llm_predictor or LLMPredictor(llm=llm)
         # validation
         if not all([s in ["self", "prev", "next"] for s in summaries]):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
