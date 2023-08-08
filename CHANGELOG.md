@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Fix for `AttributeError: 'OpenAIAgent' object has no attribute 'callback_manager'` by calling super constructor within `BaseOpenAIAgent`
+- Remove backticks from nebula queries (#7192)
 
 ## [0.7.21] - 2023-08-07
 
