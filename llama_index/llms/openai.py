@@ -40,7 +40,7 @@ class OpenAI(LLM):
     def __init__(
         self,
         model: str = "gpt-3.5-turbo",
-        temperature: float = 0.0,
+        temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
