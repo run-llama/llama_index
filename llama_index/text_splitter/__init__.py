@@ -1,9 +1,7 @@
 from typing import Optional
 
-from gridfs import DEFAULT_CHUNK_SIZE
-
 from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_CHUNK_OVERLAP
+from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.text_splitter.sentence_splitter import SentenceSplitter
 from llama_index.text_splitter.token_splitter import TokenTextSplitter
