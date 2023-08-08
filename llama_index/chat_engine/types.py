@@ -22,6 +22,13 @@ def is_function(message: ChatMessage) -> bool:
     return "function_call" in message.additional_kwargs
 
 
+class ChatResponseMode(str, Enum):
+    """Flag toggling waiting/streaming in `Agent._chat`"""
+
+    WAIT = "wait"
+    STREAM = "stream"
+
+
 @dataclass
 class AgentChatResponse:
     """Agent chat response."""
@@ -38,13 +45,6 @@ class AgentChatResponse:
 
     def __str__(self) -> str:
         return self.response
-
-
-class ChatResponseMode(str, Enum):
-    """Flag toggling waiting/streaming in `Agent.chat`"""
-
-    WAIT = "wait"
-    STREAM = "stream"
 
 
 @dataclass
