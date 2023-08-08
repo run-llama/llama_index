@@ -41,9 +41,9 @@ class AgentChatResponse:
 
 
 class ChatResponseMode(str, Enum):
-    """Flag toggling blocking/streaming in `Agent.chat`"""
+    """Flag toggling waiting/streaming in `Agent.chat`"""
 
-    DEFAULT = "default"
+    WAIT = "wait"
     STREAM = "stream"
 
 

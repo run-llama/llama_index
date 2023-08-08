@@ -137,11 +137,9 @@ class BaseOpenAIAgent(BaseAgent):
         self.memory.put(ai_message)
         return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
 
-    def _get_stream_ai_response(
-        self, functions: List[dict]
-    ) -> StreamingAgentChatResponse:
+    def _get_stream_ai_response(self, **llm_chat_kwargs) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(self.all_messages, functions=functions),
+            chat_stream=self._llm.stream_chat(**llm_chat_kwargs),
             sources=self.sources,
         )
         # Get the response in a separate thread so we can yield the response
@@ -159,12 +157,10 @@ class BaseOpenAIAgent(BaseAgent):
         return chat_stream_response
 
     async def _get_async_stream_ai_response(
-        self, functions: List[dict]
+        self, **llm_chat_kwargs
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
-            achat_stream=await self._llm.astream_chat(
-                self.all_messages, functions=functions
-            ),
+            achat_stream=await self._llm.astream_chat(**llm_chat_kwargs),
             sources=self.sources,
         )
         # create task to write chat response to history
@@ -183,44 +179,52 @@ class BaseOpenAIAgent(BaseAgent):
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
-    def _get_agent_response(
-        self, mode: ChatResponseMode, functions: List[dict]
-    ) -> AGENT_CHAT_RESPONSE_TYPE:
-        if mode == ChatResponseMode.DEFAULT:
-            chat_response: ChatResponse = self._llm.chat(
-                self.all_messages, functions=functions
+    def _get_llm_chat_kwargs(
+        self, functions: List[dict], function_call: Union[str, dict] = "auto"
+    ):
+        llm_chat_kwargs = dict(messages=self.all_messages)
+        if functions:
+            llm_chat_kwargs.update(
+                functions=functions, function_call=resolve_function_call(function_call)
             )
+        return llm_chat_kwargs
+
+    def _get_agent_response(
+        self, mode: ChatResponseMode, **llm_chat_kwargs
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        if mode == ChatResponseMode.WAIT:
+            chat_response: ChatResponse = self._llm.chat(**llm_chat_kwargs)
             return self._process_message(chat_response)
         elif mode == ChatResponseMode.STREAM:
-            return self._get_stream_ai_response(functions)
+            return self._get_stream_ai_response(**llm_chat_kwargs)
         else:
             raise NotImplementedError
 
     async def _get_async_agent_response(
-        self, mode: ChatResponseMode, functions: List[dict]
+        self, mode: ChatResponseMode, **llm_chat_kwargs
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        if mode == ChatResponseMode.DEFAULT:
-            chat_response: ChatResponse = await self._llm.achat(
-                self.all_messages, functions=functions
-            )
+        if mode == ChatResponseMode.WAIT:
+            chat_response: ChatResponse = await self._llm.achat(**llm_chat_kwargs)
             return self._process_message(chat_response)
         elif mode == ChatResponseMode.STREAM:
-            return await self._get_async_stream_ai_response(functions)
+            return await self._get_async_stream_ai_response(**llm_chat_kwargs)
         else:
             raise NotImplementedError
 
-    def chat(
+    def _chat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        mode: ChatResponseMode = ChatResponseMode.DEFAULT,
+        function_call: Union[str, dict] = "auto",
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 
         # Loop until no more function calls or max_function_calls is reached
         while True:
-            agent_chat_response = self._get_agent_response(mode, functions)
+            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, function_call)
+            agent_chat_response = self._get_agent_response(mode=mode, **llm_chat_kwargs)
             if not self._should_continue(self.latest_function_call, n_function_calls):
                 logger.debug("Break: should continue False")
                 break
@@ -230,18 +234,22 @@ class BaseOpenAIAgent(BaseAgent):
 
         return agent_chat_response
 
-    async def achat(
+    async def _achat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        mode: ChatResponseMode = ChatResponseMode.DEFAULT,
+        function_call: Union[str, dict] = "auto",
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
         n_function_calls = 0
 
         # Loop until no more function calls or max_function_calls is reached
         while True:
-            agent_chat_response = await self._get_async_agent_response(mode, functions)
+            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, function_call)
+            agent_chat_response = await self._get_async_agent_response(
+                mode=mode, **llm_chat_kwargs
+            )
             if not self._should_continue(self.latest_function_call, n_function_calls):
                 break
             assert isinstance(self.latest_function_call, dict)
@@ -250,13 +258,39 @@ class BaseOpenAIAgent(BaseAgent):
 
         return agent_chat_response
 
+    def chat(
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
+    ) -> AgentChatResponse:
+        chat_response = self._chat(
+            message, chat_history, function_call, mode=ChatResponseMode.WAIT
+        )
+        assert isinstance(chat_response, AgentChatResponse)
+        return chat_response
+
+    async def achat(
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
+    ) -> AgentChatResponse:
+        chat_response = await self._achat(
+            message, chat_history, function_call, mode=ChatResponseMode.WAIT
+        )
+        assert isinstance(chat_response, AgentChatResponse)
+        return chat_response
+
     def stream_chat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
-        chat_response = self.chat(message, chat_history, mode=ChatResponseMode.STREAM)
+        chat_response = self._chat(
+            message, chat_history, function_call, mode=ChatResponseMode.STREAM
+        )
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
@@ -266,8 +300,8 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
-        chat_response = await self.achat(
-            message, chat_history, mode=ChatResponseMode.STREAM
+        chat_response = await self._achat(
+            message, chat_history, function_call, mode=ChatResponseMode.STREAM
         )
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
