@@ -80,6 +80,7 @@ class BaseOpenAIAgent(BaseAgent):
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
+        super().__init__(callback_manager=callback_manager)
         self._llm = llm
         self._llm.callback_manager = callback_manager or CallbackManager([])
         self._memory = memory

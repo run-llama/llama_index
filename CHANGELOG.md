@@ -1,10 +1,24 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix for `AttributeError: 'OpenAIAgent' object has no attribute 'callback_manager'` by calling super constructor within `BaseOpenAIAgent`
+
+## [0.7.21] - 2023-08-07
+
+### New Features
+- Add entity metadata extractor (#7163)
+
 ## [0.7.20] - 2023-08-06
 
 ### New Features
 - add router module docs (#7171)
 - add retriever router (#7166)
+
+### New Features
+- Added an `EntityExtractor` for metadata extraction (#7163)
+- Added a `RouterRetriever` for routing queries to specific retrievers (#7166)
 
 ### Bug Fixes / Nits
 - Fix for issue where having multiple concurrent streamed responses from `OpenAIAgent` would result in interleaving of tokens across each response stream. (#7164)
