@@ -1,11 +1,13 @@
 """Prompt selectors."""
 from llama_index.prompts.chat_prompts import (
     CHAT_TEXT_QA_PROMPT,
+    CHAT_TREE_SUMMARIZE_PROMPT,
     CHAT_REFINE_PROMPT,
     CHAT_REFINE_TABLE_CONTEXT_PROMPT,
 )
 from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
+    DEFAULT_TREE_SUMMARIZE_PROMPT,
     DEFAULT_REFINE_PROMPT,
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
 )
@@ -24,6 +26,15 @@ DEFAULT_TEXT_QA_PROMPT_SEL_LC = PromptSelector(
 DEFAULT_TEXT_QA_PROMPT_SEL = QuestionAnswerPrompt(
     langchain_prompt_selector=DEFAULT_TEXT_QA_PROMPT_SEL_LC,
     prompt_type=PromptType.QUESTION_ANSWER,
+)
+
+DEFAULT_TREE_SUMMARIZE_PROMPT_SEL_LC = PromptSelector(
+    default_prompt=DEFAULT_TREE_SUMMARIZE_PROMPT.get_langchain_prompt(),
+    conditionals=[(is_chat_model, CHAT_TREE_SUMMARIZE_PROMPT.get_langchain_prompt())],
+)
+DEFAULT_TREE_SUMMARIZE_PROMPT_SEL = QuestionAnswerPrompt(
+    langchain_prompt_selector=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL_LC,
+    prompt_type=PromptType.SUMMARY,
 )
 
 DEFAULT_REFINE_PROMPT_SEL_LC = PromptSelector(
