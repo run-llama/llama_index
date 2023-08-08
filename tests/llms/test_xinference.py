@@ -122,9 +122,7 @@ def test_init() -> None:
 
 
 @pytest.mark.parametrize("chat_history", [mock_chat_history, tuple(mock_chat_history)])
-def test_chat(
-        chat_history: Sequence[ChatMessage]
-) -> None:
+def test_chat(chat_history: Sequence[ChatMessage]) -> None:
     dummy = MockXinference("uid", "endpoint")
     response = dummy.chat(chat_history)
     assert isinstance(response, ChatResponse)
@@ -134,9 +132,7 @@ def test_chat(
 
 
 @pytest.mark.parametrize("chat_history", [mock_chat_history, tuple(mock_chat_history)])
-def test_stream_chat(
-        chat_history: Sequence[ChatMessage]
-) -> None:
+def test_stream_chat(chat_history: Sequence[ChatMessage]) -> None:
     dummy = MockXinference("uid", "endpoint")
     response_gen = dummy.stream_chat(chat_history)
     total_text = ""
