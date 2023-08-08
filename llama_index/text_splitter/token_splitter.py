@@ -6,7 +6,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.text_splitter.types import MetadataAwareTextSplitter
-from llama_index.text_splitter.utils import split_text_keep_separator
+from llama_index.text_splitter.utils import split_by_char, split_by_sep
 from llama_index.utils import globals_helper
 
 _logger = logging.getLogger(__name__)
@@ -17,12 +17,12 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
     def __init__(
         self,
-        separator: str = " ",
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         tokenizer: Optional[Callable] = None,
-        backup_separators: Optional[List[str]] = ["\n"],
         callback_manager: Optional[CallbackManager] = None,
+        separator: str = " ",
+        backup_separators: Optional[List[str]] = ["\n"],
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:
@@ -30,12 +30,13 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
                 f"({chunk_size}), should be smaller."
             )
-        self._separator = separator
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self.tokenizer = tokenizer or globals_helper.tokenizer
-        self._backup_separators = backup_separators
         self.callback_manager = callback_manager or CallbackManager([])
+
+        all_seps = [separator] + backup_separators or []
+        self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text into chunks, reserving space required for metadata str."""
@@ -78,23 +79,10 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         if len(self.tokenizer(text)) <= chunk_size:
             return [text]
 
-        done_splitting = False
-        if self._separator in text:
-            # try split by main separator
-            splits = split_text_keep_separator(text, self._separator)
-            done_splitting = True
-
-        if not done_splitting and self._backup_separators is not None:
-            # try split by any backup separators
-            for sep in self._backup_separators:
-                if sep in text:
-                    splits = split_text_keep_separator(text, sep)
-                    done_splitting = True
-                    break
-
-        if not done_splitting:
-            # split by characters if all else fails
-            splits = list(text)
+        for split_fn in self._split_fns:
+            splits = split_fn(text)
+            if len(splits) > 1:
+                break
 
         new_splits = []
         for split in splits:
@@ -103,7 +91,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 new_splits.append(split)
             else:
                 # recursively split
-                new_splits.extend(self._split(split))
+                new_splits.extend(self._split(split, chunk_size=chunk_size))
         return new_splits
 
     def _merge(self, splits: List[str], chunk_size: int) -> List[str]:

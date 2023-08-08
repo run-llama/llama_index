@@ -15,8 +15,8 @@ from llama_index.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.schema import NodeWithScore, TextNode
+from llama_index.text_splitter import get_default_text_splitter
 from llama_index.text_splitter.types import TextSplitter
-from llama_index.text_splitter.utils import get_default_text_splitter
 
 CITATION_QA_TEMPLATE = Prompt(
     "Please provide an answer based solely on the provided sources. "
