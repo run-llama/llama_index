@@ -5,12 +5,18 @@ from typing import Callable, List, Optional
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_SIZE
-from llama_index.text_splitter.types import TextSplitter
+from llama_index.text_splitter.types import MetadataAwareTextSplitter
 from llama_index.utils import globals_helper
 
 
-class SentenceSplitter(TextSplitter):
-    """Split text with a preference for complete sentences.
+@dataclass
+class _Split:
+    text: str  # the split text
+    is_sentence: bool  # save whether this is a full sentence
+
+
+class SentenceSplitter(MetadataAwareTextSplitter):
+    """_Split text with a preference for complete sentences.
 
     In general, this class tries to keep sentences and paragraphs together. Therefore
     compared to the original TokenTextSplitter, there are less likely to be
@@ -70,19 +76,17 @@ class SentenceSplitter(TextSplitter):
         delimiters themselves as separate items in the list of phrases.
         """
 
-    def _postprocess_splits(self, docs: List[str]) -> List[str]:
-        """Post-process splits."""
-        # TODO: prune text splits, remove empty spaces
-        new_docs = []
-        for doc in docs:
-            if doc.replace(" ", "") == "":
-                continue
-            new_docs.append(doc)
-        return new_docs
+    def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
+        metadata_len = len(self.tokenizer(metadata_str))
+        effective_chunk_size = self._chunk_size - metadata_len
+        return self._split_text(text, chunk_size=effective_chunk_size)
 
     def split_text(self, text: str) -> List[str]:
+        return self._split_text(text, chunk_size=self._chunk_size)
+
+    def _split_text(self, text: str, chunk_size: int) -> List[str]:
         """
-        Split incoming text and return chunks with overlap size.
+        _Split incoming text and return chunks with overlap size.
 
         Has a preference for complete sentences, phrases, and minimal overlap.
         """
@@ -92,86 +96,107 @@ class SentenceSplitter(TextSplitter):
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            # First we split paragraphs using separator
-            splits = text.split(self.paragraph_separator)
 
-            # Merge paragraphs that are too small.
+            splits = self._split(text, chunk_size)
+            chunks = self._merge(splits, chunk_size)
 
-            idx = 0
-            while idx < len(splits):
-                if idx < len(splits) - 1 and len(splits[idx]) < self._chunk_size:
-                    splits[idx] = "\n\n".join([splits[idx], splits[idx + 1]])
-                    splits.pop(idx + 1)
+            event.on_end(payload={EventPayload.CHUNKS: chunks})
+
+        return chunks
+
+    def _split(self, text: str, chunk_size: int) -> List[str]:
+        """Break text into splits that are smaller than chunk size.
+
+        The order of splitting is:
+        1. split by paragraph separator
+        2. split by chunking tokenizer (default is nltk sentence tokenizer)
+        3. split by second chunking regex (default is "[^,\.;]+[,\.;]?")
+        4. split by default separator (" ")
+
+        """
+        # First we split paragraphs using separator
+        splits = text.split(self.paragraph_separator)
+
+        # Merge paragraphs that are too small.
+        idx = 0
+        while idx < len(splits):
+            if idx < len(splits) - 1 and len(splits[idx]) < chunk_size:
+                splits[idx] = "\n\n".join([splits[idx], splits[idx + 1]])
+                splits.pop(idx + 1)
+            else:
+                idx += 1
+
+        # Next we split the text using the chunk tokenizer fn,
+        # which defaults to the sentence tokenizer from nltk.
+        chunked_splits = [self.chunking_tokenizer_fn(text) for text in splits]
+        splits = [chunk for split in chunked_splits for chunk in split]
+
+        # Check if any sentences exceed the chunk size. If they do, split again
+        # using the second chunk separator. If it any still exceed,
+        # use the default separator (" ").
+
+        new_splits: List[_Split] = []
+        for split in splits:
+            split_len = len(self.tokenizer(split))
+            if split_len <= self._chunk_size:
+                new_splits.append(_Split(split, True))
+            else:
+                if self.second_chunking_regex is not None:
+                    import re
+
+                    # Default regex is "[^,\.;]+[,\.;]?"
+                    splits2 = re.findall(self.second_chunking_regex, split)
+
                 else:
-                    idx += 1
-
-            # Next we split the text using the chunk tokenizer fn,
-            # which defaults to the sentence tokenizer from nltk.
-            chunked_splits = [self.chunking_tokenizer_fn(text) for text in splits]
-            splits = [chunk for split in chunked_splits for chunk in split]
-
-            # Check if any sentences exceed the chunk size. If they do, split again
-            # using the second chunk separator. If it any still exceed,
-            # use the default separator (" ").
-            @dataclass
-            class Split:
-                text: str  # the split text
-                is_sentence: bool  # save whether this is a full sentence
-
-            new_splits: List[Split] = []
-            for split in splits:
-                split_len = len(self.tokenizer(split))
-                if split_len <= self._chunk_size:
-                    new_splits.append(Split(split, True))
-                else:
-                    if self.second_chunking_regex is not None:
-                        import re
-
-                        # Default regex is "[^,\.;]+[,\.;]?"
-                        splits2 = re.findall(self.second_chunking_regex, split)
-
+                    splits2 = [split]
+                for split2 in splits2:
+                    if len(self.tokenizer(split2)) <= self._chunk_size:
+                        new_splits.append(_Split(split2, False))
                     else:
-                        splits2 = [split]
-                    for split2 in splits2:
-                        if len(self.tokenizer(split2)) <= self._chunk_size:
-                            new_splits.append(Split(split2, False))
-                        else:
-                            splits3 = split2.split(self._separator)
-                            new_splits.extend(
-                                [Split(split3, False) for split3 in splits3]
-                            )
+                        splits3 = split2.split(self._separator)
+                        new_splits.extend([_Split(split3, False) for split3 in splits3])
 
-            # Create the list of text splits by combining smaller chunks.
-            docs: List[str] = []
-            cur_doc_list: List[str] = []
-            cur_tokens = 0
-            while len(new_splits) > 0:
-                cur_token = new_splits[0]
-                cur_len = len(self.tokenizer(cur_token.text))
-                if cur_len > self._chunk_size:
-                    raise ValueError("Single token exceed chunk size")
-                if cur_tokens + cur_len > self._chunk_size:
+        return new_splits
+
+    def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
+        # Create the list of text splits by combining smaller chunks.
+        docs: List[str] = []
+        cur_doc_list: List[str] = []
+        cur_tokens = 0
+        while len(splits) > 0:
+            cur_token = splits[0]
+            cur_len = len(self.tokenizer(cur_token.text))
+            if cur_len > chunk_size:
+                raise ValueError("Single token exceed chunk size")
+            if cur_tokens + cur_len > chunk_size:
+                docs.append("".join(cur_doc_list).strip())
+                cur_doc_list = []
+                cur_tokens = 0
+            else:
+                if (
+                    cur_token.is_sentence
+                    or cur_tokens + cur_len < chunk_size - self._chunk_overlap
+                ):
+                    cur_tokens += cur_len
+                    cur_doc_list.append(cur_token.text)
+                    splits.pop(0)
+                else:
                     docs.append("".join(cur_doc_list).strip())
                     cur_doc_list = []
                     cur_tokens = 0
-                else:
-                    if (
-                        cur_token.is_sentence
-                        or cur_tokens + cur_len < self._chunk_size - self._chunk_overlap
-                    ):
-                        cur_tokens += cur_len
-                        cur_doc_list.append(cur_token.text)
-                        new_splits.pop(0)
-                    else:
-                        docs.append("".join(cur_doc_list).strip())
-                        cur_doc_list = []
-                        cur_tokens = 0
 
-            docs.append("".join(cur_doc_list).strip())
+        docs.append("".join(cur_doc_list).strip())
 
-            # run postprocessing to remove blank spaces
-            docs = self._postprocess_splits(docs)
-
-            event.on_end(payload={EventPayload.CHUNKS: docs})
+        # run postprocessing to remove blank spaces
+        docs = self._postprocess_chunks(docs)
 
         return docs
+
+    def _postprocess_chunks(self, docs: List[str]) -> List[str]:
+        """Post-process chunks."""
+        new_docs = []
+        for doc in docs:
+            if doc.replace(" ", "") == "":
+                continue
+            new_docs.append(doc)
+        return new_docs

@@ -1,4 +1,6 @@
 """Test text splitter."""
+import tiktoken
+
 from llama_index.text_splitter import TokenTextSplitter
 from llama_index.text_splitter.utils import truncate_text
 
@@ -49,6 +51,24 @@ def test_split_chinese(chinese_text: str) -> None:
 
 
 def test_contiguous_text(contiguous_text: str) -> None:
-    splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=0)
+    splitter = TokenTextSplitter(chunk_size=100, chunk_overlap=0)
     chunks = splitter.split_text(contiguous_text)
+    assert len(chunks) == 10
+
+
+def test_split_with_metadata(english_text: str) -> None:
+    chunk_size = 100
+    metadata_str = "word " * 50
+    tokenizer = tiktoken.get_encoding("gpt2")
+    splitter = TokenTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=0, tokenizer=tokenizer.encode
+    )
+
+    chunks = splitter.split_text(english_text)
     assert len(chunks) == 2
+
+    chunks = splitter.split_text_metadata_aware(english_text, metadata_str=metadata_str)
+    assert len(chunks) == 3
+    for chunk in chunks:
+        node_content = chunk + metadata_str
+        assert len(tokenizer.encode(node_content)) <= 100

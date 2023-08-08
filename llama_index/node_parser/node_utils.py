@@ -4,16 +4,10 @@
 import logging
 from typing import List
 
-from llama_index.schema import (
-    BaseNode,
-    Document,
-    ImageDocument,
-    ImageNode,
-    MetadataMode,
-    NodeRelationship,
-    TextNode,
-)
+from llama_index.schema import (BaseNode, Document, ImageDocument, ImageNode,
+                                MetadataMode, NodeRelationship, TextNode)
 from llama_index.text_splitter import TextSplitter
+from llama_index.text_splitter.types import MetadataAwareTextSplitter
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -26,9 +20,24 @@ def get_nodes_from_document(
     include_prev_next_rel: bool = False,
 ) -> List[TextNode]:
     """Get nodes from document."""
-    text_splits = text_splitter.split_text(
-        document.get_content(metadata_mode=MetadataMode.NONE),
-    )
+    if include_metadata:
+        if isinstance(text_splitter, MetadataAwareTextSplitter):
+            text_splits = text_splitter.split_text_metadata_aware(
+                text=document.get_content(metadata_mode=MetadataMode.NONE),
+                metadata_str=document.get_metadata_str(),
+            )
+        else:
+            logger.warning(f"include_metadata is set to True but {text_splitter} is not metadata-aware."
+                           "Node content length may exceed expected chunk size."
+                           "Try lowering the chunk size or using a metadata-aware text splitter if this is a problem.")
+
+            text_splits = text_splitter.split_text(
+                document.get_content(metadata_mode=MetadataMode.NONE),
+            )
+    else:
+        text_splits = text_splitter.split_text(
+            document.get_content(metadata_mode=MetadataMode.NONE),
+        )
 
     nodes: List[TextNode] = []
     for i, text_chunk in enumerate(text_splits):
