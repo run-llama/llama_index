@@ -14,4 +14,5 @@ REBEL + Knowledge Graph Index <https://colab.research.google.com/drive/1G6pcR0pX
 SQL Index </examples/index_structs/struct_indices/SQLIndexDemo.ipynb>
 /examples/index_structs/struct_indices/duckdb_sql_query.ipynb
 /examples/index_structs/doc_summary/DocSummary.ipynb
+/examples/vector_stores/SentenceWindowVectorIndex.ipynb
 ```
