@@ -1,5 +1,6 @@
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Optional, Sequence
 
+from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
     ChatMessage,
@@ -28,10 +29,12 @@ class Xinference(CustomLLM):
         model_uid: str,
         endpoint: str,
         temperature: float = 1.0,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self.temperature = temperature
         self.model_uid = model_uid
         self.endpoint = endpoint
+        self.callback_manager = callback_manager or CallbackManager([])
 
         self._model_description = None
         self._context_window = None
