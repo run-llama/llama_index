@@ -101,10 +101,26 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "{context_str}\n"
     "---------------------\n"
     "Given the context information and not prior knowledge, "
-    "answer the question: {query_str}\n"
+    "answer the question. If the answer is not in the context, inform "
+    "the user that you can't answer the question.\n"
+    "Question: {query_str}\n"
 )
 DEFAULT_TEXT_QA_PROMPT = Prompt(
     DEFAULT_TEXT_QA_PROMPT_TMPL, prompt_type=PromptType.QUESTION_ANSWER
+)
+
+DEFAULT_TREE_SUMMARIZE_TMPL = (
+    "Context information from multiple sources is below.\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Given the information from multiple sources and not prior knowledge, "
+    "answer the question. If the answer is not in the context, inform "
+    "the user that you can't answer the question.\n"
+    "Question: {query_str}\n"
+)
+DEFAULT_TREE_SUMMARIZE_PROMPT = Prompt(
+    DEFAULT_TREE_SUMMARIZE_TMPL, prompt_type=PromptType.SUMMARY
 )
 
 

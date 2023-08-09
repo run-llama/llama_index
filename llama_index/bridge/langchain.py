@@ -18,7 +18,7 @@ from langchain.docstore.document import Document
 
 # embeddings
 from langchain.embeddings.base import Embeddings
-from langchain.input import get_color_mapping, print_text
+from langchain.embeddings import HuggingFaceEmbeddings
 
 # LLMs
 from langchain.llms import AI21, BaseLLM, Cohere, FakeListLLM, OpenAI
@@ -32,6 +32,8 @@ from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
+    BaseMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
 
 # schema
@@ -49,6 +51,7 @@ from langchain.schema import (
 
 # misc
 from langchain.sql_database import SQLDatabase
+from langchain.input import get_color_mapping, print_text
 
 # input & output
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -65,6 +68,7 @@ __all__ = [
     "ChatOpenAI",
     "BaseLanguageModel",
     "Embeddings",
+    "HuggingFaceEmbeddings",
     "PromptTemplate",
     "BasePromptTemplate",
     "ConditionalPromptSelector",
@@ -73,6 +77,7 @@ __all__ = [
     "ChatPromptTemplate",
     "HumanMessagePromptTemplate",
     "BaseMessagePromptTemplate",
+    "SystemMessagePromptTemplate",
     "BaseChatMemory",
     "ConversationBufferMemory",
     "ChatMessageHistory",
