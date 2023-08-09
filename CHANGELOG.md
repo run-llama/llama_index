@@ -5,7 +5,9 @@
 ### Bug Fixes / Nits
 - Update the default `EntityExtractor` model (#7209)
 
-## [0.7.22]
+## [0.7.22] - 2023-08-08
+### New Features
+- Added Xorbits inference for local deployments (#7151)
 
 ### New Features
 - add ensemble retriever notebook (#7190)
