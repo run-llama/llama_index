@@ -209,9 +209,9 @@ class ReActAgent(BaseAgent):
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
-        print(
-            f"\n\nStream chat _memory put: {ChatMessage(content=message, role='user')}"
-        )
+        # print(
+        # f"\n\nStream chat _memory put: {ChatMessage(content=message, role='user')}"
+        # )
         self._memory.put(ChatMessage(content=message, role="user"))
 
         current_reasoning: List[BaseReasoningStep] = []
@@ -221,7 +221,7 @@ class ReActAgent(BaseAgent):
             input_chat = self._react_chat_formatter.format(
                 chat_history=self._memory.get(), current_reasoning=current_reasoning
             )
-            print(f"\n\nStream chat input: {input_chat[1:]}")
+            # print(f"\n\nStream chat input: {input_chat[1:]}")
             # send prompt
             chat_stream = self._llm.stream_chat(input_chat)
 
@@ -235,7 +235,7 @@ class ReActAgent(BaseAgent):
                     is_done = True
                     break
                 full_response = r
-            print(f"\n\n{full_response=}")
+            # print(f"\n\n{full_response=}")
             if is_done:
                 break
 
