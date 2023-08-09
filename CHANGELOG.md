@@ -4,6 +4,7 @@
 
 ### New Features
 - Added Xorbits inference for local deployments (#7151)
+- Added Zep vector store integration (#7203)
 
 ### Bug Fixes / Nits
 - Update the default `EntityExtractor` model (#7209)
