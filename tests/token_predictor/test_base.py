@@ -7,9 +7,9 @@ from llama_index.indices.keyword_table.base import KeywordTableIndex
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
-from llama_index.schema import Document
 from llama_index.llm_predictor.mock import MockLLMPredictor
+from llama_index.schema import Document
+from llama_index.text_splitter import TokenTextSplitter
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 

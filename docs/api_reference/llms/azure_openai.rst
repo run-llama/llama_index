@@ -1,4 +1,6 @@
 Azure OpenAI
 ============
 
-.. autopydantic_model:: llama_index.llms.azure_openai.AzureOpenAI
+.. automodule:: llama_index.llms.azure_openai.AzureOpenAI
+   :members:
+   :inherited-members:

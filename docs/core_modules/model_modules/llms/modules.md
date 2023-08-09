@@ -28,6 +28,7 @@ maxdepth: 1
 ---
 /examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
 /examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
+/examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
 
 ```
 

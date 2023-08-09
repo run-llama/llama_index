@@ -14,7 +14,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Vector Store             | Type                | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
 |--------------------------|---------------------|--------------------|---------------|--------|-----------------|-------|
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
-| Weaviate                 | self-hosted / cloud |                    | ✓             | ✓      | ✓               |       |
+| Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
 | Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |

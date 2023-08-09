@@ -1,16 +1,29 @@
 import os
 import shutil
 from typing import TypedDict
-from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    TYPE_CHECKING,
+    Tuple,
+)
 from collections import defaultdict
 from datetime import datetime
 
-from llama_index.callbacks.base import BaseCallbackHandler
+from llama_index.callbacks.base_handler import BaseCallbackHandler
+from llama_index.callbacks.token_counting import get_llm_token_counts
 from llama_index.callbacks.schema import (
     CBEvent,
     CBEventType,
+    EventPayload,
     TIMESTAMP_FORMAT,
 )
+from llama_index.utils import globals_helper
 
 if TYPE_CHECKING:
     from wandb.sdk.data_types import trace_tree
@@ -99,6 +112,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
         run_args: Optional[WandbRunArgs] = None,
+        tokenizer: Optional[Callable[[str], List]] = None,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
     ) -> None:
@@ -146,6 +160,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self._cur_trace_id: Optional[str] = None
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
+        self.tokenizer = tokenizer or globals_helper.tokenizer
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -412,12 +427,12 @@ class WandbCallbackHandler(BaseCallbackHandler):
         inputs = event_pair[0].payload
         outputs = event_pair[-1].payload
 
-        if inputs and "documents" in inputs:
-            documents = inputs.pop("documents")
+        if inputs and EventPayload.DOCUMENTS in inputs:
+            documents = inputs.pop(EventPayload.DOCUMENTS)
             inputs["num_documents"] = len(documents)
 
-        if outputs and "nodes" in outputs:
-            nodes = outputs.pop("nodes")
+        if outputs and EventPayload.NODES in outputs:
+            nodes = outputs.pop(EventPayload.NODES)
             outputs["num_nodes"] = len(nodes)
 
         return inputs or {}, outputs or {}
@@ -431,29 +446,26 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         assert isinstance(inputs, dict) and isinstance(outputs, dict)
 
-        # Make `formatted_prompt` part of `inputs`
-        inputs["formatted_prompt"] = outputs.get("formatted_prompt", None)
-        outputs.pop("formatted_prompt", None)
-
         # Get `original_template` from Prompt
-        inputs["template"] = inputs["template"].original_template
+        if EventPayload.PROMPT in inputs:
+            inputs[EventPayload.PROMPT] = inputs[EventPayload.PROMPT]
 
-        # Make token counts part of span's `metadata`
-        def filterByKey(keys: List[str]) -> Dict[str, int]:
-            return {x: outputs[x] for x in keys}  # type: ignore
+        # Format messages
+        if EventPayload.MESSAGES in inputs:
+            inputs[EventPayload.MESSAGES] = "\n".join(
+                [str(x) for x in inputs[EventPayload.MESSAGES]]
+            )
 
-        metadata_keys = [
-            "formatted_prompt_tokens_count",
-            "prediction_tokens_count",
-            "total_tokens_used",
-        ]
-        metadata = filterByKey(metadata_keys)
+        token_counts = get_llm_token_counts(self.tokenizer, outputs)
+        metadata = {
+            "formatted_prompt_tokens_count": token_counts.prompt_token_count,
+            "prediction_tokens_count": token_counts.completion_token_count,
+            "total_tokens_used": token_counts.total_token_count,
+        }
         span.attributes = metadata
-        for meta_key in metadata_keys:
-            outputs.pop(meta_key, None)
 
         # Make `response` part of `outputs`
-        outputs = {"response": outputs["response"]}
+        outputs = {EventPayload.RESPONSE: outputs[EventPayload.RESPONSE]}
 
         return inputs, outputs, span
 
@@ -465,7 +477,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs = event_pair[-1].payload
 
         if outputs:
-            response = outputs["response"]
+            response = outputs[EventPayload.RESPONSE]
 
             if type(response).__name__ == "Response":
                 response = response.response
@@ -487,7 +499,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         chunks = []
         if outputs:
-            chunks = outputs.get("chunks", [])
+            chunks = outputs.get(EventPayload.CHUNKS, [])
 
         return {}, {"num_chunks": len(chunks)}
 

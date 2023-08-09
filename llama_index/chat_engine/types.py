@@ -41,7 +41,7 @@ class StreamingAgentChatResponse:
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-    _queue: queue.Queue = queue.Queue()
+    _queue: queue.Queue = field(default_factory=queue.Queue)
     _is_done = False
     _is_function: Optional[bool] = None
 
