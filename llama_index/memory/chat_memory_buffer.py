@@ -16,9 +16,7 @@ class ChatMemoryBuffer(BaseMemory):
     token_limit: int
     tokenizer_fn: Callable[[str], List] = Field(
         # NOTE: mypy does not handle the typing here well, hence the cast
-        default_factory=cast(
-            Callable[[], Any], GlobalsHelper().tokenizer
-        ),  # do_nothing
+        default_factory=cast(Callable[[], Any], GlobalsHelper().tokenizer),
         exclude=True,
     )
     chat_history: List[ChatMessage] = Field(default_factory=list)
@@ -45,7 +43,7 @@ class ChatMemoryBuffer(BaseMemory):
         # Validate tokenizer -- this avoids errors when loading from json/dict
         tokenizer_fn = values.get("tokenizer_fn", None)
         if tokenizer_fn is None:
-            values["tokenizer_fn"] = GlobalsHelper().tokenizer  # do_nothing
+            values["tokenizer_fn"] = GlobalsHelper().tokenizer
 
         return values
 
