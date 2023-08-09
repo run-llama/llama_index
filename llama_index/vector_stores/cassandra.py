@@ -6,7 +6,7 @@ powered by the cassIO library
 """
 
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, cast, Dict, Iterable, List, Optional, TypeVar
 
 
 from llama_index.schema import MetadataMode
@@ -19,7 +19,8 @@ from llama_index.indices.query.embedding_utils import (
 )
 
 from llama_index.vector_stores.types import (
-    # MetadataFilters,
+    MetadataFilters,
+    ExactMatchFilter,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
@@ -32,8 +33,10 @@ _logger = logging.getLogger(__name__)
 DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 DEFAULT_INSERTION_BATCH_SIZE = 20
 
+T = TypeVar("T")
 
-def _batch_iterable(iterable, batch_size):
+
+def _batch_iterable(iterable: Iterable[T], batch_size: int) -> Iterable[Iterable[T]]:
     this_batch = []
     for entry in iterable:
         this_batch.append(entry)
@@ -99,7 +102,7 @@ class CassandraVectorStore(VectorStore):
             primary_key_type=["TEXT", "TEXT"],
             # a conservative choice here, to make everything searchable
             # except the bulky "_node_content" key (it'd make little sense to):
-            metadata_indexing=("deny_list", ["_node_content"]),
+            metadata_indexing=("default_to_searchable", ["_node_content"]),
         )
 
     def add(
@@ -176,6 +179,12 @@ class CassandraVectorStore(VectorStore):
         """Return the underlying cassIO vector table object"""
         return self.vector_table
 
+    @staticmethod
+    def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
+        if any(not isinstance(f, ExactMatchFilter) for f in query_filters.filters):
+            raise NotImplementedError("Only `ExactMatchFilter` filters are supported")
+        return {f.key: f.value for f in query_filters.filters}
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
@@ -208,6 +217,13 @@ class CassandraVectorStore(VectorStore):
         #
         query_embedding = cast(List[float], query.query_embedding)
 
+        # metadata filtering
+        if query.filters is not None:
+            # raise NotImplementedError("No metadata filtering yet")
+            query_metadata = self._query_filters_to_dict(query.filters)
+        else:
+            query_metadata = {}
+
         _logger.debug(
             f"Running ANN search on the Cassandra table (query mode: {query.mode})"
         )
@@ -215,9 +231,10 @@ class CassandraVectorStore(VectorStore):
             matches = list(
                 self.vector_table.metric_ann_search(
                     vector=query_embedding,
-                    top_k=query.similarity_top_k,
+                    n=query.similarity_top_k,
                     metric="cos",
                     metric_threshold=None,
+                    metadata=query_metadata,
                 )
             )
             top_k_scores = [match["distance"] for match in matches]
@@ -244,9 +261,10 @@ class CassandraVectorStore(VectorStore):
             prefetch_matches = list(
                 self.vector_table.metric_ann_search(
                     vector=query_embedding,
-                    top_k=prefetch_k,
+                    n=prefetch_k,
                     metric="cos",
                     metric_threshold=None,  # this is not `mmr_threshold`
+                    metadata=query_metadata,
                 )
             )
             #
