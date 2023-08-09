@@ -9,6 +9,8 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.xinference_utils import (
@@ -98,6 +100,7 @@ class Xinference(CustomLLM):
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {"prompt": prompt, **self._model_kwargs, **kwargs}
 
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         assert self._generator is not None
         prompt = messages[-1].content if len(messages) > 0 else ""
@@ -116,6 +119,7 @@ class Xinference(CustomLLM):
         )
         return response
 
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -143,6 +147,7 @@ class Xinference(CustomLLM):
 
         return gen()
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         assert self._generator is not None
         response_text = self._generator.chat(
@@ -156,6 +161,7 @@ class Xinference(CustomLLM):
         )
         return response
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         assert self._generator is not None
         response_iter = self._generator.chat(
