@@ -22,6 +22,9 @@ if TYPE_CHECKING:
 class ZepVectorStore(VectorStore):
     """Zep Vector Store for storing and retrieving embeddings.
 
+    Zep supports both normalized and non-normalized embeddings. Cosine similarity is
+    used to compute distance and the returned score is normalized to be between 0 and 1.
+
     Args:
         collection_name (str): Name of the Zep collection in which to store embeddings.
         api_url (str): URL of the Zep API.
