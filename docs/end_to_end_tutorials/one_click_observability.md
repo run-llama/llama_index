@@ -15,7 +15,7 @@ Each provider has similarities and differences. Take a look below for the full s
 
 ## Usage Pattern
 
-To toggle, simply do the following:
+To toggle, you will generally just need to do the following:
 
 ```python
 
@@ -32,6 +32,8 @@ set_global_handler("<handler_name>", **kwargs)
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
 
 And that's it! Executions will get seamlessly piped to downstream service (e.g. W&B Prompts) and you'll be able to access features such as viewing execution traces of your application.
+
+**NOTE**: TruLens (by TruEra) uses a different "one-click" experience. See below for details.
 
 ## Partners
 
@@ -55,6 +57,16 @@ set_global_handler("wandb", run_args={"project": "llamaindex"})
 # service_context = ServiceContext.from_defaults(
 #     callback_manager=callback_manager
 # )
+
+# access additional methods on handler to persist index + load index
+import llama_index
+
+# persist index
+llama_index.global_handler.persist_index(graph, index_name="composable_graph")
+# load storage context
+storage_context = llama_index.global_handler.load_storage_context(
+    artifact_url="ayut/llamaindex/composable_graph:v0"
+)
 
 ```
 
@@ -91,7 +103,9 @@ set_global_handler("arize_phoenix")
 
 # view data as dataframe
 from llama_index.callbacks.open_inference_callback import as_dataframe
-query_data_buffer = callback_handler.flush_query_data_buffer()
+import llama_index
+
+query_data_buffer = llama_index.global_handler.flush_query_data_buffer()
 query_dataframe = as_dataframe(query_data_buffer)
 
 ```
@@ -114,14 +128,26 @@ TruLens allows users to instrument/evaluate LlamaIndex applications, through fea
 
 #### Usage Pattern + Guides
 
-**NOTE**: We're currently still working on the "one-click" portion but see below for using TruLens + LlamaIndex.
+```python
+# use trulens
+from trulens_eval import TruLlama
+tru_query_engine = TruLlama(query_engine)
+
+# query 
+tru_query_engine.query("What did the author do growing up?")
+
+```
+![](/_static/integrations/trulens.png)
+
+#### Guides
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
 /community/integrations/trulens.md
-Quickstart Guide <https://github.com/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
+Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
+Colab <https://colab.research.google.com/github/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
 ```
 
 
