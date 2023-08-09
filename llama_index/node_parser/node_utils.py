@@ -13,32 +13,11 @@ from llama_index.schema import (
     NodeRelationship,
     TextNode,
 )
-from llama_index.text_splitter import TextSplit, TextSplitter, TokenTextSplitter
+from llama_index.text_splitter import TextSplitter
+from llama_index.text_splitter.types import MetadataAwareTextSplitter
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
-
-
-def get_text_splits_from_document(
-    document: BaseNode,
-    text_splitter: TextSplitter,
-    include_metadata: bool = True,
-) -> List[TextSplit]:
-    """Break the document into chunks with additional info."""
-    # TODO: clean up since this only exists due to the diff w LangChain's TextSplitter
-    if isinstance(text_splitter, TokenTextSplitter):
-        # use this to extract extra information about the chunks
-        text_splits = text_splitter.split_text_with_overlaps(
-            document.get_content(metadata_mode=MetadataMode.NONE),
-            metadata_str=document.get_metadata_str() if include_metadata else None,
-        )
-    else:
-        text_chunks = text_splitter.split_text(
-            document.get_content(),
-        )
-        text_splits = [TextSplit(text_chunk=text_chunk) for text_chunk in text_chunks]
-
-    return text_splits
 
 
 def get_nodes_from_document(
@@ -48,37 +27,42 @@ def get_nodes_from_document(
     include_prev_next_rel: bool = False,
 ) -> List[TextNode]:
     """Get nodes from document."""
-    text_splits = get_text_splits_from_document(
-        document=document,
-        text_splitter=text_splitter,
-        include_metadata=include_metadata,
-    )
+    if include_metadata:
+        if isinstance(text_splitter, MetadataAwareTextSplitter):
+            text_splits = text_splitter.split_text_metadata_aware(
+                text=document.get_content(metadata_mode=MetadataMode.NONE),
+                metadata_str=document.get_metadata_str(),
+            )
+        else:
+            logger.warning(
+                f"include_metadata is set to True but {text_splitter} "
+                "is not metadata-aware."
+                "Node content length may exceed expected chunk size."
+                "Try lowering the chunk size or using a metadata-aware text splitter "
+                "if this is a problem."
+            )
+
+            text_splits = text_splitter.split_text(
+                document.get_content(metadata_mode=MetadataMode.NONE),
+            )
+    else:
+        text_splits = text_splitter.split_text(
+            document.get_content(metadata_mode=MetadataMode.NONE),
+        )
 
     nodes: List[TextNode] = []
-    index_counter = 0
-    for i, text_split in enumerate(text_splits):
-        text_chunk = text_split.text_chunk
+    for i, text_chunk in enumerate(text_splits):
         logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
-        start_char_idx = None
-        end_char_idx = None
-        if text_split.num_char_overlap is not None:
-            start_char_idx = index_counter - text_split.num_char_overlap
-            end_char_idx = index_counter - text_split.num_char_overlap + len(text_chunk)
-        index_counter += len(text_chunk) + 1
 
         node_metadata = {}
         if include_metadata:
             node_metadata = document.metadata
-            if text_split.metadata is not None:
-                node_metadata.update(text_split.metadata)
 
         if isinstance(document, ImageDocument):
             image_node = ImageNode(
                 text=text_chunk,
                 embedding=document.embedding,
                 metadata=node_metadata,
-                start_char_idx=start_char_idx,
-                end_char_idx=end_char_idx,
                 image=document.image,
                 relationships={
                     NodeRelationship.SOURCE: document.as_related_node_info()
@@ -89,8 +73,6 @@ def get_nodes_from_document(
             node = TextNode(
                 text=text_chunk,
                 embedding=document.embedding,
-                start_char_idx=start_char_idx,
-                end_char_idx=end_char_idx,
                 metadata=node_metadata,
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
                 excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
