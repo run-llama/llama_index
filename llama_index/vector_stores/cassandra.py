@@ -30,6 +30,18 @@ from llama_index.vector_stores.types import (
 _logger = logging.getLogger(__name__)
 
 DEFAULT_MMR_PREFETCH_FACTOR = 4.0
+DEFAULT_INSERTION_BATCH_SIZE = 20
+
+
+def _batch_iterable(iterable, batch_size):
+    this_batch = []
+    for entry in iterable:
+        this_batch.append(entry)
+        if len(this_batch) == batch_size:
+            yield this_batch
+            this_batch = []
+    if this_batch:
+        yield this_batch
 
 
 class CassandraVectorStore(VectorStore):
@@ -63,6 +75,7 @@ class CassandraVectorStore(VectorStore):
         table: str,
         embedding_dimension: int,
         ttl_seconds: Optional[int] = None,
+        insertion_batch_size: int = DEFAULT_INSERTION_BATCH_SIZE,
     ) -> None:
         import_err_msg = "`cassio` package not found, please run `pip install cassio`"
         try:
@@ -75,6 +88,7 @@ class CassandraVectorStore(VectorStore):
         self._table = table
         self._embedding_dimension = embedding_dimension
         self._ttl_seconds = ttl_seconds
+        self._insertion_batch_size = insertion_batch_size
 
         _logger.debug("Creating the Cassandra table")
         self.vector_table = ClusteredMetadataVectorCassandraTable(
@@ -83,9 +97,9 @@ class CassandraVectorStore(VectorStore):
             table=self._table,
             vector_dimension=self._embedding_dimension,
             primary_key_type=["TEXT", "TEXT"],
-            # probably just "ref_doc_id" is fine, but that would be improved later
-            # (see `node_to_metadata_dict` comments).
-            metadata_indexing=("allow_list", ["document_id", "doc_id", "ref_doc_id"]),
+            # a conservative choice here, to make everything searchable
+            # except the bulky "_node_content" key (it'd make little sense to):
+            metadata_indexing=("deny_list", ["_node_content"]),
         )
 
     def add(
@@ -109,24 +123,38 @@ class CassandraVectorStore(VectorStore):
                 flat_metadata=self.flat_metadata,
             )
             node_ids.append(result.id)
-            node_contents.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
+            node_contents.append(
+                result.node.get_content(metadata_mode=MetadataMode.NONE)
+            )
             node_metadatas.append(metadata)
             node_embeddings.append(result.embedding)
 
-        # TODO: batching or concurrent inserts
         _logger.debug(f"Adding {len(node_ids)} rows to table")
-        for (node_id, node_content, node_metadata, node_embedding) in zip(
-            node_ids, node_contents, node_metadatas, node_embeddings
+        # Concurrent batching of inserts:
+        insertion_tuples = zip(node_ids, node_contents, node_metadatas, node_embeddings)
+        for insertion_batch in _batch_iterable(
+            insertion_tuples, batch_size=self._insertion_batch_size
         ):
-            node_ref_doc_id = node_metadata["ref_doc_id"]
-            self.vector_table.put(
-                row_id=node_id,
-                body_blob=node_content,
-                vector=node_embedding,
-                metadata=node_metadata,
-                partition_id=node_ref_doc_id,
-                ttl_seconds=self._ttl_seconds,
-            )
+            futures = []
+            for (
+                node_id,
+                node_content,
+                node_metadata,
+                node_embedding,
+            ) in insertion_batch:
+                node_ref_doc_id = node_metadata["ref_doc_id"]
+                futures.append(
+                    self.vector_table.put_async(
+                        row_id=node_id,
+                        body_blob=node_content,
+                        vector=node_embedding,
+                        metadata=node_metadata,
+                        partition_id=node_ref_doc_id,
+                        ttl_seconds=self._ttl_seconds,
+                    )
+                )
+            for future in futures:
+                _ = future.result()
 
         return node_ids
 
@@ -180,14 +208,18 @@ class CassandraVectorStore(VectorStore):
         #
         query_embedding = cast(List[float], query.query_embedding)
 
-        _logger.debug(f"Running ANN search on the Cassandra table (query mode: {query.mode})")
+        _logger.debug(
+            f"Running ANN search on the Cassandra table (query mode: {query.mode})"
+        )
         if query.mode == VectorStoreQueryMode.DEFAULT:
-            matches = list(self.vector_table.metric_ann_search(
-                vector=query_embedding,
-                top_k=query.similarity_top_k,
-                metric="cos",
-                metric_threshold=None,
-            ))
+            matches = list(
+                self.vector_table.metric_ann_search(
+                    vector=query_embedding,
+                    top_k=query.similarity_top_k,
+                    metric="cos",
+                    metric_threshold=None,
+                )
+            )
             top_k_scores = [match["distance"] for match in matches]
         elif query.mode == VectorStoreQueryMode.MMR:
             # Querying a larger number of vectors and then doing MMR on them.
@@ -209,12 +241,14 @@ class CassandraVectorStore(VectorStore):
                     )
             prefetch_k = max(prefetch_k0, query.similarity_top_k)
             #
-            prefetch_matches = list(self.vector_table.metric_ann_search(
-                vector=query_embedding,
-                top_k=prefetch_k,
-                metric="cos",
-                metric_threshold=None,  # this is not `mmr_threshold`
-            ))
+            prefetch_matches = list(
+                self.vector_table.metric_ann_search(
+                    vector=query_embedding,
+                    top_k=prefetch_k,
+                    metric="cos",
+                    metric_threshold=None,  # this is not `mmr_threshold`
+                )
+            )
             #
             mmr_threshold = query.mmr_threshold or kwargs.get("mmr_threshold")
             if prefetch_matches:

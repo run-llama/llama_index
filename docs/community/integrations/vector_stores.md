@@ -224,6 +224,7 @@ vector_store = CassandraVectorStore(
     keyspace=keyspace,
     table="llamaindex_vector_test_1",
     embedding_dimension=1536,
+    #insertion_batch_size=50,  # optional
 )
 ```
 
