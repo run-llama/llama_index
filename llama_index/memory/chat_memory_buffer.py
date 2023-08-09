@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 from pydantic import Field, root_validator
 
@@ -16,10 +16,24 @@ class ChatMemoryBuffer(BaseMemory):
     token_limit: int
     tokenizer_fn: Callable[[str], List] = Field(
         # NOTE: mypy does not handle the typing here well, hence the cast
-        default_factory=cast(Callable[[], Any], GlobalsHelper().tokenizer),
+        default_factory=cast(
+            Callable[[], Any], GlobalsHelper().tokenizer
+        ),  # do_nothing
         exclude=True,
     )
     chat_history: List[ChatMessage] = Field(default_factory=list)
+
+    def __getstate__(self) -> Dict[str, Any]:
+        state = self.__dict__.copy()
+        # Remove the unpicklable entries.
+        del state["tokenizer_fn"]
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        # Restore instance attributes
+        self.__dict__.update(state)
+        # Restore the tokenizer_fn
+        self.tokenizer_fn = GlobalsHelper().tokenizer
 
     @root_validator(pre=True)
     def validate_memory(cls, values: dict) -> dict:
@@ -31,7 +45,7 @@ class ChatMemoryBuffer(BaseMemory):
         # Validate tokenizer -- this avoids errors when loading from json/dict
         tokenizer_fn = values.get("tokenizer_fn", None)
         if tokenizer_fn is None:
-            values["tokenizer_fn"] = GlobalsHelper().tokenizer
+            values["tokenizer_fn"] = GlobalsHelper().tokenizer  # do_nothing
 
         return values
 
