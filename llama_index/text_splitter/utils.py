@@ -30,22 +30,10 @@ def split_by_char() -> Callable[[str], List[str]]:
     return lambda text: list(text)
 
 
-def split_by_punkt_sentence_tokenizer() -> Callable[[str], List[str]]:
-    import nltk.tokenize.punkt as pkt
+def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
+    import nltk
 
-    class CustomLanguageVars(pkt.PunktLanguageVars):
-        _period_context_fmt = r"""
-            %(SentEndChars)s             # a potential sentence ending
-            (\)\"\s)\s*                  # other end chars and
-                                            # any amount of white space
-            (?=(?P<after_tok>
-                %(NonWord)s              # either other punctuation
-                |
-                (?P<next_tok>\S+)     # or whitespace and some other token
-            ))"""
-
-    custom_tknzr = pkt.PunktSentenceTokenizer(lang_vars=CustomLanguageVars())
-    return custom_tknzr.tokenize
+    return nltk.sent_tokenize
 
 
 def split_by_regex(regex: str) -> Callable[[str], List[str]]:

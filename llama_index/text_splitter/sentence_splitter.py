@@ -8,7 +8,7 @@ from llama_index.constants import DEFAULT_CHUNK_SIZE
 from llama_index.text_splitter.types import MetadataAwareTextSplitter
 from llama_index.text_splitter.utils import (
     split_by_char,
-    split_by_punkt_sentence_tokenizer,
+    split_by_sentence_tokenizer,
     split_by_regex,
     split_by_sep,
 )
@@ -51,9 +51,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         self.tokenizer = tokenizer or globals_helper.tokenizer
         self.callback_manager = callback_manager or CallbackManager([])
 
-        chunking_tokenizer_fn = (
-            chunking_tokenizer_fn or split_by_punkt_sentence_tokenizer()
-        )
+        chunking_tokenizer_fn = chunking_tokenizer_fn or split_by_sentence_tokenizer()
 
         self._split_fns = [
             split_by_sep(paragraph_separator),
