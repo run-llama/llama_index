@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Update the default `EntityExtractor` model (#7209)
+
 ## [0.7.22]
 
 ### New Features
