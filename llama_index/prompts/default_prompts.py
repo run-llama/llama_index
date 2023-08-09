@@ -88,7 +88,8 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "------------\n"
     "Given the new context, refine the original answer to better "
     "answer the question. "
-    "If the context isn't useful, return the original answer."
+    "If the context isn't useful, return the original answer.\n"
+    "Refined Answer: "
 )
 DEFAULT_REFINE_PROMPT = Prompt(
     DEFAULT_REFINE_PROMPT_TMPL, prompt_type=PromptType.REFINE

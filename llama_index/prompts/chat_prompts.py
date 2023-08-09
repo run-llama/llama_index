@@ -72,18 +72,16 @@ CHAT_REFINE_PROMPT_TMPL_MSGS = [
         "You are an expert Q&A system that follows strict rules:\n"
         "1. **Rewrite** an original answer using new context information\n"
         "2. **Repeat** the original answer if the context isn't useful\n"
-        "3. Never mention or reference the orginal answer."
+        "3. **Never** mention or reference the orginal answer or context "
+        "information directly.\n"
     ),
     HumanMessagePromptTemplate.from_template(
-        "We have the opportunity to refine an original answer "
-        "(only if needed) with some more context below.\n"
-        "------------\n"
-        "{context_msg}\n"
-        "------------\n"
+        "New Context: {context_msg}\n"
         "Given the new context, refine the original answer to better "
         "answer the question: {query_str}. "
         "If the context isn't useful, output the original answer again.\n"
-        "Original Answer: {existing_answer}"
+        "Original Answer: {existing_answer}\n"
+        "Refined Answer: "
     ),
 ]
 
