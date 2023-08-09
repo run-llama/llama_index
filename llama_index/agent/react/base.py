@@ -235,6 +235,7 @@ class ReActAgent(BaseAgent):
                     is_done = True
                     break
                 full_response = r
+            print(f"{full_response=}")
             if is_done:
                 break
 
