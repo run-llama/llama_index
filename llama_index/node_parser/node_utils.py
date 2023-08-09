@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def build_nodes_from_splits(
     text_splits: List[str],
-    document: Document,
+    document: BaseNode,
     include_metadata: bool = True,
     include_prev_next_rel: bool = False,
 ) -> List[TextNode]:

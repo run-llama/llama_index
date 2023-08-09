@@ -6,7 +6,7 @@ Retrieves based on sentence-level embeddings with an adaptive window size.
 
 """
 
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence, Type
 
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.vector_store.base import VectorStoreIndex
@@ -19,14 +19,14 @@ from llama_index.text_splitter.utils import split_by_sentence_tokenizer
 
 
 def build_window_nodes_from_documents(
-    documents: List[Document],
+    documents: Sequence[Document],
     sentence_splitter: Callable[[str], List[str]],
     window_size: int = 5,
     window_metadata_key: str = "window",
     original_text_metadata_key: str = "original_text",
 ) -> List[BaseNode]:
     """Build window nodes from documents."""
-    all_nodes = []
+    all_nodes: List[BaseNode] = []
     for doc in documents:
         text = doc.text
         text_splits = sentence_splitter(text)
@@ -102,13 +102,13 @@ class SentenceWindowVectorIndex(VectorStoreIndex):
 
     @classmethod
     def from_documents(
-        cls: "SentenceWindowVectorIndex",
+        cls: Type["SentenceWindowVectorIndex"],
         documents: Sequence[Document],
-        sentence_splitter: Optional[Callable[[str], List[str]]] = None,
-        window_size: int = 5,
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        sentence_splitter: Optional[Callable[[str], List[str]]] = None,
+        window_size: int = 5,
         **kwargs: Any,
     ) -> "SentenceWindowVectorIndex":
         """Create index from documents.
