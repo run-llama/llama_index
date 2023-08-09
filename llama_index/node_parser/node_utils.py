@@ -20,36 +20,12 @@ from llama_index.utils import truncate_text
 logger = logging.getLogger(__name__)
 
 
-def get_nodes_from_document(
-    document: BaseNode,
-    text_splitter: TextSplitter,
+def build_nodes_from_splits(
+    text_splits: List[str],
+    document: Document,
     include_metadata: bool = True,
     include_prev_next_rel: bool = False,
 ) -> List[TextNode]:
-    """Get nodes from document."""
-    if include_metadata:
-        if isinstance(text_splitter, MetadataAwareTextSplitter):
-            text_splits = text_splitter.split_text_metadata_aware(
-                text=document.get_content(metadata_mode=MetadataMode.NONE),
-                metadata_str=document.get_metadata_str(),
-            )
-        else:
-            logger.warning(
-                f"include_metadata is set to True but {text_splitter} "
-                "is not metadata-aware."
-                "Node content length may exceed expected chunk size."
-                "Try lowering the chunk size or using a metadata-aware text splitter "
-                "if this is a problem."
-            )
-
-            text_splits = text_splitter.split_text(
-                document.get_content(metadata_mode=MetadataMode.NONE),
-            )
-    else:
-        text_splits = text_splitter.split_text(
-            document.get_content(metadata_mode=MetadataMode.NONE),
-        )
-
     nodes: List[TextNode] = []
     for i, text_chunk in enumerate(text_splits):
         logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
@@ -99,3 +75,41 @@ def get_nodes_from_document(
                 ].as_related_node_info()
 
     return nodes
+
+
+def get_nodes_from_document(
+    document: BaseNode,
+    text_splitter: TextSplitter,
+    include_metadata: bool = True,
+    include_prev_next_rel: bool = False,
+) -> List[TextNode]:
+    """Get nodes from document."""
+    if include_metadata:
+        if isinstance(text_splitter, MetadataAwareTextSplitter):
+            text_splits = text_splitter.split_text_metadata_aware(
+                text=document.get_content(metadata_mode=MetadataMode.NONE),
+                metadata_str=document.get_metadata_str(),
+            )
+        else:
+            logger.warning(
+                f"include_metadata is set to True but {text_splitter} "
+                "is not metadata-aware."
+                "Node content length may exceed expected chunk size."
+                "Try lowering the chunk size or using a metadata-aware text splitter "
+                "if this is a problem."
+            )
+
+            text_splits = text_splitter.split_text(
+                document.get_content(metadata_mode=MetadataMode.NONE),
+            )
+    else:
+        text_splits = text_splitter.split_text(
+            document.get_content(metadata_mode=MetadataMode.NONE),
+        )
+
+    return build_nodes_from_splits(
+        text_splits,
+        document,
+        include_metadata=include_metadata,
+        include_prev_next_rel=include_prev_next_rel,
+    )
