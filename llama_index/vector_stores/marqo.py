@@ -78,7 +78,7 @@ class MarqoVectorStore(VectorStore):
             entries.append(entry)
 
         response = self._marqo_client.index(self._index_name).add_documents(
-            entries, non_tensor_fields=[METADATA_KEY, VECTOR_KEY]
+            entries, tensor_fields=[self._text_key]
         )
 
         # response should be something like:
