@@ -163,7 +163,7 @@ def test_complete() -> None:
 def test_stream_complete() -> None:
     message = "test_input"
     dummy = MockXinference("uid", "endpoint")
-    response_gen = dummy.stream_complete(prompt=message)
+    response_gen = dummy.stream_complete(message)
     total_text = ""
     for i, res in enumerate(response_gen):
         assert i < len(mock_chat_stream)
