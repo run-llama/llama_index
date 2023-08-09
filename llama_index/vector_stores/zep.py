@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Optional, TYPE_CHECKING, Tuple
 
-from llama_index.schema import TextNode
+from llama_index.schema import TextNode, MetadataMode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -9,9 +9,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
     MetadataFilters,
 )
-from llama_index.vector_stores.utils import (
-    node_to_metadata_dict,
-)
+from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +109,7 @@ class ZepVectorStore(VectorStore):
             docs.append(
                 ZepDocument(
                     document_id=result.id,
-                    content=result.node.get_content(),
+                    content=result.node.get_content(metadata_mode=MetadataMode.NONE),
                     embedding=result.embedding,
                     metadata=metadata_dict,
                 )
@@ -227,7 +225,8 @@ class ZepVectorStore(VectorStore):
         nodes: List[TextNode] = []
 
         for d in results:
-            node = TextNode(text=d.content, metadata=d.metadata)
+            node = metadata_dict_to_node(d.metadata)
+            node.set_content(d.content)
 
             nodes.append(node)
 
