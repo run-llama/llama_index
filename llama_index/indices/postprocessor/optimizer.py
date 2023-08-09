@@ -7,7 +7,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import NodeWithScore, MetadataMode
+from llama_index.schema import MetadataMode, NodeWithScore
 
 logger = logging.getLogger(__name__)
 
