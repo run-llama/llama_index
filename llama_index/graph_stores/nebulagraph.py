@@ -180,6 +180,9 @@ class NebulaGraphStore(GraphStore):
         from nebula3.Exception import IOErrorException
         from nebula3.fbthrift.transport.TTransport import TTransportException
 
+        # Clean the query string by removing triple backticks
+        query = query.replace("```", "").strip()
+
         try:
             result = self._session_pool.execute_parameter(query, param_map)
             if result is None:
