@@ -7,6 +7,7 @@ from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    MetadataFilters,
 )
 from llama_index.vector_stores.utils import (
     node_to_metadata_dict,
@@ -15,9 +16,7 @@ from llama_index.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import zep_python
     from zep_python.document import Document as ZepDocument
-    from zep_python.document import DocumentCollection
 
 
 class ZepVectorStore(VectorStore):
@@ -34,7 +33,7 @@ class ZepVectorStore(VectorStore):
         embedding_dimensions (int, optional): Dimensions of the embeddings.
             Defaults to None.
         is_auto_embedded (bool, optional): Whether the embeddings are auto-embedded.
-            Defaults to True.
+            Defaults to False.
     """
 
     stores_text = True
@@ -48,7 +47,7 @@ class ZepVectorStore(VectorStore):
         collection_description: Optional[str] = None,
         collection_metadata: Optional[dict] = None,
         embedding_dimensions: Optional[int] = None,
-        is_auto_embedded: bool = True,
+        is_auto_embedded: bool = False,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -58,12 +57,14 @@ class ZepVectorStore(VectorStore):
         )
         try:
             import zep_python  # noqa: F401
-            from zep_python.document import Document as ZepDocument  # noqa: F401
-            from zep_python.document import DocumentCollection  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self._client = zep_python.ZepClient(base_url=api_url, api_key=api_key)
+        from zep_python import ZepClient  # noqa: F401
+        from zep_python.document import Document as ZepDocument  # noqa: F401
+        from zep_python.document import DocumentCollection  # noqa: F401
+
+        self._client = ZepClient(base_url=api_url, api_key=api_key)
 
         try:
             self._collection = self._client.document.get_collection(
@@ -88,15 +89,12 @@ class ZepVectorStore(VectorStore):
                 metadata=collection_metadata,
             )
 
-    @property
-    def client(self) -> zep_python.ZepClient:
-        """Get the Zep client used by this vector store."""
-        return self._client
-
     def _prepare_documents(
         self, embedding_results: List[NodeWithEmbedding]
-    ) -> Tuple[List[ZepDocument], List[str]]:
-        docs: List[ZepDocument] = []
+    ) -> Tuple[List["ZepDocument"], List[str]]:
+        from zep_python.document import Document as ZepDocument
+
+        docs: List["ZepDocument"] = []
         ids: List[str] = []
 
         for result in embedding_results:
@@ -128,6 +126,8 @@ class ZepVectorStore(VectorStore):
         Returns:
             List[str]: List of IDs of the added documents.
         """
+        from zep_python.document import DocumentCollection
+
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
 
@@ -152,6 +152,8 @@ class ZepVectorStore(VectorStore):
         Returns:
             List[str]: List of IDs of the added documents.
         """
+        from zep_python.document import DocumentCollection
+
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
 
@@ -174,6 +176,8 @@ class ZepVectorStore(VectorStore):
                 Not currently supported.
             delete_kwargs: Must contain "uuid" key with UUID of the document to delete.
         """
+        from zep_python.document import DocumentCollection
+
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
 
@@ -197,6 +201,8 @@ class ZepVectorStore(VectorStore):
                 Not currently supported.
             delete_kwargs: Must contain "uuid" key with UUID of the document to delete.
         """
+        from zep_python.document import DocumentCollection
+
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
 
@@ -210,7 +216,9 @@ class ZepVectorStore(VectorStore):
         else:
             raise ValueError("uuid must be specified")
 
-    def _parse_query_result(self, results: List[ZepDocument]) -> VectorStoreQueryResult:
+    def _parse_query_result(
+        self, results: List["ZepDocument"]
+    ) -> VectorStoreQueryResult:
         similarities: List[float] = []
         ids: List[str] = []
         nodes: List[TextNode] = []
@@ -230,6 +238,18 @@ class ZepVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
+    def _to_zep_filters(self, filters: MetadataFilters) -> Any:
+        """Convert filters to Zep filters. Filters are ANDed together."""
+
+        filter_conditions = []
+
+        for f in filters.filters:
+            filter_conditions.append({"jsonpath": f'$[*] ? (@.{f.key} == "{f.value}")'})
+
+        zep_filters = {"where": {"and": filter_conditions}}
+
+        return zep_filters
+
     def query(
         self,
         query: VectorStoreQuery,
@@ -245,21 +265,27 @@ class ZepVectorStore(VectorStore):
             VectorStoreQueryResult: Result of the query, containing the most similar
                 nodes, their similarities, and their IDs.
         """
+        from zep_python.document import DocumentCollection
 
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
 
         if query.query_embedding is None and query.query_str is None:
-            raise ValueError("query must have either query_str or query_embedding")
+            raise ValueError("query must have one of query_str or query_embedding")
 
-        if query.query_embedding and query.query_str:
-            raise ValueError(
-                "query must have either query_str or query_embedding, not both"
-            )
+        # If we have an embedding, we shouldn't use the query string
+        # Zep does not allow both to be set
+        if query.query_embedding:
+            query.query_str = None
+
+        metadata_filters = None
+        if query.filters is not None:
+            metadata_filters = self._to_zep_filters(query.filters)
 
         results = self._collection.search(
             text=query.query_str,
             embedding=query.query_embedding,
+            metadata=metadata_filters,
             limit=query.similarity_top_k,
         )
 
@@ -281,21 +307,27 @@ class ZepVectorStore(VectorStore):
             VectorStoreQueryResult: Result of the query, containing the most similar
                 nodes, their similarities, and their IDs.
         """
+        from zep_python.document import DocumentCollection
 
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
 
         if query.query_embedding is None and query.query_str is None:
-            raise ValueError("query must have either query_str or query_embedding")
+            raise ValueError("query must have one of query_str or query_embedding")
 
-        if query.query_embedding and query.query_str:
-            raise ValueError(
-                "query must have either query_str or query_embedding, not both"
-            )
+        # If we have an embedding, we shouldn't use the query string
+        # Zep does not allow both to be set
+        if query.query_embedding:
+            query.query_str = None
+
+        metadata_filters = None
+        if query.filters is not None:
+            metadata_filters = self._to_zep_filters(query.filters)
 
         results = await self._collection.asearch(
             text=query.query_str,
             embedding=query.query_embedding,
+            metadata=metadata_filters,
             limit=query.similarity_top_k,
         )
 
