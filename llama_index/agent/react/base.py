@@ -209,9 +209,6 @@ class ReActAgent(BaseAgent):
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
-        # print(
-        # f"\n\nStream chat _memory put: {ChatMessage(content=message, role='user')}"
-        # )
         self._memory.put(ChatMessage(content=message, role="user"))
 
         current_reasoning: List[BaseReasoningStep] = []
@@ -221,7 +218,6 @@ class ReActAgent(BaseAgent):
             input_chat = self._react_chat_formatter.format(
                 chat_history=self._memory.get(), current_reasoning=current_reasoning
             )
-            # print(f"\n\nStream chat input: {input_chat[1:]}")
             # send prompt
             chat_stream = self._llm.stream_chat(input_chat)
 
@@ -235,7 +231,6 @@ class ReActAgent(BaseAgent):
                     is_done = True
                     break
                 full_response = r
-            # print(f"\n\n{full_response=}")
             if is_done:
                 break
 
@@ -289,11 +284,9 @@ class ReActAgent(BaseAgent):
 
         # Get the response in a separate thread so we can yield the response
         chat_stream_response = StreamingAgentChatResponse(achat_stream=chat_stream)
-        thread = Thread(
-            target=lambda x: asyncio.run(
-                chat_stream_response.awrite_response_to_history(x)
-            ),
-            args=(self._memory,),
+        # create task to write chat response to history
+        asyncio.create_task(
+            chat_stream_response.awrite_response_to_history(self._memory)
         )
-        thread.start()
+        # thread.start()
         return chat_stream_response

@@ -99,10 +99,15 @@ class StreamingAgentChatResponse:
 
         # try/except to prevent hanging on error
         try:
+            final_text = ""
             for chat in self.chat_stream:
                 self._is_function = is_function(chat.message)
                 self.put_in_queue(chat.delta)
+                final_text += chat.delta or ""
             if self._is_function is not None:  # if loop has gone through iteration
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                chat.message.content = final_text  # final message
                 memory.put(chat.message)
         except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
@@ -121,16 +126,20 @@ class StreamingAgentChatResponse:
 
         # try/except to prevent hanging on error
         try:
+            final_text = ""
             async for chat in self.achat_stream:
                 self._is_function = is_function(chat.message)
                 self.aput_in_queue(chat.delta)
+                final_text += chat.delta or ""
                 if self._is_function is False:
                     self._is_function_false_event.set()
             if self._is_function is not None:  # if loop has gone through iteration
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                chat.message.content = final_text  # final message
                 memory.put(chat.message)
         except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
-
         self._is_done = True
 
         # These act as is_done events for any consumers waiting

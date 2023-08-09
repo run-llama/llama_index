@@ -203,7 +203,12 @@ def test_stream_chat_basic(
             content="2 is the final answer.\n",
             role=MessageRole.ASSISTANT,
         ),
-    ]
+    ]  # thread = Thread(
+    #     target=lambda x: asyncio.run(
+    #         chat_stream_response.awrite_response_to_history(x)
+    #     ),
+    #     args=(self._memory,),
+    # )
 
 
 @pytest.mark.asyncio
@@ -232,10 +237,9 @@ async def test_astream_chat_basic(
 
     text_so_far = ""
     counter = 0
-    for delta in response.response_gen:
+    async for delta in response.async_response_gen():
         text_so_far += delta
         counter += 1
-
     expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1]
     assert text_so_far == expected_answer
     assert counter == len(expected_answer)
