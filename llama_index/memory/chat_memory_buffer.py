@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from pydantic import Field, root_validator
@@ -22,16 +23,15 @@ class ChatMemoryBuffer(BaseMemory):
     chat_history: List[ChatMessage] = Field(default_factory=list)
 
     def __getstate__(self) -> Dict[str, Any]:
-        state = self.__dict__.copy()
-        # Remove the unpicklable entries.
-        del state["tokenizer_fn"]
+        state = self.dict()
+        # Remove the unpicklable entry
+        state.pop("tokenizer_fn", None)
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
-        # Restore instance attributes
-        self.__dict__.update(state)
-        # Restore the tokenizer_fn
-        self.tokenizer_fn = GlobalsHelper().tokenizer
+        super().__init__(
+            token_limit=state["token_limit"], chat_history=state["chat_history"]
+        )
 
     @root_validator(pre=True)
     def validate_memory(cls, values: dict) -> dict:
