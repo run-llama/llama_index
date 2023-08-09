@@ -221,7 +221,7 @@ class ReActAgent(BaseAgent):
             input_chat = self._react_chat_formatter.format(
                 chat_history=self._memory.get(), current_reasoning=current_reasoning
             )
-            print(f"\n\nStream chat {input_chat=}")
+            print(f"\n\nStream chat input: {input_chat[1:]}")
             # send prompt
             chat_stream = self._llm.stream_chat(input_chat)
 
