@@ -32,7 +32,6 @@ from langchain.prompts.chat import (
     BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
-    BaseMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
 
