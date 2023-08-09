@@ -1,4 +1,3 @@
-from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from pydantic import Field, root_validator
