@@ -80,17 +80,16 @@ maxdepth: 1
 /examples/callbacks/WandbCallbackHandler.ipynb
 ```
 
-### Arize Phoenix
+### OpenInference
 
-Phoenix allows users to experiment, visualize, and evaluate their RAG systems. It contains features such as embedding visualization + logging/tracing.
-
-LlamaIndex integrates with Phoenix through their OpenInference standard.
+[OpenInference](https://github.com/Arize-ai/open-inference-spec) is an open standard for capturing and storing AI model inferences. It enables experimentation, visualization, and evaluation of LLM applications using LLM observability solutions such as [Arize](https://arize.com/) and [Phoenix](https://github.com/Arize-ai/phoenix).
 
 #### Usage Pattern
 
 ```python
-from llama_index import set_global_handler
-set_global_handler("arize_phoenix")
+import llama_index
+
+llama_index.set_global_handler("openinference")
 
 # NOTE: No need to do the following
 # from llama_index.callbacks import OpenInferenceCallbackHandler, CallbackManager
@@ -100,17 +99,18 @@ set_global_handler("arize_phoenix")
 #     callback_manager=callback_manager
 # )
 
+# Run your LlamaIndex application here...
+for query in queries:
+    query_engine.query(query)
 
-# view data as dataframe
+# View your LLM app data as a dataframe in OpenInference format.
 from llama_index.callbacks.open_inference_callback import as_dataframe
-import llama_index
 
 query_data_buffer = llama_index.global_handler.flush_query_data_buffer()
 query_dataframe = as_dataframe(query_data_buffer)
-
 ```
 
-**NOTE**: to unlock capabilities of Phoenix you will need to define additional steps to feed in query/context dataframes. See below!
+**NOTE**: To unlock capabilities of Phoenix, you will need to define additional steps to feed in query/ context dataframes. See below!
 
 #### Guides
 ```{toctree}
