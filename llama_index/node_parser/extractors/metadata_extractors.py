@@ -356,14 +356,14 @@ DEFAULT_ENTITY_MAP = {
 class EntityExtractor(MetadataFeatureExtractor):
     """
     Entity extractor. Extracts `entities` into a metadata field using a default model
-    `tomaarsen/span-marker-xlm-roberta-base-multinerd` and the SpanMarker library.
+    `tomaarsen/span-marker-mbert-base-multinerd` and the SpanMarker library.
 
     Install SpanMarker with `pip install span-marker`.
     """
 
     def __init__(
         self,
-        model_name: str = "tomaarsen/span-marker-xlm-roberta-base-multinerd",
+        model_name: str = "tomaarsen/span-marker-mbert-base-multinerd",
         prediction_threshold: float = 0.5,
         span_joiner: str = " ",
         label_entities: bool = False,
