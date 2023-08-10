@@ -69,17 +69,17 @@ CHAT_TREE_SUMMARIZE_PROMPT = SummaryPrompt.from_langchain_prompt(
 # Refine Prompt
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
     SystemMessagePromptTemplate.from_template(
-        "You are an expert Q&A system that follows strict rules:\n"
+        "You are an expert Q&A system that stricly operates in two modes"
+        "when refining existing answers:\n"
         "1. **Rewrite** an original answer using new context information\n"
         "2. **Repeat** the original answer if the context isn't useful\n"
-        "3. **Never** mention or reference the orginal answer or context "
-        "information directly.\n"
+        "Never mention or reference the original answer or context "
+        "in your response."
     ),
     HumanMessagePromptTemplate.from_template(
         "New Context: {context_msg}\n"
         "Given the new context, refine the original answer to better "
         "answer the question: {query_str}. "
-        "If the context isn't useful, output the original answer again.\n"
         "Original Answer: {existing_answer}\n"
         "Refined Answer: "
     ),
