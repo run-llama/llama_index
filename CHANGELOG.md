@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+- Fixed metadata formatting with custom tempalates and inheritance (#7216)
+
+## [0.7.23] - 2023-08-10
+
 ### New Features
 - Added Xorbits inference for local deployments (#7151)
 - Added Zep vector store integration (#7203)
