@@ -33,6 +33,14 @@ def split_by_char() -> Callable[[str], List[str]]:
 def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
     import nltk
 
+    try:
+        nltk.data.find("tokenizers/punkt")
+    except LookupError:
+        import os
+
+        nltk_data_dir = os.environ.get("NLTK_DATA", None)
+        nltk.download("punkt", download_dir=nltk_data_dir)
+
     return nltk.sent_tokenize
 
 
