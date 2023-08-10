@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 DEFAULT_SUMMARY_QUERY = (
-    "Give a concise summary of this document. Also describe some of the questions "
-    "that this document can answer. "
+    "Describe what the provided text is about. "
+    "Also describe some of the questions that this text can answer. "
 )
 
 
@@ -67,7 +67,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     ) -> None:
         """Initialize params."""
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            service_context=service_context,
+            service_context=service_context, response_mode="tree_summarize"
         )
         self._summary_query = summary_query or "summarize:"
         super().__init__(
