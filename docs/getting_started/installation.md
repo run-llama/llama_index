@@ -3,16 +3,17 @@
 ### Installation from Pip
 
 You can simply do:
+
 ```
 pip install llama-index
 ```
 
 ### Installation from Source
+
 Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.git`. Then do:
 
 - `pip install -e .` if you want to do an editable install (you can modify source files) of just the package itself.
 - `pip install -r requirements.txt` if you want to install optional dependencies + dependencies used for development (e.g. unit testing).
-
 
 ### Environment Setup
 
@@ -23,4 +24,3 @@ You can register an API key by logging into [OpenAI's page and creating a new AP
 You can also [customize the underlying LLM](/core_modules/model_modules/llms/usage_custom.md). You may
 need additional environment keys + tokens setup depending on the LLM provider.
 ```
-

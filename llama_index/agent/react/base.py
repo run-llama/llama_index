@@ -209,7 +209,6 @@ class ReActAgent(BaseAgent):
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
-
         self._memory.put(ChatMessage(content=message, role="user"))
 
         current_reasoning: List[BaseReasoningStep] = []
@@ -285,11 +284,9 @@ class ReActAgent(BaseAgent):
 
         # Get the response in a separate thread so we can yield the response
         chat_stream_response = StreamingAgentChatResponse(achat_stream=chat_stream)
-        thread = Thread(
-            target=lambda x: asyncio.run(
-                chat_stream_response.awrite_response_to_history(x)
-            ),
-            args=(self._memory,),
+        # create task to write chat response to history
+        asyncio.create_task(
+            chat_stream_response.awrite_response_to_history(self._memory)
         )
-        thread.start()
+        # thread.start()
         return chat_stream_response
