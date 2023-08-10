@@ -477,12 +477,13 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs = event_pair[-1].payload
 
         if outputs:
+            response_obj = outputs[EventPayload.RESPONSE]
             response = str(outputs[EventPayload.RESPONSE])
 
             if type(response).__name__ == "Response":
-                response = response.response
+                response = response_obj.response
             elif type(response).__name__ == "StreamingResponse":
-                response = response.get_response().response
+                response = response_obj.get_response().response
         else:
             response = " "
 
