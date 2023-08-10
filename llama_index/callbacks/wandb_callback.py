@@ -465,7 +465,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         span.attributes = metadata
 
         # Make `response` part of `outputs`
-        outputs = {EventPayload.RESPONSE: outputs[EventPayload.RESPONSE]}
+        outputs = {EventPayload.RESPONSE: str(outputs[EventPayload.RESPONSE])}
 
         return inputs, outputs, span
 
@@ -477,12 +477,13 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs = event_pair[-1].payload
 
         if outputs:
-            response = outputs[EventPayload.RESPONSE]
+            response_obj = outputs[EventPayload.RESPONSE]
+            response = str(outputs[EventPayload.RESPONSE])
 
             if type(response).__name__ == "Response":
-                response = response.response
+                response = response_obj.response
             elif type(response).__name__ == "StreamingResponse":
-                response = response.get_response().response
+                response = response_obj.get_response().response
         else:
             response = " "
 
