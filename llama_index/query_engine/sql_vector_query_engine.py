@@ -12,6 +12,7 @@ from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.selectors.llm_selectors import LLMSingleSelector
+from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.prompts.base import Prompt
 import logging
 from llama_index.callbacks.base import CallbackManager
@@ -54,7 +55,7 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
     Args:
         sql_query_tool (QueryEngineTool): Query engine tool for SQL database.
         vector_query_tool (QueryEngineTool): Query engine tool for vector database.
-        selector (Optional[LLMSingleSelector]): Selector to use.
+        selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]): Selector to use.
         service_context (Optional[ServiceContext]): Service context to use.
         sql_vector_synthesis_prompt (Optional[Prompt]): Prompt to use for SQL vector
             synthesis.
@@ -70,7 +71,7 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         self,
         sql_query_tool: QueryEngineTool,
         vector_query_tool: QueryEngineTool,
-        selector: Optional[LLMSingleSelector] = None,
+        selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
         service_context: Optional[ServiceContext] = None,
         sql_vector_synthesis_prompt: Optional[Prompt] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
@@ -125,7 +126,7 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         vector_auto_retriever: RetrieverQueryEngine,
         vector_tool_name: str,
         vector_tool_description: str,
-        selector: Optional[LLMSingleSelector] = None,
+        selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
         **kwargs: Any,
     ) -> "SQLAutoVectorQueryEngine":
         """From SQL and vector query engines.
@@ -133,7 +134,8 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         Args:
             sql_query_engine (BaseSQLTableQueryEngine): SQL query engine.
             vector_query_engine (VectorIndexAutoRetriever): Vector retriever.
-            selector (Optional[LLMSingleSelector]): Selector to use.
+            selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]):
+                Selector to use.
 
         """
         sql_query_tool = QueryEngineTool.from_defaults(

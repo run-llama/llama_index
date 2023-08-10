@@ -10,6 +10,10 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
+from llama_index.selectors.pydantic_selectors import (
+    PydanticMultiSelector,
+    PydanticSingleSelector,
+)
 from llama_index.selectors.types import BaseSelector
 from llama_index.tools.retriever_tool import RetrieverTool
 
@@ -52,9 +56,21 @@ class RouterRetriever(BaseRetriever):
         select_multi: bool = False,
     ) -> "RouterRetriever":
         if selector is None and select_multi:
-            selector = LLMMultiSelector.from_defaults(service_context=service_context)
+            try:
+                llm = service_context.llm_predictor.llm if service_context else None
+                selector = PydanticMultiSelector.from_defaults(llm=llm)  # type: ignore
+            except ValueError:
+                selector = LLMMultiSelector.from_defaults(
+                    service_context=service_context
+                )
         elif selector is None and not select_multi:
-            selector = LLMSingleSelector.from_defaults(service_context=service_context)
+            try:
+                llm = service_context.llm_predictor.llm if service_context else None
+                selector = PydanticSingleSelector.from_defaults(llm=llm)  # type: ignore
+            except ValueError:
+                selector = LLMSingleSelector.from_defaults(
+                    service_context=service_context
+                )
 
         assert selector is not None
 
