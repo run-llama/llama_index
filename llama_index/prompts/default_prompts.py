@@ -105,6 +105,7 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "answer the question. If the answer is not in the context, inform "
     "the user that you can't answer the question.\n"
     "Question: {query_str}\n"
+    "Answer: "
 )
 DEFAULT_TEXT_QA_PROMPT = Prompt(
     DEFAULT_TEXT_QA_PROMPT_TMPL, prompt_type=PromptType.QUESTION_ANSWER
@@ -119,6 +120,7 @@ DEFAULT_TREE_SUMMARIZE_TMPL = (
     "answer the question. If the answer is not in the context, inform "
     "the user that you can't answer the question.\n"
     "Question: {query_str}\n"
+    "Answer: "
 )
 DEFAULT_TREE_SUMMARIZE_PROMPT = Prompt(
     DEFAULT_TREE_SUMMARIZE_TMPL, prompt_type=PromptType.SUMMARY
