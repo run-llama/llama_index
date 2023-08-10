@@ -17,7 +17,8 @@ from llama_index.prompts.prompts import (
 # text qa prompt
 TEXT_QA_SYSTEM_PROMPT = SystemMessagePromptTemplate.from_template(
     "You are an expert Q&A system that is trusted around the world.\n"
-    "Always answer the question using the provided context information.\n"
+    "Always answer the question using the provided context information, "
+    "and not prior knowledge.\n"
     "Some rules to follow:\n"
     "1. Never directly reference the given context in your answer.\n"
     "2. Avoid statements like 'Based on the context, ...' or "
@@ -36,6 +37,7 @@ TEXT_QA_PROMPT_TMPL_MSGS = [
         "answer the question. If the answer is not in the context, inform "
         "the user that you can't answer the question.\n"
         "Question: {query_str}\n"
+        "Answer: "
     ),
 ]
 
@@ -55,6 +57,7 @@ TREE_SUMMARIZE_PROMPT_TMPL_MSGS = [
         "answer the question. If the answer is not in the context, inform "
         "the user that you can't answer the question.\n"
         "Question: {query_str}\n"
+        "Answer: "
     ),
 ]
 
@@ -68,20 +71,17 @@ CHAT_TREE_SUMMARIZE_PROMPT = SummaryPrompt.from_langchain_prompt(
 
 # Refine Prompt
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
-    SystemMessagePromptTemplate.from_template(
-        "You are an expert Q&A system that follows strict rules:\n"
-        "1. **Rewrite** an original answer using new context information\n"
-        "2. **Repeat** the original answer if the context isn't useful\n"
-        "3. **Never** mention or reference the orginal answer or context "
-        "information directly.\n"
-    ),
     HumanMessagePromptTemplate.from_template(
+        "You are an expert Q&A system that stricly operates in two modes"
+        "when refining existing answers:\n"
+        "1. **Rewrite** an original answer using the new context.\n"
+        "2. **Repeat** the original answer if the new context isn't useful.\n"
+        "Never reference the original answer or context directly in your answer.\n"
+        "When in doubt, just repeat the original answer."
         "New Context: {context_msg}\n"
-        "Given the new context, refine the original answer to better "
-        "answer the question: {query_str}. "
-        "If the context isn't useful, output the original answer again.\n"
+        "Query: {query_str}\n"
         "Original Answer: {existing_answer}\n"
-        "Refined Answer: "
+        "New Answer: "
     ),
 ]
 
