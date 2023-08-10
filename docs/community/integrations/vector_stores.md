@@ -16,6 +16,7 @@ as the storage backend for `VectorStoreIndex`.
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
+- Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
 - Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
@@ -151,6 +152,32 @@ client = weaviate.Client(
 # construct vector store
 vector_store = WeaviateVectorStore(weaviate_client=client)
 ```
+
+**Zep**
+
+Zep stores texts, metadata, and embeddings. All are returned in search results.
+
+```python
+
+from llama_index.vector_stores import ZepVectorStore
+
+vector_store = ZepVectorStore(
+    api_url="<api_url>", 
+    api_key="<api_key>", 
+    collection_name="<unique_collection_name>",  # Can either be an existing collection or a new one
+    embedding_dimensions=1536 # Optional, required if creating a new collection
+)
+
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+
+# Query index using both a text query and metadata filters
+filters = MetadataFilters(filters=[ExactMatchFilter(key="theme", value="Mafia")])
+retriever = index.as_retriever(filters=filters)
+result = retriever.retrieve("What is inception about?")
+```
+
 
 **Pinecone**
 
@@ -458,6 +485,7 @@ maxdepth: 1
 ../../examples/vector_stores/MyScaleIndexDemo.ipynb
 ../../examples/vector_stores/MetalIndexDemo.ipynb
 ../../examples/vector_stores/WeaviateIndexDemo.ipynb
+../../examples/vector_stores/ZepIndexDemo.ipynb
 ../../examples/vector_stores/OpensearchDemo.ipynb
 ../../examples/vector_stores/PineconeIndexDemo.ipynb
 ../../examples/vector_stores/ChromaIndexDemo.ipynb

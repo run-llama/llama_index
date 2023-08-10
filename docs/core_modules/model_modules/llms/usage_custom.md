@@ -14,7 +14,7 @@ Below we show a few examples of LLM customization. This includes
 ## Example: Changing the underlying LLM
 
 An example snippet of customizing the LLM being used is shown below.
-In this example, we use `text-davinci-002` instead of `text-davinci-003`. Available models include `text-davinci-003`,`text-curie-001`,`text-babbage-001`,`text-ada-001`, `code-davinci-002`,`code-cushman-001`. 
+In this example, we use `gpt-4` instead of `text-davinci-003`. Available models include `gpt-3.5-turbo`, `gpt-3.5-turbo-16k`, `gpt-4`, `gpt-4-32k`, `text-davinci-003`, and `text-davinci-002`. 
 
 Note that
 you may also plug in any LLM shown on Langchain's
@@ -35,7 +35,7 @@ from llama_index.llms import OpenAI
 documents = SimpleDirectoryReader('data').load_data()
 
 # define LLM
-llm = OpenAI(temperature=0, model="text-davinci-002")
+llm = OpenAI(temperature=0.1, model="gpt-4")
 service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
@@ -189,7 +189,9 @@ from llama_index import (
     LangchainEmbedding, 
     ListIndex
 )
-from llama_index.llms import CustomLLM, CompletionResponse, LLMMetadata, llm_callback
+from llama_index.callbacks import CallbackManager
+from llama_index.llms import CustomLLM, CompletionResponse, LLMMetadata
+from llama_index.llms.base import llm_completion_callback
 
 
 # set context window size
@@ -203,6 +205,8 @@ pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_
 
 class OurLLM(CustomLLM):
 
+    callback_manager = CallbackManager([])
+
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
@@ -212,7 +216,7 @@ class OurLLM(CustomLLM):
             model_name=model_name
         )
 
-    @llm_callback()
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         prompt_length = len(prompt)
         response = pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
@@ -221,7 +225,7 @@ class OurLLM(CustomLLM):
         text = response[prompt_length:]
         return CompletionResponse(text=text)
     
-    @llm_callback()
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         raise NotImplementedError()
 

@@ -2,13 +2,28 @@
 
 ## Unreleased
 
+### New Features
+- Added Xorbits inference for local deployments (#7151)
+- Added Zep vector store integration (#7203)
+
+### Bug Fixes / Nits
+- Update the default `EntityExtractor` model (#7209)
+- Make `ChatMemoryBuffer` pickleable (#7205)
+
+## [0.7.22] - 2023-08-08
+
+### New Features
+- add ensemble retriever notebook (#7190)
+- DOCS: added local llama2 notebook (#7146)
+
 ### Bug Fixes / Nits
 - Fix for `AttributeError: 'OpenAIAgent' object has no attribute 'callback_manager'` by calling super constructor within `BaseOpenAIAgent`
+- Remove backticks from nebula queries (#7192)
 
 ## [0.7.21] - 2023-08-07
 
 ### New Features
-- Add entity metadata extractor (#7163)
+- Added an `EntityExtractor` for metadata extraction (#7163)
 
 ## [0.7.20] - 2023-08-06
 
@@ -17,7 +32,6 @@
 - add retriever router (#7166)
 
 ### New Features
-- Added an `EntityExtractor` for metadata extraction (#7163)
 - Added a `RouterRetriever` for routing queries to specific retrievers (#7166)
 
 ### Bug Fixes / Nits
