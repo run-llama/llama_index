@@ -55,7 +55,8 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
     Args:
         sql_query_tool (QueryEngineTool): Query engine tool for SQL database.
         vector_query_tool (QueryEngineTool): Query engine tool for vector database.
-        selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]): Selector to use.
+        selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]):
+            Selector to use.
         service_context (Optional[ServiceContext]): Service context to use.
         sql_vector_synthesis_prompt (Optional[Prompt]): Prompt to use for SQL vector
             synthesis.
