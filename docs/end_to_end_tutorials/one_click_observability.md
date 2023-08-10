@@ -82,7 +82,7 @@ maxdepth: 1
 
 ### OpenInference
 
-[OpenInference](https://github.com/Arize-ai/open-inference-spec) is an open standard for capturing and storing AI model inferences. It enables experimentation, visualization, and evaluation of LLM applications using LLM observability solutions such as [Arize](https://arize.com/) and [Phoenix](https://github.com/Arize-ai/phoenix).
+[OpenInference](https://github.com/Arize-ai/open-inference-spec) is an open standard for capturing and storing AI model inferences. It enables experimentation, visualization, and evaluation of LLM applications using LLM observability solutions such as [Phoenix](https://github.com/Arize-ai/phoenix).
 
 #### Usage Pattern
 
