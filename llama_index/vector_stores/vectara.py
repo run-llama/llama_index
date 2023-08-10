@@ -16,24 +16,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.node_parser.interface import NodeParser
-from llama_index.schema import Document, BaseNode
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
-
-
-class VectaraNodeParser(NodeParser):
-    def get_nodes_from_documents(
-        self,
-        documents: Sequence[Document],
-        show_progress: bool = False,
-    ) -> List[BaseNode]:
-        """Parse documents into nodes.
-        Args:
-            documents (Sequence[Document]): documents to parse
-        """
-        all_nodes: List[BaseNode] = []
-        return all_nodes
 
 
 class VectaraVectorStore(VectorStore):
