@@ -95,6 +95,7 @@ def get_nodes_from_document(
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
                 excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
                 metadata_seperator=document.metadata_seperator,
+                metadata_template=document.metadata_template,
                 text_template=document.text_template,
                 relationships={
                     NodeRelationship.SOURCE: document.as_related_node_info()
