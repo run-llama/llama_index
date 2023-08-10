@@ -39,14 +39,6 @@ those into our Response Synthesis module.
 
 ![](/_static/indices/vector_store_query.png)
 
-## Sentence Window Vector Index
-
-The sentence window vector index is the same as the vector store index above. However, the key difference is that documents are chunked into single sentences, with embeddings generated on a per-sentence basis.
-
-### Querying
-
-When querying a sentence window vector index, nodes are retrieved based on the emebddings per sentence. However, before the retrieved nodes are sent to the LLM, each node's text is replaced with the surrounding window of sentences around the retrieved sentence. By default, this window is 5 sentences.
-
 ## Tree Index
 
 The tree index builds a hierarchical tree from a set of Nodes (which become leaf nodes in this tree).

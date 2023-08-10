@@ -7,8 +7,6 @@ from llama_index.indices.vector_store.retrievers import (
 )
 
 __all__ = [
-    "SentenceWindowVectorIndex",
-    "SentenceWindowVectorRetriever",
     "VectorStoreIndex",
     "VectorIndexRetriever",
     "VectorIndexAutoRetriever",
