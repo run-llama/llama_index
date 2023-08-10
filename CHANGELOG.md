@@ -9,6 +9,7 @@
 ### Bug Fixes / Nits
 - Update the default `EntityExtractor` model (#7209)
 - Make `ChatMemoryBuffer` pickleable (#7205)
+- Refactored `BaseOpenAIAgent` (#7077)
 
 ## [0.7.22] - 2023-08-08
 
