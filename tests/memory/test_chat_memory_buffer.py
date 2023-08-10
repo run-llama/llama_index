@@ -1,3 +1,5 @@
+import pickle
+
 from llama_index.llms import ChatMessage, MessageRole
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 
@@ -64,3 +66,10 @@ def test_dict_save_load() -> None:
 
     assert len(new_memory.get()) == 1
     assert new_memory.token_limit == 5
+
+
+def test_pickle() -> None:
+    """Unpickleable tiktoken tokenizer should be circumvented when pickling"""
+    memory = ChatMemoryBuffer.from_defaults()
+    bytes_ = pickle.dumps(memory)
+    assert isinstance(pickle.loads(bytes_), ChatMemoryBuffer)

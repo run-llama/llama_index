@@ -228,7 +228,7 @@ document. Format as comma separated. Keywords: """
                 context_str=cast(TextNode, node).text,
             )
             # node.metadata["excerpt_keywords"] = keywords
-            metadata_list.append({"excerpt_keywords": keywords})
+            metadata_list.append({"excerpt_keywords": keywords.strip()})
         return metadata_list
 
 
@@ -283,7 +283,9 @@ content: {cast(TextNode, node).text}""",
             )
             if self._embedding_only:
                 node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
-            metadata_list.append({"questions_this_excerpt_can_answer": questions})
+            metadata_list.append(
+                {"questions_this_excerpt_can_answer": questions.strip()}
+            )
         return metadata_list
 
 
@@ -326,7 +328,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
             self._llm_predictor.predict(
                 Prompt(template=self._prompt_template),
                 context_str=cast(TextNode, node).text,
-            )
+            ).strip()
             for node in nodes
         ]
 
@@ -365,14 +367,14 @@ DEFAULT_ENTITY_MAP = {
 class EntityExtractor(MetadataFeatureExtractor):
     """
     Entity extractor. Extracts `entities` into a metadata field using a default model
-    `tomaarsen/span-marker-xlm-roberta-base-multinerd` and the SpanMarker library.
+    `tomaarsen/span-marker-mbert-base-multinerd` and the SpanMarker library.
 
     Install SpanMarker with `pip install span-marker`.
     """
 
     def __init__(
         self,
-        model_name: str = "tomaarsen/span-marker-xlm-roberta-base-multinerd",
+        model_name: str = "tomaarsen/span-marker-mbert-base-multinerd",
         prediction_threshold: float = 0.5,
         span_joiner: str = " ",
         label_entities: bool = False,

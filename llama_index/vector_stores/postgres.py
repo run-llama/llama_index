@@ -168,8 +168,8 @@ class PGVectorStore(VectorStore):
         from sqlalchemy import select
 
         stmt = select(  # type: ignore
-            self.table_class, self.table_class.embedding.l2_distance(embedding)
-        ).order_by(self.table_class.embedding.l2_distance(embedding))
+            self.table_class, self.table_class.embedding.cosine_distance(embedding)
+        ).order_by(self.table_class.embedding.cosine_distance(embedding))
         if metadata_filters:
             for filter_ in metadata_filters.filters:
                 bind_parameter = f"value_{filter_.key}"
@@ -196,7 +196,7 @@ class PGVectorStore(VectorStore):
                         node_id=item.node_id,
                         text=item.text,
                         metadata=item.metadata_,
-                        similarity=sim,
+                        similarity=(1 - sim),
                     )
                     for item, sim in res.all()
                 ]
@@ -216,7 +216,7 @@ class PGVectorStore(VectorStore):
                         node_id=item.node_id,
                         text=item.text,
                         metadata=item.metadata_,
-                        similarity=sim,
+                        similarity=(1 - sim),
                     )
                     for item, sim in res.all()
                 ]
