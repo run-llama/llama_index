@@ -25,6 +25,7 @@ as the storage backend for `VectorStoreIndex`.
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart] (https://www.mongodb.com/atlas/database).
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
+- Vectara (`VectaraVectorStore`). [API docs](https://docs.vectara.com/docs/)
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -287,6 +288,20 @@ vector_store = MyScaleVectorStore(
 )
 ```
 
+**Vectara**
+Use the [Vectara Console](https://console.vectara.com/login) to create a corpus, and add an API key for access. 
+Then put the customer id, corpus id, and API key in your environment as shown below.
+
+```python
+from llama_index.vector_stores import VectaraVectorStore
+
+# construct vector store
+vectara_customer_id = os.environ.get("VECTARA_CUSTOMER_ID")
+vectara_corpus_id = os.environ.get("VECTARA_CORPUS_ID")
+vectara_api_key = os.environ.get("VECTARA_API_KEY")
+vector_store = VectaraVectorStore(vectara_customer_id, vectara_corpus_id, vectara_api_key)
+```
+
 **DocArray**
 
 ```python
@@ -456,4 +471,5 @@ maxdepth: 1
 ../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 ../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 ../../examples/vector_stores/postgres.ipynb
+../../examples/vector_stores/vectara.ipynb
 ```

@@ -36,6 +36,9 @@ class IndexStructType(str, Enum):
         MILVUS ("milvus"): Milvus Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Milvus vector store index.
+        VECTARA ("vectara"): Vectara Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Vectara vector store index.
         CHROMA ("chroma"): Chroma Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Chroma vector store index.
@@ -75,6 +78,7 @@ class IndexStructType(str, Enum):
     MILVUS = "milvus"
     CHROMA = "chroma"
     MYSCALE = "myscale"
+    VECTARA = "vectara"
     VECTOR_STORE = "vector_store"
     OPENSEARCH = "opensearch"
     CHATGPT_RETRIEVAL_PLUGIN = "chatgpt_retrieval_plugin"
