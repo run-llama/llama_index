@@ -1,10 +1,12 @@
 # ChangeLog
 
-## Unreleased
+## [0.7.23] - 2023-08-10
 
 ### New Features
+- Add "one click observability" page to docs (#7183)
 - Added Xorbits inference for local deployments (#7151)
 - Added Zep vector store integration (#7203)
+- feat/zep vectorstore (#7203)
 
 ### Bug Fixes / Nits
 - Update the default `EntityExtractor` model (#7209)
