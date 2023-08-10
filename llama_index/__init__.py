@@ -31,11 +31,7 @@ from llama_index.indices.knowledge_graph import (
 )
 from llama_index.indices.list import ListIndex, GPTListIndex
 from llama_index.indices.tree import TreeIndex, GPTTreeIndex
-from llama_index.indices.vector_store import (
-    VectorStoreIndex,
-    GPTVectorStoreIndex,
-    SentenceWindowVectorIndex,
-)
+from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
 from llama_index.indices.document_summary import (
     DocumentSummaryIndex,
     GPTDocumentSummaryIndex,
@@ -149,7 +145,6 @@ __all__ = [
     "ComposableGraph",
     # indices
     "VectorStoreIndex",
-    "SentenceWindowVectorIndex",
     "ListIndex",
     "SimpleKeywordTableIndex",
     "KeywordTableIndex",
