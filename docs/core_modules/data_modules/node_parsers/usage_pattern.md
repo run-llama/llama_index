@@ -81,7 +81,7 @@ node_parser = SimpleNodeParser(text_splitter=text_splitter)
 
 ## SentenceWindowNodeParser
 
-The `SentenceWindowNodeParser` is similar to the `SimpleNodeParser`, except that it splits all documents into individual sentences. Then, node also contains the surrounding "window" of setnences around it in the metadata. Note that this metadata will not be visible to the LLM or embedding model.
+The `SentenceWindowNodeParser` is similar to the `SimpleNodeParser`, except that it splits all documents into individual sentences. The resulting nodes also contain the surrounding "window" of sentences around each node in the metadata. Note that this metadata will not be visible to the LLM or embedding model.
 
 This is most useful for generating embeddings that have a very specific scope. Then, combined with a `MetadataReplacementNodePostProcessor`, you can replace the sentence with it's surrounding context before sending the node to the LLM. 
 
