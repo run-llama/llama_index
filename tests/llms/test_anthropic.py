@@ -10,7 +10,7 @@ except ImportError:
 
 @pytest.mark.skipif(anthropic is None, reason="anthropic not installed")
 def test_basic() -> None:
-    llm = Anthropic(model="test")
+    llm = Anthropic(model="claude-instant-1")
     test_prompt = "test prompt"
     response = llm.complete(test_prompt)
     assert len(response.text) > 0
@@ -23,7 +23,7 @@ def test_basic() -> None:
 
 @pytest.mark.skipif(anthropic is None, reason="anthropic not installed")
 def test_streaming() -> None:
-    llm = Anthropic(model="test")
+    llm = Anthropic(model="claude-instant-1")
     test_prompt = "test prompt"
     response_gen = llm.stream_complete(test_prompt)
     for r in response_gen:
@@ -40,7 +40,7 @@ def test_streaming() -> None:
 @pytest.mark.skipif(anthropic is None, reason="anthropic not installed")
 @pytest.mark.asyncio
 async def test_async() -> None:
-    llm = Anthropic(model="test")
+    llm = Anthropic(model="claude-instant-1")
     test_prompt = "test prompt"
     response = await llm.acomplete(test_prompt)
     assert len(response.text) > 0
