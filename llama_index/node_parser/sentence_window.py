@@ -98,7 +98,7 @@ class SentenceWinowNodeParser(NodeParser):
             )
 
             for document in documents_with_progress:
-                splits = self._sentence_splitter(document.text)
+                self._sentence_splitter(document.text)
                 nodes = self.build_window_nodes_from_documents([document])
                 all_nodes.extend(nodes)
 

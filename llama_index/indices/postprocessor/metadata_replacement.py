@@ -16,10 +16,10 @@ class MetadataReplacementPostProcessor(BaseNodePostprocessor):
 
         for n in nodes:
             n.node.set_content(
-                n.node.metadata.get[
+                n.node.metadata.get(
                     self._target_metadata_key,
                     n.node.get_content(metadata_mode=MetadataMode.NONE),
-                ]
+                )
             )
 
         return nodes
