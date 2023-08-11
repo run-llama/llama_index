@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added "LLAMA_INDEX_CACHE_DIR" to control cached files (#7233)
+
 ## [0.7.24] - 2023-08-10
 
 ### New Features
