@@ -5,7 +5,7 @@ from typing import Any, Optional, Tuple, cast
 from llama_index import Prompt
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
+from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata, LLM
 from llama_index.llm_predictor.vellum.exceptions import VellumGenerateException
 from llama_index.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
 from llama_index.llm_predictor.vellum.types import (
@@ -44,6 +44,11 @@ class VellumPredictor(BaseLLMPredictor):
         # via Vellum's API based on the LLM that backs the registered prompt's
         # deployment. This is not currently possible, so we use default values.
         return LLMMetadata()
+
+    @property
+    def llm(self) -> LLM:
+        """Get the LLM."""
+        raise NotImplementedError("Vellum does not expose the LLM.")
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Predict the answer to a query."""

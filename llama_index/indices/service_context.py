@@ -5,7 +5,6 @@ from typing import Optional, Union
 import llama_index
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
@@ -14,10 +13,7 @@ from llama_index.llms.utils import LLMType
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
-from llama_index.embeddings import (
-    DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
-    LangchainEmbedding,
-)
+from llama_index.embeddings import resolve_embed_model
 
 logger = logging.getLogger(__name__)
 
@@ -116,28 +112,6 @@ class ServiceContext:
             )
             chunk_size = chunk_size_limit
 
-        if isinstance(embed_model, str):
-            splits = embed_model.split(":", 1)
-            is_local = splits[0]
-            model_name = splits[1] if len(splits) > 1 else None
-            if is_local != "local":
-                raise ValueError(
-                    "embed_model must start with str 'local' or of type BaseEmbedding"
-                )
-            try:
-                from langchain.embeddings import HuggingFaceEmbeddings
-            except ImportError as exc:
-                raise ImportError(
-                    "Could not import sentence_transformers or langchain package. "
-                    "Please install with `pip install sentence-transformers langchain`."
-                ) from exc
-
-            embed_model = LangchainEmbedding(
-                HuggingFaceEmbeddings(
-                    model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
-                )
-            )
-
         if llama_index.global_service_context is not None:
             return cls.from_service_context(
                 llama_index.global_service_context,
@@ -161,7 +135,7 @@ class ServiceContext:
             llm_predictor.llm.callback_manager = callback_manager
 
         # NOTE: the embed_model isn't used in all indices
-        embed_model = embed_model or OpenAIEmbedding()
+        embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
         prompt_helper = prompt_helper or _get_default_prompt_helper(
@@ -194,7 +168,7 @@ class ServiceContext:
         llm_predictor: Optional[BaseLLMPredictor] = None,
         llm: Optional[LLM] = None,
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[BaseEmbedding] = None,
+        embed_model: Optional[Union[BaseEmbedding, str]] = None,
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -227,6 +201,7 @@ class ServiceContext:
 
         # NOTE: the embed_model isn't used in all indices
         embed_model = embed_model or service_context.embed_model
+        embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
         prompt_helper = prompt_helper or _get_default_prompt_helper(

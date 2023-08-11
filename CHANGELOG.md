@@ -1,5 +1,21 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added "LLAMA_INDEX_CACHE_DIR" to control cached files (#7233)
+- Default to pydantic selectors when possible (#7154, #7223)
+- Remove the need for langchain wrappers on `embed_model` in the service context (#7157)
+- Metadata extractors take an `LLM` object now, in addition to `LLMPredictor` (#7202)
+- Added local mode + fallback to llama.cpp + llama2 (#7200)
+- Added local fallback for embeddings to `BAAI/bge-small-en` (#7200)
+- Added `SentenceWindowNodeParser` + `MetadataReplacementPostProcessor` (#7211)
+
+### Breaking Changes
+- Change default LLM to gpt-3.5-turbo from text-davinci-003 (#7223)
+- Change prompts for compact/refine/tree_summarize to work better with gpt-3.5-turbo (#7150, #7179, #7223)
+- Increase default LLM temperature to 0.1 (#7180)
+
 ## [0.7.24.post1] - 2023-08-11
 
 ### Other Changes
