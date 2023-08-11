@@ -93,7 +93,9 @@ class ContextChatEngine(BaseChatEngine):
         """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
         for postprocessor in self._node_postprocessors:
-            nodes = postprocessor.postprocess_nodes(nodes)
+    nodes = postprocessor.postprocess_nodes(
+        nodes, query_bundle=QueryBundle(message)
+    )
 
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
