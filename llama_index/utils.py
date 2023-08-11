@@ -258,9 +258,7 @@ def get_cache_dir() -> str:
 
     # Linux, Unix, AIX, etc.
     elif os.name == "posix" and sys.platform != "darwin":
-        # use ~/.cache if empty OR not set
-        base = os.path.expanduser("~/.cache")
-        path = Path(base, "llama_index")
+        path = Path("/tmp/llama_index")
 
     # Mac OS
     elif sys.platform == "darwin":
