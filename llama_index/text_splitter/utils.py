@@ -37,8 +37,11 @@ def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
         nltk.data.find("tokenizers/punkt")
     except LookupError:
         import os
+        from llama_index.utils import get_cache_dir
 
-        nltk_data_dir = os.environ.get("NLTK_DATA", None)
+        cache_dir = get_cache_dir()
+        nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+
         nltk.download("punkt", download_dir=nltk_data_dir)
 
     return nltk.sent_tokenize

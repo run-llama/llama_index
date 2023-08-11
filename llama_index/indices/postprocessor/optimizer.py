@@ -53,7 +53,13 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             try:
                 nltk.data.find("tokenizers/punkt")
             except LookupError:
-                nltk.download("punkt")
+                import os
+                from llama_index.utils import get_cache_dir
+
+                cache_dir = get_cache_dir()
+                nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+                nltk.download("punkt", download_dir=nltk_data_dir)
+
             tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn

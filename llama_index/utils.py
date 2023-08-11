@@ -66,7 +66,10 @@ class GlobalsHelper:
             try:
                 nltk.data.find("corpora/stopwords")
             except LookupError:
-                nltk_data_dir = os.environ.get("NLTK_DATA", None)
+                from llama_index.utils import get_cache_dir
+
+                cache_dir = get_cache_dir()
+                nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
                 nltk.download("stopwords", download_dir=nltk_data_dir)
             self._stopwords = stopwords.words("english")
         return self._stopwords
