@@ -37,7 +37,7 @@ class ContextChatEngine(BaseChatEngine):
         llm: LLM,
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
-        node_postprocessors: Optional[List[BaseNodePostprocessor]],
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         context_template: Optional[str] = None,
     ) -> None:
         self._retriever = retriever
