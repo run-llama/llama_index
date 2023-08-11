@@ -38,12 +38,13 @@ def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
     cache_dir = get_cache_dir()
     nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
 
-    # update env var for nltk so that it finds the data
-    os.environ["NLTK_DATA"] = nltk_data_dir
+    # update nltk path for nltk so that it finds the data
+    if nltk_data_dir not in nltk.data.path:
+        nltk.data.path.append(nltk_data_dir)
 
     try:
         nltk.data.find("tokenizers/punkt")
-    except LookupError:
+    except LookupError as e:
         nltk.download("punkt", download_dir=nltk_data_dir)
 
     return nltk.sent_tokenize
