@@ -4,9 +4,9 @@ from typing import List
 
 import pytest
 
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.node_parser.node_utils import TextSplit, get_nodes_from_document
 from llama_index.schema import Document, MetadataMode
+from llama_index.text_splitter import TokenTextSplitter
 
 
 class TokenTextSplitterWithMetadata(TokenTextSplitter):

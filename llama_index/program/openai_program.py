@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union, Generator
 
 from pydantic import BaseModel
 
@@ -8,6 +8,8 @@ from llama_index.llms.openai_utils import to_openai_function
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import Prompt
 from llama_index.types import Model
+from llama_index.program.utils import create_list_model
+from typing import Tuple
 
 
 def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
@@ -16,6 +18,21 @@ def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
     return {
         "name": schema["title"],
     }
+
+
+def _get_json_str(raw_str: str, start_idx: int) -> Tuple[Optional[str], int]:
+    """Extract JSON str from raw string and start index."""
+    raw_str = raw_str[start_idx:]
+    stack_count = 0
+    for i, c in enumerate(raw_str):
+        if c == "{":
+            stack_count += 1
+        if c == "}":
+            stack_count -= 1
+            if stack_count == 0:
+                return raw_str[: i + 1], i + 2 + start_idx
+
+    return None, start_idx
 
 
 class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
@@ -137,3 +154,44 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         else:
             output = self.output_cls.parse_raw(function_call["arguments"])
         return output
+
+    def stream_list(
+        self, *args: Any, **kwargs: Any
+    ) -> Generator[BaseModel, None, None]:
+        """Streams a list of objects."""
+
+        formatted_prompt = self._prompt.format(**kwargs)
+
+        # openai_fn_spec = to_openai_function(self._output_cls)
+        list_output_cls = create_list_model(self._output_cls)
+        openai_fn_spec = to_openai_function(list_output_cls)
+
+        chat_response_gen = self._llm.stream_chat(
+            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            functions=[openai_fn_spec],
+            function_call=_default_function_call(list_output_cls),
+        )
+        # extract function call arguments
+        # obj_start_idx finds start position (before a new "{" in JSON)
+        obj_start_idx: int = -1  # NOTE: uninitialized
+        for stream_resp in chat_response_gen:
+            kwargs = stream_resp.message.additional_kwargs
+            fn_args = kwargs["function_call"]["arguments"]
+
+            # this is inspired by `get_object` from `MultiTaskBase` in
+            # the openai_function_call repo
+
+            if fn_args.find("[") != -1:
+                if obj_start_idx == -1:
+                    obj_start_idx = fn_args.find("[") + 1
+            else:
+                # keep going until we find the start position
+                continue
+
+            new_obj_json_str, obj_start_idx = _get_json_str(fn_args, obj_start_idx)
+            if new_obj_json_str is not None:
+                obj_json_str = new_obj_json_str
+                obj = self._output_cls.parse_raw(obj_json_str)
+                if self._verbose:
+                    print(f"Extracted object: {obj.json()}")
+                yield obj

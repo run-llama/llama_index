@@ -4,11 +4,6 @@
 import logging
 from typing import List
 
-from llama_index.langchain_helpers.text_splitter import (
-    TextSplit,
-    TextSplitter,
-    TokenTextSplitter,
-)
 from llama_index.schema import (
     BaseNode,
     Document,
@@ -18,6 +13,7 @@ from llama_index.schema import (
     NodeRelationship,
     TextNode,
 )
+from llama_index.text_splitter import TextSplit, TextSplitter, TokenTextSplitter
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -99,6 +95,7 @@ def get_nodes_from_document(
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
                 excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
                 metadata_seperator=document.metadata_seperator,
+                metadata_template=document.metadata_template,
                 text_template=document.text_template,
                 relationships={
                     NodeRelationship.SOURCE: document.as_related_node_info()

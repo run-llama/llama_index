@@ -7,10 +7,10 @@ import openai
 import pytest
 
 from llama_index.indices.service_context import ServiceContext
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.mock import MockLLM
+from llama_index.text_splitter import TokenTextSplitter
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_predict import (
     patch_llmpredictor_apredict,

@@ -22,7 +22,7 @@ disambiguate the document or subsection from other similar documents or subsecti
 
 from abc import abstractmethod
 import json
-from typing import List, Optional, Sequence, cast, Dict
+from typing import List, Optional, Sequence, cast, Dict, Callable
 from functools import reduce
 
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
@@ -223,7 +223,7 @@ document. Format as comma separated. Keywords: """
                 context_str=cast(TextNode, node).text,
             )
             # node.metadata["excerpt_keywords"] = keywords
-            metadata_list.append({"excerpt_keywords": keywords})
+            metadata_list.append({"excerpt_keywords": keywords.strip()})
         return metadata_list
 
 
@@ -276,7 +276,9 @@ content: {cast(TextNode, node).text}""",
             )
             if self._embedding_only:
                 node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
-            metadata_list.append({"questions_this_excerpt_can_answer": questions})
+            metadata_list.append(
+                {"questions_this_excerpt_can_answer": questions.strip()}
+            )
         return metadata_list
 
 
@@ -317,7 +319,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
             self._llm_predictor.predict(
                 Prompt(template=self._prompt_template),
                 context_str=cast(TextNode, node).text,
-            )
+            ).strip()
             for node in nodes
         ]
 
@@ -330,5 +332,110 @@ class SummaryExtractor(MetadataFeatureExtractor):
                 metadata["next_section_summary"] = node_summaries[i + 1]
             if self._self_summary:
                 metadata["section_summary"] = node_summaries[i]
+
+        return metadata_list
+
+
+DEFAULT_ENTITY_MAP = {
+    "PER": "persons",
+    "ORG": "organizations",
+    "LOC": "locations",
+    "ANIM": "animals",
+    "BIO": "biological",
+    "CEL": "celestial",
+    "DIS": "diseases",
+    "EVE": "events",
+    "FOOD": "foods",
+    "INST": "instruments",
+    "MEDIA": "media",
+    "PLANT": "plants",
+    "MYTH": "mythological",
+    "TIME": "times",
+    "VEHI": "vehicles",
+}
+
+
+class EntityExtractor(MetadataFeatureExtractor):
+    """
+    Entity extractor. Extracts `entities` into a metadata field using a default model
+    `tomaarsen/span-marker-mbert-base-multinerd` and the SpanMarker library.
+
+    Install SpanMarker with `pip install span-marker`.
+    """
+
+    def __init__(
+        self,
+        model_name: str = "tomaarsen/span-marker-mbert-base-multinerd",
+        prediction_threshold: float = 0.5,
+        span_joiner: str = " ",
+        label_entities: bool = False,
+        device: Optional[str] = None,
+        entity_map: Optional[Dict[str, str]] = None,
+        tokenizer: Optional[Callable[[str], List[str]]] = None,
+    ):
+        """
+        Entity extractor for extracting entities from text and inserting
+        into node metadata.
+
+        Args:
+            model_name (str):
+                Name of the SpanMarker model to use.
+            prediction_threshold (float):
+                Minimum prediction threshold for entities. Defaults to 0.5.
+            span_joiner (str):
+                String to join spans with. Defaults to " ".
+            label_entities (bool):
+                Whether to label entities with their type. Setting to true can be
+                slightly error prone, but can be useful for downstream tasks.
+                Defaults to False.
+            device (Optional[str]):
+                Device to use for SpanMarker model, i.e. "cpu" or "cuda".
+                Loads onto "cpu" by default.
+            entity_map (Optional[Dict[str, str]]):
+                Mapping from entity class name to label.
+            tokenizer (Optional[Callable[[str], List[str]]]):
+                Tokenizer to use for splitting text into words.
+                Defaults to NLTK word_tokenize.
+        """
+        try:
+            from span_marker import SpanMarkerModel
+        except ImportError:
+            raise ImportError(
+                "SpanMarker is not installed. Install with `pip install span-marker`."
+            )
+
+        try:
+            from nltk.tokenize import word_tokenize
+        except ImportError:
+            raise ImportError("NLTK is not installed. Install with `pip install nltk`.")
+
+        self._model = SpanMarkerModel.from_pretrained(model_name)
+        if device is not None:
+            self._model = self._model.to(device)
+
+        self._tokenizer = tokenizer or word_tokenize
+        self._prediction_threshold = prediction_threshold
+        self._span_joiner = span_joiner
+        self._label_entities = label_entities
+        self._entity_map = DEFAULT_ENTITY_MAP
+        if entity_map is not None:
+            self._entity_map.update(entity_map)
+
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        # Extract node-level entity metadata
+        metadata_list: List[Dict] = [{} for _ in nodes]
+        for i, metadata in enumerate(metadata_list):
+            node_text = nodes[i].get_content()
+            words = self._tokenizer(node_text)
+            spans = self._model.predict(words)
+            for span in spans:
+                if span["score"] > self._prediction_threshold:
+                    ent_label = self._entity_map.get(span["label"], span["label"])
+                    metadata_label = ent_label if self._label_entities else "entities"
+
+                    if metadata_label not in metadata:
+                        metadata[metadata_label] = set()
+
+                    metadata[metadata_label].add(self._span_joiner.join(span["span"]))
 
         return metadata_list
