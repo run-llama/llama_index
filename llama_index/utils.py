@@ -246,7 +246,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     return tokenizer.tokenize
 
 
-def get_cache_dir() -> Path:
+def get_cache_dir() -> str:
     """Locate a platform-appropriate cache directory for llama_index,
     and create it if it doesn't yet exist
     """
@@ -273,7 +273,7 @@ def get_cache_dir() -> Path:
 
     if not os.path.exists(path):
         os.makedirs(path)
-    return path
+    return str(path)
 
 
 # Sample text from llama_index's readme
