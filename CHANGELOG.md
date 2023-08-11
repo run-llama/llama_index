@@ -1,6 +1,6 @@
 # ChangeLog
 
-## [0.7.23] - 2023-08-10
+## [0.7.24] - 2023-08-10
 
 ### New Features
 - Default to pydantic selectors when possible (#7154, #7223)
@@ -15,8 +15,14 @@
 - Change prompts for compact/refine/tree_summarize to work better with gpt-3.5-turbo (#7150, #7179, #7223)
 - Increase default LLM temperature to 0.1 (#7180)
 
+### Other Changes
+- docs: Improvements to Mendable Search (#7220)
+- Refactor openai agent (#7077)
+
 ### Bug Fixes / Nits
 - Use `1 - cosine_distance` for pgvector/postgres vector db (#7217)
+- fix metadata formatting and extraction (#7216)
+- fix(readers): Fix non-ASCII JSON Reader bug (#7086)
 
 ## [0.7.23] - 2023-08-10
 
