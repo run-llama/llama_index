@@ -11,7 +11,7 @@ from llama_index.text_splitter.utils import split_by_sentence_tokenizer
 from llama_index.utils import get_tqdm_iterable
 
 
-DEFAULT_WINDOW_SIZE = 5
+DEFAULT_WINDOW_SIZE = 3
 DEFAULT_WINDOW_METADATA_KEY = "window"
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 

@@ -93,7 +93,7 @@ from llama_index.node_parser import SentenceWindowNodeParser
 
 node_parser = SentenceWindowNodeParser.from_defaults(
   # how many sentences on either side to capture
-  window_size=5,  
+  window_size=3,  
   # the metadata key that holds the window of surrounding sentences
   window_metadata_key="window",  
   # the metadata key that holds the original sentence
