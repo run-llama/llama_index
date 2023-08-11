@@ -18,7 +18,7 @@ from langchain.docstore.document import Document
 
 # embeddings
 from langchain.embeddings.base import Embeddings
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings, HuggingFaceBgeEmbeddings
 
 # LLMs
 from langchain.llms import AI21, BaseLLM, Cohere, FakeListLLM, OpenAI
@@ -68,6 +68,7 @@ __all__ = [
     "BaseLanguageModel",
     "Embeddings",
     "HuggingFaceEmbeddings",
+    "HuggingFaceBgeEmbeddings",
     "PromptTemplate",
     "BasePromptTemplate",
     "ConditionalPromptSelector",

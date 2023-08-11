@@ -1,7 +1,7 @@
 from typing import Any, Dict
 from pytest import MonkeyPatch
 
-from llama_index.bridge.langchain import HuggingFaceEmbeddings
+from llama_index.bridge.langchain import HuggingFaceBgeEmbeddings
 from llama_index.embeddings import OpenAIEmbedding, LangchainEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 
@@ -18,7 +18,7 @@ def mock_openai_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
 
 def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.bridge.langchain.HuggingFaceEmbeddings.__init__",
+        "llama_index.bridge.langchain.HuggingFaceBgeEmbeddings.__init__",
         mock_hf_embeddings,
     )
     monkeypatch.setattr(
@@ -34,7 +34,7 @@ def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     assert isinstance(embed_model, LangchainEmbedding)
 
     # Test LCEmbeddings
-    embed_model = resolve_embed_model(HuggingFaceEmbeddings())
+    embed_model = resolve_embed_model(HuggingFaceBgeEmbeddings())
     assert isinstance(embed_model, LangchainEmbedding)
 
     # Test BaseEmbedding
