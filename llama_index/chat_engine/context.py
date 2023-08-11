@@ -9,6 +9,7 @@ from llama_index.chat_engine.types import (
     ToolOutput,
 )
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
@@ -37,12 +38,14 @@ class ContextChatEngine(BaseChatEngine):
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         context_template: Optional[str] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
     ) -> None:
         self._retriever = retriever
         self._llm = llm
         self._memory = memory
         self._prefix_messages = prefix_messages
         self._context_template = context_template or DEFAULT_CONTEXT_TEMPALTE
+        self._node_postprocessors = node_postprocessors or []
 
     @classmethod
     def from_defaults(
@@ -81,6 +84,9 @@ class ContextChatEngine(BaseChatEngine):
     def _generate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(nodes)
+
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
         )
