@@ -15,7 +15,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 install_requires = [
     "tiktoken",
     "dataclasses_json",
-    "langchain>=0.0.218",
+    "langchain>=0.0.262",
     "sqlalchemy>=2.0.15",
     "numpy",
     "tenacity>=8.2.0,<9.0.0",
