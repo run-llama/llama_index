@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### New Features
+- Added "LLAMA_INDEX_CACHE_DIR" to control cached files (#7233)
 - Default to pydantic selectors when possible (#7154, #7223)
 - Remove the need for langchain wrappers on `embed_model` in the service context (#7157)
 - Metadata extractors take an `LLM` object now, in addition to `LLMPredictor` (#7202)

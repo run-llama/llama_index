@@ -60,6 +60,7 @@ def resolve_embed_model(
             ) from exc
 
         cache_folder = os.path.join(get_cache_dir(), "models")
+        os.makedirs(cache_folder, exist_ok=True)
 
         embed_model = LangchainEmbedding(
             HuggingFaceBgeEmbeddings(

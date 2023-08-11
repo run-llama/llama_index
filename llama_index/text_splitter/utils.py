@@ -32,13 +32,19 @@ def split_by_char() -> Callable[[str], List[str]]:
 
 def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
     import nltk
+    import os
+    from llama_index.utils import get_cache_dir
+
+    cache_dir = get_cache_dir()
+    nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+
+    # update nltk path for nltk so that it finds the data
+    if nltk_data_dir not in nltk.data.path:
+        nltk.data.path.append(nltk_data_dir)
 
     try:
         nltk.data.find("tokenizers/punkt")
     except LookupError:
-        import os
-
-        nltk_data_dir = os.environ.get("NLTK_DATA", None)
         nltk.download("punkt", download_dir=nltk_data_dir)
 
     return nltk.sent_tokenize
