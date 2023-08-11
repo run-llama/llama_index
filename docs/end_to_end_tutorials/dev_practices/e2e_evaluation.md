@@ -18,9 +18,6 @@ Quantitative eval is more useful when evaluating applications where there is a c
 
 Qualitative eval is more useful when generating long-form responses that are meant to be *helpful* but not necessarily completely accurate.
 
-Here are some resources on quantitative eval.
-
-Here are some resources on qualitative eval.
 
 ## Discovery - Sensitivity Testing
 
