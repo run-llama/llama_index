@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Other Changes
+- Reverted #7223 changes to defaults
+
 ## [0.7.24] - 2023-08-10
 
 ### New Features
