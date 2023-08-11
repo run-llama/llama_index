@@ -29,8 +29,10 @@ def mock_service_context_merge_chunks(
 
 
 def test_tree_summarize(mock_service_context_merge_chunks: ServiceContext) -> None:
-    mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+    mock_summary_prompt_tmpl = "{context_str}{query_str}"
+    mock_summary_prompt = Prompt(
+        mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
+    )
 
     query_str = "What is?"
     texts = [
@@ -43,7 +45,7 @@ def test_tree_summarize(mock_service_context_merge_chunks: ServiceContext) -> No
     # test sync
     tree_summarize = TreeSummarize(
         service_context=mock_service_context_merge_chunks,
-        text_qa_template=mock_qa_prompt,
+        summary_template=mock_summary_prompt,
     )
     response = tree_summarize.get_response(text_chunks=texts, query_str=query_str)
     assert str(response) == "Text chunk 1\nText chunk 2\nText chunk 3\nText chunk 4"
@@ -52,8 +54,10 @@ def test_tree_summarize(mock_service_context_merge_chunks: ServiceContext) -> No
 def test_tree_summarize_use_async(
     mock_service_context_merge_chunks: ServiceContext,
 ) -> None:
-    mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+    mock_summary_prompt_tmpl = "{context_str}{query_str}"
+    mock_summary_prompt = Prompt(
+        mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
+    )
 
     query_str = "What is?"
     texts = [
@@ -66,7 +70,7 @@ def test_tree_summarize_use_async(
     # test async
     tree_summarize = TreeSummarize(
         service_context=mock_service_context_merge_chunks,
-        text_qa_template=mock_qa_prompt,
+        summary_template=mock_summary_prompt,
         use_async=True,
     )
     response = tree_summarize.get_response(text_chunks=texts, query_str=query_str)
@@ -77,8 +81,10 @@ def test_tree_summarize_use_async(
 async def test_tree_summarize_async(
     mock_service_context_merge_chunks: ServiceContext,
 ) -> None:
-    mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+    mock_summary_prompt_tmpl = "{context_str}{query_str}"
+    mock_summary_prompt = Prompt(
+        mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
+    )
 
     query_str = "What is?"
     texts = [
@@ -91,7 +97,7 @@ async def test_tree_summarize_async(
     # test async
     tree_summarize = TreeSummarize(
         service_context=mock_service_context_merge_chunks,
-        text_qa_template=mock_qa_prompt,
+        summary_template=mock_summary_prompt,
     )
     response = await tree_summarize.aget_response(
         text_chunks=texts, query_str=query_str

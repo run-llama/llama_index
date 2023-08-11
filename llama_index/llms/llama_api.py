@@ -24,7 +24,7 @@ class LlamaAPI(CustomLLM):
     def __init__(
         self,
         model: str = "llama-13b-chat",
-        temperature: float = 0.0,
+        temperature: float = 0.1,
         max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
