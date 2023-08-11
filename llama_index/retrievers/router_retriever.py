@@ -9,11 +9,7 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
-from llama_index.selectors.pydantic_selectors import (
-    PydanticMultiSelector,
-    PydanticSingleSelector,
-)
+from llama_index.selectors.utils import get_selector_from_context
 from llama_index.selectors.types import BaseSelector
 from llama_index.tools.retriever_tool import RetrieverTool
 
@@ -55,24 +51,10 @@ class RouterRetriever(BaseRetriever):
         selector: Optional[BaseSelector] = None,
         select_multi: bool = False,
     ) -> "RouterRetriever":
-        if selector is None and select_multi:
-            try:
-                llm = service_context.llm_predictor.llm if service_context else None
-                selector = PydanticMultiSelector.from_defaults(llm=llm)  # type: ignore
-            except ValueError:
-                selector = LLMMultiSelector.from_defaults(
-                    service_context=service_context
-                )
-        elif selector is None and not select_multi:
-            try:
-                llm = service_context.llm_predictor.llm if service_context else None
-                selector = PydanticSingleSelector.from_defaults(llm=llm)  # type: ignore
-            except ValueError:
-                selector = LLMSingleSelector.from_defaults(
-                    service_context=service_context
-                )
 
-        assert selector is not None
+        selector = selector or get_selector_from_context(
+            service_context or ServiceContext.from_defaults(), is_multi=select_multi
+        )
 
         return cls(
             selector,

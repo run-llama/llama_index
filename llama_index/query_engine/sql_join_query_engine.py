@@ -11,6 +11,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.indices.service_context import ServiceContext
+from llama_index.selectors.utils import get_selector_from_context
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.prompts.base import Prompt
@@ -188,17 +189,10 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         sql_query_engine = sql_query_tool.query_engine
         self._service_context = service_context or sql_query_engine.service_context
 
-        if selector is None:
-            try:
-                selector = PydanticSingleSelector.from_defaults(
-                    llm=self._service_context.llm_predictor.llm  # type: ignore
-                )
-            except ValueError:
-                selector = LLMSingleSelector.from_defaults(
-                    service_context=self._service_context
-                )
-        self._selector = selector
-        assert self._selector is not None
+        self._selector = selector or get_selector_from_context(
+            self._service_context, is_multi=False
+        )
+        assert isinstance(self._selector, (LLMSingleSelector, PydanticSingleSelector))
 
         self._sql_join_synthesis_prompt = (
             sql_join_synthesis_prompt or DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT
