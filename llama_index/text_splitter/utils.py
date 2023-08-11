@@ -44,7 +44,7 @@ def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
 
     try:
         nltk.data.find("tokenizers/punkt")
-    except LookupError as e:
+    except LookupError:
         nltk.download("punkt", download_dir=nltk_data_dir)
 
     return nltk.sent_tokenize
