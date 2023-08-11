@@ -29,7 +29,7 @@ postprocessor.postprocess_nodes(nodes)
 
 ## MetadataReplacementPostProcessor
 
-Used to replace the node content with a field from the node metadata. If the field is not present in the metadat, then the node text remains unchanged. Most useful when used in combination with the `SentenceWindowNodeParser`.
+Used to replace the node content with a field from the node metadata. If the field is not present in the metadata, then the node text remains unchanged. Most useful when used in combination with the `SentenceWindowNodeParser`.
 
 ```python
 from llama_index.indices.postprocessor import MetadataReplacementPostProcessor
