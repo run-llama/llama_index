@@ -31,7 +31,7 @@ class Anthropic(LLM):
     def __init__(
         self,
         model: str = "claude-2",
-        temperature: float = 0.0,
+        temperature: float = 0.1,
         max_tokens: int = 512,
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
