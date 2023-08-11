@@ -72,6 +72,7 @@ class LlamaCPP(CustomLLM):
             model_name = os.path.basename(model_url)
             model_path = os.path.join(cache_dir, "models", model_name)
             if not os.path.exists(model_path):
+                os.makedirs(os.path.dirname(model_path), exist_ok=True)
                 self._download_url(model_url, model_path)
                 assert os.path.exists(model_path)
 
