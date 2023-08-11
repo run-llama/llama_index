@@ -1,5 +1,6 @@
 from typing import Any, Optional, Sequence
 
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -8,10 +9,9 @@ from llama_index.llms.base import (
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseAsyncGen,
-    llm_completion_callback,
     llm_chat_callback,
+    llm_completion_callback,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
