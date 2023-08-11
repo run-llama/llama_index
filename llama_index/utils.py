@@ -70,6 +70,10 @@ class GlobalsHelper:
 
                 cache_dir = get_cache_dir()
                 nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+
+                # update env var for nltk so that it finds the data
+                os.environ["NLTK_DATA"] = nltk_data_dir
+
                 nltk.download("stopwords", download_dir=nltk_data_dir)
             self._stopwords = stopwords.words("english")
         return self._stopwords
