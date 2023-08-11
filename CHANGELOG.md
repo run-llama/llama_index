@@ -7,7 +7,7 @@
 - Remove the need for langchain wrappers on `embed_model` in the service context (#7157)
 - Metadata extractors take an `LLM` object now, in addition to `LLMPredictor` (#7202)
 - Added local mode + fallback to llama.cpp + llama2 (#7200)
-- Added local fallback for embeddings (#7200)
+- Added local fallback for embeddings to `BAAI/bge-small-en` (#7200)
 - Added `SentenceWindowNodeParser` + `MetadataReplacementPostProcessor` (#7211)
 
 ### Breaking Changes
