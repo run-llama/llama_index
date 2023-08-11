@@ -45,7 +45,7 @@ class ContextChatEngine(BaseChatEngine):
         self._memory = memory
         self._prefix_messages = prefix_messages
         self._context_template = context_template or DEFAULT_CONTEXT_TEMPALTE
-        self._node_postprocessors = node_postprocessors or []
+        self._node_postprocessors = node_postprocessors
 
     @classmethod
     def from_defaults(
@@ -57,6 +57,7 @@ class ContextChatEngine(BaseChatEngine):
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
@@ -78,8 +79,15 @@ class ContextChatEngine(BaseChatEngine):
             ]
 
         prefix_messages = prefix_messages or []
+        node_postprocessors = node_postprocessors or []
 
-        return cls(retriever, llm=llm, memory=memory, prefix_messages=prefix_messages)
+        return cls(
+            retriever,
+            llm=llm,
+            memory=memory,
+            prefix_messages=prefix_messages,
+            node_postprocessors=node_postprocessors,
+        )
 
     def _generate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Generate context information from a message."""
