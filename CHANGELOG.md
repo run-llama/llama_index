@@ -44,6 +44,7 @@
 - Use `1 - cosine_distance` for pgvector/postgres vector db (#7217)
 - fix metadata formatting and extraction (#7216)
 - fix(readers): Fix non-ASCII JSON Reader bug (#7086)
+- Chore: change PgVectorStore variable name from `sim` to `distance` for clarity (#7226)
 
 ## [0.7.23] - 2023-08-10
 
