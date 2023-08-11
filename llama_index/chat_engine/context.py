@@ -10,8 +10,8 @@ from llama_index.chat_engine.types import (
 )
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
