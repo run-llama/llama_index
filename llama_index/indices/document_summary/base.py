@@ -16,7 +16,11 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import Response
-from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
+from llama_index.response_synthesizers import (
+    BaseSynthesizer,
+    get_response_synthesizer,
+    ResponseMode,
+)
 from llama_index.schema import (
     BaseNode,
     NodeWithScore,
@@ -30,8 +34,8 @@ logger = logging.getLogger(__name__)
 
 
 DEFAULT_SUMMARY_QUERY = (
-    "Give a concise summary of this document. Also describe some of the questions "
-    "that this document can answer. "
+    "Describe what the provided text is about. "
+    "Also describe some of the questions that this text can answer. "
 )
 
 
@@ -67,7 +71,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     ) -> None:
         """Initialize params."""
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            service_context=service_context,
+            service_context=service_context, response_mode=ResponseMode.TREE_SUMMARIZE
         )
         self._summary_query = summary_query or "summarize:"
         super().__init__(
