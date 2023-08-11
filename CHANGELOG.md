@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Use `1 - cosine_distance` for pgvector/postgres vector db (#7217)
+- Chore: change PgVectorStore variable name from `sim` to `distance` for clarity (#7226)
 
 ## [0.7.23] - 2023-08-10
 
