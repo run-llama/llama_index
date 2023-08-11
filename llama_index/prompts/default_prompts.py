@@ -88,7 +88,8 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "------------\n"
     "Given the new context, refine the original answer to better "
     "answer the question. "
-    "If the context isn't useful, return the original answer."
+    "If the context isn't useful, return the original answer.\n"
+    "Refined Answer: "
 )
 DEFAULT_REFINE_PROMPT = Prompt(
     DEFAULT_REFINE_PROMPT_TMPL, prompt_type=PromptType.REFINE
@@ -101,10 +102,28 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "{context_str}\n"
     "---------------------\n"
     "Given the context information and not prior knowledge, "
-    "answer the question: {query_str}\n"
+    "answer the question. If the answer is not in the context, inform "
+    "the user that you can't answer the question.\n"
+    "Question: {query_str}\n"
+    "Answer: "
 )
 DEFAULT_TEXT_QA_PROMPT = Prompt(
     DEFAULT_TEXT_QA_PROMPT_TMPL, prompt_type=PromptType.QUESTION_ANSWER
+)
+
+DEFAULT_TREE_SUMMARIZE_TMPL = (
+    "Context information from multiple sources is below.\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Given the information from multiple sources and not prior knowledge, "
+    "answer the question. If the answer is not in the context, inform "
+    "the user that you can't answer the question.\n"
+    "Question: {query_str}\n"
+    "Answer: "
+)
+DEFAULT_TREE_SUMMARIZE_PROMPT = Prompt(
+    DEFAULT_TREE_SUMMARIZE_TMPL, prompt_type=PromptType.SUMMARY
 )
 
 

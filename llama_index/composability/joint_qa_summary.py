@@ -8,7 +8,6 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.query_engine.router_query_engine import RouterQueryEngine
 from llama_index.schema import Document
-from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.storage.storage_context import StorageContext
 from llama_index.tools.query_engine import QueryEngineTool
 
@@ -83,8 +82,7 @@ class QASummaryQueryEngineBuilder:
         )
 
         # build query engine
-        query_engine = RouterQueryEngine(
-            selector=LLMSingleSelector.from_defaults(self._service_context),
+        query_engine = RouterQueryEngine.from_defaults(
             query_engine_tools=[
                 QueryEngineTool.from_defaults(
                     vector_query_engine, description=self._qa_text
@@ -93,5 +91,7 @@ class QASummaryQueryEngineBuilder:
                     list_query_engine, description=self._summary_text
                 ),
             ],
+            service_context=self._service_context,
+            select_multi=False,
         )
         return query_engine
