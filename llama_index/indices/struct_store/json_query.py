@@ -21,14 +21,12 @@ JSONType = Union[Dict[str, "JSONType"], List["JSONType"], str, int, float, bool,
 
 
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
-    "Given a query, synthesize a response "
-    "to satisfy the query using the JSON results. "
-    "Only include details that are relevant to the query. "
-    "If you don't know the answer, then say that.\n"
+    "Given an input question about a JSON value, synthesize a response "
+    "from the query results.\n"
+    "Query: {query_str}\n"
     "JSON Schema: {json_schema}\n"
     "JSON Path: {json_path}\n"
     "Value at path: {json_path_value}\n"
-    "Query: {query_str}\n"
     "Response: "
 )
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT = Prompt(

@@ -12,7 +12,14 @@ from llama_index.response_synthesizers import ResponseMode, get_response_synthes
 from llama_index.schema import Document
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
-from tests.mock_utils.mock_utils import mock_tokenizer
+
+
+def mock_tokenizer(text: str) -> List[str]:
+    """Mock tokenizer."""
+    if text == "":
+        return []
+    tokens = text.split(" ")
+    return tokens
 
 
 def test_give_response(

@@ -33,7 +33,7 @@ class AzureOpenAI(OpenAI):
         self,
         model: str = "gpt-35-turbo",
         engine: Optional[str] = None,
-        temperature: float = 0.1,
+        temperature: float = 0.0,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,

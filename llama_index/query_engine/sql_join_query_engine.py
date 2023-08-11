@@ -1,7 +1,7 @@
 """SQL Join query engine."""
 
 from llama_index.bridge.langchain import print_text
-from typing import Optional, Dict, Callable, Union
+from typing import Optional, Dict, Callable
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,
@@ -11,9 +11,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.indices.service_context import ServiceContext
-from llama_index.selectors.utils import get_selector_from_context
 from llama_index.selectors.llm_selectors import LLMSingleSelector
-from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.prompts.base import Prompt
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 import logging
@@ -146,9 +144,8 @@ class SQLJoinQueryEngine(BaseQueryEngine):
 
     Args:
         sql_query_tool (QueryEngineTool): Query engine tool for SQL database.
-            other_query_tool (QueryEngineTool): Other query engine tool.
-        selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]):
-            Selector to use.
+        other_query_tool (QueryEngineTool): Other query engine tool.
+        selector (Optional[LLMSingleSelector]): Selector to use.
         service_context (Optional[ServiceContext]): Service context to use.
         sql_join_synthesis_prompt (Optional[Prompt]): Prompt to use for SQL join
             synthesis.
@@ -164,7 +161,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         self,
         sql_query_tool: QueryEngineTool,
         other_query_tool: QueryEngineTool,
-        selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
+        selector: Optional[LLMSingleSelector] = None,
         service_context: Optional[ServiceContext] = None,
         sql_join_synthesis_prompt: Optional[Prompt] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
@@ -188,12 +185,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
 
         sql_query_engine = sql_query_tool.query_engine
         self._service_context = service_context or sql_query_engine.service_context
-
-        self._selector = selector or get_selector_from_context(
-            self._service_context, is_multi=False
-        )
-        assert isinstance(self._selector, (LLMSingleSelector, PydanticSingleSelector))
-
+        self._selector = selector or LLMSingleSelector.from_defaults()
         self._sql_join_synthesis_prompt = (
             sql_join_synthesis_prompt or DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT
         )

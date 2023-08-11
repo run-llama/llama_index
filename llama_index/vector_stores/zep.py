@@ -225,7 +225,7 @@ class ZepVectorStore(VectorStore):
         nodes: List[TextNode] = []
 
         for d in results:
-            node = metadata_dict_to_node(d.metadata or {})
+            node = metadata_dict_to_node(d.metadata)
             node.set_content(d.content)
 
             nodes.append(node)
