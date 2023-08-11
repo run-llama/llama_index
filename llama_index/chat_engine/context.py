@@ -37,15 +37,15 @@ class ContextChatEngine(BaseChatEngine):
         llm: LLM,
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
+        node_postprocessors: Optional[List[BaseNodePostprocessor]],
         context_template: Optional[str] = None,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
     ) -> None:
         self._retriever = retriever
         self._llm = llm
         self._memory = memory
         self._prefix_messages = prefix_messages
+        self._node_postprocessors = node_postprocessors or []
         self._context_template = context_template or DEFAULT_CONTEXT_TEMPALTE
-        self._node_postprocessors = node_postprocessors
 
     @classmethod
     def from_defaults(
