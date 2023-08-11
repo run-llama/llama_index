@@ -1,3 +1,5 @@
+(one-click-observability)=
+
 #  One-Click Observability
 
 LlamaIndex provides **one-click observability**  🔭 to allow you to build principled LLM applications in a production setting.
