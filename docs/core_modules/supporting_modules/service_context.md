@@ -22,7 +22,7 @@ class ServiceContext:
 
     # The embedding model used to generate vector representations of text.
     # If not provided, defaults to text-embedding-ada-002
-    # If your OpenAI key is not set, defaults to sentence-transformers/all-mpnet-base-v2
+    # If your OpenAI key is not set, defaults to BAAI/bge-small-en
     embed_model: BaseEmbedding
 
     # The parser that converts documents into nodes.

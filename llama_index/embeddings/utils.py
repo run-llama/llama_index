@@ -1,13 +1,14 @@
 """Embedding utils for LlamaIndex."""
-
+import os
 from typing import List, Union
 
+from llama_index.utils import get_cache_dir
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2"
+DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "BAAI/bge-small-en"
 
 
 def save_embedding(embedding: List[float], file_path: str) -> None:
@@ -36,8 +37,8 @@ def resolve_embed_model(
             embed_model = "local"
             print(
                 "******\n"
-                "Could not load OpenAIEmbedding. Using default HuggingFaceEmbedding "
-                "with model_name=sentence-transformers/all-mpnet-base-v2. "
+                "Could not load OpenAIEmbedding. Using HuggingFaceBgeEmbeddings "
+                f"with model_name={DEFAULT_HUGGINGFACE_EMBEDDING_MODEL}. "
                 "Please check your API key if you intended to use OpenAI embeddings."
                 "\n******"
             )
@@ -51,16 +52,19 @@ def resolve_embed_model(
                 "embed_model must start with str 'local' or of type BaseEmbedding"
             )
         try:
-            from langchain.embeddings import HuggingFaceEmbeddings
+            from langchain.embeddings import HuggingFaceBgeEmbeddings
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers or langchain package. "
-                "Please install with `pip install sentence-transformers langchain`."
+                "Please install with `pip install -U sentence-transformers langchain`."
             ) from exc
 
+        cache_folder = os.path.join(get_cache_dir(), "models")
+
         embed_model = LangchainEmbedding(
-            HuggingFaceEmbeddings(
-                model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+            HuggingFaceBgeEmbeddings(
+                model_name=model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
+                cache_folder=cache_folder,
             )
         )
 

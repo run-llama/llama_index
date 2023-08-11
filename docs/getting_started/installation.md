@@ -27,7 +27,7 @@ need additional environment keys + tokens setup depending on the LLM provider.
 
 ### Local Environment Setup
 
-If you don't wish to use OpenAI, the environment will automatically fallback to using `LlamaCPP` and `llama2-chat-13B` for text generation and `sentence-transformers/all-mpnet-base-v2` for retrieval and embeddings. This models will all run locally.
+If you don't wish to use OpenAI, the environment will automatically fallback to using `LlamaCPP` and `llama2-chat-13B` for text generation and `BAAI/bge-small-en` for retrieval and embeddings. This models will all run locally.
 
 In order to use `LlamaCPP`, follow the installation guide [here](/examples/llm/llama_2_llama_cpp.ipynb). You'll need to install the `llama-cpp-python` package, preferably compiled to support your GPU. This will use aronund 11.5GB of memory across the CPU and GPU.
 
