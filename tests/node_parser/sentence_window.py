@@ -1,11 +1,11 @@
 from llama_index.schema import Document
-from llama_index.node_parser.sentence_window import SentenceWinowNodeParser
+from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
 
 
 def test_split_and_window() -> None:
     document = Document(text="This is a test 1. This is a test 2. This is a test 3.")
 
-    node_parser = SentenceWinowNodeParser.from_defaults()
+    node_parser = SentenceWindowNodeParser.from_defaults()
 
     nodes = node_parser.get_nodes_from_documents([document])
 

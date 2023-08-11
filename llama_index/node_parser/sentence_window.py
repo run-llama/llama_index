@@ -16,7 +16,7 @@ DEFAULT_WINDOW_METADATA_KEY = "window"
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 
 
-class SentenceWinowNodeParser(NodeParser):
+class SentenceWindowNodeParser(NodeParser):
     """Sentence window node parser.
 
     Splits a document into Nodes, with each node being a sentence.
@@ -61,7 +61,7 @@ class SentenceWinowNodeParser(NodeParser):
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         metadata_extractor: Optional[MetadataExtractor] = None,
-    ) -> "SentenceWinowNodeParser":
+    ) -> "SentenceWindowNodeParser":
         callback_manager = callback_manager or CallbackManager([])
 
         sentence_splitter = sentence_splitter or split_by_sentence_tokenizer()
