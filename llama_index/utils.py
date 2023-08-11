@@ -243,8 +243,12 @@ def get_cache_dir() -> Path:
     """Locate a platform-appropriate cache directory for llama_index,
     and create it if it doesn't yet exist
     """
+    # User override
+    if "LLAMA_INDEX_CACHE_DIR" in os.environ:
+        path = Path(os.environ["LLAMA_INDEX_CACHE_DIR"])
+
     # Linux, Unix, AIX, etc.
-    if os.name == "posix" and sys.platform != "darwin":
+    elif os.name == "posix" and sys.platform != "darwin":
         # use ~/.cache if empty OR not set
         base = os.path.expanduser("~/.cache")
         path = Path(base, "llama_index")
