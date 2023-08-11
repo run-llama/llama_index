@@ -1,7 +1,9 @@
 from typing import Any, Generator, Optional, Sequence, cast
 
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompt_selectors import DEFAULT_TEXT_QA_PROMPT_SEL
+from llama_index.prompts.default_prompts import (
+    DEFAULT_TEXT_QA_PROMPT,
+)
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -15,7 +17,7 @@ class SimpleSummarize(BaseSynthesizer):
         streaming: bool = False,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
-        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
+        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
 
     async def aget_response(
         self,

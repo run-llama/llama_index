@@ -3,11 +3,12 @@ from typing import List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.schema import BaseNode, Document
-from llama_index.text_splitter import TextSplitter, get_default_text_splitter
+from llama_index.text_splitter import TextSplitter, TokenTextSplitter
 from llama_index.utils import get_tqdm_iterable
 
 
@@ -33,7 +34,7 @@ class SimpleNodeParser(NodeParser):
     ) -> None:
         """Init params."""
         self.callback_manager = callback_manager or CallbackManager([])
-        self._text_splitter = text_splitter or get_default_text_splitter(
+        self._text_splitter = text_splitter or TokenTextSplitter(
             callback_manager=self.callback_manager
         )
         self._include_metadata = include_metadata
@@ -51,14 +52,18 @@ class SimpleNodeParser(NodeParser):
         metadata_extractor: Optional[MetadataExtractor] = None,
     ) -> "SimpleNodeParser":
         callback_manager = callback_manager or CallbackManager([])
+        chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
+        chunk_overlap = (
+            chunk_overlap if chunk_overlap is not None else DEFAULT_CHUNK_OVERLAP
+        )
 
-        text_splitter = get_default_text_splitter(
+        token_text_splitter = TokenTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             callback_manager=callback_manager,
         )
         return cls(
-            text_splitter=text_splitter,
+            text_splitter=token_text_splitter,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
             callback_manager=callback_manager,

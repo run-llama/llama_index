@@ -26,11 +26,6 @@ class BaseLLMPredictor(Protocol):
 
     @property
     @abstractmethod
-    def llm(self) -> LLM:
-        """Get LLM."""
-
-    @property
-    @abstractmethod
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
 

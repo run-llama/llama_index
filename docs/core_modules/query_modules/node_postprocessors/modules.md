@@ -27,20 +27,6 @@ postprocessor = KeywordNodePostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-## MetadataReplacementPostProcessor
-
-Used to replace the node content with a field from the node metadata. If the field is not present in the metadata, then the node text remains unchanged. Most useful when used in combination with the `SentenceWindowNodeParser`.
-
-```python
-from llama_index.indices.postprocessor import MetadataReplacementPostProcessor
-
-postprocessor = KeywordNodePostprocessor(
-  target_metadata_key="window",
-)
-
-postprocessor.postprocess_nodes(nodes)
-```
-
 ## SentenceEmbeddingOptimizer
 
 This postprocessor optimizes token usage by removing sentences that are not relevant to the query (this is done using embeddings).
@@ -253,5 +239,4 @@ maxdepth: 1
 /examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
 /examples/node_postprocessor/PII.ipynb
 /examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
-/examples/node_postprocessor/MetadataReplacementDemo.ipynb
 ```

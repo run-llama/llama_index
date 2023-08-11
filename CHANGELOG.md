@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [0.7.24.post1] - 2023-08-11
+
+### Other Changes
+- Reverted #7223 changes to defaults (#7235)
+
 ## [0.7.24] - 2023-08-10
 
 ### New Features

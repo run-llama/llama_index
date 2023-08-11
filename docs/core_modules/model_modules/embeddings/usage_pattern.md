@@ -56,22 +56,23 @@ To configure the model used (from Hugging Face hub), add the model name separate
 from llama_index import ServiceContext
 
 service_context = ServiceContext.from_defaults(
-  embed_model="local:BAAI/bge-large-en"
+  embed_model="local:sentence-transformers/all-mpnet-base-v2"
 )
 ```
 
 ### Embedding Model Integrations
 
-We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/).
+We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/), using our `LangchainEmbedding` wrapper class.
 
 The example below loads a model from Hugging Face, using Langchain's embedding class.
 
 ```python
-from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
-from llama_index import ServiceContext
+from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from llama_index import LangchainEmbedding, ServiceContext
 
-embed_model = HuggingFaceBgeEmbeddings(model_name="BAAI/bge-base-en")
-
+embed_model = LangchainEmbedding(
+  HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+)
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 ```
 

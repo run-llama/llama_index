@@ -8,12 +8,10 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
-)
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.response_synthesizers import TreeSummarize
-from llama_index.selectors.utils import get_selector_from_context
+from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
 from llama_index.selectors.types import BaseSelector
 from llama_index.schema import BaseNode
 from llama_index.tools.query_engine import QueryEngineTool
@@ -88,7 +86,7 @@ class RouterQueryEngine(BaseQueryEngine):
         self._metadatas = [x.metadata for x in query_engine_tools]
         self._summarizer = summarizer or TreeSummarize(
             service_context=self.service_context,
-            summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
+            text_qa_template=DEFAULT_TEXT_QA_PROMPT,
         )
 
         super().__init__(self.service_context.callback_manager)
@@ -102,11 +100,10 @@ class RouterQueryEngine(BaseQueryEngine):
         summarizer: Optional[TreeSummarize] = None,
         select_multi: bool = False,
     ) -> "RouterQueryEngine":
-        service_context = service_context or ServiceContext.from_defaults()
-
-        selector = selector or get_selector_from_context(
-            service_context, is_multi=select_multi
-        )
+        if selector is None and select_multi:
+            selector = LLMMultiSelector.from_defaults(service_context=service_context)
+        elif selector is None and not select_multi:
+            selector = LLMSingleSelector.from_defaults(service_context=service_context)
 
         assert selector is not None
 
@@ -272,7 +269,7 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         self.service_context = service_context or ServiceContext.from_defaults()
         self._summarizer = summarizer or TreeSummarize(
             service_context=self.service_context,
-            summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
+            text_qa_template=DEFAULT_TEXT_QA_PROMPT,
         )
         self._retriever = retriever
 

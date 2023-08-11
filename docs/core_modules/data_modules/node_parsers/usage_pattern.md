@@ -78,27 +78,3 @@ text_splitter = SentenceSplitter(
 
 node_parser = SimpleNodeParser(text_splitter=text_splitter)
 ```
-
-## SentenceWindowNodeParser
-
-The `SentenceWindowNodeParser` is similar to the `SimpleNodeParser`, except that it splits all documents into individual sentences. The resulting nodes also contain the surrounding "window" of sentences around each node in the metadata. Note that this metadata will not be visible to the LLM or embedding model.
-
-This is most useful for generating embeddings that have a very specific scope. Then, combined with a `MetadataReplacementNodePostProcessor`, you can replace the sentence with it's surrounding context before sending the node to the LLM. 
-
-An example of setting up the parser with default settings is below. In practice, you would usually only want to adjust the window size of sentences.
-
-```python
-import nltk
-from llama_index.node_parser import SentenceWindowNodeParser
-
-node_parser = SentenceWindowNodeParser.from_defaults(
-  # how many sentences on either side to capture
-  window_size=5,  
-  # the metadata key that holds the window of surrounding sentences
-  window_metadata_key="window",  
-  # the metadata key that holds the original sentence
-  original_text_metadata_key="original_sentence"
-)
-```
-
-A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](/examples/node_postprocessor/MetadataReplacementDemo.ipynb).
