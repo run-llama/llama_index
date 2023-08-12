@@ -3,6 +3,7 @@
 from typing import List
 
 from llama_index.bridge.langchain import BaseTool, BaseToolkit
+from llama_index.tools import AsyncBaseTool, adapt_to_async_tool
 from pydantic import Field
 
 from llama_index.langchain_helpers.agents.tools import (
@@ -21,10 +22,10 @@ class LlamaToolkit(BaseToolkit):
 
         arbitrary_types_allowed = True
 
-    def get_tools(self) -> List[BaseTool]:
+    def get_tools(self) -> List[AsyncBaseTool]:
         """Get the tools in the toolkit."""
         index_tools: List[BaseTool] = [
-            LlamaIndexTool.from_tool_config(tool_config=tool_config)
+            adapt_to_async_tool(LlamaIndexTool.from_tool_config(tool_config=tool_config))
             for tool_config in self.index_configs
         ]
 

@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
@@ -112,3 +112,55 @@ class BaseTool:
             func=self.__call__,
             **langchain_tool_kwargs,
         )
+
+
+class AsyncBaseTool(BaseTool):
+    """
+    Base-level tool class that is backwards compatible with the old tool spec but also
+    supports async.
+    """
+
+    def __call__(self, tool_input: Any) -> ToolOutput:
+        return self.call(tool_input)
+
+    @abstractmethod
+    def call(self, tool_input: Any) -> ToolOutput:
+        """
+        This is the method that should be implemented by the tool developer.
+        """
+
+    @abstractmethod
+    async def acall(self, tool_input: Any) -> ToolOutput:
+        """
+        This is the async version of the call method.
+        Should also be implemented by the tool developer as an async-compatible implementation.
+        """
+
+
+class BaseToolAsyncAdapter(AsyncBaseTool):
+    """
+    Adapter class that allows a synchronous tool to be used as an async tool.
+    """
+
+    def __init__(self, tool: BaseTool):
+        self.base_tool = tool
+
+    @property
+    def metadata(self) -> ToolMetadata:
+        return self.base_tool.metadata
+
+    def call(self, tool_input: Any) -> ToolOutput:
+        return self.base_tool(tool_input)
+
+    async def acall(self, tool_input: Any) -> ToolOutput:
+        return self.call(tool_input)
+
+
+def adapt_to_async_tool(tool: BaseTool) -> AsyncBaseTool:
+    """
+    Converts a synchronous tool to an async tool.
+    """
+    if isinstance(tool, AsyncBaseTool):
+        return tool
+    else:
+        return BaseToolAsyncAdapter(tool)

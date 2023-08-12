@@ -2,7 +2,7 @@ from typing import Any, Optional, cast
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool
-from llama_index.tools.types import BaseTool, ToolMetadata, ToolOutput
+from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 
 DEFAULT_NAME = "query_engine_tool"
 DEFAULT_DESCRIPTION = """Useful for running a natural language query
@@ -10,7 +10,7 @@ against a knowledge base and get back a natural language response.
 """
 
 
-class QueryEngineTool(BaseTool):
+class QueryEngineTool(AsyncBaseTool):
     """Query engine tool.
 
     A tool making use of a query engine.
@@ -49,13 +49,23 @@ class QueryEngineTool(BaseTool):
     def metadata(self) -> ToolMetadata:
         return self._metadata
 
-    def __call__(self, input: Any) -> ToolOutput:
-        query_str = cast(str, input)
+    def call(self, tool_input: Any) -> ToolOutput:
+        query_str = cast(str, tool_input)
         response = self._query_engine.query(query_str)
         return ToolOutput(
             content=str(response),
             tool_name=self.metadata.name,
-            raw_input={"input": input},
+            raw_input={"input": tool_input},
+            raw_output=response,
+        )
+
+    async def acall(self, tool_input: Any) -> ToolOutput:
+        query_str = cast(str, tool_input)
+        response = await self._query_engine.aquery(query_str)
+        return ToolOutput(
+            content=str(response),
+            tool_name=self.metadata.name,
+            raw_input={"input": tool_input},
             raw_output=response,
         )
 

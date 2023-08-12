@@ -19,7 +19,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.schema import BaseNode, NodeWithScore
-from llama_index.tools import BaseTool, ToolOutput
+from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -48,6 +48,33 @@ def call_function(
     tool = get_function_by_name(tools, name)
     argument_dict = json.loads(arguments_str)
     output = tool(**argument_dict)
+    if verbose:
+        print(f"Got output: {str(output)}")
+        print("========================")
+    return (
+        ChatMessage(
+            content=str(output),
+            role=MessageRole.FUNCTION,
+            additional_kwargs={
+                "name": function_call["name"],
+            },
+        ),
+        output,
+    )
+
+async def acall_function(
+    tools: List[BaseTool], function_call: dict, verbose: bool = False
+) -> Tuple[ChatMessage, ToolOutput]:
+    """Call a function and return the output as a string."""
+    name = function_call["name"]
+    arguments_str = function_call["arguments"]
+    if verbose:
+        print("=== Calling Function ===")
+        print(f"Calling function: {name} with args: {arguments_str}")
+    tool = get_function_by_name(tools, name)
+    async_tool = adapt_to_async_tool(tool)
+    argument_dict = json.loads(arguments_str)
+    output = await async_tool.acall(**argument_dict)
     if verbose:
         print(f"Got output: {str(output)}")
         print("========================")
@@ -181,6 +208,13 @@ class BaseOpenAIAgent(BaseAgent):
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
+    async def _acall_function(self, tools: List[BaseTool], function_call: dict) -> None:
+        function_message, tool_output = await acall_function(
+            tools, function_call, verbose=self._verbose
+        )
+        self.sources.append(tool_output)
+        self.memory.put(function_message)
+
     def _get_llm_chat_kwargs(
         self, functions: List[dict], function_call: Union[str, dict] = "auto"
     ) -> Dict[str, Any]:
@@ -255,7 +289,7 @@ class BaseOpenAIAgent(BaseAgent):
             if not self._should_continue(self.latest_function_call, n_function_calls):
                 break
             assert isinstance(self.latest_function_call, dict)
-            self._call_function(tools, self.latest_function_call)
+            await self._acall_function(tools, self.latest_function_call)
             n_function_calls += 1
 
         return agent_chat_response
