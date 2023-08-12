@@ -3,11 +3,13 @@ import pytest
 from llama_index.tools.function_tool import FunctionTool
 from pydantic import BaseModel
 
+
 def tmp_function(x: int) -> str:
-        return str(x)
+    return str(x)
+
 
 async def async_tmp_function(x: int) -> str:
-        return "async_" + str(x)
+    return "async_" + str(x)
 
 
 def test_function_tool() -> None:
@@ -99,6 +101,7 @@ async def test_function_tool_async() -> None:
     langchain_tool2 = function_tool.to_langchain_structured_tool()
     assert (await langchain_tool2.arun({"x": 1, "y": 2})) == "async_1,2"
     assert langchain_tool2.args_schema == TestSchema
+
 
 @pytest.mark.asyncio
 async def test_function_tool_async_defaults() -> None:
