@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
@@ -120,8 +120,8 @@ class AsyncBaseTool(BaseTool):
     supports async.
     """
 
-    def __call__(self, tool_input: Any) -> ToolOutput:
-        return self.call(tool_input)
+    def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        return self.call(*args, **kwargs)
 
     @abstractmethod
     def call(self, tool_input: Any) -> ToolOutput:
@@ -133,7 +133,8 @@ class AsyncBaseTool(BaseTool):
     async def acall(self, tool_input: Any) -> ToolOutput:
         """
         This is the async version of the call method.
-        Should also be implemented by the tool developer as an async-compatible implementation.
+        Should also be implemented by the tool developer as an
+        async-compatible implementation.
         """
 
 

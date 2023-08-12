@@ -103,9 +103,10 @@ class ReActAgent(BaseAgent):
         """
         Extracts the reasoning step from the given output.
 
-        This method parses the message content from the output, extracts the reasoning step,
-        and determines whether the processing is complete. It also performs validation checks
-        on the output and handles possible errors.
+        This method parses the message content from the output,
+        extracts the reasoning step, and determines whether the processing is
+        complete. It also performs validation checks on the output and
+        handles possible errors.
         """
         if output.message.content is None:
             raise ValueError("Got empty message.")
