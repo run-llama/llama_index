@@ -1,4 +1,4 @@
-"""Pinecone Vector store index.
+"""Vectara Vector store index.
 
 An index that that is built on top of an existing vector store.
 
@@ -66,7 +66,7 @@ class VectaraVectorStore(VectorStore):
 
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
-        self._session.mount("http://", adapter)
+        self._session.mount("https://", adapter)
         self.vectara_api_timeout = 60
 
     def _get_post_headers(self) -> dict:
