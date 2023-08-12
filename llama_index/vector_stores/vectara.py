@@ -234,7 +234,7 @@ class VectaraVectorStore(VectorStore):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return []
+            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
 
         result = response.json()
         responses = result["responseSet"][0]["response"]
