@@ -223,7 +223,7 @@ class ReActAgent(BaseAgent):
             # send prompt
             chat_response = await self._llm.achat(input_chat)
             # given react prompt outputs, call tools or return response
-            reasoning_steps, is_done = self._process_actions(output=chat_response)
+            reasoning_steps, is_done = await self._aprocess_actions(output=chat_response)
             current_reasoning.extend(reasoning_steps)
             if is_done:
                 break
