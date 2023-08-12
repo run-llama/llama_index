@@ -97,12 +97,14 @@ class ReActAgent(BaseAgent):
     def reset(self) -> None:
         self._memory.reset()
 
-    def _extract_reasoning_step(self, output: ChatResponse) -> Tuple[str, List[BaseReasoningStep], bool]:
+    def _extract_reasoning_step(
+        self, output: ChatResponse
+    ) -> Tuple[str, List[BaseReasoningStep], bool]:
         """
         Extracts the reasoning step from the given output.
 
-        This method parses the message content from the output, extracts the reasoning step, 
-        and determines whether the processing is complete. It also performs validation checks 
+        This method parses the message content from the output, extracts the reasoning step,
+        and determines whether the processing is complete. It also performs validation checks
         on the output and handles possible errors.
         """
         if output.message.content is None:
@@ -126,8 +128,9 @@ class ReActAgent(BaseAgent):
 
         return message_content, current_reasoning, False
 
-
-    def _process_actions(self, output: ChatResponse) -> Tuple[List[BaseReasoningStep], bool]:
+    def _process_actions(
+        self, output: ChatResponse
+    ) -> Tuple[List[BaseReasoningStep], bool]:
         _, current_reasoning, is_done = self._extract_reasoning_step(output)
 
         if is_done:
@@ -143,7 +146,9 @@ class ReActAgent(BaseAgent):
             print_text(f"{observation_step.get_content()}\n", color="blue")
         return current_reasoning, False
 
-    async def _aprocess_actions(self, output: ChatResponse) -> Tuple[List[BaseReasoningStep], bool]:
+    async def _aprocess_actions(
+        self, output: ChatResponse
+    ) -> Tuple[List[BaseReasoningStep], bool]:
         _, current_reasoning, is_done = self._extract_reasoning_step(output)
 
         if is_done:
@@ -158,7 +163,6 @@ class ReActAgent(BaseAgent):
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
         return current_reasoning, False
-
 
     def _get_response(
         self,
@@ -223,7 +227,9 @@ class ReActAgent(BaseAgent):
             # send prompt
             chat_response = await self._llm.achat(input_chat)
             # given react prompt outputs, call tools or return response
-            reasoning_steps, is_done = await self._aprocess_actions(output=chat_response)
+            reasoning_steps, is_done = await self._aprocess_actions(
+                output=chat_response
+            )
             current_reasoning.extend(reasoning_steps)
             if is_done:
                 break

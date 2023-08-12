@@ -8,10 +8,13 @@ from llama_index.tools.utils import create_schema_from_function
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 
+
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
+
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
         return fn(*args, **kwargs)
+
     return _async_wrapped_fn
 
 

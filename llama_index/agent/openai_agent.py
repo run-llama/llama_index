@@ -62,6 +62,7 @@ def call_function(
         output,
     )
 
+
 async def acall_function(
     tools: List[BaseTool], function_call: dict, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:

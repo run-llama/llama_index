@@ -25,7 +25,9 @@ class LlamaToolkit(BaseToolkit):
     def get_tools(self) -> List[AsyncBaseTool]:
         """Get the tools in the toolkit."""
         index_tools: List[BaseTool] = [
-            adapt_to_async_tool(LlamaIndexTool.from_tool_config(tool_config=tool_config))
+            adapt_to_async_tool(
+                LlamaIndexTool.from_tool_config(tool_config=tool_config)
+            )
             for tool_config in self.index_configs
         ]
 

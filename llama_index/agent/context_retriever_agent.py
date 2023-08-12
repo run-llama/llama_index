@@ -158,9 +158,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
 
         # format message
         context_str = self._context_separator.join(retrieved_texts)
-        return self._qa_prompt.format(
-            context_str=context_str, query_str=message
-        )
+        return self._qa_prompt.format(context_str=context_str, query_str=message)
 
     def chat(
         self,
