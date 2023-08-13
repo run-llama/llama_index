@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Updated supabase kwargs for add and query (#7103)
+
 ## [0.8.1] - 2023-08-13
 
 ### New Features
