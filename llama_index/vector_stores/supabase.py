@@ -103,7 +103,7 @@ class SupabaseVectorStore(VectorStore):
             data.append((result.id, result.embedding, metadata_dict))
             ids.append(result.id)
 
-        self._collection.upsert(vectors=data)
+        self._collection.upsert(records=data)
 
         return ids
 
