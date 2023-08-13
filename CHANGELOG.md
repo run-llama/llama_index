@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [0.8.1] - 2023-08-13
+
+### New Features
+- feat: add node_postprocessors to ContextChatEngine (#7232)
+- add ensemble query engine tutorial (#7247)
+
+### Smaller Features
+- Allow EMPTY keys for Fastchat/local OpenAI API endpoints (#7224) 
+
 ## [0.8.0] - 2023-08-11
 
 ### New Features
