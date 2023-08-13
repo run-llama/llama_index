@@ -11,29 +11,30 @@ They can be persisted to (and loaded from) disk by calling `vector_store.persist
 LlamaIndex supports over 20 different vector store options.
 We are actively adding more integrations and improving feature coverage for each.
 
-| Vector Store    | Type                | Metadata Filtering | Delete | Store Documents | Async | Popular |
-| --------------- | ------------------- | ------------------ | ------ | --------------- | ----- | ------- |
-| Pinecone        | cloud               | ✓                  | ✓      | ✓               |       | ✓       |
-| Weaviate        | self-hosted / cloud |                    | ✓      | ✓               |       | ✓       |
-| Postgres        | self-hosted / cloud | ✓                  | ✓      | ✓               | ✓     | ✓       |
-| Qdrant          | self-hosted / cloud | ✓                  | ✓      | ✓               |       | ✓       |
-| Chroma          | self-hosted         | ✓                  | ✓      | ✓               |       | ✓       |
-| Milvus / Zilliz | self-hosted / cloud |                    | ✓      | ✓               |       |         |
-| Typesense       | self-hosted / cloud | ✓                  | ✓      | ✓               |       |         |
-| Supabase        | self-hosted / cloud | ✓                  |        | ✓               |       |         |
-| MongoDB Atlas   | self-hosted / cloud | ✓                  | ✓      | ✓               |       |         |
-| Redis           | self-hosted / cloud | ✓                  | ✓      | ✓               |       |         |
-| Deeplake        | self-hosted / cloud | ✓                  | ✓      | ✓               |       |         |
-| OpenSearch      | self-hosted / cloud | ✓                  | ✓      | ✓               |       |         |
-| DynamoDB        | cloud               |                    | ✓      |                 |       |         |
-| LanceDB         | cloud               | ✓                  | ✓      | ✓               |       |         |
-| Metal           | cloud               | ✓                  | ✓      | ✓               |       |         |
-| MyScale         | cloud               |                    |        | ✓               |       |         |
-| Tair            | cloud               | ✓                  | ✓      | ✓               |       |         |
-| Simple          | in-memory           |                    | ✓      |                 |       |         |
-| FAISS           | in-memory           |                    |        |                 |       |         |
-| ChatGPT Retrieval Plugin  | aggregator          |                    | ✓      | ✓               |       |         |
-| DocArray        | aggregator          | ✓                  | ✓      | ✓               |       |         |
+| Vector Store             | Type                | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
+|--------------------------|---------------------|--------------------|---------------|--------|-----------------|------|
+| Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |      |
+| Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |      |
+| Zep                      | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓    |
+| Postgres                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓    |
+| Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               |      |
+| Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |      |
+| Milvus / Zilliz          | self-hosted / cloud |                    |               | ✓      | ✓               |      |
+| Typesense                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |      |
+| Supabase                 | self-hosted / cloud | ✓                  |               |        | ✓               |      |
+| MongoDB Atlas            | self-hosted / cloud | ✓                  |               | ✓      | ✓               |      |
+| Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |      |
+| Deeplake                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |      |
+| OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |      |
+| DynamoDB                 | cloud               |                    |               | ✓      |                 |      |
+| LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |      |
+| Metal                    | cloud               | ✓                  |               | ✓      | ✓               |      |
+| MyScale                  | cloud               |                    |               |        | ✓               |      |
+| Tair                     | cloud               | ✓                  |               | ✓      | ✓               |      |
+| Simple                   | in-memory           |                    |               | ✓      |                 |      |
+| FAISS                    | in-memory           |                    |               |        |                 |      |
+| ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |      |
+| DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |      |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 
@@ -56,6 +57,7 @@ maxdepth: 1
 /examples/vector_stores/MilvusIndexDemo.ipynb
 /examples/vector_stores/RedisIndexDemo.ipynb
 /examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
+/examples/vector_stores/ZepIndexDemo.ipynb
 /examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 /examples/vector_stores/AsyncIndexCreationDemo.ipynb
 /examples/vector_stores/TairIndexDemo.ipynb

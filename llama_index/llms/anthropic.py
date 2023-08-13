@@ -4,6 +4,7 @@ from llama_index.llms.anthropic_utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_prompt,
 )
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -15,6 +16,8 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
@@ -28,13 +31,14 @@ class Anthropic(LLM):
     def __init__(
         self,
         model: str = "claude-2",
-        temperature: float = 0.0,
+        temperature: float = 0.1,
         max_tokens: int = 512,
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
         additional_kwargs: Dict[str, Any] = {},
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         try:
             import anthropic
@@ -48,6 +52,7 @@ class Anthropic(LLM):
         self._temperature = temperature
         self._max_tokens = max_tokens
         self._additional_kwargs = additional_kwargs
+        self.callback_manager = callback_manager or CallbackManager([])
 
         self._client = anthropic.Anthropic(
             api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
@@ -84,6 +89,7 @@ class Anthropic(LLM):
             **kwargs,
         }
 
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = messages_to_anthropic_prompt(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -98,10 +104,12 @@ class Anthropic(LLM):
             raw=dict(response),
         )
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         complete_fn = chat_to_completion_decorator(self.chat)
         return complete_fn(prompt, **kwargs)
 
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -126,10 +134,12 @@ class Anthropic(LLM):
 
         return gen()
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
         return stream_complete_fn(prompt, **kwargs)
 
+    @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -146,10 +156,12 @@ class Anthropic(LLM):
             raw=dict(response),
         )
 
+    @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         acomplete_fn = achat_to_completion_decorator(self.achat)
         return await acomplete_fn(prompt, **kwargs)
 
+    @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
@@ -174,6 +186,7 @@ class Anthropic(LLM):
 
         return gen()
 
+    @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:

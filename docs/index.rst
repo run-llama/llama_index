@@ -48,6 +48,8 @@ Our documentation includes detailed `Installation Instructions <./getting_starte
 
 Once you're up and running, `High-Level Concepts <./getting_started/concepts.html>`_ has an overview of LlamaIndex's modular architecture. For more hands-on practical examples, look through our `End-to-End Tutorials <./end_to_end_tutorials/use_cases.html>`_ or learn how to `customize <./getting_started/customization.html>`_ components to fit your specific needs.
 
+**NOTE**: We have a Typescript package too! [[Repo]](https://github.com/run-llama/LlamaIndexTS) [[Docs]](https://ts.llamaindex.ai/)
+
 🗺️ Ecosystem
 ************
 
@@ -58,6 +60,11 @@ To download or contribute, find LlamaIndex on:
 
   - LlamaIndex: https://pypi.org/project/llama-index/.
   - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
+
+- NPM (Typescript/Javascript):
+   - Github: https://github.com/run-llama/LlamaIndexTS
+   - Docs: https://ts.llamaindex.ai/
+   - LlamaIndex.TS: https://www.npmjs.com/package/llamaindex
 
 Community
 ---------
@@ -88,6 +95,7 @@ Associated projects
    :hidden:
 
    end_to_end_tutorials/usage_pattern.md
+   end_to_end_tutorials/one_click_observability.md
    end_to_end_tutorials/discover_llamaindex.md
    end_to_end_tutorials/use_cases.md
    
@@ -107,12 +115,13 @@ Associated projects
    :caption: Query Modules
    :hidden:
 
+   core_modules/query_modules/query_engine/root.md
+   core_modules/query_modules/chat_engines/root.md
    core_modules/query_modules/retriever/root.md
+   core_modules/query_modules/router/root.md
    core_modules/query_modules/node_postprocessors/root.md
    core_modules/query_modules/response_synthesizers/root.md
    core_modules/query_modules/structured_outputs/root.md
-   core_modules/query_modules/query_engine/root.md
-   core_modules/query_modules/chat_engines/root.md
 
 .. toctree::
    :maxdepth: 1

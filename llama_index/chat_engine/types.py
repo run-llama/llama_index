@@ -1,17 +1,32 @@
+import asyncio
 import logging
 import queue
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Generator, List, Optional
+from threading import Event
+from typing import AsyncGenerator, Generator, List, Optional, Union
 
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
-from llama_index.tools import ToolOutput
 from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore
+from llama_index.tools import ToolOutput
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+
+
+def is_function(message: ChatMessage) -> bool:
+    """Utility for ChatMessage responses from OpenAI models"""
+    return "function_call" in message.additional_kwargs
+
+
+class ChatResponseMode(str, Enum):
+    """Flag toggling waiting/streaming in `Agent._chat`"""
+
+    WAIT = "wait"
+    STREAM = "stream"
 
 
 @dataclass
@@ -42,8 +57,19 @@ class StreamingAgentChatResponse:
     achat_stream: Optional[ChatResponseAsyncGen] = None
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     _queue: queue.Queue = queue.Queue()
-    _is_done = False
+    _aqueue: asyncio.Queue = asyncio.Queue()
+    # flag when chat message is a function call
     _is_function: Optional[bool] = None
+    # flag when processing done
+    _is_done = False
+    # signal when a new item is added to the queue
+    _new_item_event: asyncio.Event = field(default_factory=asyncio.Event)
+    # NOTE: async code uses two events rather than one since it yields
+    # control when waiting for queue item
+    # signal when the OpenAI functions stop executing
+    _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
+    # signal when an OpenAI function is being executed
+    _is_function_not_none_thread_event: Event = field(default_factory=Event)
 
     def __post_init__(self) -> None:
         if self.sources and not self.source_nodes:
@@ -57,6 +83,14 @@ class StreamingAgentChatResponse:
                 self.response += delta
         return self.response
 
+    def put_in_queue(self, delta: Optional[str]) -> None:
+        self._queue.put_nowait(delta)
+        self._is_function_not_none_thread_event.set()
+
+    def aput_in_queue(self, delta: Optional[str]) -> None:
+        self._aqueue.put_nowait(delta)
+        self._new_item_event.set()
+
     def write_response_to_history(self, memory: BaseMemory) -> None:
         if self.chat_stream is None:
             raise ValueError(
@@ -65,24 +99,25 @@ class StreamingAgentChatResponse:
 
         # try/except to prevent hanging on error
         try:
-            final_message = None
+            final_text = ""
             for chat in self.chat_stream:
-                final_message = chat.message
-                self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None)
-                    is not None
-                )
-                self._queue.put_nowait(chat.delta)
-
-            if final_message is not None:
-                memory.put(final_message)
+                self._is_function = is_function(chat.message)
+                self.put_in_queue(chat.delta)
+                final_text += chat.delta or ""
+            if self._is_function is not None:  # if loop has gone through iteration
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                chat.message.content = final_text  # final message
+                memory.put(chat.message)
         except Exception as e:
-            print("Error reading response: ", e)
-            pass
+            logger.warning(f"Encountered exception writing response to history: {e}")
 
         self._is_done = True
 
-    async def awrite_response_to_history(self, memory: BaseMemory) -> None:
+    async def awrite_response_to_history(
+        self,
+        memory: BaseMemory,
+    ) -> None:
         if self.achat_stream is None:
             raise ValueError(
                 "achat_stream is None. Cannot asynchronously write to "
@@ -91,22 +126,25 @@ class StreamingAgentChatResponse:
 
         # try/except to prevent hanging on error
         try:
-            final_message = None
+            final_text = ""
             async for chat in self.achat_stream:
-                final_message = chat.message
-                self._is_function = (
-                    final_message.additional_kwargs.get("function_call", None)
-                    is not None
-                )
-                self._queue.put_nowait(chat.delta)
-
-            if final_message is not None:
-                memory.put(final_message)
+                self._is_function = is_function(chat.message)
+                self.aput_in_queue(chat.delta)
+                final_text += chat.delta or ""
+                if self._is_function is False:
+                    self._is_function_false_event.set()
+            if self._is_function is not None:  # if loop has gone through iteration
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                chat.message.content = final_text  # final message
+                memory.put(chat.message)
         except Exception as e:
-            print("Error reading response: ", e)
-            pass
-
+            logger.warning(f"Encountered exception writing response to history: {e}")
         self._is_done = True
+
+        # These act as is_done events for any consumers waiting
+        self._is_function_false_event.set()
+        self._new_item_event.set()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
@@ -119,9 +157,22 @@ class StreamingAgentChatResponse:
                 # Queue is empty, but we're not done yet
                 continue
 
+    async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        while not self._is_done or not self._aqueue.empty():
+            if not self._aqueue.empty():
+                delta = self._aqueue.get_nowait()
+                self.response += delta
+                yield delta
+            else:
+                await self._new_item_event.wait()  # Wait until a new item is added
+                self._new_item_event.clear()  # Clear the event for the next wait
+
     def print_response_stream(self) -> None:
         for token in self.response_gen:
-            print(token, end="")
+            print(token, end="", flush=True)
+
+
+AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
 
 
 class BaseChatEngine(ABC):
@@ -135,7 +186,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Main chat interface."""
         pass
 
@@ -149,7 +200,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Async version of main chat interface."""
         pass
 
@@ -164,7 +215,6 @@ class BaseChatEngine(ABC):
         """Enter interactive chat REPL."""
         print("===== Entering Chat REPL =====")
         print('Type "exit" to exit.\n')
-
         self.reset()
         message = input("Human: ")
         while message != "exit":

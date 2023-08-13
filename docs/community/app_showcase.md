@@ -13,6 +13,13 @@ Build AI workflows using building blocks. Many workflows built on top of LlamaIn
 
 [[Website]](https://app.algovera.ai/workflows).
 
+###### SlideSpeak
+
+Summarize PowerPoint files and other documents with AI. SlideSpeak is an open source chatbot for presentations and other documents. Built on top of LlamaIndex, it utilizes Pinecone as a Vector Storage. We currently use ChatGPT Turbo 3.5 as a model for the chatbot. We're currently working on adding support for other document formats, which will allow you to summarize presentations, Word documents, Google Slides, PDFs and much more.
+
+[[Website]](https://slidespeak.co/?ref=llamaindex)
+[[GitHub]](https://github.com/SlideSpeak/slidespeak-backend)
+
 ###### ChatGPT LlamaIndex
 
 Interface that allows users to upload long docs and chat with the bot.
@@ -21,6 +28,22 @@ Interface that allows users to upload long docs and chat with the bot.
 ###### AgentHQ
 
 A web tool to build agents, interacting with LlamaIndex data structures.[[Website]](https://app.agent-hq.io/)
+
+###### SiteChatAI
+
+SiteChatAi is ChatGPT powered that can be integrated into any website. It is a simple chatbot that can be used to answer simple questions and can be trained to answer more complex questions. It provides human like conversation experience to the users. It can be used to answer questions related to the website or the business. It uses Llamma Index and LangChain
+  
+Current version of SiteChatAI support following features:  
+- Multi-lingual support  
+- Real time chat  
+- Easy to integrate  
+- Customizable  
+- Human like conversation experience  
+- Can be trained to answer complex questions
+- and more.
+
+  
+[[Website]](https://sitechatai.com/?utm_source=llama-index&utm_medium=app%20showcase&utm_campaign=promotion)
 
 
 ###### PapersGPT

@@ -24,8 +24,6 @@ resp = OpenAI().complete('Paul Graham is ')
 print(resp)
 ```
 
-You can use the LLM as a standalone module or with other LlamaIndex abstractions. Check out our guide below.
-
 ```{toctree}
 ---
 maxdepth: 1

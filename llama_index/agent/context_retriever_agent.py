@@ -1,6 +1,6 @@
 """Context retriever agent."""
 
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
 from llama_index.agent.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
@@ -9,7 +9,9 @@ from llama_index.agent.openai_agent import (
 )
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import AgentChatResponse
+from llama_index.chat_engine.types import (
+    AgentChatResponse,
+)
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI
@@ -111,10 +113,10 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         """
         qa_prompt = qa_prompt or DEFAULT_QA_PROMPT
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):
             raise ValueError(
@@ -147,7 +149,10 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         return self._tools
 
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         """Chat."""
         # augment user message
@@ -165,4 +170,6 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         if self._verbose:
             print_text(formatted_message + "\n", color="yellow")
 
-        return super().chat(formatted_message, chat_history=chat_history)
+        return super().chat(
+            formatted_message, chat_history=chat_history, function_call=function_call
+        )

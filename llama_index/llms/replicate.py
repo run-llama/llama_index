@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
+from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
     ChatMessage,
@@ -8,6 +9,8 @@ from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import completion_response_to_chat_response
@@ -27,12 +30,14 @@ class Replicate(CustomLLM):
         prompt_key: str = "prompt",
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._model = model
         self._context_window = context_window
         self._prompt_key = prompt_key
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
+        self.callback_manager = callback_manager or CallbackManager([])
 
         # model kwargs
         self._temperature = temperature
@@ -62,11 +67,13 @@ class Replicate(CustomLLM):
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {self._prompt_key: prompt, **self._model_kwargs, **kwargs}
 
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = self._messages_to_prompt(messages)
         completion_response = self.complete(prompt, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -74,6 +81,7 @@ class Replicate(CustomLLM):
         completion_response = self.stream_complete(prompt, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         response_gen = self.stream_complete(prompt, **kwargs)
         response_list = list(response_gen)
@@ -81,6 +89,7 @@ class Replicate(CustomLLM):
         final_response.delta = None
         return final_response
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         try:
             import replicate

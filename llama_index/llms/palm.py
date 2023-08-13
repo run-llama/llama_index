@@ -1,8 +1,14 @@
 """Palm API."""
 
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.custom import CustomLLM
 from typing import Optional, Any
-from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
+from llama_index.llms.base import (
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+    llm_completion_callback,
+)
 import os
 
 
@@ -14,6 +20,7 @@ class PaLM(CustomLLM):
         api_key: Optional[str] = None,
         model_name: Optional[str] = "models/text-bison-001",
         num_output: Optional[int] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **generate_kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -40,6 +47,7 @@ class PaLM(CustomLLM):
         self._num_output = num_output or self._model.output_token_limit
 
         self._generate_kwargs = generate_kwargs
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -52,6 +60,7 @@ class PaLM(CustomLLM):
             model_name=self._model_name,
         )
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Predict the answer to a query.
 
@@ -72,6 +81,7 @@ class PaLM(CustomLLM):
         )
         return CompletionResponse(text=completion.result, raw=completion.candidates[0])
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Stream the answer to a query.
 
@@ -86,5 +96,5 @@ class PaLM(CustomLLM):
 
         """
         raise NotImplementedError(
-            "PaLM does not support streaming completion in LlamaIndex atm."
+            "PaLM does not support streaming completion in LlamaIndex currently."
         )
