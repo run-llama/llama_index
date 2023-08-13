@@ -4,13 +4,18 @@ from typing import Any, List
 
 from llama_index.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.schema import TextNode
-from llama_index.vector_stores.types import (MetadataFilters,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (legacy_metadata_dict_to_node,
-                                             metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
 
 logger = logging.getLogger(__name__)
 
