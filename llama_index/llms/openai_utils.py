@@ -264,7 +264,6 @@ def validate_openai_api_key(
         api_type or os.environ.get("OPENAI_API_TYPE", "") or openai.api_type
     )
 
-    print(openai_api_type, openai_api_key)
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
     elif (
