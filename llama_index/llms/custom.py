@@ -25,7 +25,7 @@ class CustomLLM(LLM):
         `stream_complete`, and `metadata` methods.
     """
 
-    def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
+    def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
 
     @llm_chat_callback()

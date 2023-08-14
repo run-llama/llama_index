@@ -190,7 +190,12 @@ from llama_index import (
     ListIndex
 )
 from llama_index.callbacks import CallbackManager
-from llama_index.llms import CustomLLM, CompletionResponse, LLMMetadata
+from llama_index.llms import (
+    CustomLLM, 
+    CompletionResponse, 
+    CompletionResponseGen,
+    LLMMetadata,
+)
 from llama_index.llms.base import llm_completion_callback
 
 
@@ -204,8 +209,6 @@ model_name = "facebook/opt-iml-max-30b"
 pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
 
 class OurLLM(CustomLLM):
-
-    callback_manager = CallbackManager([])
 
     @property
     def metadata(self) -> LLMMetadata:
