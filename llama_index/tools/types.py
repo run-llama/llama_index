@@ -124,13 +124,13 @@ class AsyncBaseTool(BaseTool):
         return self.call(*args, **kwargs)
 
     @abstractmethod
-    def call(self, tool_input: Any) -> ToolOutput:
+    def call(self, input: Any) -> ToolOutput:
         """
         This is the method that should be implemented by the tool developer.
         """
 
     @abstractmethod
-    async def acall(self, tool_input: Any) -> ToolOutput:
+    async def acall(self, input: Any) -> ToolOutput:
         """
         This is the async version of the call method.
         Should also be implemented by the tool developer as an
@@ -150,11 +150,11 @@ class BaseToolAsyncAdapter(AsyncBaseTool):
     def metadata(self) -> ToolMetadata:
         return self.base_tool.metadata
 
-    def call(self, tool_input: Any) -> ToolOutput:
-        return self.base_tool(tool_input)
+    def call(self, input: Any) -> ToolOutput:
+        return self.base_tool(input)
 
-    async def acall(self, tool_input: Any) -> ToolOutput:
-        return self.call(tool_input)
+    async def acall(self, input: Any) -> ToolOutput:
+        return self.call(input)
 
 
 def adapt_to_async_tool(tool: BaseTool) -> AsyncBaseTool:
