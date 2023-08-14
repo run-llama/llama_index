@@ -1,9 +1,17 @@
-"""Default query for PandasIndex."""
+"""Default query for PandasIndex.
+
+WARNING: This tool provides the Agent access to the `eval` function.
+Arbitrary code execution is possible on the machine running this tool.
+This tool is not recommended to be used in a production setting, and would
+require heavy sandboxing or virtual machines
+
+"""
 
 import logging
 from typing import Any, Callable, Optional
 
 import pandas as pd
+import numpy as np
 from llama_index.bridge.langchain import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
@@ -54,7 +62,7 @@ def default_output_processor(
         module_end_str = ast.unparse(module_end)  # type: ignore
         print(module_end_str)
         try:
-            return str(eval(module_end_str, {}, local_vars))
+            return str(eval(module_end_str, {"np": np}, local_vars))
         except Exception as e:
             raise e
     except Exception as e:
@@ -70,6 +78,12 @@ class PandasQueryEngine(BaseQueryEngine):
     """GPT Pandas query.
 
     Convert natural language to Pandas python code.
+
+    WARNING: This tool provides the Agent access to the `eval` function.
+    Arbitrary code execution is possible on the machine running this tool.
+    This tool is not recommended to be used in a production setting, and would
+    require heavy sandboxing or virtual machines
+
 
     Args:
         df (pd.DataFrame): Pandas dataframe to use.

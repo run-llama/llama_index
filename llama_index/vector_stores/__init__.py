@@ -15,11 +15,13 @@ from llama_index.vector_stores.opensearch import (
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.vector_stores.redis import RedisVectorStore
+from llama_index.vector_stores.rocksetdb import RocksetVectorStore
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from llama_index.vector_stores.postgres import PGVectorStore
+from llama_index.vector_stores.zep import ZepVectorStore
 from llama_index.vector_stores.docarray import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
@@ -28,6 +30,7 @@ from llama_index.vector_stores.docarray import (
 __all__ = [
     "SimpleVectorStore",
     "RedisVectorStore",
+    "RocksetVectorStore",
     "FaissVectorStore",
     "PineconeVectorStore",
     "WeaviateVectorStore",
@@ -46,4 +49,5 @@ __all__ = [
     "DocArrayHnswVectorStore",
     "SupabaseVectorStore",
     "PGVectorStore",
+    "ZepVectorStore",
 ]

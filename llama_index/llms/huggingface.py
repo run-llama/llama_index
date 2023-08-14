@@ -2,7 +2,13 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional
 
-from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
+from llama_index.llms.base import (
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+    llm_completion_callback,
+)
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.custom import CustomLLM
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
@@ -29,6 +35,7 @@ class HuggingFaceLLM(CustomLLM):
         tokenizer_outputs_to_remove: Optional[list] = None,
         model_kwargs: Optional[dict] = None,
         generate_kwargs: Optional[dict] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
         import torch
@@ -40,6 +47,7 @@ class HuggingFaceLLM(CustomLLM):
         )
 
         model_kwargs = model_kwargs or {}
+        self._model_name = model_name
         self.model = model or AutoModelForCausalLM.from_pretrained(
             model_name, device_map=device_map, **model_kwargs
         )
@@ -75,6 +83,7 @@ class HuggingFaceLLM(CustomLLM):
         self._query_wrapper_prompt = query_wrapper_prompt
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
+        self.callback_manager = callback_manager or CallbackManager([])
 
         # setup stopping criteria
         stopping_ids_list = stopping_ids or []
@@ -97,9 +106,12 @@ class HuggingFaceLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self._context_window, num_output=self._max_new_tokens
+            context_window=self._context_window,
+            num_output=self._max_new_tokens,
+            model_name=self._model_name,
         )
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
 
@@ -127,6 +139,7 @@ class HuggingFaceLLM(CustomLLM):
 
         return CompletionResponse(text=completion, raw={"model_output": tokens})
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Streaming completion endpoint."""
         from transformers import TextIteratorStreamer

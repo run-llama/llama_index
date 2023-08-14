@@ -3,11 +3,12 @@
 from typing import List
 
 import pytest
+import tiktoken
 
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.bridge.langchain import RecursiveCharacterTextSplitter
 from llama_index.node_parser.node_utils import get_nodes_from_document
-from llama_index.schema import Document
-from llama_index.schema import MetadataMode
+from llama_index.schema import Document, MetadataMode
+from llama_index.text_splitter import TokenTextSplitter
 
 
 @pytest.fixture
@@ -60,7 +61,8 @@ def test_get_nodes_from_document_with_metadata(
     )
     assert len(nodes) == 3
     actual_chunk_sizes = [
-        len(text_splitter.tokenizer(node.get_content())) for node in nodes
+        len(text_splitter.tokenizer(node.get_content(metadata_mode=MetadataMode.ALL)))
+        for node in nodes
     ]
     assert all(
         chunk_size <= text_splitter._chunk_size for chunk_size in actual_chunk_sizes
@@ -70,4 +72,24 @@ def test_get_nodes_from_document_with_metadata(
             "test_key: test_val" in n.get_content(metadata_mode=MetadataMode.ALL)
             for n in nodes
         ]
+    )
+
+
+def test_get_nodes_from_document_langchain_compatible(
+    documents: List[Document],
+) -> None:
+    """Test get nodes from document have desired chunk size."""
+    tokenizer = tiktoken.get_encoding("gpt2").encode
+    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=20, chunk_overlap=0
+    )
+    nodes = get_nodes_from_document(
+        documents[0],
+        text_splitter,
+        include_metadata=False,
+    )
+    assert len(nodes) == 2
+    actual_chunk_sizes = [len(tokenizer(node.get_content())) for node in nodes]
+    assert all(
+        chunk_size <= text_splitter._chunk_size for chunk_size in actual_chunk_sizes
     )

@@ -8,15 +8,16 @@ make use of the available context window (and thereby reducing the number of LLM
 needed), or truncating them so that they fit in a single LLM call.
 """
 
+import logging
 from typing import Callable, List, Optional, Sequence
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import LLMMetadata
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.utils import get_empty_prompt_txt
+from llama_index.text_splitter import TokenTextSplitter
+from llama_index.text_splitter.utils import truncate_text
 from llama_index.utils import globals_helper
-import logging
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
@@ -166,7 +167,7 @@ class PromptHelper:
             num_chunks=len(text_chunks),
             padding=padding,
         )
-        return [text_splitter.truncate_text(chunk) for chunk in text_chunks]
+        return [truncate_text(chunk, text_splitter) for chunk in text_chunks]
 
     def repack(
         self, prompt: Prompt, text_chunks: Sequence[str], padding: int = DEFAULT_PADDING

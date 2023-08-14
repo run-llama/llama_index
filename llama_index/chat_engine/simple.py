@@ -1,10 +1,10 @@
 import asyncio
 from threading import Thread
-from typing import Any, List, Type, Optional
+from typing import Any, List, Optional, Type
 
 from llama_index.chat_engine.types import (
-    BaseChatEngine,
     AgentChatResponse,
+    BaseChatEngine,
     StreamingAgentChatResponse,
 )
 from llama_index.indices.service_context import ServiceContext
@@ -48,7 +48,7 @@ class SimpleChatEngine(BaseChatEngine):
         llm = service_context.llm_predictor.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if system_prompt is not None:
             if prefix_messages is not None:
@@ -116,7 +116,7 @@ class SimpleChatEngine(BaseChatEngine):
         all_messages = self._prefix_messages + self._memory.get()
 
         chat_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(all_messages)
+            achat_stream=await self._llm.astream_chat(all_messages)
         )
         thread = Thread(
             target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),

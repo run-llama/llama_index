@@ -6,6 +6,8 @@ PyPI:
 - LlamaIndex: https://pypi.org/project/llama-index/.
 - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 
+LlamaIndex.TS (Typescript/Javascript): https://github.com/run-llama/LlamaIndexTS.
+
 Documentation: https://gpt-index.readthedocs.io/.
 
 Twitter: https://twitter.com/llama_index.

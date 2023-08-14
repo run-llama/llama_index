@@ -27,7 +27,7 @@ POWER_TASK = Task(
     eval_fn=contains_expected_response,
 )
 
-ADD_THEN_MULTIPLY_TASK = Task(
+MULTIPLY_THEN_ADD_TASK = Task(
     message="What is 123 + 321 * 2?",
     expected_response="765",
     tools=[add_tool, multiply_tool],
@@ -36,6 +36,6 @@ ADD_THEN_MULTIPLY_TASK = Task(
 
 
 TASKS: Dict[str, Callable[..., Task]] = {
-    "add_then_multiply": lambda: ADD_THEN_MULTIPLY_TASK,
+    "multiply_then_add": lambda: MULTIPLY_THEN_ADD_TASK,
     "power": lambda: POWER_TASK,
 }

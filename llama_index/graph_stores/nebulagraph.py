@@ -10,8 +10,8 @@ from llama_index.graph_stores.types import GraphStore
 
 QUOTE = '"'
 RETRY_TIMES = 3
-WAIT_MIN_SECONDS = 0.1
-WAIT_MAX_SECONDS = 20
+WAIT_MIN_SECONDS = 0.5
+WAIT_MAX_SECONDS = 10
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,8 @@ def escape_str(value: str) -> str:
     for pattern in patterns:
         if pattern in value:
             value = value.replace(pattern, patterns[pattern])
+    if value[0] == " " or value[-1] == " ":
+        value = value.strip()
 
     return value
 
@@ -177,6 +179,9 @@ class NebulaGraphStore(GraphStore):
         """
         from nebula3.Exception import IOErrorException
         from nebula3.fbthrift.transport.TTransport import TTransportException
+
+        # Clean the query string by removing triple backticks
+        query = query.replace("```", "").strip()
 
         try:
             result = self._session_pool.execute_parameter(query, param_map)
@@ -309,9 +314,12 @@ class NebulaGraphStore(GraphStore):
         if len(self._edge_types) == 1:
             # MATCH (s)-[e:follow*..2]-() WHERE id(s) IN ["player100", "player101"]
             #   WITH id(s) AS subj, [rel in e | [rel.degree, dst(rel)] ] AS rels
+            #   WITH
+            #       subj,
+            #       REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
             # RETURN
             #   subj,
-            #   REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
+            #   REDUCE(acc = subj,l in flattened_rels|acc + ', ' + l) AS flattened_rels
             query = (
                 f"MATCH (s)-[e:`{self._edge_types[0]}`*..{depth}]-() "
                 f"  WHERE id(s) IN $subjs "
@@ -320,9 +328,13 @@ class NebulaGraphStore(GraphStore):
                 f"[rel IN e | "
                 f"  [rel.`{self._rel_prop_names[0]}`, dst(rel)] "
                 f"] AS rels "
-                f"RETURN "
+                f"WITH "
                 f"  subj,"
                 f"  REDUCE(acc = collect(NULL), l in rels | acc + l)"
+                f"    AS flattened_rels"
+                f" RETURN"
+                f"  subj,"
+                f"  REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l )"
                 f"    AS flattened_rels"
             )
         else:
@@ -331,14 +343,19 @@ class NebulaGraphStore(GraphStore):
             # MATCH (s)-[e:follow|serve*..2]-()
             # WHERE id(s) IN ["player100", "player101"]
             #   WITH id(s) AS subj,
-            # [rel in e | [CASE type(rel)
+            #        [rel in e | [CASE type(rel)
             #     WHEN "follow" THEN rel.degree
             #     WHEN "serve" THEN rel.start_year
             #     END, dst(rel)] ]
             #     AS rels
+            #   WITH
+            #     subj,
+            #     REDUCE(acc = collect(NULL), l in rels | acc + l) AS
+            #       flattened_rels
             # RETURN
             #   subj,
-            #   REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
+            #   REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l ) AS
+            #       flattened_rels
             _case_when_string = "".join(
                 [
                     f"WHEN {QUOTE}{edge_type}{QUOTE} THEN rel.`{rel_prop_name}` "
@@ -350,16 +367,21 @@ class NebulaGraphStore(GraphStore):
             query = (
                 f"MATCH (s)-[e:`{'`|`'.join(self._edge_types)}`*..{depth}]-() "
                 f"  WHERE id(s) IN $subjs "
-                f"WITH "
-                f"id(s) AS subj,"
-                f"[rel IN e | "
+                f"  WITH "
+                f"    id(s) AS subj,"
+                f" [rel IN e | "
                 f"  [CASE type(rel) "
                 f"  {_case_when_string}"
                 f"  END, dst(rel)] "
                 f"] AS rels "
+                f"  WITH"
+                f"    subj,"
+                f"    REDUCE(acc = collect(NULL), l in rels | acc + l) AS "
+                f"        flattened_rels"
                 f"RETURN"
                 f"  subj,"
-                f"  REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels"
+                f"  REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l ) AS "
+                f"      flattened_rels"
             )
         subjs_param = prepare_subjs_param(subjs)
         logger.debug(f"get_flat_rel_map() subjs_param: {subjs}, query: {query}")
@@ -387,7 +409,6 @@ class NebulaGraphStore(GraphStore):
         # SimpleGraphStore.get_rel_map() though.
         # But this makes more sense for multi-hop relation path.
 
-        # lower case subjs
         if subjs is not None:
             subjs = [escape_str(subj) for subj in subjs]
             if len(subjs) == 0:
