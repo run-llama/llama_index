@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.2] - 2023-08-14
 
 ### New Features
 - Enable the LLM or embedding model to be disabled by setting to `None` in the service context (#7255)
