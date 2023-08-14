@@ -62,6 +62,7 @@ def _get_client(
 class RocksetVectorStore(VectorStore):
     stores_text: bool = True
     is_embedding_query: bool = True
+    flat_metadata: bool = False
 
     class DistanceFunc(Enum):
         COSINE_SIM = "COSINE_SIM"
