@@ -18,12 +18,14 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
         # return default OpenAI model. If it fails, return LlamaCPP
         try:
             llm = OpenAI()
-        except ValueError:
+        except ValueError as e:
             llm = "local"
             print(
                 "******\n"
                 "Could not load OpenAI model. Using default LlamaCPP=llama2-13b-chat. "
-                "If you intended to use OpenAI, please check your API key."
+                "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
+                "Original error:\n"
+                f"{str(e)}"
                 "\n******"
             )
 

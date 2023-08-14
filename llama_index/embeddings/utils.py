@@ -50,13 +50,15 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
     if embed_model == "default":
         try:
             embed_model = OpenAIEmbedding()
-        except ValueError:
+        except ValueError as e:
             embed_model = "local"
             print(
                 "******\n"
                 "Could not load OpenAIEmbedding. Using HuggingFaceBgeEmbeddings "
                 f"with model_name={DEFAULT_HUGGINGFACE_EMBEDDING_MODEL}. "
-                "Please check your API key if you intended to use OpenAI embeddings."
+                "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
+                "Original error:\n"
+                f"{str(e)}"
                 "\n******"
             )
 
