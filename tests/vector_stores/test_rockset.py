@@ -10,9 +10,15 @@ Find your API server from https://rockset.com/docs/rest-api#introduction.
 Get your API key from https://console.rockset.com/apikeys.
 """
 
-from typing import Generator
+from typing import Generator, Any
 import pytest
-import rockset
+
+try:
+    import rockset
+
+    rockset_installed = True
+except ImportError:
+    rockset_installed = False
 from time import sleep
 from llama_index.vector_stores import RocksetVectorStore
 from llama_index.vector_stores.types import (
@@ -24,15 +30,11 @@ from llama_index.vector_stores.types import (
 from llama_index.schema import TextNode
 
 
-def collection_is_empty(
-    client: rockset.RocksetClient, collection_name: str = "test"
-) -> bool:
+def collection_is_empty(client: Any, collection_name: str = "test") -> bool:
     return len(client.sql(f"SELECT _id FROM {collection_name} LIMIT 1").results) == 0
 
 
-def collection_exists(
-    client: rockset.RocksetClient, collection_name: str = "test"
-) -> bool:
+def collection_exists(client: Any, collection_name: str = "test") -> bool:
     try:
         client.Collections.get(collection=collection_name)
     except rockset.exceptions.NotFoundException:
@@ -77,6 +79,7 @@ def vector_store() -> Generator[RocksetVectorStore, None, None]:
         sleep(0.1)
 
 
+@pytest.mark.skipif(not rockset_installed, reason="rockset not installed")
 def test_query(vector_store: RocksetVectorStore) -> None:
     result = vector_store.query(
         VectorStoreQuery(query_embedding=[0.9, 0.1], similarity_top_k=1)
@@ -88,6 +91,7 @@ def test_query(vector_store: RocksetVectorStore) -> None:
     assert result.nodes[0].metadata["type"] == "fruit"
 
 
+@pytest.mark.skipif(not rockset_installed, reason="rockset not installed")
 def test_metadata_filter(vector_store: RocksetVectorStore) -> None:
     result = vector_store.query(
         VectorStoreQuery(
