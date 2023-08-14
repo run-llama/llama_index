@@ -28,6 +28,7 @@ maxdepth: 1
 ---
 /examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
 /examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
+/examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
 
 ```
 
@@ -39,6 +40,16 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/palm.ipynb
+
+```
+
+## Predibase
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/predibase.ipynb
 
 ```
 
@@ -69,4 +80,22 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/llama_api.ipynb
+```
+
+## Llama CPP
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_2_llama_cpp.ipynb
+```
+
+## Xorbits Inference
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/XinferenceLocalDeployment.ipynb
 ```

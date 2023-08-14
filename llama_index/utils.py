@@ -63,10 +63,19 @@ class GlobalsHelper:
                 raise ImportError(
                     "`nltk` package not found, please run `pip install nltk`"
                 )
+
+            from llama_index.utils import get_cache_dir
+
+            cache_dir = get_cache_dir()
+            nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+
+            # update nltk path for nltk so that it finds the data
+            if nltk_data_dir not in nltk.data.path:
+                nltk.data.path.append(nltk_data_dir)
+
             try:
                 nltk.data.find("corpora/stopwords")
             except LookupError:
-                nltk_data_dir = os.environ.get("NLTK_DATA", None)
                 nltk.download("stopwords", download_dir=nltk_data_dir)
             self._stopwords = stopwords.words("english")
         return self._stopwords
@@ -239,15 +248,17 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     return tokenizer.tokenize
 
 
-def get_cache_dir() -> Path:
+def get_cache_dir() -> str:
     """Locate a platform-appropriate cache directory for llama_index,
     and create it if it doesn't yet exist
     """
+    # User override
+    if "LLAMA_INDEX_CACHE_DIR" in os.environ:
+        path = Path(os.environ["LLAMA_INDEX_CACHE_DIR"])
+
     # Linux, Unix, AIX, etc.
-    if os.name == "posix" and sys.platform != "darwin":
-        # use ~/.cache if empty OR not set
-        base = os.path.expanduser("~/.cache")
-        path = Path(base, "llama_index")
+    elif os.name == "posix" and sys.platform != "darwin":
+        path = Path("/tmp/llama_index")
 
     # Mac OS
     elif sys.platform == "darwin":
@@ -262,7 +273,7 @@ def get_cache_dir() -> Path:
 
     if not os.path.exists(path):
         os.makedirs(path)
-    return path
+    return str(path)
 
 
 # Sample text from llama_index's readme

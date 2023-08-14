@@ -1,5 +1,6 @@
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -8,6 +9,8 @@ from llama_index.llms.base import (
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseAsyncGen,
+    llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
@@ -22,16 +25,22 @@ class CustomLLM(LLM):
         `stream_complete`, and `metadata` methods.
     """
 
+    def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
+        self.callback_manager = callback_manager or CallbackManager([])
+
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         chat_fn = completion_to_chat_decorator(self.complete)
         return chat_fn(messages, **kwargs)
 
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         stream_chat_fn = stream_completion_to_chat_decorator(self.stream_complete)
         return stream_chat_fn(messages, **kwargs)
 
+    @llm_chat_callback()
     async def achat(
         self,
         messages: Sequence[ChatMessage],
@@ -39,6 +48,7 @@ class CustomLLM(LLM):
     ) -> ChatResponse:
         return self.chat(messages, **kwargs)
 
+    @llm_chat_callback()
     async def astream_chat(
         self,
         messages: Sequence[ChatMessage],
@@ -51,9 +61,11 @@ class CustomLLM(LLM):
         # NOTE: convert generator to async generator
         return gen()
 
+    @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         return self.complete(prompt, **kwargs)
 
+    @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:

@@ -1,7 +1,8 @@
-from pydantic import Field
-from typing import Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.llms.base import ChatMessage, LLM
+from pydantic import Field, root_validator
+
+from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory.types import BaseMemory
 from llama_index.utils import GlobalsHelper
 
@@ -13,8 +14,37 @@ class ChatMemoryBuffer(BaseMemory):
     """Simple buffer for storing chat history."""
 
     token_limit: int
-    tokenizer_fn: Callable[[str], List]
+    tokenizer_fn: Callable[[str], List] = Field(
+        # NOTE: mypy does not handle the typing here well, hence the cast
+        default_factory=cast(Callable[[], Any], GlobalsHelper().tokenizer),
+        exclude=True,
+    )
     chat_history: List[ChatMessage] = Field(default_factory=list)
+
+    def __getstate__(self) -> Dict[str, Any]:
+        state = self.dict()
+        # Remove the unpicklable entry
+        state.pop("tokenizer_fn", None)
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        super().__init__(
+            token_limit=state["token_limit"], chat_history=state["chat_history"]
+        )
+
+    @root_validator(pre=True)
+    def validate_memory(cls, values: dict) -> dict:
+        # Validate token limit
+        token_limit = values.get("token_limit", -1)
+        if token_limit < 1:
+            raise ValueError("Token limit must be set and greater than 0.")
+
+        # Validate tokenizer -- this avoids errors when loading from json/dict
+        tokenizer_fn = values.get("tokenizer_fn", None)
+        if tokenizer_fn is None:
+            values["tokenizer_fn"] = GlobalsHelper().tokenizer
+
+        return values
 
     @classmethod
     def from_defaults(
@@ -36,6 +66,22 @@ class ChatMemoryBuffer(BaseMemory):
             tokenizer_fn=tokenizer_fn or GlobalsHelper().tokenizer,
             chat_history=chat_history or [],
         )
+
+    def to_string(self) -> str:
+        """Convert memory to string."""
+        return self.json()
+
+    @classmethod
+    def from_string(cls, json_str: str) -> "ChatMemoryBuffer":
+        return cls.parse_raw(json_str)
+
+    def to_dict(self) -> dict:
+        """Convert memory to dict."""
+        return self.dict()
+
+    @classmethod
+    def from_dict(cls, json_dict: dict) -> "ChatMemoryBuffer":
+        return cls.parse_obj(json_dict)
 
     def get(self) -> List[ChatMessage]:
         """Get chat history."""

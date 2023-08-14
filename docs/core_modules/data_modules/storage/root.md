@@ -9,6 +9,7 @@ Under the hood, LlamaIndex also supports swappable **storage components** that a
 - **Document stores**: where ingested documents (i.e., `Node` objects) are stored,
 - **Index stores**: where index metadata are stored,
 - **Vector stores**: where embedding vectors are stored.
+- **Graph stores**: where knowledge graphs are stored (i.e. for `KnowledgeGraphIndex`).
 
 The Document/Index stores rely on a common Key-Value store abstraction, which is also detailed below.
 
@@ -88,4 +89,5 @@ vector_stores.md
 docstores.md
 index_stores.md
 kv_stores.md
+/community/integrations/graph_stores.md
 ```

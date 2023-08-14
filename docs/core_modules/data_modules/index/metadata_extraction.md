@@ -21,6 +21,7 @@ from llama_index.node_parser.extractors import (
     QuestionsAnsweredExtractor,
     TitleExtractor,
     KeywordExtractor,
+    EntityExtractor,
 )
 
 metadata_extractor = MetadataExtractor(
@@ -29,6 +30,7 @@ metadata_extractor = MetadataExtractor(
         QuestionsAnsweredExtractor(questions=3),
         SummaryExtractor(summaries=["prev", "self"]),
         KeywordExtractor(keywords=10),
+        EntityExtractor(prediction_threshold=0.5),
     ],
 )
 

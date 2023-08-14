@@ -15,7 +15,7 @@ from datetime import datetime
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, TypeVar
 
-from llama_index.callbacks.base import BaseCallbackHandler
+from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
 
 if TYPE_CHECKING:
@@ -217,7 +217,9 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
                     )
                 )
         elif event_type is CBEventType.LLM:
-            self._trace_data.query_data.response_text = payload[EventPayload.RESPONSE]
+            self._trace_data.query_data.response_text = str(
+                payload.get(EventPayload.RESPONSE, "")
+            ) or str(payload.get(EventPayload.COMPLETION, ""))
         elif event_type is CBEventType.EMBEDDING:
             self._trace_data.query_data.query_embedding = payload[
                 EventPayload.EMBEDDINGS

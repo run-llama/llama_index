@@ -266,7 +266,9 @@ def validate_openai_api_key(
 
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-    elif openai_api_type == "open_ai" and not OPENAI_API_KEY_FORMAT.search(
-        openai_api_key
+    elif (
+        openai_api_type == "open_ai"
+        and openai_api_key != "EMPTY"  # Exempt EMPTY key for fastchat/local models
+        and not OPENAI_API_KEY_FORMAT.search(openai_api_key)
     ):
         raise ValueError(INVALID_API_KEY_ERROR_MESSAGE)

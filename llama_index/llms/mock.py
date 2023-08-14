@@ -1,20 +1,32 @@
 from typing import Any, Optional
 
-from llama_index.llms.base import CompletionResponse, CompletionResponseGen, LLMMetadata
+from llama_index.llms.base import (
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+    llm_completion_callback,
+)
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.custom import CustomLLM
 
 
 class MockLLM(CustomLLM):
-    def __init__(self, max_tokens: Optional[int] = None):
+    def __init__(
+        self,
+        max_tokens: Optional[int] = None,
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> None:
+        self.callback_manager = callback_manager or CallbackManager([])
         self.max_tokens = max_tokens
 
     @property
     def metadata(self) -> LLMMetadata:
-        return LLMMetadata(num_output=self.max_tokens)
+        return LLMMetadata(num_output=self.max_tokens or -1)
 
     def _generate_text(self, length: int) -> str:
         return " ".join(["text" for _ in range(length)])
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         response_text = (
             self._generate_text(self.max_tokens) if self.max_tokens else prompt
@@ -24,6 +36,7 @@ class MockLLM(CustomLLM):
             text=response_text,
         )
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         def gen_prompt() -> CompletionResponseGen:
             for ch in prompt:
