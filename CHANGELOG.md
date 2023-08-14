@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Updated supabase kwargs for add and query (#7103)
+- Small tweak to default prompts to allow for more general purpose queries (#7254)
 
 ## [0.8.1] - 2023-08-13
 

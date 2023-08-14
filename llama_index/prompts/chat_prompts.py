@@ -17,7 +17,7 @@ from llama_index.prompts.prompts import (
 # text qa prompt
 TEXT_QA_SYSTEM_PROMPT = SystemMessagePromptTemplate.from_template(
     "You are an expert Q&A system that is trusted around the world.\n"
-    "Always answer the question using the provided context information, "
+    "Always answer the query using the provided context information, "
     "and not prior knowledge.\n"
     "Some rules to follow:\n"
     "1. Never directly reference the given context in your answer.\n"
@@ -34,9 +34,8 @@ TEXT_QA_PROMPT_TMPL_MSGS = [
         "{context_str}\n"
         "---------------------\n"
         "Given the context information and not prior knowledge, "
-        "answer the question. If the answer is not in the context, inform "
-        "the user that you can't answer the question.\n"
-        "Question: {query_str}\n"
+        "answer the query.\n"
+        "Query: {query_str}\n"
         "Answer: "
     ),
 ]
@@ -54,9 +53,8 @@ TREE_SUMMARIZE_PROMPT_TMPL_MSGS = [
         "{context_str}\n"
         "---------------------\n"
         "Given the information from multiple sources and not prior knowledge, "
-        "answer the question. If the answer is not in the context, inform "
-        "the user that you can't answer the question.\n"
-        "Question: {query_str}\n"
+        "answer the query.\n"
+        "Query: {query_str}\n"
         "Answer: "
     ),
 ]
