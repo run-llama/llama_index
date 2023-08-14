@@ -126,7 +126,7 @@ class ServiceContext:
             )
 
         callback_manager = callback_manager or CallbackManager([])
-        if llm is not None:
+        if llm is not None and llm != "default":
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
             llm_predictor = LLMPredictor(llm=llm)
@@ -190,7 +190,7 @@ class ServiceContext:
             chunk_size = chunk_size_limit
 
         callback_manager = callback_manager or service_context.callback_manager
-        if llm is not None:
+        if llm is not None and llm != "default":
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
             llm_predictor = LLMPredictor(llm=llm)
