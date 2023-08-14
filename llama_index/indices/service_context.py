@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
 
 import llama_index
 from llama_index.callbacks.base import CallbackManager
@@ -13,7 +13,7 @@ from llama_index.llms.utils import LLMType
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
-from llama_index.embeddings import resolve_embed_model
+from llama_index.embeddings.utils import resolve_embed_model, EmbedType
 
 logger = logging.getLogger(__name__)
 
@@ -70,9 +70,9 @@ class ServiceContext:
     def from_defaults(
         cls,
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        llm: Optional[LLMType] = None,
+        llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[Union[BaseEmbedding, str]] = None,
+        embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -166,9 +166,9 @@ class ServiceContext:
         cls,
         service_context: "ServiceContext",
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        llm: Optional[LLM] = None,
+        llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[Union[BaseEmbedding, str]] = None,
+        embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
