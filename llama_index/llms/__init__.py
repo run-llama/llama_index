@@ -14,6 +14,7 @@ from llama_index.llms.base import (
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.langchain import LangChainLLM
+from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.palm import PaLM
@@ -30,6 +31,7 @@ __all__ = [
     "PredibaseLLM",
     "Anthropic",
     "Replicate",
+    "LlamaCPP",
     "CustomLLM",
     "MockLLM",
     "ChatMessage",
