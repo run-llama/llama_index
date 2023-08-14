@@ -84,7 +84,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-
             splits = self._split(text, chunk_size)
             chunks = self._merge(splits, chunk_size)
 

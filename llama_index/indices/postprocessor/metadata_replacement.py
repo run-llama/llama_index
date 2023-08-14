@@ -13,7 +13,6 @@ class MetadataReplacementPostProcessor(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-
         for n in nodes:
             n.node.set_content(
                 n.node.metadata.get(

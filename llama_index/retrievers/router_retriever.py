@@ -51,7 +51,6 @@ class RouterRetriever(BaseRetriever):
         selector: Optional[BaseSelector] = None,
         select_multi: bool = False,
     ) -> "RouterRetriever":
-
         selector = selector or get_selector_from_context(
             service_context or ServiceContext.from_defaults(), is_multi=select_multi
         )

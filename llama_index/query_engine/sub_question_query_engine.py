@@ -207,7 +207,6 @@ class SubQuestionQueryEngine(BaseQueryEngine):
                 CBEventType.SUB_QUESTION,
                 payload={EventPayload.SUB_QUESTION: SubQuestionAnswerPair(sub_q=sub_q)},
             ) as event:
-
                 question = sub_q.sub_question
                 query_engine = self._query_engines[sub_q.tool_name]
 
@@ -239,7 +238,6 @@ class SubQuestionQueryEngine(BaseQueryEngine):
                 CBEventType.SUB_QUESTION,
                 payload={EventPayload.SUB_QUESTION: SubQuestionAnswerPair(sub_q=sub_q)},
             ) as event:
-
                 question = sub_q.sub_question
                 query_engine = self._query_engines[sub_q.tool_name]
 

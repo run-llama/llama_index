@@ -1,5 +1,26 @@
 # ChangeLog
 
+## [0.8.2] - 2023-08-14
+
+### New Features
+- Enable the LLM or embedding model to be disabled by setting to `None` in the service context (#7255)
+- Resolve nearly any huggingface embedding model using the `embed_model="local:<model_name>"` syntax (#7255)
+- Async tool-calling support (#7239)
+
+### Bug Fixes / Nits
+- Updated supabase kwargs for add and query (#7103)
+- Small tweak to default prompts to allow for more general purpose queries (#7254)
+- Make callback manager optional for `CustomLLM` + docs update (#7257)
+
+## [0.8.1] - 2023-08-13
+
+### New Features
+- feat: add node_postprocessors to ContextChatEngine (#7232)
+- add ensemble query engine tutorial (#7247)
+
+### Smaller Features
+- Allow EMPTY keys for Fastchat/local OpenAI API endpoints (#7224) 
+
 ## [0.8.0] - 2023-08-11
 
 ### New Features
@@ -44,6 +65,7 @@
 - Use `1 - cosine_distance` for pgvector/postgres vector db (#7217)
 - fix metadata formatting and extraction (#7216)
 - fix(readers): Fix non-ASCII JSON Reader bug (#7086)
+- Chore: change PgVectorStore variable name from `sim` to `distance` for clarity (#7226)
 
 ## [0.7.23] - 2023-08-10
 
