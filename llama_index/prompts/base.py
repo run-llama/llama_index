@@ -184,7 +184,7 @@ class Prompt(Pipeline):
             if omit_metadata
             else {
                 "type": self.prompt_type,
-                "template": self.prompt.template, # type: ignore
+                "template": self.prompt.template,  # type: ignore
                 "input_variables": self.prompt.input_variables,
                 # TODO (jon-chuang): System message (Chat models), Formatting?
             },
