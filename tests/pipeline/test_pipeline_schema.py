@@ -19,7 +19,8 @@ def test_llm_schema() -> None:
     "is_function_calling_model": false,
     "model_name": "text-davinci-003"
   },
-  "children": []
+  "children": [],
+  "inputs": []
 }"""
     )
 
@@ -39,7 +40,8 @@ def test_prompt_schema() -> None:
     "template": "This is a {{my_var}} prompt",
     "input_variables": []
   },
-  "children": []
+  "children": [],
+  "inputs": []
 }"""
     )
 
@@ -56,7 +58,8 @@ def test_embedding_schema() -> None:
     "batch_size": 10,
     "embedding_class": "OpenAIEmbedding"
   },
-  "children": []
+  "children": [],
+  "inputs": []
 }"""
     )
 
@@ -73,7 +76,8 @@ def test_document_store_schema() -> None:
     "doc_store_class": "SimpleDocumentStore",
     "num_documents": 0
   },
-  "children": []
+  "children": [],
+  "inputs": []
 }"""
     )
 
