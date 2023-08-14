@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added support for Rockset as a vector store (#7111)
+
 ## [0.8.2] - 2023-08-14
 
 ### New Features
