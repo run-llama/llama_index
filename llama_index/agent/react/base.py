@@ -20,7 +20,7 @@ from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
-from llama_index.tools import BaseTool
+from llama_index.tools import BaseTool, adapt_to_async_tool
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -47,8 +47,8 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
     ) -> None:
         self._llm = llm
-        self._tools = tools
-        self._tools_dict = {tool.metadata.name: tool for tool in tools}
+        self._tools = [adapt_to_async_tool(tool) for tool in tools]
+        self._tools_dict = {tool.metadata.name: tool for tool in self._tools}
         self._memory = memory
         self._max_iterations = max_iterations
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter(
@@ -97,33 +97,68 @@ class ReActAgent(BaseAgent):
     def reset(self) -> None:
         self._memory.reset()
 
-    def _process_actions(
+    def _extract_reasoning_step(
         self, output: ChatResponse
-    ) -> Tuple[List[BaseReasoningStep], bool]:
-        """Process outputs (and execute tools)."""
+    ) -> Tuple[str, List[BaseReasoningStep], bool]:
+        """
+        Extracts the reasoning step from the given output.
+
+        This method parses the message content from the output,
+        extracts the reasoning step, and determines whether the processing is
+        complete. It also performs validation checks on the output and
+        handles possible errors.
+        """
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
-        # parse output into either an ActionReasoningStep or ResponseReasoningStep
         current_reasoning = []
         try:
             reasoning_step = self._output_parser.parse(message_content)
-        except BaseException:
-            raise ValueError(f"Could not parse output: {message_content}")
+        except BaseException as exc:
+            raise ValueError(f"Could not parse output: {message_content}") from exc
         if self._verbose:
             print_text(f"{reasoning_step.get_content()}\n", color="pink")
         current_reasoning.append(reasoning_step)
-        # is done if ResponseReasoningStep
+
         if reasoning_step.is_done:
-            return current_reasoning, True
+            return message_content, current_reasoning, True
 
         reasoning_step = cast(ActionReasoningStep, reasoning_step)
         if not isinstance(reasoning_step, ActionReasoningStep):
             raise ValueError(f"Expected ActionReasoningStep, got {reasoning_step}")
-        # call tool with input
-        tool = self._tools_dict[reasoning_step.action]
 
-        tool_output = tool(**reasoning_step.action_input)
+        return message_content, current_reasoning, False
+
+    def _process_actions(
+        self, output: ChatResponse
+    ) -> Tuple[List[BaseReasoningStep], bool]:
+        _, current_reasoning, is_done = self._extract_reasoning_step(output)
+
+        if is_done:
+            return current_reasoning, True
+
+        # call tool with input
+        reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
+        tool = self._tools_dict[reasoning_step.action]
+        tool_output = tool.call(**reasoning_step.action_input)
+        observation_step = ObservationReasoningStep(observation=str(tool_output))
+        current_reasoning.append(observation_step)
+        if self._verbose:
+            print_text(f"{observation_step.get_content()}\n", color="blue")
+        return current_reasoning, False
+
+    async def _aprocess_actions(
+        self, output: ChatResponse
+    ) -> Tuple[List[BaseReasoningStep], bool]:
+        _, current_reasoning, is_done = self._extract_reasoning_step(output)
+
+        if is_done:
+            return current_reasoning, True
+
+        # call tool with input
+        reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
+        tool = self._tools_dict[reasoning_step.action]
+        tool_output = await tool.acall(**reasoning_step.action_input)
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -193,7 +228,9 @@ class ReActAgent(BaseAgent):
             # send prompt
             chat_response = await self._llm.achat(input_chat)
             # given react prompt outputs, call tools or return response
-            reasoning_steps, is_done = self._process_actions(output=chat_response)
+            reasoning_steps, is_done = await self._aprocess_actions(
+                output=chat_response
+            )
             current_reasoning.extend(reasoning_steps)
             if is_done:
                 break

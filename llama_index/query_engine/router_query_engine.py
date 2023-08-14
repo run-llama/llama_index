@@ -291,7 +291,6 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         super().__init__(self.service_context.callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
