@@ -378,5 +378,5 @@ class LLM(Pipeline):
         """Get pipeline schema."""
         return PipelineSchema(
             name="LLM",
-            metadata=None if omit_metadata else self.metadata.dict(),
+            metadata={} if omit_metadata else self.metadata.dict(),
         )

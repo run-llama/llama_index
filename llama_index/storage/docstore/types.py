@@ -124,11 +124,15 @@ class BaseDocumentStore(Pipeline):
         """Get schema."""
         return PipelineSchema(
             name="DocumentStore",
-            metadata=None
+            metadata={}
             if omit_metadata
             else {
-                # "document_hash": self.get_document_hash(),
+                # TODO (jon-chuang): find an alternative way of deterministically
+                # versioning the docstore (with a hash or otherwise)
                 "doc_store_class": type(self).__name__,
+                # TODO (jon-chuang): this could be expensive for production use-case
+                # as it involves fetching all docs make the docstore
+                # store summary statistics instead.
                 "num_documents": len(self.docs),
             },
         )

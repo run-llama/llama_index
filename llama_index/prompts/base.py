@@ -180,12 +180,13 @@ class Prompt(Pipeline):
     ) -> PipelineSchema:
         return PipelineSchema(
             name="Prompt",
-            metadata=None
+            metadata={}
             if omit_metadata
             else {
                 "type": self.prompt_type,
                 "template": self.prompt.template,
                 "input_variables": self.prompt.input_variables,
+                # TODO (jon-chuang): System message (Chat models), Formatting?
             },
             children=[],
         )

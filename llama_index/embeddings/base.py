@@ -327,7 +327,7 @@ class BaseEmbedding(Pipeline):
     ) -> PipelineSchema:
         return PipelineSchema(
             name="Embedding",
-            metadata=None
+            metadata={}
             if omit_metadata
             else {
                 "batch_size": self._embed_batch_size,

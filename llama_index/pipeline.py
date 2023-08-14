@@ -9,9 +9,13 @@ from typing import Dict, List, Any
 class PipelineSchema:
     """Class representing a component in a pipeline."""
 
+    # TODO (jon-chuang): should name be an Enum to be more restrictive?
     name: str
     metadata: Dict[str, Any] = field(default_factory=dict)
     children: List["PipelineSchema"] = field(default_factory=list)
+
+    # TODO (jon-chuang): Handle DAG as opposed to tree.
+    inputs: List["PipelineSchema"] = field(default_factory=list)
 
     def json(self) -> str:
         return json.dumps(asdict(self), indent=2)
@@ -34,7 +38,10 @@ class Pipeline(ABC):
     ) -> PipelineSchema:
         pass
 
-    def children(self) -> List[PipelineSchema]:  # Which?
+    def children(self) -> List[PipelineSchema]:
+        raise NotImplementedError
+
+    def inputs(self) -> List[PipelineSchema]:
         raise NotImplementedError
 
 
