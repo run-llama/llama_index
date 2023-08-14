@@ -1,8 +1,10 @@
 """Global eval handlers."""
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.wandb_callback import WandbCallbackHandler
 from typing import Any
+
+from llama_index.callbacks.base_handler import BaseCallbackHandler
+from llama_index.callbacks.open_inference_callback import OpenInferenceCallbackHandler
+from llama_index.callbacks.wandb_callback import WandbCallbackHandler
 
 
 def set_global_handler(eval_mode: str, **eval_params: Any) -> None:
@@ -17,6 +19,8 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
     """Get global eval handler."""
     if eval_mode == "wandb":
         handler: BaseCallbackHandler = WandbCallbackHandler(**eval_params)
+    elif eval_mode == "openinference":
+        handler = OpenInferenceCallbackHandler(**eval_params)
     else:
         raise ValueError(f"Eval mode {eval_mode} not supported.")
 

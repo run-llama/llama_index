@@ -5,9 +5,9 @@ Tool that wraps any data loader, and is able to load data on-demand.
 """
 
 
-from llama_index.tools.types import BaseTool, ToolMetadata, ToolOutput
+from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.readers.base import BaseReader
-from typing import Any, Optional, Dict, Type, Callable, List
+from typing import Any, Optional, Dict, Type, Callable, List, Tuple
 from llama_index.readers.schema.base import Document
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from llama_index.tools.function_tool import FunctionTool
 
 
-class OnDemandLoaderTool(BaseTool):
+class OnDemandLoaderTool(AsyncBaseTool):
     """On-demand data loader tool.
 
     Loads data with by calling the provided loader function,
@@ -115,8 +115,7 @@ class OnDemandLoaderTool(BaseTool):
             metadata=metadata,
         )
 
-    def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        """Call."""
+    def _parse_args(self, *args: Any, **kwargs: Any) -> Tuple[str, List[Document]]:
         if self._query_str_kwargs_key not in kwargs:
             raise ValueError(
                 "Missing query_str in kwargs with parameter name: "
@@ -129,10 +128,31 @@ class OnDemandLoaderTool(BaseTool):
 
         docs = self._loader(*args, **kwargs)
 
+        return query_str, docs
+
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        """Call."""
+        query_str, docs = self._parse_args(*args, **kwargs)
+
         index = self._index_cls.from_documents(docs, **self._index_kwargs)
         # TODO: add query kwargs
         query_engine = index.as_query_engine()
         response = query_engine.query(query_str)
+        return ToolOutput(
+            content=str(response),
+            tool_name=self.metadata.name,
+            raw_input={"query": query_str},
+            raw_output=response,
+        )
+
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        """Async Call."""
+        query_str, docs = self._parse_args(*args, **kwargs)
+
+        index = self._index_cls.from_documents(docs, **self._index_kwargs)
+        # TODO: add query kwargs
+        query_engine = index.as_query_engine()
+        response = await query_engine.aquery(query_str)
         return ToolOutput(
             content=str(response),
             tool_name=self.metadata.name,

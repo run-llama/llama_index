@@ -12,6 +12,7 @@ from llama_index.vector_stores.opensearch import OpensearchVectorStore
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.vector_stores.redis import RedisVectorStore
+from llama_index.vector_stores.rocksetdb import RocksetVectorStore
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.types import VectorStore
@@ -33,6 +34,7 @@ class VectorStoreType(str, Enum):
     DEEPLAKE = "deeplake"
     MYSCALE = "myscale"
     SUPABASE = "supabase"
+    ROCKSET = "rockset"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -50,6 +52,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.CHATGPT_PLUGIN: ChatGPTRetrievalPluginClient,
     VectorStoreType.DEEPLAKE: DeepLakeVectorStore,
     VectorStoreType.MYSCALE: MyScaleVectorStore,
+    VectorStoreType.ROCKSET: RocksetVectorStore,
 }
 
 VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {

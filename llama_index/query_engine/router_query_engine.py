@@ -8,10 +8,12 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from llama_index.prompts.default_prompt_selectors import (
+    DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
+)
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.response_synthesizers import TreeSummarize
-from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
+from llama_index.selectors.utils import get_selector_from_context
 from llama_index.selectors.types import BaseSelector
 from llama_index.schema import BaseNode
 from llama_index.tools.query_engine import QueryEngineTool
@@ -28,15 +30,21 @@ def combine_responses(
     logger.info("Combining responses from multiple query engines.")
 
     response_strs = []
+    source_nodes = []
     for response in responses:
+        if isinstance(response, StreamingResponse):
+            response_obj = response.get_response()
+        else:
+            response_obj = response
+        source_nodes.extend(response_obj.source_nodes)
         response_strs.append(str(response))
 
     summary = summarizer.get_response(query_bundle.query_str, response_strs)
 
     if isinstance(summary, str):
-        return Response(response=summary)
+        return Response(response=summary, source_nodes=source_nodes)
     else:
-        return StreamingResponse(response_gen=summary)
+        return StreamingResponse(response_gen=summary, source_nodes=source_nodes)
 
 
 async def acombine_responses(
@@ -46,15 +54,21 @@ async def acombine_responses(
     logger.info("Combining responses from multiple query engines.")
 
     response_strs = []
+    source_nodes = []
     for response in responses:
+        if isinstance(response, StreamingResponse):
+            response_obj = response.get_response()
+        else:
+            response_obj = response
+        source_nodes.extend(response_obj.source_nodes)
         response_strs.append(str(response))
 
     summary = await summarizer.aget_response(query_bundle.query_str, response_strs)
 
     if isinstance(summary, str):
-        return Response(response=summary)
+        return Response(response=summary, source_nodes=source_nodes)
     else:
-        return StreamingResponse(response_gen=summary)
+        return StreamingResponse(response_gen=summary, source_nodes=source_nodes)
 
 
 class RouterQueryEngine(BaseQueryEngine):
@@ -86,7 +100,7 @@ class RouterQueryEngine(BaseQueryEngine):
         self._metadatas = [x.metadata for x in query_engine_tools]
         self._summarizer = summarizer or TreeSummarize(
             service_context=self.service_context,
-            text_qa_template=DEFAULT_TEXT_QA_PROMPT,
+            summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
 
         super().__init__(self.service_context.callback_manager)
@@ -100,10 +114,11 @@ class RouterQueryEngine(BaseQueryEngine):
         summarizer: Optional[TreeSummarize] = None,
         select_multi: bool = False,
     ) -> "RouterQueryEngine":
-        if selector is None and select_multi:
-            selector = LLMMultiSelector.from_defaults(service_context=service_context)
-        elif selector is None and not select_multi:
-            selector = LLMSingleSelector.from_defaults(service_context=service_context)
+        service_context = service_context or ServiceContext.from_defaults()
+
+        selector = selector or get_selector_from_context(
+            service_context, is_multi=select_multi
+        )
 
         assert selector is not None
 
@@ -269,14 +284,13 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         self.service_context = service_context or ServiceContext.from_defaults()
         self._summarizer = summarizer or TreeSummarize(
             service_context=self.service_context,
-            text_qa_template=DEFAULT_TEXT_QA_PROMPT,
+            summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
         self._retriever = retriever
 
         super().__init__(self.service_context.callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
