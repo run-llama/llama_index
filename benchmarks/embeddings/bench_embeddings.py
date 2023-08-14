@@ -5,7 +5,6 @@ from typing import List, Optional, Tuple, Callable
 from llama_index import SimpleDirectoryReader
 from llama_index.embeddings import OpenAIEmbedding, resolve_embed_model
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from llama_index import LangchainEmbedding
 from functools import partial
 
 
