@@ -3,9 +3,8 @@ import time
 from typing import List, Optional, Tuple, Callable
 
 from llama_index import SimpleDirectoryReader
-from llama_index.embeddings import OpenAIEmbedding
+from llama_index.embeddings import OpenAIEmbedding, resolve_embed_model
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding
 from functools import partial
 
@@ -48,15 +47,10 @@ def create_open_ai_embedding(batch_size: int) -> Tuple[BaseEmbedding, str, int]:
     )
 
 
-def create_hf_embedding(
+def create_local_embedding(
     model_name: str, batch_size: int
 ) -> Tuple[BaseEmbedding, str, int]:
-    model = LangchainEmbedding(
-        HuggingFaceEmbeddings(
-            model_name=model_name,
-        ),
-        embed_batch_size=batch_size,
-    )
+    model = resolve_embed_model(f"local:{model_name}")
     return (
         model,
         "hf/" + model_name,
@@ -125,13 +119,21 @@ if __name__ == "__main__":
         embed_models=[
             # create_open_ai_embedding,
             partial(
-                create_hf_embedding,
+                create_local_embedding,
                 model_name="sentence-transformers/all-MiniLM-L6-v2",
             ),
-            # partial(
-            #     create_hf_embedding,
-            #     model_name="sentence-transformers/all-mpnet-base-v2",
-            # ),
+            partial(
+                create_local_embedding,
+                model_name="sentence-transformers/all-MiniLM-L12-v2",
+            ),
+            partial(
+                create_local_embedding,
+                model_name="BAAI/bge-small-en",
+            ),
+            partial(
+                create_local_embedding,
+                model_name="sentence-transformers/all-mpnet-base-v2",
+            ),
         ],
         torch_num_threads=None,
     )
