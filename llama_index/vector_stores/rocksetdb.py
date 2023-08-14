@@ -45,7 +45,7 @@ def _get_client(
     """
     rockset = _get_rockset()
     if client:
-        if not type(client) is rockset.RocksetClient:
+        if type(client) is not rockset.RocksetClient:
             raise ValueError("Parameter `client` must be of type rockset.RocksetClient")
     elif not api_key and not getenv("ROCKSET_API_KEY"):
         raise ValueError(
@@ -187,7 +187,13 @@ class RocksetVectorStore(VectorStore):
                     _id, 
                     {self.metadata_col}
                     {
-                        f', {self.distance_func.value}({query.query_embedding}, {self.embedding_col}) AS {similarity_col}' if query.query_embedding else ''
+                        f''', {self.distance_func.value}(
+                            {query.query_embedding}, 
+                            {self.embedding_col}
+                        ) 
+                            AS {similarity_col}'''
+                        if query.query_embedding 
+                        else ''
                     }
                 FROM 
                     "{self.workspace}"."{self.collection}" x
@@ -200,7 +206,9 @@ class RocksetVectorStore(VectorStore):
                 } {
                     f''' {'AND' if query.node_ids else ''} ({
                         ' AND '.join([
-                            f'x.{self.metadata_col}.{filter.key}=:{filter.key}' for filter in query.filters.filters
+                            f"x.{self.metadata_col}.{filter.key}=:{filter.key}"
+                            for filter 
+                            in query.filters.filters
                         ])
                     })''' if query.filters else ""
                 }
