@@ -90,7 +90,7 @@ print(refreshed_docs)
 
 This is most useful when you are reading from a directory that is constantly updating with new information.
 
-To autmatically set the doc `id_` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. More details can be found [here](https://gpt-index.readthedocs.io/en/stable/core_modules/data_modules/documents_and_nodes/usage_documents.html)
+To autmatically set the doc `id_` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. More details can be found [here](https://gpt-index.readthedocs.io/en/stable/core_modules/data_modules/documents_and_nodes/usage_documents.html).
 
 ## Document Tracking
 
@@ -106,4 +106,4 @@ print(index.ref_doc_info)
 
 Each entry in the output shows the ingested doc `id_`s as keys, and their associated `node_ids` of the nodes they were split into. 
 
-Lastly, the orignal `metadata` dictionary of each input document is also tracked. You can read more about the `metadata` attribute in [Customizing Documents](https://gpt-index.readthedocs.io/en/stable/core_modules/data_modules/documents_and_nodes/usage_documents.html)
+Lastly, the orignal `metadata` dictionary of each input document is also tracked. You can read more about the `metadata` attribute in [Customizing Documents](https://gpt-index.readthedocs.io/en/stable/core_modules/data_modules/documents_and_nodes/usage_documents.html).
