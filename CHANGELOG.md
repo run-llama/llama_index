@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+- Enable the LLM or embedding model to be disabled by setting to `None` in the service context (#7255)
+- Resolve nearly any huggingface embedding model using the `embed_model="local:<model_name>"` syntax (#7255)
+
 ### Bug Fixes / Nits
 - Updated supabase kwargs for add and query (#7103)
 - Small tweak to default prompts to allow for more general purpose queries (#7254)
