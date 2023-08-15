@@ -45,6 +45,9 @@ def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
+    def do_nothing(*args, **kwargs):
+        pass
+
     monkeypatch.setattr(
         LLMPredictor,
         "predict",
@@ -63,7 +66,7 @@ def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         LLMPredictor,
         "__init__",
-        lambda x: None,
+        do_nothing,
     )
     monkeypatch.setattr(
         LLMPredictor,
