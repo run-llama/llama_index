@@ -9,7 +9,7 @@ from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.llms.base import LLM
-from llama_index.llms.utils import LLMType
+from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
@@ -126,11 +126,11 @@ class ServiceContext:
             )
 
         callback_manager = callback_manager or CallbackManager([])
-        if llm is not None and llm != "default":
+        if llm is not None:
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
-            llm_predictor = LLMPredictor(llm=llm)
-        llm_predictor = llm_predictor or LLMPredictor()
+            llm = resolve_llm(llm)
+        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
         if isinstance(llm_predictor, LLMPredictor):
             llm_predictor.llm.callback_manager = callback_manager
 
@@ -190,9 +190,10 @@ class ServiceContext:
             chunk_size = chunk_size_limit
 
         callback_manager = callback_manager or service_context.callback_manager
-        if llm is not None and llm != "default":
+        if llm is not None:
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
+            llm = resolve_llm(llm)
             llm_predictor = LLMPredictor(llm=llm)
 
         llm_predictor = llm_predictor or service_context.llm_predictor
