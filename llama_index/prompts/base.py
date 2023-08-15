@@ -173,7 +173,7 @@ class Prompt(Pipeline):
         kwargs.update(self.partial_dict)
         return kwargs
 
-    def schema(
+    def get_schema(
         self,
         include_children: bool = True,
         omit_metadata: bool = False,

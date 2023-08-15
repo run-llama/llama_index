@@ -116,7 +116,7 @@ class BaseDocumentStore(Pipeline):
             index: self.get_node(node_id) for index, node_id in node_id_dict.items()
         }
 
-    def schema(
+    def get_schema(
         self,
         include_children: bool = True,
         omit_metadata: bool = False,

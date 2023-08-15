@@ -1,24 +1,19 @@
 # from functools import
-import json
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, asdict
+from pydantic import BaseModel, Field
 from typing import Dict, List, Any
 
 
-@dataclass
-class PipelineSchema:
+class PipelineSchema(BaseModel):
     """Class representing a component in a pipeline."""
 
     # TODO (jon-chuang): should name be an Enum to be more restrictive?
     name: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    children: List["PipelineSchema"] = field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    children: List["PipelineSchema"] = Field(default_factory=list)
 
     # TODO (jon-chuang): Handle DAG as opposed to tree.
-    inputs: List["PipelineSchema"] = field(default_factory=list)
-
-    def json(self) -> str:
-        return json.dumps(asdict(self), indent=2)
+    inputs: List["PipelineSchema"] = Field(default_factory=list)
 
 
 class Pipeline(ABC):
@@ -31,7 +26,7 @@ class Pipeline(ABC):
     """
 
     @abstractmethod
-    def schema(
+    def get_schema(
         self,
         include_children: bool = True,
         omit_metadata: bool = False,

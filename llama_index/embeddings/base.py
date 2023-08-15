@@ -3,13 +3,14 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
+from pydantic import BaseModel, Field, validator
 from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utils import get_tqdm_iterable, globals_helper
+from llama_index.utils import get_tqdm_iterable
 from llama_index.pipeline import Pipeline, PipelineSchema
 
 # TODO: change to numpy array
@@ -49,25 +50,31 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding(Pipeline):
+class BaseEmbedding(BaseModel, Pipeline):
     """Base class for embeddings."""
 
-    def __init__(
-        self,
-        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-        tokenizer: Optional[Callable] = None,
-        callback_manager: Optional[CallbackManager] = None,
-    ) -> None:
-        """Init params."""
-        self._total_tokens_used = 0
-        self._last_token_usage: Optional[int] = None
-        self._tokenizer = tokenizer or globals_helper.tokenizer
-        self.callback_manager = callback_manager or CallbackManager([])
-        # list of tuples of id, text
-        self._text_queue: List[Tuple[str, str]] = []
-        if embed_batch_size <= 0:
-            raise ValueError("embed_batch_size must be > 0")
-        self._embed_batch_size = embed_batch_size
+    model_name: str = Field(
+        default="unknown", description="The name of the embedding model."
+    )
+    embed_batch_size: int = Field(
+        default=DEFAULT_EMBED_BATCH_SIZE,
+        description="The batch size for embedding calls.",
+    )
+    callback_manager: CallbackManager = Field(
+        default_factory=lambda: CallbackManager([]), exclude=True
+    )
+    _text_queue: List[Tuple[str, str]] = Field(default_factory=list)
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @validator("callback_manager", pre=True)
+    def _validate_callback_manager(
+        cls, v: Optional[CallbackManager]
+    ) -> CallbackManager:
+        if v is None:
+            return CallbackManager([])
+        return v
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> List[float]:
@@ -81,8 +88,6 @@ class BaseEmbedding(Pipeline):
         """Get query embedding."""
         with self.callback_manager.event(CBEventType.EMBEDDING) as event:
             query_embedding = self._get_query_embedding(query)
-            query_tokens_count = len(self._tokenizer(query))
-            self._total_tokens_used += query_tokens_count
 
             event.on_end(
                 payload={
@@ -96,8 +101,6 @@ class BaseEmbedding(Pipeline):
         """Get query embedding."""
         with self.callback_manager.event(CBEventType.EMBEDDING) as event:
             query_embedding = await self._aget_query_embedding(query)
-            query_tokens_count = len(self._tokenizer(query))
-            self._total_tokens_used += query_tokens_count
 
             event.on_end(
                 payload={
@@ -166,8 +169,6 @@ class BaseEmbedding(Pipeline):
         """Get text embedding."""
         with self.callback_manager.event(CBEventType.EMBEDDING) as event:
             text_embedding = self._get_text_embedding(text)
-            text_tokens_count = len(self._tokenizer(text))
-            self._total_tokens_used += text_tokens_count
 
             event.on_end(
                 payload={
@@ -205,9 +206,7 @@ class BaseEmbedding(Pipeline):
 
         for idx, (text_id, text) in queue_with_progress:
             cur_batch.append((text_id, text))
-            text_tokens_count = len(self._tokenizer(text))
-            self._total_tokens_used += text_tokens_count
-            if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
+            if idx == len(text_queue) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
                 with self.callback_manager.event(CBEventType.EMBEDDING) as event:
                     cur_batch_ids = [text_id for text_id, _ in cur_batch]
@@ -243,9 +242,7 @@ class BaseEmbedding(Pipeline):
         embeddings_coroutines: List[Coroutine] = []
         for idx, (text_id, text) in enumerate(text_queue):
             cur_batch.append((text_id, text))
-            text_tokens_count = len(self._tokenizer(text))
-            self._total_tokens_used += text_tokens_count
-            if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
+            if idx == len(text_queue) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
                 event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
@@ -303,35 +300,11 @@ class BaseEmbedding(Pipeline):
         """Get embedding similarity."""
         return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
 
-    @property
-    def total_tokens_used(self) -> int:
-        """Get the total tokens used so far."""
-        return self._total_tokens_used
-
-    @property
-    def last_token_usage(self) -> int:
-        """Get the last token usage."""
-        if self._last_token_usage is None:
-            return 0
-        return self._last_token_usage
-
-    @last_token_usage.setter
-    def last_token_usage(self, value: int) -> None:
-        """Set the last token usage."""
-        self._last_token_usage = value
-
-    def schema(
+    def get_schema(
         self,
         include_children: bool = True,
         omit_metadata: bool = False,
     ) -> PipelineSchema:
         return PipelineSchema(
-            name="Embedding",
-            metadata={}
-            if omit_metadata
-            else {
-                "batch_size": self._embed_batch_size,
-                "embedding_class": type(self).__name__,
-                # TODO (jon-chuang): add more fields (e.g. model name)
-            },
+            name="Embedding", metadata={} if omit_metadata else self.dict()
         )

@@ -1,10 +1,10 @@
 """Langchain Embedding Wrapper Module."""
 
-
-from typing import Any, List
+from typing import List, Optional
 
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.callbacks import CallbackManager
+from llama_index.embeddings.base import BaseEmbedding, DEFAULT_EMBED_BATCH_SIZE
 
 
 class LangchainEmbedding(BaseEmbedding):
@@ -15,10 +15,31 @@ class LangchainEmbedding(BaseEmbedding):
             embeddings class.
     """
 
-    def __init__(self, langchain_embedding: LCEmbeddings, **kwargs: Any) -> None:
-        """Init params."""
-        super().__init__(**kwargs)
-        self._langchain_embedding = langchain_embedding
+    _langchain_embedding: LCEmbeddings
+
+    def __init__(
+        self,
+        langchain_embeddings: LCEmbeddings,
+        model_name: Optional[str] = None,
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        callback_manager: Optional[CallbackManager] = None,
+    ):
+        # attempt to get a useful model name
+        if model_name is not None:
+            model_name = model_name
+        elif hasattr(langchain_embeddings, "model_name"):
+            model_name = langchain_embeddings.model_name
+        elif hasattr(langchain_embeddings, "model"):
+            model_name = langchain_embeddings.model
+        else:
+            model_name = type(langchain_embeddings).__name__
+
+        super().__init__(
+            langchain_embeddings=langchain_embeddings,
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+            model_name=model_name,
+        )
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""

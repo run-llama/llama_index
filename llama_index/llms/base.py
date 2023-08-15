@@ -370,7 +370,7 @@ class LLM(Pipeline):
         """Async streaming completion endpoint for LLM."""
         pass
 
-    def schema(
+    def get_schema(
         self,
         include_children: bool = True,
         omit_metadata: bool = False,
