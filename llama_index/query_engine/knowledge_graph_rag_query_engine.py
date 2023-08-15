@@ -153,7 +153,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         handle_llm_prompt_template: Optional[Prompt],
         cross_handle_policy: Optional[str] = "union",
         max_items: Optional[int] = 5,
-        result_start_token: Optional[str] = None,
+        result_start_token: str = "KEYWORDS:",
     ) -> List[str]:
         """Get entities from query string."""
         assert cross_handle_policy in [
@@ -203,7 +203,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         handle_llm_prompt_template: Optional[Prompt],
         cross_handle_policy: Optional[str] = "union",
         max_items: Optional[int] = 5,
-        result_start_token: Optional[str] = None,
+        result_start_token: str = "KEYWORDS:",
     ) -> List[str]:
         """Get entities from query string."""
         assert cross_handle_policy in [
@@ -230,7 +230,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             # TBD: handle_fn is not async
             keywords_fn = handle_fn(query_str)
         if handle_llm_prompt_template is not None:
-            response = await self._service_context.llm_predictor.predict(
+            response = await self._service_context.llm_predictor.apredict(
                 handle_llm_prompt_template,
                 max_keywords=max_items,
                 question=query_str,
