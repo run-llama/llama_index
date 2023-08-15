@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 rel_query = Template(
     """
-MATCH ()-[e:`$edge_type`]->()
-  WITH e limit 1
-MATCH (m)-[:`$edge_type`]->(n) WHERE id(m) == src(e) AND id(n) == dst(e)
-RETURN "(:" + tags(m)[0] + ")-[:$edge_type]->(:" + tags(n)[0] + ")" AS rels
+LOOKUP ON $edge_type 
+YIELD src(edge) AS srcVid |
+GO FROM $$-.srcVid OVER $edge_type 
+        YIELD "(:" + tags($$^)[0] + ")-[:$edge_type]->(:" + tags($$$$)[0] + ")" AS rels | limit 1
 """
 )
 
