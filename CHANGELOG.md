@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- accept `api_key` kwarg in OpenAI LLM class constructor (#7263)
+
 ## [0.8.2.post1] - 2023-08-14
 
 ### New Features
