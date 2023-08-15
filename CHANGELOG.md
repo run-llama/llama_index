@@ -5,6 +5,9 @@
 ### New Features
 - Added support for Rockset as a vector store (#7111)
 
+### Bug Fixes
+- Fixed bug in service context definition that could disable LLM (#7261)
+
 ## [0.8.2] - 2023-08-14
 
 ### New Features
