@@ -6,6 +6,7 @@ from llama_index.query_engine.knowledge_graph_query_engine import (
 )
 from llama_index.query_engine.knowledge_graph_rag_query_engine import (
     KnowledgeGraphRAGQueryEngine,
+    KnowledgeGraphRAGRetriever,
 )
 from llama_index.query_engine.multistep_query_engine import MultiStepQueryEngine
 from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
@@ -48,4 +49,5 @@ __all__ = [
     "PandasQueryEngine",
     "KnowledgeGraphQueryEngine",
     "KnowledgeGraphRAGQueryEngine",
+    "KnowledgeGraphRAGRetriever",
 ]

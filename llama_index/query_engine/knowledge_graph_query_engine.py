@@ -189,8 +189,8 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         """Get nodes for response."""
         graph_store_query = self.generate_query(query_bundle.query_str)
         if self._verbose:
-            print_text(f"Graph Store Query: {graph_store_query}\n", color="yellow")
-        logger.info(f"Graph Store Query: {graph_store_query}")
+            print_text(f"Graph Store Query:\n{graph_store_query}\n", color="yellow")
+        logger.debug(f"Graph Store Query:\n{graph_store_query}")
 
         with self.callback_manager.event(
             CBEventType.RETRIEVE,
@@ -200,14 +200,14 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
             graph_store_response = self.graph_store.query(query=graph_store_query)
             if self._verbose:
                 print_text(
-                    f"Graph Store Response: {graph_store_response}\n",
+                    f"Graph Store Response:\n{graph_store_response}\n",
                     color="yellow",
                 )
-            logger.info(f"Graph Store Response: {graph_store_response}")
+            logger.debug(f"Graph Store Response:\n{graph_store_response}")
 
             retrieve_event.on_end(payload={EventPayload.RESPONSE: graph_store_response})
 
-        prompt_string: Sequence = self._graph_response_answer_prompt.format(
+        retrieved_graph_context: Sequence = self._graph_response_answer_prompt.format(
             query_str=query_bundle.query_str,
             kg_query_str=graph_store_query,
             kg_response_str=graph_store_response,
@@ -215,7 +215,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
 
         node = NodeWithScore(
             node=TextNode(
-                text=prompt_string,
+                text=retrieved_graph_context,
                 score=1.0,
                 metadata={
                     "query_str": query_bundle.query_str,
@@ -249,8 +249,8 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         graph_store_query = await self.agenerate_query(query_bundle.query_str)
         if self._verbose:
-            print_text(f"Graph Store Query: {graph_store_query}\n", color="yellow")
-        logger.info(f"Graph Store Query: {graph_store_query}")
+            print_text(f"Graph Store Query:\n{graph_store_query}\n", color="yellow")
+        logger.debug(f"Graph Store Query:\n{graph_store_query}")
 
         with self.callback_manager.event(
             CBEventType.RETRIEVE,
@@ -261,14 +261,14 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
             graph_store_response = self.graph_store.query(query=graph_store_query)
             if self._verbose:
                 print_text(
-                    f"Graph Store Response: {graph_store_response}\n",
+                    f"Graph Store Response:\n{graph_store_response}\n",
                     color="yellow",
                 )
-            logger.info(f"Graph Store Response: {graph_store_response}")
+            logger.debug(f"Graph Store Response:\n{graph_store_response}")
 
             retrieve_event.on_end(payload={EventPayload.RESPONSE: graph_store_response})
 
-        prompt_string: Sequence = self._graph_response_answer_prompt.format(
+        retrieved_graph_context: Sequence = self._graph_response_answer_prompt.format(
             query_str=query_bundle.query_str,
             kg_query_str=graph_store_query,
             kg_response_str=graph_store_response,
@@ -276,7 +276,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
 
         node = NodeWithScore(
             node=TextNode(
-                text=prompt_string,
+                text=retrieved_graph_context,
                 score=1.0,
                 metadata={
                     "query_str": query_bundle.query_str,

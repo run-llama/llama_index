@@ -4,41 +4,32 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.bridge.langchain import print_text
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.graph_stores.registery import GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE
+from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.prompts.prompts import QueryKeywordExtractPrompt
 from llama_index.query_engine import KnowledgeGraphQueryEngine
-from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
+from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.response_synthesizers import BaseSynthesizer
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.storage.storage_context import StorageContext
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_SYNONYM_EXPAND_TEMPLATE = """
-Generate synonyms or possible form of keywords,
+Generate synonyms or possible form of keywords up to {max_keywords} in total,
 considering possible cases of capitalization, pluralization, common expressions, etc.
-Provide synonyms of keywords in comma-separated format: 'SYNONYMS: <keywords>'
+Provide all synonyms of keywords in comma-separated format: 'SYNONYMS: <keywords>'
+Note, result should be in one-line with only one 'SYNONYMS: ' prefix
 ----
-KEYWORDS: {keywords}
+KEYWORDS: {question}
 ----
 """
-# Example of the prompt:
-# ---------------------
-# Generate synonyms or possible form of keywords,
-# considering possible cases of capitalization, pluralization, common expressions, etc.
-# Provide synonyms of keywords in comma-separated format: 'SYNONYMS: <keywords>'
-# ----
-# KEYWORDS: apple inc, book
-# ----
-# SYNONYMS: Apple Inc, Apple Incorporated, apple company, Book, books
 
 DEFAULT_SYNONYM_EXPAND_PROMPT = Prompt(
     DEFAULT_SYNONYM_EXPAND_TEMPLATE,
@@ -69,13 +60,13 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             possible values: "union", "intersection"
         max_entities (int): The maximum number of entities to extract.
             default: 5
+        max_synonyms (int): The maximum number of synonyms to expand per entity.
+            default: 5
         retriever_mode (Optional[str]): The retriever mode to use.
             default: "keyword"
             possible values: "keyword", "embedding", "keyword_embedding"
         with_nl2graphquery (bool): Whether to combine NL2GraphQuery in context.
             default: False
-        similarity_top_k (int): The number of top embeddings to use
-            (if embeddings are used).
         graph_traversal_depth (int): The depth of graph traversal.
             default: 2
         max_knowledge_sequence (int): The maximum number of knowledge sequence to
@@ -94,9 +85,9 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         synonym_expand_template: Optional[Prompt] = None,
         synonym_expand_policy: Optional[str] = "union",
         max_entities: int = 5,
+        max_synonyms: int = 5,
         retriever_mode: Optional[str] = "keyword",
         with_nl2graphquery: bool = False,
-        similarity_top_k: int = 5,
         graph_traversal_depth: int = 2,
         max_knowledge_sequence: int = 30,
         verbose: bool = False,
@@ -113,14 +104,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
 
         self._service_context = service_context or ServiceContext.from_defaults()
 
-        # Get Graph Store Type
-        self._graph_store_type = GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE[
-            self._graph_store.__class__
-        ]
-
-        # Get Graph schema
-        self._graph_schema = self._graph_store.get_schema()
-
         self._entity_extract_fn = entity_extract_fn
         self._entity_extract_template = (
             entity_extract_template or DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -134,6 +117,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self._synonym_expand_policy = synonym_expand_policy
 
         self._max_entities = max_entities
+        self._max_synonyms = max_synonyms
         self._retriever_mode = retriever_mode
         self._with_nl2graphquery = with_nl2graphquery
         if self._with_nl2graphquery:
@@ -146,7 +130,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 None,
             )
             refresh_schema = kwargs.get("refresh_schema", False)
-            verbose = kwargs.get("verbose", False)
             response_synthesizer = kwargs.get("response_synthesizer", None)
             self._kg_query_engine = KnowledgeGraphQueryEngine(
                 service_context=self._service_context,
@@ -159,96 +142,83 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 **kwargs,
             )
 
-        self._similarity_top_k = similarity_top_k
         self._graph_traversal_depth = graph_traversal_depth
         self._max_knowledge_sequence = max_knowledge_sequence
         self._verbose = verbose
 
-    def _get_entities(self, query_str: str) -> List[str]:
+    def _process_entities(
+        self,
+        query_str: str,
+        handle_fn: Optional[Callable],
+        handle_llm_prompt_template: Optional[Prompt],
+        cross_handle_policy: Optional[str] = "union",
+        max_items: Optional[int] = 5,
+        result_start_token: Optional[str] = None,
+    ) -> List[str]:
         """Get entities from query string."""
-        assert self._entity_extract_policy in [
+        assert cross_handle_policy in [
             "union",
             "intersection",
         ], "Invalid entity extraction policy."
-        if self._entity_extract_policy == "intersection":
+        if cross_handle_policy == "intersection":
             assert all(
                 [
-                    self._entity_extract_fn is not None,
-                    self._entity_extract_template is not None,
+                    handle_fn is not None,
+                    handle_llm_prompt_template is not None,
                 ]
             ), "Must provide entity extract function and template."
         assert any(
             [
-                self._entity_extract_fn is not None,
-                self._entity_extract_template is not None,
+                handle_fn is not None,
+                handle_llm_prompt_template is not None,
             ]
         ), "Must provide either entity extract function or template."
         keywords_fn: List[str] = []
         keywords_llm: Set[str] = set()
 
-        if self._entity_extract_fn is not None:
-            keywords_fn = self._entity_extract_fn(query_str)
-        if self._entity_extract_template is not None:
+        if handle_fn is not None:
+            keywords_fn = handle_fn(query_str)
+        if handle_llm_prompt_template is not None:
             response = self._service_context.llm_predictor.predict(
-                self._entity_extract_template,
-                max_keywords=self._max_entities,
+                handle_llm_prompt_template,
+                max_keywords=max_items,
                 question=query_str,
             )
             keywords_llm = extract_keywords_given_response(
-                response, start_token="KEYWORDS:", lowercase=False
+                response, start_token=result_start_token, lowercase=False
             )
-        if self._entity_extract_policy == "union":
+        if cross_handle_policy == "union":
             keywords = list(set(keywords_fn) | keywords_llm)
-        elif self._entity_extract_policy == "intersection":
+        elif cross_handle_policy == "intersection":
             keywords = list(set(keywords_fn).intersection(set(keywords_llm)))
         if self._verbose:
-            print_text(f"Entities extracted: {keywords}\n", color="green")
+            print_text(f"Entities processed: {keywords}\n", color="green")
 
         return keywords
+
+    def _get_entities(self, query_str: str) -> List[str]:
+        """Get entities from query string."""
+        entities = self._process_entities(
+            query_str,
+            self._entity_extract_fn,
+            self._entity_extract_template,
+            self._entity_extract_policy,
+            self._max_entities,
+            "KEYWORDS:",
+        )
+        expanded_entities = self._expand_synonyms(entities)
+        return list(set(entities) | set(expanded_entities))
 
     def _expand_synonyms(self, keywords: List[str]) -> List[str]:
-        """Expand synonyms."""
-        # if no _synonym_expand_fn nor _synonym_expand_template is provided,
-        # we don't expand synonyms
-        if not any(
-            [
-                self._synonym_expand_fn is not None,
-                self._synonym_expand_template is not None,
-            ]
-        ):
-            return []
-
-        assert self._synonym_expand_policy in [
-            "union",
-            "intersection",
-        ], "Invalid synonym expansion policy."
-        if self._synonym_expand_policy == "intersection":
-            assert all(
-                [
-                    self._synonym_expand_fn is not None,
-                    self._synonym_expand_template is not None,
-                ]
-            ), "Must provide synonym expand function and template."
-        keywords_fn: List[str] = []
-        keywords_llm: Set[str] = set()
-
-        if self._synonym_expand_fn is not None:
-            keywords_fn = self._synonym_expand_fn(keywords)
-        if self._synonym_expand_template is not None:
-            response = self._service_context.llm_predictor.predict(
-                self._synonym_expand_template,
-                keywords=str(keywords),
-            )
-            keywords_llm = extract_keywords_given_response(
-                response, start_token="KEYWORDS:", lowercase=False
-            )
-        if self._synonym_expand_policy == "union":
-            keywords = list(set(keywords_fn) | keywords_llm)
-        elif self._synonym_expand_policy == "intersection":
-            keywords = list(set(keywords_fn).intersection(set(keywords_llm)))
-        if self._verbose:
-            print_text(f"Entities expanded: {keywords}\n", color="green")
-        return keywords
+        """Expand synonyms or similar expressions for keywords."""
+        return self._process_entities(
+            str(keywords),
+            self._synonym_expand_fn,
+            self._synonym_expand_template,
+            self._synonym_expand_policy,
+            self._max_synonyms,
+            "SYNONYMS:",
+        )
 
     def _get_knowledge_sequence(
         self, entities: List[str]
@@ -259,17 +229,12 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             entities, self._graph_traversal_depth
         )
         logger.debug(f"rel_map: {rel_map}")
-        if self._verbose:
-            print_text(f"rel_map: {rel_map}\n", color="green")
+
         # Build Knowledge Sequence
         knowledge_sequence = []
         if rel_map:
             knowledge_sequence.extend(
-                [
-                    f"{sub} {rel_obj}"
-                    for sub, rel_objs in rel_map.items()
-                    for rel_obj in rel_objs
-                ]
+                [rel_obj for rel_objs in rel_map.values() for rel_obj in rel_objs]
             )
         else:
             logger.info("> No knowledge sequence extracted from entities.")
@@ -277,39 +242,27 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         # truncate knowledge sequence
         if len(knowledge_sequence) > self._max_knowledge_sequence:
             knowledge_sequence = knowledge_sequence[: self._max_knowledge_sequence]
-        if self._verbose:
-            print_text(f"knowledge_sequence: {knowledge_sequence}\n", color="green")
+
         return knowledge_sequence, rel_map
 
-    def _retrieve_keyword(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """retrieve in keyword mode."""
-        # Get entities
-        entities = self._get_entities(query_bundle.query_str)
-        # Before we enable embedding/symantic search, we need to make sure
-        # we don't miss any entities that's synoynm of the entities we extracted
-        # in string matching based retrieval in following steps, thus we expand
-        # synonyms here.
-        if len(entities) == 0:
-            logger.info("> No entities extracted from query string.")
-            return []
-        expanded_entities = self._expand_synonyms(entities)
-        if expanded_entities:
-            entities = list(set(entities + expanded_entities))
-
-        # Get SubGraph from Graph Store as Knowledge Sequence
-        knowledge_sequence, rel_map = self._get_knowledge_sequence(entities)
+    def _build_nodes(
+        self, knowledge_sequence: List[str], rel_map: Optional[Dict[Any, Any]] = None
+    ) -> List[NodeWithScore]:
+        """Build nodes from knowledge sequence."""
         if len(knowledge_sequence) == 0:
             logger.info("> No knowledge sequence extracted from entities.")
             return []
-
+        _new_line_char = "\n"
         context_string = (
             f"The following are knowledge sequence in max depth"
             f" {self._graph_traversal_depth} "
             f"in the form of "
-            f"`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
-            f" extracted from the query string:\n"
-            f"'\n'.join(knowledge_sequence)"
+            f"`subject predicate, object, predicate_next_hop, object_next_hop ...`"
+            f" extracted based on key entities as subject:\n"
+            f"{_new_line_char.join(knowledge_sequence)}"
         )
+        if self._verbose:
+            print_text(f"Graph RAG context:\n{context_string}\n", color="blue")
 
         node = NodeWithScore(
             node=TextNode(
@@ -323,171 +276,78 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         )
         return [node]
 
+    def _retrieve_keyword(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """retrieve in keyword mode."""
+        if self._retriever_mode not in ["keyword", "keyword_embedding"]:
+            return []
+        # Get entities
+        entities = self._get_entities(query_bundle.query_str)
+        # Before we enable embedding/symantic search, we need to make sure
+        # we don't miss any entities that's synoynm of the entities we extracted
+        # in string matching based retrieval in following steps, thus we expand
+        # synonyms here.
+        if len(entities) == 0:
+            logger.info("> No entities extracted from query string.")
+            return []
+
+        # Get SubGraph from Graph Store as Knowledge Sequence
+        knowledge_sequence, rel_map = self._get_knowledge_sequence(entities)
+
+        return self._build_nodes(knowledge_sequence, rel_map)
+
     def _retrieve_embedding(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """retrieve in embedding mode."""
+        if self._retriever_mode not in ["embedding", "keyword_embedding"]:
+            return []
         # TBD: will implement this later with vector store.
         raise NotImplementedError
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Build nodes for response."""
-        nodes, nodes_keyword, nodes_embedding = [], [], []
+        nodes: List[NodeWithScore] = []
         if self._with_nl2graphquery:
-            nodes_nl2graphquery = self._kg_query_engine._retrieve(query_bundle)
-            nodes.extend(nodes_nl2graphquery)
+            try:
+                nodes_nl2graphquery = self._kg_query_engine._retrieve(query_bundle)
+                nodes.extend(nodes_nl2graphquery)
+            except Exception as e:
+                logger.warn(f"Error in retrieving from nl2graphquery: {e}")
 
-        if self._retriever_mode == "keyword":
-            nodes_keyword = self._retrieve_keyword(query_bundle)
-        elif self._retriever_mode == "embedding":
-            nodes_embedding = self._retrieve_embedding(query_bundle)
-        elif self._retriever_mode == "keyword_embedding":
-            nodes_keyword = self._retrieve_keyword(query_bundle)
-            nodes_embedding = self._retrieve_embedding(query_bundle)
-        else:
-            raise ValueError("Invalid retriever mode.")
+        nodes.extend(self._retrieve_keyword(query_bundle))
+        nodes.extend(self._retrieve_embedding(query_bundle))
 
-        nodes.extend(nodes_keyword)
-        nodes.extend(nodes_embedding)
         return nodes
 
 
-class KnowledgeGraphRAGQueryEngine(BaseQueryEngine):
+class KnowledgeGraphRAGQueryEngine(RetrieverQueryEngine):
     """Knowledge Graph RAG query engine.
 
     Query engine that perform SubGraph RAG towards knowledge graph.
 
     Args:
-        service_context (Optional[ServiceContext]): A service context to use.
-        storage_context (Optional[StorageContext]): A storage context to use.
-        entity_extract_fn (Optional[Callable]): A function to extract entities.
-        entity_extract_template Optional[QueryKeywordExtractPrompt]): A Query Key Entity
-            Extraction Prompt (see :ref:`Prompt-Templates`).
-        entity_extract_policy (Optional[str]): The entity extraction policy to use.
-            default: "union"
-            possible values: "union", "intersection"
-        synonym_expand_fn (Optional[Callable]): A function to expand synonyms.
-        synonym_expand_template (Optional[QueryKeywordExpandPrompt]): A Query Key Entity
-            Expansion Prompt (see :ref:`Prompt-Templates`).
-        synonym_expand_policy (Optional[str]): The synonym expansion policy to use.
-            default: "union"
-            possible values: "union", "intersection"
-        max_entities (int): The maximum number of entities to extract.
-            default: 5
-        retriever_mode (Optional[str]): The retriever mode to use.
-            default: "keyword"
-            possible values: "keyword", "embedding", "keyword_embedding"
-        with_nl2graphquery (bool): Whether to combine NL2GraphQuery in context.
-            default: False
-        similarity_top_k (int): The number of top embeddings to use
-            (if embeddings are used).
-        graph_traversal_depth (int): The depth of graph traversal.
-            default: 2
-        max_knowledge_sequence (int): The maximum number of knowledge sequence to
-            include in the response. By default, it's 30.
-        verbose (bool): Whether to print out debug info.
-        response_synthesizer (Optional[BaseSynthesizer]): A response synthesizer to use.
+        retriever (BaseRetriever): A retriever object.
+        response_synthesizer (BaseSynthesizer): A response synthesizer object.
+        node_postprocessors (List[BaseNodePostprocessor]): A list of node postprocessor objects.
+        callback_manager (CallbackManager): A callback manager object.
 
     """
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
-        storage_context: Optional[StorageContext] = None,
-        entity_extract_fn: Optional[Callable] = None,
-        entity_extract_template: Optional[Prompt] = None,
-        entity_extract_policy: Optional[str] = "union",
-        synonym_expand_fn: Optional[Callable] = None,
-        synonym_expand_template: Optional[Prompt] = None,
-        synonym_expand_policy: Optional[str] = "union",
-        max_entities: int = 5,
-        retriever_mode: Optional[str] = "keyword",
-        with_nl2graphquery: bool = False,
-        similarity_top_k: int = 5,
-        graph_traversal_depth: int = 2,
-        max_knowledge_sequence: int = 30,
-        verbose: bool = False,
+        retriever: Optional[KnowledgeGraphRAGRetriever] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
-        self._retriever = KnowledgeGraphRAGRetriever(
-            service_context=service_context,
-            storage_context=storage_context,
-            entity_extract_fn=entity_extract_fn,
-            entity_extract_template=entity_extract_template,
-            entity_extract_policy=entity_extract_policy,
-            synonym_expand_fn=synonym_expand_fn,
-            synonym_expand_template=synonym_expand_template,
-            synonym_expand_policy=synonym_expand_policy,
-            max_entities=max_entities,
-            retriever_mode=retriever_mode,
-            with_nl2graphquery=with_nl2graphquery,
-            similarity_top_k=similarity_top_k,
-            graph_traversal_depth=graph_traversal_depth,
-            max_knowledge_sequence=max_knowledge_sequence,
-            **kwargs,
+        assert isinstance(retriever, KnowledgeGraphRAGRetriever), (
+            f"retriever should be an instance of KnowledgeGraphRAGRetriever, "
+            f"got {type(retriever)}"
         )
-        self._service_context = service_context or ServiceContext.from_defaults()
-        self._storage_context = storage_context or StorageContext.from_defaults()
-        self._graph_store = self._storage_context.graph_store
+        self._retriever = retriever
 
-        self._verbose = verbose
-        self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            callback_manager=self._service_context.callback_manager,
-            service_context=self._service_context,
+        super().__init__(
+            retriever=retriever,
+            response_synthesizer=response_synthesizer,
+            node_postprocessors=node_postprocessors,
+            callback_manager=callback_manager,
         )
-
-        super().__init__(self._service_context.callback_manager)
-
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Query the graph store for RAG."""
-        with self.callback_manager.event(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        ) as query_event:
-            with self.callback_manager.event(
-                CBEventType.RETRIEVE,
-                payload={EventPayload.QUERY_STR: query_bundle.query_str},
-            ) as retrieve_event:
-                # Get the graph store response
-                nodes = self._retriever.retrieve(query_bundle)
-                retrieve_event.on_end(payload={EventPayload.RESPONSE: nodes})
-
-            response = self._response_synthesizer.synthesize(
-                query=query_bundle,
-                nodes=nodes,
-            )
-
-            if self._verbose:
-                print_text(f"Final Response: {response}\n", color="green")
-
-            query_event.on_end(payload={EventPayload.RESPONSE: response})
-
-        return response
-
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Query the graph store."""
-        with self.callback_manager.event(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        ) as query_event:
-            with self.callback_manager.event(
-                CBEventType.RETRIEVE,
-                payload={EventPayload.QUERY_STR: query_bundle.query_str},
-            ) as retrieve_event:
-                # Get the graph store response
-                # TBD: This is a blocking call. We need to make it async.
-                nodes = self._retriever.retrieve(query_bundle)
-                retrieve_event.on_end(payload={EventPayload.RESPONSE: nodes})
-
-            response = await self._response_synthesizer.asynthesize(
-                query=query_bundle,
-                nodes=nodes,
-            )
-
-            if self._verbose:
-                print_text(f"Final Response: {response}\n", color="green")
-
-            query_event.on_end(payload={EventPayload.RESPONSE: response})
-
-        return response
-
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        """Get the retriever."""
-        return self._retriever
