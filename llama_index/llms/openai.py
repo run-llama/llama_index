@@ -48,9 +48,7 @@ class OpenAI(LLM):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        validate_openai_api_key(
-            api_key, kwargs.get("api_type", None)
-        )
+        validate_openai_api_key(api_key, kwargs.get("api_type", None))
 
         self.model = model
         self.temperature = temperature
