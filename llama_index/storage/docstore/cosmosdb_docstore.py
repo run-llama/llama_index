@@ -17,11 +17,11 @@ class CosmosDBDocStore(KVDocumentStore):
 
     def __init__(
         self,
-        cosmosdb_kvstore: MongoDBKVStore,
+        mongo_kvstore: MongoDBKVStore,
         namespace: Optional[str] = None,
     ) -> None:
         """Init a MongoDocumentStore."""
-        super().__init__(cosmosdb_kvstore, namespace)
+        super().__init__(mongo_kvstore, namespace)
         # Replace "/" with "_" in collections, CosmosDB doesn't allow "/"
         self._node_collection = f"{self._namespace}_data"
         self._ref_doc_collection = f"{self._namespace}_ref_doc_info"
