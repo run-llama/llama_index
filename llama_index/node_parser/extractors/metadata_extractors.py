@@ -278,7 +278,7 @@ specific answers to which are unlikely to be found elsewhere: \
 """
                 ),
                 context_str=f"""\
-metadata: {json.dumps(node.metadata)} \
+metadata: {json.dumps(node.metadata, ensure_ascii=False)} \
 content: {cast(TextNode, node).text}""",
             )
             if self._embedding_only:
