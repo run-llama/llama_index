@@ -4,10 +4,6 @@ from llama_index.query_engine.graph_query_engine import ComposableGraphQueryEngi
 from llama_index.query_engine.knowledge_graph_query_engine import (
     KnowledgeGraphQueryEngine,
 )
-from llama_index.query_engine.knowledge_graph_rag_query_engine import (
-    KnowledgeGraphRAGQueryEngine,
-    KnowledgeGraphRAGRetriever,
-)
 from llama_index.query_engine.multistep_query_engine import MultiStepQueryEngine
 from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
@@ -48,6 +44,4 @@ __all__ = [
     "FLAREInstructQueryEngine",
     "PandasQueryEngine",
     "KnowledgeGraphQueryEngine",
-    "KnowledgeGraphRAGQueryEngine",
-    "KnowledgeGraphRAGRetriever",
 ]
