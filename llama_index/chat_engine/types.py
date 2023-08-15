@@ -56,8 +56,8 @@ class StreamingAgentChatResponse:
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-    _queue: queue.Queue = queue.Queue()
-    _aqueue: asyncio.Queue = asyncio.Queue()
+    _queue: queue.Queue = field(default_factory=queue.Queue)
+    _aqueue: asyncio.Queue = field(default_factory=asyncio.Queue)
     # flag when chat message is a function call
     _is_function: Optional[bool] = None
     # flag when processing done
