@@ -106,4 +106,4 @@ print(index.ref_doc_info)
 
 Each entry in the output shows the ingested doc `id_`s as keys, and their associated `node_ids` of the nodes they were split into. 
 
-Lastly, the orignal `metadata` dictionary of each input document is also tracked. You can read more about the `metadata` attribute in [Customizing Documents](../documents_and_nodes/usage_documents.md).
+Lastly, the original `metadata` dictionary of each input document is also tracked. You can read more about the `metadata` attribute in [Customizing Documents](../documents_and_nodes/usage_documents.md).
