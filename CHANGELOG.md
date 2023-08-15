@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - accept `api_key` kwarg in OpenAI LLM class constructor (#7263)
+- Fix to create separate queue instances for separate instances of `StreamingAgentChatResponse`
 
 ## [0.8.2.post1] - 2023-08-14
 
