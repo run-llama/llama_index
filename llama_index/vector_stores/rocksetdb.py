@@ -112,6 +112,13 @@ class RocksetVectorStore(VectorStore):
             "ASC" if distance_func is distance_func.EUCLIDEAN_DIST else "DESC"
         )
 
+        try:
+            self.rs.set_application("llama_index")
+        except AttributeError:
+            # set_application method does not exist.
+            # rockset version < 2.1.0
+            pass
+
     @property
     def client(self) -> Any:
         return self.rs
