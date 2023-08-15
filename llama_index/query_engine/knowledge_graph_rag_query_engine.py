@@ -474,7 +474,8 @@ class KnowledgeGraphRAGQueryEngine(RetrieverQueryEngine):
     Args:
         retriever (BaseRetriever): A retriever object.
         response_synthesizer (BaseSynthesizer): A response synthesizer object.
-        node_postprocessors (List[BaseNodePostprocessor]): A list of node postprocessor objects.
+        node_postprocessors (List[BaseNodePostprocessor]): A list of node
+            postprocessor objects.
         callback_manager (CallbackManager): A callback manager object.
 
     """
