@@ -198,6 +198,40 @@ async def test_add_to_db_query_and_delete(
     else:
         res = pg.query(q)
     assert res.nodes
+    print(res.nodes)
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "aaa"
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [(True,), ])
+async def test_hybrid_query(
+        pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], text_nodes: List[TextNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg.async_add_sparse_data(text_nodes)
+    else:
+        pg.add(node_embeddings)
+    assert isinstance(pg, PGVectorStore)
+
+    q = VectorStoreQuery(query_embedding=[0] * 1536, query_str="mr fox", similarity_top_k=2)
+
+    if use_async:
+        res = await pg.a_hybrid_query(q)
+    else:
+        res = pg.query(q)
+    assert res.nodes
+    print(res.nodes)
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "bbb"
+    pg.delete("bbb")
+
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert res.nodes
+    print(res.nodes)
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "aaa"
 
