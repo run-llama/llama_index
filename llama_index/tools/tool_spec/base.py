@@ -36,6 +36,7 @@ class BaseToolSpec:
         tool_list = []
         for func_name in self.spec_functions:
             func = getattr(self, func_name)
+            coroutine = getattr(self, "a" + func_name, None)
             metadata = func_to_metadata_mapping.get(func_name, None)
             if metadata is None:
                 name = func_name
@@ -50,6 +51,7 @@ class BaseToolSpec:
                 name=metadata.name,
                 description=metadata.description,
                 fn_schema=metadata.fn_schema,
+                async_fn=coroutine,
             )
             tool_list.append(tool)
         return tool_list

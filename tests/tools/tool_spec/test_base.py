@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.types import ToolMetadata
 from typing import List, Type
+import pytest
 
 
 class FooSchema(BaseModel):
@@ -29,6 +30,14 @@ class TestToolSpec(BaseToolSpec):
     def bar(self, arg1: bool) -> str:
         """Bar."""
         return f"bar {arg1}"
+
+    async def afoo(self, arg1: str, arg2: int) -> str:
+        """Async Foo."""
+        return self.foo(arg1=arg1, arg2=arg2)
+
+    async def abar(self, arg1: bool) -> str:
+        """Async bar."""
+        return self.bar(arg1=arg1)
 
     def abc(self, arg1: str) -> str:
         # NOTE: no docstring
@@ -83,6 +92,16 @@ def test_tool_spec() -> None:
     assert tools[1].metadata.fn_schema is not None
     fn_schema = tools[1].metadata.fn_schema.schema()
     assert fn_schema["properties"]["arg1"]["type"] == "boolean"
+
+
+@pytest.mark.asyncio
+async def test_tool_spec_async() -> None:
+    """Test async_fn of tool spec."""
+    tool_spec = TestToolSpec()
+    tools = tool_spec.to_tool_list()
+    assert len(tools) == 3
+    assert await tools[0].async_fn("hello", 1) == "foo hello 1"
+    assert str(await tools[1].acall(True)) == "bar True"
 
 
 def test_tool_spec_schema() -> None:
