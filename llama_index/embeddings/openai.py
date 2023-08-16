@@ -1,7 +1,7 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
@@ -235,8 +235,9 @@ class OpenAIEmbedding(BaseEmbedding):
 
     deployment_name: Optional[str]
     openai_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    query_engine: OpenAIEmbeddingModeModel = Field(exclude=True)
-    text_engine: OpenAIEmbeddingModeModel = Field(exclude=True)
+
+    _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
+    _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
 
     def __init__(
         self,
@@ -254,14 +255,15 @@ class OpenAIEmbedding(BaseEmbedding):
             kwargs.get("api_key", None), kwargs.get("api_type", None)
         )
 
+        self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
+        self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
+
         """Init params."""
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=model,
             deployment_name=deployment_name,
-            query_engine=get_engine(mode, model, _QUERY_MODE_MODEL_DICT),
-            text_engine=get_engine(mode, model, _TEXT_MODE_MODEL_DICT),
             openai_kwargs=kwargs,
         )
 
@@ -269,7 +271,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """Get query embedding."""
         return get_embedding(
             query,
-            engine=self.query_engine,
+            engine=self._query_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -278,7 +280,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """The asynchronous version of _get_query_embedding."""
         return await aget_embedding(
             query,
-            engine=self.query_engine,
+            engine=self._query_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -287,7 +289,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """Get text embedding."""
         return get_embedding(
             text,
-            engine=self.text_engine,
+            engine=self._text_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -296,7 +298,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """Asynchronously get text embedding."""
         return await aget_embedding(
             text,
-            engine=self.text_engine,
+            engine=self._text_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -310,7 +312,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """
         return get_embeddings(
             texts,
-            engine=self.text_engine,
+            engine=self._text_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -319,7 +321,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """Asynchronously get text embeddings."""
         return await aget_embeddings(
             texts,
-            engine=self.text_engine,
+            engine=self._text_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )

@@ -3,7 +3,7 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, PrivateAttr
 from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
@@ -11,7 +11,6 @@ import numpy as np
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.utils import get_tqdm_iterable
-from llama_index.pipeline import Pipeline, PipelineSchema
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -50,7 +49,7 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding(BaseModel, Pipeline):
+class BaseEmbedding(BaseModel):
     """Base class for embeddings."""
 
     model_name: str = Field(
@@ -63,7 +62,7 @@ class BaseEmbedding(BaseModel, Pipeline):
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
-    _text_queue: List[Tuple[str, str]] = Field(default_factory=list)
+    _text_queue: List[Tuple[str, str]] = PrivateAttr(default_factory=list)
 
     class Config:
         arbitrary_types_allowed = True
@@ -299,12 +298,3 @@ class BaseEmbedding(BaseModel, Pipeline):
     ) -> float:
         """Get embedding similarity."""
         return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
-
-    def get_schema(
-        self,
-        include_children: bool = True,
-        omit_metadata: bool = False,
-    ) -> PipelineSchema:
-        return PipelineSchema(
-            name="Embedding", metadata={} if omit_metadata else self.dict()
-        )

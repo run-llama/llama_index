@@ -9,10 +9,9 @@ from llama_index.llms.langchain_utils import from_lc_messages
 from llama_index.prompts.prompt_selector import PromptSelector
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.types import BaseOutputParser
-from llama_index.pipeline import Pipeline, PipelineSchema
 
 
-class Prompt(Pipeline):
+class Prompt:
     """Prompt class for LlamaIndex.
 
     Wrapper around langchain's prompt class. Adds ability to:
@@ -172,20 +171,3 @@ class Prompt(Pipeline):
         """
         kwargs.update(self.partial_dict)
         return kwargs
-
-    def get_schema(
-        self,
-        include_children: bool = True,
-        omit_metadata: bool = False,
-    ) -> PipelineSchema:
-        return PipelineSchema(
-            name="Prompt",
-            metadata={}
-            if omit_metadata
-            else {
-                "type": self.prompt_type,
-                "template": self.prompt.template,  # type: ignore
-                "input_variables": self.prompt.input_variables,
-                # TODO (jon-chuang): System message (Chat models), Formatting?
-            },
-        )

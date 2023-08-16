@@ -1,12 +1,11 @@
 import os
 import fsspec
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.schema import BaseNode
-from llama_index.pipeline import PipelineSchema, Pipeline
 
 
 DEFAULT_PERSIST_FNAME = "docstore.json"
@@ -22,7 +21,7 @@ class RefDocInfo(DataClassJsonMixin):
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
-class BaseDocumentStore(Pipeline):
+class BaseDocumentStore(ABC):
     # ===== Save/load =====
     def persist(
         self,
@@ -115,24 +114,3 @@ class BaseDocumentStore(Pipeline):
         return {
             index: self.get_node(node_id) for index, node_id in node_id_dict.items()
         }
-
-    def get_schema(
-        self,
-        include_children: bool = True,
-        omit_metadata: bool = False,
-    ) -> PipelineSchema:
-        """Get schema."""
-        return PipelineSchema(
-            name="DocumentStore",
-            metadata={}
-            if omit_metadata
-            else {
-                # TODO (jon-chuang): find an alternative way of deterministically
-                # versioning the docstore (with a hash or otherwise)
-                "doc_store_class": type(self).__name__,
-                # TODO (jon-chuang): this could be expensive for production use-case
-                # as it involves fetching all docs make the docstore
-                # store summary statistics instead.
-                "num_documents": len(self.docs),
-            },
-        )

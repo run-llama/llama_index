@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Improve SQL Query parsing (#7283)
+- Fix loading embed_model from global service context (#7284)
 
 ## [0.8.3] - 2023-08-16
 

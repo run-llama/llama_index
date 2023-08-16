@@ -4,11 +4,10 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, AsyncGenerator, Callable, Generator, Optional, Sequence, cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.pipeline import Pipeline, PipelineSchema
 
 
 class MessageRole(str, Enum):
@@ -310,10 +309,23 @@ def llm_completion_callback() -> Callable:
     return wrap
 
 
-class LLM(Pipeline):
+class LLM(BaseModel):
     """LLM interface."""
 
-    callback_manager: Optional[CallbackManager] = None
+    callback_manager: Optional[CallbackManager] = Field(
+        default_factory=CallbackManager, exclude=True
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @validator("callback_manager", pre=True)
+    def _validate_callback_manager(
+        cls, v: Optional[CallbackManager]
+    ) -> CallbackManager:
+        if v is None:
+            return CallbackManager([])
+        return v
 
     @property
     @abstractmethod
@@ -369,14 +381,3 @@ class LLM(Pipeline):
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
         pass
-
-    def get_schema(
-        self,
-        include_children: bool = True,
-        omit_metadata: bool = False,
-    ) -> PipelineSchema:
-        """Get pipeline schema."""
-        return PipelineSchema(
-            name="LLM",
-            metadata={} if omit_metadata else self.metadata.dict(),
-        )

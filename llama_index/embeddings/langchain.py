@@ -1,5 +1,6 @@
 """Langchain Embedding Wrapper Module."""
 
+from pydantic import PrivateAttr
 from typing import List, Optional
 
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
@@ -15,7 +16,7 @@ class LangchainEmbedding(BaseEmbedding):
             embeddings class.
     """
 
-    _langchain_embedding: LCEmbeddings
+    _langchain_embedding: LCEmbeddings = PrivateAttr()
 
     def __init__(
         self,
@@ -34,8 +35,8 @@ class LangchainEmbedding(BaseEmbedding):
         else:
             model_name = type(langchain_embeddings).__name__
 
+        self._langchain_embedding = langchain_embeddings
         super().__init__(
-            langchain_embeddings=langchain_embeddings,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=model_name,

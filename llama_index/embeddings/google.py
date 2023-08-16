@@ -1,6 +1,6 @@
 """Google Universal Sentence Encoder Embedding Wrapper Module."""
 
-from pydantic import Field
+from pydantic import PrivateAttr
 from typing import Any, List, Optional
 
 from llama_index.callbacks import CallbackManager
@@ -11,7 +11,7 @@ DEFAULT_HANDLE = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
 
 
 class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
-    _google_use: Any = Field(exclude=True)
+    _model: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -21,16 +21,17 @@ class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
     ):
         """Init params."""
         handle = handle or DEFAULT_HANDLE
-        # try:
-        #    import tensorflow_hub as hub
+        try:
+            import tensorflow_hub as hub
 
-        #    google_use = hub.load(handle)
-        # except ImportError:
-        #    raise ImportError(
-        #        "Please install tensorflow_hub: `pip install tensorflow_hub`"
-        #    )
+            model = hub.load(handle)
+        except ImportError:
+            raise ImportError(
+                "Please install tensorflow_hub: `pip install tensorflow_hub`"
+            )
+
+        self._model = model
         super().__init__(
-            google_use="fake",
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=handle,
@@ -55,5 +56,5 @@ class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
         return self._get_embedding(text)
 
     def _get_embedding(self, text: str) -> List[float]:
-        vectors = self._google_use([text]).numpy().tolist()
+        vectors = self._model([text]).numpy().tolist()
         return vectors[0]
