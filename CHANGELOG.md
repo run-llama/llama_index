@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Improve SQL Query parsing (#7283)
+
 ## [0.8.3] - 2023-08-16
 
 ### New Features
