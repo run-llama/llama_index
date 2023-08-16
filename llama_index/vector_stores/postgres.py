@@ -12,23 +12,29 @@ from llama_index.vector_stores.types import (
 from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
 DBEmbeddingRow = namedtuple(
-    "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"]
+    "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity", "search_type"]
 )
 
 
 def get_data_model(
     base: Type,
     index_name: str,
-    add_sparse_vector: bool,
+    hybrid_search: bool,
     text_search_config: str
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table
     """
     from pgvector.sqlalchemy import Vector
-    from sqlalchemy import Column
+    from sqlalchemy import Column, Computed
     from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, JSON
     from sqlalchemy.sql import func
+
+    from sqlalchemy.dialects.postgresql import TSVECTOR
+    from sqlalchemy.types import TypeDecorator
+    class TSVector(TypeDecorator):
+        impl = TSVECTOR
+
 
     class AbstractData(base):  # type: ignore
         __abstract__ = True  # this line is necessary
@@ -37,14 +43,13 @@ def get_data_model(
         metadata_ = Column(JSON)
         node_id = Column(VARCHAR)
         embedding = Column(Vector(1536))  # type: ignore
+        text_search_tsv = Column(TSVector(), Computed("to_tsvector('%s', text)" % text_search_config, persisted=True))
 
-        if add_sparse_vector:
-            __table_args__ = (
-                Index(
-                    'idx_text_tsv',
-                    func.to_tsvector(text_search_config, text),
-                    postgresql_using='gin'
-                )
+        if hybrid_search:
+            Index(
+                'text_search_tsv_idx',
+                func.to_tsvector(literal(self._text_search_config), text_search_tsv),
+                postgresql_using='gin'
             )
 
     tablename = "data_%s" % index_name  # dynamic table name
@@ -54,6 +59,8 @@ def get_data_model(
 
 
 class PGVectorStore(VectorStore):
+    from sqlalchemy.sql.selectable import Select
+
     stores_text = True
     flat_metadata = False
 
@@ -62,8 +69,9 @@ class PGVectorStore(VectorStore):
         connection_string: str,
         async_connection_string: str,
         table_name: str,
-        add_sparse_vector: bool = False,
-        text_search_config = 'english'
+        hybrid_search: bool = False,
+        text_search_config = 'english',
+        hybrid_search_cross_encoder = 'cross-encoder/ms-marco-MiniLM-L-6-v2',
     ) -> None:
         try:
             import sqlalchemy  # noqa: F401
@@ -80,10 +88,11 @@ class PGVectorStore(VectorStore):
         self.connection_string = connection_string
         self.async_connection_string = async_connection_string
         self.table_name: str = table_name.lower()
-        self._add_sparse_vector = add_sparse_vector
+        self._hybrid_search = hybrid_search
         self._text_search_config = text_search_config
+        self._hybrid_search_cross_encoder = hybrid_search_cross_encoder
 
-        if self._add_sparse_vector and text_search_config is None:
+        if self._hybrid_search and text_search_config is None:
             raise ValueError(
                 "Sparse vector index creation requires "
                 "a text search configuration specification."
@@ -94,7 +103,7 @@ class PGVectorStore(VectorStore):
 
         self._base = declarative_base()
         # sqlalchemy model
-        self.table_class = get_data_model(self._base, self.table_name)
+        self.table_class = get_data_model(self._base, self.table_name, self._hybrid_search, self._text_search_config)
         self._connect()
         self._create_extension()
         self._create_tables_if_not_exists()
@@ -186,6 +195,43 @@ class PGVectorStore(VectorStore):
                 await session.commit()
         return ids
 
+    async def async_add_sparse_data(self, textNodes: List[TextNode]) -> List[str]:
+        ids = []
+        async with self._async_session() as session:
+            async with session.begin():
+                for textNode in textNodes:
+                    ids.append(textNode.node_id)
+                    item = self.table_class(
+                            node_id=textNode.node_id,
+                            text=textNode.get_content(metadata_mode=MetadataMode.NONE),
+                            metadata_=node_to_metadata_dict(
+                                textNode,
+                                remove_text=True,
+                                flat_metadata=self.flat_metadata,
+                            ),
+                        )
+                    session.add(item)
+                await session.commit()
+        return ids
+
+    def _apply_filters_and_limit(
+        self,
+        stmt: Select,
+        limit: int,
+        metadata_filters: Optional[MetadataFilters] = None,
+    ):
+        import sqlalchemy
+        if metadata_filters:
+            for filter_ in metadata_filters.filters:
+                bind_parameter = f"value_{filter_.key}"
+                stmt = stmt.where(  # type: ignore
+                    sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}")
+                )
+                stmt = stmt.params(  # type: ignore
+                    **{bind_parameter: str(filter_.value)}
+                )
+        return stmt.limit(limit)  # type: ignore
+
     def _build_query(
         self,
         embedding: Optional[List[float]],
@@ -198,16 +244,8 @@ class PGVectorStore(VectorStore):
         stmt = select(  # type: ignore
             self.table_class, self.table_class.embedding.cosine_distance(embedding)
         ).order_by(self.table_class.embedding.cosine_distance(embedding))
-        if metadata_filters:
-            for filter_ in metadata_filters.filters:
-                bind_parameter = f"value_{filter_.key}"
-                stmt = stmt.where(  # type: ignore
-                    sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}")
-                )
-                stmt = stmt.params(  # type: ignore
-                    **{bind_parameter: str(filter_.value)}
-                )
-        return stmt.limit(limit)  # type: ignore
+
+        return self._apply_filters_and_limit(stmt,limit,metadata_filters)
 
     def _query_with_score(
         self,
@@ -224,7 +262,8 @@ class PGVectorStore(VectorStore):
                         node_id=item.node_id,
                         text=item.text,
                         metadata=item.metadata_,
-                        similarity=(1 - distance),
+                        similarity=(1 - distance) if distance is not None else 0,
+                        search_type="dense"
                     )
                     for item, distance in res.all()
                 ]
@@ -244,73 +283,99 @@ class PGVectorStore(VectorStore):
                         node_id=item.node_id,
                         text=item.text,
                         metadata=item.metadata_,
-                        similarity=(1 - distance),
+                        similarity=(1 - distance) if distance is not None else 0,
+                        search_type="dense",
                     )
                     for item, distance in res.all()
                 ]
 
-    def _rerank(query, results):
+    def _rerank(self, query, results):
+        try:
+            from sentence_transformers import CrossEncoder
+        except ImportError:
+            raise ImportError(
+                "Cannot import sentence-transformers package,",
+                "please `pip install sentence-transformers`",
+            )
+        import itertools
+
         # Based on example code from: https://github.com/pgvector/pgvector-python/blob/master/examples/hybrid_search.py
         # deduplicate
         results = set(itertools.chain(*results))
 
         # re-rank
-        encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-        scores = encoder.predict([(query, item.text if has_key(item, text) else item[1]) for item in results])
+        encoder = CrossEncoder(self._hybrid_search_cross_encoder)
+        scores = encoder.predict([(query, item.text) for item in results])
         return [v for _, v in sorted(zip(scores, results), reverse=True)]
 
-    async def _async_sparse_vector_query(
+    def _build_sparse_query(
             self,
             query_str: Optional[str],
-            limit: int = 10,
+            limit: int,
             metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
+        import sqlalchemy
+        from sqlalchemy import select
+        from sqlalchemy.sql import func, text
+
         if query_str is None:
             raise ValueError(
                 "query_str must be specified for a sparse vector query."
             )
 
-        metadata_filter_clause = ""
-        if metadata_filters:
-            for filter_ in metadata_filters.filters:
-                bind_parameter = f"value_{filter_.key}"
-                metadata_filter_clause += f"metadata_->>'{filter_.key}' = :{bind_parameter}"
-        async with (self._async_session() as async_session):
-            with async_session.connection().connection.cursor() as cur:
-                cur.execute(
-                "SELECT node_id, text, metadata FROM %s, plainto_tsquery('%s', %s) query WHERE to_tsvector('%s', text) @@ query AND %s ORDER BY ts_rank_cd(to_tsvector('%s', text), query) DESC LIMIT %d",
-                (self.table_name,
-                 self._text_search_config,
-                 query,
-                 self._text_search_config,
-                 metadata_filters,
-                 self._text_search_config, limit)
-                )
-            return cur.fetchall()
+        stmt = select(  # type: ignore
+            self.table_class,
+            func.ts_rank(self.table_class.text_search_tsv, func.to_tsquery(query_str)).label('rank')
+        ).where(self.table_class.text_search_tsv.match(query_str)).order_by(text("rank desc"))
+
+        return self._apply_filters_and_limit(stmt, limit, metadata_filters)  # type: ignore
+
+    async def _sparse_query_with_rank(
+            self,
+            query: VectorStoreQuery,
+            limit: int,
+            metadata_filters: Optional[MetadataFilters] = None,
+    ) -> List[DBEmbeddingRow]:
+        stmt = self._build_sparse_query(query.query_str, limit, metadata_filters)
+        async with self._async_session() as async_session:
+            async with async_session.begin():
+                res = await async_session.execute(stmt)
+                return [
+                    DBEmbeddingRow(
+                        node_id=item.node_id,
+                        text=item.text,
+                        metadata=item.metadata_,
+                        similarity=cross_rank,
+                        search_type="sparse",
+                    )
+                    for item, cross_rank in res.all()
+                ]
 
     async def _async_hybrid_query(self, query):
+        import asyncio
         results = await asyncio.gather(
             self._aquery_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
             ),
-            _async_sparse_vector_query(query.query_str, query.similarity_top_k, query.filters)
+            self._sparse_query_with_rank(query, query.similarity_top_k, query.filters)
         )
-        results = rerank(query, results)
+        results = self._rerank(query, results)
 
         return [
             DBEmbeddingRow(
-                node_id=item.node_id if has_key(item, node_id) else item[0],
-                text=item.text if has_key(item, text) else item[1],
-                metadata=item.metadata_ if has_key(item, metadata_) else item[2],
+                node_id=item.node_id,
+                text=item.text,
+                metadata=item.metadata_,
                 similarity= score,
+                search_type=item.search_type,
             )
-            for score, item in results
+            for score, item in results[:query.similarity_top_k]
         ]
 
     async def a_hybrid_query(
         self, query: VectorStoreQuery
     ) -> VectorStoreQueryResult:
-        results = await self._aquery_with_score(query)
+        results = await self._async_hybrid_query(query)
         return self._db_rows_to_query_result(results)
 
     def _db_rows_to_query_result(
