@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.3] - 2023-08-16
 
 ### New Features
 - Added Knowledge Graph RAG Retriever (#7204)
