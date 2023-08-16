@@ -16,14 +16,14 @@ WAIT_MAX_SECONDS = 10
 logger = logging.getLogger(__name__)
 
 
-rel_query_0 = Template(
+rel_query_sample_edge = Template(
     """
 MATCH ()-[e:`$edge_type`]->()
 RETURN [src(e), dst(e)] AS sample_edge LIMIT 1
 """
 )
 
-rel_query_1 = Template(
+rel_query_edge_type = Template(
     """
 MATCH (m)-[:`$edge_type`]->(n)
   WHERE id(m) == "$src_id" AND id(n) == "$dst_id"
@@ -530,13 +530,13 @@ class NebulaGraphStore(GraphStore):
 
             # build relationships types
             sample_edge = self.execute(
-                rel_query_0.substitute(edge_type=edge_type_name)
+                rel_query_sample_edge.substitute(edge_type=edge_type_name)
             ).column_values("sample_edge")
             if len(sample_edge) == 0:
                 continue
             src_id, dst_id = sample_edge[0].cast()
             r = self.execute(
-                rel_query_1.substitute(
+                rel_query_edge_type.substitute(
                     edge_type=edge_type_name, src_id=src_id, dst_id=dst_id
                 )
             ).column_values("rels")
