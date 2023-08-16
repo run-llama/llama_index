@@ -201,7 +201,9 @@ class ServiceContext:
             llm_predictor.llm.callback_manager = callback_manager
 
         # NOTE: the embed_model isn't used in all indices
-        embed_model = embed_model or service_context.embed_model
+        # default to using the embed model passed from the service context
+        if embed_model == "default":
+            embed_model = service_context.embed_model
         embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
