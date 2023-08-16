@@ -38,4 +38,6 @@ It is intenteded for two purposes:
 1. Evaluating changes cheaply and quickly across a large dataset during the development stage.
 2. Flagging outliers for further evaluation (GPT-4 / human alerting) during the production monitoring stage.
 
+We also want the metrics ensembling to be interpretable - the correlation and weighting scores should give an indication of which metrics best capture the  
+
 We will discuss more about the methodology in future updates.
