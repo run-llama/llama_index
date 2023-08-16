@@ -12,7 +12,7 @@ from llama_index.vector_stores.types import (
 from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
 DBEmbeddingRow = namedtuple(
-    "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity", "search_type"]
+    "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"]
 )
 
 
@@ -195,25 +195,6 @@ class PGVectorStore(VectorStore):
                 await session.commit()
         return ids
 
-    async def async_add_sparse_data(self, textNodes: List[TextNode]) -> List[str]:
-        ids = []
-        async with self._async_session() as session:
-            async with session.begin():
-                for textNode in textNodes:
-                    ids.append(textNode.node_id)
-                    item = self.table_class(
-                            node_id=textNode.node_id,
-                            text=textNode.get_content(metadata_mode=MetadataMode.NONE),
-                            metadata_=node_to_metadata_dict(
-                                textNode,
-                                remove_text=True,
-                                flat_metadata=self.flat_metadata,
-                            ),
-                        )
-                    session.add(item)
-                await session.commit()
-        return ids
-
     def _apply_filters_and_limit(
         self,
         stmt: Select,
@@ -263,7 +244,6 @@ class PGVectorStore(VectorStore):
                         text=item.text,
                         metadata=item.metadata_,
                         similarity=(1 - distance) if distance is not None else 0,
-                        search_type="dense"
                     )
                     for item, distance in res.all()
                 ]
@@ -284,7 +264,6 @@ class PGVectorStore(VectorStore):
                         text=item.text,
                         metadata=item.metadata_,
                         similarity=(1 - distance) if distance is not None else 0,
-                        search_type="dense",
                     )
                     for item, distance in res.all()
                 ]
@@ -346,7 +325,6 @@ class PGVectorStore(VectorStore):
                         text=item.text,
                         metadata=item.metadata_,
                         similarity=cross_rank,
-                        search_type="sparse",
                     )
                     for item, cross_rank in res.all()
                 ]
@@ -367,7 +345,6 @@ class PGVectorStore(VectorStore):
                 text=item.text,
                 metadata=item.metadata_,
                 similarity= score,
-                search_type=item.search_type,
             )
             for score, item in results[:query.similarity_top_k]
         ]

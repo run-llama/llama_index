@@ -96,18 +96,41 @@ def node_embeddings() -> List[NodeWithEmbedding]:
     ]
 
 @pytest.fixture(scope="session")
-def text_nodes() -> List[TextNode]:
+def hybrid_node_embeddings() -> List[TextNode]:
     return [
-        TextNode(
-            text="The quick brown fox jumped over the lazy dog.",
-            id_="ccc",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
+        NodeWithEmbedding(
+            embedding=[1.0] * 1536,
+            node=TextNode(
+                text="lorem ipsum",
+                id_="aaa",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+            ),
         ),
-        TextNode(
-            text="The fox and the hound",
-            id_="ddd",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ddd")},
-            extra_info={"test_key": "test_value"},
+        NodeWithEmbedding(
+            embedding=[0.0] * 1536,
+            node=TextNode(
+                text="dolor sit amet",
+                id_="bbb",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
+                extra_info={"test_key": "test_value"},
+            ),
+        ),
+        NodeWithEmbedding(
+            embedding=[1.0] * 1536,
+            node=TextNode(
+                text="The quick brown fox jumped over the lazy dog.",
+                id_="ccc",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
+            ),
+        ),
+        NodeWithEmbedding(
+            embedding=[0.0] * 1536,
+            node=TextNode(
+                text="The fox and the hound",
+                id_="ddd",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ddd")},
+                extra_info={"test_key": "test_value"},
+            ),
         ),
     ]
 
@@ -239,12 +262,12 @@ async def test_hybrid_query(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True,), ])
 async def test_hybrid_query(
-        pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], text_nodes: List[TextNode], use_async: bool
+        pg: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], text_nodes: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add_sparse_data(text_nodes)
+        await pg.add(text_nodes)
     else:
-        pg.add(node_embeddings)
+        pg.add(hybrid_node_embeddings)
     assert isinstance(pg, PGVectorStore)
 
     q = VectorStoreQuery(query_embedding=[0] * 1536, query_str="mr fox", similarity_top_k=2)
