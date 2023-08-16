@@ -15,6 +15,7 @@ from llama_index.llms.base import LLM, LLMMetadata
 from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompts import SimpleInputPrompt
 from llama_index.types import TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
@@ -66,12 +67,17 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         llm: Optional[LLMType] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
     ) -> None:
         """Initialize params."""
         self._llm = resolve_llm(llm)
 
         if callback_manager:
             self._llm.callback_manager = callback_manager
+
+        self.system_prompt = system_prompt
+        self.query_wrapper_prompt = query_wrapper_prompt
 
     @property
     def llm(self) -> LLM:
@@ -92,6 +98,16 @@ class LLMPredictor(BaseLLMPredictor):
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
+            if self.system_prompt:
+                prompt.prompt_selector.default_prompt.template = (
+                    self.system_prompt
+                    + "\n\n"
+                    + prompt.prompt_selector.default_prompt.template
+                )
+            if self.query_wrapper_prompt:
+                prompt.partial_dict["query_str"] = self.query_wrapper_prompt.format(
+                    query_str=prompt.partial_dict["query_str"]
+                )
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             response = self._llm.complete(formatted_prompt)
             output = response.text
@@ -107,6 +123,16 @@ class LLMPredictor(BaseLLMPredictor):
             chat_response = self._llm.stream_chat(messages)
             stream_tokens = stream_chat_response_to_tokens(chat_response)
         else:
+            if self.system_prompt:
+                prompt.prompt_selector.default_prompt.template = (
+                    self.system_prompt
+                    + "\n\n"
+                    + prompt.prompt_selector.default_prompt.template
+                )
+            if self.query_wrapper_prompt:
+                prompt.partial_dict["query_str"] = self.query_wrapper_prompt.format(
+                    query_str=prompt.partial_dict["query_str"]
+                )
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             stream_response = self._llm.stream_complete(formatted_prompt)
             stream_tokens = stream_completion_response_to_tokens(stream_response)
@@ -121,6 +147,16 @@ class LLMPredictor(BaseLLMPredictor):
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
+            if self.system_prompt:
+                prompt.prompt_selector.default_prompt.template = (
+                    self.system_prompt
+                    + "\n\n"
+                    + prompt.prompt_selector.default_prompt.template
+                )
+            if self.query_wrapper_prompt:
+                prompt.partial_dict["query_str"] = self.query_wrapper_prompt.format(
+                    query_str=prompt.partial_dict["query_str"]
+                )
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             response = await self._llm.acomplete(formatted_prompt)
             output = response.text
@@ -136,6 +172,16 @@ class LLMPredictor(BaseLLMPredictor):
             chat_response = await self._llm.astream_chat(messages)
             stream_tokens = await astream_chat_response_to_tokens(chat_response)
         else:
+            if self.system_prompt:
+                prompt.prompt_selector.default_prompt.template = (
+                    self.system_prompt
+                    + "\n\n"
+                    + prompt.prompt_selector.default_prompt.template
+                )
+            if self.query_wrapper_prompt:
+                prompt.partial_dict["query_str"] = self.query_wrapper_prompt.format(
+                    query_str=prompt.partial_dict["query_str"]
+                )
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             stream_response = await self._llm.astream_complete(formatted_prompt)
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
