@@ -105,7 +105,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         return self._graph_store
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        from llama_index.indices.knowledge_graph.retriever import (
+        from llama_index.indices.knowledge_graph.retrievers import (
             KGRetrieverMode,
             KGTableRetriever,
         )

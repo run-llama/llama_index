@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added Knowledge Graph RAG Retriever (#7204)
+
 ### Bug Fixes / Nits
 - accept `api_key` kwarg in OpenAI LLM class constructor (#7263)
 - Fix to create separate queue instances for separate instances of `StreamingAgentChatResponse` (#7264)
