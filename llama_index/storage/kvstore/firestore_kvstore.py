@@ -23,7 +23,7 @@ class FirestoreKVStore(BaseKVStore):
     """
 
     def __init__(
-        self, project: str = None, database: str = DEFAULT_FIRESTORE_DATABASE
+        self, project: Optional[str] = None, database: str = DEFAULT_FIRESTORE_DATABASE
     ) -> None:
         try:
             from google.cloud import firestore_v1 as firestore
@@ -37,7 +37,7 @@ class FirestoreKVStore(BaseKVStore):
     def firestore_collection(self, collection: str) -> str:
         return collection.replace("/", SLASH_REPLACEMENT)
 
-    def replace_field_name_set(self, val: Dict[str, Any]) -> str:
+    def replace_field_name_set(self, val: Dict[str, Any]) -> Dict[str, Any]:
         val = val.copy()
         for k, v in FIELD_NAME_REPLACE_SET.items():
             if k in val:
@@ -45,7 +45,7 @@ class FirestoreKVStore(BaseKVStore):
                 val.pop(k)
         return val
 
-    def replace_field_name_get(self, val: Dict[str, Any]) -> str:
+    def replace_field_name_get(self, val: Dict[str, Any]) -> Dict[str, Any]:
         val = val.copy()
         for k, v in FIELD_NAME_REPLACE_GET.items():
             if k in val:
