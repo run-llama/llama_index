@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Union, Iterator, Generator, Mapping, Sequence
+from typing import List, Dict, Any, Union, Iterator, Generator, Mapping, Sequence, Tuple
 
 import pytest
 from llama_index.llms.base import (
@@ -104,7 +104,11 @@ class MockRESTfulClient:
 
 
 class MockXinference(Xinference):
-    def load_model(self, endpoint: str, model_uid: str) -> Any:
+    def load_model(
+        self,
+        model_uid: str,
+        endpoint: str,
+    ) -> Tuple[Any, int, Dict[Any, Any]]:
         client = MockRESTfulClient()  # type: ignore[assignment]
 
         assert client is not None

@@ -51,7 +51,7 @@ class HuggingFaceLLM(CustomLLM):
         default_factory=list,
         description=(
             "The stopping ids to use. "
-            "Generation stops when these token IDs are predicted.",
+            "Generation stops when these token IDs are predicted."
         ),
     )
     tokenizer_outputs_to_remove: list = Field(
