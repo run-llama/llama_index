@@ -8,8 +8,8 @@ from llama_index.constants import DEFAULT_CHUNK_SIZE
 from llama_index.text_splitter.types import MetadataAwareTextSplitter
 from llama_index.text_splitter.utils import (
     split_by_char,
-    split_by_sentence_tokenizer,
     split_by_regex,
+    split_by_sentence_tokenizer,
     split_by_sep,
 )
 from llama_index.utils import globals_helper
@@ -132,28 +132,32 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         """Merge splits into chunks."""
         chunks: List[str] = []
         cur_chunk: List[str] = []
-        cur_tokens = 0
+        cur_chunk_len = 0
         while len(splits) > 0:
-            cur_token = splits[0]
-            cur_len = len(self.tokenizer(cur_token.text))
-            if cur_len > chunk_size:
+            cur_split = splits[0]
+            cur_split_len = len(self.tokenizer(cur_split.text))
+            if cur_split_len > chunk_size:
                 raise ValueError("Single token exceed chunk size")
-            if cur_tokens + cur_len > chunk_size:
+            if cur_chunk_len + cur_split_len > chunk_size:
+                # if adding split to current chunk exceed chunk size: close out chunk
                 chunks.append("".join(cur_chunk).strip())
                 cur_chunk = []
-                cur_tokens = 0
+                cur_chunk_len = 0
             else:
                 if (
-                    cur_token.is_sentence
-                    or cur_tokens + cur_len < chunk_size - self._chunk_overlap
+                    cur_split.is_sentence
+                    or cur_chunk_len + cur_split_len < chunk_size - self._chunk_overlap
+                    or cur_chunk == []
                 ):
-                    cur_tokens += cur_len
-                    cur_chunk.append(cur_token.text)
+                    # add split to chunk
+                    cur_chunk_len += cur_split_len
+                    cur_chunk.append(cur_split.text)
                     splits.pop(0)
                 else:
+                    # close out chunk
                     chunks.append("".join(cur_chunk).strip())
                     cur_chunk = []
-                    cur_tokens = 0
+                    cur_chunk_len = 0
 
         # handle the last chunk
         chunk = "".join(cur_chunk).strip()
