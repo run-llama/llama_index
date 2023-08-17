@@ -14,7 +14,7 @@ from llama_index.agent.react.types import (
 )
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
@@ -180,112 +180,112 @@ class ReActAgent(BaseAgent):
         # TODO: add sources from reasoning steps
         return AgentChatResponse(response=response_step.response, sources=[])
 
+    @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        with self.callback_manager.as_trace("chat"):
-            if chat_history is not None:
-                self._memory.set(chat_history)
+        if chat_history is not None:
+            self._memory.set(chat_history)
 
-            self._memory.put(ChatMessage(content=message, role="user"))
+        self._memory.put(ChatMessage(content=message, role="user"))
 
-            current_reasoning: List[BaseReasoningStep] = []
-            # start loop
-            for _ in range(self._max_iterations):
-                # prepare inputs
-                input_chat = self._react_chat_formatter.format(
-                    chat_history=self._memory.get(), current_reasoning=current_reasoning
-                )
-                # send prompt
-                chat_response = self._llm.chat(input_chat)
-                # given react prompt outputs, call tools or return response
-                reasoning_steps, is_done = self._process_actions(output=chat_response)
-                current_reasoning.extend(reasoning_steps)
-                if is_done:
-                    break
-
-            response = self._get_response(current_reasoning)
-            self._memory.put(
-                ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
+        current_reasoning: List[BaseReasoningStep] = []
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
             )
-            return response
+            # send prompt
+            chat_response = self._llm.chat(input_chat)
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, is_done = self._process_actions(output=chat_response)
+            current_reasoning.extend(reasoning_steps)
+            if is_done:
+                break
 
+        response = self._get_response(current_reasoning)
+        self._memory.put(
+            ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
+        )
+        return response
+
+    @trace_method("chat")
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        with self.callback_manager.as_trace("chat"):
-            if chat_history is not None:
-                self._memory.set(chat_history)
+        if chat_history is not None:
+            self._memory.set(chat_history)
 
-            self._memory.put(ChatMessage(content=message, role="user"))
+        self._memory.put(ChatMessage(content=message, role="user"))
 
-            current_reasoning: List[BaseReasoningStep] = []
-            # start loop
-            for _ in range(self._max_iterations):
-                # prepare inputs
-                input_chat = self._react_chat_formatter.format(
-                    chat_history=self._memory.get(), current_reasoning=current_reasoning
-                )
-                # send prompt
-                chat_response = await self._llm.achat(input_chat)
-                # given react prompt outputs, call tools or return response
-                reasoning_steps, is_done = await self._aprocess_actions(
-                    output=chat_response
-                )
-                current_reasoning.extend(reasoning_steps)
-                if is_done:
-                    break
-
-            response = self._get_response(current_reasoning)
-            self._memory.put(
-                ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
+        current_reasoning: List[BaseReasoningStep] = []
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
             )
-            return response
+            # send prompt
+            chat_response = await self._llm.achat(input_chat)
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, is_done = await self._aprocess_actions(
+                output=chat_response
+            )
+            current_reasoning.extend(reasoning_steps)
+            if is_done:
+                break
 
+        response = self._get_response(current_reasoning)
+        self._memory.put(
+            ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
+        )
+        return response
+
+    @trace_method("chat")
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        with self.callback_manager.as_trace("chat"):
-            if chat_history is not None:
-                self._memory.set(chat_history)
-            self._memory.put(ChatMessage(content=message, role="user"))
+        if chat_history is not None:
+            self._memory.set(chat_history)
+        self._memory.put(ChatMessage(content=message, role="user"))
 
-            current_reasoning: List[BaseReasoningStep] = []
-            # start loop
-            for _ in range(self._max_iterations):
-                # prepare inputs
-                input_chat = self._react_chat_formatter.format(
-                    chat_history=self._memory.get(), current_reasoning=current_reasoning
-                )
-                # send prompt
-                chat_stream = self._llm.stream_chat(input_chat)
-
-                # iterate over stream, break out if is final answer after the "Answer: "
-                is_done = False
-                full_response = ChatResponse(
-                    message=ChatMessage(content=None, role="assistant")
-                )
-                for r in chat_stream:
-                    if "Answer: " in (r.message.content or ""):
-                        is_done = True
-                        break
-                    full_response = r
-                if is_done:
-                    break
-
-                # given react prompt outputs, call tools or return response
-                reasoning_steps, _ = self._process_actions(output=full_response)
-                current_reasoning.extend(reasoning_steps)
-
-            # Get the response in a separate thread so we can yield the response
-            chat_stream_response = StreamingAgentChatResponse(chat_stream=chat_stream)
-            thread = Thread(
-                target=chat_stream_response.write_response_to_history,
-                args=(self._memory,),
+        current_reasoning: List[BaseReasoningStep] = []
+        # start loop
+        for _ in range(self._max_iterations):
+            # prepare inputs
+            input_chat = self._react_chat_formatter.format(
+                chat_history=self._memory.get(), current_reasoning=current_reasoning
             )
-            thread.start()
-            return chat_stream_response
+            # send prompt
+            chat_stream = self._llm.stream_chat(input_chat)
+
+            # iterate over stream, break out if is final answer after the "Answer: "
+            is_done = False
+            full_response = ChatResponse(
+                message=ChatMessage(content=None, role="assistant")
+            )
+            for r in chat_stream:
+                if "Answer: " in (r.message.content or ""):
+                    is_done = True
+                    break
+                full_response = r
+            if is_done:
+                break
+
+            # given react prompt outputs, call tools or return response
+            reasoning_steps, _ = self._process_actions(output=full_response)
+            current_reasoning.extend(reasoning_steps)
+
+        # Get the response in a separate thread so we can yield the response
+        chat_stream_response = StreamingAgentChatResponse(chat_stream=chat_stream)
+        thread = Thread(
+            target=chat_stream_response.write_response_to_history,
+            args=(self._memory,),
+        )
+        thread.start()
+        return chat_stream_response
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None

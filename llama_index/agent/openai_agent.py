@@ -6,7 +6,7 @@ from threading import Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
@@ -295,57 +295,57 @@ class BaseOpenAIAgent(BaseAgent):
 
         return agent_chat_response
 
+    @trace_method("chat")
     def chat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
-        with self.callback_manager.as_trace("chat"):
-            chat_response = self._chat(
-                message, chat_history, function_call, mode=ChatResponseMode.WAIT
-            )
-            assert isinstance(chat_response, AgentChatResponse)
-            return chat_response
+        chat_response = self._chat(
+            message, chat_history, function_call, mode=ChatResponseMode.WAIT
+        )
+        assert isinstance(chat_response, AgentChatResponse)
+        return chat_response
 
+    @trace_method("chat")
     async def achat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
-        with self.callback_manager.as_trace("chat"):
-            chat_response = await self._achat(
-                message, chat_history, function_call, mode=ChatResponseMode.WAIT
-            )
-            assert isinstance(chat_response, AgentChatResponse)
-            return chat_response
+        chat_response = await self._achat(
+            message, chat_history, function_call, mode=ChatResponseMode.WAIT
+        )
+        assert isinstance(chat_response, AgentChatResponse)
+        return chat_response
 
+    @trace_method("chat")
     def stream_chat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
-        with self.callback_manager.as_trace("chat"):
-            chat_response = self._chat(
-                message, chat_history, function_call, mode=ChatResponseMode.STREAM
-            )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
-            return chat_response
+        chat_response = self._chat(
+            message, chat_history, function_call, mode=ChatResponseMode.STREAM
+        )
+        assert isinstance(chat_response, StreamingAgentChatResponse)
+        return chat_response
 
+    @trace_method("chat")
     async def astream_chat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
-        with self.callback_manager.as_trace("chat"):
-            chat_response = await self._achat(
-                message, chat_history, function_call, mode=ChatResponseMode.STREAM
-            )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
-            return chat_response
+        chat_response = await self._achat(
+            message, chat_history, function_call, mode=ChatResponseMode.STREAM
+        )
+        assert isinstance(chat_response, StreamingAgentChatResponse)
+        return chat_response
 
 
 class OpenAIAgent(BaseOpenAIAgent):
