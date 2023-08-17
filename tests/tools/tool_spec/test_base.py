@@ -3,7 +3,7 @@
 from pydantic import BaseModel
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.types import ToolMetadata
-from typing import List, Type
+from typing import List, Type, Tuple, Union
 import pytest
 
 
@@ -21,7 +21,7 @@ class AbcSchema(BaseModel):
 
 
 class TestToolSpec(BaseToolSpec):
-    spec_functions: List[str] = ["foo", "bar", "abc"]
+    spec_functions: List[Union[str, Tuple[str, str]]] = ["foo", "bar", "abc"]
 
     def foo(self, arg1: str, arg2: int) -> str:
         """Foo."""
@@ -32,11 +32,11 @@ class TestToolSpec(BaseToolSpec):
         return f"bar {arg1}"
 
     async def afoo(self, arg1: str, arg2: int) -> str:
-        """Async Foo."""
+        """Afoo."""
         return self.foo(arg1=arg1, arg2=arg2)
 
     async def abar(self, arg1: bool) -> str:
-        """Async bar."""
+        """Abar."""
         return self.bar(arg1=arg1)
 
     def abc(self, arg1: str) -> str:
@@ -46,6 +46,8 @@ class TestToolSpec(BaseToolSpec):
     def get_fn_schema_from_fn_name(self, fn_name: str) -> Type[BaseModel]:
         """Return map from function name."""
         if fn_name == "foo":
+            return FooSchema
+        elif fn_name == "afoo":
             return FooSchema
         elif fn_name == "bar":
             return BarSchema
@@ -102,6 +104,15 @@ async def test_tool_spec_async() -> None:
     assert len(tools) == 3
     assert await tools[0].async_fn("hello", 1) == "foo hello 1"
     assert str(await tools[1].acall(True)) == "bar True"
+
+
+def test_async_patching() -> None:
+    # test sync patching of async function
+    tool_spec = TestToolSpec()
+    tool_spec.spec_functions = ["afoo"]
+    tools = tool_spec.to_tool_list()
+    assert len(tools) == 1
+    assert tools[0].fn("hello", 1) == "foo hello 1"
 
 
 def test_tool_spec_schema() -> None:
