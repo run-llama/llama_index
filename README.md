@@ -61,6 +61,12 @@ Please check it out for the most up-to-date tutorials, how-to guides, references
 pip install llama-index
 ```
 
+To enable database related capabilities include `database` extra like this:
+```
+pip install llama-index[database]
+```
+
+
 Examples are in the `examples` folder. Indices are in the `indices` folder (see list of indices below).
 
 To build a simple vector store index:

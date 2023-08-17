@@ -16,7 +16,6 @@ install_requires = [
     "tiktoken",
     "dataclasses_json",
     "langchain>=0.0.262,<=0.0.266",
-    "sqlalchemy>=2.0.15",
     "numpy",
     "tenacity>=8.2.0,<9.0.0",
     "openai>=0.26.4",
@@ -41,4 +40,9 @@ setup(
     url="https://github.com/jerryjliu/llama_index",
     include_package_data=True,
     long_description_content_type="text/markdown",
+    extras_require={
+        "database": [
+            "sqlalchemy>=2.0.15",
+        ],
+    },
 )
