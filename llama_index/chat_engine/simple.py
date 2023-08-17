@@ -11,6 +11,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.callbacks.base import CallbackManager
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -25,10 +26,12 @@ class SimpleChatEngine(BaseChatEngine):
         llm: LLM,
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._llm = llm
         self._memory = memory
         self._prefix_messages = prefix_messages
+        self._callback_manager = callback_manager or CallbackManager([])
 
     @classmethod
     def from_defaults(
@@ -59,72 +62,76 @@ class SimpleChatEngine(BaseChatEngine):
 
         prefix_messages = prefix_messages or []
 
-        return cls(llm=llm, memory=memory, prefix_messages=prefix_messages)
+        return cls(llm=llm, memory=memory, prefix_messages=prefix_messages, callback_manager=service_context.callback_manager)
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        if chat_history is not None:
-            self._memory.set(chat_history)
-        self._memory.put(ChatMessage(content=message, role="user"))
-        all_messages = self._prefix_messages + self._memory.get()
+        with self._callback_manager.as_trace("chat"):
+            if chat_history is not None:
+                self._memory.set(chat_history)
+            self._memory.put(ChatMessage(content=message, role="user"))
+            all_messages = self._prefix_messages + self._memory.get()
 
-        chat_response = self._llm.chat(all_messages)
-        ai_message = chat_response.message
-        self._memory.put(ai_message)
+            chat_response = self._llm.chat(all_messages)
+            ai_message = chat_response.message
+            self._memory.put(ai_message)
 
-        return AgentChatResponse(response=str(chat_response.message.content))
+            return AgentChatResponse(response=str(chat_response.message.content))
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        if chat_history is not None:
-            self._memory.set(chat_history)
-        self._memory.put(ChatMessage(content=message, role="user"))
-        all_messages = self._prefix_messages + self._memory.get()
+        with self._callback_manager.as_trace("chat"):
+            if chat_history is not None:
+                self._memory.set(chat_history)
+            self._memory.put(ChatMessage(content=message, role="user"))
+            all_messages = self._prefix_messages + self._memory.get()
 
-        chat_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(all_messages)
-        )
-        thread = Thread(
-            target=chat_response.write_response_to_history, args=(self._memory,)
-        )
-        thread.start()
+            chat_response = StreamingAgentChatResponse(
+                chat_stream=self._llm.stream_chat(all_messages)
+            )
+            thread = Thread(
+                target=chat_response.write_response_to_history, args=(self._memory,)
+            )
+            thread.start()
 
-        return chat_response
+            return chat_response
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        if chat_history is not None:
-            self._memory.set(chat_history)
-        self._memory.put(ChatMessage(content=message, role="user"))
-        all_messages = self._prefix_messages + self._memory.get()
+        with self._callback_manager.as_trace("chat"):
+            if chat_history is not None:
+                self._memory.set(chat_history)
+            self._memory.put(ChatMessage(content=message, role="user"))
+            all_messages = self._prefix_messages + self._memory.get()
 
-        chat_response = await self._llm.achat(all_messages)
-        ai_message = chat_response.message
-        self._memory.put(ai_message)
+            chat_response = await self._llm.achat(all_messages)
+            ai_message = chat_response.message
+            self._memory.put(ai_message)
 
-        return AgentChatResponse(response=str(chat_response.message.content))
+            return AgentChatResponse(response=str(chat_response.message.content))
 
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        if chat_history is not None:
-            self._memory.set(chat_history)
-        self._memory.put(ChatMessage(content=message, role="user"))
-        all_messages = self._prefix_messages + self._memory.get()
+        with self._callback_manager.as_trace("chat"):
+            if chat_history is not None:
+                self._memory.set(chat_history)
+            self._memory.put(ChatMessage(content=message, role="user"))
+            all_messages = self._prefix_messages + self._memory.get()
 
-        chat_response = StreamingAgentChatResponse(
-            achat_stream=await self._llm.astream_chat(all_messages)
-        )
-        thread = Thread(
-            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
-            args=(self._memory,),
-        )
-        thread.start()
+            chat_response = StreamingAgentChatResponse(
+                achat_stream=await self._llm.astream_chat(all_messages)
+            )
+            thread = Thread(
+                target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
+                args=(self._memory,),
+            )
+            thread.start()
 
-        return chat_response
+            return chat_response
 
     def reset(self) -> None:
         self._memory.reset()

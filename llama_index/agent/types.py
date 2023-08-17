@@ -12,18 +12,20 @@ class BaseAgent(BaseChatEngine, BaseQueryEngine):
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        agent_response = self.chat(
-            query_bundle.query_str,
-            chat_history=[],
-        )
-        return Response(response=str(agent_response))
+        with self.callback_manager.as_trace("query"):
+            agent_response = self.chat(
+                query_bundle.query_str,
+                chat_history=[],
+            )
+            return Response(response=str(agent_response))
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        agent_response = await self.achat(
-            query_bundle.query_str,
-            chat_history=[],
-        )
-        return Response(response=str(agent_response))
+        with self.callback_manager.as_trace("query"):
+            agent_response = await self.achat(
+                query_bundle.query_str,
+                chat_history=[],
+            )
+            return Response(response=str(agent_response))
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None

@@ -167,13 +167,14 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         """Chat."""
-        formatted_message = self._build_formatted_message(message)
-        if self._verbose:
-            print_text(formatted_message + "\n", color="yellow")
+        with self.callback_manager.as_trace("chat"):
+            formatted_message = self._build_formatted_message(message)
+            if self._verbose:
+                print_text(formatted_message + "\n", color="yellow")
 
-        return super().chat(
-            formatted_message, chat_history=chat_history, function_call=function_call
-        )
+            return super().chat(
+                formatted_message, chat_history=chat_history, function_call=function_call
+            )
 
     async def achat(
         self,
@@ -182,10 +183,11 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         """Chat."""
-        formatted_message = self._build_formatted_message(message)
-        if self._verbose:
-            print_text(formatted_message + "\n", color="yellow")
+        with self.callback_manager.as_trace("chat"):
+            formatted_message = self._build_formatted_message(message)
+            if self._verbose:
+                print_text(formatted_message + "\n", color="yellow")
 
-        return await super().achat(
-            formatted_message, chat_history=chat_history, function_call=function_call
-        )
+            return await super().achat(
+                formatted_message, chat_history=chat_history, function_call=function_call
+            )
