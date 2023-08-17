@@ -62,7 +62,12 @@ class SimpleChatEngine(BaseChatEngine):
 
         prefix_messages = prefix_messages or []
 
-        return cls(llm=llm, memory=memory, prefix_messages=prefix_messages, callback_manager=service_context.callback_manager)
+        return cls(
+            llm=llm,
+            memory=memory,
+            prefix_messages=prefix_messages,
+            callback_manager=service_context.callback_manager,
+        )
 
     @trace_method("chat")
     def chat(
