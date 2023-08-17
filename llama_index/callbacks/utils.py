@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, cast
 from llama_index.callbacks.base import CallbackManager
 
@@ -24,7 +25,13 @@ def trace_method(
             callback_manager = cast(CallbackManager, callback_manager)
             with callback_manager.as_trace(trace_id):
                 return func(self, *args, **kwargs)
+        
+        async def async_wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
+            callback_manager = getattr(self, callback_manager_attr)
+            callback_manager = cast(CallbackManager, callback_manager)
+            with callback_manager.as_trace(trace_id):
+                return await func(self, *args, **kwargs)
 
-        return wrapper
+        return async_wrapper if asyncio.iscoroutinefunction(func) else wrapper
 
     return decorator
