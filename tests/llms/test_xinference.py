@@ -104,11 +104,13 @@ class MockRESTfulClient:
 
 
 class MockXinference(Xinference):
-    def load(self) -> None:
-        self._client = MockRESTfulClient()  # type: ignore[assignment]
+    def load_model(self, endpoint: str, model_uid: str) -> Any:
+        client = MockRESTfulClient()  # type: ignore[assignment]
 
-        assert self._client is not None
-        self._generator = self._client.get_model()
+        assert client is not None
+        generator = client.get_model()
+
+        return generator, 256, {}
 
 
 def test_init() -> None:
@@ -118,7 +120,6 @@ def test_init() -> None:
     )
     assert dummy.model_uid == "uid"
     assert dummy.endpoint == "endpoint"
-    assert isinstance(dummy._client, MockRESTfulClient)
 
 
 @pytest.mark.parametrize("chat_history", [mock_chat_history, tuple(mock_chat_history)])
