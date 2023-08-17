@@ -31,7 +31,6 @@ def test_chinese_text(chinese_text: str) -> None:
 
 
 def test_contiguous_text(contiguous_text: str) -> None:
-    # NOTE: sentence splitter does not split contiguous text
     splitter = SentenceSplitter(chunk_size=100, chunk_overlap=0)
     chunks = splitter.split_text(contiguous_text)
     assert len(chunks) == 11
@@ -53,3 +52,11 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_edge_case():
+    """Test case from: https://github.com/jerryjliu/llama_index/issues/7287"""
+    text = "\n\nMarch 2020\n\nL&D Metric (Org) - 2.92%\n\n| Training Name                                                                                                          | Catergory       | Duration (hrs) | Invitees | Attendance | Target Training Hours | Actual Training Hours | Adoption % |\n| ---------------------------------------------------------------------------------------------------------------------- | --------------- | -------------- | -------- | ---------- | --------------------- | --------------------- | ---------- |\n| Overview of Data Analytics                                      | Technical       | 1              | 23       | 10         | 23                    | 10                    | 43.5       |\n| Sales & Learning Best Practices - Introduction to OTT Platforms | Technical       | 0.5            | 16       | 12         | 8                     | 6                     | 75         |\n| Leading Through OKRs                                                                                                   | Lifeskill       | 1              | 1        | 1          | 1                     | 1                     | 100        |\n| COVID: Lockdown Awareness Session                                                                                      | Lifeskill       | 2              | 1        | 1          | 2                     | 2                     | 100        |\n| Navgati Interview                                                                                                      | Lifeskill       | 2              | 6        | 6          | 12                    | 12                    | 100        |\n| leadership Summit                                               | Leadership      | 18             | 42       | 42         | 756                   | 756                   | 100        |\n| AWS - AI/ML - Online Conference                                                                                        | Project Related | 15             | 2        | 2          | 30                    | 30                    | 100        |\n"  # noqa
+    splitter = SentenceSplitter()
+    chunks = splitter.split_text(text)
+    assert len(chunks) == 2
