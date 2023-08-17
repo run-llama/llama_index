@@ -40,7 +40,9 @@ from llama_index.llms.openai_utils import (
 class OpenAI(LLM):
     model: str = Field(description="The OpenAI model to use.")
     temperature: str = Field(description="The tempature to use during generation.")
-    max_tokens: int = Field(description="The maximum number of tokens to generate.")
+    max_tokens: Optional[int] = Field(
+        description="The maximum number of tokens to generate."
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additonal kwargs for the OpenAI API."
     )

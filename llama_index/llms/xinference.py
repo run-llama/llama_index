@@ -45,7 +45,9 @@ class Xinference(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
 
-        generator, context_window, model_description = self.load(model_uid, endpoint)
+        generator, context_window, model_description = self.load_model(
+            model_uid, endpoint
+        )
         self._generator = generator
         super().__init__(
             model_uid=model_uid,
@@ -56,7 +58,7 @@ class Xinference(CustomLLM):
             callback_manager=callback_manager,
         )
 
-    def load(self, model_uid: str, endpoint: str) -> Tuple[Any, int, dict]:
+    def load_model(self, model_uid: str, endpoint: str) -> Tuple[Any, int, dict]:
         try:
             from xinference.client import RESTfulClient
         except ImportError:
