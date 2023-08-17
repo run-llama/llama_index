@@ -31,7 +31,7 @@ class SimpleChatEngine(BaseChatEngine):
         self._llm = llm
         self._memory = memory
         self._prefix_messages = prefix_messages
-        self._callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @classmethod
     def from_defaults(

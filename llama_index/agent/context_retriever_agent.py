@@ -8,7 +8,7 @@ from llama_index.agent.openai_agent import (
     BaseOpenAIAgent,
 )
 from llama_index.bridge.langchain import print_text
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AgentChatResponse,
 )
@@ -167,14 +167,13 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         """Chat."""
-        with self.callback_manager.as_trace("chat"):
-            formatted_message = self._build_formatted_message(message)
-            if self._verbose:
-                print_text(formatted_message + "\n", color="yellow")
+        formatted_message = self._build_formatted_message(message)
+        if self._verbose:
+            print_text(formatted_message + "\n", color="yellow")
 
-            return super().chat(
-                formatted_message, chat_history=chat_history, function_call=function_call
-            )
+        return super().chat(
+            formatted_message, chat_history=chat_history, function_call=function_call
+        )
 
     async def achat(
         self,
@@ -183,11 +182,10 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         """Chat."""
-        with self.callback_manager.as_trace("chat"):
-            formatted_message = self._build_formatted_message(message)
-            if self._verbose:
-                print_text(formatted_message + "\n", color="yellow")
+        formatted_message = self._build_formatted_message(message)
+        if self._verbose:
+            print_text(formatted_message + "\n", color="yellow")
 
-            return await super().achat(
-                formatted_message, chat_history=chat_history, function_call=function_call
-            )
+        return await super().achat(
+            formatted_message, chat_history=chat_history, function_call=function_call
+        )
