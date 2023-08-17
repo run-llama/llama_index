@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 from llama_index.storage.index_store.firestore_indexstore import FirestoreIndexStore
