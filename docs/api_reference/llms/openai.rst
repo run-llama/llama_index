@@ -1,6 +1,4 @@
 OpenAI
 ======
 
-.. automodule:: llama_index.llms.openai.OpenAI
-   :members:
-   :inherited-members:
+.. autopydantic_model:: llama_index.llms.openai.OpenAI
