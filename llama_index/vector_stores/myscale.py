@@ -63,7 +63,7 @@ class MyScaleVectorStore(VectorStore):
         myscale_client: Optional[Any] = None,
         table: str = "llama_index",
         database: str = "default",
-        index_type: str = "IVFFLAT",
+        index_type: str = "MSTG",
         metric: str = "cosine",
         batch_size: int = 32,
         index_params: Optional[dict] = None,

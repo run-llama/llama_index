@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### New Features
+- Changed default MyScale index format to `MSTG` (#7288)
 - Added tracing to chat engines/agents (#7304)
 
 ### Bug Fixes / Nits
