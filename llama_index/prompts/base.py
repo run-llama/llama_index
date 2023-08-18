@@ -148,7 +148,7 @@ class SelectorPromptTemplate:
         ] = None,
     ):
         self.default_prompt = default_prompt
-        self.conditional = conditionals or []
+        self.conditionals = conditionals or []
 
     @property
     def metadata(self) -> dict:
