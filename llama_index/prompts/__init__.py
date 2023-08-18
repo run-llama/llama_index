@@ -2,6 +2,6 @@
 
 from llama_index.prompts.base import (BasePromptTemplate, ChatPromptTemplate,
                                       Prompt, PromptTemplate,
-                                      SelectorPromptTemplate)
+                                      SelectorPromptTemplate, PromptType)
 
-__all__ = ["Prompt", "PromptTemplate", "SelectorPromptTemplate", "ChatPromptTemplate"]
+__all__ = ["Prompt", "PromptTemplate", "SelectorPromptTemplate", "ChatPromptTemplate", "BasePromptTemplate", "PromptType"]

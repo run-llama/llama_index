@@ -2,10 +2,10 @@ from string import Formatter
 from typing import List
 
 from llama_index.llms.base import LLM
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate
 
 
-def get_empty_prompt_txt(prompt: Prompt) -> str:
+def get_empty_prompt_txt(prompt: BasePromptTemplate) -> str:
     """Get empty prompt text.
 
     Substitute empty strings in parts of the prompt that have
@@ -13,17 +13,12 @@ def get_empty_prompt_txt(prompt: Prompt) -> str:
     been partially formatted. This is used to compute the initial tokens.
 
     """
-    fmt_dict = {
-        v: ""
-        for v in prompt.get_langchain_prompt().input_variables
-        if v not in prompt.partial_dict
-    }
-    # TODO: change later from llm=None
+    fmt_dict = {v: "" for v in prompt.template_vars}
     empty_prompt_txt = prompt.format(llm=None, **fmt_dict)
     return empty_prompt_txt
 
 
-def get_biggest_prompt(prompts: List[Prompt]) -> Prompt:
+def get_biggest_prompt(prompts: List[BasePromptTemplate]) -> BasePromptTemplate:
     """Get biggest prompt.
 
     Oftentimes we need to fetch the biggest prompt, in order to

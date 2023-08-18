@@ -28,7 +28,7 @@ from functools import reduce
 from llama_index.llms.base import LLM
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.node_parser.interface import BaseExtractor
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode
 
 
@@ -167,7 +167,7 @@ class TitleExtractor(MetadataFeatureExtractor):
 
         title_candidates = [
             self._llm_predictor.predict(
-                Prompt(template=self._node_template),
+                PromptTemplate(template=self._node_template),
                 context_str=cast(TextNode, node).text,
             )
             for node in nodes_to_extract_title
@@ -178,7 +178,7 @@ class TitleExtractor(MetadataFeatureExtractor):
             )
 
             title = self._llm_predictor.predict(
-                Prompt(template=self._combine_template),
+                PromptTemplate(template=self._combine_template),
                 context_str=titles,
             )
         else:
@@ -220,7 +220,7 @@ class KeywordExtractor(MetadataFeatureExtractor):
 
             # TODO: figure out a good way to allow users to customize keyword template
             keywords = self._llm_predictor.predict(
-                Prompt(
+                PromptTemplate(
                     template=f"""\
 {{context_str}}. Give {self._keywords} unique keywords for this \
 document. Format as comma separated. Keywords: """
@@ -269,7 +269,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
             # Extract the title from the first node
             # TODO: figure out a good way to allow users to customize template
             questions = self._llm_predictor.predict(
-                Prompt(
+                PromptTemplate(
                     template=self._prompt_template
                     or f"""\
 {{context_str}}. Given the contextual information, \
@@ -326,7 +326,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
             raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
         node_summaries = [
             self._llm_predictor.predict(
-                Prompt(template=self._prompt_template),
+                PromptTemplate(template=self._prompt_template),
                 context_str=cast(TextNode, node).text,
             ).strip()
             for node in nodes

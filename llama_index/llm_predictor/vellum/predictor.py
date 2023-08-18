@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Tuple, cast
 
-from llama_index import Prompt
+from llama_index.prompts import BasePromptTemplate
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata, LLM
@@ -50,7 +50,7 @@ class VellumPredictor(BaseLLMPredictor):
         """Get the LLM."""
         raise NotImplementedError("Vellum does not expose the LLM.")
 
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict the answer to a query."""
 
         from vellum import GenerateRequest
@@ -72,7 +72,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream the answer to a query."""
 
         from vellum import GenerateRequest, GenerateStreamResult
@@ -121,7 +121,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return text_generator()
 
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Asynchronously predict the answer to a query."""
 
         from vellum import GenerateRequest
@@ -143,7 +143,9 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+    async def astream(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> TokenAsyncGen:
         async def gen() -> TokenAsyncGen:
             for token in self.stream(prompt, **prompt_args):
                 yield token
@@ -152,7 +154,7 @@ class VellumPredictor(BaseLLMPredictor):
         return gen()
 
     def _prepare_generate_call(
-        self, prompt: Prompt, **prompt_args: Any
+        self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> Tuple[VellumRegisteredPrompt, VellumCompiledPrompt, str]:
         """Prepare a generate call."""
 

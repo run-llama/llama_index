@@ -18,6 +18,10 @@ class BasePromptTemplate(Protocol):
     def metadata(self) -> dict:
         ...
 
+    @property
+    def template_vars(self) -> List[str]:
+        ...
+
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         ...
 
@@ -47,6 +51,14 @@ class ChatPromptTemplate:
     @property
     def metadata(self) -> dict:
         return self._metadata
+
+    @property
+    def template_vars(self) -> List[str]:
+        """Get input variables."""
+        variables = []
+        for message_template in self._message_templates:
+            variables.extend(get_template_vars(message_template.content))
+        return variables
 
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
         prompt = deepcopy(self)
@@ -102,6 +114,10 @@ class PromptTemplate:
     def metadata(self) -> dict:
         return self._metadata
 
+    @property
+    def template_vars(self) -> List[str]:
+        return get_template_vars(self._template)
+
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
         """Partially format the prompt."""
         prompt = deepcopy(self)
@@ -135,6 +151,10 @@ class SelectorPromptTemplate(BaseModel):
     @property
     def metadata(self) -> dict:
         return self.default_prompt.metadata
+    
+    @property
+    def template_vars(self) -> List[str]:
+        return self.default_prompt.template_vars
 
     def _select(self, llm: Optional[LLM] = None) -> PromptTemplate:
         if llm is None:

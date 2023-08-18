@@ -2,10 +2,9 @@
 from typing import Any
 from unittest.mock import patch
 
-
 from llama_index.llm_predictor.structured import LLMPredictor, StructuredLLMPredictor
-from llama_index.types import BaseOutputParser
 from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
+from llama_index.types import BaseOutputParser
 
 try:
     gptcache_installed = True
