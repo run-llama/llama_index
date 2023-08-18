@@ -1,9 +1,8 @@
 import logging
 import math
-from typing import Any, List, cast
+from typing import Any, List
 
 from llama_index.schema import MetadataMode, TextNode
-from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:
     """
-        Translate standard metadata filters to Bagel specific spec.
+    Translate standard metadata filters to Bagel specific spec.
     """
     filters = {}
     for filter in standard_filters.filters:
@@ -33,7 +32,7 @@ def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:
 
 class BagelVectorStore(VectorStore):
     """
-        Vector store for Bagel.
+    Vector store for Bagel.
     """
 
     # support for Bagel specific parameters
@@ -42,39 +41,39 @@ class BagelVectorStore(VectorStore):
 
     def __init__(self, collection: Any, **kwargs: Any) -> None:
         """
-            Initialize BagelVectorStore.
+        Initialize BagelVectorStore.
 
-            Args:
-                collection: Bagel collection.
-                **kwargs: Additional arguments.
+        Args:
+            collection: Bagel collection.
+            **kwargs: Additional arguments.
         """
 
         try:
-            import bagel
+            from bagel.api.Cluster import Cluster
         except ImportError:
             raise ImportError(
-                "Bagel is not installed. Please install bagel using `pip install bagel`."
+                "Bagel is not installed. Please install bagel."
             )
-
-        from bagel.api.Cluster import Cluster
 
         if not isinstance(collection, Cluster):
             raise ValueError(
-                "collection must be a bagel Cluster. Please use bagel client to get a Cluster."
+                "Collection must be a bagel Cluster."
             )
 
         self._collection = collection
 
-    def add(self, embedding_results: List[NodeWithEmbedding], **kwargs: Any) -> List[str]:
+    def add(
+        self, embedding_results: List[NodeWithEmbedding], **kwargs: Any
+    ) -> List[str]:
         """
-            Add a list of nodes with embeddings to the vector store.
+        Add a list of nodes with embeddings to the vector store.
 
-            Args:
-                embedding_results: List of nodes with embeddings.
-                kwargs: Additional arguments.
+        Args:
+            embedding_results: List of nodes with embeddings.
+            kwargs: Additional arguments.
 
-            Returns:
-                List of document ids.
+        Returns:
+            List of document ids.
         """
         if not self._collection:
             raise ValueError("collection not set")
@@ -87,10 +86,17 @@ class BagelVectorStore(VectorStore):
         for node_with_embedding in embedding_results:
             ids.append(node_with_embedding.id)
             embeddings.append(node_with_embedding.embedding)
-            metadatas.append(node_to_metadata_dict(
-                node_with_embedding.node, remove_text=True, flat_metadata=self.flat_metadata))
-            documents.append(node_with_embedding.node.get_content(
-                metadata_mode=MetadataMode.NONE) or "")
+            metadatas.append(
+                node_to_metadata_dict(
+                    node_with_embedding.node,
+                    remove_text=True,
+                    flat_metadata=self.flat_metadata,
+                )
+            )
+            documents.append(
+                node_with_embedding.node.get_content(metadata_mode=MetadataMode.NONE)
+                or ""
+            )
 
         self._collection.add(
             ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents
@@ -100,11 +106,11 @@ class BagelVectorStore(VectorStore):
 
     def delete(self, ref_doc_id: str, **kwargs) -> None:
         """
-            Delete a document from the vector store.
+        Delete a document from the vector store.
 
-            Args:
-                ref_doc_id: Reference document id.
-                kwargs: Additional arguments.
+        Args:
+            ref_doc_id: Reference document id.
+            kwargs: Additional arguments.
         """
         if not self._collection:
             raise ValueError("collection not set")
@@ -114,20 +120,20 @@ class BagelVectorStore(VectorStore):
     @property
     def client(self) -> Any:
         """
-            Get the Bagel cluster.
+        Get the Bagel cluster.
         """
         return self._collection
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
-            Query the vector store.
+        Query the vector store.
 
-            Args:
-                query: Query to run.
-                kwargs: Additional arguments.
+        Args:
+            query: Query to run.
+            kwargs: Additional arguments.
 
-            Returns:
-                Query result.
+        Returns:
+            Query result.
         """
         if not self._collection:
             raise ValueError("collection not set")
@@ -184,6 +190,4 @@ class BagelVectorStore(VectorStore):
             logger.debug(f"similarity: {1.0 - math.exp(-distance)}")
             logger.debug(f"id: {node_id}")
 
-        return VectorStoreQueryResult(
-            nodes=nodes, similarities=similarities, ids=ids
-        )
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
