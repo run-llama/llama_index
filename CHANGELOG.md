@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Changed default MyScale index format to `MSTG` (#7288)
+
 ## [0.8.4] - 2023-08-17
 
 ### Bug Fixes / Nits
