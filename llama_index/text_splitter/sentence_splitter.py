@@ -124,8 +124,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             if split_len <= chunk_size:
                 new_splits.append(_Split(split, is_sentence=is_sentence))
             else:
+                ns = self._split(split, chunk_size=chunk_size)
+                if len(ns) == 0:
+                    print("0 length split")
                 # recursively split
-                new_splits.extend(self._split(split, chunk_size=chunk_size))
+                new_splits.extend(ns)
         return new_splits
 
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
@@ -138,7 +141,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             cur_split_len = len(self.tokenizer(cur_split.text))
             if cur_split_len > chunk_size:
                 raise ValueError("Single token exceed chunk size")
-            if cur_chunk_len + cur_split_len > chunk_size:
+            if cur_chunk_len + cur_split_len > chunk_size and len(cur_chunk) > 0:
                 # if adding split to current chunk exceed chunk size: close out chunk
                 chunks.append("".join(cur_chunk).strip())
                 cur_chunk = []
@@ -147,7 +150,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 if (
                     cur_split.is_sentence
                     or cur_chunk_len + cur_split_len < chunk_size - self._chunk_overlap
-                    or cur_chunk == []
+                    or len(cur_chunk) == 0
                 ):
                     # add split to chunk
                     cur_chunk_len += cur_split_len

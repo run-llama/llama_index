@@ -1,5 +1,17 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix sentence splitter infinite loop (#7925)
+
+## [0.8.4] - 2023-08-17
+
+### Bug Fixes / Nits
+- Improve SQL Query parsing (#7283)
+- Fix loading embed_model from global service context (#7284)
+- Limit langchain version until we migrate to pydantic v2 (#7297)
+
 ## [0.8.3] - 2023-08-16
 
 ### New Features
