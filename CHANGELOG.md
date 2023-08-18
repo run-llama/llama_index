@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix sentence splitter infinite loop (#7925)
+
 ## [0.8.4] - 2023-08-17
 
 ### Bug Fixes / Nits
