@@ -4,8 +4,6 @@
 from copy import deepcopy
 from typing import Any, Callable, List, Optional, Protocol, Tuple
 
-from pydantic import BaseModel, Field
-
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
 from llama_index.prompts.prompt_type import PromptType

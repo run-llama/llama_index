@@ -3,7 +3,12 @@
 import json
 from typing import Any, Dict
 
-from llama_index.prompts.base import BasePromptTemplate
+from llama_index.prompts.base import (
+    BasePromptTemplate,
+    ChatPromptTemplate,
+    PromptTemplate,
+    SelectorPromptTemplate,
+)
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import mock_extract_keywords_response
 
@@ -156,44 +161,55 @@ def mock_llmpredictor_predict(prompt: BasePromptTemplate, **prompt_args: Any) ->
     Depending on the prompt, return response.
 
     """
-    full_prompt_args = prompt.get_full_format_args(prompt_args)
-    if prompt.prompt_type == PromptType.SUMMARY:
+    if isinstance(prompt, (PromptTemplate, ChatPromptTemplate)):
+        partial_kwargs = prompt._kwargs
+    elif isinstance(prompt, SelectorPromptTemplate):
+        partial_kwargs = prompt.default_prompt._kwargs
+    else:
+        raise ValueError(f"Unknown prompt type: {type(prompt)}")
+
+    full_prompt_args = {
+        **partial_kwargs,
+        **prompt_args,
+    }
+    prompt_type = prompt.metadata["prompt_type"]
+    if prompt_type == PromptType.SUMMARY:
         response = _mock_summary_predict(full_prompt_args)
-    elif prompt.prompt_type == PromptType.TREE_INSERT:
+    elif prompt_type == PromptType.TREE_INSERT:
         response = _mock_insert_predict()
-    elif prompt.prompt_type == PromptType.TREE_SELECT:
+    elif prompt_type == PromptType.TREE_SELECT:
         response = _mock_query_select()
-    elif prompt.prompt_type == PromptType.REFINE:
+    elif prompt_type == PromptType.REFINE:
         response = _mock_refine(full_prompt_args)
-    elif prompt.prompt_type == PromptType.QUESTION_ANSWER:
+    elif prompt_type == PromptType.QUESTION_ANSWER:
         response = _mock_answer(full_prompt_args)
-    elif prompt.prompt_type == PromptType.KEYWORD_EXTRACT:
+    elif prompt_type == PromptType.KEYWORD_EXTRACT:
         response = _mock_keyword_extract(full_prompt_args)
-    elif prompt.prompt_type == PromptType.QUERY_KEYWORD_EXTRACT:
+    elif prompt_type == PromptType.QUERY_KEYWORD_EXTRACT:
         response = _mock_query_keyword_extract(full_prompt_args)
-    elif prompt.prompt_type == PromptType.SCHEMA_EXTRACT:
+    elif prompt_type == PromptType.SCHEMA_EXTRACT:
         response = _mock_schema_extract(full_prompt_args)
-    elif prompt.prompt_type == PromptType.TEXT_TO_SQL:
+    elif prompt_type == PromptType.TEXT_TO_SQL:
         response = _mock_text_to_sql(full_prompt_args)
-    elif prompt.prompt_type == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
+    elif prompt_type == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
         response = _mock_kg_triplet_extract(full_prompt_args)
-    elif prompt.prompt_type == PromptType.SIMPLE_INPUT:
+    elif prompt_type == PromptType.SIMPLE_INPUT:
         response = _mock_input(full_prompt_args)
-    elif prompt.prompt_type == PromptType.SINGLE_SELECT:
+    elif prompt_type == PromptType.SINGLE_SELECT:
         response = _mock_single_select()
-    elif prompt.prompt_type == PromptType.MULTI_SELECT:
+    elif prompt_type == PromptType.MULTI_SELECT:
         response = _mock_multi_select(full_prompt_args)
-    elif prompt.prompt_type == PromptType.SUB_QUESTION:
+    elif prompt_type == PromptType.SUB_QUESTION:
         response = _mock_sub_questions()
-    elif prompt.prompt_type == PromptType.PANDAS:
+    elif prompt_type == PromptType.PANDAS:
         response = _mock_pandas(full_prompt_args)
-    elif prompt.prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS:
+    elif prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS:
         response = _mock_sql_response_synthesis(full_prompt_args)
-    elif prompt.prompt_type == PromptType.DECOMPOSE:
+    elif prompt_type == PromptType.DECOMPOSE:
         response = _mock_decompose_query(full_prompt_args)
-    elif prompt.prompt_type == PromptType.CHOICE_SELECT:
+    elif prompt_type == PromptType.CHOICE_SELECT:
         response = _mock_choice_select(full_prompt_args)
-    elif prompt.prompt_type == PromptType.CONVERSATION:
+    elif prompt_type == PromptType.CONVERSATION:
         response = _mock_conversation(full_prompt_args)
     else:
         response = str(full_prompt_args)

@@ -3,11 +3,8 @@ from llama_index.program.base_program import BasePydanticProgram
 from typing import Optional, List, Any, Type, cast
 from pydantic import BaseModel, Field
 from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.prompts import Prompt
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 import pandas as pd
-
-from llama_index.prompts.base import PromptTemplate
 
 
 class DataFrameRow(BaseModel):
