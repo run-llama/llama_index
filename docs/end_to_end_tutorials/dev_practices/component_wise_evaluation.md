@@ -5,6 +5,8 @@
 
 BEIR is useful for benchmarking if a particular retrieval model generalize well to niche domains in a zero-shot setting (without fine-tuning).
 
+Here is a notebook showing how the BEIR dataset can be used with your retrieval pipeline.
+
 We will be adding more methods to evaluate retrieval soon. This includes evaluating retrieval on your own dataset.
 
 ## Evaluating the Query Engine
@@ -18,7 +20,7 @@ Against annotated datasets, whether your own data or an academic benchmark, ther
 3. **Recall:** The percentage of queries that are answered correctly, regardless of the number of answers returned.
 4. **Precision:** The percentage of queries that are answered correctly, divided by the number of answers returned.
 
-There are more technical metrics such as MRR, MAP, etc. that are useful for academic benchmarks, but we will not cover them here.
+This [towardsdatascience article](https://towardsdatascience.com/ranking-evaluation-metrics-for-recommender-systems-263d0a66ef54) covers more technical metrics like NDCG, MAP and MRR in greater depth.
 
 ### HotpotQA Dataset
 
@@ -27,3 +29,13 @@ The HotpotQA dataset is useful for evaluating queries that require multiple retr
 Limitations:
 
 1. HotpotQA is evaluated on a Wikipedia corpus. LLMs, especially GPT4, tend to have memorized information from Wikipedia relatively well. Hence, the benchmark is not particularly good for evaluating retrieval + rerank systems with knowledgeable models like GPT4.
+
+### Examples
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/evaluation/BeirEvaluation.ipynb
+/examples/evaluation/HotpotQADistractor.ipynb
+```

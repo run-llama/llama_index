@@ -24,32 +24,17 @@ It helps to start with a discovery phase of understanding your data and doing so
 
 Over time, try to formalize processes and evaluation methodology and develop your system, setting up tools for observability, debugging and experiment tracking, and eventually production monitoring.
 
-## Comparisons with Software Engineering
-
 ## The Challenges of Building a Production-Ready LLM Application
 Many who are interested in the LLM application space are not machine learning engineers but rather software developers or  non-technical folk. 
 
 One of the biggest strides forward that LLMs and foundation models have made to the AI/ML application landscape is that it makes it really easy to go from idea to prototype without facing all of the hurdles and uncertainty of a traditional machine learning project - collecting, exploring and cleaning data, keeping up with latest research and exploring different methods, training models, adjusting hyperparameters, and dealing with unexpected issues in model quality. The huge infrastructure burden, long development cycle, and high risk to reward ratio have been blockers to successful applications.
 
-LlamaIndex was born out of the new age of connecting powerful models which have strong zero-shot capabilities with your data. 
-
-At the same time, despite the fact that getting a prototype working quickly has become a lot more accessible, deploying a machine learning product in the real world is still rife with uncertainty and challenges.
+At the same time, despite the fact that getting a prototype working quickly through a framework like LlamaIndex has become a lot more accessible, deploying a machine learning product in the real world is still rife with uncertainty and challenges.
 
 ### Quality and User Interaction
 On the tamer side, one may face quality issues, and in the worse case, one may be liable to losing user trust if the application proves itself to be unreliable. 
 
 We've already seen a bit of this with ChatGPT - despite its life-likeness and seeming ability to understand our conversations and requests, it often makes things up ("hallucinates"). It's not connected to the real world, data, or other digital applications. 
-
-Part of LlamaIndex's aim is to...
-
-A huge benefit of the chat 
-
-Although augmenting the language model with retrieval can help, 
-
-It is important to be aware that 
-
-### Model-Based v.s. Model-Free
-In developing complex AI/ML systems, it is often a question whether 
 
 ## Tradeoffs in LLM Application Development
 There are a few tradeoffs in LLM application development:
@@ -57,22 +42,20 @@ There are a few tradeoffs in LLM application development:
 2. **Latency** - more powerful models may be slower
 3. **Simplicity** (one size fits all) - how powerful and flexible is the model / pipeline?
 4. **Reliability / Useability** - is my application working at least in the general case? Is it ready for unstructured user interaction? Have I covered the major usage patterns?
+
+LLM infra improvements are progressing quickly and we expect cost and latency to go down over time.
   
 Here are some additional concerns:
 1. **Evaluation** - Once I start diving deeper into improving quality, how can I evaluate individual components? How can I keep track of issues and track whether / how they are being improved over time as I change my application?
-2. **Data-Driven** - How can I automate more of my evaluation and iteration process? Is it possible to get better user experiences if I can start to flywheel a data engine? How do I start small and improve over time? How can I manage the complexity while keeping track of my guiding light of providing the best user experience? 
-3. **Customization / Complexity Tradeoff** - Can I add additional structure. How do I improve each stage of the pipeline - preprocessing and feature extraction, ???. How can I break down this goal into more measurable and trackable sub-goals?
+2. **Data-Driven** - How can I automate more of my evaluation and iteration process? How do I start small and improve over time? How can I manage the complexity while keeping track of my guiding light of providing the best user experience? 
+3. **Customization / Complexity Tradeoff** - Can I add additional structure. How do I improve each stage of the pipeline - preprocessing and feature extraction, retrieval, generation? How can I break down this goal into more measurable and trackable sub-goals?
 
 Differences between **Evaluation** and being **Data-Driven**:
-1. **Evaluation** is not necessarily a rigorous or full data-driven process. It is more concerned with the initial *development* phase of the application - validating that the overall pipeline and starting to define possible signals and metrics to shift gears into production monitoring and flywheel the data engine.
-2. Being **Data-Driven** is closely tied to *automation*. After we've chosen our basic application structure, how can we improve the system over time? How can we ensure the quality of the system without diving too deep into the weeds whenever there is an issue? How can we reduce the cost of monitoring and improving the system, and what are the pathways to adding and curating data points to add? How can we leverage ML systems to make this process easier?
+1. **Evaluation** is not necessarily a rigorous or full data-driven process. It is more concerned with the initial *development* phase of the application - validating that the overall pipeline and starting to define possible signals and metrics which may be carried forward when shifting gears into production.
+2. Being **Data-Driven** is closely tied to *automation*. After we've chosen our basic application structure, how can we improve the system over time? How can we ensure the quality of the system in a systematic way? How can we reduce the cost of monitoring and improving the system, and what are the pathways to adding and curating data points to add? How can we leverage ML systems to make this process easier?
 
 Additional considerations:
 1. **Privacy** - how can I ensure that my data is not leaked if I am feeding it into these models? What infrastructure am I using and what is the security guarantee / how is the access control structured?
-2. 
-
-The field is progressing quickly and we expect cost 
-
 
 ## Development Hurdles
 
@@ -94,9 +77,5 @@ If your data is extremely specific (medical, legal, scientific, financial, or ot
         - these methods have been shown to generalize well to out of domain data
         - that are starting to be available in some enterprise systems (e.g. [Elastic Search's ELSeR](https://www.elastic.co/guide/en/machine-learning/current/ml-nlp-elser.html))
 
-TODO: move this into its own page?
 ## Case Studies and Resources
-The best way to learn is to learn from the best in the industry. Since the problem space is large, and we are still in the early days of LLM applications, here are some resources 
-
-
 1. (Course) [Data-Centric AI (MIT), 2023](https://www.youtube.com/playlist?list=PLnSYPjg2dHQKdig0vVbN-ZnEU0yNJ1mo5)

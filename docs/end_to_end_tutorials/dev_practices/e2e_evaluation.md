@@ -1,14 +1,7 @@
 # End-to-End Evaluation
 ## Setting up an Evaluation Set
 
-To help with this, we've created some tools that automatically generate a dataset for you given a set of documents to query.
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/evaluation/QuestionGeneration.ipynb
-```
+To help with this, we've created some tools that automatically generate a dataset for you given a set of documents to query. (See examples below).
 
 In the future, we will also be able to create datasets automatically against tools.
 
@@ -41,3 +34,12 @@ It is intenteded for two purposes:
 We also want the metrics ensembling to be interpretable - the correlation and weighting scores should give an indication of which metrics best capture the  
 
 We will discuss more about the methodology in future updates.
+
+## Examples
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/evaluation/QuestionGeneration.ipynb
+```
