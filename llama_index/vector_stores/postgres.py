@@ -37,26 +37,40 @@ def get_data_model(
         impl = TSVECTOR
 
 
-    class AbstractData(base):  # type: ignore
-        __abstract__ = True  # this line is necessary
-        id = Column(BIGINT, primary_key=True, autoincrement=True)
-        text = Column(VARCHAR, nullable=False)
-        metadata_ = Column(JSON)
-        node_id = Column(VARCHAR)
-        embedding = Column(Vector(1536))  # type: ignore
-        if hybrid_search:
-            text_search_tsv = Column(TSVector(), Computed("to_tsvector('%s', text)" % text_search_config, persisted=True))
-
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
-    model = type(class_name, (AbstractData,), {"__tablename__": tablename})
 
     if hybrid_search:
+        class HybridAbstractData(base):  # type: ignore
+            __abstract__ = True  # this line is necessary
+            id = Column(BIGINT, primary_key=True, autoincrement=True)
+            text = Column(VARCHAR, nullable=False)
+            metadata_ = Column(JSON)
+            node_id = Column(VARCHAR)
+            embedding = Column(Vector(1536))  # type: ignore
+            text_search_tsv = Column(
+                                TSVector(),
+                                Computed("to_tsvector('%s', text)" % text_search_config,
+                                persisted=True)
+                              )
+
+        model = type(class_name, (HybridAbstractData,), {"__tablename__": tablename})
+
         Index(
             'text_search_tsv_idx',
             model.text_search_tsv,
             postgresql_using='gin'
         )
+    else:
+        class AbstractData(base):  # type: ignore
+            __abstract__ = True  # this line is necessary
+            id = Column(BIGINT, primary_key=True, autoincrement=True)
+            text = Column(VARCHAR, nullable=False)
+            metadata_ = Column(JSON)
+            node_id = Column(VARCHAR)
+            embedding = Column(Vector(1536))  # type: ignore
+
+        model = type(class_name, (AbstractData,), {"__tablename__": tablename})
 
     return model
 
