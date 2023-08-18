@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added tracing to chat engines/agents (#7304)
+
 ## [0.8.4] - 2023-08-17
 
 ### Bug Fixes / Nits
