@@ -13,11 +13,9 @@ from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 from llama_index.types import Model
-from llama_index.program import (
-    BasePydanticProgram,
-    LLMTextCompletionProgram,
-    OpenAIPydanticProgram,
-)
+from llama_index.program.base_program import BasePydanticProgram
+from llama_index.program.openai_program import OpenAIPydanticProgram
+from llama_index.program.llm_program import LLMTextCompletionProgram
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 logger = logging.getLogger(__name__)
@@ -56,16 +54,18 @@ class DefaultRefineProgram(BasePydanticProgram):
         return StructuredRefineResponse
 
     def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
-        return self._llm_predictor.predict(
+        answer = self._llm_predictor.predict(
             self._prompt,
             **kwds,
         )
+        return StructuredRefineResponse(answer=answer, query_satisfied=True)
 
     async def acall(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
-        return await self._llm_predictor.apredict(
+        answer = await self._llm_predictor.apredict(
             self._prompt,
             **kwds,
         )
+        return StructuredRefineResponse(answer=answer, query_satisfied=True)
 
 
 class Refine(BaseSynthesizer):
@@ -85,6 +85,11 @@ class Refine(BaseSynthesizer):
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._verbose = verbose
         self._structured_answer_filtering = structured_answer_filtering
+
+        if self._streaming and self._structured_answer_filtering:
+            raise ValueError(
+                "Streaming not supported with structured answer filtering."
+            )
 
     def get_response(
         self,
