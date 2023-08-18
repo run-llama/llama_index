@@ -13,7 +13,7 @@ from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate, BasePromptTemplate
 import logging
 from llama_index.callbacks.base import CallbackManager
 from llama_index.query_engine.sql_join_query_engine import (
@@ -38,7 +38,9 @@ Transformed vector store query: {query_engine_query_str}
 Vector store response: {query_engine_response_str}
 Response: 
 """  # noqa
-DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT = Prompt(DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL)
+DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT = PromptTemplate(
+    DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL
+)
 
 
 # NOTE: maintain for backwards compatibility
@@ -74,7 +76,7 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         vector_query_tool: QueryEngineTool,
         selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
         service_context: Optional[ServiceContext] = None,
-        sql_vector_synthesis_prompt: Optional[Prompt] = None,
+        sql_vector_synthesis_prompt: Optional[BasePromptTemplate] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
         use_sql_vector_synthesis: bool = True,
         callback_manager: Optional[CallbackManager] = None,

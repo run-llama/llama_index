@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict
 
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import mock_extract_keywords_response
 
@@ -150,7 +150,7 @@ def _mock_conversation(prompt_args: Dict) -> str:
     return prompt_args["history"] + ":" + prompt_args["message"]
 
 
-def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> str:
+def mock_llmpredictor_predict(prompt: BasePromptTemplate, **prompt_args: Any) -> str:
     """Mock predict method of LLMPredictor.
 
     Depending on the prompt, return response.
@@ -201,7 +201,9 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> str:
     return response
 
 
-def patch_llmpredictor_predict(self: Any, prompt: Prompt, **prompt_args: Any) -> str:
+def patch_llmpredictor_predict(
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+) -> str:
     """Mock predict method of LLMPredictor.
 
     Depending on the prompt, return response.
@@ -211,12 +213,14 @@ def patch_llmpredictor_predict(self: Any, prompt: Prompt, **prompt_args: Any) ->
 
 
 async def patch_llmpredictor_apredict(
-    self: Any, prompt: Prompt, **prompt_args: Any
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
 ) -> str:
     """Mock apredict method of LLMPredictor."""
     return patch_llmpredictor_predict(self, prompt, **prompt_args)
 
 
-async def mock_llmpredictor_apredict(prompt: Prompt, **prompt_args: Any) -> str:
+async def mock_llmpredictor_apredict(
+    prompt: BasePromptTemplate, **prompt_args: Any
+) -> str:
     """Mock apredict method of LLMPredictor."""
     return mock_llmpredictor_predict(prompt, **prompt_args)

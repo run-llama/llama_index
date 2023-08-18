@@ -15,7 +15,7 @@ from llama_index.prompts import BasePromptTemplate
 
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import LLMMetadata
-from llama_index.prompts.utils import get_empty_prompt_txt
+from llama_index.prompts.prompt_utils import get_empty_prompt_txt
 from llama_index.text_splitter import TokenTextSplitter
 from llama_index.text_splitter.utils import truncate_text
 from llama_index.utils import globals_helper

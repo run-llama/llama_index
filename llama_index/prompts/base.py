@@ -7,8 +7,7 @@ from typing import Any, Callable, List, Optional, Protocol, Tuple
 from pydantic import BaseModel, Field
 
 from llama_index.llms.base import LLM, ChatMessage
-from llama_index.llms.generic_utils import (messages_to_prompt,
-                                            prompt_to_messages)
+from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 
@@ -142,16 +141,21 @@ class PromptTemplate:
         return prompt_to_messages(prompt)
 
 
-class SelectorPromptTemplate(BaseModel):
-    default_prompt: PromptTemplate
-    conditionals: List[Tuple[Callable[[LLM], bool], PromptTemplate]] = Field(
-        default_factory=list
-    )
+class SelectorPromptTemplate:
+    def __init__(
+        self,
+        default_prompt: PromptTemplate,
+        conditionals: Optional[
+            List[Tuple[Callable[[LLM], bool], PromptTemplate]]
+        ] = None,
+    ):
+        self.default_prompt = default_prompt
+        self.conditional = conditionals or []
 
     @property
     def metadata(self) -> dict:
         return self.default_prompt.metadata
-    
+
     @property
     def template_vars(self) -> List[str]:
         return self.default_prompt.template_vars

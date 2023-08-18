@@ -492,7 +492,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self,
         query_str: str,
         handle_fn: Optional[Callable],
-        handle_llm_prompt_template: Optional[Prompt],
+        handle_llm_prompt_template: Optional[BasePromptTemplate],
         cross_handle_policy: Optional[str] = "union",
         max_items: Optional[int] = 5,
         result_start_token: str = "KEYWORDS:",
