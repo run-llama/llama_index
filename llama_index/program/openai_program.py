@@ -71,8 +71,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         if not isinstance(llm, OpenAI):
             raise ValueError(
-                "OpenAIPydanticProgram only supports OpenAI LLMs. "
-                f"Got: {type(llm)}"
+                "OpenAIPydanticProgram only supports OpenAI LLMs. " f"Got: {type(llm)}"
             )
 
         if not llm.metadata.is_function_calling_model:

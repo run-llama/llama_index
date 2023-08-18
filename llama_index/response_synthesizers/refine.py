@@ -16,6 +16,7 @@ from llama_index.program import (
     LLMTextCompletionProgram,
     OpenAIPydanticProgram,
 )
+from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 class StructuredRefineResponse(BaseModel):
     """
     Used to answer a given query based on the provided context.
-    
+
     Also indicates if the query was satisfied with the provided answer.
     """
 
@@ -87,14 +88,15 @@ class Refine(BaseSynthesizer):
                 StructuredRefineResponse,
                 prompt_template_str=prompt_template_str,
                 llm=self._service_context.llm,
-                verbose=self._verbose
+                verbose=self._verbose,
             )
         except ValueError:
+            output_parser = PydanticOutputParser(StructuredRefineResponse)
             return LLMTextCompletionProgram.from_defaults(
-                StructuredRefineResponse,
+                output_parser,
                 prompt_template_str=prompt_template_str,
                 llm=self._service_context.llm,
-                verbose=self._verbose
+                verbose=self._verbose,
             )
 
     def _give_response_single(
@@ -115,7 +117,9 @@ class Refine(BaseSynthesizer):
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if response is None and not self._streaming:
-                structured_response = cast(StructuredRefineResponse, program(context_str=cur_text_chunk))
+                structured_response = cast(
+                    StructuredRefineResponse, program(context_str=cur_text_chunk)
+                )
                 query_satisfied = structured_response.query_satisfied
                 if query_satisfied:
                     response = structured_response.answer
@@ -163,12 +167,13 @@ class Refine(BaseSynthesizer):
             refine_template, text_chunks=[text_chunk]
         )
 
-        response = None
         program = self._get_program(refine_template.format())
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if not self._streaming:
-                structured_response = cast(StructuredRefineResponse, program(context_msg=cur_text_chunk))
+                structured_response = cast(
+                    StructuredRefineResponse, program(context_msg=cur_text_chunk)
+                )
                 query_satisfied = structured_response.query_satisfied
                 if query_satisfied:
                     response = structured_response.answer
@@ -238,13 +243,14 @@ class Refine(BaseSynthesizer):
             refine_template, text_chunks=[text_chunk]
         )
 
-        response = None
         program = self._get_program(refine_template.format())
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if not self._streaming:
                 structured_response = await program.acall(context_msg=cur_text_chunk)
-                structured_response = cast(StructuredRefineResponse, structured_response)
+                structured_response = cast(
+                    StructuredRefineResponse, structured_response
+                )
                 query_satisfied = structured_response.query_satisfied
                 if query_satisfied:
                     response = structured_response.answer
@@ -275,8 +281,10 @@ class Refine(BaseSynthesizer):
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                structured_response = program.acall(context_str=cur_text_chunk)
-                structured_response = cast(StructuredRefineResponse, structured_response)
+                structured_response = await program.acall(context_str=cur_text_chunk)
+                structured_response = cast(
+                    StructuredRefineResponse, structured_response
+                )
                 query_satisfied = structured_response.query_satisfied
                 if query_satisfied:
                     response = structured_response.answer
