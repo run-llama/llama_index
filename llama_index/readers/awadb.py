@@ -1,6 +1,6 @@
 """Awadb reader."""
 
-from typing import Any, Dict, List
+from typing import Any, List
 
 import numpy as np
 
@@ -27,11 +27,11 @@ class AwadbReader(BaseReader):
             https://github.com/facebookresearch/faiss/wiki/Installing-Faiss
         """
         try:
-            import awadb
+            pass
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self.awadb_client=client
+        self.awadb_client = client
 
     def load_data(
         self,
@@ -59,7 +59,7 @@ class AwadbReader(BaseReader):
         )
         documents = []
         for item_detail in results[0]["ResultItems"]:
-            documents.append(Document(text=item_detail['embedding_text']))
+            documents.append(Document(text=item_detail["embedding_text"]))
 
         if not separate_documents:
             # join all documents into one

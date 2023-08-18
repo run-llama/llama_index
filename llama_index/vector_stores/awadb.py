@@ -6,13 +6,10 @@ An index that is built on top of an existing vector store.
 import logging
 import uuid
 
-import math
-from typing import Any, List, cast, Optional
+from typing import Any, List, Set, Optional
 
 from llama_index.schema import MetadataMode, TextNode
-from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
@@ -51,7 +48,7 @@ class AwaDBVectorStore(VectorStore):
         return self.awadb_client
 
     def __init__(
-        self, 
+        self,
         table_name: str = DEFAULT_TABLE_NAME,
         log_and_data_dir: Optional[str] = None,
         **kwargs: Any
@@ -68,29 +65,26 @@ class AwaDBVectorStore(VectorStore):
 
         Returns:
             None.
-        """ 
+        """
 
-        import_err_msg = (
-            "`awadb` package not found, please run `pip install awadb`"
-        )
+        import_err_msg = "`awadb` package not found, please run `pip install awadb`"
         try:
-            import awadb 
+            import awadb
         except ImportError:
             raise ImportError(import_err_msg)
         if log_and_data_dir is not None:
             self.awadb_client = awadb.Client(log_and_data_dir)
         else:
             self.awadb_client = awadb.Client()
-       
+
         if table_name == self.DEFAULT_TABLE_NAME:
             table_name += "_"
             table_name += str(uuid.uuid4()).split("-")[-1]
 
         self.awadb_client.Create(table_name)
-        
 
     def add(
-        self, 
+        self,
         embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to AwaDB.
@@ -116,27 +110,21 @@ class AwaDBVectorStore(VectorStore):
                 )
             )
             ids.append(result.id)
-            texts.append(
-                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
-            )
+            texts.append(result.node.get_content(metadata_mode=MetadataMode.NONE) or "")
 
         self.awadb_client.AddTexts(
-                "embedding_text",
-                "text_embedding",
-                texts,
-                embeddings,
-                metadatas,
-                is_duplicate_texts=False,
-                ids=ids,
+            "embedding_text",
+            "text_embedding",
+            texts,
+            embeddings,
+            metadatas,
+            is_duplicate_texts=False,
+            ids=ids,
         )
 
         return ids
 
-    def delete(
-        self,
-        ref_doc_id: str,
-        **delete_kwargs: Any
-    ) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes using with ref_doc_id.
 
         Args:
@@ -151,39 +139,36 @@ class AwaDBVectorStore(VectorStore):
         ids.append(ref_doc_id)
         self.awadb_client.Delete(ids)
 
-    def query(
-        self, 
-        query: VectorStoreQuery, 
-        **kwargs: Any
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query : vector store query
 
         Returns:
-            VectorStoreQueryResult: Query results 
+            VectorStoreQueryResult: Query results
         """
-        meta_filters = {} 
+        meta_filters = {}
         if query.filters is not None:
             for filter in query.filters.filters:
                 meta_filters[filter.key] = filter.value
-         
+
         not_include_fields: Set[str] = {"text_embedding"}
         results = self.awadb_client.Search(
-            query = query.query_embedding,
-            topn = query.similarity_top_k,
-            meta_filter = meta_filters,
-            not_include_fields=not_include_fields)
-       
+            query=query.query_embedding,
+            topn=query.similarity_top_k,
+            meta_filter=meta_filters,
+            not_include_fields=not_include_fields,
+        )
+
         nodes = []
         similarities = []
         ids = []
-        
+
         for item_detail in results[0]["ResultItems"]:
             content = ""
             meta_data = {}
-            node_id = "" 
+            node_id = ""
             for item_key in item_detail:
                 if item_key == "embedding_text":
                     content = item_detail[item_key]
@@ -218,4 +203,3 @@ class AwaDBVectorStore(VectorStore):
             nodes.append(node)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
-
