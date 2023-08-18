@@ -14,6 +14,7 @@ from llama_index.vector_stores.types import (
 
 # from testing find install here https://github.com/pgvector/pgvector#installation-notes
 
+
 PARAMS: Dict[str, Union[str, int]] = dict(
     host="localhost", user="postgres", password="password", port=5432
 )
@@ -35,6 +36,7 @@ try:
     postgres_not_available = False
 except (ImportError, Exception):
     postgres_not_available = True
+
 
 @pytest.fixture(scope="session")
 def conn() -> Any:
