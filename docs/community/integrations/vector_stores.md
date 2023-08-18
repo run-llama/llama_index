@@ -484,4 +484,5 @@ maxdepth: 1
 ../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 ../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 ../../examples/vector_stores/postgres.ipynb
+../../examples/vector_stores/AwadbDemo.ipynb
 ```
