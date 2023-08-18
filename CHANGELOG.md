@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added tracing to chat engines/agents (#7304)
+
 ### Bug Fixes / Nits
 - Fix sentence splitter infinite loop (#7925)
 

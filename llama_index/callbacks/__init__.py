@@ -5,6 +5,7 @@ from .open_inference_callback import OpenInferenceCallbackHandler
 from .schema import CBEvent, CBEventType, EventPayload
 from .token_counting import TokenCountingHandler
 from .wandb_callback import WandbCallbackHandler
+from .utils import trace_method
 
 __all__ = [
     "OpenInferenceCallbackHandler",
@@ -16,4 +17,5 @@ __all__ = [
     "AimCallback",
     "WandbCallbackHandler",
     "TokenCountingHandler",
+    "trace_method",
 ]
