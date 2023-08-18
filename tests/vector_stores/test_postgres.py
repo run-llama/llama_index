@@ -72,6 +72,18 @@ def pg(db: None) -> Any:
 
     asyncio.run(pg.close())
 
+@pytest.fixture
+def pg_hybrid(db: None) -> Any:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB,
+        table_name=TEST_TABLE_NAME,
+        hybrid_search=True,
+    )
+
+    yield pg
+
+    asyncio.run(pg.close())
 
 @pytest.fixture(scope="session")
 def node_embeddings() -> List[NodeWithEmbedding]:
@@ -228,20 +240,20 @@ async def test_add_to_db_query_and_delete(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True,), (False,)])
 async def test_hybrid_query(
-        pg: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], use_async: bool
+    pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(hybrid_node_embeddings)
+        await pg_hybrid.async_add(hybrid_node_embeddings)
     else:
-        pg.add(hybrid_node_embeddings)
-    assert isinstance(pg, PGVectorStore)
+        pg_hybrid.add(hybrid_node_embeddings)
+    assert isinstance(pg_hybrid, PGVectorStore)
 
     q = VectorStoreQuery(query_embedding=[0.1] * 1536, query_str="fox", similarity_top_k=2)
 
     if use_async:
-        res = await pg.a_hybrid_query(q)
+        res = await pg_hybrid.a_hybrid_query(q)
     else:
-        res = pg.hybrid_query(q)
+        res = pg_hybrid.hybrid_query(q)
     assert res.nodes
     assert len(res.nodes) == 2
     assert res.nodes[0].node_id == "ccc"
@@ -250,9 +262,9 @@ async def test_hybrid_query(
     q = VectorStoreQuery(query_embedding=[1] * 1536, query_str="lorem", similarity_top_k=2)
 
     if use_async:
-        res = await pg.a_hybrid_query(q)
+        res = await pg_hybrid.a_hybrid_query(q)
     else:
-        res = pg.hybrid_query(q)
+        res = pg_hybrid.hybrid_query(q)
     assert res.nodes
     assert len(res.nodes) == 2
     assert res.nodes[0].node_id == "aaa"
@@ -261,13 +273,13 @@ async def test_hybrid_query(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True,), (False,)])
 async def test_add_to_db_and_hybrid_query_with_metadata_filters(
-        pg: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], use_async: bool
+        pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(hybrid_node_embeddings)
+        await pg_hybrid.async_add(hybrid_node_embeddings)
     else:
-        pg.add(hybrid_node_embeddings)
-    assert isinstance(pg, PGVectorStore)
+        pg_hybrid.add(hybrid_node_embeddings)
+    assert isinstance(pg_hybrid, PGVectorStore)
     filters = MetadataFilters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
     )
@@ -275,22 +287,22 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
         query_embedding=[0.1] * 1536, query_str="fox", similarity_top_k=10, filters=filters
     )
     if use_async:
-        res = await pg.a_hybrid_query(q)
+        res = await pg_hybrid.a_hybrid_query(q)
     else:
-        res = pg.hybrid_query(q)
+        res = pg_hybrid.hybrid_query(q)
     assert res.nodes
     assert len(res.nodes) == 2
     assert res.nodes[0].node_id == "ddd"
     assert res.nodes[1].node_id == "bbb"
 
 def test_hybrid_query_fails_if_no_query_str_provided(
-        pg: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
+        pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
 ) -> None:
     q = VectorStoreQuery(
         query_embedding=[1.0] * 1536, similarity_top_k=10
     )
 
     with pytest.raises(Exception) as exc:
-        pg.hybrid_query(q)
+        pg_hybrid.hybrid_query(q)
 
         assert str(exc) == "query_str must be specified for a sparse vector query."

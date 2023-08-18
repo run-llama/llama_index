@@ -28,6 +28,7 @@ def get_data_model(
     from pgvector.sqlalchemy import Vector
     from sqlalchemy import Column, Computed
     from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, JSON
+    from sqlalchemy.schema import Index
     from sqlalchemy.sql import func
 
     from sqlalchemy.dialects.postgresql import TSVECTOR
@@ -43,18 +44,20 @@ def get_data_model(
         metadata_ = Column(JSON)
         node_id = Column(VARCHAR)
         embedding = Column(Vector(1536))  # type: ignore
-        text_search_tsv = Column(TSVector(), Computed("to_tsvector('%s', text)" % text_search_config, persisted=True))
-
         if hybrid_search:
-            Index(
-                'text_search_tsv_idx',
-                func.to_tsvector(literal(self._text_search_config), text_search_tsv),
-                postgresql_using='gin'
-            )
+            text_search_tsv = Column(TSVector(), Computed("to_tsvector('%s', text)" % text_search_config, persisted=True))
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
     model = type(class_name, (AbstractData,), {"__tablename__": tablename})
+
+    if hybrid_search:
+        Index(
+            'text_search_tsv_idx',
+            model.text_search_tsv,
+            postgresql_using='gin'
+        )
+
     return model
 
 
@@ -123,6 +126,7 @@ class PGVectorStore(VectorStore):
         user: str,
         password: str,
         table_name: str,
+        hybrid_search: bool = False
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
@@ -133,6 +137,7 @@ class PGVectorStore(VectorStore):
             connection_string=conn_str,
             async_connection_string=async_conn_str,
             table_name=table_name,
+            hybrid_search=hybrid_search,
         )
 
     def _connect(self) -> Any:
