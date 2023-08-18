@@ -8,6 +8,7 @@ from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts import PromptTemplate
+from llama_index.prompts.base import BasePromptTemplate
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
@@ -120,8 +121,8 @@ class CitationQueryEngine(BaseQueryEngine):
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
         text_splitter: Optional[TextSplitter] = None,
-        citation_qa_template: Prompt = CITATION_QA_TEMPLATE,
-        citation_refine_template: Prompt = CITATION_REFINE_TEMPLATE,
+        citation_qa_template: BasePromptTemplate = CITATION_QA_TEMPLATE,
+        citation_refine_template: BasePromptTemplate = CITATION_REFINE_TEMPLATE,
         retriever: Optional[BaseRetriever] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         # response synthesizer args
@@ -142,8 +143,8 @@ class CitationQueryEngine(BaseQueryEngine):
             text_splitter (Optional[TextSplitter]):
                 A text splitter for creating citation source nodes. Default is
                 a SentenceSplitter.
-            citation_qa_template (Prompt): Template for initial citation QA
-            citation_refine_template (Prompt): Template for citation refinement.
+            citation_qa_template (BasePromptTemplate): Template for initial citation QA
+            citation_refine_template (BasePromptTemplate): Template for citation refinement.
             retriever (BaseRetriever): A retriever object.
             service_context (Optional[ServiceContext]): A ServiceContext object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of

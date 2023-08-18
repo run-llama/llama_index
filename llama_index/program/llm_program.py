@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.program.base_program import BasePydanticProgram
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 
@@ -20,7 +20,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def __init__(
         self,
         output_parser: PydanticOutputParser,
-        prompt: Prompt,
+        prompt: PromptTemplate,
         llm: LLM,
         function_call: Union[str, Dict[str, Any]],
         verbose: bool = False,
@@ -42,7 +42,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
         llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
-        prompt = Prompt(prompt_template_str)
+        prompt = PromptTemplate(prompt_template_str)
         function_call = function_call or {
             "name": output_parser.output_cls.schema()["title"]
         }
@@ -64,9 +64,9 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         prompt_with_parse_instrs_tmpl = self._output_parser.format(
-            self._prompt.original_template
+            self._prompt._template  # pylint: disable=protected-access
         )
-        prompt_with_parse_instrs = Prompt(prompt_with_parse_instrs_tmpl)
+        prompt_with_parse_instrs = PromptTemplate(prompt_with_parse_instrs_tmpl)
 
         formatted_prompt = prompt_with_parse_instrs.format(**kwargs)
 

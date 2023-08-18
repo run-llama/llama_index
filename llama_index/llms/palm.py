@@ -65,7 +65,7 @@ class PaLM(CustomLLM):
         """Predict the answer to a query.
 
         Args:
-            prompt (Prompt): Prompt to use for prediction.
+            prompt (str): Prompt to use for prediction.
 
         Returns:
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
@@ -89,7 +89,7 @@ class PaLM(CustomLLM):
         better abstractions about response handling.
 
         Args:
-            prompt (Prompt): Prompt to use for prediction.
+            prompt (str): Prompt to use for prediction.
 
         Returns:
             str: The predicted answer.
