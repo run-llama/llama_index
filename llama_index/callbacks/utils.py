@@ -1,6 +1,9 @@
 import asyncio
+import logging
 from typing import Any, Callable, cast
 from llama_index.callbacks.base import CallbackManager
+
+logger = logging.getLogger(__name__)
 
 
 def trace_method(
@@ -21,13 +24,29 @@ def trace_method(
 
     def decorator(func: Callable) -> Callable:
         def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
-            callback_manager = getattr(self, callback_manager_attr)
+            try:
+                callback_manager = getattr(self, callback_manager_attr)
+            except AttributeError:
+                logger.warning(
+                    "Could not find attribute %s on %s.",
+                    callback_manager_attr,
+                    type(self),
+                )
+                return func(self, *args, **kwargs)
             callback_manager = cast(CallbackManager, callback_manager)
             with callback_manager.as_trace(trace_id):
                 return func(self, *args, **kwargs)
 
         async def async_wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
-            callback_manager = getattr(self, callback_manager_attr)
+            try:
+                callback_manager = getattr(self, callback_manager_attr)
+            except AttributeError:
+                logger.warning(
+                    "Could not find attribute %s on %s.",
+                    callback_manager_attr,
+                    type(self),
+                )
+                return await func(self, *args, **kwargs)
             callback_manager = cast(CallbackManager, callback_manager)
             with callback_manager.as_trace(trace_id):
                 return await func(self, *args, **kwargs)
