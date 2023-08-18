@@ -51,14 +51,10 @@ class BagelVectorStore(VectorStore):
         try:
             from bagel.api.Cluster import Cluster
         except ImportError:
-            raise ImportError(
-                "Bagel is not installed. Please install bagel."
-            )
+            raise ImportError("Bagel is not installed. Please install bagel.")
 
         if not isinstance(collection, Cluster):
-            raise ValueError(
-                "Collection must be a bagel Cluster."
-            )
+            raise ValueError("Collection must be a bagel Cluster.")
 
         self._collection = collection
 
@@ -104,7 +100,7 @@ class BagelVectorStore(VectorStore):
 
         return ids
 
-    def delete(self, ref_doc_id: str, **kwargs) -> None:
+    def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
         """
         Delete a document from the vector store.
 
