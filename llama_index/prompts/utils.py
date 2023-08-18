@@ -1,7 +1,8 @@
 from string import Formatter
 from typing import List
 
-from llama_index.prompts.base_legacy import Prompt
+from llama_index.llms.base import LLM
+from llama_index.prompts.base import Prompt
 
 
 def get_empty_prompt_txt(prompt: Prompt) -> str:
@@ -35,6 +36,7 @@ def get_biggest_prompt(prompts: List[Prompt]) -> Prompt:
     biggest_prompt = prompts[empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))]
     return biggest_prompt
 
+
 def get_template_vars(template_str: str) -> List[str]:
     """Get template variables from a template string."""
     variables = []
@@ -45,3 +47,7 @@ def get_template_vars(template_str: str) -> List[str]:
             variables.append(variable_name)
 
     return variables
+
+
+def is_chat_model(llm: LLM) -> bool:
+    return llm.metadata.is_chat_model

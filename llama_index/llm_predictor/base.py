@@ -14,7 +14,7 @@ from llama_index.llm_predictor.utils import (
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate
 from llama_index.prompts.prompts import SimpleInputPrompt
 from llama_index.types import TokenAsyncGen, TokenGen
 
@@ -36,19 +36,21 @@ class BaseLLMPredictor(Protocol):
         """Get LLM metadata."""
 
     @abstractmethod
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict the answer to a query."""
 
     @abstractmethod
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream the answer to a query."""
 
     @abstractmethod
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Async predict the answer to a query."""
 
     @abstractmethod
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+    async def astream(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> TokenAsyncGen:
         """Async predict the answer to a query."""
 
 
@@ -89,7 +91,7 @@ class LLMPredictor(BaseLLMPredictor):
         """Get LLM metadata."""
         return self._llm.metadata
 
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict."""
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
@@ -108,7 +110,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         return output
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream."""
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
@@ -122,7 +124,7 @@ class LLMPredictor(BaseLLMPredictor):
             stream_tokens = stream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Async predict."""
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
@@ -141,7 +143,9 @@ class LLMPredictor(BaseLLMPredictor):
 
         return output
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+    async def astream(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> TokenAsyncGen:
         """Async stream."""
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
@@ -155,7 +159,7 @@ class LLMPredictor(BaseLLMPredictor):
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
-    def _extend_prompt(self, prompt: Prompt) -> Prompt:
+    def _extend_prompt(self, prompt: BasePromptTemplate) -> BasePromptTemplate:
         """Add system and query wrapper prompts to base prompt"""
         if self.system_prompt:
             prompt.prompt_selector.default_prompt.template = (

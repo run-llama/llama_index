@@ -7,7 +7,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import PromptTemplate
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
@@ -18,7 +18,7 @@ from llama_index.schema import NodeWithScore, TextNode
 from llama_index.text_splitter import get_default_text_splitter
 from llama_index.text_splitter.types import TextSplitter
 
-CITATION_QA_TEMPLATE = Prompt(
+CITATION_QA_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "
     "When referencing information from a source, "
     "cite the appropriate source(s) using their corresponding numbers. "
@@ -41,7 +41,7 @@ CITATION_QA_TEMPLATE = Prompt(
     "Answer: "
 )
 
-CITATION_REFINE_TEMPLATE = Prompt(
+CITATION_REFINE_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "
     "When referencing information from a source, "
     "cite the appropriate source(s) using their corresponding numbers. "

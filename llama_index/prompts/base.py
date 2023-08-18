@@ -7,18 +7,18 @@ from typing import Any, Callable, List, Optional, Protocol, Tuple
 from pydantic import BaseModel, Field
 
 from llama_index.llms.base import LLM, ChatMessage
-from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
-from llama_index.prompts import PromptTemplate
+from llama_index.llms.generic_utils import (messages_to_prompt,
+                                            prompt_to_messages)
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 
 
-class PromptTemplate(Protocol):
+class BasePromptTemplate(Protocol):
     @property
     def metadata(self) -> dict:
         ...
 
-    def partial_format(self, **kwargs: Any) -> "PromptTemplate":
+    def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         ...
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
@@ -166,10 +166,6 @@ class SelectorPromptTemplate(BaseModel):
         """Format the prompt into a list of chat messages."""
         prompt = self._select(llm=llm)
         return prompt.format(**kwargs)
-
-
-def is_chat_model(llm: LLM) -> bool:
-    return llm.metadata.is_chat_model
 
 
 # NOTE: only for backwards compatibility
