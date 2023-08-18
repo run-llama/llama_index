@@ -38,6 +38,7 @@ def get_response_synthesizer(
     callback_manager: Optional[CallbackManager] = None,
     use_async: bool = False,
     streaming: bool = False,
+    structured_answer_filtering: bool = False,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
 
@@ -56,6 +57,7 @@ def get_response_synthesizer(
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             streaming=streaming,
+            structured_answer_filtering=structured_answer_filtering,
         )
     elif response_mode == ResponseMode.COMPACT:
         return CompactAndRefine(
@@ -63,6 +65,7 @@ def get_response_synthesizer(
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             streaming=streaming,
+            structured_answer_filtering=structured_answer_filtering,
         )
     elif response_mode == ResponseMode.TREE_SUMMARIZE:
         return TreeSummarize(

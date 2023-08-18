@@ -1,16 +1,18 @@
 import logging
-from typing import Any, Generator, Optional, Sequence, cast
+from typing import Any, Generator, Optional, Sequence, cast, Type
 from pydantic import BaseModel, Field
 from llama_index.indices.service_context import ServiceContext
+from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.indices.utils import truncate_text
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TEXT_QA_PROMPT_SEL,
     DEFAULT_REFINE_PROMPT_SEL,
 )
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, Prompt
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
+from llama_index.types import Model
 from llama_index.program import (
     BasePydanticProgram,
     LLMTextCompletionProgram,
@@ -36,6 +38,36 @@ class StructuredRefineResponse(BaseModel):
     )
 
 
+class DefaultRefineProgram(BasePydanticProgram):
+    """
+    Runs the query on the LLM as normal and always returns the answer with query_satisfied=True.
+    """
+
+    def __init__(
+        self,
+        prompt: Prompt,
+        llm_predictor: BaseLLMPredictor
+    ):
+        self._prompt = prompt
+        self._llm_predictor = llm_predictor
+
+    @property
+    def output_cls(self) -> Type[Model]:
+        return StructuredRefineResponse
+
+    def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
+        return self._llm_predictor.predict(
+            self._prompt,
+            **kwds,
+        )
+
+    async def acall(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
+        return await self._llm_predictor.apredict(
+            self._prompt,
+            **kwds,
+        )
+
+
 class Refine(BaseSynthesizer):
     """Refine a response to a query across text chunks."""
 
@@ -46,11 +78,13 @@ class Refine(BaseSynthesizer):
         refine_template: Optional[RefinePrompt] = None,
         streaming: bool = False,
         verbose: bool = False,
+        structured_answer_filtering: bool = False,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._verbose = verbose
+        self._structured_answer_filtering = structured_answer_filtering
 
     def get_response(
         self,
@@ -83,20 +117,26 @@ class Refine(BaseSynthesizer):
         return response
 
     def _get_program(self, prompt_template_str: str) -> BasePydanticProgram:
-        try:
-            return OpenAIPydanticProgram.from_defaults(
-                StructuredRefineResponse,
-                prompt_template_str=prompt_template_str,
-                llm=self._service_context.llm,
-                verbose=self._verbose,
-            )
-        except ValueError:
-            output_parser = PydanticOutputParser(StructuredRefineResponse)
-            return LLMTextCompletionProgram.from_defaults(
-                output_parser,
-                prompt_template_str=prompt_template_str,
-                llm=self._service_context.llm,
-                verbose=self._verbose,
+        if self._structured_answer_filtering:
+            try:
+                return OpenAIPydanticProgram.from_defaults(
+                    StructuredRefineResponse,
+                    prompt_template_str=prompt_template_str,
+                    llm=self._service_context.llm,
+                    verbose=self._verbose,
+                )
+            except ValueError:
+                output_parser = PydanticOutputParser(StructuredRefineResponse)
+                return LLMTextCompletionProgram.from_defaults(
+                    output_parser,
+                    prompt_template_str=prompt_template_str,
+                    llm=self._service_context.llm,
+                    verbose=self._verbose,
+                )
+        else:
+            return DefaultRefineProgram(
+                prompt=Prompt(prompt_template_str),
+                llm_predictor=self._service_context.llm_predictor,
             )
 
     def _give_response_single(
