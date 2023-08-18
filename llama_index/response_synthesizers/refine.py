@@ -121,12 +121,12 @@ class Refine(BaseSynthesizer):
             response = cast(Generator, response)
         return response
 
-    def _get_program(self, prompt_template_str: str) -> BasePydanticProgram:
+    def _get_program(self, prompt: Prompt) -> BasePydanticProgram:
         if self._structured_answer_filtering:
             try:
                 return OpenAIPydanticProgram.from_defaults(
                     StructuredRefineResponse,
-                    prompt_template_str=prompt_template_str,
+                    prompt=prompt,
                     llm=self._service_context.llm,
                     verbose=self._verbose,
                 )
@@ -134,13 +134,13 @@ class Refine(BaseSynthesizer):
                 output_parser = PydanticOutputParser(StructuredRefineResponse)
                 return LLMTextCompletionProgram.from_defaults(
                     output_parser,
-                    prompt_template_str=prompt_template_str,
+                    prompt=prompt,
                     llm=self._service_context.llm,
                     verbose=self._verbose,
                 )
         else:
             return DefaultRefineProgram(
-                prompt=Prompt(prompt_template_str),
+                prompt=prompt,
                 llm_predictor=self._service_context.llm_predictor,
             )
 
@@ -157,7 +157,7 @@ class Refine(BaseSynthesizer):
         )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
-        program = self._get_program(text_qa_template.format())
+        program = self._get_program(text_qa_template)
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             query_satisfied = False
@@ -212,7 +212,7 @@ class Refine(BaseSynthesizer):
             refine_template, text_chunks=[text_chunk]
         )
 
-        program = self._get_program(refine_template.format())
+        program = self._get_program(refine_template)
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if not self._streaming:
@@ -288,7 +288,7 @@ class Refine(BaseSynthesizer):
             refine_template, text_chunks=[text_chunk]
         )
 
-        program = self._get_program(refine_template.format())
+        program = self._get_program(refine_template)
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if not self._streaming:
@@ -322,7 +322,7 @@ class Refine(BaseSynthesizer):
         )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
-        program = self._get_program(text_qa_template.format())
+        program = self._get_program(text_qa_template)
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:

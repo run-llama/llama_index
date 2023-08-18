@@ -35,14 +35,20 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def from_defaults(
         cls,
         output_parser: PydanticOutputParser,
-        prompt_template_str: str,
+        prompt_template_str: str = None,
+        prompt: Prompt = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
         llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
-        prompt = Prompt(prompt_template_str)
+        if prompt is None and prompt_template_str is None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt is not None and prompt_template_str is not None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt_template_str is not None:
+            prompt = Prompt(prompt_template_str)
         function_call = function_call or {
             "name": output_parser.output_cls.schema()["title"]
         }
