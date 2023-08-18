@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Expose a system prompt/query wrapper prompt in the service context for open-source LLMs (#6647)
+
 ## [0.8.4] - 2023-08-17
 
 ### Bug Fixes / Nits
