@@ -1,173 +1,176 @@
-"""Base module for prompts."""
+"""Prompts."""
+
+
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, List, Optional, Protocol, Tuple
 
-from llama_index.bridge.langchain import BasePromptTemplate as BaseLangchainPrompt
-from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
+from pydantic import BaseModel, Field
+
 from llama_index.llms.base import LLM, ChatMessage
-from llama_index.llms.langchain_utils import from_lc_messages
-from llama_index.prompts.prompt_selector import PromptSelector
+from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
+from llama_index.prompts import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.types import BaseOutputParser
+from llama_index.prompts.utils import get_template_vars
 
 
-class Prompt:
-    """Prompt class for LlamaIndex.
+class PromptTemplate(Protocol):
+    @property
+    def metadata(self) -> dict:
+        ...
 
-    Wrapper around langchain's prompt class. Adds ability to:
-        - enforce certain prompt types
-        - partially fill values
-    """
+    def partial_format(self, **kwargs: Any) -> "PromptTemplate":
+        ...
 
+    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
+        ...
+
+    def format_messages(
+        self, llm: Optional[LLM] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        ...
+
+
+class ChatPromptTemplate:
+    def __init__(
+        self,
+        message_templates: List[ChatMessage],
+        prompt_type: str = PromptType.CUSTOM,
+        **kwargs: Any,
+    ):
+        self._message_templates = message_templates
+        self._kwargs = kwargs
+
+        self._metadata = {
+            "prompt_type": prompt_type,
+        }
+
+    @property
+    def metadata(self) -> dict:
+        return self._metadata
+
+    def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
+        prompt = deepcopy(self)
+        prompt._kwargs.update(kwargs)
+        return prompt
+
+    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
+        del llm  # unused
+        messages = self.format_messages(**kwargs)
+        prompt = messages_to_prompt(messages)
+        return prompt
+
+    def format_messages(
+        self, llm: Optional[LLM] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        del llm  # unused
+        """Format the prompt into a list of chat messages."""
+        all_kwargs = {
+            **self._kwargs,
+            **kwargs,
+        }
+
+        messages = []
+        for message_template in self._message_templates:
+            template_vars = get_template_vars(message_template.content)
+            relevant_kwargs = {
+                k: v for k, v in all_kwargs.items() if k in template_vars
+            }
+            formatted_content = message_template.content.format(**relevant_kwargs)
+
+            message = message_template.copy()
+            message.content = formatted_content
+            messages.append(message)
+
+        return messages
+
+
+class PromptTemplate:
     def __init__(
         self,
         template: Optional[str] = None,
-        langchain_prompt: Optional[BaseLangchainPrompt] = None,
-        langchain_prompt_selector: Optional[PromptSelector] = None,
-        output_parser: Optional[BaseOutputParser] = None,
         prompt_type: str = PromptType.CUSTOM,
-        metadata: Optional[Dict[str, Any]] = None,
-        **prompt_kwargs: Any,
+        **kwargs: Any,
     ) -> None:
-        """Init params."""
-        # first check if langchain_prompt_selector is provided
-        # TODO: self.prompt is deprecated, switch to prompt_selector under the hood
-        if langchain_prompt_selector is not None:
-            self.prompt_selector = langchain_prompt_selector
-            self.prompt: BaseLangchainPrompt = self.prompt_selector.default_prompt
-        # then check if template is provided
-        elif langchain_prompt is None:
-            if template is None:
-                raise ValueError(
-                    "`template` must be specified if `langchain_prompt` is None"
-                )
+        self._template = template
+        self._kwargs = kwargs
 
-            self.prompt = LangchainPrompt.from_template(
-                template=template, **prompt_kwargs
-            )
-            self.prompt_selector = PromptSelector(default_prompt=self.prompt)
-        # finally, check if langchain_prompt is provided
-        else:
-            if template:
-                raise ValueError(
-                    f"Both template ({template}) and langchain_prompt "
-                    f"({langchain_prompt}) are provided, only one should be."
-                )
-            self.prompt = langchain_prompt
-            self.prompt_selector = PromptSelector(default_prompt=self.prompt)
-
-        self.partial_dict: Dict[str, Any] = {}
-        self.prompt_kwargs = prompt_kwargs
-        # NOTE: this is only used for token counting and testing
-        self.prompt_type = prompt_type
-
-        self.output_parser = output_parser
-
-        self._original_template = template
-
-        # Metadata is used to pass arbitrary information to other consumers of the
-        # prompt. For example, VellumPromptRegistry uses this to access vellum-specific
-        # identifiers that users can pass along with the prompt.
-        self.metadata = metadata or {}
+        self._metadata = {
+            "prompt_type": prompt_type,
+        }
 
     @property
-    def original_template(self) -> str:
-        """Return the originally specified template, if supplied."""
+    def metadata(self) -> dict:
+        return self._metadata
 
-        if not self._original_template:
-            raise ValueError("No original template specified.")
-
-        return self._original_template
-
-    @classmethod
-    def from_langchain_prompt(
-        cls, prompt: BaseLangchainPrompt, **kwargs: Any
-    ) -> "Prompt":
-        """Load prompt from LangChain prompt."""
-        return cls(langchain_prompt=prompt, **kwargs)
-
-    @classmethod
-    def from_langchain_prompt_selector(
-        cls, prompt_selector: PromptSelector, **kwargs: Any
-    ) -> "Prompt":
-        """Load prompt from LangChain prompt."""
-        return cls(langchain_prompt_selector=prompt_selector, **kwargs)
-
-    def partial_format(self, **kwargs: Any) -> "Prompt":
-        """Format the prompt partially.
-
-        Return an instance of itself.
-
-        """
-        try:
-            # NOTE: this is a hack to get around deepcopy failing on output parser
-            output_parser = self.output_parser
-            self.output_parser = None
-
-            copy_obj = deepcopy(self)
-            copy_obj.output_parser = output_parser
-            copy_obj.partial_dict.update(kwargs)
-            self.output_parser = output_parser
-        except Exception as e:
-            raise e
-
-        return copy_obj
-
-    @classmethod
-    def from_prompt(
-        cls,
-        prompt: "Prompt",
-        llm: Optional[LLM] = None,
-        prompt_type: Optional[PromptType] = None,
-    ) -> "Prompt":
-        """Create a prompt from an existing prompt.
-
-        Use case: If the existing prompt is already partially filled,
-        and the remaining fields satisfy the requirements of the
-        prompt class, then we can create a new prompt from the existing
-        partially filled prompt.
-
-        """
-        lc_prompt = prompt.get_langchain_prompt(llm=llm)
-        tmpl_vars = lc_prompt.input_variables
-        format_dict = {}
-        for var in tmpl_vars:
-            if var not in prompt.partial_dict:
-                format_dict[var] = f"{{{var}}}"
-
-        template_str = prompt.format(llm=llm, **format_dict)
-        cls_obj = cls(
-            template_str,
-            prompt_type=prompt_type or PromptType.CUSTOM,
-            **prompt.prompt_kwargs,
-        )
-        return cls_obj
-
-    def get_langchain_prompt(self, llm: Optional[LLM] = None) -> BaseLangchainPrompt:
-        """Get langchain prompt."""
-        return self.prompt_selector.select(llm=llm)
+    def partial_format(self, **kwargs: Any) -> "PromptTemplate":
+        """Partially format the prompt."""
+        prompt = deepcopy(self)
+        prompt._kwargs.update(kwargs)
+        return prompt
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
-        kwargs.update(self.partial_dict)
-        lc_prompt = self.get_langchain_prompt(llm=llm)
-        return lc_prompt.format(**kwargs)
+        del llm  # unused
+        all_kwargs = {
+            **self._kwargs,
+            **kwargs,
+        }
+        return self._template.format(**all_kwargs)
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
-        kwargs.update(self.partial_dict)
-        lc_template = self.get_langchain_prompt(llm=llm)
-        lc_value = lc_template.format_prompt(**kwargs)
-        lc_messages = lc_value.to_messages()
-        return from_lc_messages(lc_messages)
+        del llm  # unused
+        prompt = self.format(**kwargs)
+        return prompt_to_messages(prompt)
 
-    def get_full_format_args(self, kwargs: Dict) -> Dict[str, Any]:
-        """Get dict of all format args.
 
-        Hack to pass into Langchain to pass validation.
+class SelectorPromptTemplate(BaseModel):
+    default_prompt: PromptTemplate
+    conditionals: List[Tuple[Callable[[LLM], bool], PromptTemplate]] = Field(
+        default_factory=list
+    )
 
-        """
-        kwargs.update(self.partial_dict)
-        return kwargs
+    @property
+    def metadata(self) -> dict:
+        return self.default_prompt.metadata
+
+    def _select(self, llm: Optional[LLM] = None) -> PromptTemplate:
+        if llm is None:
+            return self.default_prompt
+
+        for condition, prompt in self.conditionals:
+            if condition(llm):
+                return prompt
+        return self.default_prompt
+
+    def partial_format(self, **kwargs: Any) -> "SelectorPromptTemplate":
+        default_prompt = self.default_prompt.partial_format(**kwargs)
+        conditionals = [
+            (condition, prompt.partial_format(**kwargs))
+            for condition, prompt in self.conditionals
+        ]
+        return SelectorPromptTemplate(
+            default_prompt=default_prompt, conditionals=conditionals
+        )
+
+    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
+        """Format the prompt into a string."""
+        prompt = self._select(llm=llm)
+        return prompt.format(**kwargs)
+
+    def format_messages(
+        self, llm: Optional[LLM] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Format the prompt into a list of chat messages."""
+        prompt = self._select(llm=llm)
+        return prompt.format(**kwargs)
+
+
+def is_chat_model(llm: LLM) -> bool:
+    return llm.metadata.is_chat_model
+
+
+# NOTE: only for backwards compatibility
+Prompt = PromptTemplate
