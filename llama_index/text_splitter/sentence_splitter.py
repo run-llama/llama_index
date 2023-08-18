@@ -135,30 +135,32 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         """Merge splits into chunks."""
         chunks: List[str] = []
         cur_chunk: List[str] = []
-        cur_tokens = 0
+        cur_chunk_len = 0
         while len(splits) > 0:
-            cur_token = splits[0]
-            cur_len = len(self.tokenizer(cur_token.text))
-            if cur_len > chunk_size:
+            cur_split = splits[0]
+            cur_split_len = len(self.tokenizer(cur_split.text))
+            if cur_split_len > chunk_size:
                 raise ValueError("Single token exceed chunk size")
-            # Ensure no infinite looping by always checking we collected some chunks.
-            if cur_tokens + cur_len > chunk_size and len(cur_chunk) > 0:
+            if cur_chunk_len + cur_split_len > chunk_size and len(cur_chunk) > 0:
+                # if adding split to current chunk exceed chunk size: close out chunk
                 chunks.append("".join(cur_chunk).strip())
                 cur_chunk = []
-                cur_tokens = 0
+                cur_chunk_len = 0
             else:
                 if (
-                    cur_token.is_sentence
-                    or cur_tokens + cur_len < chunk_size - self._chunk_overlap
+                    cur_split.is_sentence
+                    or cur_chunk_len + cur_split_len < chunk_size - self._chunk_overlap
                     or len(cur_chunk) == 0
                 ):
-                    cur_tokens += cur_len
-                    cur_chunk.append(cur_token.text)
+                    # add split to chunk
+                    cur_chunk_len += cur_split_len
+                    cur_chunk.append(cur_split.text)
                     splits.pop(0)
                 else:
+                    # close out chunk
                     chunks.append("".join(cur_chunk).strip())
                     cur_chunk = []
-                    cur_tokens = 0
+                    cur_chunk_len = 0
 
         # handle the last chunk
         chunk = "".join(cur_chunk).strip()
