@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Generator, Optional, Sequence, cast
-
+from pydantic import BaseModel, Field
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
 from llama_index.prompts.default_prompt_selectors import (
@@ -11,8 +11,28 @@ from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
+from llama_index.program import (
+    BasePydanticProgram,
+    LLMTextCompletionProgram,
+    OpenAIPydanticProgram,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class StructuredRefineResponse(BaseModel):
+    """
+    Used to answer a given query based on the provided context.
+    
+    Also indicates if the query was satisfied with the provided answer.
+    """
+
+    answer: str = Field(
+        description="The answer for the given query, based on the context and not prior knowledge."
+    )
+    query_satisfied: bool = Field(
+        description="True if there was enough context given to provide an answer that satisfies the query."
+    )
 
 
 class Refine(BaseSynthesizer):
@@ -61,6 +81,22 @@ class Refine(BaseSynthesizer):
             response = cast(Generator, response)
         return response
 
+    def _get_program(self, prompt_template_str: str) -> BasePydanticProgram:
+        try:
+            return OpenAIPydanticProgram.from_defaults(
+                StructuredRefineResponse,
+                prompt_template_str=prompt_template_str,
+                llm=self._service_context.llm,
+                verbose=self._verbose
+            )
+        except ValueError:
+            return LLMTextCompletionProgram.from_defaults(
+                StructuredRefineResponse,
+                prompt_template_str=prompt_template_str,
+                llm=self._service_context.llm,
+                verbose=self._verbose
+            )
+
     def _give_response_single(
         self,
         query_str: str,
@@ -74,24 +110,29 @@ class Refine(BaseSynthesizer):
         )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
+        program = self._get_program(text_qa_template.format())
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
+            query_satisfied = False
             if response is None and not self._streaming:
-                response = self._service_context.llm_predictor.predict(
-                    text_qa_template,
-                    context_str=cur_text_chunk,
-                )
+                structured_response = cast(StructuredRefineResponse, program(context_str=cur_text_chunk))
+                query_satisfied = structured_response.query_satisfied
+                if query_satisfied:
+                    response = structured_response.answer
             elif response is None and self._streaming:
                 response = self._service_context.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
+                query_satisfied = True
             else:
                 response = self._refine_response_single(
                     cast(RESPONSE_TEXT_TYPE, response),
                     query_str,
                     cur_text_chunk,
                 )
+        if response is None:
+            response = "Empty Response"
         if isinstance(response, str):
             response = response or "Empty Response"
         else:
@@ -104,7 +145,7 @@ class Refine(BaseSynthesizer):
         query_str: str,
         text_chunk: str,
         **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
+    ) -> Optional[RESPONSE_TEXT_TYPE]:
         """Refine response."""
         # TODO: consolidate with logic in response/schema.py
         if isinstance(response, Generator):
@@ -122,20 +163,25 @@ class Refine(BaseSynthesizer):
             refine_template, text_chunks=[text_chunk]
         )
 
+        response = None
+        program = self._get_program(refine_template.format())
         for cur_text_chunk in text_chunks:
+            query_satisfied = False
             if not self._streaming:
-                response = self._service_context.llm_predictor.predict(
-                    refine_template,
-                    context_msg=cur_text_chunk,
-                )
+                structured_response = cast(StructuredRefineResponse, program(context_msg=cur_text_chunk))
+                query_satisfied = structured_response.query_satisfied
+                if query_satisfied:
+                    response = structured_response.answer
             else:
                 response = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
-            refine_template = self._refine_template.partial_format(
-                query_str=query_str, existing_answer=response
-            )
+                query_satisfied = True
+            if query_satisfied:
+                refine_template = self._refine_template.partial_format(
+                    query_str=query_str, existing_answer=response
+                )
 
         return response
 
@@ -162,6 +208,8 @@ class Refine(BaseSynthesizer):
                     prev_response_obj, query_str, text_chunk
                 )
             prev_response_obj = response
+        if response is None:
+            response = "Empty Response"
         if isinstance(response, str):
             response = response or "Empty Response"
         else:
@@ -174,7 +222,7 @@ class Refine(BaseSynthesizer):
         query_str: str,
         text_chunk: str,
         **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
+    ) -> Optional[RESPONSE_TEXT_TYPE]:
         """Refine response."""
         # TODO: consolidate with logic in response/schema.py
         if isinstance(response, Generator):
@@ -190,18 +238,23 @@ class Refine(BaseSynthesizer):
             refine_template, text_chunks=[text_chunk]
         )
 
+        response = None
+        program = self._get_program(refine_template.format())
         for cur_text_chunk in text_chunks:
+            query_satisfied = False
             if not self._streaming:
-                response = await self._service_context.llm_predictor.apredict(
-                    refine_template,
-                    context_msg=cur_text_chunk,
-                )
+                structured_response = await program.acall(context_msg=cur_text_chunk)
+                structured_response = cast(StructuredRefineResponse, structured_response)
+                query_satisfied = structured_response.query_satisfied
+                if query_satisfied:
+                    response = structured_response.answer
             else:
                 raise ValueError("Streaming not supported for async")
 
-            refine_template = self._refine_template.partial_format(
-                query_str=query_str, existing_answer=response
-            )
+            if query_satisfied:
+                refine_template = self._refine_template.partial_format(
+                    query_str=query_str, existing_answer=response
+                )
 
         return response
 
@@ -218,13 +271,15 @@ class Refine(BaseSynthesizer):
         )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
+        program = self._get_program(text_qa_template.format())
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                response = await self._service_context.llm_predictor.apredict(
-                    text_qa_template,
-                    context_str=cur_text_chunk,
-                )
+                structured_response = program.acall(context_str=cur_text_chunk)
+                structured_response = cast(StructuredRefineResponse, structured_response)
+                query_satisfied = structured_response.query_satisfied
+                if query_satisfied:
+                    response = structured_response.answer
             elif response is None and self._streaming:
                 raise ValueError("Streaming not supported for async")
             else:
@@ -233,6 +288,8 @@ class Refine(BaseSynthesizer):
                     query_str,
                     cur_text_chunk,
                 )
+        if response is None:
+            response = "Empty Response"
         if isinstance(response, str):
             response = response or "Empty Response"
         else:
