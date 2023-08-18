@@ -1,6 +1,4 @@
 LangChainLLM
 ============
 
-.. automodule:: llama_index.llms.langchain
-   :members:
-   :inherited-members:
+.. autopydantic_model:: llama_index.llms.langchain.LangChainLLM

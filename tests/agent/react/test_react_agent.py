@@ -1,3 +1,4 @@
+from pydantic import PrivateAttr
 from typing import Any, List, Sequence
 
 import pytest
@@ -24,6 +25,9 @@ def add_tool() -> FunctionTool:
 
 
 class MockChatLLM(MockLLM):
+    _i: int = PrivateAttr()
+    _responses: List[ChatMessage] = PrivateAttr()
+
     def __init__(self, responses: List[ChatMessage]) -> None:
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
@@ -127,6 +131,9 @@ async def test_achat_basic(
 
 
 class MockStreamChatLLM(MockLLM):
+    _i: int = PrivateAttr()
+    _responses: List[ChatMessage] = PrivateAttr()
+
     def __init__(self, responses: List[ChatMessage]) -> None:
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return

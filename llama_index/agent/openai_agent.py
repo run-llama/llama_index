@@ -6,7 +6,7 @@ from threading import Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
@@ -295,6 +295,7 @@ class BaseOpenAIAgent(BaseAgent):
 
         return agent_chat_response
 
+    @trace_method("chat")
     def chat(
         self,
         message: str,
@@ -307,6 +308,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, AgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     async def achat(
         self,
         message: str,
@@ -319,6 +321,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, AgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     def stream_chat(
         self,
         message: str,
@@ -331,6 +334,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     async def astream_chat(
         self,
         message: str,
