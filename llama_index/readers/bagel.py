@@ -145,7 +145,7 @@ class BagelReader(BaseReader):
             query_texts: The document texts to get the closes neighbors of. Optional.
             n_results: The number of neighbors to return for each query. Optional.
             where: A Where type dict used to filter results by. Optional.
-            where_document: A WhereDocument type dict used to filter by the documents. Optional.
+            where_document: A WhereDocument type dict used to filter. Optional.
             include: A list of what to include in the results. Optional.
 
         Returns:
