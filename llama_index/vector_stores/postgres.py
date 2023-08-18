@@ -280,12 +280,17 @@ class PGVectorStore(VectorStore):
 
         # Based on example code from: https://github.com/pgvector/pgvector-python/blob/master/examples/hybrid_search.py
         # deduplicate
-        results = set(itertools.chain(*results))
+        seen = set()
+        uniq_results = []
+        for result in itertools.chain(*results):
+            if result.node_id not in seen:
+                seen.add(result.node_id)
+                uniq_results.append(result)
 
         # re-rank
         encoder = CrossEncoder(self._hybrid_search_cross_encoder)
-        scores = encoder.predict([(query, item.text) for item in results])
-        return [v for _, v in sorted(zip(scores, results), reverse=True)]
+        scores = encoder.predict([(query.query_str, item.text) for item in uniq_results])
+        return [v for _, v in sorted(zip(scores, uniq_results), reverse=True)]
 
     def _build_sparse_query(
             self,
@@ -304,12 +309,12 @@ class PGVectorStore(VectorStore):
 
         stmt = select(  # type: ignore
             self.table_class,
-            func.ts_rank(self.table_class.text_search_tsv, func.to_tsquery(query_str)).label('rank')
+            func.ts_rank(self.table_class.text_search_tsv, func.plainto_tsquery(query_str)).label('rank')
         ).where(self.table_class.text_search_tsv.match(query_str)).order_by(text("rank desc"))
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)  # type: ignore
 
-    async def _sparse_query_with_rank(
+    async def _async_sparse_query_with_rank(
             self,
             query: VectorStoreQuery,
             limit: int,
@@ -324,9 +329,29 @@ class PGVectorStore(VectorStore):
                         node_id=item.node_id,
                         text=item.text,
                         metadata=item.metadata_,
-                        similarity=cross_rank,
+                        similarity=rank,
                     )
-                    for item, cross_rank in res.all()
+                    for item, rank in res.all()
+                ]
+
+    def _sparse_query_with_rank(
+            self,
+            query: VectorStoreQuery,
+            limit: int,
+            metadata_filters: Optional[MetadataFilters] = None,
+    ) -> List[DBEmbeddingRow]:
+        stmt = self._build_sparse_query(query.query_str, limit, metadata_filters)
+        with self._session() as session:
+            with session.begin():
+                res = session.execute(stmt)
+                return [
+                    DBEmbeddingRow(
+                        node_id=item.node_id,
+                        text=item.text,
+                        metadata=item.metadata_,
+                        similarity=rank,
+                    )
+                    for item, rank in res.all()
                 ]
 
     async def _async_hybrid_query(self, query):
@@ -335,24 +360,33 @@ class PGVectorStore(VectorStore):
             self._aquery_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
             ),
-            self._sparse_query_with_rank(query, query.similarity_top_k, query.filters)
+            self._async_sparse_query_with_rank(query, query.similarity_top_k, query.filters)
         )
         results = self._rerank(query, results)
 
-        return [
-            DBEmbeddingRow(
-                node_id=item.node_id,
-                text=item.text,
-                metadata=item.metadata_,
-                similarity= score,
-            )
-            for score, item in results[:query.similarity_top_k]
-        ]
+        return results[:query.similarity_top_k]
+
+    def _hybrid_query(self, query):
+        dense_results = self._query_with_score(
+            query.query_embedding, query.similarity_top_k, query.filters
+        )
+        sparse_results = self._sparse_query_with_rank(query, query.similarity_top_k, query.filters)
+        combined_results = dense_results + sparse_results
+
+        results = self._rerank(query, combined_results)
+
+        return results[:query.similarity_top_k]
 
     async def a_hybrid_query(
         self, query: VectorStoreQuery
     ) -> VectorStoreQueryResult:
         results = await self._async_hybrid_query(query)
+        return self._db_rows_to_query_result(results)
+
+    def hybrid_query(
+            self, query: VectorStoreQuery
+    ) -> VectorStoreQueryResult:
+        results = self._hybrid_query(query)
         return self._db_rows_to_query_result(results)
 
     def _db_rows_to_query_result(

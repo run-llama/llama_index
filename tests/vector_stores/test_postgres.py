@@ -14,7 +14,6 @@ from llama_index.vector_stores.types import (
 
 # from testing find install here https://github.com/pgvector/pgvector#installation-notes
 
-
 PARAMS: Dict[str, Union[str, int]] = dict(
     host="localhost", user="postgres", password="password", port=5432
 )
@@ -36,7 +35,6 @@ try:
     postgres_not_available = False
 except (ImportError, Exception):
     postgres_not_available = True
-
 
 @pytest.fixture(scope="session")
 def conn() -> Any:
@@ -85,7 +83,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
             ),
         ),
         NodeWithEmbedding(
-            embedding=[0.0] * 1536,
+            embedding=[0.1] * 1536,
             node=TextNode(
                 text="dolor sit amet",
                 id_="bbb",
@@ -99,7 +97,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
 def hybrid_node_embeddings() -> List[TextNode]:
     return [
         NodeWithEmbedding(
-            embedding=[1.0] * 1536,
+            embedding=[0.0] * 1536,
             node=TextNode(
                 text="lorem ipsum",
                 id_="aaa",
@@ -107,7 +105,7 @@ def hybrid_node_embeddings() -> List[TextNode]:
             ),
         ),
         NodeWithEmbedding(
-            embedding=[0.0] * 1536,
+            embedding=[1.0] * 1536,
             node=TextNode(
                 text="dolor sit amet",
                 id_="bbb",
@@ -116,15 +114,15 @@ def hybrid_node_embeddings() -> List[TextNode]:
             ),
         ),
         NodeWithEmbedding(
-            embedding=[1.0] * 1536,
+            embedding=[5.0] * 1536,
             node=TextNode(
-                text="The quick brown fox jumped over the lazy dog.",
+                text="The quick brown fox jumped over the lazy dog (fox).",
                 id_="ccc",
                 relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
             ),
         ),
         NodeWithEmbedding(
-            embedding=[0.0] * 1536,
+            embedding=[5.0] * 1536,
             node=TextNode(
                 text="The fox and the hound",
                 id_="ddd",
@@ -205,7 +203,7 @@ async def test_add_to_db_query_and_delete(
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
 
-    q = VectorStoreQuery(query_embedding=[0] * 1536, similarity_top_k=1)
+    q = VectorStoreQuery(query_embedding=[0.1] * 1536, similarity_top_k=1)
 
     if use_async:
         res = await pg.aquery(q)
@@ -221,59 +219,76 @@ async def test_add_to_db_query_and_delete(
     else:
         res = pg.query(q)
     assert res.nodes
-    print(res.nodes)
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "aaa"
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
-@pytest.mark.parametrize("use_async", [(True,), ])
+@pytest.mark.parametrize("use_async", [(True,), (False,)])
 async def test_hybrid_query(
-        pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], text_nodes: List[TextNode], use_async: bool
+        pg: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add_sparse_data(text_nodes)
-    else:
-        pg.add(node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-
-    q = VectorStoreQuery(query_embedding=[0] * 1536, query_str="mr fox", similarity_top_k=2)
-
-    if use_async:
-        res = await pg.a_hybrid_query(q)
-    else:
-        res = pg.query(q)
-    assert res.nodes
-    print(res.nodes)
-    assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "bbb"
-    pg.delete("bbb")
-
-    if use_async:
-        res = await pg.aquery(q)
-    else:
-        res = pg.query(q)
-    assert res.nodes
-    print(res.nodes)
-    assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "aaa"
-
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("use_async", [(True,), ])
-async def test_hybrid_query(
-        pg: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], text_nodes: List[TextNode], use_async: bool
-) -> None:
-    if use_async:
-        await pg.add(text_nodes)
+        await pg.async_add(hybrid_node_embeddings)
     else:
         pg.add(hybrid_node_embeddings)
     assert isinstance(pg, PGVectorStore)
 
-    q = VectorStoreQuery(query_embedding=[0] * 1536, query_str="mr fox", similarity_top_k=2)
+    q = VectorStoreQuery(query_embedding=[0.1] * 1536, query_str="fox", similarity_top_k=2)
 
     if use_async:
         res = await pg.a_hybrid_query(q)
     else:
-        res = pg.query(q)
+        res = pg.hybrid_query(q)
     assert res.nodes
+    assert len(res.nodes) == 2
+    assert res.nodes[0].node_id == "ccc"
+    assert res.nodes[1].node_id == "ddd"
+
+    q = VectorStoreQuery(query_embedding=[1] * 1536, query_str="lorem", similarity_top_k=2)
+
+    if use_async:
+        res = await pg.a_hybrid_query(q)
+    else:
+        res = pg.hybrid_query(q)
+    assert res.nodes
+    assert len(res.nodes) == 2
+    assert res.nodes[0].node_id == "aaa"
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [(True,), (False,)])
+async def test_add_to_db_and_hybrid_query_with_metadata_filters(
+        pg: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], use_async: bool
+) -> None:
+    if use_async:
+        await pg.async_add(hybrid_node_embeddings)
+    else:
+        pg.add(hybrid_node_embeddings)
+    assert isinstance(pg, PGVectorStore)
+    filters = MetadataFilters(
+        filters=[ExactMatchFilter(key="test_key", value="test_value")]
+    )
+    q = VectorStoreQuery(
+        query_embedding=[0.1] * 1536, query_str="fox", similarity_top_k=10, filters=filters
+    )
+    if use_async:
+        res = await pg.a_hybrid_query(q)
+    else:
+        res = pg.hybrid_query(q)
+    assert res.nodes
+    assert len(res.nodes) == 2
+    assert res.nodes[0].node_id == "ddd"
+    assert res.nodes[1].node_id == "bbb"
+
+def test_hybrid_query_fails_if_no_query_str_provided(
+        pg: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
+) -> None:
+    q = VectorStoreQuery(
+        query_embedding=[1.0] * 1536, similarity_top_k=10
+    )
+
+    with pytest.raises(Exception) as exc:
+        pg.hybrid_query(q)
+
+        assert str(exc) == "query_str must be specified for a sparse vector query."
