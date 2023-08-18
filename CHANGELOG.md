@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### New Features
+- Expose a system prompt/query wrapper prompt in the service context for open-source LLMs (#6647)
+- Changed default MyScale index format to `MSTG` (#7288)
+- Added tracing to chat engines/agents (#7304)
+
 ### Bug Fixes / Nits
 - Fix sentence splitter infinite loop (#7925)
 
