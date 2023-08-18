@@ -143,16 +143,18 @@ class BagelReader(BaseReader):
         Args:
             query_embeddings: The embeddings to get the closes neighbors of. Optional.
             query_texts: The document texts to get the closes neighbors of. Optional.
-            n_results: The number of neighbors to return for each query_embedding or query_texts. Optional.
-            where: A Where type dict used to filter results by. E.g. `{"color" : "red", "price": 4.20}`. Optional.
-            where_document: A WhereDocument type dict used to filter by the documents. E.g. `{$contains: {"text": "hello"}}`. Optional.
-            include: A list of what to include in the results. Can contain `"embeddings"`, `"metadatas"`, `"documents"`, `"distances"`. Ids are always included. Defaults to `["metadatas", "documents", "distances"]`. Optional.
+            n_results: The number of neighbors to return for each query. Optional.
+            where: A Where type dict used to filter results by. Optional.
+            where_document: A WhereDocument type dict used to filter. Optional.
+            include: A list of what to include in the results. Optional.
 
         Returns:
-            Llama Index Document(s) with the closest embeddings to the query_embeddings or query_texts.
+            Llama Index Document(s) with the closest embeddings to the
+            query_embeddings or query_texts.
         """
         # get the results from the collection
-        # If neither query_embeddings nor query_texts are provided, or both are provided, raise an error
+        # If neither query_embeddings nor query_texts are provided,
+        # or both are provided, raise an error
         if (query_vector is None and query_texts is None) or (
             query_vector is not None and query_texts is not None
         ):
