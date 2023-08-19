@@ -5,6 +5,9 @@
 ### New Features
 - Awadb Vector Store (#7291)
 
+### Bug Fixes / Nits
+- Fix bug in OpenAI llm temperature type 
+
 ## [0.8.5] - 2023-08-18
 
 ### New Features
