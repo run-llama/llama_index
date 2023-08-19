@@ -18,6 +18,12 @@ LLM Implementations
    llms/azure_openai.rst
    llms/huggingface.rst
    llms/langchain.rst
+   llms/anthropic.rst
+   llms/llama_cpp.rst
+   llms/palm.rst
+   llms/predibase.rst
+   llms/replicate.rst
+   llms/xinference.rst
 
 LLM Interface
 ^^^^^^^^^^^^^^^^^^^^^^^
