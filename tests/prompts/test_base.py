@@ -1,7 +1,6 @@
 """Test prompts."""
 
 
-
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.prompts import PromptTemplate

@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from llama_index import Prompt
+from llama_index.prompts import BasePromptTemplate
 from llama_index.callbacks import CBEventType
 from llama_index.llm_predictor.vellum import (
     VellumRegisteredPrompt,
@@ -15,7 +15,7 @@ from llama_index.llm_predictor.vellum import (
 def test_predict__basic(
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_predictor_factory: Callable[..., VellumPredictor],
-    dummy_prompt: Prompt,
+    dummy_prompt: BasePromptTemplate,
 ) -> None:
     """When the Vellum API returns expected values, so should our predictor"""
 
@@ -35,7 +35,7 @@ def test_predict__callback_manager(
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_predictor_factory: Callable[..., VellumPredictor],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
-    dummy_prompt: Prompt,
+    dummy_prompt: BasePromptTemplate,
 ) -> None:
     """Ensure we invoke a callback manager, when provided"""
 
@@ -85,7 +85,7 @@ def test_predict__callback_manager(
 def test_stream__basic(
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_predictor_factory: Callable[..., VellumPredictor],
-    dummy_prompt: Prompt,
+    dummy_prompt: BasePromptTemplate,
 ) -> None:
     """When the Vellum API streams expected values, so should our predictor"""
 
@@ -137,7 +137,7 @@ def test_stream__callback_manager(
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_predictor_factory: Callable[..., VellumPredictor],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
-    dummy_prompt: Prompt,
+    dummy_prompt: BasePromptTemplate,
 ) -> None:
     """Ensure we invoke a callback manager, when provided"""
 
