@@ -2,12 +2,13 @@
 
 
 from copy import deepcopy
-from typing import Any, Callable, List, Optional, Protocol, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
+from llama_index.types import BaseOutputParser
 
 
 class BasePromptTemplate(Protocol):
@@ -17,6 +18,10 @@ class BasePromptTemplate(Protocol):
 
     @property
     def template_vars(self) -> List[str]:
+        ...
+
+    @property
+    def kwargs(self) -> Dict[str, str]:
         ...
 
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
@@ -36,6 +41,7 @@ class ChatPromptTemplate:
         self,
         message_templates: List[ChatMessage],
         prompt_type: str = PromptType.CUSTOM,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ):
         self._message_templates = message_templates
@@ -43,11 +49,16 @@ class ChatPromptTemplate:
 
         self._metadata = {
             "prompt_type": prompt_type,
+            "output_parser": output_parser,
         }
 
     @property
     def metadata(self) -> dict:
         return self._metadata
+
+    @property
+    def kwargs(self) -> Dict[str, str]:
+        return self._kwargs
 
     @property
     def template_vars(self) -> List[str]:
@@ -98,6 +109,7 @@ class PromptTemplate:
         self,
         template: Optional[str] = None,
         prompt_type: str = PromptType.CUSTOM,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         self._template = template
@@ -105,11 +117,16 @@ class PromptTemplate:
 
         self._metadata = {
             "prompt_type": prompt_type,
+            "output_parser": output_parser,
         }
 
     @property
     def metadata(self) -> dict:
         return self._metadata
+
+    @property
+    def kwargs(self) -> Dict[str, str]:
+        return self._kwargs
 
     @property
     def template_vars(self) -> List[str]:
@@ -153,6 +170,10 @@ class SelectorPromptTemplate:
     @property
     def metadata(self) -> dict:
         return self.default_prompt.metadata
+
+    @property
+    def kwargs(self) -> Dict[str, str]:
+        return self.default_prompt.kwargs
 
     @property
     def template_vars(self) -> List[str]:

@@ -161,15 +161,8 @@ def mock_llmpredictor_predict(prompt: BasePromptTemplate, **prompt_args: Any) ->
     Depending on the prompt, return response.
 
     """
-    if isinstance(prompt, (PromptTemplate, ChatPromptTemplate)):
-        partial_kwargs = prompt._kwargs
-    elif isinstance(prompt, SelectorPromptTemplate):
-        partial_kwargs = prompt.default_prompt._kwargs
-    else:
-        raise ValueError(f"Unknown prompt type: {type(prompt)}")
-
     full_prompt_args = {
-        **partial_kwargs,
+        **prompt.kwargs,
         **prompt_args,
     }
     prompt_type = prompt.metadata["prompt_type"]
