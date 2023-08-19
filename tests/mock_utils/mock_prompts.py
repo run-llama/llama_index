@@ -4,18 +4,26 @@ from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 
 MOCK_SUMMARY_PROMPT_TMPL = "{context_str}\n"
-MOCK_SUMMARY_PROMPT = PromptTemplate(MOCK_SUMMARY_PROMPT_TMPL, prompt_type=PromptType.SUMMARY)
+MOCK_SUMMARY_PROMPT = PromptTemplate(
+    MOCK_SUMMARY_PROMPT_TMPL, prompt_type=PromptType.SUMMARY
+)
 
 MOCK_INSERT_PROMPT_TMPL = "{num_chunks}\n{context_list}{new_chunk_text}\n"
-MOCK_INSERT_PROMPT = PromptTemplate(MOCK_INSERT_PROMPT_TMPL, prompt_type=PromptType.TREE_INSERT)
+MOCK_INSERT_PROMPT = PromptTemplate(
+    MOCK_INSERT_PROMPT_TMPL, prompt_type=PromptType.TREE_INSERT
+)
 
 # # single choice
 MOCK_QUERY_PROMPT_TMPL = "{num_chunks}\n" "{context_list}\n" "{query_str}'\n"
-MOCK_QUERY_PROMPT = PromptTemplate(MOCK_QUERY_PROMPT_TMPL, prompt_type=PromptType.TREE_SELECT)
+MOCK_QUERY_PROMPT = PromptTemplate(
+    MOCK_QUERY_PROMPT_TMPL, prompt_type=PromptType.TREE_SELECT
+)
 
 
 MOCK_REFINE_PROMPT_TMPL = "{query_str}\n" "{existing_answer}\n" "{context_msg}\n"
-MOCK_REFINE_PROMPT = PromptTemplate(MOCK_REFINE_PROMPT_TMPL, prompt_type=PromptType.REFINE)
+MOCK_REFINE_PROMPT = PromptTemplate(
+    MOCK_REFINE_PROMPT_TMPL, prompt_type=PromptType.REFINE
+)
 
 
 MOCK_TEXT_QA_PROMPT_TMPL = "{context_str}\n" "{query_str}\n"
@@ -59,7 +67,11 @@ MOCK_KG_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
 )
 
 MOCK_INPUT_PROMPT_TMPL = "{query_str}"
-MOCK_INPUT_PROMPT = PromptTemplate(MOCK_INPUT_PROMPT_TMPL, prompt_type=PromptType.SIMPLE_INPUT)
+MOCK_INPUT_PROMPT = PromptTemplate(
+    MOCK_INPUT_PROMPT_TMPL, prompt_type=PromptType.SIMPLE_INPUT
+)
 
 MOCK_PANDAS_PROMPT_TMPL = "{query_str}\n{df_str}\n{instruction_str}"
-MOCK_PANDAS_PROMPT = PromptTemplate(MOCK_PANDAS_PROMPT_TMPL, prompt_type=PromptType.PANDAS)
+MOCK_PANDAS_PROMPT = PromptTemplate(
+    MOCK_PANDAS_PROMPT_TMPL, prompt_type=PromptType.PANDAS
+)

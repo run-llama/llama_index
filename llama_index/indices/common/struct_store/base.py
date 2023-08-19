@@ -94,7 +94,9 @@ class SQLDocumentContextBuilder:
         schema = self._sql_database.get_single_table_info(table_name)
         prompt_with_schema = self._table_context_prompt.partial_format(schema=schema)
         prompt_with_schema.metadata["prompt_type"] = PromptType.QUESTION_ANSWER
-        refine_prompt_with_schema = self._refine_table_context_prompt.partial_format(schema=schema)
+        refine_prompt_with_schema = self._refine_table_context_prompt.partial_format(
+            schema=schema
+        )
         refine_prompt_with_schema.metadata["prompt_type"] = PromptType.REFINE
 
         text_splitter = (

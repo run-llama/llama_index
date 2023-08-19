@@ -162,7 +162,7 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
         """Init params."""
         # partial format df parser template string with column schema
         prompt_template_str = df_parser_template_str.replace(
-            "{column_schema}", column_schema
+            "{column_schema}", column_schema or ""
         )
 
         pydantic_program = pydantic_program_cls.from_defaults(

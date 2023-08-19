@@ -12,10 +12,21 @@ from llama_index.types import BaseOutputParser
 
 
 class BasePromptTemplate(Protocol):
-    metadata: dict
-    template_vars: List[str]
-    kwargs: Dict[str, str]
-    output_parser: Optional[BaseOutputParser]
+    @property
+    def metadata(self) -> dict:
+        ...
+
+    @property
+    def template_vars(self) -> List[str]:
+        ...
+
+    @property
+    def kwargs(self) -> Dict[str, str]:
+        ...
+
+    @property
+    def output_parser(self) -> Optional[BaseOutputParser]:
+        ...
 
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         ...
@@ -50,7 +61,7 @@ class ChatPromptTemplate:
         """Get input variables."""
         variables = []
         for message_template in self._message_templates:
-            variables.extend(get_template_vars(message_template.content))
+            variables.extend(get_template_vars(message_template.content or ""))
         return variables
 
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
@@ -76,7 +87,7 @@ class ChatPromptTemplate:
 
         messages = []
         for message_template in self._message_templates:
-            template_vars = get_template_vars(message_template.content)
+            template_vars = get_template_vars(message_template.content or "")
             relevant_kwargs = {
                 k: v for k, v in all_kwargs.items() if k in template_vars
             }
@@ -92,7 +103,7 @@ class ChatPromptTemplate:
 class PromptTemplate:
     def __init__(
         self,
-        template: Optional[str] = None,
+        template: str,
         prompt_type: str = PromptType.CUSTOM,
         output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
