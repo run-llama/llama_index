@@ -168,6 +168,7 @@ class EvaporateExtractor:
             ResponseMode,
             get_response_synthesizer,
         )
+
         function_field = get_function_field_from_attribute(field)
         # TODO: replace with new response synthesis module
 

@@ -9,7 +9,7 @@ from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import Prompt
 from llama_index.types import Model
 from llama_index.program.utils import create_list_model
-from typing import Tuple
+from typing import Tuple, cast
 
 
 def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
@@ -61,8 +61,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     def from_defaults(
         cls,
         output_cls: Type[Model],
-        prompt_template_str: str = None,
-        prompt: Prompt = None,
+        prompt_template_str: Optional[str] = None,
+        prompt: Optional[Prompt] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
@@ -91,7 +91,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         return cls(
             output_cls=output_cls,
             llm=llm,
-            prompt=prompt,
+            prompt=cast(Prompt, prompt),
             function_call=function_call,
             verbose=verbose,
         )

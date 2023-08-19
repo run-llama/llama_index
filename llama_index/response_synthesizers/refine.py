@@ -12,7 +12,6 @@ from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, Prom
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
-from llama_index.types import Model
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.program.llm_program import LLMTextCompletionProgram
@@ -41,16 +40,12 @@ class DefaultRefineProgram(BasePydanticProgram):
     Runs the query on the LLM as normal and always returns the answer with query_satisfied=True.
     """
 
-    def __init__(
-        self,
-        prompt: Prompt,
-        llm_predictor: BaseLLMPredictor
-    ):
+    def __init__(self, prompt: Prompt, llm_predictor: BaseLLMPredictor):
         self._prompt = prompt
         self._llm_predictor = llm_predictor
 
     @property
-    def output_cls(self) -> Type[Model]:
+    def output_cls(self) -> Type[BaseModel]:
         return StructuredRefineResponse
 
     def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:

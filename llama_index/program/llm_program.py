@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union, cast
 
 
 from pydantic import BaseModel
@@ -35,8 +35,8 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def from_defaults(
         cls,
         output_parser: PydanticOutputParser,
-        prompt_template_str: str = None,
-        prompt: Prompt = None,
+        prompt_template_str: Optional[str] = None,
+        prompt: Optional[Prompt] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
@@ -54,7 +54,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         }
         return cls(
             output_parser,
-            prompt=prompt,
+            prompt=cast(Prompt, prompt),
             llm=llm,
             function_call=function_call,
             verbose=verbose,
