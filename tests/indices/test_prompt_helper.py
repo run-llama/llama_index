@@ -179,6 +179,4 @@ def test_get_biggest_prompt() -> None:
     prompt3 = PromptTemplate("This is the {text}")
     biggest_prompt = get_biggest_prompt([prompt1, prompt2, prompt3])
 
-    lc_biggest_template = cast(LangchainPrompt, biggest_prompt.prompt).template
-    prompt2_template = cast(LangchainPrompt, prompt2.prompt).template
-    assert lc_biggest_template == prompt2_template
+    assert biggest_prompt == prompt2

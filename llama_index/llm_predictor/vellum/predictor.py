@@ -59,11 +59,13 @@ class VellumPredictor(BaseLLMPredictor):
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         result = self._vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
         completion_text = self._process_generate_response(
@@ -81,11 +83,13 @@ class VellumPredictor(BaseLLMPredictor):
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         responses = self._vellum_client.generate_stream(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
         def text_generator() -> TokenGen:

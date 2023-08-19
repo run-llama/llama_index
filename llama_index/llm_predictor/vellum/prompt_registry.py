@@ -151,7 +151,7 @@ class VellumPromptRegistry:
             parameters=params,
             meta={
                 "source": "llamaindex",
-                "prompt_type": prompt.prompt_type,
+                "prompt_type": prompt.metadata["prompt_type"],
             },
         )
 
@@ -165,7 +165,8 @@ class VellumPromptRegistry:
         )
 
     def _generate_default_label(self, prompt: Prompt) -> str:
-        return f"LlamaIndex Demo: {prompt.prompt_type}"
+        prompt_type = prompt.metadata["prompt_type"]
+        return f"LlamaIndex Demo: {prompt_type}'"
 
     def _generate_default_name(self, prompt: Prompt) -> str:
         default_label = self._generate_default_label(prompt)

@@ -92,14 +92,11 @@ class SQLDocumentContextBuilder:
     ) -> str:
         """Build context from documents for a single table."""
         schema = self._sql_database.get_single_table_info(table_name)
-        prompt_with_schema = QuestionAnswerPrompt.from_prompt(
-            self._table_context_prompt.partial_format(schema=schema),
-            prompt_type=PromptType.QUESTION_ANSWER,
-        )
-        refine_prompt_with_schema = RefinePrompt.from_prompt(
-            self._refine_table_context_prompt.partial_format(schema=schema),
-            prompt_type=PromptType.REFINE,
-        )
+        prompt_with_schema = self._table_context_prompt.partial_format(schema=schema)
+        prompt_with_schema.metadata["prompt_type"] = PromptType.QUESTION_ANSWER
+        refine_prompt_with_schema = self._refine_table_context_prompt.partial_format(schema=schema)
+        refine_prompt_with_schema.metadata["prompt_type"] = PromptType.REFINE
+
         text_splitter = (
             self._text_splitter
             or self._service_context.prompt_helper.get_text_splitter_given_prompt(

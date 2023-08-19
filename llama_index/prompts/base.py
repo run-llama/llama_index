@@ -55,7 +55,7 @@ class ChatPromptTemplate:
 
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
         prompt = deepcopy(self)
-        prompt._kwargs.update(kwargs)
+        prompt.kwargs.update(kwargs)
         return prompt
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
@@ -70,7 +70,7 @@ class ChatPromptTemplate:
         del llm  # unused
         """Format the prompt into a list of chat messages."""
         all_kwargs = {
-            **self._kwargs,
+            **self.kwargs,
             **kwargs,
         }
 
@@ -113,14 +113,14 @@ class PromptTemplate:
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
         """Partially format the prompt."""
         prompt = deepcopy(self)
-        prompt._kwargs.update(kwargs)
+        prompt.kwargs.update(kwargs)
         return prompt
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
         del llm  # unused
         all_kwargs = {
-            **self._kwargs,
+            **self.kwargs,
             **kwargs,
         }
         return self._template.format(**all_kwargs)
