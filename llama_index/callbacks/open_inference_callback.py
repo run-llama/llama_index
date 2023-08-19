@@ -217,9 +217,13 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
                     )
                 )
         elif event_type is CBEventType.LLM:
-            self._trace_data.query_data.response_text = str(
-                payload.get(EventPayload.RESPONSE, "")
-            ) or str(payload.get(EventPayload.COMPLETION, ""))
+            if chat_response := payload.get(EventPayload.RESPONSE):
+                response_text = chat_response.message.content
+            elif completion_response := payload.get(EventPayload.COMPLETION):
+                response_text = completion_response.text
+            else:
+                response_text = ""
+            self._trace_data.query_data.response_text = response_text
         elif event_type is CBEventType.EMBEDDING:
             self._trace_data.query_data.query_embedding = payload[
                 EventPayload.EMBEDDINGS
