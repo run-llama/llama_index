@@ -5,9 +5,6 @@ from typing import Any, Dict
 
 from llama_index.prompts.base import (
     BasePromptTemplate,
-    ChatPromptTemplate,
-    PromptTemplate,
-    SelectorPromptTemplate,
 )
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import mock_extract_keywords_response

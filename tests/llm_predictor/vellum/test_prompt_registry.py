@@ -1,7 +1,6 @@
-from typing import Callable, Type
+from typing import Callable
 from unittest import mock
 
-from llama_index import Prompt
 from llama_index.llm_predictor.vellum import (
     VellumRegisteredPrompt,
     VellumCompiledPrompt,

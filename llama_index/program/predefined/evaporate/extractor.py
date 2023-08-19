@@ -15,7 +15,6 @@ from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import QuestionAnswerPrompt
 
 
 from llama_index.program.predefined.evaporate.prompts import (

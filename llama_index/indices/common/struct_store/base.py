@@ -18,8 +18,6 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
     RefineTableContextPrompt,
     SchemaExtractPrompt,
     TableContextPrompt,

@@ -134,11 +134,13 @@ class VellumPredictor(BaseLLMPredictor):
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         result = await self._async_vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
         completion_text = self._process_generate_response(
