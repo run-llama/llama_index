@@ -1,11 +1,10 @@
 """Test LLM reranker."""
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import PromptTemplate
+from llama_index.prompts import PromptTemplate
 from llama_index.llm_predictor import LLMPredictor
 from unittest.mock import patch
 from typing import List, Any
-from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.indices.postprocessor.llm_rerank import LLMRerank
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import BaseNode, TextNode, NodeWithScore
@@ -15,7 +14,6 @@ def mock_llmpredictor_predict(
     self: Any, prompt: PromptTemplate, **prompt_args: Any
 ) -> str:
     """Patch llm predictor predict."""
-    assert isinstance(prompt, QuestionAnswerPrompt)
     context_str = prompt_args["context_str"]
     node_strs = context_str.split("\n")
     node_to_choice_and_score = {
