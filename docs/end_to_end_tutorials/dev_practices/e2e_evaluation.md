@@ -1,7 +1,21 @@
 # End-to-End Evaluation
+End-to-End evaluation should be the guiding signal for your RAG application - will my pipeline generate the right responses given the data sources and a set of queries?
+
+Generally, end-to-end evaluation should be the gold signal for how your application behaves as a whole. While it helps initially to individually inspect queries and responses, as you deal with more failure and corner cases, it may stop being feasible to look at each query individually, and rather it may help instead to define and gain an intuition for what a set of summary metrics or automated evaluation might be telling you.
+
 ## Setting up an Evaluation Set
 
-To help with this, we've created some tools that automatically generate a dataset for you given a set of documents to query. (See examples below).
+It is helpful to start off with a small but diverse set of queries, and build up more examples as one discovers problematic queries or interactions.
+
+We've created some tools that automatically generate a dataset for you given a set of documents to query. (See example below).
+
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/evaluation/QuestionGeneration.ipynb
+```
 
 In the future, we will also be able to create datasets automatically against tools.
 
@@ -16,9 +30,11 @@ Qualitative eval is more useful when generating long-form responses that are mea
 
 With a complex pipeline, it may be unclear which parts of the pipeline are affecting your results.
 
-Sensitivity testing can be a good inroad into choosing which components to individually test or tweak more thoroughly.
+Sensitivity testing can be a good inroad into choosing which components to individually test or tweak more thoroughly, or which parts of your dataset (e.g. queries) may be producing problematic results.
 
 More details on how to discover issues automatically with methods such as sensitivity testing will come soon.
+
+Examples of this in the more traditional ML domain include [Giskard](https://docs.giskard.ai/en/latest/getting-started/quickstart.html).
 
 ## Metrics Ensembling
 
@@ -34,12 +50,3 @@ It is intenteded for two purposes:
 We also want the metrics ensembling to be interpretable - the correlation and weighting scores should give an indication of which metrics best capture the  
 
 We will discuss more about the methodology in future updates.
-
-## Examples
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/evaluation/QuestionGeneration.ipynb
-```
