@@ -41,3 +41,17 @@ maxdepth: 1
 ---
 Kuzu Graph Store </examples/index_structs/knowledge_graph/KuzuGraphDemo.ipynb>
 ```
+
+## `FalkorDBGraphStore`
+
+We support a `FalkorDBGraphStore` integration, for persisting graphs directly in FalkorDB! Furthermore, you can generate cypher queries and return natural language responses for your FalkorDB graphs using the `KnowledgeGraphQueryEngine`.
+
+See the associated guides below:
+
+```{toctree}
+---
+maxdepth: 1
+---
+FalkorDB Graph Store </examples/index_structs/knowledge_graph/FalkorDBGraphKGIndexDemo.ipynb>
+Knowledge Graph Query Engine </examples/query_engine/knowledge_graph_query_engine.ipynb>
+```
