@@ -6,7 +6,7 @@ Full credits go to: https://github.com/HazyResearch/evaporate
 
 """
 
-from llama_index.prompts.prompts import PromptTemplate
+from llama_index.prompts import PromptTemplate
 
 # deprecated, kept for backward compatibility
 

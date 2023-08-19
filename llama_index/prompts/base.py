@@ -91,10 +91,11 @@ class ChatPromptTemplate:
             relevant_kwargs = {
                 k: v for k, v in all_kwargs.items() if k in template_vars
             }
-            formatted_content = message_template.content.format(**relevant_kwargs)
+            content_template = message_template.content or ""
+            content = content_template.format(**relevant_kwargs)
 
             message = message_template.copy()
-            message.content = formatted_content
+            message.content = content
             messages.append(message)
 
         return messages
@@ -148,9 +149,9 @@ class PromptTemplate:
 class SelectorPromptTemplate:
     def __init__(
         self,
-        default_prompt: PromptTemplate,
+        default_prompt: BasePromptTemplate,
         conditionals: Optional[
-            List[Tuple[Callable[[LLM], bool], PromptTemplate]]
+            List[Tuple[Callable[[LLM], bool], BasePromptTemplate]]
         ] = None,
     ):
         self.default_prompt = default_prompt
@@ -172,7 +173,7 @@ class SelectorPromptTemplate:
     def output_parser(self) -> Optional[BaseOutputParser]:
         return self.default_prompt.output_parser
 
-    def _select(self, llm: Optional[LLM] = None) -> PromptTemplate:
+    def _select(self, llm: Optional[LLM] = None) -> BasePromptTemplate:
         if llm is None:
             return self.default_prompt
 
@@ -201,7 +202,7 @@ class SelectorPromptTemplate:
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
         prompt = self._select(llm=llm)
-        return prompt.format(**kwargs)
+        return prompt.format_messages(**kwargs)
 
 
 # NOTE: only for backwards compatibility

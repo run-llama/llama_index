@@ -14,7 +14,12 @@ from llama_index.llm_predictor.utils import (
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.prompts.base import BasePromptTemplate
+from llama_index.prompts.base import (
+    BasePromptTemplate,
+    ChatPromptTemplate,
+    PromptTemplate,
+    SelectorPromptTemplate,
+)
 from llama_index.prompts.prompts import SimpleInputPrompt
 from llama_index.types import TokenAsyncGen, TokenGen
 
@@ -161,16 +166,38 @@ class LLMPredictor(BaseLLMPredictor):
 
     def _extend_prompt(self, prompt: BasePromptTemplate) -> BasePromptTemplate:
         """Add system and query wrapper prompts to base prompt"""
+        # TODO: avoid mutating prompt attributes
         if self.system_prompt:
-            prompt.prompt_selector.default_prompt.template = (
-                self.system_prompt
-                + "\n\n"
-                + prompt.prompt_selector.default_prompt.template
-            )
+            if isinstance(prompt, SelectorPromptTemplate):
+                default_prompt = prompt.default_prompt
+                if isinstance(default_prompt, PromptTemplate):
+                    default_prompt._template = (
+                        self.system_prompt + "\n\n" + default_prompt._template
+                    )
+                else:
+                    raise ValueError("PromptTemplate expected as default_prompt")
+            elif isinstance(prompt, ChatPromptTemplate):
+                prompt._message_templates = [
+                    ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt)
+                ] + prompt._message_templates
+            elif isinstance(prompt, PromptTemplate):
+                prompt._template = self.system_prompt + "\n\n" + prompt._template
+
         if self.query_wrapper_prompt:
-            prompt.partial_dict["query_str"] = self.query_wrapper_prompt.format(
-                query_str=prompt.partial_dict["query_str"]
-            )
+            if isinstance(prompt, (PromptTemplate, ChatPromptTemplate)):
+                prompt.kwargs["query_str"] = self.query_wrapper_prompt.format(
+                    query_str=prompt.kwargs["query_str"]
+                )
+            elif isinstance(prompt, SelectorPromptTemplate):
+                if isinstance(default_prompt, PromptTemplate):
+                    prompt.default_prompt.kwargs[
+                        "query_str"
+                    ] = self.query_wrapper_prompt.format(
+                        query_str=prompt.default_prompt.kwargs["query_str"]
+                    )
+                else:
+                    raise ValueError("PromptTemplate expected as default_prompt")
+
         return prompt
 
     def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:

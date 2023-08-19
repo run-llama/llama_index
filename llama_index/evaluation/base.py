@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from llama_index.indices.base import ServiceContext
 from llama_index.indices.list.base import ListIndex
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts import PromptTemplate
 from llama_index.schema import Document
 from llama_index.response.schema import Response
 
@@ -155,8 +155,8 @@ class ResponseEvaluator:
         index = ListIndex.from_documents(context, service_context=self.service_context)
         response_txt = ""
 
-        EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
-        REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
+        EVAL_PROMPT_TMPL = PromptTemplate(DEFAULT_EVAL_PROMPT)
+        REFINE_PROMPT_TMPL = PromptTemplate(DEFAULT_REFINE_PROMPT)
 
         query_engine = index.as_query_engine(
             text_qa_template=EVAL_PROMPT_TMPL,
@@ -199,8 +199,8 @@ class ResponseEvaluator:
             )
             response_txt = ""
 
-            EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
-            REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
+            EVAL_PROMPT_TMPL = PromptTemplate(DEFAULT_EVAL_PROMPT)
+            REFINE_PROMPT_TMPL = PromptTemplate(DEFAULT_REFINE_PROMPT)
 
             query_engine = index.as_query_engine(
                 text_qa_template=EVAL_PROMPT_TMPL,
@@ -285,10 +285,8 @@ class QueryResponseEvaluator(BaseEvaluator):
         context = self.get_context(response)
         index = ListIndex.from_documents(context, service_context=self.service_context)
 
-        QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
-            QUERY_RESPONSE_EVAL_PROMPT
-        )
-        QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(QUERY_RESPONSE_REFINE_PROMPT)
+        QUERY_RESPONSE_EVAL_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_EVAL_PROMPT)
+        QUERY_RESPONSE_REFINE_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_REFINE_PROMPT)
 
         query_response = f"Question: {query}\nResponse: {answer}"
 
@@ -337,10 +335,8 @@ class QueryResponseEvaluator(BaseEvaluator):
             )
             response_txt = ""
 
-            QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
-                QUERY_RESPONSE_EVAL_PROMPT
-            )
-            QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(
+            QUERY_RESPONSE_EVAL_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_EVAL_PROMPT)
+            QUERY_RESPONSE_REFINE_PROMPT_TMPL = PromptTemplate(
                 QUERY_RESPONSE_REFINE_PROMPT
             )
 
