@@ -100,7 +100,7 @@ class BagelVectorStore(VectorStore):
 
         return ids
 
-    def delete(self, node_id: str, **kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
         """
         Delete a document from the vector store.
 
@@ -111,7 +111,7 @@ class BagelVectorStore(VectorStore):
         if not self._collection:
             raise ValueError("collection not set")
 
-        self._collection.delete(ids=[node_id])
+        self._collection.delete(ids=[ref_doc_id])
 
     @property
     def client(self) -> Any:
