@@ -80,7 +80,7 @@ class BagelVectorStore(VectorStore):
         documents = []
 
         for node_with_embedding in embedding_results:
-            ids.append(node_with_embedding.id)
+            ids.append(node_with_embedding.ref_doc_id)
             embeddings.append(node_with_embedding.embedding)
             metadatas.append(
                 node_to_metadata_dict(
