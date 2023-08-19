@@ -14,7 +14,7 @@ from llama_index.agent.react.types import (
 )
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
@@ -180,6 +180,7 @@ class ReActAgent(BaseAgent):
         # TODO: add sources from reasoning steps
         return AgentChatResponse(response=response_step.response, sources=[])
 
+    @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -210,6 +211,7 @@ class ReActAgent(BaseAgent):
         )
         return response
 
+    @trace_method("chat")
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -241,6 +243,7 @@ class ReActAgent(BaseAgent):
         )
         return response
 
+    @trace_method("chat")
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
@@ -284,6 +287,7 @@ class ReActAgent(BaseAgent):
         thread.start()
         return chat_stream_response
 
+    @trace_method("chat")
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
