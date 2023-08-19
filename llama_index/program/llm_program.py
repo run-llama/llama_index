@@ -70,11 +70,11 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         prompt_with_parse_instrs_tmpl = self._output_parser.format(
-            self._prompt.original_template
+            self._prompt.format(**kwargs)
         )
         prompt_with_parse_instrs = Prompt(prompt_with_parse_instrs_tmpl)
 
-        formatted_prompt = prompt_with_parse_instrs.format(**kwargs)
+        formatted_prompt = prompt_with_parse_instrs.format()
 
         response = self._llm.complete(formatted_prompt)
         raw_output = response.text
