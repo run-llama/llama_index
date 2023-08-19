@@ -1,7 +1,7 @@
 # End-to-End Evaluation
 End-to-End evaluation should be the guiding signal for your RAG application - will my pipeline generate the right responses given the data sources and a set of queries?
 
-Generally, end-to-end evaluation should be the gold signal for how your application behaves as a whole. While it helps initially to individually inspect queries and responses, as you deal with more failure and corner cases, it may stop being feasible to look at each query individually, and rather it may help instead to define and gain an intuition for what a set of summary metrics or automated evaluation might be telling you.
+While it helps initially to individually inspect queries and responses, as you deal with more failure and corner cases, it may stop being feasible to look at each query individually, and rather it may help instead to define a set of summary metrics or automated evaluation, and gain an intuition for what they might be telling you and where you might dive deeper.
 
 ## Setting up an Evaluation Set
 
