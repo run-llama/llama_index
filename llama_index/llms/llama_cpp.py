@@ -1,5 +1,6 @@
 import os
 import requests
+from pydantic import Field, PrivateAttr
 from tqdm import tqdm
 from typing import Any, Callable, Dict, Optional, Sequence
 
@@ -31,6 +32,31 @@ DEFAULT_LLAMA_CPP_MODEL = (
 
 
 class LlamaCPP(CustomLLM):
+    model_url: str = Field(description="The URL llama-cpp model to download and use.")
+    model_path: Optional[str] = Field(
+        description="The path to the llama-cpp model to use."
+    )
+    temperature: float = Field(description="The temperature to use for sampling.")
+    max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
+    context_window: int = Field(
+        description="The maximum number of context tokens for the model."
+    )
+    messages_to_prompt: Callable = Field(
+        description="The function to convert messages to a prompt.", exclude=True
+    )
+    completion_to_prompt: Callable = Field(
+        description="The function to convert a completion to a prompt.", exclude=True
+    )
+    generate_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Kwargs used for generation."
+    )
+    model_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Kwargs used for model initialization."
+    )
+    verbose: bool = Field(description="Whether to print verbose output.")
+
+    _model: Any = PrivateAttr()
+
     def __init__(
         self,
         model_url: str = DEFAULT_LLAMA_CPP_MODEL,
@@ -41,9 +67,9 @@ class LlamaCPP(CustomLLM):
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
-        verbose: bool = True,
         generate_kwargs: Optional[Dict[str, Any]] = None,
         model_kwargs: Optional[Dict[str, Any]] = None,
+        verbose: bool = True,
     ) -> None:
         try:
             from llama_cpp import Llama
@@ -55,8 +81,8 @@ class LlamaCPP(CustomLLM):
                 "`https://github.com/abetlen/llama-cpp-python`"
             )
 
-        self._model_kwargs = model_kwargs or {}
-        self._model_kwargs.update({"n_ctx": context_window, "verbose": verbose})
+        model_kwargs = model_kwargs or {}
+        model_kwargs.update({"n_ctx": context_window, "verbose": verbose})
 
         # check if model is cached
         if model_path is not None:
@@ -66,7 +92,7 @@ class LlamaCPP(CustomLLM):
                     "Please check the path or provide a model_url to download."
                 )
             else:
-                self._model = Llama(model_path=model_path, **self._model_kwargs)
+                self._model = Llama(model_path=model_path, **model_kwargs)
         else:
             cache_dir = get_cache_dir()
             model_name = os.path.basename(model_url)
@@ -76,29 +102,38 @@ class LlamaCPP(CustomLLM):
                 self._download_url(model_url, model_path)
                 assert os.path.exists(model_path)
 
-            self._model = Llama(model_path=model_path, **self._model_kwargs)
+            self._model = Llama(model_path=model_path, **model_kwargs)
 
-        self._model_path = model_path
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-        self.callback_manager = callback_manager or CallbackManager([])
+        model_path = model_path
+        messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        completion_to_prompt = completion_to_prompt or (lambda x: x)
 
-        # model kwargs
-        self._context_window = context_window
-        self._temperature = temperature
-        self._max_new_tokens = max_new_tokens
-        self._generate_kwargs = generate_kwargs or {}
-        self._generate_kwargs.update(
+        generate_kwargs = generate_kwargs or {}
+        generate_kwargs.update(
             {"temperature": temperature, "max_tokens": max_new_tokens}
+        )
+
+        super().__init__(
+            model_path=model_path,
+            model_url=model_url,
+            temperature=temperature,
+            context_window=context_window,
+            max_new_tokens=max_new_tokens,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            callback_manager=callback_manager,
+            generate_kwargs=generate_kwargs,
+            model_kwargs=model_kwargs,
+            verbose=verbose,
         )
 
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self._context_window,
-            num_output=self._max_new_tokens,
-            model_name=self._model_path,
+            context_window=self.context_window,
+            num_output=self.max_new_tokens,
+            model_name=self.model_path,
         )
 
     def _download_url(self, model_url: str, model_path: str) -> None:
@@ -132,7 +167,7 @@ class LlamaCPP(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self._messages_to_prompt(messages)
+        prompt = self.messages_to_prompt(messages)
         completion_response = self.complete(prompt, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
@@ -140,25 +175,25 @@ class LlamaCPP(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        prompt = self._messages_to_prompt(messages)
+        prompt = self.messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        self._generate_kwargs.update({"stream": False})
-        prompt = self._completion_to_prompt(prompt)
+        self.generate_kwargs.update({"stream": False})
+        prompt = self.completion_to_prompt(prompt)
 
-        response = self._model(prompt=prompt, **self._generate_kwargs)
+        response = self._model(prompt=prompt, **self.generate_kwargs)
 
         return CompletionResponse(text=response["choices"][0]["text"], raw=response)
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        self._generate_kwargs.update({"stream": True})
-        prompt = self._completion_to_prompt(prompt)
+        self.generate_kwargs.update({"stream": True})
+        prompt = self.completion_to_prompt(prompt)
 
-        response_iter = self._model(prompt=prompt, **self._generate_kwargs)
+        response_iter = self._model(prompt=prompt, **self.generate_kwargs)
 
         def gen() -> CompletionResponseGen:
             text = ""

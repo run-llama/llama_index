@@ -1,3 +1,4 @@
+from pydantic import PrivateAttr
 from threading import Thread
 from typing import Any, Generator, Optional, Sequence
 
@@ -28,11 +29,13 @@ from llama_index.llms.langchain_utils import (
 class LangChainLLM(LLM):
     """Adapter for a LangChain LLM."""
 
+    _llm: BaseLanguageModel = PrivateAttr()
+
     def __init__(
         self, llm: BaseLanguageModel, callback_manager: Optional[CallbackManager] = None
     ) -> None:
         self._llm = llm
-        self.callback_manager = callback_manager or CallbackManager([])
+        super().__init__(callback_manager=callback_manager)
 
     @property
     def llm(self) -> BaseLanguageModel:

@@ -1,6 +1,7 @@
 """Vector stores."""
 
 from llama_index.vector_stores.bagel import BagelVectorStore
+
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
@@ -27,6 +28,7 @@ from llama_index.vector_stores.docarray import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
+from llama_index.vector_stores.awadb import AwaDBVectorStore
 
 __all__ = [
     "SimpleVectorStore",
@@ -51,5 +53,5 @@ __all__ = [
     "SupabaseVectorStore",
     "PGVectorStore",
     "ZepVectorStore",
-    "BagelVectorStore",
+    "AwaDBVectorStore",
 ]
