@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix Azure pydantic error (#7329)
+
 ## [0.8.5.post1] - 2023-08-18
 
 ### New Features

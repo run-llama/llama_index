@@ -75,6 +75,7 @@ class OpenAI(LLM):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             callback_manager=callback_manager,
+            **kwargs,
         )
 
     @property
