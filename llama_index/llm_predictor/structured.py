@@ -31,9 +31,9 @@ class StructuredLLMPredictor(LLMPredictor):
         """
         llm_prediction = super().predict(prompt, **prompt_args)
         # run output parser
-        if prompt.metadata["output_parser"] is not None:
+        if prompt.output_parser is not None:
             # TODO: return other formats
-            output_parser = prompt.metadata["output_parser"]
+            output_parser = prompt.output_parser
             parsed_llm_prediction = str(output_parser.parse(llm_prediction))
         else:
             parsed_llm_prediction = llm_prediction
@@ -68,8 +68,8 @@ class StructuredLLMPredictor(LLMPredictor):
 
         """
         llm_prediction = await super().apredict(prompt, **prompt_args)
-        if prompt.metadata["output_parser"] is not None:
-            output_parser = prompt.metadata["output_parser"]
+        if prompt.output_parser is not None:
+            output_parser = prompt.output_parser
             parsed_llm_prediction = str(output_parser.parse(llm_prediction))
         else:
             parsed_llm_prediction = llm_prediction

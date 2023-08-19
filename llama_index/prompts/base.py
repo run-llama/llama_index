@@ -12,17 +12,10 @@ from llama_index.types import BaseOutputParser
 
 
 class BasePromptTemplate(Protocol):
-    @property
-    def metadata(self) -> dict:
-        ...
-
-    @property
-    def template_vars(self) -> List[str]:
-        ...
-
-    @property
-    def kwargs(self) -> Dict[str, str]:
-        ...
+    metadata: dict
+    template_vars: List[str]
+    kwargs: Dict[str, str]
+    output_parser: Optional[BaseOutputParser]
 
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         ...
@@ -45,20 +38,12 @@ class ChatPromptTemplate:
         **kwargs: Any,
     ):
         self._message_templates = message_templates
-        self._kwargs = kwargs
 
-        self._metadata = {
+        self.kwargs = kwargs
+        self.metadata = {
             "prompt_type": prompt_type,
-            "output_parser": output_parser,
         }
-
-    @property
-    def metadata(self) -> dict:
-        return self._metadata
-
-    @property
-    def kwargs(self) -> Dict[str, str]:
-        return self._kwargs
+        self.output_parser = output_parser
 
     @property
     def template_vars(self) -> List[str]:
@@ -113,20 +98,13 @@ class PromptTemplate:
         **kwargs: Any,
     ) -> None:
         self._template = template
-        self._kwargs = kwargs
 
-        self._metadata = {
+        self.kwargs = kwargs
+        self.metadata = {
             "prompt_type": prompt_type,
             "output_parser": output_parser,
         }
-
-    @property
-    def metadata(self) -> dict:
-        return self._metadata
-
-    @property
-    def kwargs(self) -> Dict[str, str]:
-        return self._kwargs
+        self.output_parser = output_parser
 
     @property
     def template_vars(self) -> List[str]:
@@ -178,6 +156,10 @@ class SelectorPromptTemplate:
     @property
     def template_vars(self) -> List[str]:
         return self.default_prompt.template_vars
+
+    @property
+    def output_parser(self) -> Optional[BaseOutputParser]:
+        return self.default_prompt.output_parser
 
     def _select(self, llm: Optional[LLM] = None) -> PromptTemplate:
         if llm is None:
