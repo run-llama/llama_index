@@ -10,8 +10,10 @@ def get_empty_prompt_txt(prompt: BasePromptTemplate) -> str:
     been partially formatted. This is used to compute the initial tokens.
 
     """
-    fmt_dict = {v: "" for v in prompt.template_vars}
-    empty_prompt_txt = prompt.format(llm=None, **fmt_dict)
+    partial_kargs = prompt.kwargs
+    empty_kwargs = {v: "" for v in prompt.template_vars if v not in partial_kargs}
+    all_kwargs = {**partial_kargs, **empty_kwargs}
+    empty_prompt_txt = prompt.format(llm=None, **all_kwargs)
     return empty_prompt_txt
 
 

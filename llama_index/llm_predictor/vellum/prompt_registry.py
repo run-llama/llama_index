@@ -179,8 +179,8 @@ class VellumPromptRegistry:
 
         import vellum
 
-        prompt_template = prompt.original_template
-        for input_variable in prompt.get_langchain_prompt().input_variables:
+        prompt_template = prompt._template  # noqa
+        for input_variable in prompt.template_vars:
             prompt_template = prompt_template.replace(
                 input_variable, f"{{ {input_variable} }}"
             )
@@ -191,8 +191,8 @@ class VellumPromptRegistry:
             block_type=vellum.BlockTypeEnum.JINJA,
             properties=vellum.PromptTemplateBlockPropertiesRequest(
                 template=self._prepare_prompt_jinja_template(
-                    prompt.original_template,
-                    prompt.get_langchain_prompt().input_variables,
+                    prompt._template,  # noqa
+                    prompt.template_vars,
                 ),
             ),
         )
@@ -214,10 +214,7 @@ class VellumPromptRegistry:
                 version=1,
                 blocks=[block],
             ),
-            input_variables=[
-                {"key": input_var}
-                for input_var in prompt.get_langchain_prompt().input_variables
-            ],
+            input_variables=[{"key": input_var} for input_var in prompt.template_vars],
         )
 
     def _prepare_prompt_jinja_template(

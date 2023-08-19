@@ -31,7 +31,6 @@ def test_from_prompt__new(
 
 
 def test_from_prompt__existing(
-    dummy_prompt_class: Type[Prompt],
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
