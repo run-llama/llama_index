@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Awadb Vector Store (#7291)
+
 ## [0.8.5] - 2023-08-18
 
 ### New Features
