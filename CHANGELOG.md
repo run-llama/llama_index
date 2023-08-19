@@ -3,13 +3,19 @@
 ## Unreleased
 
 ### New Features
+- Awadb Vector Store (#7291)
+
+## [0.8.5] - 2023-08-18
+
+### New Features
 - Expose a system prompt/query wrapper prompt in the service context for open-source LLMs (#6647)
 - Changed default MyScale index format to `MSTG` (#7288)
 - Added tracing to chat engines/agents (#7304)
-- Awadb Vector Store (#7291)
+- move LLM and embeddings to pydantic (#7289)
 
 ### Bug Fixes / Nits
-- Fix sentence splitter infinite loop (#7925)
+- Fix sentence splitter bug (#7303)
+- Fix sentence splitter infinite loop (#7295)
 
 ## [0.8.4] - 2023-08-17
 
