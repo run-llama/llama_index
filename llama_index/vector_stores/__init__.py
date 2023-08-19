@@ -54,4 +54,5 @@ __all__ = [
     "PGVectorStore",
     "ZepVectorStore",
     "AwaDBVectorStore",
+    "BagelVectorStore",
 ]
