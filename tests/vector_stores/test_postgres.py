@@ -8,6 +8,7 @@ from llama_index.vector_stores import PGVectorStore
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     MetadataFilters,
     ExactMatchFilter,
 )
@@ -111,7 +112,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
 def hybrid_node_embeddings() -> List[TextNode]:
     return [
         NodeWithEmbedding(
-            embedding=[0.0] * 1536,
+            embedding=[0.1] * 1536,
             node=TextNode(
                 text="lorem ipsum",
                 id_="aaa",
@@ -136,7 +137,7 @@ def hybrid_node_embeddings() -> List[TextNode]:
             ),
         ),
         NodeWithEmbedding(
-            embedding=[5.0] * 1536,
+            embedding=[10.0] * 1536,
             node=TextNode(
                 text="The fox and the hound",
                 id_="ddd",
@@ -248,26 +249,76 @@ async def test_hybrid_query(
         pg_hybrid.add(hybrid_node_embeddings)
     assert isinstance(pg_hybrid, PGVectorStore)
 
-    q = VectorStoreQuery(query_embedding=[0.1] * 1536, query_str="fox", similarity_top_k=2)
+    # Test hybrid query with 0.5 alpha selects keyword matches
+    q = VectorStoreQuery(
+        query_embedding=[0.1] * 1536,
+        query_str="fox",
+        similarity_top_k=2,
+        alpha=0.5,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
 
     if use_async:
-        res = await pg_hybrid.a_hybrid_query(q)
+        res = await pg_hybrid.aquery(q)
     else:
-        res = pg_hybrid.hybrid_query(q)
+        res = pg_hybrid.query(q)
     assert res.nodes
     assert len(res.nodes) == 2
     assert res.nodes[0].node_id == "ccc"
     assert res.nodes[1].node_id == "ddd"
 
-    q = VectorStoreQuery(query_embedding=[1] * 1536, query_str="lorem", similarity_top_k=2)
+    # Test hybrid query with alpha = 1 ignores keyword search
+    q = VectorStoreQuery(
+        query_embedding=[0.1] * 1536,
+        query_str="fox",
+        similarity_top_k=2,
+        alpha=1,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
 
     if use_async:
-        res = await pg_hybrid.a_hybrid_query(q)
+        res = await pg_hybrid.aquery(q)
     else:
-        res = pg_hybrid.hybrid_query(q)
+        res = pg_hybrid.query(q)
     assert res.nodes
     assert len(res.nodes) == 2
     assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+
+    # Test hybrid query with 0.5 alpha returns similar embedding results
+    q = VectorStoreQuery(
+        query_embedding=[1] * 1536,
+        query_str="lorem",
+        similarity_top_k=2,
+        alpha=0.5,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 2
+    assert res.nodes[0].node_id == "aaa"
+
+    # Test hybrid query with alpha 0 ignores embedding results
+    q = VectorStoreQuery(
+        query_embedding=[0.1] * 1536,
+        query_str="fox",
+        similarity_top_k=2,
+        alpha=0,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 2
+    assert res.nodes[0].node_id == "ccc"
+    assert res.nodes[1].node_id == "ddd"
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
@@ -284,12 +335,17 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
     )
     q = VectorStoreQuery(
-        query_embedding=[0.1] * 1536, query_str="fox", similarity_top_k=10, filters=filters
+        query_embedding=[0.1] * 1536,
+        query_str="fox",
+        similarity_top_k=10,
+        filters=filters,
+        alpha=0.5,
+        mode=VectorStoreQueryMode.HYBRID,
     )
     if use_async:
-        res = await pg_hybrid.a_hybrid_query(q)
+        res = await pg_hybrid.aquery(q)
     else:
-        res = pg_hybrid.hybrid_query(q)
+        res = pg_hybrid.query(q)
     assert res.nodes
     assert len(res.nodes) == 2
     assert res.nodes[0].node_id == "ddd"
@@ -299,10 +355,13 @@ def test_hybrid_query_fails_if_no_query_str_provided(
         pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
 ) -> None:
     q = VectorStoreQuery(
-        query_embedding=[1.0] * 1536, similarity_top_k=10
+        query_embedding=[1.0] * 1536,
+        similarity_top_k=10,
+        alpha=0.5,
+        mode=VectorStoreQueryMode.HYBRID,
     )
 
     with pytest.raises(Exception) as exc:
-        pg_hybrid.hybrid_query(q)
+        pg_hybrid.query(q)
 
         assert str(exc) == "query_str must be specified for a sparse vector query."

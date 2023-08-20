@@ -6,6 +6,7 @@ from llama_index.vector_stores.types import (
     VectorStore,
     NodeWithEmbedding,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
     MetadataFilters,
 )
@@ -295,21 +296,35 @@ class PGVectorStore(VectorStore):
                 "Cannot import sentence-transformers package,",
                 "please `pip install sentence-transformers`",
             )
-        import itertools
 
-        # Based on example code from: https://github.com/pgvector/pgvector-python/blob/master/examples/hybrid_search.py
+        import functools
+
+        all_results = [res for result in results for res in result]
+
+        # re-rank
+        encoder = CrossEncoder(self._hybrid_search_cross_encoder)
+        scores = encoder.predict([(query.query_str, item[0].text) for item in all_results])
+        max_score = max(scores)
+        min_score = min(scores)
+        score_range = max_score - min_score
+        normalized_scores = [(score-min_score)/score_range for score in scores] if score_range != 0 else scores
+        results_with_weighted_scores = [(tup[0] * tup[1][1], tup[1][0], tup[1][1]) for tup in zip(normalized_scores, all_results)]
+        def compare_results(x, y):
+            # if scores are equal, fallback to comparing weights
+            if x[0] == y[0]:
+                return x[2] - y[2]
+            return x[0] - y[0]
+        sorted_scaled_results = [v for _, v, _ in sorted(results_with_weighted_scores, reverse=True, key=functools.cmp_to_key(compare_results))]
+
         # deduplicate
         seen = set()
         uniq_results = []
-        for result in itertools.chain(*results):
+        for result in sorted_scaled_results:
             if result.node_id not in seen:
                 seen.add(result.node_id)
                 uniq_results.append(result)
 
-        # re-rank
-        encoder = CrossEncoder(self._hybrid_search_cross_encoder)
-        scores = encoder.predict([(query.query_str, item.text) for item in uniq_results])
-        return [v for _, v in sorted(zip(scores, uniq_results), reverse=True)]
+        return uniq_results
 
     def _build_sparse_query(
             self,
@@ -381,32 +396,31 @@ class PGVectorStore(VectorStore):
             ),
             self._async_sparse_query_with_rank(query, query.similarity_top_k, query.filters)
         )
+
+        alpha = query.alpha if query.alpha is not None else 1
+        weights = [alpha, 1-alpha]
+        results = [[(res, weights[idx]) for res in result] for idx, result in enumerate(results)]
+
         results = self._rerank(query, results)
 
         return results[:query.similarity_top_k]
 
     def _hybrid_query(self, query):
+        alpha = query.alpha if query.alpha is not None else 1
+
         dense_results = self._query_with_score(
             query.query_embedding, query.similarity_top_k, query.filters
         )
+        dense_results = [(res, alpha) for res in dense_results]
+
         sparse_results = self._sparse_query_with_rank(query, query.similarity_top_k, query.filters)
-        combined_results = dense_results + sparse_results
+        sparse_results = [(res, 1-alpha) for res in sparse_results]
+
+        combined_results = [dense_results, sparse_results]
 
         results = self._rerank(query, combined_results)
 
         return results[:query.similarity_top_k]
-
-    async def a_hybrid_query(
-        self, query: VectorStoreQuery
-    ) -> VectorStoreQueryResult:
-        results = await self._async_hybrid_query(query)
-        return self._db_rows_to_query_result(results)
-
-    def hybrid_query(
-            self, query: VectorStoreQuery
-    ) -> VectorStoreQueryResult:
-        results = self._hybrid_query(query)
-        return self._db_rows_to_query_result(results)
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]
@@ -435,18 +449,26 @@ class PGVectorStore(VectorStore):
             ids=ids,
         )
 
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        results = self._query_with_score(
-            query.query_embedding, query.similarity_top_k, query.filters
-        )
-        return self._db_rows_to_query_result(results)
-
-    async def aquery(
+    async def a_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        results = await self._aquery_with_score(
-            query.query_embedding, query.similarity_top_k, query.filters
-        )
+        if query.mode is VectorStoreQueryMode.HYBRID:
+            results = await self._hybrid_query(query)
+        else:
+            results = await self._aquery_with_score(
+                query.query_embedding, query.similarity_top_k, query.filters
+            )
+
+        return self._db_rows_to_query_result(results)
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        if query.mode is VectorStoreQueryMode.HYBRID:
+            results = self._hybrid_query(query)
+        else:
+            results = self._query_with_score(
+                query.query_embedding, query.similarity_top_k, query.filters
+            )
+
         return self._db_rows_to_query_result(results)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
