@@ -17,13 +17,11 @@ class MonsterLLM(CustomLLM):
         temperature: float = 0.75,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
-        prompt_key: str = "prompt",
         messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._model = model
         self._context_window = context_window
-        self._prompt_key = prompt_key
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self.callback_manager = callback_manager or CallbackManager([])
 
@@ -42,7 +40,7 @@ class MonsterLLM(CustomLLM):
 
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {
-            self._prompt_key: prompt,
+            "prompt": prompt,
             "temperature": self._temperature,
             **self._additional_kwargs,
             **kwargs,
@@ -57,20 +55,26 @@ class MonsterLLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         try:
-            from monsterapi import MODEL_TYPES
+            from monsterapi.InputDataModels import MODEL_TYPES
             from monsterapi import client as MonsterClient
         except ImportError:
             raise ImportError(
                 "Could not import Monster API client library."
                 "Please install it with `pip install monsterapi`"
             )
-        llm_models_enabled = [i for i,j in MODEL_TYPES.items() if j == "LLM"]
-        if self._model not in  llm_models_enabled:
-            raise RuntimeError(f"Model: {self._model} is not supported. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
+        llm_models_enabled = [i for i, j in MODEL_TYPES.items() if j == "LLM"]
+        if self._model not in llm_models_enabled:
+            raise RuntimeError(
+                f"Model: {self._model} is not supported.Supported models are {llm_models_enabled}. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
         input_dict = self._get_input_dict(prompt, **kwargs)
         monster_client = MonsterClient()
 
-        response = monster_client.get_response(model=self._model, data=input_dict)
+        response = monster_client.get_response(
+            model=self._model, data=input_dict)
         process_id = response['process_id']
         result = monster_client.wait_and_get_result(process_id)
         return CompletionResponse(text=result['text'])
+
+    @llm_completion_callback()
+    def stream_complete(self, prompt: str, **kwargs: Any) -> "CompletionResponseGen":
+        raise NotImplementedError()
