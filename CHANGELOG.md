@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added FireStore docstore/index store support (#7305)
+
 ### Bug Fixes / Nits
 - Fix Azure pydantic error (#7329)
 
