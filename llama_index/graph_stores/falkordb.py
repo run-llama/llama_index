@@ -14,32 +14,8 @@ from llama_index.graph_stores.types import (DEFAULT_PERSIST_DIR,
 
 logger = logging.getLogger(__name__)
 
-node_properties_query = '\
-CALL apoc.meta.data() \
-YIELD label, other, elementType, type, property \
-WHERE NOT type = "RELATIONSHIP" AND elementType = "node" \
-WITH label AS nodeLabels, collect({property:property, type:type}) AS properties \
-RETURN {labels: nodeLabels, properties: properties} AS output\
-'
-
-rel_properties_query = '\
-CALL apoc.meta.data() \
-YIELD label, other, elementType, type, property \
-WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship" \
-WITH label AS nodeLabels, collect({property:property, type:type}) AS properties \
-RETURN {type: nodeLabels, properties: properties} AS output \
-'
-
-rel_query = '\
-CALL apoc.meta.data() \
-YIELD label, other, elementType, type, property \
-WHERE type = "RELATIONSHIP" AND elementType = "node" \
-UNWIND other AS other_node \
-RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other_node) + ")" AS output \
-'
-
 get_query = '\
-    MATCH (n1:%s)-[r]->(n2:%s) \
+    MATCH (n1:`%s`)-[r]->(n2:`%s`) \
     WHERE n1.id = $subj \
     RETURN type(r), n2.id\
 '
@@ -71,12 +47,12 @@ class FalkorDBGraphStore(GraphStore):
         self._node_label = node_label       
         
         self._driver = redis.Redis.from_url(url).graph(database)
-        self._driver.query(f"CREATE INDEX FOR (n:{self._node_label}) ON (n.id)")
+        self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
 
         self._database = database
 
         self.schema = ""
-        self.get_query = get_query % (self._node_label, self._node_label)
+        self.get_query = f"MATCH (n1:`{self._node_label}`)-[r]->(n2:`{self._node_label}`) WHERE n1.id = $subj RETURN type(r), n2.id"
 
     @property
     def client(self) -> None:
@@ -160,39 +136,26 @@ class FalkorDBGraphStore(GraphStore):
 
         def delete_rel(subj: str, obj: str, rel: str) -> None:
 
-            query = """MATCH (n1:`%s`)-[r:`%s`]->(n2:`%s`) WHERE n1.id = $subj AND n2.id = $obj DELETE r"""
-
-            prepared_statement = query % (
-                self._node_label,
-                rel.replace(" ", "_").upper(),
-                self._node_label,
-            )
+            rel = rel.replace(" ", "_").upper()
+            query = f"MATCH (n1:`{self._node_label}`)-[r:`{rel}`]->(n2:`{self._node_label}`) WHERE n1.id = $subj AND n2.id = $obj DELETE r"
 
             # Call FalkorDB with prepared statement
-            self._driver.query(prepared_statement, params={"subj": subj, "obj": obj})
+            self._driver.query(query, params={"subj": subj, "obj": obj})
 
         def delete_entity(entity: str) -> None:
 
-            query = """MATCH (n:`%s`) WHERE n.id = $entity DELETE n"""
-
-            prepared_statement = query % (
-                self._node_label
-            )
+            query = f"MATCH (n:`{self._node_label}`) WHERE n.id = $entity DELETE n"
 
             # Call FalkorDB with prepared statement
-            self._driver.query(prepared_statement, params={"entity": entity})
+            self._driver.query(query, params={"entity": entity})
 
 
         def check_edges(entity: str) -> bool:
 
-            query = """MATCH (n1:`%s`)--() WHERE n1.id = $entity RETURN count(*)"""
+            query = "MATCH (n1:`{self._node_label}`)--() WHERE n1.id = $entity RETURN count(*)"
             
-            prepared_statement = query % (
-                self._node_label
-            )
-
             # Call FalkorDB with prepared statement
-            result = self._driver.query(prepared_statement, params={"entity": entity}, read_only=True)
+            result = self._driver.query(query, params={"entity": entity}, read_only=True)
             return bool(result.result_set)
 
         delete_rel(subj, obj, rel)
@@ -206,17 +169,12 @@ class FalkorDBGraphStore(GraphStore):
         """
         Refreshes the FalkorDB graph schema information.
         """
-        node_properties = self.query(node_properties_query)
-        relationships_properties = self.query(rel_properties_query)
-        relationships = self.query(rel_query)
+        node_properties = self.query("CALL DB.PROPERTYKEYS()")
+        relationships = self.query("CALL DB.RELATIONSHIPTYPES()")
 
         self.schema = f"""
-        Node properties are the following:
-        {[el['output'] for el in node_properties]}
-        Relationship properties are the following:
-        {[el['output'] for el in relationships_properties]}
-        The relationships are the following:
-        {[el['output'] for el in relationships]}
+        Properties: {node_properties}
+        Relationships: {relationships}
         """
 
     def get_schema(self, refresh: bool = False) -> str:
