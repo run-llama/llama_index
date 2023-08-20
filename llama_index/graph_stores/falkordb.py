@@ -14,29 +14,35 @@ from llama_index.graph_stores.types import (DEFAULT_PERSIST_DIR,
 
 logger = logging.getLogger(__name__)
 
-node_properties_query = """
-CALL apoc.meta.data()
-YIELD label, other, elementType, type, property
-WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
-WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
-RETURN {labels: nodeLabels, properties: properties} AS output
-"""
+node_properties_query = '\
+CALL apoc.meta.data() \
+YIELD label, other, elementType, type, property \
+WHERE NOT type = "RELATIONSHIP" AND elementType = "node" \
+WITH label AS nodeLabels, collect({property:property, type:type}) AS properties \
+RETURN {labels: nodeLabels, properties: properties} AS output\
+'
 
-rel_properties_query = """
-CALL apoc.meta.data()
-YIELD label, other, elementType, type, property
-WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship"
-WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
-RETURN {type: nodeLabels, properties: properties} AS output
-"""
+rel_properties_query = '\
+CALL apoc.meta.data() \
+YIELD label, other, elementType, type, property \
+WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship" \
+WITH label AS nodeLabels, collect({property:property, type:type}) AS properties \
+RETURN {type: nodeLabels, properties: properties} AS output \
+'
 
-rel_query = """
-CALL apoc.meta.data()
-YIELD label, other, elementType, type, property
-WHERE type = "RELATIONSHIP" AND elementType = "node"
-UNWIND other AS other_node
-RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other_node) + ")" AS output
-"""
+rel_query = '\
+CALL apoc.meta.data() \
+YIELD label, other, elementType, type, property \
+WHERE type = "RELATIONSHIP" AND elementType = "node" \
+UNWIND other AS other_node \
+RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other_node) + ")" AS output \
+'
+
+get_query = '\
+    MATCH (n1:%s)-[r]->(n2:%s) \
+    WHERE n1.id = $subj \
+    RETURN type(r), n2.id\
+'
 
 class FalkorDBGraphStore(GraphStore):
     """FalkorDB Graph Store.
@@ -62,10 +68,15 @@ class FalkorDBGraphStore(GraphStore):
             raise ImportError("Please install redis client: pip install redis")
         
         """Initialize params."""
-        self.node_label = node_label       
+        self._node_label = node_label       
+        
         self._driver = redis.Redis.from_url(url).graph(database)
+        self._driver.query(f"CREATE INDEX FOR (n:{self._node_label}) ON (n.id)")
+
         self._database = database
+
         self.schema = ""
+        self.get_query = get_query % (self._node_label, self._node_label)
 
     @property
     def client(self) -> None:
@@ -73,15 +84,7 @@ class FalkorDBGraphStore(GraphStore):
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
-        query = """
-            MATCH (n1:%s)-[r]->(n2:%s)
-            WHERE n1.id = $subj
-            RETURN type(r), n2.id
-        """
-
-        prepared_statement = query % (self.node_label, self.node_label)
-
-        result = self._driver.query(prepared_statement, {"subj": subj}, read_only=True)
+        result = self._driver.query(self.get_query, params={"subj": subj}, read_only=True)
         return result.result_set
 
     def get_rel_map(
@@ -103,24 +106,35 @@ class FalkorDBGraphStore(GraphStore):
         if subjs is None or len(subjs) == 0:
             # unlike simple graph_store, we don't do get_all here
             return rel_map
-
-        query = (
-            f"""
-            MATCH p=(n1:{self.node_label})-[*1..{depth}]->()
+        
+        query = f"""
+            MATCH (n1:{self._node_label})
             {"WHERE n1.id IN $subjs" if subjs else ""}
-            UNWIND relationships(p) AS rel 
-            WITH n1.id AS subj, p, apoc.coll.flatten(apoc.coll.toSet(
-            collect([type(rel), endNode(rel).id]))) AS flattened_rels 
-            RETURN subj, collect(flattened_rels) AS flattened_rels
-            """
-        )
+            WITH n1
+            MATCH p=(n1)-[e*1..{depth}]->(z)
+            RETURN p
+        """
 
-        data = list(self.query(query, {"subjs": subjs}, read_only=True))
+        data = self.query(query, params={"subjs": subjs})
         if not data:
             return rel_map
 
         for record in data:
-            rel_map[record["subj"]] = record["flattened_rels"]
+            nodes = record[0].nodes()
+            edges = record[0].edges()
+
+            subj_id = nodes[0].properties["id"]
+            path = []
+            for i,edge in enumerate(edges):
+                dest = nodes[i+1]
+                dest_id = dest.properties["id"]
+                path.append(edge.relation)
+                path.append(dest_id)
+
+            paths = rel_map[subj_id] if subj_id in rel_map else []
+            paths.append(path)
+            rel_map[subj_id] = paths
+
         return rel_map
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
@@ -133,13 +147,13 @@ class FalkorDBGraphStore(GraphStore):
         """
 
         prepared_statement = query % (
-            self.node_label,
-            self.node_label,
+            self._node_label,
+            self._node_label,
             rel.replace(" ", "_").upper(),
         )
 
         # Call FalkorDB with prepared statement
-        self._driver.query(prepared_statement, {"subj": subj, "obj": obj})
+        self._driver.query(prepared_statement, params={"subj": subj, "obj": obj})
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
@@ -151,13 +165,13 @@ class FalkorDBGraphStore(GraphStore):
             """
 
             prepared_statement = query % (
-                self.node_label,
+                self._node_label,
                 rel.replace(" ", "_").upper(),
-                self.node_label,
+                self._node_label,
             )
 
             # Call FalkorDB with prepared statement
-            self._driver.query(prepared_statement, {"subj": subj, "obj": obj})
+            self._driver.query(prepared_statement, params={"subj": subj, "obj": obj})
 
         def delete_entity(entity: str) -> None:
 
@@ -166,11 +180,11 @@ class FalkorDBGraphStore(GraphStore):
             """
 
             prepared_statement = query % (
-                self.node_label
+                self._node_label
             )
 
             # Call FalkorDB with prepared statement
-            self._driver.query(prepared_statement, {"entity": entity})
+            self._driver.query(prepared_statement, params={"entity": entity})
 
 
         def check_edges(entity: str) -> bool:
@@ -180,11 +194,11 @@ class FalkorDBGraphStore(GraphStore):
             """
             
             prepared_statement = query % (
-                self.node_label
+                self._node_label
             )
 
             # Call FalkorDB with prepared statement
-            result = self._driver.query(prepared_statement, {"entity": entity}, read_only=True)
+            result = self._driver.query(prepared_statement, params={"entity": entity}, read_only=True)
             return bool(result.result_set)
 
         delete_rel(subj, obj, rel)
@@ -196,7 +210,7 @@ class FalkorDBGraphStore(GraphStore):
 
     def refresh_schema(self) -> None:
         """
-        Refreshes the Neo4j graph schema information.
+        Refreshes the FalkorDB graph schema information.
         """
         node_properties = self.query(node_properties_query)
         relationships_properties = self.query(rel_properties_query)
@@ -219,7 +233,8 @@ class FalkorDBGraphStore(GraphStore):
         logger.debug(f"get_schema() schema:\n{self.schema}")
         return self.schema
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        result = self._driver.query(query)
+    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
+        result = self._driver.query(query, params=params)
         return result.result_set
+
 
