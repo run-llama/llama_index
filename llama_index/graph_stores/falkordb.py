@@ -226,7 +226,7 @@ class FalkorDBGraphStore(GraphStore):
         """
 
     def get_schema(self, refresh: bool = False) -> str:
-        """Get the schema of the Neo4jGraph store."""
+        """Get the schema of the FalkorDBGraph store."""
         if self.schema and not refresh:
             return self.schema
         self.refresh_schema()
