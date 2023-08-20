@@ -109,7 +109,7 @@ class FalkorDBGraphStore(GraphStore):
         
         query = f"""
             MATCH (n1:{self._node_label})
-            {"WHERE n1.id IN $subjs" if subjs else ""}
+            WHERE n1.id IN $subjs
             WITH n1
             MATCH p=(n1)-[e*1..{depth}]->(z)
             RETURN p
@@ -160,9 +160,7 @@ class FalkorDBGraphStore(GraphStore):
 
         def delete_rel(subj: str, obj: str, rel: str) -> None:
 
-            query = """
-                MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.id = $subj AND n2.id = $obj DELETE r
-            """
+            query = """MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.id = $subj AND n2.id = $obj DELETE r"""
 
             prepared_statement = query % (
                 self._node_label,
@@ -175,9 +173,7 @@ class FalkorDBGraphStore(GraphStore):
 
         def delete_entity(entity: str) -> None:
 
-            query = """
-                MATCH (n:%s) WHERE n.id = $entity DELETE n
-            """
+            query = """MATCH (n:%s) WHERE n.id = $entity DELETE n"""
 
             prepared_statement = query % (
                 self._node_label
@@ -189,9 +185,7 @@ class FalkorDBGraphStore(GraphStore):
 
         def check_edges(entity: str) -> bool:
 
-            query = """
-                MATCH (n1:%s)--() WHERE n1.id = $entity RETURN count(*)
-            """
+            query = """MATCH (n1:%s)--() WHERE n1.id = $entity RETURN count(*)"""
             
             prepared_statement = query % (
                 self._node_label
