@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added support for BagelDB vector store (#7311)
+
 ## [0.8.5.post2] - 2023-08-20
 
 ### New Features
