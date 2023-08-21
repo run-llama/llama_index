@@ -20,5 +20,3 @@ pre-commit==3.2.0
 pylint==2.15.10
 ruff==0.0.259
 types-redis==4.5.5.0
-
-pydantic==1.10.12
