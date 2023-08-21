@@ -28,16 +28,19 @@ class StructuredRefineResponse(BaseModel):
     """
 
     answer: str = Field(
-        description="The answer for the given query, based on the context and not prior knowledge."
+        description="The answer for the given query, based on the context and not " \
+            "prior knowledge."
     )
     query_satisfied: bool = Field(
-        description="True if there was enough context given to provide an answer that satisfies the query."
+        description="True if there was enough context given to provide an answer " \
+            "that satisfies the query."
     )
 
 
 class DefaultRefineProgram(BasePydanticProgram):
     """
-    Runs the query on the LLM as normal and always returns the answer with query_satisfied=True.
+    Runs the query on the LLM as normal and always returns the answer with
+    query_satisfied=True. In effect, doesn't do any answer filtering.
     """
 
     def __init__(self, prompt: Prompt, llm_predictor: BaseLLMPredictor):
