@@ -1,3 +1,4 @@
+from pydantic import Field
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.callbacks import CallbackManager
@@ -37,6 +38,16 @@ from llama_index.llms.openai_utils import (
 
 
 class OpenAI(LLM):
+    model: str = Field(description="The OpenAI model to use.")
+    temperature: int = Field(description="The tempature to use during generation.")
+    max_tokens: Optional[int] = Field(
+        description="The maximum number of tokens to generate."
+    )
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additonal kwargs for the OpenAI API."
+    )
+    max_retries: int = Field(description="The maximum number of API retries.")
+
     def __init__(
         self,
         model: str = "gpt-3.5-turbo",
@@ -51,16 +62,21 @@ class OpenAI(LLM):
     ) -> None:
         validate_openai_api_key(api_key, api_type)
 
-        self.model = model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.additional_kwargs = additional_kwargs or {}
+        additional_kwargs = additional_kwargs or {}
         if api_key is not None:
-            self.additional_kwargs["api_key"] = api_key
+            additional_kwargs["api_key"] = api_key
         if api_type is not None:
-            self.additional_kwargs["api_type"] = api_type
-        self.max_retries = max_retries
-        self.callback_manager = callback_manager or CallbackManager([])
+            additional_kwargs["api_type"] = api_type
+
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            max_retries=max_retries,
+            callback_manager=callback_manager,
+            **kwargs,
+        )
 
     @property
     def metadata(self) -> LLMMetadata:

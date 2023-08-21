@@ -2,13 +2,38 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+- Use service context for intermediate index in retry source query engine (#7341)
+
+## [0.8.5.post2] - 2023-08-20
+
+### New Features
+- Added FireStore docstore/index store support (#7305)
+- add recursive agent notebook (#7330)
+
+### Bug Fixes / Nits
+- Fix Azure pydantic error (#7329)
+- fix callback trace ids (make them a context var)  (#7331)
+
+## [0.8.5.post1] - 2023-08-18
+
+### New Features
+- Awadb Vector Store (#7291)
+
+### Bug Fixes / Nits
+- Fix bug in OpenAI llm temperature type 
+
+## [0.8.5] - 2023-08-18
+
 ### New Features
 - Expose a system prompt/query wrapper prompt in the service context for open-source LLMs (#6647)
 - Changed default MyScale index format to `MSTG` (#7288)
 - Added tracing to chat engines/agents (#7304)
+- move LLM and embeddings to pydantic (#7289)
 
 ### Bug Fixes / Nits
-- Fix sentence splitter infinite loop (#7925)
+- Fix sentence splitter bug (#7303)
+- Fix sentence splitter infinite loop (#7295)
 
 ## [0.8.4] - 2023-08-17
 
