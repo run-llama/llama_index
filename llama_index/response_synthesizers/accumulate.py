@@ -1,12 +1,10 @@
 import asyncio
-from typing import Any, List, Sequence, Optional
+from typing import Any, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompts import (
-    DEFAULT_TEXT_QA_PROMPT,
-)
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from llama_index.prompts.prompts import BasePromptTemplate
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -16,7 +14,7 @@ class Accumulate(BaseSynthesizer):
 
     def __init__(
         self,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
         use_async: bool = False,

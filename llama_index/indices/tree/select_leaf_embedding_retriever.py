@@ -3,11 +3,9 @@
 import logging
 from typing import Dict, List, Tuple, cast
 
-
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.tree.select_leaf_retriever import (
-    TreeSelectLeafRetriever,
-)
+from llama_index.indices.tree.select_leaf_retriever import \
+    TreeSelectLeafRetriever
 from llama_index.indices.utils import get_sorted_node_list
 from llama_index.schema import BaseNode, MetadataMode
 
@@ -21,14 +19,14 @@ class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
     query and the node text.
 
     Args:
-        query_template (Optional[TreeSelectPrompt]): Tree Select Query Prompt
+        query_template (Optional[BasePromptTemplate]): Tree Select Query Prompt
             (see :ref:`Prompt-Templates`).
-        query_template_multiple (Optional[TreeSelectMultiplePrompt]): Tree Select
+        query_template_multiple (Optional[BasePromptTemplate]): Tree Select
             Query Prompt (Multiple)
             (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
+        text_qa_template (Optional[BasePromptTemplate]): Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        refine_template (Optional[RefinePrompt]): Refinement Prompt
+        refine_template (Optional[BasePromptTemplate]): Refinement Prompt
             (see :ref:`Prompt-Templates`).
         child_branch_factor (int): Number of child nodes to consider at each level.
             If child_branch_factor is 1, then the query will only choose one child node

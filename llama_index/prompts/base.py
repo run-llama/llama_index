@@ -5,7 +5,8 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from llama_index.llms.base import LLM, ChatMessage
-from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
+from llama_index.llms.generic_utils import (messages_to_prompt,
+                                            prompt_to_messages)
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser

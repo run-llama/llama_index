@@ -4,12 +4,10 @@ from typing import Callable, List, Optional
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.utils import (
-    default_format_node_batch_fn,
-    default_parse_choice_select_answer_fn,
-)
+from llama_index.indices.utils import (default_format_node_batch_fn,
+                                       default_parse_choice_select_answer_fn)
 from llama_index.prompts.choice_select import DEFAULT_CHOICE_SELECT_PROMPT
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts.prompts import BasePromptTemplate
 from llama_index.schema import NodeWithScore
 
 
@@ -18,7 +16,7 @@ class LLMRerank(BaseNodePostprocessor):
 
     def __init__(
         self,
-        choice_select_prompt: Optional[QuestionAnswerPrompt] = None,
+        choice_select_prompt: Optional[BasePromptTemplate] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,

@@ -7,16 +7,12 @@ from typing import Any, Dict, List, Optional
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import (
-    extract_keywords_given_response,
-    rake_extract_keywords,
-    simple_extract_keywords,
-)
+    extract_keywords_given_response, rake_extract_keywords,
+    simple_extract_keywords)
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.default_prompts import (
-    DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
-    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-)
-from llama_index.prompts.prompts import BasePromptTemplate, QueryKeywordExtractPrompt
+    DEFAULT_KEYWORD_EXTRACT_TEMPLATE, DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE)
+from llama_index.prompts.prompts import BasePromptTemplate
 from llama_index.schema import NodeWithScore
 from llama_index.utils import truncate_text
 
@@ -34,12 +30,12 @@ class BaseKeywordTableRetriever(BaseRetriever):
         keyword_extract_template (Optional[BasePromptTemplate]): A Keyword
             Extraction Prompt
             (see :ref:`Prompt-Templates`).
-        query_keyword_extract_template (Optional[QueryKeywordExtractPrompt]): A Query
+        query_keyword_extract_template (Optional[BasePromptTemplate]): A Query
             Keyword Extraction
             Prompt (see :ref:`Prompt-Templates`).
-        refine_template (Optional[RefinePrompt]): A Refinement Prompt
+        refine_template (Optional[BasePromptTemplate]): A Refinement Prompt
             (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question Answering Prompt
+        text_qa_template (Optional[BasePromptTemplate]): A Question Answering Prompt
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): Maximum number of keywords to extract from query.
         num_chunks_per_query (int): Maximum number of text chunks to query.
@@ -50,7 +46,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
         self,
         index: BaseKeywordTableIndex,
         keyword_extract_template: Optional[BasePromptTemplate] = None,
-        query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
+        query_keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         **kwargs: Any,
