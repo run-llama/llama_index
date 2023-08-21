@@ -15,6 +15,7 @@ maxdepth: 1
 /examples/agent/openai_agent_query_cookbook.ipynb
 /examples/agent/openai_agent_query_plan.ipynb
 /examples/agent/openai_agent_context_retrieval.ipynb
+/examples/query_engine/recursive_retriever_agents.ipynb
 ```
 
 ## ReAct Agent
