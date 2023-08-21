@@ -1,12 +1,12 @@
 from typing import Any, Dict, Optional, Type, Union
 
-
 from pydantic import BaseModel
+
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
+from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.prompts.base import PromptTemplate
-from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 
 class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
@@ -64,7 +64,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         prompt_with_parse_instrs_tmpl = self._output_parser.format(
-            self._prompt._template  # pylint: disable=protected-access
+            self._prompt.template
         )
         prompt_with_parse_instrs = PromptTemplate(prompt_with_parse_instrs_tmpl)
 
