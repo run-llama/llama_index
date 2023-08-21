@@ -23,7 +23,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
-from llama_index.prompts.prompts import KeywordExtractPrompt
+from llama_index.prompts.prompts import BasePromptTemplate
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -49,7 +49,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     are then used to answer the query.
 
     Args:
-        keyword_extract_template (Optional[KeywordExtractPrompt]): A Keyword
+        keyword_extract_template (Optional[BasePromptTemplate]): A Keyword
             Extraction Prompt
             (see :ref:`Prompt-Templates`).
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
@@ -64,7 +64,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[KeywordTable] = None,
         service_context: Optional[ServiceContext] = None,
-        keyword_extract_template: Optional[KeywordExtractPrompt] = None,
+        keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_chunk: int = 10,
         use_async: bool = False,
         show_progress: bool = False,

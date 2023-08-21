@@ -6,7 +6,7 @@ from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.response.schema import Response
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ DEFAULT_RESYNTHESIS_PROMPT_TMPL = (
     "Otherwise, please return the original query.\n"
 )
 
-DEFAULT_RESYNTHESIS_PROMPT = Prompt(DEFAULT_RESYNTHESIS_PROMPT_TMPL)
+DEFAULT_RESYNTHESIS_PROMPT = PromptTemplate(DEFAULT_RESYNTHESIS_PROMPT_TMPL)
 
 
 class FeedbackQueryTransformation(BaseQueryTransform):
@@ -40,7 +40,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         self,
         llm_predictor: Optional[BaseLLMPredictor] = None,
         resynthesize_query: bool = False,
-        resynthesis_prompt: Optional[Prompt] = None,
+        resynthesis_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         super().__init__()
         self.llm_predictor = llm_predictor or LLMPredictor()

@@ -16,7 +16,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
-from llama_index.prompts.prompts import KeywordExtractPrompt, QueryKeywordExtractPrompt
+from llama_index.prompts.prompts import BasePromptTemplate, QueryKeywordExtractPrompt
 from llama_index.schema import NodeWithScore
 from llama_index.utils import truncate_text
 
@@ -31,7 +31,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
     Arguments are shared among subclasses.
 
     Args:
-        keyword_extract_template (Optional[KeywordExtractPrompt]): A Keyword
+        keyword_extract_template (Optional[BasePromptTemplate]): A Keyword
             Extraction Prompt
             (see :ref:`Prompt-Templates`).
         query_keyword_extract_template (Optional[QueryKeywordExtractPrompt]): A Query
@@ -49,7 +49,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
     def __init__(
         self,
         index: BaseKeywordTableIndex,
-        keyword_extract_template: Optional[KeywordExtractPrompt] = None,
+        keyword_extract_template: Optional[BasePromptTemplate] = None,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
