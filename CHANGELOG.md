@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Add structured answer filtering for Refine response synthesizer (#7317)
+
 ### Bug Fixes / Nits
 - Use service context for intermediate index in retry source query engine (#7341)
 
