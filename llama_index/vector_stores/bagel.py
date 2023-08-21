@@ -112,8 +112,8 @@ class BagelVectorStore(VectorStore):
             raise ValueError("collection not set")
 
         results = self._collection.get(where={"doc_id": ref_doc_id})
-        if results and 'ids' in results:
-            self._collection.delete(ids = results['ids'])
+        if results and "ids" in results:
+            self._collection.delete(ids=results["ids"])
 
     @property
     def client(self) -> Any:
