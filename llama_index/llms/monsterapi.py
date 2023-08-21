@@ -20,9 +20,9 @@ class MonsterLLM(CustomLLM):
     def __init__(
         self,
         model: str,
+        monster_api_key: Optional[str] = None,
         max_new_tokens: int = 256,
         temperature: float = 0.75,
-        monster_api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         messages_to_prompt: Optional[Callable] = None,
