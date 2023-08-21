@@ -4,11 +4,17 @@
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
 from llama_index.bridge.langchain import PromptTemplate as LangchainTemplate
 from llama_index.llms import MockLLM
-from llama_index.llms.base import LLM
-from llama_index.prompts import LangchainPromptTemplate, PromptTemplate
+from llama_index.llms.base import LLM, ChatMessage, MessageRole
+from llama_index.prompts import (
+    ChatPromptTemplate,
+    LangchainPromptTemplate,
+    PromptTemplate,
+    SelectorPromptTemplate,
+)
+from llama_index.prompts.prompt_type import PromptType
 
 
-def test_partial_format() -> None:
+def test_template() -> None:
     """Test partial format."""
     prompt_txt = "hello {text} {foo}"
     prompt = PromptTemplate(prompt_txt)
@@ -17,6 +23,57 @@ def test_partial_format() -> None:
 
     assert isinstance(prompt_fmt, PromptTemplate)
     assert prompt_fmt.format(text="world") == "hello world bar"
+
+
+def test_chat_template() -> None:
+    chat_template = ChatPromptTemplate(
+        message_templates=[
+            ChatMessage(
+                content="This is a system message with a {sys_param}",
+                role=MessageRole.SYSTEM,
+            ),
+            ChatMessage(content="hello {text} {foo}", role=MessageRole.USER),
+        ],
+        prompt_type=PromptType.CONVERSATION,
+    )
+
+    partial_template = chat_template.partial_format(sys_param="sys_arg")
+    messages = partial_template.format_messages(text="world", foo="bar")
+
+    assert messages[0] == ChatMessage(
+        content="This is a system message with a sys_arg", role=MessageRole.SYSTEM
+    )
+
+
+def test_selector_template() -> None:
+    default_template = PromptTemplate("hello {text} {foo}")
+    chat_template = ChatPromptTemplate(
+        message_templates=[
+            ChatMessage(
+                content="This is a system message with a {sys_param}",
+                role=MessageRole.SYSTEM,
+            ),
+            ChatMessage(content="hello {text} {foo}", role=MessageRole.USER),
+        ],
+        prompt_type=PromptType.CONVERSATION,
+    )
+
+    selector_template = SelectorPromptTemplate(
+        default_template=default_template,
+        conditionals=[
+            (lambda llm: isinstance(llm, MockLLM), chat_template),
+        ],
+    )
+
+    partial_template = selector_template.partial_format(text="world", foo="bar")
+
+    prompt = partial_template.format()
+    assert prompt == "hello world bar"
+
+    messages = partial_template.format_messages(llm=MockLLM(), sys_param="sys_arg")
+    assert messages[0] == ChatMessage(
+        content="This is a system message with a sys_arg", role=MessageRole.SYSTEM
+    )
 
 
 def test_langchain_template() -> None:

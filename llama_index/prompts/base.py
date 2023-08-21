@@ -41,6 +41,55 @@ class BasePromptTemplate(BaseModel, ABC):
         ...
 
 
+class PromptTemplate(BasePromptTemplate):
+    template: str
+
+    def __init__(
+        self,
+        template: str,
+        prompt_type: str = PromptType.CUSTOM,
+        output_parser: Optional[BaseOutputParser] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        if metadata is None:
+            metadata = {}
+        metadata["prompt_type"] = prompt_type
+
+        template_vars = get_template_vars(template)
+
+        super().__init__(
+            template=template,
+            template_vars=template_vars,
+            kwargs=kwargs,
+            metadata=metadata,
+            output_parser=output_parser,
+        )
+
+    def partial_format(self, **kwargs: Any) -> "PromptTemplate":
+        """Partially format the prompt."""
+        prompt = deepcopy(self)
+        prompt.kwargs.update(kwargs)
+        return prompt
+
+    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
+        """Format the prompt into a string."""
+        del llm  # unused
+        all_kwargs = {
+            **self.kwargs,
+            **kwargs,
+        }
+        return self.template.format(**all_kwargs)
+
+    def format_messages(
+        self, llm: Optional[LLM] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Format the prompt into a list of chat messages."""
+        del llm  # unused
+        prompt = self.format(**kwargs)
+        return prompt_to_messages(prompt)
+
+
 class ChatPromptTemplate(BasePromptTemplate):
     message_templates: List[ChatMessage]
 
@@ -105,74 +154,25 @@ class ChatPromptTemplate(BasePromptTemplate):
         return messages
 
 
-class PromptTemplate(BasePromptTemplate):
-    template: str
-
-    def __init__(
-        self,
-        template: str,
-        prompt_type: str = PromptType.CUSTOM,
-        output_parser: Optional[BaseOutputParser] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> None:
-        if metadata is None:
-            metadata = {}
-        metadata["prompt_type"] = prompt_type
-
-        template_vars = get_template_vars(template)
-
-        super().__init__(
-            template=template,
-            template_vars=template_vars,
-            kwargs=kwargs,
-            metadata=metadata,
-            output_parser=output_parser,
-        )
-
-    def partial_format(self, **kwargs: Any) -> "PromptTemplate":
-        """Partially format the prompt."""
-        prompt = deepcopy(self)
-        prompt.kwargs.update(kwargs)
-        return prompt
-
-    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
-        """Format the prompt into a string."""
-        del llm  # unused
-        all_kwargs = {
-            **self.kwargs,
-            **kwargs,
-        }
-        return self.template.format(**all_kwargs)
-
-    def format_messages(
-        self, llm: Optional[LLM] = None, **kwargs: Any
-    ) -> List[ChatMessage]:
-        """Format the prompt into a list of chat messages."""
-        del llm  # unused
-        prompt = self.format(**kwargs)
-        return prompt_to_messages(prompt)
-
-
 class SelectorPromptTemplate(BasePromptTemplate):
-    default_prompt: BasePromptTemplate
+    default_template: BasePromptTemplate
     conditionals: Optional[List[Tuple[Callable[[LLM], bool], BasePromptTemplate]]] = (
         None,
     )
 
     def __init__(
         self,
-        default_prompt: BasePromptTemplate,
+        default_template: BasePromptTemplate,
         conditionals: Optional[
             List[Tuple[Callable[[LLM], bool], BasePromptTemplate]]
         ] = None,
     ):
-        metadata = default_prompt.metadata
-        kwargs = default_prompt.kwargs
-        template_vars = default_prompt.template_vars
-        output_parser = default_prompt.output_parser
+        metadata = default_template.metadata
+        kwargs = default_template.kwargs
+        template_vars = default_template.template_vars
+        output_parser = default_template.output_parser
         super().__init__(
-            default_prompt=default_prompt,
+            default_template=default_template,
             conditionals=conditionals,
             metadata=metadata,
             kwargs=kwargs,
@@ -182,21 +182,21 @@ class SelectorPromptTemplate(BasePromptTemplate):
 
     def _select(self, llm: Optional[LLM] = None) -> BasePromptTemplate:
         if llm is None:
-            return self.default_prompt
+            return self.default_template
 
         for condition, prompt in self.conditionals:
             if condition(llm):
                 return prompt
-        return self.default_prompt
+        return self.default_template
 
     def partial_format(self, **kwargs: Any) -> "SelectorPromptTemplate":
-        default_prompt = self.default_prompt.partial_format(**kwargs)
+        default_template = self.default_template.partial_format(**kwargs)
         conditionals = [
             (condition, prompt.partial_format(**kwargs))
             for condition, prompt in self.conditionals
         ]
         return SelectorPromptTemplate(
-            default_prompt=default_prompt, conditionals=conditionals
+            default_template=default_template, conditionals=conditionals
         )
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
