@@ -30,7 +30,11 @@ Over time, you would try to formalize processes and evaluation methodology, sett
 ## The Challenges of Building a Production-Ready LLM Application
 Many who are interested in the LLM application space are not machine learning engineers but rather software developers or  even non-technical folk. 
 
-One of the biggest strides forward that LLMs and foundation models have made to the AI/ML application landscape is that it makes it really easy to go from idea to prototype without facing all of the hurdles and uncertainty of a traditional machine learning project - collecting, exploring and cleaning data, keeping up with latest research and exploring different methods, training models, adjusting hyperparameters, and dealing with unexpected issues in model quality. The huge infrastructure burden, long development cycle, and high risk to reward ratio have been blockers to successful applications.
+One of the biggest strides forward that LLMs and foundation models have made to the AI/ML application landscape is that it makes it really easy to go from idea to prototype without facing all of the hurdles and uncertainty of a traditional machine learning project.
+
+This would have involved collecting, exploring and cleaning data, keeping up with latest research and exploring different methods, training models, adjusting hyperparameters, and dealing with unexpected issues in model quality. 
+
+The huge infrastructure burden, long development cycle, and high risk to reward ratio have been blockers to successful applications.
 
 At the same time, despite the fact that getting a prototype working quickly through frameworks like LlamaIndex has become a lot more accessible, deploying a machine learning product in the real world is still rife with uncertainty and challenges.
 
@@ -57,7 +61,7 @@ Here are some additional concerns:
 
 Differences between **Evaluation** and being **Data-Driven**:
 1. **Evaluation** does not necessarily have to be rigorous or fully data-driven process - especially at the initial stages. It is more concerned with the initial *development* phase of the application - validating that the overall pipeline works in the general case and starting to define possible signals and metrics which may be carried forward into production.
-2. Being **Data-Driven** is closely tied to *automation*. After we've chosen our basic application structure, how can we improve the system over time? How can we ensure the quality of the system in a systematic way? How can we reduce the cost of monitoring and improving the system, and what are the pathways to adding and curating data points to add? How can we leverage ML systems (including but not limited to LLMs) to make this process easier?
+2. Being **Data-Driven** is closely tied to *automation*. After we've chosen our basic application structure, how can we improve the system over time? How can we ensure quality in a systematic way? How can we reduce the cost of monitoring, and what are the pathways to adding and curating data points? How can we leverage ML systems (including but not limited to LLMs) to make this process easier?
 
 Additional considerations:
 1. **Privacy** - how can I ensure that my data is not leaked if I am feeding it into these models? What infrastructure am I using and what is the security guarantee / how is the access control structured?
