@@ -2,9 +2,15 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import (ChatMessage, ChatResponse,
-                                   CompletionResponse, LLMMetadata,
-                                   llm_chat_callback, llm_completion_callback)
+from llama_index.llms.base import (
+    ChatMessage,
+    ChatResponse,
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+    llm_chat_callback,
+    llm_completion_callback
+)
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import \
     messages_to_prompt as generic_messages_to_prompt
@@ -67,19 +73,29 @@ class MonsterLLM(CustomLLM):
                 "Could not import Monster API client library."
                 "Please install it with `pip install monsterapi`"
             )
+
+        # Check if model is supported
         llm_models_enabled = [i for i, j in MODEL_TYPES.items() if j == "LLM"]
         if self._model not in llm_models_enabled:
             raise RuntimeError(
                 f"Model: {self._model} is not supported.Supported models are {llm_models_enabled}. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
+
+        # Validate input args against input Pydantic model
         input_dict = self._get_input_dict(prompt, **kwargs)
+
+        # Initiate client object
         monster_client = MonsterClient(api_key=self.api_key)
 
+        # Send request and receive process_id
         response = monster_client.get_response(
             model=self._model, data=input_dict)
         process_id = response['process_id']
+
+        # Wait for response and return result
         result = monster_client.wait_and_get_result(process_id)
+
         return CompletionResponse(text=result['text'])
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> "CompletionResponseGen":
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         raise NotImplementedError()
