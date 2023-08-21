@@ -4,6 +4,7 @@
 
 ### New Features
 - Added FireStore docstore/index store support (#7305)
+- add recursive agent notebook (#7330)
 
 ### Bug Fixes / Nits
 - Fix Azure pydantic error (#7329)
