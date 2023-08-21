@@ -24,7 +24,7 @@ def test_partial_format() -> None:
 
 
 def test_langchain_prompt() -> None:
-    lc_template = LangchainTemplate("hello {text} {foo}")
+    lc_template = LangchainTemplate.from_template("hello {text} {foo}")
     template = LangchainPromptTemplate(lc_template)
 
     template_fmt = template.partial_format(foo="bar")
