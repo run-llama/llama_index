@@ -44,11 +44,8 @@ class BM25Retriever(BaseRetriever):
         return nodes
 
     def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
-        if (
-            query_bundle.custom_embedding_strs is not None
-            or query_bundle.embedding is not None
-        ):
-            raise NotImplementedError("BM25Retriever does not support embeddings")
+        if query_bundle.custom_embedding_strs or query_bundle.embedding:
+            logger.warning("BM25Retriever does not support embeddings, skipping...")
 
         scored_nodes = self._get_scored_nodes(query_bundle.query_str)
 
