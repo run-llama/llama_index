@@ -11,6 +11,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.callbacks import CallbackManager, trace_method
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -25,10 +26,12 @@ class SimpleChatEngine(BaseChatEngine):
         llm: LLM,
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._llm = llm
         self._memory = memory
         self._prefix_messages = prefix_messages
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @classmethod
     def from_defaults(
@@ -59,8 +62,14 @@ class SimpleChatEngine(BaseChatEngine):
 
         prefix_messages = prefix_messages or []
 
-        return cls(llm=llm, memory=memory, prefix_messages=prefix_messages)
+        return cls(
+            llm=llm,
+            memory=memory,
+            prefix_messages=prefix_messages,
+            callback_manager=service_context.callback_manager,
+        )
 
+    @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -75,6 +84,7 @@ class SimpleChatEngine(BaseChatEngine):
 
         return AgentChatResponse(response=str(chat_response.message.content))
 
+    @trace_method("chat")
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
@@ -93,6 +103,7 @@ class SimpleChatEngine(BaseChatEngine):
 
         return chat_response
 
+    @trace_method("chat")
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -107,6 +118,7 @@ class SimpleChatEngine(BaseChatEngine):
 
         return AgentChatResponse(response=str(chat_response.message.content))
 
+    @trace_method("chat")
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:

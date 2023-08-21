@@ -75,3 +75,4 @@ html_js_files = [
 ]
 
 nb_execution_mode = "off"
+autodoc_pydantic_model_show_json_error_strategy = "coerce"

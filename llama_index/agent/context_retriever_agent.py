@@ -8,7 +8,7 @@ from llama_index.agent.openai_agent import (
     BaseOpenAIAgent,
 )
 from llama_index.bridge.langchain import print_text
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import CallbackManager
 from llama_index.chat_engine.types import (
     AgentChatResponse,
 )
@@ -148,13 +148,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         """Get tools."""
         return self._tools
 
-    def chat(
-        self,
-        message: str,
-        chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Union[str, dict] = "auto",
-    ) -> AgentChatResponse:
-        """Chat."""
+    def _build_formatted_message(self, message: str) -> str:
         # augment user message
         retrieved_nodes_w_scores: List[NodeWithScore] = self._retriever.retrieve(
             message
@@ -164,12 +158,34 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
 
         # format message
         context_str = self._context_separator.join(retrieved_texts)
-        formatted_message = self._qa_prompt.format(
-            context_str=context_str, query_str=message
-        )
+        return self._qa_prompt.format(context_str=context_str, query_str=message)
+
+    def chat(
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
+    ) -> AgentChatResponse:
+        """Chat."""
+        formatted_message = self._build_formatted_message(message)
         if self._verbose:
             print_text(formatted_message + "\n", color="yellow")
 
         return super().chat(
+            formatted_message, chat_history=chat_history, function_call=function_call
+        )
+
+    async def achat(
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        function_call: Union[str, dict] = "auto",
+    ) -> AgentChatResponse:
+        """Chat."""
+        formatted_message = self._build_formatted_message(message)
+        if self._verbose:
+            print_text(formatted_message + "\n", color="yellow")
+
+        return await super().achat(
             formatted_message, chat_history=chat_history, function_call=function_call
         )

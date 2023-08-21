@@ -4,6 +4,7 @@ from pytest import MonkeyPatch
 from llama_index.bridge.langchain import HuggingFaceBgeEmbeddings
 from llama_index.embeddings import OpenAIEmbedding, LangchainEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.token_counter.mock_embed_model import MockEmbedding
 
 
 def mock_hf_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
@@ -27,7 +28,7 @@ def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
 
     # Test None
     embed_model = resolve_embed_model(None)
-    assert isinstance(embed_model, OpenAIEmbedding)
+    assert isinstance(embed_model, MockEmbedding)
 
     # Test str
     embed_model = resolve_embed_model("local")

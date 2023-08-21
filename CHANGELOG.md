@@ -1,5 +1,76 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Use service context for intermediate index in retry source query engine (#7341)
+
+## [0.8.5.post2] - 2023-08-20
+
+### New Features
+- Added FireStore docstore/index store support (#7305)
+- add recursive agent notebook (#7330)
+
+### Bug Fixes / Nits
+- Fix Azure pydantic error (#7329)
+- fix callback trace ids (make them a context var)  (#7331)
+
+## [0.8.5.post1] - 2023-08-18
+
+### New Features
+- Awadb Vector Store (#7291)
+
+### Bug Fixes / Nits
+- Fix bug in OpenAI llm temperature type 
+
+## [0.8.5] - 2023-08-18
+
+### New Features
+- Expose a system prompt/query wrapper prompt in the service context for open-source LLMs (#6647)
+- Changed default MyScale index format to `MSTG` (#7288)
+- Added tracing to chat engines/agents (#7304)
+- move LLM and embeddings to pydantic (#7289)
+
+### Bug Fixes / Nits
+- Fix sentence splitter bug (#7303)
+- Fix sentence splitter infinite loop (#7295)
+
+## [0.8.4] - 2023-08-17
+
+### Bug Fixes / Nits
+- Improve SQL Query parsing (#7283)
+- Fix loading embed_model from global service context (#7284)
+- Limit langchain version until we migrate to pydantic v2 (#7297)
+
+## [0.8.3] - 2023-08-16
+
+### New Features
+- Added Knowledge Graph RAG Retriever (#7204)
+
+### Bug Fixes / Nits
+- accept `api_key` kwarg in OpenAI LLM class constructor (#7263)
+- Fix to create separate queue instances for separate instances of `StreamingAgentChatResponse` (#7264)
+
+## [0.8.2.post1] - 2023-08-14
+
+### New Features
+- Added support for Rockset as a vector store (#7111)
+
+### Bug Fixes
+- Fixed bug in service context definition that could disable LLM (#7261)
+
+## [0.8.2] - 2023-08-14
+
+### New Features
+- Enable the LLM or embedding model to be disabled by setting to `None` in the service context (#7255)
+- Resolve nearly any huggingface embedding model using the `embed_model="local:<model_name>"` syntax (#7255)
+- Async tool-calling support (#7239)
+
+### Bug Fixes / Nits
+- Updated supabase kwargs for add and query (#7103)
+- Small tweak to default prompts to allow for more general purpose queries (#7254)
+- Make callback manager optional for `CustomLLM` + docs update (#7257)
+
 ## [0.8.1] - 2023-08-13
 
 ### New Features

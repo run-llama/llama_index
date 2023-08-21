@@ -82,7 +82,6 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
 
             split_text = self._tokenizer_fn(text)
 
-            start_embed_token_ct = self.embed_model.total_tokens_used
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
                     self.embed_model.get_agg_embedding_from_queries(
@@ -106,12 +105,6 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                 similarity_top_k=num_top_k,
                 embedding_ids=list(range(len(text_embeddings))),
                 similarity_cutoff=threshold,
-            )
-
-            net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct
-            logger.info(
-                f"> [optimize] Total embedding token usage: "
-                f"{net_embed_tokens} tokens"
             )
 
             if len(top_idxs) == 0:

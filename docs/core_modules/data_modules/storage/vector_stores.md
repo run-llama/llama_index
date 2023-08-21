@@ -1,13 +1,15 @@
 # Vector Stores
 
-Vector stores contain embedding vectors of ingested document chunks 
+Vector stores contain embedding vectors of ingested document chunks
 (and sometimes the document chunks as well).
 
 ## Simple Vector Store
+
 By default, LlamaIndex uses a simple in-memory vector store that's great for quick experimentation.
 They can be persisted to (and loaded from) disk by calling `vector_store.persist()` (and `SimpleVectorStore.from_persist_path(...)` respectively).
 
 ## Vector Store Options & Feature Support
+
 LlamaIndex supports over 20 different vector store options.
 We are actively adding more integrations and improving feature coverage for each.
 
@@ -31,6 +33,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |      |
 | MyScale                  | cloud               |                    |               |        | ✓               |      |
 | Tair                     | cloud               | ✓                  |               | ✓      | ✓               |      |
+| Rockset                  | cloud               | ✓                  |               | ✓      | ✓               |      |
 | Simple                   | in-memory           |                    |               | ✓      |                 |      |
 | FAISS                    | in-memory           |                    |               |        |                 |      |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |      |
@@ -44,6 +47,7 @@ caption: Examples
 maxdepth: 1
 ---
 /examples/vector_stores/SimpleIndexDemo.ipynb
+/examples/vector_stores/RocksetIndexDemo.ipynb
 /examples/vector_stores/QdrantIndexDemo.ipynb
 /examples/vector_stores/FaissIndexDemo.ipynb
 /examples/vector_stores/DeepLakeIndexDemo.ipynb
@@ -66,4 +70,3 @@ maxdepth: 1
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 /examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 ```
-

@@ -112,9 +112,9 @@ service_context = ServiceContext.from_defaults(
 
 ## Example: Using a HuggingFace LLM
 
-LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
+LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model as in [this example](embeddings.md#custom-embeddings).
 
-Many open-source models from HuggingFace require either some preamble before before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
+Many open-source models from HuggingFace require either some preamble before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
 
 Below, this example uses both the `system_prompt` and `query_wrapper_prompt`, using specific prompts from the model card found [here](https://huggingface.co/stabilityai/stablelm-tuned-alpha-3b).
 
@@ -190,7 +190,12 @@ from llama_index import (
     ListIndex
 )
 from llama_index.callbacks import CallbackManager
-from llama_index.llms import CustomLLM, CompletionResponse, LLMMetadata
+from llama_index.llms import (
+    CustomLLM, 
+    CompletionResponse, 
+    CompletionResponseGen,
+    LLMMetadata,
+)
 from llama_index.llms.base import llm_completion_callback
 
 
@@ -204,8 +209,6 @@ model_name = "facebook/opt-iml-max-30b"
 pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
 
 class OurLLM(CustomLLM):
-
-    callback_manager = CallbackManager([])
 
     @property
     def metadata(self) -> LLMMetadata:
