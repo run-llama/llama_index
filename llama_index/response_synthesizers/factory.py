@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Callable
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.service_context import ServiceContext
@@ -7,6 +7,7 @@ from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
     DEFAULT_REFINE_PROMPT_SEL,
 )
+from llama_index.prompts.prompts import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import (
     QuestionAnswerPrompt,
@@ -16,6 +17,7 @@ from llama_index.prompts.prompts import (
 )
 from llama_index.response_synthesizers.accumulate import Accumulate
 from llama_index.response_synthesizers.base import BaseSynthesizer
+from llama_index.program.base_program import BasePydanticProgram
 from llama_index.response_synthesizers.compact_and_accumulate import (
     CompactAndAccumulate,
 )
@@ -39,6 +41,7 @@ def get_response_synthesizer(
     use_async: bool = False,
     streaming: bool = False,
     structured_answer_filtering: bool = False,
+    program_factory: Optional[Callable[[Prompt], BasePydanticProgram]] = None,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
 
@@ -58,6 +61,7 @@ def get_response_synthesizer(
             refine_template=refine_template,
             streaming=streaming,
             structured_answer_filtering=structured_answer_filtering,
+            program_factory=program_factory,
         )
     elif response_mode == ResponseMode.COMPACT:
         return CompactAndRefine(
@@ -66,6 +70,7 @@ def get_response_synthesizer(
             refine_template=refine_template,
             streaming=streaming,
             structured_answer_filtering=structured_answer_filtering,
+            program_factory=program_factory,
         )
     elif response_mode == ResponseMode.TREE_SUMMARIZE:
         return TreeSummarize(
