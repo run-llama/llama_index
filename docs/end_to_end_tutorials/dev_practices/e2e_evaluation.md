@@ -19,11 +19,23 @@ maxdepth: 1
 
 In the future, we will also be able to create datasets automatically against tools.
 
-## Qualitative v.s. Quantitative Eval
+## The Spectrum of Evaluation Options
 
 Quantitative eval is more useful when evaluating applications where there is a correct answer - for instance, validating that the choice of tools and their inputs are correct given the plan, or retrieving specific pieces of information, or attempting to produce intermediate output of a certain schema (e.g. JSON fields).
 
 Qualitative eval is more useful when generating long-form responses that are meant to be *helpful* but not necessarily completely accurate.
+
+There is a spectrum of evaluation options ranging from metrics, cheaper models, more expensive models (GPT4), and human evaluation.
+
+Below is some example usage of the [evaluation modules](evaluation):
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/evaluation/TestNYC-Evaluation-Query.ipynb
+/examples/evaluation/TestNYC-Evaluation.ipynb
+```
 
 
 ## Discovery - Sensitivity Testing
@@ -47,6 +59,6 @@ It is intenteded for two purposes:
 1. Evaluating changes cheaply and quickly across a large dataset during the development stage.
 2. Flagging outliers for further evaluation (GPT-4 / human alerting) during the production monitoring stage.
 
-We also want the metrics ensembling to be interpretable - the correlation and weighting scores should give an indication of which metrics best capture the  
+We also want the metrics ensembling to be interpretable - the correlation and weighting scores should give an indication of which metrics best capture the evaluation criteria.
 
 We will discuss more about the methodology in future updates.

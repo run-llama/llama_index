@@ -25,7 +25,7 @@ Here is a notebook showing how the BEIR dataset can be used with your retrieval 
 maxdepth: 1
 ---
 /examples/evaluation/BeirEvaluation.ipynb
-``````
+```
 
 We will be adding more methods to evaluate retrieval soon. This includes evaluating retrieval on your own dataset.
 
