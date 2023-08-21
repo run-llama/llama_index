@@ -153,6 +153,7 @@ class OpenAI(LLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # TMP: check tokens
+        # question: is messages_to_prompt a reasonable proxy or not
         from llama_index.llms.generic_utils import messages_to_prompt
 
         prompt_str = messages_to_prompt(messages)
