@@ -1,7 +1,7 @@
 from inspect import signature
 from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 
 
