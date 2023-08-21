@@ -17,6 +17,11 @@ When developing your LLM application, it could help to first define an end-to-en
 
 The analogy with software testing is integration tests and unit tests. You should probably start writing unit tests once you start fiddling with individual components. Equally, your gold standard on whether things are working will together are integration tests. Both are equally important.
 
+### E2E or Component-Wise - Which Do I Start With?
+However, if you want to get an overall idea of how your system is doing as you iterate upon it, it makes sense to start with centering your core development loop around the e2e eval - as an overall sanity/vibe check.
+
+If you have an idea of what you're doing and want to iterate step by step on each component, building it up as things go - you may want to start with a component-wise eval. However this may run the risk of premature optimization - making model selection or parameter choices without assessing the overall application needs. You may have to revisit these choices after creating your final application.
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -33,6 +38,7 @@ maxdepth: 1
 ---
 /core_modules/supporting_modules/evaluation/root.md
 ```
+
 
 ## Diving Deeper into Evaluation
 Evaluation is a controversial topic, and as the field of NLP has evolved, so have the methods of evaluation.
