@@ -35,9 +35,9 @@ class MonsterLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=self._context_window,
             num_output=self.max_new_tokens,
-            model_name=self.model_name,
+            model_name=self._model,
         )
 
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
