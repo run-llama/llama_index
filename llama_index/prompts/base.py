@@ -4,8 +4,10 @@
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
+from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
+from llama_index.llms.langchain_utils import from_lc_messages
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser
@@ -114,7 +116,6 @@ class PromptTemplate:
         self.kwargs = kwargs
         self.metadata = {
             "prompt_type": prompt_type,
-            "output_parser": output_parser,
         }
         self.output_parser = output_parser
 
@@ -203,6 +204,44 @@ class SelectorPromptTemplate:
         """Format the prompt into a list of chat messages."""
         prompt = self._select(llm=llm)
         return prompt.format_messages(**kwargs)
+
+
+class LangchainPromptTemplate:
+    def __init__(
+        self,
+        template: LangchainTemplate,
+        prompt_type: str = PromptType.CUSTOM,
+    ) -> None:
+        self._template = template
+
+        self.metadata = {
+            "prompt_type": prompt_type,
+        }
+        self.output_parser = template.output_parser
+
+    @property
+    def template_vars(self) -> List[str]:
+        return get_template_vars(self._template)
+
+    def partial_format(self, **kwargs: Any) -> "PromptTemplate":
+        """Partially format the prompt."""
+        partial_template = self._template.partial(**kwargs)
+        return LangchainPromptTemplate(partial_template)
+
+    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
+        """Format the prompt into a string."""
+        del llm  # unused
+        return self._template.format(**kwargs)
+
+    def format_messages(
+        self, llm: Optional[LLM] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Format the prompt into a list of chat messages."""
+        del llm  # unused
+        lc_prompt_value = self._template.format_prompt(**kwargs)
+        lc_messages = lc_prompt_value.to_messages()
+        messages = from_lc_messages(lc_messages)
+        return messages
 
 
 # NOTE: only for backwards compatibility
