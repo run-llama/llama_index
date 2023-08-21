@@ -49,7 +49,7 @@ def test_create_schema_from_function_with_field() -> None:
 
     # Test the created schema
     instance = schema()
-    assert instance.x == 3
+    assert instance.x == 3  # type: ignore
 
     instance = schema(x=5)
-    assert instance.x == 5
+    assert instance.x == 5  # type: ignore
