@@ -80,7 +80,7 @@ class BagelVectorStore(VectorStore):
         documents = []
 
         for node_with_embedding in embedding_results:
-            ids.append(node_with_embedding.ref_doc_id)
+            ids.append(node_with_embedding.id)
             embeddings.append(node_with_embedding.embedding)
             metadatas.append(
                 node_to_metadata_dict(
@@ -111,7 +111,9 @@ class BagelVectorStore(VectorStore):
         if not self._collection:
             raise ValueError("collection not set")
 
-        self._collection.delete(ids=[ref_doc_id])
+        results = self._collection.get(where={"doc_id": ref_doc_id})
+        if results and 'ids' in results:
+            self._collection.delete(ids = results['ids'])
 
     @property
     def client(self) -> Any:
