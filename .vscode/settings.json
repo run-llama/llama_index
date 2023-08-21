@@ -2,13 +2,9 @@
   "python.formatting.provider": "none",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-      "source.organizeImports": true,
+    "source.organizeImports": true,
   },
-<<<<<<< HEAD
-}
-=======
   "[python]": {
     "editor.defaultFormatter": "ms-python.autopep8"
   },
 }
->>>>>>> 12eae4b3 (Update readme modules and demo notebooks)
