@@ -22,13 +22,13 @@ class MonsterLLM(CustomLLM):
         model: str,
         max_new_tokens: int = 256,
         temperature: float = 0.75,
-        api_key: Optional[str] = None,
+        monster_api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.api_key = api_key
+        self.monster_api_key = monster_api_key
         self.max_new_tokens = max_new_tokens
         self._model = model
         self._context_window = context_window
@@ -84,7 +84,7 @@ class MonsterLLM(CustomLLM):
         input_dict = self._get_input_dict(prompt, **kwargs)
 
         # Initiate client object
-        monster_client = MonsterClient(api_key=self.api_key)
+        monster_client = MonsterClient(api_key=self.monster_api_key)
 
         # Send request and receive process_id
         response = monster_client.get_response(
