@@ -1,9 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.5.post2] - 2023-08-20
 
 ### Bug Fixes / Nits
 - Fix Azure pydantic error (#7329)
+- fix callback trace ids (make them a context var)  (#7331)
 
 ## [0.8.5.post1] - 2023-08-18
 
