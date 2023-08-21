@@ -49,11 +49,13 @@ class ChatPromptTemplate(BasePromptTemplate):
         message_templates: List[ChatMessage],
         prompt_type: str = PromptType.CUSTOM,
         output_parser: Optional[BaseOutputParser] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
-        metadata = {
-            "prompt_type": prompt_type,
-        }
+        if metadata is None:
+            metadata = {}
+        metadata["prompt_type"] = prompt_type
+
         template_vars = []
         for message_template in message_templates:
             template_vars.extend(get_template_vars(message_template.content or ""))
@@ -111,11 +113,13 @@ class PromptTemplate(BasePromptTemplate):
         template: str,
         prompt_type: str = PromptType.CUSTOM,
         output_parser: Optional[BaseOutputParser] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        metadata = {
-            "prompt_type": prompt_type,
-        }
+        if metadata is None:
+            metadata = {}
+        metadata["prompt_type"] = prompt_type
+
         template_vars = get_template_vars(template)
 
         super().__init__(
@@ -217,6 +221,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
         selector: Optional[LangchainSelector] = None,
         output_parser: Optional[BaseOutputParser] = None,
         prompt_type: str = PromptType.CUSTOM,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         if selector is None:
             if template is None:
@@ -229,9 +234,11 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
         kwargs = selector.default_prompt.partial_variables
         template_vars = selector.default_prompt.input_variables
-        metadata = {
-            "prompt_type": prompt_type,
-        }
+
+        if metadata is None:
+            metadata = {}
+        metadata["prompt_type"] = prompt_type
+
         super().__init__(
             selector=selector,
             metadata=metadata,
