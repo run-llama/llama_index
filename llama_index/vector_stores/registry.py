@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Dict, Type
 
+from llama_index.vector_stores.bagel import BagelVectorStore
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
@@ -35,6 +36,7 @@ class VectorStoreType(str, Enum):
     MYSCALE = "myscale"
     SUPABASE = "supabase"
     ROCKSET = "rockset"
+    BAGEL = "bagel"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -53,6 +55,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.DEEPLAKE: DeepLakeVectorStore,
     VectorStoreType.MYSCALE: MyScaleVectorStore,
     VectorStoreType.ROCKSET: RocksetVectorStore,
+    VectorStoreType.BAGEL: BagelVectorStore,
 }
 
 VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {
