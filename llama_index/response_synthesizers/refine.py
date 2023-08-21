@@ -28,12 +28,12 @@ class StructuredRefineResponse(BaseModel):
     """
 
     answer: str = Field(
-        description="The answer for the given query, based on the context and not " \
-            "prior knowledge."
+        description="The answer for the given query, based on the context and not "
+        "prior knowledge."
     )
     query_satisfied: bool = Field(
-        description="True if there was enough context given to provide an answer " \
-            "that satisfies the query."
+        description="True if there was enough context given to provide an answer "
+        "that satisfies the query."
     )
 
 
