@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pydantic import Field, PrivateAttr
 from typing import Any, Optional, Tuple, cast
 
 from llama_index.prompts import BasePromptTemplate
@@ -16,6 +17,17 @@ from llama_index.types import TokenAsyncGen, TokenGen
 
 
 class VellumPredictor(BaseLLMPredictor):
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, exclude=True
+    )
+
+    _vellum_client: Any = PrivateAttr()
+    _async_vellum_client = PrivateAttr()
+    _prompt_registry: Any = PrivateAttr()
+
+    class Config:
+        arbitrary_types_allowed = True
+
     def __init__(
         self,
         vellum_api_key: str,
@@ -29,12 +41,14 @@ class VellumPredictor(BaseLLMPredictor):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self.callback_manager = callback_manager or CallbackManager([])
+        callback_manager = callback_manager or CallbackManager([])
 
         # Vellum-specific
         self._vellum_client = Vellum(api_key=vellum_api_key)
         self._async_vellum_client = AsyncVellum(api_key=vellum_api_key)
         self._prompt_registry = VellumPromptRegistry(vellum_api_key=vellum_api_key)
+
+        super().__init__(callback_manager=callback_manager)
 
     @property
     def metadata(self) -> LLMMetadata:

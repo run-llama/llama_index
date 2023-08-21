@@ -1,6 +1,4 @@
 HuggingFaceLLM
 ==============
 
-.. automodule:: llama_index.llms.huggingface
-   :members:
-   :inherited-members:
+.. autopydantic_model:: llama_index.llms.huggingface.HuggingFaceLLM
