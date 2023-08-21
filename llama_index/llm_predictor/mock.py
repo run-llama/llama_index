@@ -1,9 +1,7 @@
 """Mock LLM Predictor."""
-
+from pydantic import Field
 from typing import Any, Dict
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.llms.base import LLMMetadata, LLM
@@ -14,7 +12,7 @@ from llama_index.token_counter.utils import (
     mock_extract_kg_triplets_response,
 )
 from llama_index.types import TokenAsyncGen, TokenGen
-from llama_index.utils import count_tokens, globals_helper
+from llama_index.utils import globals_helper
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py
 
@@ -86,10 +84,9 @@ def _mock_knowledge_graph_triplet_extract(prompt_args: Dict, max_triplets: int) 
 class MockLLMPredictor(BaseLLMPredictor):
     """Mock LLM Predictor."""
 
-    def __init__(self, max_tokens: int = DEFAULT_NUM_OUTPUTS) -> None:
-        """Initialize params."""
-        self.max_tokens = max_tokens
-        self.callback_manager = CallbackManager([])
+    max_tokens: int = Field(
+        default=DEFAULT_NUM_OUTPUTS, description="Number of tokens to mock generate."
+    )
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -99,38 +96,8 @@ class MockLLMPredictor(BaseLLMPredictor):
     def llm(self) -> LLM:
         raise NotImplementedError("MockLLMPredictor does not have an LLM model.")
 
-    def _log_start(self, prompt: Prompt, prompt_args: dict) -> str:
-        """Log start of an LLM event."""
-        llm_payload = prompt_args.copy()
-        llm_payload[EventPayload.TEMPLATE] = prompt
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload=llm_payload,
-        )
-
-        return event_id
-
-    def _log_end(self, event_id: str, output: str, formatted_prompt: str) -> None:
-        """Log end of an LLM event."""
-        prompt_tokens_count = count_tokens(formatted_prompt)
-        prediction_tokens_count = count_tokens(output)
-        self.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={
-                EventPayload.RESPONSE: output,
-                EventPayload.PROMPT: formatted_prompt,
-                # deprecated
-                "formatted_prompt_tokens_count": prompt_tokens_count,
-                "prediction_tokens_count": prediction_tokens_count,
-                "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
-            },
-            event_id=event_id,
-        )
-
     def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Mock predict."""
-        event_id = self._log_start(prompt, prompt_args)
-        formatted_prompt = prompt.format(**prompt_args)
 
         prompt_str = prompt.prompt_type
         if prompt_str == PromptType.SUMMARY:
@@ -159,7 +126,6 @@ class MockLLMPredictor(BaseLLMPredictor):
         else:
             raise ValueError("Invalid prompt type.")
 
-        self._log_end(event_id, output, formatted_prompt)
         return output
 
     def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:

@@ -57,7 +57,7 @@ def test_get_text_splitter() -> None:
     text_splitter = prompt_helper.get_text_splitter_given_prompt(
         test_prompt, 2, padding=1
     )
-    assert text_splitter._chunk_size == 2
+    assert text_splitter.chunk_size == 2
     test_text = "Hello world foo Hello world bar"
     text_chunks = text_splitter.split_text(test_text)
     assert text_chunks == ["Hello world", "foo Hello", "world bar"]
