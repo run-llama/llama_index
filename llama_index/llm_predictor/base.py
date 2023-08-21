@@ -8,13 +8,20 @@ from pydantic import BaseModel, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llm_predictor.utils import (
-    astream_chat_response_to_tokens, astream_completion_response_to_tokens,
-    stream_chat_response_to_tokens, stream_completion_response_to_tokens)
+    astream_chat_response_to_tokens,
+    astream_completion_response_to_tokens,
+    stream_chat_response_to_tokens,
+    stream_completion_response_to_tokens,
+)
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.prompts.base import (BasePromptTemplate, ChatPromptTemplate,
-                                      PromptTemplate, SelectorPromptTemplate)
+from llama_index.prompts.base import (
+    BasePromptTemplate,
+    ChatPromptTemplate,
+    PromptTemplate,
+    SelectorPromptTemplate,
+)
 from llama_index.types import TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
