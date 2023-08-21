@@ -43,6 +43,14 @@ Knowledge Graph RAG Retriever </examples/query_engine/knowledge_graph_rag_query_
 * DocumentSummaryIndexRetriever
 * DocumentSummaryIndexEmbeddingRetriever
 
+## External Retrievers
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/retrievers/bm25_retriever.ipynb 
+```
+
 ## Composed Retrievers
 * TransformRetriever
 ```{toctree}
