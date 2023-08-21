@@ -9,16 +9,20 @@ from typing import Any, Dict, List, Optional
 import fsspec
 from dataclasses_json import DataClassJsonMixin
 
-from llama_index.graph_stores.types import (DEFAULT_PERSIST_DIR,
-                                            DEFAULT_PERSIST_FNAME, GraphStore)
+from llama_index.graph_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
+    GraphStore,
+)
 
 logger = logging.getLogger(__name__)
 
-get_query = '\
+get_query = "\
     MATCH (n1:`%s`)-[r]->(n2:`%s`) \
     WHERE n1.id = $subj \
     RETURN type(r), n2.id\
-'
+"
+
 
 class FalkorDBGraphStore(GraphStore):
     """FalkorDB Graph Store.
@@ -42,10 +46,10 @@ class FalkorDBGraphStore(GraphStore):
             import redis
         except ImportError:
             raise ImportError("Please install redis client: pip install redis")
-        
+
         """Initialize params."""
-        self._node_label = node_label       
-        
+        self._node_label = node_label
+
         self._driver = redis.Redis.from_url(url).graph(database)
         self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
 
@@ -60,7 +64,9 @@ class FalkorDBGraphStore(GraphStore):
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
-        result = self._driver.query(self.get_query, params={"subj": subj}, read_only=True)
+        result = self._driver.query(
+            self.get_query, params={"subj": subj}, read_only=True
+        )
         return result.result_set
 
     def get_rel_map(
@@ -82,7 +88,7 @@ class FalkorDBGraphStore(GraphStore):
         if subjs is None or len(subjs) == 0:
             # unlike simple graph_store, we don't do get_all here
             return rel_map
-        
+
         query = f"""
             MATCH (n1:{self._node_label})
             WHERE n1.id IN $subjs
@@ -101,8 +107,8 @@ class FalkorDBGraphStore(GraphStore):
 
             subj_id = nodes[0].properties["id"]
             path = []
-            for i,edge in enumerate(edges):
-                dest = nodes[i+1]
+            for i, edge in enumerate(edges):
+                dest = nodes[i + 1]
                 dest_id = dest.properties["id"]
                 path.append(edge.relation)
                 path.append(dest_id)
@@ -135,7 +141,6 @@ class FalkorDBGraphStore(GraphStore):
         """Delete triplet."""
 
         def delete_rel(subj: str, obj: str, rel: str) -> None:
-
             rel = rel.replace(" ", "_").upper()
             query = f"MATCH (n1:`{self._node_label}`)-[r:`{rel}`]->(n2:`{self._node_label}`) WHERE n1.id = $subj AND n2.id = $obj DELETE r"
 
@@ -143,19 +148,18 @@ class FalkorDBGraphStore(GraphStore):
             self._driver.query(query, params={"subj": subj, "obj": obj})
 
         def delete_entity(entity: str) -> None:
-
             query = f"MATCH (n:`{self._node_label}`) WHERE n.id = $entity DELETE n"
 
             # Call FalkorDB with prepared statement
             self._driver.query(query, params={"entity": entity})
 
-
         def check_edges(entity: str) -> bool:
-
             query = "MATCH (n1:`{self._node_label}`)--() WHERE n1.id = $entity RETURN count(*)"
-            
+
             # Call FalkorDB with prepared statement
-            result = self._driver.query(query, params={"entity": entity}, read_only=True)
+            result = self._driver.query(
+                query, params={"entity": entity}, read_only=True
+            )
             return bool(result.result_set)
 
         delete_rel(subj, obj, rel)
@@ -163,7 +167,6 @@ class FalkorDBGraphStore(GraphStore):
             delete_entity(subj)
         if not check_edges(obj):
             delete_entity(obj)
-
 
     def refresh_schema(self) -> None:
         """
@@ -188,5 +191,3 @@ class FalkorDBGraphStore(GraphStore):
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
         result = self._driver.query(query, params=params)
         return result.result_set
-
-
