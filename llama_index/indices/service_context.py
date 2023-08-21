@@ -5,6 +5,7 @@ from typing import Optional
 import llama_index
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
@@ -13,8 +14,7 @@ from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
-from llama_index.prompts.prompts import Prompt
-from llama_index.embeddings.utils import resolve_embed_model, EmbedType
+from llama_index.prompts.base import BasePromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class ServiceContext:
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
-        query_wrapper_prompt: Optional[Prompt] = None,
+        query_wrapper_prompt: Optional[BasePromptTemplate] = None,
         # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
@@ -184,7 +184,7 @@ class ServiceContext:
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
-        query_wrapper_prompt: Optional[Prompt] = None,
+        query_wrapper_prompt: Optional[BasePromptTemplate] = None,
         # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,

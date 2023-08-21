@@ -1,9 +1,10 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
-from abc import abstractmethod, ABC
-from pydantic import BaseModel, PrivateAttr
+from abc import ABC, abstractmethod
 from typing import Any, List, Optional
+
+from pydantic import BaseModel, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llm_predictor.utils import (
@@ -21,7 +22,6 @@ from llama_index.prompts.base import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.prompts.prompts import SimpleInputPrompt
 from llama_index.types import TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class LLMPredictor(BaseLLMPredictor):
         arbitrary_types_allowed = True
 
     system_prompt: Optional[str]
-    query_wrapper_prompt: Optional[Prompt]
+    query_wrapper_prompt: Optional[BasePromptTemplate]
     _llm: LLM = PrivateAttr()
 
     def __init__(
@@ -82,7 +82,7 @@ class LLMPredictor(BaseLLMPredictor):
         llm: Optional[LLMType] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
-        query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
+        query_wrapper_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         """Initialize params."""
         self._llm = resolve_llm(llm)
