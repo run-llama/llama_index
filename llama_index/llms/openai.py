@@ -151,6 +151,16 @@ class OpenAI(LLM):
 
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
+
+        # TMP: check tokens
+        from llama_index.llms.generic_utils import messages_to_prompt
+
+        prompt_str = messages_to_prompt(messages)
+        from llama_index.utils import globals_helper
+
+        num_tokens = len(globals_helper.tokenizer(prompt_str))
+        print(f"**chat completion tokens**: {num_tokens}")
+
         response = completion_with_retry(
             is_chat_model=self._is_chat_model,
             max_retries=self.max_retries,

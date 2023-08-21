@@ -123,6 +123,31 @@ class Refine(BaseSynthesizer):
         )
 
         for cur_text_chunk in text_chunks:
+            from llama_index.utils import globals_helper
+
+            num_tokens = len(globals_helper.tokenizer(cur_text_chunk))
+            fmt_refine = refine_template.format(context_msg=cur_text_chunk)
+            num_new_tokens = len(globals_helper.tokenizer(fmt_refine))
+
+            # try another tokenizer
+            import tiktoken
+
+            enc = tiktoken.encoding_for_model("gpt-4")
+            from typing import Callable, List, cast
+            from functools import partial
+
+            tmp_tokenizer = cast(Callable[[str], List], enc.encode)
+            tmp_tokenizer = partial(tmp_tokenizer, allowed_special="all")
+            num_tmp_tokens = len(globals_helper.tokenizer(fmt_refine))
+
+            print(
+                "\n\n******CUR TEXT CHUNK ****\n"
+                + f"{num_tokens}\n"
+                + f"{num_new_tokens}\n"
+                + f"{num_tmp_tokens}\n"
+                + str(cur_text_chunk)
+            )
+
             if not self._streaming:
                 response = self._service_context.llm_predictor.predict(
                     refine_template,
