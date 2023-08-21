@@ -1,10 +1,12 @@
 """Prompts."""
 
 
+from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
+from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
 from llama_index.llms.langchain_utils import from_lc_messages
@@ -13,36 +15,43 @@ from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser
 
 
-class BasePromptTemplate(Protocol):
+class BasePromptTemplate(ABC):
     @property
+    @abstractmethod
     def metadata(self) -> dict:
         ...
 
     @property
+    @abstractmethod
     def template_vars(self) -> List[str]:
         ...
 
     @property
+    @abstractmethod
     def kwargs(self) -> Dict[str, str]:
         ...
 
     @property
+    @abstractmethod
     def output_parser(self) -> Optional[BaseOutputParser]:
         ...
 
+    @abstractmethod
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         ...
 
+    @abstractmethod
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         ...
 
+    @abstractmethod
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         ...
 
 
-class ChatPromptTemplate:
+class ChatPromptTemplate(BasePromptTemplate):
     def __init__(
         self,
         message_templates: List[ChatMessage],
@@ -103,7 +112,7 @@ class ChatPromptTemplate:
         return messages
 
 
-class PromptTemplate:
+class PromptTemplate(BasePromptTemplate):
     def __init__(
         self,
         template: str,
@@ -147,7 +156,7 @@ class PromptTemplate:
         return prompt_to_messages(prompt)
 
 
-class SelectorPromptTemplate:
+class SelectorPromptTemplate(BasePromptTemplate):
     def __init__(
         self,
         default_prompt: BasePromptTemplate,
@@ -206,13 +215,21 @@ class SelectorPromptTemplate:
         return prompt.format_messages(**kwargs)
 
 
-class LangchainPromptTemplate:
+class LangchainPromptTemplate(BasePromptTemplate):
     def __init__(
         self,
-        template: LangchainTemplate,
+        template: Optional[LangchainTemplate] = None,
+        selector: Optional[LangchainSelector] = None,
         prompt_type: str = PromptType.CUSTOM,
     ) -> None:
-        self._template = template
+        if selector is None:
+            if template is None:
+                raise ValueError("Must provide either template or selector.")
+            self._selector = LangchainSelector(default_prompt=template)
+        else:
+            if template is not None:
+                raise ValueError("Must provide either template or selector.")
+            self._selector = selector
 
         self.metadata = {
             "prompt_type": prompt_type,
@@ -221,7 +238,7 @@ class LangchainPromptTemplate:
 
     @property
     def template_vars(self) -> List[str]:
-        return get_template_vars(self._template)
+        return get_template_vars(self._selector.default_prompt)
 
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
         """Partially format the prompt."""
@@ -231,14 +248,16 @@ class LangchainPromptTemplate:
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
         del llm  # unused
-        return self._template.format(**kwargs)
+        template = self._selector.get_prompt(llm=llm)
+        return template.format(**kwargs)
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
         del llm  # unused
-        lc_prompt_value = self._template.format_prompt(**kwargs)
+        template = self._selector.get_prompt(llm=llm)
+        lc_prompt_value = template.format_prompt(**kwargs)
         lc_messages = lc_prompt_value.to_messages()
         messages = from_lc_messages(lc_messages)
         return messages
