@@ -82,7 +82,7 @@ class MonsterLLM(CustomLLM):
 
         llm_models_enabled = [i for i, j in MODEL_TYPES.items() if j == "LLM"]
 
-        return MonsterClient(token=self.monster_api_key), llm_models_enabled
+        return MonsterClient(monster_api_key), llm_models_enabled
 
     @property
     def metadata(self) -> LLMMetadata:
