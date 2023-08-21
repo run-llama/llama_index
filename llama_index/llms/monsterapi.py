@@ -14,12 +14,14 @@ class MonsterLLM(CustomLLM):
     def __init__(
         self,
         model: str,
+        max_new_tokens: int = 256,
         temperature: float = 0.75,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
+        self.max_new_tokens = max_new_tokens
         self._model = model
         self._context_window = context_window
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
@@ -31,17 +33,18 @@ class MonsterLLM(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        """LLM metadata."""
+        """Get LLM metadata."""
         return LLMMetadata(
-            context_window=self._context_window,
-            num_output=DEFAULT_NUM_OUTPUTS,
-            model_name=self._model,
+            context_window=self.context_window,
+            num_output=self.max_new_tokens,
+            model_name=self.model_name,
         )
 
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {
             "prompt": prompt,
             "temperature": self._temperature,
+            "max_length": self.max_new_tokens,
             **self._additional_kwargs,
             **kwargs,
         }
