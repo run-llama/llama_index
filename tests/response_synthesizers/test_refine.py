@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, cast
 from collections import OrderedDict
 from pydantic import BaseModel
 import pytest
@@ -29,6 +29,7 @@ class TestRefineProgram(BasePydanticProgram):
         context_msg: Optional[str] = None
     ) -> StructuredRefineResponse:
         input_str = context_str or context_msg
+        input_str = cast(str, input_str)
         query_satisfied = self._input_to_query_satisfied[input_str]
         return StructuredRefineResponse(
             answer=input_str, query_satisfied=query_satisfied
@@ -41,6 +42,7 @@ class TestRefineProgram(BasePydanticProgram):
         context_msg: Optional[str] = None
     ) -> StructuredRefineResponse:
         input_str = context_str or context_msg
+        input_str = cast(str, input_str)
         query_satisfied = self._input_to_query_satisfied[input_str]
         return StructuredRefineResponse(
             answer=input_str, query_satisfied=query_satisfied
@@ -66,7 +68,7 @@ def refine_instance(mock_refine_service_context: ServiceContext) -> Refine:
     )
 
 
-def test_constructor_args(mock_refine_service_context: ServiceContext):
+def test_constructor_args(mock_refine_service_context: ServiceContext) -> None:
     with pytest.raises(ValueError):
         # cant construct refine with both streaming and answer filtering
         Refine(
@@ -78,13 +80,15 @@ def test_constructor_args(mock_refine_service_context: ServiceContext):
         # cant construct refine with a program factory but not answer filtering
         Refine(
             service_context=mock_refine_service_context,
-            program_factory=lambda x: x,
+            program_factory=lambda _: TestRefineProgram({}),
             structured_answer_filtering=False,
         )
 
 
 @pytest.mark.asyncio
-async def test_answer_filtering_one_answer(mock_refine_service_context: ServiceContext):
+async def test_answer_filtering_one_answer(
+    mock_refine_service_context: ServiceContext,
+) -> None:
     input_to_query_satisfied = OrderedDict(
         [
             ("input1", False),
@@ -99,13 +103,15 @@ async def test_answer_filtering_one_answer(mock_refine_service_context: ServiceC
         program_factory=program_factory,
     )
     res = await refine_instance.aget_response(
-        "question", input_to_query_satisfied.keys()
+        "question", list(input_to_query_satisfied.keys())
     )
     assert res == "input2"
 
 
 @pytest.mark.asyncio
-async def test_answer_filtering_no_answers(mock_refine_service_context: ServiceContext):
+async def test_answer_filtering_no_answers(
+    mock_refine_service_context: ServiceContext,
+) -> None:
     input_to_query_satisfied = OrderedDict(
         [
             ("input1", False),
@@ -120,6 +126,6 @@ async def test_answer_filtering_no_answers(mock_refine_service_context: ServiceC
         program_factory=program_factory,
     )
     res = await refine_instance.aget_response(
-        "question", input_to_query_satisfied.keys()
+        "question", list(input_to_query_satisfied.keys())
     )
     assert res == "Empty Response"
