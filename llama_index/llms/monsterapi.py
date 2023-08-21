@@ -17,6 +17,19 @@ from llama_index.llms.generic_utils import \
 
 
 class MonsterLLM(CustomLLM):
+
+    model: str = Field(description="The Predibase model to use.")
+    monster_api_key: str = Field(description="The Predibase API key to use.")
+    max_new_tokens: int = Field(
+        description="The number of tokens to generate.")
+    temperature: float = Field(
+        description="The temperature to use for sampling.")
+    context_window: int = Field(
+        description="The number of context tokens available to the LLM."
+    )
+
+    _client: Any = PrivateAttr()
+
     def __init__(
         self,
         model: str,
@@ -28,8 +41,15 @@ class MonsterLLM(CustomLLM):
         messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.monster_api_key = monster_api_key
+
+        self._client, available_llms = self.initialize_client(monster_api_key)
         self.max_new_tokens = max_new_tokens
+
+        # Check if provided model is supported
+        if model not in available_llms:
+            raise RuntimeError(
+                f"Model: {model} is not supported.Supported models are {available_llms}. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
+
         self._model = model
         self._context_window = context_window
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
@@ -38,6 +58,29 @@ class MonsterLLM(CustomLLM):
         # model kwargs
         self._temperature = temperature
         self._additional_kwargs = additional_kwargs or {}
+
+        super().__init__(
+            model=model,
+            monster_api_key=monster_api_key,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            context_window=context_window,
+            callback_manager=callback_manager,
+        )
+
+    def initialize_client(self, monster_api_key: str) -> Any:
+        try:
+            from monsterapi.InputDataModels import MODEL_TYPES
+            from monsterapi import client as MonsterClient
+        except ImportError:
+            raise ImportError(
+                "Could not import Monster API client library."
+                "Please install it with `pip install monsterapi`"
+            )
+
+        llm_models_enabled = [i for i, j in MODEL_TYPES.items() if j == "LLM"]
+
+        return MonsterClient(token=self.monster_api_key), llm_models_enabled
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -65,34 +108,16 @@ class MonsterLLM(CustomLLM):
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        try:
-            from monsterapi.InputDataModels import MODEL_TYPES
-            from monsterapi import client as MonsterClient
-        except ImportError:
-            raise ImportError(
-                "Could not import Monster API client library."
-                "Please install it with `pip install monsterapi`"
-            )
-
-        # Check if model is supported
-        llm_models_enabled = [i for i, j in MODEL_TYPES.items() if j == "LLM"]
-        if self._model not in llm_models_enabled:
-            raise RuntimeError(
-                f"Model: {self._model} is not supported.Supported models are {llm_models_enabled}. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
-
         # Validate input args against input Pydantic model
         input_dict = self._get_input_dict(prompt, **kwargs)
 
-        # Initiate client object
-        monster_client = MonsterClient(api_key=self.monster_api_key)
-
         # Send request and receive process_id
-        response = monster_client.get_response(
+        response = self._client.get_response(
             model=self._model, data=input_dict)
         process_id = response['process_id']
 
         # Wait for response and return result
-        result = monster_client.wait_and_get_result(process_id)
+        result = self._client.wait_and_get_result(process_id)
 
         return CompletionResponse(text=result['text'])
 
