@@ -199,7 +199,7 @@ class TitleExtractor(MetadataFeatureExtractor):
             return []
 
         title_candidates = [
-            self._llm_predictor.predict(
+            self.llm_predictor.predict(
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
@@ -210,7 +210,7 @@ class TitleExtractor(MetadataFeatureExtractor):
                 lambda x, y: x + "," + y, title_candidates[1:], title_candidates[0]
             )
 
-            title = self._llm_predictor.predict(
+            title = self.llm_predictor.predict(
                 PromptTemplate(template=self.combine_template),
                 context_str=titles,
             )
@@ -324,7 +324,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
             # TODO: figure out a good way to allow users to customize template
             questions = self.llm_predictor.predict(
                 PromptTemplate(
-                    template=self._prompt_template
+                    template=self.prompt_template
                     or f"""\
 {{context_str}}. Given the contextual information, \
 generate {self.questions} questions this document can provide \
@@ -400,7 +400,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
             raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
         node_summaries = [
             self.llm_predictor.predict(
-                PromptTemplate(template=self._prompt_template),
+                PromptTemplate(template=self.prompt_template),
                 context_str=cast(TextNode, node).text,
             ).strip()
             for node in nodes
