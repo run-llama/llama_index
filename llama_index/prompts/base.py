@@ -242,8 +242,15 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
         """Partially format the prompt."""
-        partial_template = self._template.partial(**kwargs)
-        return LangchainPromptTemplate(partial_template)
+        default_prompt = self._selector.default_prompt.partial(**kwargs)
+        conditionals = [
+            (condition, prompt.partial(**kwargs))
+            for condition, prompt in self._selector.conditionals
+        ]
+        lc_selector = LangchainSelector(
+            default_prompt=default_prompt, conditionals=conditionals
+        )
+        return LangchainPromptTemplate(selector=lc_selector)
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
