@@ -57,7 +57,8 @@ def test_partial_format() -> None:
 #     assert prompt_new.prompt == prompt
 #     assert prompt_new.format(text="world2", foo="bar") == "hello world2 bar"
 #     assert (
-#         prompt_new.format(llm=test_llm, text="world2", foo="bar") == "world world2 bar"
+#         prompt_new.format(llm=test_llm, text="world2", foo="bar") == \
+#         "world world2 bar"
 #     )
 
 #     test_lc_prompt = prompt_new.get_langchain_prompt(llm=test_llm)

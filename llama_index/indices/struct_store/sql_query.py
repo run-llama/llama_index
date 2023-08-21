@@ -15,7 +15,7 @@ from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
-from llama_index.prompts import PromptTemplate, BasePromptTemplate
+from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
@@ -85,8 +85,9 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
     Args:
         index (SQLStructStoreIndex): A SQL Struct Store Index
-        text_to_sql_prompt (Optional[BasePromptTemplate]): A Text to SQL BasePromptTemplate
-            to use for the query. Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
+        text_to_sql_prompt (Optional[BasePromptTemplate]): A Text to SQL
+            BasePromptTemplate to use for the query.
+            Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
         context_query_kwargs (Optional[dict]): Keyword arguments for the
             context query. Defaults to {}.
         synthesize_response (bool): Whether to synthesize a response from the

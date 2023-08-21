@@ -144,7 +144,8 @@ class CitationQueryEngine(BaseQueryEngine):
                 A text splitter for creating citation source nodes. Default is
                 a SentenceSplitter.
             citation_qa_template (BasePromptTemplate): Template for initial citation QA
-            citation_refine_template (BasePromptTemplate): Template for citation refinement.
+            citation_refine_template (BasePromptTemplate):
+                Template for citation refinement.
             retriever (BaseRetriever): A retriever object.
             service_context (Optional[ServiceContext]): A ServiceContext object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
