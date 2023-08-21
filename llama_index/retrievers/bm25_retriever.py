@@ -15,7 +15,7 @@ class BM25Retriever(BaseRetriever):
     def __init__(
         self,
         index: VectorStoreIndex,
-        tokenizer: Callable[[str], list],
+        tokenizer: Callable[[str], list[str]],
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
         try:
