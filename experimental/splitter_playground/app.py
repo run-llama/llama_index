@@ -1,12 +1,13 @@
 import os
 import tempfile
-from typing import List
+from typing import List, Union
 
 import streamlit as st
 import tiktoken
 from langchain.text_splitter import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
+    TextSplitter as LCSplitter,
 )
 from langchain.text_splitter import TokenTextSplitter as LCTokenTextSplitter
 from streamlit.runtime.uploaded_file_manager import UploadedFile
@@ -76,7 +77,7 @@ for ind, col in enumerate(cols):
             key=f"splitter_cls_{ind}",
         )
 
-        text_splitter: TextSplitter
+        text_splitter: Union[TextSplitter, LCSplitter]
         if text_splitter_cls == "TokenTextSplitter":
             text_splitter = TokenTextSplitter(
                 chunk_size=chunk_size, chunk_overlap=chunk_overlap

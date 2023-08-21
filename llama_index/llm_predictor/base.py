@@ -1,8 +1,9 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
-from abc import abstractmethod
-from typing import Any, List, Optional, Protocol, runtime_checkable
+from abc import abstractmethod, ABC
+from pydantic import BaseModel, PrivateAttr
+from typing import Any, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llm_predictor.utils import (
@@ -21,8 +22,7 @@ from llama_index.types import TokenAsyncGen, TokenGen
 logger = logging.getLogger(__name__)
 
 
-@runtime_checkable
-class BaseLLMPredictor(Protocol):
+class BaseLLMPredictor(BaseModel, ABC):
     """Base LLM Predictor."""
 
     @property
@@ -63,6 +63,13 @@ class LLMPredictor(BaseLLMPredictor):
     deprecate this class and move all functionality into the LLM class.
     """
 
+    class Config:
+        arbitrary_types_allowed = True
+
+    system_prompt: Optional[str]
+    query_wrapper_prompt: Optional[Prompt]
+    _llm: LLM = PrivateAttr()
+
     def __init__(
         self,
         llm: Optional[LLMType] = None,
@@ -76,8 +83,9 @@ class LLMPredictor(BaseLLMPredictor):
         if callback_manager:
             self._llm.callback_manager = callback_manager
 
-        self.system_prompt = system_prompt
-        self.query_wrapper_prompt = query_wrapper_prompt
+        super().__init__(
+            system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt
+        )
 
     @property
     def llm(self) -> LLM:
