@@ -27,7 +27,6 @@ install_requires = [
     "typing_extensions>=4.5.0",
     "beautifulsoup4",  # hotfix for langchain 0.0.212 bug
     "nest_asyncio",
-    "pydantic==1.10.12",
 ]
 
 setup(
