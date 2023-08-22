@@ -1,4 +1,4 @@
-# Basic Usage Pattern
+![image](https://github.com/jerryjliu/llama_index/assets/76428643/ff239993-e083-461b-b29c-eff13ba38d84)# Basic Usage Pattern
 
 The general usage pattern of LlamaIndex is as follows:
 
@@ -48,7 +48,7 @@ For instance, you can do
 ```python
 from llama_index.node_parser import SimpleNodeParser
 
-parser = SimpleNodeParser()
+parser = SimpleNodeParser.from_defaults()
 
 nodes = parser.get_nodes_from_documents(documents)
 ```
