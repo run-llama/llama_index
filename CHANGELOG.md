@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added support for Cassandra vector store (#6784)
+
 ### Bug Fixes / Nits
 - Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
 
