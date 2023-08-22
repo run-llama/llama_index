@@ -6,6 +6,13 @@
 - Use service context for intermediate index in retry source query engine (#7341)
 - temp fix for prompt helper + chat models (#7350)
 
+### Breaking/Deprecated API Changes
+- Refactor prompt template (#7319)
+  - Use `BasePromptTemplate` for generic typing
+  - Use `PromptTemplate`, `ChatPromptTemplate`, `SelectorPromptTemplate` as core implementations
+  - Fully replace specific prompt classes (e.g. `SummaryPrompt`) with generic `BasePromptTemplate` for typing in codebase.
+
+
 ## [0.8.5.post2] - 2023-08-20
 
 ### New Features
