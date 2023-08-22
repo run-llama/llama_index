@@ -6,14 +6,18 @@ from typing import Any, Optional, Union
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql_query import (
-    BaseSQLTableQueryEngine, NLSQLTableQueryEngine)
-from llama_index.indices.vector_store.retrievers.auto_retriever import \
-    VectorIndexAutoRetriever
+    BaseSQLTableQueryEngine,
+    NLSQLTableQueryEngine,
+)
+from llama_index.indices.vector_store.retrievers.auto_retriever import (
+    VectorIndexAutoRetriever,
+)
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.query_engine.retriever_query_engine import \
-    RetrieverQueryEngine
+from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.query_engine.sql_join_query_engine import (
-    SQLAugmentQueryTransform, SQLJoinQueryEngine)
+    SQLAugmentQueryTransform,
+    SQLJoinQueryEngine,
+)
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.tools.query_engine import QueryEngineTool
@@ -23,10 +27,12 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL = """
 The original question is given below.
-This question has been translated into a SQL query. Both the SQL query and the response are given below.
+This question has been translated into a SQL query. \
+Both the SQL query and the response are given below.
 Given the SQL response, the question has also been translated into a vector store query.
 The vector store query and response is given below.
-Given SQL query, SQL response, transformed vector store query, and vector store response, please synthesize a response to the original question.
+Given SQL query, SQL response, transformed vector store query, and vector store \
+response, please synthesize a response to the original question.
 
 Original question: {query_str}
 SQL query: {sql_query_str}
@@ -57,8 +63,8 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]):
             Selector to use.
         service_context (Optional[ServiceContext]): Service context to use.
-        sql_vector_synthesis_prompt (Optional[BasePromptTemplate]): Prompt to use for SQL vector
-            synthesis.
+        sql_vector_synthesis_prompt (Optional[BasePromptTemplate]):
+            Prompt to use for SQL vector synthesis.
         sql_augment_query_transform (Optional[SQLAugmentQueryTransform]): Query
             transform to use for SQL augmentation.
         use_sql_vector_synthesis (bool): Whether to use SQL vector synthesis.
