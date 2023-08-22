@@ -21,7 +21,8 @@ from llama_index.llms.generic_utils import \
 class MonsterLLM(CustomLLM):
 
     model: str = Field(description="The Predibase model to use.")
-    monster_api_key: str = Field(description="The Predibase API key to use.")
+    monster_api_key: Optional[str] = Field(
+        description="The Predibase API key to use.")
     max_new_tokens: int = Field(
         description="The number of tokens to generate.")
     temperature: float = Field(
@@ -79,7 +80,7 @@ class MonsterLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=self._context_window,
+            context_window=self.context_window,
             num_output=self.max_new_tokens,
             model_name=self.model,
         )
@@ -94,7 +95,7 @@ class MonsterLLM(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self._messages_to_prompt(messages)
+        prompt = self.messages_to_prompt(messages)
         completion_response = self.complete(prompt, **kwargs)
         return completion_response
 
