@@ -3,6 +3,7 @@
 
 from llama_index.vector_stores.bagel import BagelVectorStore
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
+from llama_index.vector_stores.cassandra import CassandraVectorStore
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
@@ -38,6 +39,7 @@ __all__ = [
     "PineconeVectorStore",
     "WeaviateVectorStore",
     "QdrantVectorStore",
+    "CassandraVectorStore",
     "ChromaVectorStore",
     "MetalVectorStore",
     "OpensearchVectorStore",
