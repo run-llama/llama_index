@@ -1,25 +1,22 @@
 """SQL Vector query engine."""
 
-from typing import Optional, Any, Union
-from llama_index.indices.struct_store.sql_query import (
-    BaseSQLTableQueryEngine,
-    NLSQLTableQueryEngine,
-)
-from llama_index.indices.vector_store.retrievers.auto_retriever import (
-    VectorIndexAutoRetriever,
-)
-from llama_index.tools.query_engine import QueryEngineTool
-from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+import logging
+from typing import Any, Optional, Union
+
+from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.struct_store.sql_query import (
+    BaseSQLTableQueryEngine, NLSQLTableQueryEngine)
+from llama_index.indices.vector_store.retrievers.auto_retriever import \
+    VectorIndexAutoRetriever
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.query_engine.retriever_query_engine import \
+    RetrieverQueryEngine
+from llama_index.query_engine.sql_join_query_engine import (
+    SQLAugmentQueryTransform, SQLJoinQueryEngine)
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
-from llama_index.prompts.base import PromptTemplate, BasePromptTemplate
-import logging
-from llama_index.callbacks.base import CallbackManager
-from llama_index.query_engine.sql_join_query_engine import (
-    SQLJoinQueryEngine,
-    SQLAugmentQueryTransform,
-)
+from llama_index.tools.query_engine import QueryEngineTool
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +57,7 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]):
             Selector to use.
         service_context (Optional[ServiceContext]): Service context to use.
-        sql_vector_synthesis_prompt (Optional[Prompt]): Prompt to use for SQL vector
+        sql_vector_synthesis_prompt (Optional[BasePromptTemplate]): Prompt to use for SQL vector
             synthesis.
         sql_augment_query_transform (Optional[SQLAugmentQueryTransform]): Query
             transform to use for SQL augmentation.
