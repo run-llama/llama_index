@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Support fine-tuned OpenAI models (#7364)
+
 ## [0.8.6] - 2023-08-22
 
 ### New Features
