@@ -81,7 +81,7 @@ class MonsterLLM(CustomLLM):
         return LLMMetadata(
             context_window=self._context_window,
             num_output=self.max_new_tokens,
-            model_name=self._model,
+            model_name=self.model,
         )
 
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
@@ -105,7 +105,7 @@ class MonsterLLM(CustomLLM):
 
         # Send request and receive process_id
         response = self._client.get_response(
-            model=self._model, data=input_dict)
+            model=self.model, data=input_dict)
         process_id = response['process_id']
 
         # Wait for response and return result
