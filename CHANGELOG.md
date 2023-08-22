@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### New Features
+- Support fine-tuned OpenAI models (#7364)
 - Added support for Cassandra vector store (#6784)
 - Support pydantic fields in tool functions (#7348)
 
