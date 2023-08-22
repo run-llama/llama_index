@@ -29,6 +29,7 @@ class MonsterLLM(CustomLLM):
     context_window: int = Field(
         description="The number of context tokens available to the LLM."
     )
+    messages_to_prompt: Optional[Callable] = None
 
     _client: Any = PrivateAttr()
 
@@ -38,28 +39,17 @@ class MonsterLLM(CustomLLM):
         monster_api_key: Optional[str] = None,
         max_new_tokens: int = 256,
         temperature: float = 0.75,
-        additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
-        messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
+        messages_to_prompt: Optional[Callable] = None,
     ) -> None:
 
         self._client, available_llms = self.initialize_client(monster_api_key)
-        self.max_new_tokens = max_new_tokens
-
+        _messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         # Check if provided model is supported
         if model not in available_llms:
             raise RuntimeError(
                 f"Model: {model} is not supported.Supported models are {available_llms}. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
-
-        self._model = model
-        self._context_window = context_window
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        self.callback_manager = callback_manager or CallbackManager([])
-
-        # model kwargs
-        self._temperature = temperature
-        self._additional_kwargs = additional_kwargs or {}
 
         super().__init__(
             model=model,
@@ -68,6 +58,7 @@ class MonsterLLM(CustomLLM):
             temperature=temperature,
             context_window=context_window,
             callback_manager=callback_manager,
+            messages_to_prompt=_messages_to_prompt,
         )
 
     def initialize_client(self, monster_api_key: str) -> Any:
