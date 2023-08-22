@@ -23,9 +23,13 @@ def test_template() -> None:
     prompt = PromptTemplate(prompt_txt)
 
     prompt_fmt = prompt.partial_format(foo="bar")
-
     assert isinstance(prompt_fmt, PromptTemplate)
+
     assert prompt_fmt.format(text="world") == "hello world bar"
+
+    assert prompt_fmt.format_messages(text="world") == [
+        ChatMessage(content="hello world bar", role=MessageRole.USER)
+    ]
 
 
 def test_chat_template() -> None:
@@ -45,6 +49,12 @@ def test_chat_template() -> None:
 
     assert messages[0] == ChatMessage(
         content="This is a system message with a sys_arg", role=MessageRole.SYSTEM
+    )
+
+    assert partial_template.format(text="world", foo="bar") == (
+        "system: This is a system message with a sys_arg\n"
+        "user: hello world bar\n"
+        "assistant: "
     )
 
 
