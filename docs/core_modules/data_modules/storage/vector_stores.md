@@ -16,6 +16,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
+| Cassandra                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
 | Milvus / Zilliz          | self-hosted / cloud |                    |               | ✓      | ✓               |       |
@@ -63,5 +64,6 @@ maxdepth: 1
 /examples/vector_stores/DocArrayHnswIndexDemo.ipynb
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 /examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
+/examples/vector_stores/CassandraIndexDemo.ipynb
 ```
 
