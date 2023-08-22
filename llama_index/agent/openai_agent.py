@@ -270,7 +270,7 @@ class BaseOpenAIAgent(BaseAgent):
             self._call_function(tools, self.latest_function_call)
             # change function call to the default value, if a custom function was given
             # as an argument (none and auto are predefined by OpenAI)
-            if type(current_func) is not str or current_func.lower() not in ["auto", "none"]:
+            if current_func not in ("auto", "none"):
                 current_func = "auto"
             n_function_calls += 1
 
@@ -299,7 +299,7 @@ class BaseOpenAIAgent(BaseAgent):
             await self._acall_function(tools, self.latest_function_call)
             # change function call to the default value, if a custom function was given
             # as an argument (none and auto are predefined by OpenAI)
-            if type(current_func) is not str or current_func.lower() not in ["auto", "none"]:
+            if current_func not in ("auto", "none"):
                 current_func = "auto"
             n_function_calls += 1
 
