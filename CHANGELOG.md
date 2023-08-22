@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+
 ## [0.8.6] - 2023-08-22
 
 ### New Features
