@@ -50,6 +50,7 @@ Knowledge Graph RAG Retriever </examples/query_engine/knowledge_graph_rag_query_
 maxdepth: 1
 ---
 /examples/query_engine/pdf_tables/recursive_retriever.ipynb
+/examples/retrievers/auto_vs_recursive_retriever.ipynb
 /examples/retrievers/router_retriever.ipynb
 /examples/retrievers/ensemble_retrieval.ipynb
 ```
