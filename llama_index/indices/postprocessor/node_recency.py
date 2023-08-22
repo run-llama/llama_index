@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 from pydantic import Field
 
-from llama_index.indices.postprocessor.node import \
-    BasePydanticNodePostprocessor
+from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import MetadataMode, NodeWithScore
