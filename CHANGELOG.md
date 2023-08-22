@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Use service context for intermediate index in retry source query engine (#7341)
+- temp fix for prompt helper + chat models (#7350)
 
 ## [0.8.5.post2] - 2023-08-20
 
