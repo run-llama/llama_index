@@ -11,6 +11,7 @@ from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
+from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.langchain_utils import from_lc_messages
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
@@ -156,9 +157,9 @@ class ChatPromptTemplate(BasePromptTemplate):
 
 class SelectorPromptTemplate(BasePromptTemplate):
     default_template: BasePromptTemplate
-    conditionals: Optional[List[Tuple[Callable[[LLM], bool], BasePromptTemplate]]] = (
-        None,
-    )
+    conditionals: Optional[
+        List[Tuple[Callable[[LLM], bool], BasePromptTemplate]]
+    ] = None
 
     def __init__(
         self,
@@ -184,17 +185,21 @@ class SelectorPromptTemplate(BasePromptTemplate):
         if llm is None:
             return self.default_template
 
-        for condition, prompt in self.conditionals:
-            if condition(llm):
-                return prompt
+        if self.conditionals is not None:
+            for condition, prompt in self.conditionals:
+                if condition(llm):
+                    return prompt
         return self.default_template
 
     def partial_format(self, **kwargs: Any) -> "SelectorPromptTemplate":
         default_template = self.default_template.partial_format(**kwargs)
-        conditionals = [
-            (condition, prompt.partial_format(**kwargs))
-            for condition, prompt in self.conditionals
-        ]
+        if self.conditionals is None:
+            conditionals = None
+        else:
+            conditionals = [
+                (condition, prompt.partial_format(**kwargs))
+                for condition, prompt in self.conditionals
+            ]
         return SelectorPromptTemplate(
             default_template=default_template, conditionals=conditionals
         )
@@ -247,7 +252,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
             output_parser=output_parser,
         )
 
-    def partial_format(self, **kwargs: Any) -> "PromptTemplate":
+    def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         """Partially format the prompt."""
         default_prompt = self.selector.default_prompt.partial(**kwargs)
         conditionals = [
@@ -261,15 +266,26 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
-        template = self.selector.get_prompt(llm=llm)
-        return template.format(**kwargs)
+        if llm is not None:
+            if not isinstance(llm, LangChainLLM):
+                raise ValueError("Must provide a LangChainLLM.")
+            lc_template = self.selector.get_prompt(llm=llm.llm)
+        else:
+            lc_template = self.selector.default_prompt
+
+        return lc_template.format(**kwargs)
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
-        template = self.selector.get_prompt(llm=llm)
-        lc_prompt_value = template.format_prompt(**kwargs)
+        if llm is not None:
+            if not isinstance(llm, LangChainLLM):
+                raise ValueError("Must provide a LangChainLLM.")
+            lc_template = self.selector.get_prompt(llm=llm.llm)
+        else:
+            lc_template = self.selector.default_prompt
+        lc_prompt_value = lc_template.format_prompt(**kwargs)
         lc_messages = lc_prompt_value.to_messages()
         messages = from_lc_messages(lc_messages)
         return messages

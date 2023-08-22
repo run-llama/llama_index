@@ -1,10 +1,13 @@
 """Test prompts."""
 
 
+from llama_index.bridge.langchain import BaseLanguageModel
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
+from llama_index.bridge.langchain import FakeListLLM
 from llama_index.bridge.langchain import PromptTemplate as LangchainTemplate
 from llama_index.llms import MockLLM
-from llama_index.llms.base import LLM, ChatMessage, MessageRole
+from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.langchain import LangChainLLM
 from llama_index.prompts import (
     ChatPromptTemplate,
     LangchainPromptTemplate,
@@ -86,10 +89,11 @@ def test_langchain_template() -> None:
 
 
 def test_langchain_selector_template() -> None:
-    mock_llm = MockLLM()
+    lc_llm = FakeListLLM(responses=["test"])
+    mock_llm = LangChainLLM(llm=lc_llm)
 
-    def is_mock(llm: LLM):
-        return llm == mock_llm
+    def is_mock(llm: BaseLanguageModel) -> bool:
+        return llm == lc_llm
 
     default_lc_template = LangchainTemplate.from_template("hello {text} {foo}")
     conditionals = [
