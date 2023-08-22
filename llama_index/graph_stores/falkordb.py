@@ -1,17 +1,10 @@
 """Simple graph store index."""
 
-import json
 import logging
-import os
-from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-import fsspec
-from dataclasses_json import DataClassJsonMixin
 
 from llama_index.graph_stores.types import (
-    DEFAULT_PERSIST_DIR,
-    DEFAULT_PERSIST_FNAME,
     GraphStore,
 )
 
@@ -56,7 +49,10 @@ class FalkorDBGraphStore(GraphStore):
         self._database = database
 
         self.schema = ""
-        self.get_query = f"MATCH (n1:`{self._node_label}`)-[r]->(n2:`{self._node_label}`) WHERE n1.id = $subj RETURN type(r), n2.id"
+        self.get_query = f""" 
+            MATCH (n1:`{self._node_label}`)-[r]->(n2:`{self._node_label}`) 
+            WHERE n1.id = $subj RETURN type(r), n2.id
+        """
 
     @property
     def client(self) -> None:
@@ -142,7 +138,10 @@ class FalkorDBGraphStore(GraphStore):
 
         def delete_rel(subj: str, obj: str, rel: str) -> None:
             rel = rel.replace(" ", "_").upper()
-            query = f"MATCH (n1:`{self._node_label}`)-[r:`{rel}`]->(n2:`{self._node_label}`) WHERE n1.id = $subj AND n2.id = $obj DELETE r"
+            query = f"""
+                MATCH (n1:`{self._node_label}`)-[r:`{rel}`]->(n2:`{self._node_label}`) 
+                WHERE n1.id = $subj AND n2.id = $obj DELETE r
+            """
 
             # Call FalkorDB with prepared statement
             self._driver.query(query, params={"subj": subj, "obj": obj})
@@ -154,7 +153,10 @@ class FalkorDBGraphStore(GraphStore):
             self._driver.query(query, params={"entity": entity})
 
         def check_edges(entity: str) -> bool:
-            query = "MATCH (n1:`{self._node_label}`)--() WHERE n1.id = $entity RETURN count(*)"
+            query = f"""
+                MATCH (n1:`{self._node_label}`)--() 
+                WHERE n1.id = $entity RETURN count(*)
+            """
 
             # Call FalkorDB with prepared statement
             result = self._driver.query(
