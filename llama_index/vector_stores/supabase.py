@@ -140,8 +140,6 @@ class SupabaseVectorStore(VectorStore):
         if len(row_ids) > 0:
             self._collection.delete(row_ids)
 
-        # raise NotImplementedError("Delete not yet implemented for vecs.")
-
     def query(
             self,
             query: VectorStoreQuery,
