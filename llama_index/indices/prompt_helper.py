@@ -15,6 +15,7 @@ from typing import Callable, List, Optional, Sequence
 from llama_index.prompts import BasePromptTemplate
 
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.llms.openai_utils import is_chat_model
 from llama_index.llm_predictor.base import LLMMetadata
 from llama_index.prompts.prompt_utils import get_empty_prompt_txt
 from llama_index.text_splitter import TokenTextSplitter
@@ -112,6 +113,11 @@ class PromptHelper(BaseModel):
             num_output = DEFAULT_NUM_OUTPUTS
         else:
             num_output = llm_metadata.num_output
+
+        # TODO: account for token counting in chat models
+        model_name = llm_metadata.model_name
+        if is_chat_model(model_name):
+            context_window -= 150
 
         return cls(
             context_window=context_window,
