@@ -1,17 +1,23 @@
 """Test prompts."""
 
 
-from llama_index.llms.base import LLM
-from llama_index.llms.openai import OpenAI
-from llama_index.prompts import PromptTemplate
+from llama_index.bridge.langchain import BaseLanguageModel
+from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
+from llama_index.bridge.langchain import FakeListLLM
+from llama_index.bridge.langchain import PromptTemplate as LangchainTemplate
+from llama_index.llms import MockLLM
+from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.langchain import LangChainLLM
+from llama_index.prompts import (
+    ChatPromptTemplate,
+    LangchainPromptTemplate,
+    PromptTemplate,
+    SelectorPromptTemplate,
+)
+from llama_index.prompts.prompt_type import PromptType
 
 
-def is_openai(llm: LLM) -> bool:
-    """Test condition."""
-    return isinstance(llm, OpenAI)
-
-
-def test_partial_format() -> None:
+def test_template() -> None:
     """Test partial format."""
     prompt_txt = "hello {text} {foo}"
     prompt = PromptTemplate(prompt_txt)
@@ -22,60 +28,83 @@ def test_partial_format() -> None:
     assert prompt_fmt.format(text="world") == "hello world bar"
 
 
-# def test_from_langchain_prompt() -> None:
-#     """Test from langchain prompt."""
-#     prompt_txt = "hello {text} {foo}"
-#     prompt = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt)
-#     prompt_new = Prompt.from_langchain_prompt(prompt)
+def test_chat_template() -> None:
+    chat_template = ChatPromptTemplate(
+        message_templates=[
+            ChatMessage(
+                content="This is a system message with a {sys_param}",
+                role=MessageRole.SYSTEM,
+            ),
+            ChatMessage(content="hello {text} {foo}", role=MessageRole.USER),
+        ],
+        prompt_type=PromptType.CONVERSATION,
+    )
 
-#     assert isinstance(prompt_new, Prompt)
-#     assert prompt_new.prompt == prompt
-#     assert prompt_new.format(text="world2", foo="bar") == "hello world2 bar"
+    partial_template = chat_template.partial_format(sys_param="sys_arg")
+    messages = partial_template.format_messages(text="world", foo="bar")
 
-#     # test errors if we specify both template and langchain prompt
-#     with pytest.raises(ValueError):
-#         prompt_txt = "hello {text} {foo}"
-#         prompt = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt)
-#         Prompt(template=prompt_txt, langchain_prompt=prompt)
+    assert messages[0] == ChatMessage(
+        content="This is a system message with a sys_arg", role=MessageRole.SYSTEM
+    )
 
 
-# def test_from_langchain_prompt_selector() -> None:
-#     """Test from langchain prompt selector."""
-#     prompt_txt = "hello {text} {foo}"
-#     prompt_txt_2 = "world {text} {foo}"
-#     prompt = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt)
-#     prompt_2 = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt_2)
+def test_selector_template() -> None:
+    default_template = PromptTemplate("hello {text} {foo}")
+    chat_template = ChatPromptTemplate(
+        message_templates=[
+            ChatMessage(
+                content="This is a system message with a {sys_param}",
+                role=MessageRole.SYSTEM,
+            ),
+            ChatMessage(content="hello {text} {foo}", role=MessageRole.USER),
+        ],
+        prompt_type=PromptType.CONVERSATION,
+    )
 
-#     test_prompt_selector = PromptSelector(
-#         default_prompt=prompt, conditionals=[(is_openai, prompt_2)]
-#     )
+    selector_template = SelectorPromptTemplate(
+        default_template=default_template,
+        conditionals=[
+            (lambda llm: isinstance(llm, MockLLM), chat_template),
+        ],
+    )
 
-#     test_llm = MagicMock(spec=OpenAI)
+    partial_template = selector_template.partial_format(text="world", foo="bar")
 
-#     prompt_new = Prompt.from_langchain_prompt_selector(test_prompt_selector)
-#     assert isinstance(prompt_new, Prompt)
-#     assert prompt_new.prompt == prompt
-#     assert prompt_new.format(text="world2", foo="bar") == "hello world2 bar"
-#     assert (
-#         prompt_new.format(llm=test_llm, text="world2", foo="bar") == \
-#         "world world2 bar"
-#     )
+    prompt = partial_template.format()
+    assert prompt == "hello world bar"
 
-#     test_lc_prompt = prompt_new.get_langchain_prompt(llm=test_llm)
-#     assert test_lc_prompt == prompt_2
-#     test_lc_prompt = prompt_new.get_langchain_prompt(llm=None)
-#     assert test_lc_prompt == prompt
+    messages = partial_template.format_messages(llm=MockLLM(), sys_param="sys_arg")
+    assert messages[0] == ChatMessage(
+        content="This is a system message with a sys_arg", role=MessageRole.SYSTEM
+    )
 
-#     # test errors if langchain prompt input var doesn't match
-#     with pytest.raises(ValueError):
-#         prompt_txt = "hello {text} {foo}"
-#         prompt_txt_2 = "world {text} {foo} {tmp}"
-#         prompt = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt)
-#         prompt_2 = PromptTemplate(
-#             input_variables=["text", "foo", "tmp"], template=prompt_txt_2
-#         )
 
-#         test_prompt_selector = PromptSelector(
-#             prompt=prompt, conditionals=([is_openai], [prompt_2])
-#         )
-#         prompt_new = Prompt.from_langchain_prompt_selector(test_prompt_selector)
+def test_langchain_template() -> None:
+    lc_template = LangchainTemplate.from_template("hello {text} {foo}")
+    template = LangchainPromptTemplate(lc_template)
+
+    template_fmt = template.partial_format(foo="bar")
+    assert isinstance(template, LangchainPromptTemplate)
+    assert template_fmt.format(text="world") == "hello world bar"
+
+
+def test_langchain_selector_template() -> None:
+    lc_llm = FakeListLLM(responses=["test"])
+    mock_llm = LangChainLLM(llm=lc_llm)
+
+    def is_mock(llm: BaseLanguageModel) -> bool:
+        return llm == lc_llm
+
+    default_lc_template = LangchainTemplate.from_template("hello {text} {foo}")
+    conditionals = [
+        (is_mock, LangchainTemplate.from_template("hello {text} {foo} mock")),
+    ]
+
+    lc_selector = LangchainSelector(
+        default_prompt=default_lc_template, conditionals=conditionals
+    )
+    template = LangchainPromptTemplate(selector=lc_selector)
+
+    template_fmt = template.partial_format(foo="bar")
+    assert isinstance(template, LangchainPromptTemplate)
+    assert template_fmt.format(llm=mock_llm, text="world") == "hello world bar mock"

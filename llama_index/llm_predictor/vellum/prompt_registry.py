@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List, Tuple
 from uuid import uuid4
 
-from llama_index.prompts import BasePromptTemplate
 from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
 from llama_index.llm_predictor.vellum.utils import convert_to_kebab_case
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.base import PromptTemplate
 
 if TYPE_CHECKING:
@@ -181,7 +181,7 @@ class VellumPromptRegistry:
         import vellum
 
         assert isinstance(prompt, PromptTemplate)
-        prompt_template = prompt._template  # noqa
+        prompt_template = prompt.template
         for input_variable in prompt.template_vars:
             prompt_template = prompt_template.replace(
                 input_variable, f"{{ {input_variable} }}"
@@ -193,7 +193,7 @@ class VellumPromptRegistry:
             block_type=vellum.BlockTypeEnum.JINJA,
             properties=vellum.PromptTemplateBlockPropertiesRequest(
                 template=self._prepare_prompt_jinja_template(
-                    prompt._template,  # noqa
+                    prompt.template,
                     prompt.template_vars,
                 ),
             ),

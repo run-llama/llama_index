@@ -15,21 +15,21 @@ from llama_index.prompts.default_prompts import (
 from llama_index.prompts.utils import is_chat_model
 
 DEFAULT_TEXT_QA_PROMPT_SEL = SelectorPromptTemplate(
-    default_prompt=DEFAULT_TEXT_QA_PROMPT,
+    default_template=DEFAULT_TEXT_QA_PROMPT,
     conditionals=[(is_chat_model, CHAT_TEXT_QA_PROMPT)],
 )
 
 DEFAULT_TREE_SUMMARIZE_PROMPT_SEL = SelectorPromptTemplate(
-    default_prompt=DEFAULT_TREE_SUMMARIZE_PROMPT,
+    default_template=DEFAULT_TREE_SUMMARIZE_PROMPT,
     conditionals=[(is_chat_model, CHAT_TREE_SUMMARIZE_PROMPT)],
 )
 
 DEFAULT_REFINE_PROMPT_SEL = SelectorPromptTemplate(
-    default_prompt=DEFAULT_REFINE_PROMPT,
+    default_template=DEFAULT_REFINE_PROMPT,
     conditionals=[(is_chat_model, CHAT_REFINE_PROMPT)],
 )
 
 DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL = SelectorPromptTemplate(
-    default_prompt=DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
+    default_template=DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
     conditionals=[(is_chat_model, CHAT_REFINE_TABLE_CONTEXT_PROMPT)],
 )

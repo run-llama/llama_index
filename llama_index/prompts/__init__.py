@@ -3,10 +3,11 @@
 from llama_index.prompts.base import (
     BasePromptTemplate,
     ChatPromptTemplate,
+    LangchainPromptTemplate,
     Prompt,
     PromptTemplate,
-    SelectorPromptTemplate,
     PromptType,
+    SelectorPromptTemplate,
 )
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
     "PromptTemplate",
     "SelectorPromptTemplate",
     "ChatPromptTemplate",
+    "LangchainPromptTemplate",
     "BasePromptTemplate",
     "PromptType",
 ]
