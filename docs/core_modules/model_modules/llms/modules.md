@@ -81,3 +81,21 @@ maxdepth: 1
 ---
 /examples/llm/llama_api.ipynb
 ```
+
+## Llama CPP
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_2_llama_cpp.ipynb
+```
+
+## Xorbits Inference
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/XinferenceLocalDeployment.ipynb
+```

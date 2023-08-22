@@ -35,6 +35,7 @@ VectorIndexAutoRetriever </examples/vector_stores/chroma_auto_retriever.ipynb>
 maxdepth: 1
 ---
 Custom Retriever (KG Index and Vector Store Index) </examples/index_structs/knowledge_graph/KnowledgeGraphIndex_vs_VectorStoreIndex_vs_CustomIndex_combined.ipynb>
+Knowledge Graph RAG Retriever </examples/query_engine/knowledge_graph_rag_query_engine.ipynb>
 ```
 * KGTableRetriever
 
@@ -49,5 +50,7 @@ Custom Retriever (KG Index and Vector Store Index) </examples/index_structs/know
 maxdepth: 1
 ---
 /examples/query_engine/pdf_tables/recursive_retriever.ipynb
+/examples/retrievers/auto_vs_recursive_retriever.ipynb
 /examples/retrievers/router_retriever.ipynb
+/examples/retrievers/ensemble_retrieval.ipynb
 ```

@@ -22,7 +22,7 @@ While each callback may not leverage each event type, the following events are a
 - `RETRIEVE` -> Logs for the nodes retrieved for a query.
 - `SYNTHESIZE` -> Logs for the result for synthesize calls.
 - `TREE` -> Logs for the summary and level of summaries generated.
-- `SUB_QUESTIONS` -> Logs for the sub questions and answers generated.
+- `SUB_QUESTION` -> Log for a generated sub question and answer.
 
 You can implement your own callback to track and trace these events, or use an existing callback.
 
@@ -35,6 +35,7 @@ Currently supported callbacks are as follows:
 - [LlamaDebugHanlder](/examples/callbacks/LlamaDebugHandler.ipynb) -> Basic tracking and tracing for events. Example usage can be found in the notebook below.
 - [WandbCallbackHandler](/examples/callbacks/WandbCallbackHandler.ipynb) -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at [Wandb](https://docs.wandb.ai/guides/prompts/quickstart)
 - [AimCallback](/examples/callbacks/AimCallback.ipynb) -> Tracking of LLM inputs and outputs. Example usage can be found in the notebook below.
+- [OpenInferenceCallbackHandler](/docs/examples/callbacks/OpenInferenceCallback.ipynb) -> Tracking of AI model inferences. Example usage can be found in the notebook below.
 
 
 ```{toctree}
@@ -46,5 +47,6 @@ hidden:
 /examples/callbacks/LlamaDebugHandler.ipynb
 /examples/callbacks/WandbCallbackHandler.ipynb
 /examples/callbacks/AimCallback.ipynb
+/examples/callbacks/OpenInferenceCallback.ipynb
 token_counting_migration.md
 ```

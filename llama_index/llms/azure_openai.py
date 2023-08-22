@@ -1,3 +1,4 @@
+from pydantic import Field
 from typing import Any, Dict, Optional
 
 from llama_index.callbacks import CallbackManager
@@ -29,19 +30,26 @@ class AzureOpenAI(OpenAI):
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
     """
 
+    engine: str = Field(description="The name of the deployed azure engine.")
+
     def __init__(
         self,
         model: str = "gpt-35-turbo",
         engine: Optional[str] = None,
-        temperature: float = 0.0,
+        temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        self.engine = engine
+        if engine is None:
+            raise ValueError("You must specify an `engine` parameter.")
+
+        self.validate_env()
+
         super().__init__(
+            engine=engine,
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -50,11 +58,6 @@ class AzureOpenAI(OpenAI):
             callback_manager=callback_manager,
             **kwargs,
         )
-
-        if self.engine is None:
-            raise ValueError("You must specify an `engine` parameter.")
-
-        self.validate_env()
 
     def validate_env(self) -> None:
         """Validate necessary environment variables are set."""

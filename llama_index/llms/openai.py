@@ -1,3 +1,4 @@
+from pydantic import Field
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.callbacks import CallbackManager
@@ -37,26 +38,45 @@ from llama_index.llms.openai_utils import (
 
 
 class OpenAI(LLM):
+    model: str = Field(description="The OpenAI model to use.")
+    temperature: int = Field(description="The tempature to use during generation.")
+    max_tokens: Optional[int] = Field(
+        description="The maximum number of tokens to generate."
+    )
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additonal kwargs for the OpenAI API."
+    )
+    max_retries: int = Field(description="The maximum number of API retries.")
+
     def __init__(
         self,
-        model: str = "text-davinci-003",
-        temperature: float = 0.0,
+        model: str = "gpt-3.5-turbo",
+        temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
+        api_key: Optional[str] = None,
+        api_type: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        validate_openai_api_key(
-            kwargs.get("api_key", None), kwargs.get("api_type", None)
-        )
+        validate_openai_api_key(api_key, api_type)
 
-        self.model = model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.additional_kwargs = additional_kwargs or {}
-        self.max_retries = max_retries
-        self.callback_manager = callback_manager or CallbackManager([])
+        additional_kwargs = additional_kwargs or {}
+        if api_key is not None:
+            additional_kwargs["api_key"] = api_key
+        if api_type is not None:
+            additional_kwargs["api_type"] = api_type
+
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            max_retries=max_retries,
+            callback_manager=callback_manager,
+            **kwargs,
+        )
 
     @property
     def metadata(self) -> LLMMetadata:

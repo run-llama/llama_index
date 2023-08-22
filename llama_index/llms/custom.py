@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence
+from typing import Any, Sequence
 
 from llama_index.llms.base import (
     LLM,
@@ -8,10 +8,9 @@ from llama_index.llms.base import (
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseAsyncGen,
-    llm_completion_callback,
     llm_chat_callback,
+    llm_completion_callback,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
@@ -24,9 +23,6 @@ class CustomLLM(LLM):
     Subclasses must implement the `__init__`, `complete`,
         `stream_complete`, and `metadata` methods.
     """
-
-    def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
-        self.callback_manager = callback_manager or CallbackManager([])
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:

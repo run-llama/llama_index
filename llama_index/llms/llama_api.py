@@ -1,3 +1,4 @@
+from pydantic import Field, PrivateAttr
 from typing import Any, Dict, Optional, Sequence
 
 from llama_index.callbacks import CallbackManager
@@ -21,10 +22,19 @@ from llama_index.llms.openai_utils import (
 
 
 class LlamaAPI(CustomLLM):
+    model: str = Field(description="The llama-api model to use.")
+    temperature: float = Field(description="The temperature to use for sampling.")
+    max_tokens: int = Field(description="The maximum number of tokens to generate.")
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additonal kwargs for the llama-api API."
+    )
+
+    _client: Any = PrivateAttr()
+
     def __init__(
         self,
         model: str = "llama-13b-chat",
-        temperature: float = 0.0,
+        temperature: float = 0.1,
         max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
@@ -39,22 +49,25 @@ class LlamaAPI(CustomLLM):
             ) from e
 
         self._client = Client(api_key)
-        self._model = model
-        self._temperature = temperature
-        self._max_tokens = max_tokens
-        self._additional_kwargs = additional_kwargs or {}
-        self.callback_manager = callback_manager or CallbackManager([])
+
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs or {},
+            callback_manager=callback_manager,
+        )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
-            "model": self._model,
-            "temperature": self._temperature,
-            "max_length": self._max_tokens,
+            "model": self.model,
+            "temperature": self.temperature,
+            "max_length": self.max_tokens,
         }
         model_kwargs = {
             **base_kwargs,
-            **self._additional_kwargs,
+            **self.additional_kwargs,
         }
         return model_kwargs
 

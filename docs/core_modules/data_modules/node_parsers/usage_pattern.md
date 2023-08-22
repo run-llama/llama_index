@@ -46,35 +46,78 @@ node_parser = SimpleNodeParser.from_defaults(chunk_size=1024, chunk_overlap=20)
 
 ### Text Splitter Customization
 
-If you do customize the `text_splitter` from the default `TokenTextSplitter`, you can use any splitter from langchain, or optionally our `SentenceSplitter`. Each text splitter has options for the default separator, as well as options for backup separators. These are useful for languages that are sufficiently different from English.
+If you do customize the `text_splitter` from the default `SentenceSplitter`, you can use any splitter from langchain, or optionally our `TokenTextSplitter` or `CodeSplitter`. Each text splitter has options for the default separator, as well as options for additional config. These are useful for languages that are sufficiently different from English.
 
-`TokenTextSplitter` configuration:
-
-```python
-from llama_index.text_splitter import TokenTextSplitter
-
-text_splitter = TokenTextSplitter(
-  separator=" ",
-  chunk_size=1024,
-  chunk_overlap=20,
-  backup_separators=["\n"]
-)
-
-node_parser = SimpleNodeParser(text_splitter=text_splitter)
-```
-
-`SentenceSplitter` configuration:
+`SentenceSplitter` default configuration:
 
 ```python
+import tiktoken
 from llama_index.text_splitter import SentenceSplitter
 
 text_splitter = SentenceSplitter(
   separator=" ",
   chunk_size=1024,
   chunk_overlap=20,
-  backup_separators=["\n"],
-  paragraph_separator="\n\n\n"
+  paragraph_separator="\n\n\n",
+  secondary_chunking_regex="[^,.;。]+[,.;。]?",
+  tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode
 )
 
 node_parser = SimpleNodeParser(text_splitter=text_splitter)
 ```
+
+`TokenTextSplitter` default configuration:
+
+```python
+import tiktoken
+from llama_index.text_splitter import TokenTextSplitter
+
+text_splitter = TokenTextSplitter(
+  separator=" ",
+  chunk_size=1024,
+  chunk_overlap=20,
+  backup_separators=["\n"],
+  tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode
+)
+
+node_parser = SimpleNodeParser(text_splitter=text_splitter)
+```
+
+`CodeSplitter` configuration:
+
+```python
+from llama_index.text_splitter import CodeSplitter
+
+text_splitter = CodeSplitter(
+  language="python",
+  chunk_lines=40,
+  chunk_lines_overlap=15,
+  max_chars=1500,
+)
+
+node_parser = SimpleNodeParser(text_splitter=text_splitter)
+```
+
+## SentenceWindowNodeParser
+
+The `SentenceWindowNodeParser` is similar to the `SimpleNodeParser`, except that it splits all documents into individual sentences. The resulting nodes also contain the surrounding "window" of sentences around each node in the metadata. Note that this metadata will not be visible to the LLM or embedding model.
+
+This is most useful for generating embeddings that have a very specific scope. Then, combined with a `MetadataReplacementNodePostProcessor`, you can replace the sentence with it's surrounding context before sending the node to the LLM. 
+
+An example of setting up the parser with default settings is below. In practice, you would usually only want to adjust the window size of sentences.
+
+```python
+import nltk
+from llama_index.node_parser import SentenceWindowNodeParser
+
+node_parser = SentenceWindowNodeParser.from_defaults(
+  # how many sentences on either side to capture
+  window_size=3,  
+  # the metadata key that holds the window of surrounding sentences
+  window_metadata_key="window",  
+  # the metadata key that holds the original sentence
+  original_text_metadata_key="original_sentence"
+)
+```
+
+A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](/examples/node_postprocessor/MetadataReplacementDemo.ipynb).

@@ -7,7 +7,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import NodeWithScore, MetadataMode
+from llama_index.schema import MetadataMode, NodeWithScore
 
 logger = logging.getLogger(__name__)
 
@@ -49,11 +49,21 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
 
         if tokenizer_fn is None:
             import nltk.data
+            import os
+            from llama_index.utils import get_cache_dir
+
+            cache_dir = get_cache_dir()
+            nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+
+            # update nltk path for nltk so that it finds the data
+            if nltk_data_dir not in nltk.data.path:
+                nltk.data.path.append(nltk_data_dir)
 
             try:
                 nltk.data.find("tokenizers/punkt")
             except LookupError:
-                nltk.download("punkt")
+                nltk.download("punkt", download_dir=nltk_data_dir)
+
             tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn
@@ -72,7 +82,6 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
 
             split_text = self._tokenizer_fn(text)
 
-            start_embed_token_ct = self.embed_model.total_tokens_used
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
                     self.embed_model.get_agg_embedding_from_queries(
@@ -96,12 +105,6 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                 similarity_top_k=num_top_k,
                 embedding_ids=list(range(len(text_embeddings))),
                 similarity_cutoff=threshold,
-            )
-
-            net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct
-            logger.info(
-                f"> [optimize] Total embedding token usage: "
-                f"{net_embed_tokens} tokens"
             )
 
             if len(top_idxs) == 0:
