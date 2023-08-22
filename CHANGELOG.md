@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### New Features
+- Added support for Cassandra vector store (#6784)
 - Support pydantic fields in tool functions (#7348)
 
 ### Bug Fixes / Nits
