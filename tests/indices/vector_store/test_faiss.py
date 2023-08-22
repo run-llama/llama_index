@@ -1,6 +1,5 @@
 """Test vector store indexes."""
 
-import os
 from pathlib import Path
 from typing import List
 
