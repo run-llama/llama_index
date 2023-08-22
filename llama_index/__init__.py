@@ -77,7 +77,7 @@ from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 
 # prompts
 from llama_index.prompts import Prompt, PromptTemplate, BasePromptTemplate
-from llama_index.prompts.prompts import (
+from llama_index.prompts import (
     KeywordExtractPrompt,
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,

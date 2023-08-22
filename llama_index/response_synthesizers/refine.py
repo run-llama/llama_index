@@ -3,9 +3,11 @@ from typing import Any, Generator, Optional, Sequence, cast
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_REFINE_PROMPT_SEL, DEFAULT_TEXT_QA_PROMPT_SEL)
-from llama_index.prompts.prompts import BasePromptTemplate
+    DEFAULT_REFINE_PROMPT_SEL,
+    DEFAULT_TEXT_QA_PROMPT_SEL,
+)
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE

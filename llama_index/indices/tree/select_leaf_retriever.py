@@ -8,14 +8,17 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
-from llama_index.indices.utils import (extract_numbers_given_response,
-                                       get_sorted_node_list)
-from llama_index.prompts.default_prompt_selectors import \
-    DEFAULT_REFINE_PROMPT_SEL
-from llama_index.prompts.default_prompts import (DEFAULT_QUERY_PROMPT,
-                                                 DEFAULT_QUERY_PROMPT_MULTIPLE,
-                                                 DEFAULT_TEXT_QA_PROMPT)
-from llama_index.prompts.prompts import BasePromptTemplate
+from llama_index.indices.utils import (
+    extract_numbers_given_response,
+    get_sorted_node_list,
+)
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from llama_index.prompts.default_prompts import (
+    DEFAULT_QUERY_PROMPT,
+    DEFAULT_QUERY_PROMPT_MULTIPLE,
+    DEFAULT_TEXT_QA_PROMPT,
+)
 from llama_index.response.schema import Response
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore

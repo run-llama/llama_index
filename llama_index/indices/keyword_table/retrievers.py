@@ -7,12 +7,16 @@ from typing import Any, Dict, List, Optional
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import (
-    extract_keywords_given_response, rake_extract_keywords,
-    simple_extract_keywords)
+    extract_keywords_given_response,
+    rake_extract_keywords,
+    simple_extract_keywords,
+)
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
-    DEFAULT_KEYWORD_EXTRACT_TEMPLATE, DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE)
-from llama_index.prompts.prompts import BasePromptTemplate
+    DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
+)
 from llama_index.schema import NodeWithScore
 from llama_index.utils import truncate_text
 
