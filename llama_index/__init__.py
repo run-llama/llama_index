@@ -76,7 +76,7 @@ from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 
 # prompts
-from llama_index.prompts import Prompt, PromptTemplate
+from llama_index.prompts import Prompt, PromptTemplate, BasePromptTemplate
 from llama_index.prompts.prompts import (
     KeywordExtractPrompt,
     QueryKeywordExtractPrompt,
@@ -169,6 +169,7 @@ __all__ = [
     "GPTDocumentSummaryIndex",
     "Prompt",
     "PromptTemplate",
+    "BasePromptTemplate",
     "LangchainEmbedding",
     "OpenAIEmbedding",
     "SummaryPrompt",
