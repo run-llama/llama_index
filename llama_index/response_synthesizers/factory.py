@@ -42,6 +42,7 @@ def get_response_synthesizer(
     streaming: bool = False,
     structured_answer_filtering: bool = False,
     program_factory: Optional[Callable[[Prompt], BasePydanticProgram]] = None,
+    verbose: bool = False,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
 
@@ -62,6 +63,7 @@ def get_response_synthesizer(
             streaming=streaming,
             structured_answer_filtering=structured_answer_filtering,
             program_factory=program_factory,
+            verbose=verbose,
         )
     elif response_mode == ResponseMode.COMPACT:
         return CompactAndRefine(
@@ -71,6 +73,7 @@ def get_response_synthesizer(
             streaming=streaming,
             structured_answer_filtering=structured_answer_filtering,
             program_factory=program_factory,
+            verbose=verbose,
         )
     elif response_mode == ResponseMode.TREE_SUMMARIZE:
         return TreeSummarize(
@@ -78,6 +81,7 @@ def get_response_synthesizer(
             summary_template=summary_template,
             streaming=streaming,
             use_async=use_async,
+            verbose=verbose,
         )
     elif response_mode == ResponseMode.SIMPLE_SUMMARIZE:
         return SimpleSummarize(
