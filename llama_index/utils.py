@@ -272,7 +272,7 @@ def get_cache_dir() -> str:
         path = Path(local, "llama_index")
 
     if not os.path.exists(path):
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
     return str(path)
 
 
