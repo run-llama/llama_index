@@ -95,7 +95,12 @@ def test_langchain_template() -> None:
 
     template_fmt = template.partial_format(foo="bar")
     assert isinstance(template, LangchainPromptTemplate)
+
     assert template_fmt.format(text="world") == "hello world bar"
+
+    assert template_fmt.format_messages(text="world") == [
+        ChatMessage(content="hello world bar", role=MessageRole.USER)
+    ]
 
 
 def test_langchain_selector_template() -> None:
@@ -117,4 +122,5 @@ def test_langchain_selector_template() -> None:
 
     template_fmt = template.partial_format(foo="bar")
     assert isinstance(template, LangchainPromptTemplate)
+
     assert template_fmt.format(llm=mock_llm, text="world") == "hello world bar mock"
