@@ -87,7 +87,7 @@ class MonsterLLM(CustomLLM):
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {
             "prompt": prompt,
-            "temperature": self._temperature,
+            "temperature": self.temperature,
             "max_length": self.max_new_tokens,
             **self._additional_kwargs,
             **kwargs,
