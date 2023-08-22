@@ -30,7 +30,6 @@ class MonsterLLM(CustomLLM):
         description="The number of context tokens available to the LLM."
     )
     messages_to_prompt: Optional[Callable] = None
-    additional_kwargs: Optional[Dict[str, Any]] = None
 
     _client: Any = PrivateAttr()
 
@@ -43,7 +42,6 @@ class MonsterLLM(CustomLLM):
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         callback_manager: Optional[CallbackManager] = None,
         messages_to_prompt: Optional[Callable] = None,
-        additional_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         self._client, available_llms = self.initialize_client(monster_api_key)
@@ -52,8 +50,6 @@ class MonsterLLM(CustomLLM):
         if model not in available_llms:
             raise RuntimeError(
                 f"Model: {model} is not supported.Supported models are {available_llms}. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
-
-        self.additional_kwargs = additional_kwargs or {}
 
         super().__init__(
             model=model,
@@ -93,7 +89,6 @@ class MonsterLLM(CustomLLM):
             "prompt": prompt,
             "temperature": self.temperature,
             "max_length": self.max_new_tokens,
-            **self.additional_kwargs,
             **kwargs,
         }
 
