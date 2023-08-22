@@ -53,10 +53,7 @@ class MonsterLLM(CustomLLM):
             raise RuntimeError(
                 f"Model: {model} is not supported.Supported models are {available_llms}. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
 
-        if additional_kwargs is None:
-            self._additional_kwargs = {}
-        else:
-            self._additional_kwargs = additional_kwargs
+        self.additional_kwargs = additional_kwargs or {}
 
         super().__init__(
             model=model,
@@ -96,7 +93,7 @@ class MonsterLLM(CustomLLM):
             "prompt": prompt,
             "temperature": self.temperature,
             "max_length": self.max_new_tokens,
-            **self._additional_kwargs,
+            **self.additional_kwargs,
             **kwargs,
         }
 
