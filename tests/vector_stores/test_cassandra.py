@@ -1,3 +1,4 @@
+import pytest
 import sys
 import unittest
 from unittest.mock import MagicMock
@@ -9,8 +10,14 @@ from llama_index.vector_stores.types import VectorStoreQueryMode
 
 from llama_index.vector_stores.cassandra import CassandraVectorStore
 
+try:
+    import cassio
+except ImportError:
+    cassio = None
+
 
 class TestCassandraVectorStore(unittest.TestCase):
+    @pytest.mark.skipif(cassio is None, reason="cassio not installed")
     def test_cassandra_create_and_crud(self) -> None:
         mock_db_session = MagicMock()
         try:
@@ -49,6 +56,7 @@ class TestCassandraVectorStore(unittest.TestCase):
 
         vector_store.client
 
+    @pytest.mark.skipif(cassio is None, reason="cassio not installed")
     def test_cassandra_queries(self) -> None:
         mock_db_session = MagicMock()
         try:
