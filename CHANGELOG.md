@@ -4,6 +4,7 @@
 
 ### New Features
 - Support fine-tuned OpenAI models (#7364)
+- Support pydantic fields in tool functions (#7348)
 
 ### Bug Fixes / Nits
 - Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
