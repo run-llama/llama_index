@@ -6,7 +6,7 @@ from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL, DEFAULT_TEXT_QA_PROMPT_SEL,
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL)
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
-from llama_index.prompts.prompts import BasePromptTemplate, SimpleInputPrompt
+from llama_index.prompts.prompts import BasePromptTemplate
 from llama_index.response_synthesizers.accumulate import Accumulate
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.response_synthesizers.compact_and_accumulate import \
@@ -26,7 +26,7 @@ def get_response_synthesizer(
     text_qa_template: Optional[BasePromptTemplate] = None,
     refine_template: Optional[BasePromptTemplate] = None,
     summary_template: Optional[BasePromptTemplate] = None,
-    simple_template: Optional[SimpleInputPrompt] = None,
+    simple_template: Optional[BasePromptTemplate] = None,
     response_mode: ResponseMode = ResponseMode.COMPACT,
     callback_manager: Optional[CallbackManager] = None,
     use_async: bool = False,

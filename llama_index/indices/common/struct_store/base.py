@@ -9,19 +9,12 @@ from llama_index.data_structs.table import StructDatapoint
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
-)
-from llama_index.prompts.default_prompts import (
-    DEFAULT_TABLE_CONTEXT_PROMPT,
-    DEFAULT_TABLE_CONTEXT_QUERY,
-)
+from llama_index.prompts.default_prompt_selectors import \
+    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL
+from llama_index.prompts.default_prompts import (DEFAULT_TABLE_CONTEXT_PROMPT,
+                                                 DEFAULT_TABLE_CONTEXT_QUERY)
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.prompts.prompts import (
-    RefineTableContextPrompt,
-    SchemaExtractPrompt,
-    TableContextPrompt,
-)
+from llama_index.prompts.prompts import BasePromptTemplate
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.text_splitter import TextSplitter
@@ -38,9 +31,9 @@ class SQLDocumentContextBuilder:
         llm_predictor (Optional[BaseLLMPredictor]): LLM Predictor to use.
         prompt_helper (Optional[PromptHelper]): Prompt Helper to use.
         text_splitter (Optional[TextSplitter]): Text Splitter to use.
-        table_context_prompt (Optional[TableContextPrompt]): A
+        table_context_prompt (Optional[BasePromptTemplate]): A
             Table Context Prompt (see :ref:`Prompt-Templates`).
-        refine_table_context_prompt (Optional[RefineTableContextPrompt]):
+        refine_table_context_prompt (Optional[BasePromptTemplate]):
             A Refine Table Context Prompt (see :ref:`Prompt-Templates`).
         table_context_task (Optional[str]): The query to perform
             on the table context. A default query string is used
@@ -52,8 +45,8 @@ class SQLDocumentContextBuilder:
         sql_database: SQLDatabase,
         service_context: Optional[ServiceContext] = None,
         text_splitter: Optional[TextSplitter] = None,
-        table_context_prompt: Optional[TableContextPrompt] = None,
-        refine_table_context_prompt: Optional[RefineTableContextPrompt] = None,
+        table_context_prompt: Optional[BasePromptTemplate] = None,
+        refine_table_context_prompt: Optional[BasePromptTemplate] = None,
         table_context_task: Optional[str] = None,
     ) -> None:
         """Initialize params."""
@@ -140,7 +133,7 @@ class BaseStructDatapointExtractor:
     def __init__(
         self,
         llm_predictor: BaseLLMPredictor,
-        schema_extract_prompt: SchemaExtractPrompt,
+        schema_extract_prompt: BasePromptTemplate,
         output_parser: OUTPUT_PARSER_TYPE,
     ) -> None:
         """Initialize params."""

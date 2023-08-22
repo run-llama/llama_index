@@ -19,7 +19,7 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
-from llama_index.prompts.prompts import KnowledgeGraphPrompt
+from llama_index.prompts.prompts import BasePromptTemplate
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
@@ -34,7 +34,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     Build a KG by extracting triplets, and leveraging the KG during query-time.
 
     Args:
-        kg_triple_extract_template (KnowledgeGraphPrompt): The prompt to use for
+        kg_triple_extract_template (BasePromptTemplate): The prompt to use for
             extracting triplets.
         max_triplets_per_chunk (int): The maximum number of triplets to extract.
         service_context (Optional[ServiceContext]): The service context to use.
@@ -58,7 +58,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         index_struct: Optional[KG] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
-        kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
+        kg_triple_extract_template: Optional[BasePromptTemplate] = None,
         max_triplets_per_chunk: int = 10,
         include_embeddings: bool = False,
         show_progress: bool = False,

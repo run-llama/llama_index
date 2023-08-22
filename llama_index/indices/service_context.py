@@ -106,7 +106,7 @@ class ServiceContext:
             callback_manager (Optional[CallbackManager]): CallbackManager
             system_prompt (Optional[str]): System-wide prompt to be prepended
                 to all input prompts, used to guide system "decision making"
-            query_wrapper_prompt (Optional[SimpleInputPrompt]): A format to wrap
+            query_wrapper_prompt (Optional[BasePromptTemplate]): A format to wrap
                 passed-in input queries.
 
         Deprecated Args:

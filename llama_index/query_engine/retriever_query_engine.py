@@ -7,13 +7,10 @@ from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import BasePromptTemplate, SimpleInputPrompt
+from llama_index.prompts.prompts import BasePromptTemplate
 from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response_synthesizers import (
-    BaseSynthesizer,
-    ResponseMode,
-    get_response_synthesizer,
-)
+from llama_index.response_synthesizers import (BaseSynthesizer, ResponseMode,
+                                               get_response_synthesizer)
 from llama_index.schema import NodeWithScore
 
 
@@ -53,7 +50,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         response_mode: ResponseMode = ResponseMode.COMPACT,
         text_qa_template: Optional[BasePromptTemplate] = None,
         refine_template: Optional[BasePromptTemplate] = None,
-        simple_template: Optional[SimpleInputPrompt] = None,
+        simple_template: Optional[BasePromptTemplate] = None,
         use_async: bool = False,
         streaming: bool = False,
         # class-specific args
@@ -71,7 +68,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             text_qa_template (Optional[BasePromptTemplate]): A BasePromptTemplate
                 object.
             refine_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
-            simple_template (Optional[SimpleInputPrompt]): A SimpleInputPrompt object.
+            simple_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
 
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
