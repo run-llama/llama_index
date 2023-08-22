@@ -122,7 +122,7 @@ class CassandraVectorStore(VectorStore):
         for result in embedding_results:
             metadata = node_to_metadata_dict(
                 result.node,
-                remove_text=False,  # must keep the text here for retrieval
+                remove_text=True,
                 flat_metadata=self.flat_metadata,
             )
             node_ids.append(result.id)
@@ -292,6 +292,7 @@ class CassandraVectorStore(VectorStore):
         top_k_ids = []
         for match in matches:
             node = metadata_dict_to_node(match["metadata"])
+            node.set_content(match["body_blob"])
             top_k_nodes.append(node)
             top_k_ids.append(match["row_id"])
 
