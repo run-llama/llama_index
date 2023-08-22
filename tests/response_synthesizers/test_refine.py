@@ -96,7 +96,10 @@ async def test_answer_filtering_one_answer(
             ("input3", False),
         ]
     )
-    program_factory = lambda _: TestRefineProgram(input_to_query_satisfied)
+
+    def program_factory(*args: Any, **kwargs: Any) -> TestRefineProgram:
+        return TestRefineProgram(input_to_query_satisfied)
+
     refine_instance = Refine(
         service_context=mock_refine_service_context,
         structured_answer_filtering=True,
@@ -119,7 +122,10 @@ async def test_answer_filtering_no_answers(
             ("input3", False),
         ]
     )
-    program_factory = lambda _: TestRefineProgram(input_to_query_satisfied)
+
+    def program_factory(*args: Any, **kwargs: Any) -> TestRefineProgram:
+        return TestRefineProgram(input_to_query_satisfied)
+
     refine_instance = Refine(
         service_context=mock_refine_service_context,
         structured_answer_filtering=True,
