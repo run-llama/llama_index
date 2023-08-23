@@ -34,7 +34,7 @@ metadata_extractor = MetadataExtractor(
     ],
 )
 
-node_parser = SimpleNodeParser(
+node_parser = SimpleNodeParser.from_defaults(
     metadata_extractor=metadata_extractor,
 )
 ```
