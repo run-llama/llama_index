@@ -53,5 +53,4 @@ See the associated guides below:
 maxdepth: 1
 ---
 FalkorDB Graph Store </examples/index_structs/knowledge_graph/FalkorDBGraphKGIndexDemo.ipynb>
-Knowledge Graph Query Engine </examples/query_engine/knowledge_graph_query_engine.ipynb>
 ```

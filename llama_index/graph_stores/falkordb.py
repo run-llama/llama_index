@@ -3,18 +3,9 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-
-from llama_index.graph_stores.types import (
-    GraphStore,
-)
+from llama_index.graph_stores.types import GraphStore
 
 logger = logging.getLogger(__name__)
-
-get_query = "\
-    MATCH (n1:`%s`)-[r]->(n2:`%s`) \
-    WHERE n1.id = $subj \
-    RETURN type(r), n2.id\
-"
 
 
 class FalkorDBGraphStore(GraphStore):
