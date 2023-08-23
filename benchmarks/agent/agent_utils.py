@@ -12,7 +12,7 @@ OPENAI_MODELS = [
     "gpt-3.5-turbo-0613",
     "gpt-4-0613",
 ]
-ANTHROPIC_MODELS = ["claude-instant-1", "claude-2"]
+ANTHROPIC_MODELS = ["claude-instant-1", "claude-instant-1.2", "claude-2"]
 LLAMA_MODELS = [
     "llama13b-v2-chat",
     "llama70b-v2-chat",
