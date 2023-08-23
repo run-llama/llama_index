@@ -127,7 +127,7 @@ def test_init() -> None:
     assert isinstance(dummy.temperature, float)
     assert dummy.temperature == 1.0
     assert isinstance(dummy.max_tokens, int)
-    assert dummy.max_tokens == dummy.context_window // 2
+    assert dummy.max_tokens == dummy.context_window // 4
 
     dummy_custom = MockXinference(
         model_uid="uid_custom",
