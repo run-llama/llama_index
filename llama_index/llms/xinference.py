@@ -52,7 +52,14 @@ class Xinference(CustomLLM):
             model_uid, endpoint
         )
         self._generator = generator
-        max_tokens = context_window // 2 if max_tokens is None else max_tokens
+        if max_tokens is None:
+            max_tokens = context_window // 4
+        elif max_tokens > context_window:
+            raise ValueError(
+                f"received max_tokens {max_tokens} with context window {context_window}"
+                "max_tokens can not exceed the context window of the model"
+            )
+
         super().__init__(
             model_uid=model_uid,
             endpoint=endpoint,
