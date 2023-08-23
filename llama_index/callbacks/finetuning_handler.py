@@ -28,12 +28,12 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
 
         if event_type == CBEventType.LLM:
             cur_messages = []
-            if EventPayload.PROMPT in payload:
+            if payload and EventPayload.PROMPT in payload:
                 message = ChatMessage(
                     role=MessageRole.USER, text=str(payload[EventPayload.PROMPT])
                 )
                 cur_messages = [message]
-            elif EventPayload.MESSAGES in payload:
+            elif payload and EventPayload.MESSAGES in payload:
                 cur_messages = payload[EventPayload.MESSAGES]
 
             if len(cur_messages) > 0:
@@ -53,7 +53,11 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
         """Run when an event ends."""
         from llama_index.llms.base import ChatMessage, MessageRole
 
-        if event_type == CBEventType.LLM and event_id in self._finetuning_events:
+        if (
+            event_type == CBEventType.LLM
+            and event_id in self._finetuning_events
+            and payload is not None
+        ):
             if isinstance(payload[EventPayload.RESPONSE], str):
                 response = ChatMessage(
                     role=MessageRole.ASSISTANT, text=str(payload[EventPayload.RESPONSE])

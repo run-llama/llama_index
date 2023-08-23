@@ -12,6 +12,7 @@ import tiktoken
 import numpy as np
 import sys
 from collections import defaultdict
+from typing import Dict, List
 
 
 def validate_json(data_path: str) -> None:
@@ -19,7 +20,8 @@ def validate_json(data_path: str) -> None:
     with open(data_path) as f:
         dataset = [json.loads(line) for line in f]
 
-    # We can inspect the data quickly by checking the number of examples and the first item
+    # We can inspect the data quickly by checking the number
+    # of examples and the first item
 
     # Initial dataset stats
     print("Num examples:", len(dataset))
@@ -27,10 +29,12 @@ def validate_json(data_path: str) -> None:
     for message in dataset[0]["messages"]:
         print(message)
 
-    # Now that we have a sense of the data, we need to go through all the different examples and check to make sure the formatting is correct and matches the Chat completions message structure
+    # Now that we have a sense of the data, we need to go through all the different
+    # examples and check to make sure the formatting is correct and matches the Chat
+    # completions message structure
 
     # Format error checks
-    format_errors = defaultdict(int)
+    format_errors: Dict[str, int] = defaultdict(int)
 
     for ex in dataset:
         if not isinstance(ex, dict):
@@ -66,14 +70,17 @@ def validate_json(data_path: str) -> None:
     else:
         print("No errors found")
 
-    # Beyond the structure of the message, we also need to ensure that the length does not exceed the 4096 token limit.
+    # Beyond the structure of the message, we also need to ensure that the length does
+    # not exceed the 4096 token limit.
 
     # Token counting functions
     encoding = tiktoken.get_encoding("cl100k_base")
 
     # not exact!
     # simplified from https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
-    def num_tokens_from_messages(messages, tokens_per_message=3, tokens_per_name=1):
+    def num_tokens_from_messages(
+        messages: List[dict], tokens_per_message: int = 3, tokens_per_name: int = 1
+    ) -> int:
         num_tokens = 0
         for message in messages:
             num_tokens += tokens_per_message
@@ -84,20 +91,21 @@ def validate_json(data_path: str) -> None:
         num_tokens += 3
         return num_tokens
 
-    def num_assistant_tokens_from_messages(messages):
+    def num_assistant_tokens_from_messages(messages: List[dict]) -> int:
         num_tokens = 0
         for message in messages:
             if message["role"] == "assistant":
                 num_tokens += len(encoding.encode(message["content"]))
         return num_tokens
 
-    def print_distribution(values, name):
+    def print_distribution(values: list, name: str) -> None:
         print(f"\n#### Distribution of {name}:")
         print(f"min / max: {min(values)}, {max(values)}")
         print(f"mean / median: {np.mean(values)}, {np.median(values)}")
         print(f"p5 / p95: {np.quantile(values, 0.1)}, {np.quantile(values, 0.9)}")
 
-    # Last, we can look at the results of the different formatting operations before proceeding with creating a fine-tuning job:
+    # Last, we can look at the results of the different formatting operations before
+    # proceeding with creating a fine-tuning job:
 
     # Warnings and tokens counts
     n_missing_system = 0
@@ -121,9 +129,10 @@ def validate_json(data_path: str) -> None:
     print_distribution(n_messages, "num_messages_per_example")
     print_distribution(convo_lens, "num_total_tokens_per_example")
     print_distribution(assistant_message_lens, "num_assistant_tokens_per_example")
-    n_too_long = sum(l > 4096 for l in convo_lens)
+    n_too_long = sum(length > 4096 for length in convo_lens)
     print(
-        f"\n{n_too_long} examples may be over the 4096 token limit, they will be truncated during fine-tuning"
+        f"\n{n_too_long} examples may be over the 4096 token limit, "
+        "they will be truncated during fine-tuning"
     )
 
     # Pricing and default n_epochs estimate
@@ -146,16 +155,19 @@ def validate_json(data_path: str) -> None:
         min(MAX_TOKENS_PER_EXAMPLE, length) for length in convo_lens
     )
     print(
-        f"Dataset has ~{n_billing_tokens_in_dataset} tokens that will be charged for during training"
+        f"Dataset has ~{n_billing_tokens_in_dataset} tokens that will "
+        "be charged for during training"
     )
     print(f"By default, you'll train for {n_epochs} epochs on this dataset")
     print(
-        f"By default, you'll be charged for ~{n_epochs * n_billing_tokens_in_dataset} tokens"
+        "By default, you'll be charged for "
+        f"~{n_epochs * n_billing_tokens_in_dataset} tokens"
     )
 
     print("As of Augest 22, 2023, fine-tuning gpt-3.5-turbo is $0.008 / 1K Tokens.")
     print(
-        f"This means your total cost for training will be ${n_billing_tokens_in_dataset * 0.008 / 1000} per epoch."
+        "This means your total cost for training will be "
+        f"${n_billing_tokens_in_dataset * 0.008 / 1000} per epoch."
     )
 
 
