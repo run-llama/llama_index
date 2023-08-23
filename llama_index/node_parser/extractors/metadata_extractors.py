@@ -30,10 +30,12 @@ from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts.base import Prompt
 from llama_index.schema import BaseNode, TextNode
+from llama_index.utils import get_tqdm_iterable
 
 
 class MetadataFeatureExtractor(BaseExtractor):
     is_text_node_only: bool = True
+    show_progress: bool = True
 
     @abstractmethod
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -72,6 +74,7 @@ class MetadataExtractor(BaseExtractor):
         node_text_template: str = DEFAULT_NODE_TEXT_TEMPLATE,
         disable_template_rewrite: bool = False,
     ) -> None:
+        """Init params."""
         super().__init__(
             extractors=extractors,
             node_text_template=node_text_template,
@@ -315,7 +318,10 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
-        for node in nodes:
+        nodes_queue = get_tqdm_iterable(
+            nodes, self.show_progress, "Extracting questions"
+        )
+        for node in nodes_queue:
             if self.is_text_node_only and not isinstance(node, TextNode):
                 metadata_list.append({})
                 continue
@@ -397,13 +403,25 @@ class SummaryExtractor(MetadataFeatureExtractor):
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         if not all([isinstance(node, TextNode) for node in nodes]):
             raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
-        node_summaries = [
-            self.llm_predictor.predict(
-                Prompt(template=self.prompt_template),
-                context_str=cast(TextNode, node).text,
-            ).strip()
-            for node in nodes
-        ]
+        nodes_queue = get_tqdm_iterable(
+            nodes, self.show_progress, "Extracting summaries"
+        )
+        node_summaries = []
+        for node in nodes_queue:
+            node_summaries.append(
+                self.llm_predictor.predict(
+                    Prompt(template=self.prompt_template),
+                    context_str=cast(TextNode, node).text,
+                ).strip()
+            )
+
+        # node_summaries = [
+        #     self.llm_predictor.predict(
+        #         Prompt(template=self.prompt_template),
+        #         context_str=cast(TextNode, node).text,
+        #     ).strip()
+        #     for node in nodes
+        # ]
 
         # Extract node-level summary metadata
         metadata_list: List[Dict] = [{} for _ in nodes]
