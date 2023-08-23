@@ -78,13 +78,22 @@ class OpenAI(LLM):
             **kwargs,
         )
 
+    def _get_model_name(self) -> str:
+        model_name = self.model
+        if "ft-" in model_name:  # legacy fine-tuning
+            model_name = model_name.split(":")[0]
+        elif model_name.startswith("ft:"):
+            model_name = model_name.split(":")[1]
+
+        return model_name
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=openai_modelname_to_contextsize(self.model),
+            context_window=openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
-            is_function_calling_model=is_function_calling_model(self.model),
+            is_function_calling_model=is_function_calling_model(self._get_model_name()),
             model_name=self.model,
         )
 
@@ -124,7 +133,7 @@ class OpenAI(LLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        return is_chat_model(self.model)
+        return is_chat_model(self._get_model_name())
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -274,7 +283,7 @@ class OpenAI(LLM):
                 "Please install tiktoken to use the max_tokens=None feature."
             )
         context_window = self.metadata.context_window
-        encoding = tiktoken.encoding_for_model(self.model)
+        encoding = tiktoken.encoding_for_model(self._get_model_name())
         tokens = encoding.encode(prompt)
         max_token = context_window - len(tokens)
         if max_token <= 0:

@@ -1,5 +1,28 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Added `max_tokens` to `Xinference` LLM (#7372)
+
+## [0.8.8] - 2023-08-23
+
+### New Features
+- `OpenAIFineTuningHandler` for collecting LLM inputs/outputs for OpenAI fine tuning (#7367)
+
+### Bug Fixes / Nits
+- Add support for `claude-instant-1.2` (#7369)
+
+## [0.8.7] - 2023-08-22
+
+### New Features
+- Support fine-tuned OpenAI models (#7364)
+- Added support for Cassandra vector store (#6784)
+- Support pydantic fields in tool functions (#7348)
+
+### Bug Fixes / Nits
+- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+
 ## [0.8.6] - 2023-08-22
 
 ### New Features
