@@ -4,7 +4,6 @@ from pydantic import Field, PrivateAttr
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
@@ -45,14 +44,16 @@ class Xinference(CustomLLM):
         model_uid: str,
         endpoint: str,
         temperature: float = 1.0,
-        max_tokens: int = DEFAULT_NUM_OUTPUTS,
+        max_tokens: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         generator, context_window, model_description = self.load_model(
             model_uid, endpoint
         )
         self._generator = generator
-        if max_tokens > context_window:
+        if max_tokens is None:
+            max_tokens = context_window // 4
+        elif max_tokens > context_window:
             raise ValueError(
                 f"received max_tokens {max_tokens} with context window {context_window}"
                 "max_tokens can not exceed the context window of the model"
