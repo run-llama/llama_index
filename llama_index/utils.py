@@ -272,7 +272,9 @@ def get_cache_dir() -> str:
         path = Path(local, "llama_index")
 
     if not os.path.exists(path):
-        os.makedirs(path, exist_ok=True) # exists_ok=True prevents https://github.com/jerryjliu/llama_index/issues/7362
+        os.makedirs(
+            path, exist_ok=True
+        )  # prevents https://github.com/jerryjliu/llama_index/issues/7362
     return str(path)
 
 
