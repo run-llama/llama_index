@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Added `max_tokens` to `Xinference` LLM (#7372)
+
 ## [0.8.8] - 2023-08-23
 
 ### New Features
