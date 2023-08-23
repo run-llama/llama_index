@@ -10,6 +10,7 @@ CLAUDE_MODELS = {
     "claude-instant-1": 100000,
     "claude-instant-1.2": 100000,
     "claude-2": 100000,
+    "claude-2.0": 100000,
 }
 
 
