@@ -1,6 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.8] - 2023-08-23
+
+### New Features
+- `OpenAIFineTuningHandler` for collecting LLM inputs/outputs for OpenAI fine tuning (#7367)
 
 ### Bug Fixes / Nits
 - Add support for `claude-instant-1.2` (#7369)
