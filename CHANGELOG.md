@@ -3,7 +3,28 @@
 ## Unreleased
 
 ### Bug Fixes / Nits
+- Add support for `claude-instant-1.2` (#7369)
+
+## [0.8.7] - 2023-08-22
+
+### New Features
+- Support fine-tuned OpenAI models (#7364)
+- Added support for Cassandra vector store (#6784)
+- Support pydantic fields in tool functions (#7348)
+
+### Bug Fixes / Nits
+- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+
+## [0.8.6] - 2023-08-22
+
+### New Features
+- auto vs. recursive retriever notebook (#7353)
+- Reader and Vector Store for BagelDB with example notebooks (#7311)
+
+### Bug Fixes / Nits
 - Use service context for intermediate index in retry source query engine (#7341)
+- temp fix for prompt helper + chat models (#7350)
+- Properly skip unit-tests when packages not installed (#7351)
 
 ## [0.8.5.post2] - 2023-08-20
 

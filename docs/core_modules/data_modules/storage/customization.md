@@ -28,7 +28,7 @@ from llama_index.vector_stores import SimpleVectorStore
 from llama_index.node_parser import SimpleNodeParser
 
 # create parser and parse document into nodes 
-parser = SimpleNodeParser()
+parser = SimpleNodeParser.from_defaults()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create storage context using default stores
@@ -80,6 +80,7 @@ Most of our vector store integrations store the entire index (vectors + text) in
 The vector stores that support this practice are:
 
 - ChatGPTRetrievalPluginClient
+- CassandraVectorStore
 - ChromaVectorStore
 - DocArrayHnswVectorStore
 - DocArrayInMemoryVectorStore
