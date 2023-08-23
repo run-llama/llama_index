@@ -6,6 +6,14 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 
 
 class OpenAIFineTuningHandler(BaseCallbackHandler):
+    """
+    Callback handler for OpenAI fine-tuning.
+
+    This handler will collect all messages
+    sent to the LLM, along with their responses. It will then save these messages
+    in a `.jsonl` format that can be used for fine-tuning with OpenAI's API.
+    """
+
     def __init__(
         self,
     ) -> None:
@@ -77,6 +85,19 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
         return events
 
     def save_finetuning_events(self, path: str) -> None:
+        """
+        Save the finetuning events to a file.
+
+        This saved format can be used for fine-tuning with OpenAI's API.
+        The structure for each json line is as follows:
+        {
+          messages: [
+            { rol: "system", content: "Text"},
+            { role: "user", content: "Text" },
+          ]
+        },
+        ...
+        """
         from llama_index.llms.openai_utils import to_openai_message_dicts
 
         events = self.get_finetuning_events()

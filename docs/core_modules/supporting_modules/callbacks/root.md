@@ -36,6 +36,7 @@ Currently supported callbacks are as follows:
 - [WandbCallbackHandler](/examples/callbacks/WandbCallbackHandler.ipynb) -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at [Wandb](https://docs.wandb.ai/guides/prompts/quickstart)
 - [AimCallback](/examples/callbacks/AimCallback.ipynb) -> Tracking of LLM inputs and outputs. Example usage can be found in the notebook below.
 - [OpenInferenceCallbackHandler](/docs/examples/callbacks/OpenInferenceCallback.ipynb) -> Tracking of AI model inferences. Example usage can be found in the notebook below.
+- [OpenAIFineTuningHandler](https://github.com/jerryjliu/llama_index/blob/main/experimental/openai_fine_tuning/openai_fine_tuning.ipynb) -> Records all LLM inputs and outputs. Then, provides a function `save_finetuning_events()` to save inputs and outputs in a format suitable for fine-tuning with OpenAI.
 
 
 ```{toctree}
