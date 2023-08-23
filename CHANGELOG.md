@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added support for FalkorDB/RedisGraph graph store (#7346)
+
 ### Bug Fixes / Nits
 - Added `max_tokens` to `Xinference` LLM (#7372)
 - Support cache dir creation in multithreaded apps (#7365)
