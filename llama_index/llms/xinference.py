@@ -169,7 +169,7 @@ class Xinference(CustomLLM):
             prompt=prompt,
             chat_history=history,
             generate_config={
-                "stream": False,
+                "stream": True,
                 "temperature": self.temperature,
                 "max_tokens": self.max_tokens,
             },
@@ -215,7 +215,7 @@ class Xinference(CustomLLM):
             prompt=prompt,
             chat_history=None,
             generate_config={
-                "stream": False,
+                "stream": True,
                 "temperature": self.temperature,
                 "max_tokens": self.max_tokens,
             },
