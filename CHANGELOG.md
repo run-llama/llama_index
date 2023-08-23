@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.8] - 2023-08-23
 
 ### New Features
 - `OpenAIFineTuningHandler` for collecting LLM inputs/outputs for OpenAI fine tuning (#7367)
