@@ -52,7 +52,7 @@ class Xinference(CustomLLM):
             model_uid, endpoint
         )
         self._generator = generator
-        max_tokens = context_window//2 if max_tokens is None else max_tokens
+        max_tokens = context_window // 2 if max_tokens is None else max_tokens
         super().__init__(
             model_uid=model_uid,
             endpoint=endpoint,
@@ -98,11 +98,13 @@ class Xinference(CustomLLM):
         if "context_length" in model_description:
             context_window = model_description["context_length"]
         else:
-            warnings.warn("""
+            warnings.warn(
+                """
             Parameter `context_length` not found in model description,
             using `xinference_modelname_to_contextsize` that is no longer maintained.
             Please update Xinference to the newest version.
-            """)
+            """
+            )
             context_window = xinference_modelname_to_contextsize(model)
 
         return generator, context_window, model_description
