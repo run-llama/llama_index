@@ -60,6 +60,8 @@ Against annotated datasets, whether your own data or an academic benchmark, ther
 
 This [towardsdatascience article](https://towardsdatascience.com/ranking-evaluation-metrics-for-recommender-systems-263d0a66ef54) covers more technical metrics like NDCG, MAP and MRR in greater depth.
 
-## Resources
-1. [LLM Patterns by Eugene Yan](https://eugeneyan.com/writing/llm-patterns/)
 
+## Case Studies and Resources
+1. (Course) [Data-Centric AI (MIT), 2023](https://www.youtube.com/playlist?list=PLnSYPjg2dHQKdig0vVbN-ZnEU0yNJ1mo5)
+2. [Scale's Approach to LLM Testing and Evaluation](https://scale.com/llm-test-evaluation)
+3. [LLM Patterns by Eugene Yan](https://eugeneyan.com/writing/llm-patterns/)
