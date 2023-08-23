@@ -34,7 +34,8 @@ def test_as_retriever(
         f"The following are knowledge sequence in max depth"
         f" {retriever.graph_store_query_depth} "
         f"in the form of directed graph like:\n"
-        f"`subject -[predicate]->, object, <-[predicate_next_hop]-, object_next_hop ...`"
+        f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+        f" object_next_hop ...`"
     )
 
     raw_text = "['foo', 'is', 'bar']"
@@ -69,7 +70,8 @@ def test_retrievers(
         nodes[1].node.get_content()
         == "The following are knowledge sequence in max depth 2"
         " in the form of directed graph like:\n"
-        "`subject -[predicate]->, object, <-[predicate_next_hop]-, object_next_hop ...`"
+        "`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+        " object_next_hop ...`"
         "\n['foo', 'is', 'bar']"
     )
 
@@ -101,7 +103,8 @@ def test_retriever_no_text(
         nodes[0].node.get_content()
         == "The following are knowledge sequence in max depth 2"
         " in the form of directed graph like:\n"
-        "`subject -[predicate]->, object, <-[predicate_next_hop]-, object_next_hop ...`"
+        "`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+        " object_next_hop ...`"
         "\n['foo', 'is', 'bar']"
     )
 
@@ -134,6 +137,7 @@ def test_retrieve_similarity(
         nodes[1].node.get_content()
         == "The following are knowledge sequence in max depth 2"
         " in the form of directed graph like:\n"
-        "`subject -[predicate]->, object, <-[predicate_next_hop]-, object_next_hop ...`"
+        "`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+        " object_next_hop ...`"
         "\n['foo', 'is', 'bar']"
     )

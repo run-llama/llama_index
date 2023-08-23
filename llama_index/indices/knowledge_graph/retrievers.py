@@ -277,7 +277,8 @@ class KGTableRetriever(BaseRetriever):
             f"The following are knowledge sequence in max depth"
             f" {self.graph_store_query_depth} "
             f"in the form of directed graph like:\n"
-            f"`subject -[predicate]->, object, <-[predicate_next_hop]-, object_next_hop ...`"
+            f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+            f" object_next_hop ...`"
         )
         rel_info = [rel_initial_text] + rel_texts
         rel_node_info = {
@@ -657,7 +658,8 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             f"The following are knowledge sequence in max depth"
             f" {self._graph_traversal_depth} "
             f"in the form of directed graph like:\n"
-            f"`subject -[predicate]->, object, <-[predicate_next_hop]-, object_next_hop ...`"
+            f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+            f" object_next_hop ...`"
             f" extracted based on key entities as subject:\n"
             f"{_new_line_char.join(knowledge_sequence)}"
         )
