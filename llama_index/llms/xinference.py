@@ -44,7 +44,6 @@ class Xinference(CustomLLM):
         temperature: float = 1.0,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-
         generator, context_window, model_description = self.load_model(
             model_uid, endpoint
         )

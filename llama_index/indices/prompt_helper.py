@@ -9,9 +9,11 @@ needed), or truncating them so that they fit in a single LLM call.
 """
 
 import logging
+from pydantic import BaseModel, Field, PrivateAttr
 from typing import Callable, List, Optional, Sequence
 
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.llms.openai_utils import is_chat_model
 from llama_index.llm_predictor.base import LLMMetadata
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.utils import get_empty_prompt_txt
@@ -25,7 +27,7 @@ DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
 logger = logging.getLogger(__name__)
 
 
-class PromptHelper:
+class PromptHelper(BaseModel):
     """Prompt helper.
 
     General prompt helper that can help deal with LLM context window token limitations.
@@ -48,6 +50,25 @@ class PromptHelper:
 
     """
 
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum context size that will get sent to the LLM.",
+    )
+    num_output: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="The amount of token-space to leave in input for generation.",
+    )
+    chunk_overlap_ratio: float = Field(
+        default=DEFAULT_CHUNK_OVERLAP_RATIO,
+        description="The percentage token amount that each chunk should overlap.",
+    )
+    chunk_size_limit: Optional[int] = Field(description="The maximum size of a chunk.")
+    separator: str = Field(
+        default=" ", description="The separator when chunking tokens."
+    )
+
+    _tokenizer: Callable[[str], List] = PrivateAttr()
+
     def __init__(
         self,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -58,17 +79,19 @@ class PromptHelper:
         separator: str = " ",
     ) -> None:
         """Init params."""
-        self.context_window = context_window
-        self.num_output = num_output
-
-        self.chunk_overlap_ratio = chunk_overlap_ratio
-        if self.chunk_overlap_ratio > 1.0 or self.chunk_overlap_ratio < 0.0:
+        if chunk_overlap_ratio > 1.0 or chunk_overlap_ratio < 0.0:
             raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
-        self.chunk_size_limit = chunk_size_limit
 
         # TODO: make configurable
         self._tokenizer = tokenizer or globals_helper.tokenizer
-        self._separator = separator
+
+        super().__init__(
+            context_window=context_window,
+            num_output=num_output,
+            chunk_overlap_ratio=chunk_overlap_ratio,
+            chunk_size_limit=chunk_size_limit,
+            separator=separator,
+        )
 
     @classmethod
     def from_llm_metadata(
@@ -89,6 +112,11 @@ class PromptHelper:
             num_output = DEFAULT_NUM_OUTPUTS
         else:
             num_output = llm_metadata.num_output
+
+        # TODO: account for token counting in chat models
+        model_name = llm_metadata.model_name
+        if is_chat_model(model_name):
+            context_window -= 150
 
         return cls(
             context_window=context_window,
@@ -151,7 +179,7 @@ class PromptHelper:
             raise ValueError("Got 0 as available chunk size.")
         chunk_overlap = int(self.chunk_overlap_ratio * chunk_size)
         text_splitter = TokenTextSplitter(
-            separator=self._separator,
+            separator=self.separator,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             tokenizer=self._tokenizer,

@@ -80,6 +80,7 @@ Most of our vector store integrations store the entire index (vectors + text) in
 The vector stores that support this practice are:
 
 - ChatGPTRetrievalPluginClient
+- CassandraVectorStore
 - ChromaVectorStore
 - DocArrayHnswVectorStore
 - DocArrayInMemoryVectorStore
