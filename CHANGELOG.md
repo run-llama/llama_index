@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Add support for `claude-instant-1.2` (#7369)
+
 ## [0.8.7] - 2023-08-22
 
 ### New Features
