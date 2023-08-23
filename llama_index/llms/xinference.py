@@ -45,16 +45,14 @@ class Xinference(CustomLLM):
         model_uid: str,
         endpoint: str,
         temperature: float = 1.0,
-        max_tokens: Optional[int] = None,
+        max_tokens: int = DEFAULT_NUM_OUTPUTS,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         generator, context_window, model_description = self.load_model(
             model_uid, endpoint
         )
         self._generator = generator
-        if max_tokens is None:
-            max_tokens = context_window // 4
-        elif max_tokens > context_window:
+        if max_tokens > context_window:
             raise ValueError(
                 f"received max_tokens {max_tokens} with context window {context_window}"
                 "max_tokens can not exceed the context window of the model"
@@ -122,7 +120,7 @@ class Xinference(CustomLLM):
         assert isinstance(self.context_window, int)
         return LLMMetadata(
             context_window=int(self.context_window // TOKEN_RATIO),
-            num_output=DEFAULT_NUM_OUTPUTS,
+            num_output=self.max_tokens,
             model_name=self.model_uid,
         )
 
