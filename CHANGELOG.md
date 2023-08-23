@@ -1,5 +1,12 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Added `max_tokens` to `Xinference` LLM (#7372)
+- Support cache dir creation in multithreaded apps (#7365)
+- Ensure temperature is a float for openai (#7382)
+
 ## [0.8.8] - 2023-08-23
 
 ### New Features
