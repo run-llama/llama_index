@@ -214,7 +214,7 @@ class WeaviateVectorStore(VectorStore):
                 vector=vector,
             )
 
-        if query.filters is not None:
+        if query.filters is not None and len(query.filters.filters) > 0:
             filter = _to_weaviate_filter(query.filters)
             query_builder = query_builder.with_where(filter)
         else:

@@ -1,4 +1,3 @@
-"""Tool utilies."""
 from inspect import signature
 from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast
 
@@ -14,7 +13,6 @@ def create_schema_from_function(
     ] = None,
 ) -> Type[BaseModel]:
     """Create schema from function."""
-    # NOTE: adapted from langchain.tools.base
     fields = {}
     params = signature(func).parameters
     for param_name in params.keys():
@@ -27,6 +25,9 @@ def create_schema_from_function(
         if param_default is params[param_name].empty:
             # Required field
             fields[param_name] = (param_type, FieldInfo())
+        elif isinstance(param_default, FieldInfo):
+            # Field with pydantic.Field as default value
+            fields[param_name] = (param_type, param_default)
         else:
             fields[param_name] = (param_type, FieldInfo(default=param_default))
 
