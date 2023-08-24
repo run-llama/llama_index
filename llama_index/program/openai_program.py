@@ -1,15 +1,17 @@
-from typing import Any, Dict, Optional, Type, Union, Generator
+from typing import Any, Dict, Generator, Optional, Tuple, Type, Union
 
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import to_openai_function
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.program.utils import create_list_model
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.types import Model
-from llama_index.program.utils import create_list_model
-from typing import Tuple
 
 
 def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:

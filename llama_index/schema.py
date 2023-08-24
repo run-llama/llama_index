@@ -4,9 +4,13 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
-from pydantic import BaseModel, Field, root_validator
 from typing import Any, Dict, List, Optional, Union
 from typing_extensions import Self
+
+try:
+    from pydantic.v1 import BaseModel, Field, root_validator
+except ImportError:
+    from pydantic import BaseModel, Field, root_validator
 
 from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.utils import SAMPLE_TEXT

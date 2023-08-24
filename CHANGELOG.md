@@ -12,6 +12,7 @@
 - Support cache dir creation in multithreaded apps (#7365)
 - Ensure temperature is a float for openai (#7382)
 - Remove duplicate subjects in knowledge graph retriever (#7378)
+- Added support for both pydantic v1 and v2 to allow other apps to move forward (#7394)
 
 ### Breaking/Deprecated API Changes
 - Refactor prompt template (#7319)

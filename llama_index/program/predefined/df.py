@@ -1,10 +1,15 @@
-from llama_index.program.base_program import BasePydanticProgram
+from typing import Any, List, Optional, Type, cast
 
-from typing import Optional, List, Any, Type, cast
-from pydantic import BaseModel, Field
-from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 import pandas as pd
+
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
+
+from llama_index.program.base_program import BasePydanticProgram
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.program.openai_program import OpenAIPydanticProgram
 
 
 class DataFrameRow(BaseModel):

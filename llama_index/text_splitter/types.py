@@ -1,5 +1,5 @@
 """Text splitter implementations."""
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from typing import List
 
 from llama_index.schema import BaseComponent

@@ -1,7 +1,10 @@
 import logging
 from typing import Optional
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
 
 from llama_index.bridge.langchain import PydanticOutputParser
 from llama_index.evaluation.base import BaseEvaluator, Evaluation

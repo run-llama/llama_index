@@ -24,7 +24,10 @@ from abc import abstractmethod
 from functools import reduce
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
-from pydantic import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.llms.base import LLM

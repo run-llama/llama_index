@@ -1,7 +1,6 @@
 """Node parser interface."""
-from typing import List, Sequence, Dict
-
 from abc import ABC, abstractmethod
+from typing import Dict, List, Sequence
 
 from llama_index.schema import BaseComponent, BaseNode, Document
 
