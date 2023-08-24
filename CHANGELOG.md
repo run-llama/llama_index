@@ -5,6 +5,7 @@
 ### New Features
 - Added support for FalkorDB/RedisGraph graph store (#7346)
 - Added directed sub-graph RAG (#7378)
+- Added support for `BM25Retriever` (#7342)
 
 ### Bug Fixes / Nits
 - Added `max_tokens` to `Xinference` LLM (#7372)
