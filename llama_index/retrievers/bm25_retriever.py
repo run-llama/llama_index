@@ -1,12 +1,14 @@
 import logging
 from collections.abc import Callable
-from typing import cast
+from typing import Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import Document, NodeWithScore
+from llama_index.storage.docstore.types import BaseDocumentStore
+from llama_index.utils import globals_helper
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +16,7 @@ logger = logging.getLogger(__name__)
 class BM25Retriever(BaseRetriever):
     def __init__(
         self,
-        index: VectorStoreIndex,
+        docstore: BaseDocumentStore,
         tokenizer: Callable[[str], list[str]],
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
@@ -23,7 +25,7 @@ class BM25Retriever(BaseRetriever):
         except ImportError:
             raise ImportError("Please install rank_bm25: pip install rank-bm25")
 
-        self._docstore = index.docstore
+        self._docstore = docstore
         self._tokenizer = tokenizer
         self._similarity_top_k = similarity_top_k
         self._documents = cast(
@@ -32,6 +34,19 @@ class BM25Retriever(BaseRetriever):
         self._corpus = [self._tokenizer(doc.text) for doc in self._documents]
 
         self.bm25 = BM25Okapi(self._corpus)
+
+    @classmethod
+    def from_defaults(
+        cls,
+        index: VectorStoreIndex,
+        tokenizer: Optional[Callable[[str], list[str]]] = None,
+    ) -> "BM25Retriever":
+        tokenizer = tokenizer or globals_helper.tokenizer
+
+        return cls(
+            index.docstore,
+            tokenizer,
+        )
 
     def _get_scored_nodes(self, query: str) -> list[NodeWithScore]:
         tokenized_query = self._tokenizer(query)
