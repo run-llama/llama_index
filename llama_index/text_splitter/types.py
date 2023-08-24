@@ -1,10 +1,11 @@
 """Text splitter implementations."""
 from abc import abstractmethod, ABC
-from pydantic import BaseModel
 from typing import List
 
+from llama_index.schema import BaseComponent
 
-class TextSplitter(ABC, BaseModel):
+
+class TextSplitter(ABC, BaseComponent):
     class Config:
         arbitrary_types_allowed = True
 

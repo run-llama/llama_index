@@ -1,12 +1,12 @@
 """Node parser interface."""
 from typing import List, Sequence, Dict
-
+from pydantic import BaseModel
 from abc import ABC, abstractmethod
 
-from llama_index.schema import BaseComponent, BaseNode, Document
+from llama_index.schema import BaseNode, Document
 
 
-class NodeParser(BaseComponent, ABC):
+class NodeParser(BaseModel, ABC):
     """Base interface for node parser."""
 
     class Config:
@@ -26,7 +26,7 @@ class NodeParser(BaseComponent, ABC):
         """
 
 
-class BaseExtractor(BaseComponent, ABC):
+class BaseExtractor(BaseModel, ABC):
     """Base interface for feature extractor."""
 
     class Config:

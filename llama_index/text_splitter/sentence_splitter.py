@@ -41,11 +41,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         default=SENTENCE_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
     )
-    seperator: str = Field(
-        default=" ", description="Default seperator for splitting into words"
+    separator: str = Field(
+        default=" ", description="Default separator for splitting into words"
     )
-    paragraph_seperator: List = Field(
-        default=DEFUALT_PARAGRAPH_SEP, description="Seperator between paragraphs."
+    paragraph_separator: str = Field(
+        default=DEFUALT_PARAGRAPH_SEP, description="Separator between paragraphs."
     )
     secondary_chunking_regex: str = Field(
         default=CHUNKING_REGEX, description="Backup regex for splitting into sentences."

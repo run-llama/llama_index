@@ -3,13 +3,14 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from pydantic import BaseModel, Field, validator, PrivateAttr
+from pydantic import Field, validator, PrivateAttr
 from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.schema import BaseComponent
 from llama_index.utils import get_tqdm_iterable
 
 # TODO: change to numpy array
@@ -49,7 +50,7 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding(BaseModel):
+class BaseEmbedding(BaseComponent):
     """Base class for embeddings."""
 
     model_name: str = Field(

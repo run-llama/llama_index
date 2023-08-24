@@ -2,7 +2,7 @@
 
 import logging
 from abc import abstractmethod, ABC
-from pydantic import BaseModel, PrivateAttr
+from pydantic import PrivateAttr
 from typing import Any, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
@@ -17,12 +17,13 @@ from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompts import SimpleInputPrompt
+from llama_index.schema import BaseComponent
 from llama_index.types import TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
 
 
-class BaseLLMPredictor(BaseModel, ABC):
+class BaseLLMPredictor(BaseComponent, ABC):
     """Base LLM Predictor."""
 
     @property
@@ -72,7 +73,7 @@ class LLMPredictor(BaseLLMPredictor):
 
     def __init__(
         self,
-        llm: Optional[LLMType] = None,
+        llm: Optional[LLMType] = "default",
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         query_wrapper_prompt: Optional[SimpleInputPrompt] = None,
