@@ -4,6 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
+import asyncio
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
@@ -94,30 +95,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        id_to_embed_map: Dict[str, List[float]] = {}
-
-        for n in nodes:
-            if n.embedding is None:
-                self._service_context.embed_model.queue_text_for_embedding(
-                    n.node_id, n.get_content(metadata_mode=MetadataMode.EMBED)
-                )
-            else:
-                id_to_embed_map[n.node_id] = n.embedding
-
-        # call embedding model to get embeddings
-        (
-            result_ids,
-            result_embeddings,
-        ) = self._service_context.embed_model.get_queued_text_embeddings(show_progress)
-        for new_id, text_embedding in zip(result_ids, result_embeddings):
-            id_to_embed_map[new_id] = text_embedding
-
-        results = []
-        for node in nodes:
-            embedding = id_to_embed_map[node.node_id]
-            result = NodeWithEmbedding(node=node, embedding=embedding)
-            results.append(result)
-        return results
+        return asyncio.get_event_loop().run_until_complete(
+            self._aget_node_embedding_results(nodes, show_progress)
+        )
 
     async def _aget_node_embedding_results(
         self,
@@ -195,25 +175,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         show_progress: bool = False,
     ) -> None:
         """Add document to index."""
-        if not nodes:
-            return
-
-        embedding_results = self._get_node_embedding_results(nodes, show_progress)
-        new_ids = self._vector_store.add(embedding_results)
-
-        if not self._vector_store.stores_text or self._store_nodes_override:
-            # NOTE: if the vector store doesn't store text,
-            # we need to add the nodes to the index struct and document store
-            for result, new_id in zip(embedding_results, new_ids):
-                index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node], allow_update=True)
-        else:
-            # NOTE: if the vector store keeps text,
-            # we only need to add image and index nodes
-            for result, new_id in zip(embedding_results, new_ids):
-                if isinstance(result.node, (ImageNode, IndexNode)):
-                    index_struct.add_node(result.node, text_id=new_id)
-                    self._docstore.add_documents([result.node], allow_update=True)
+        return asyncio.get_event_loop().run_until_complete(
+            self._async_add_nodes_to_index(index_struct, nodes, show_progress)
+        )
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
         """Build index from nodes."""

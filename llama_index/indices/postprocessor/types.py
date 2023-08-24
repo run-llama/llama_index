@@ -14,7 +14,7 @@ class BaseNodePostprocessor(ABC):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        return asyncio.get_running_loop().run_until_complete(
+        return asyncio.get_event_loop().run_until_complete(
             self.apostprocess_nodes(nodes, query_bundle)
         )
 
