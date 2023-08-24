@@ -170,10 +170,10 @@ class LLMPredictor(BaseLLMPredictor):
     def _extend_prompt(self, prompt: Prompt) -> Prompt:
         """Add system and query wrapper prompts to base prompt"""
         if self.system_prompt:
-            prompt.prompt_selector.default_prompt.template = (
+            prompt.prompt_selector.default_prompt.template = (  # type: ignore
                 self.system_prompt
                 + "\n\n"
-                + prompt.prompt_selector.default_prompt.template
+                + prompt.prompt_selector.default_prompt.template  # type: ignore
             )
         if self.query_wrapper_prompt:
             prompt.partial_dict["query_str"] = self.query_wrapper_prompt.format(
