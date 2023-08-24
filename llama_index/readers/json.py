@@ -81,12 +81,13 @@ class JSONReader(BaseReader):
 
     def load_data(self, input_file: str) -> List[Document]:
         """Load data from the input file."""
-        with open(input_file, "r") as f:
+        with open(input_file, "r", encoding='utf-8') as f:
             data = json.load(f)
             if self.levels_back is None:
                 # If levels_back isn't set, we just format and make each
                 # line an embedding
-                json_output = json.dumps(data, indent=0, ensure_ascii=self.ensure_ascii)
+                json_output = json.dumps(
+                    data, indent=0, ensure_ascii=self.ensure_ascii)
                 lines = json_output.split("\n")
                 useful_lines = [
                     line for line in lines if not re.match(r"^[{}\[\],]*$", line)
