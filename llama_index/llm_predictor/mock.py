@@ -6,10 +6,11 @@ try:
 except ImportError:
     from pydantic import Field
 
+
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.llms.base import LLM, LLMMetadata
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import (
     mock_extract_keywords_response,
@@ -53,13 +54,13 @@ def _mock_answer(max_tokens: int, prompt_args: Dict) -> str:
     return " ".join(["answer"] * token_limit)
 
 
-def _mock_refine(max_tokens: int, prompt: Prompt, prompt_args: Dict) -> str:
+def _mock_refine(max_tokens: int, prompt: BasePromptTemplate, prompt_args: Dict) -> str:
     """Mock refine."""
     # tokens in response shouldn't be larger than tokens in
     # `existing_answer` + `context_msg`
     # NOTE: if existing_answer is not in prompt_args, we need to get it from the prompt
     if "existing_answer" not in prompt_args:
-        existing_answer = prompt.partial_dict["existing_answer"]
+        existing_answer = prompt.kwargs["existing_answer"]
     else:
         existing_answer = prompt_args["existing_answer"]
     num_ctx_tokens = len(globals_helper.tokenizer(prompt_args["context_msg"]))
@@ -100,10 +101,10 @@ class MockLLMPredictor(BaseLLMPredictor):
     def llm(self) -> LLM:
         raise NotImplementedError("MockLLMPredictor does not have an LLM model.")
 
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Mock predict."""
 
-        prompt_str = prompt.prompt_type
+        prompt_str = prompt.metadata["prompt_type"]
         if prompt_str == PromptType.SUMMARY:
             output = _mock_summary_predict(self.max_tokens, prompt_args)
         elif prompt_str == PromptType.TREE_INSERT:
@@ -122,7 +123,7 @@ class MockLLMPredictor(BaseLLMPredictor):
             output = _mock_query_keyword_extract(prompt_args)
         elif prompt_str == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
             output = _mock_knowledge_graph_triplet_extract(
-                prompt_args, prompt.partial_dict.get("max_knowledge_triplets", 2)
+                prompt_args, int(prompt.kwargs.get("max_knowledge_triplets", 2))
             )
         elif prompt_str == PromptType.CUSTOM:
             # we don't know specific prompt type, return generic response
@@ -132,11 +133,13 @@ class MockLLMPredictor(BaseLLMPredictor):
 
         return output
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         raise NotImplementedError
 
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         return self.predict(prompt, **prompt_args)
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+    async def astream(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> TokenAsyncGen:
         raise NotImplementedError

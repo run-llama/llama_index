@@ -71,17 +71,6 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
-        # query_bundle = cast(QueryBundle, metadata["query_bundle"])
-        # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-        # raw_pred = self.service_context.llm_predictor.predict(
-        #     prompt=infer_recency_prompt,
-        #     query_str=query_bundle.query_str,
-        # )
-        # pred = parse_recency_pred(raw_pred)
-        # # if no need to use recency post-processor, return nodes as is
-        # if not pred:
-        #     return nodes
-
         # sort nodes by date
         node_dates = pd.to_datetime(
             [node.node.metadata[self.date_key] for node in nodes]
@@ -133,17 +122,6 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
 
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
-
-        # query_bundle = cast(QueryBundle, metadata["query_bundle"])
-        # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-        # raw_pred = self.service_context.llm_predictor.predict(
-        #     prompt=infer_recency_prompt,
-        #     query_str=query_bundle.query_str,
-        # )
-        # pred = parse_recency_pred(raw_pred)
-        # # if no need to use recency post-processor, return nodes as is
-        # if not pred:
-        #     return nodes
 
         # sort nodes by date
         node_dates = pd.to_datetime(

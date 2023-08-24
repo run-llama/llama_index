@@ -15,7 +15,7 @@ from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
@@ -30,7 +30,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
     "SQL Response: {sql_response_str}\n"
     "Response: "
 )
-DEFAULT_RESPONSE_SYNTHESIS_PROMPT = Prompt(
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL,
     prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
 )
@@ -85,24 +85,25 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
     Args:
         index (SQLStructStoreIndex): A SQL Struct Store Index
-        text_to_sql_prompt (Optional[Prompt]): A Text to SQL Prompt
-            to use for the query. Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
+        text_to_sql_prompt (Optional[BasePromptTemplate]): A Text to SQL
+            BasePromptTemplate to use for the query.
+            Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
         context_query_kwargs (Optional[dict]): Keyword arguments for the
             context query. Defaults to {}.
         synthesize_response (bool): Whether to synthesize a response from the
             query results. Defaults to True.
-        response_synthesis_prompt (Optional[Prompt]): A
-            Response Synthesis Prompt to use for the query. Defaults to
+        response_synthesis_prompt (Optional[BasePromptTemplate]): A
+            Response Synthesis BasePromptTemplate to use for the query. Defaults to
             DEFAULT_RESPONSE_SYNTHESIS_PROMPT.
     """
 
     def __init__(
         self,
         index: SQLStructStoreIndex,
-        text_to_sql_prompt: Optional[Prompt] = None,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -215,10 +216,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         sql_database: SQLDatabase,
-        text_to_sql_prompt: Optional[Prompt] = None,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
@@ -321,10 +322,10 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
     def __init__(
         self,
         sql_database: SQLDatabase,
-        text_to_sql_prompt: Optional[Prompt] = None,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
@@ -389,10 +390,10 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         self,
         sql_database: SQLDatabase,
         table_retriever: ObjectRetriever[SQLTableSchema],
-        text_to_sql_prompt: Optional[Prompt] = None,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         **kwargs: Any,

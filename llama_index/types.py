@@ -1,5 +1,13 @@
 from abc import abstractmethod
-from typing import Any, AsyncGenerator, Generator, Protocol, TypeVar, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Generator,
+    Protocol,
+    TypeVar,
+    Union,
+    runtime_checkable,
+)
 
 try:
     from pydantic.v1 import BaseModel
@@ -14,6 +22,8 @@ RESPONSE_TEXT_TYPE = Union[str, TokenGen]
 
 
 # TODO: move into a `core` folder
+# NOTE: this is necessary to make it compatible with pydantic
+@runtime_checkable
 class BaseOutputParser(Protocol):
     """Output parser class."""
 

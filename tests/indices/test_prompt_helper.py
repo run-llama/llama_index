@@ -1,11 +1,9 @@
 """Test PromptHelper."""
-from typing import cast
 
-from llama_index.bridge.langchain import PromptTemplate as LangchainPrompt
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
-from llama_index.prompts.base import Prompt
-from llama_index.prompts.utils import get_biggest_prompt, get_empty_prompt_txt
+from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.prompt_utils import get_biggest_prompt, get_empty_prompt_txt
 from llama_index.schema import TextNode
 from llama_index.text_splitter.utils import truncate_text
 from tests.mock_utils.mock_utils import mock_tokenizer
@@ -14,7 +12,7 @@ from tests.mock_utils.mock_utils import mock_tokenizer
 def test_get_chunk_size() -> None:
     """Test get chunk size given prompt."""
     # test with 1 chunk
-    prompt = Prompt("This is the prompt")
+    prompt = PromptTemplate("This is the prompt")
     prompt_helper = PromptHelper(
         context_window=11, num_output=1, chunk_overlap_ratio=0, tokenizer=mock_tokenizer
     )
@@ -50,7 +48,7 @@ def test_get_chunk_size() -> None:
 def test_get_text_splitter() -> None:
     """Test get text splitter."""
     test_prompt_text = "This is the prompt{text}"
-    test_prompt = Prompt(test_prompt_text)
+    test_prompt = PromptTemplate(test_prompt_text)
     prompt_helper = PromptHelper(
         context_window=11, num_output=1, chunk_overlap_ratio=0, tokenizer=mock_tokenizer
     )
@@ -84,7 +82,7 @@ def test_get_text_splitter_partial() -> None:
 
     # test without partially formatting
     test_prompt_text = "This is the {foo} prompt{text}"
-    test_prompt = Prompt(test_prompt_text)
+    test_prompt = PromptTemplate(test_prompt_text)
     prompt_helper = PromptHelper(
         context_window=11, num_output=1, chunk_overlap_ratio=0, tokenizer=mock_tokenizer
     )
@@ -98,7 +96,7 @@ def test_get_text_splitter_partial() -> None:
     assert truncated_text == "Hello world"
 
     # test with partially formatting
-    test_prompt = Prompt(test_prompt_text)
+    test_prompt = PromptTemplate(test_prompt_text)
     test_prompt = test_prompt.partial_format(foo="bar")
     prompt_helper = PromptHelper(
         context_window=12, num_output=1, chunk_overlap_ratio=0, tokenizer=mock_tokenizer
@@ -118,7 +116,7 @@ def test_truncate() -> None:
     """Test truncate."""
     # test prompt uses up one token
     test_prompt_txt = "test{text}"
-    test_prompt = Prompt(test_prompt_txt)
+    test_prompt = PromptTemplate(test_prompt_txt)
     # set context_window=19
     # For each text chunk, there's 4 tokens for text + 5 for the padding
     prompt_helper = PromptHelper(
@@ -139,7 +137,7 @@ def test_get_numbered_text_from_nodes() -> None:
     """Test get_text_from_nodes."""
     # test prompt uses up one token
     test_prompt_txt = "test{text}"
-    test_prompt = Prompt(test_prompt_txt)
+    test_prompt = PromptTemplate(test_prompt_txt)
     # set context_window=17
     # For each text chunk, there's 3 for text, 5 for padding (including number)
     prompt_helper = PromptHelper(
@@ -159,7 +157,7 @@ def test_get_numbered_text_from_nodes() -> None:
 def test_repack() -> None:
     """Test repack."""
     test_prompt_text = "This is the prompt{text}"
-    test_prompt = Prompt(test_prompt_text)
+    test_prompt = PromptTemplate(test_prompt_text)
     prompt_helper = PromptHelper(
         context_window=13,
         num_output=1,
@@ -174,11 +172,9 @@ def test_repack() -> None:
 
 def test_get_biggest_prompt() -> None:
     """Test get_biggest_prompt from PromptHelper."""
-    prompt1 = Prompt("This is the prompt{text}")
-    prompt2 = Prompt("This is the longer prompt{text}")
-    prompt3 = Prompt("This is the {text}")
+    prompt1 = PromptTemplate("This is the prompt{text}")
+    prompt2 = PromptTemplate("This is the longer prompt{text}")
+    prompt3 = PromptTemplate("This is the {text}")
     biggest_prompt = get_biggest_prompt([prompt1, prompt2, prompt3])
 
-    lc_biggest_template = cast(LangchainPrompt, biggest_prompt.prompt).template
-    prompt2_template = cast(LangchainPrompt, prompt2.prompt).template
-    assert lc_biggest_template == prompt2_template
+    assert biggest_prompt == prompt2

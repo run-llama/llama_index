@@ -13,7 +13,7 @@ except ImportError:
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.response_synthesizers import ResponseMode, get_response_synthesizer
 from llama_index.schema import NodeRelationship, NodeWithScore
 from llama_index.storage.docstore import BaseDocumentStore
@@ -313,10 +313,10 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Missing query bundle.")
 
-        infer_prev_next_prompt = QuestionAnswerPrompt(
+        infer_prev_next_prompt = PromptTemplate(
             self.infer_prev_next_tmpl,
         )
-        refine_infer_prev_next_prompt = RefinePrompt(self.refine_prev_next_tmpl)
+        refine_infer_prev_next_prompt = PromptTemplate(self.refine_prev_next_tmpl)
 
         all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:

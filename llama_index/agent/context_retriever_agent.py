@@ -17,7 +17,7 @@ from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts import PromptTemplate
 from llama_index.schema import NodeWithScore
 from llama_index.tools import BaseTool
 
@@ -30,7 +30,7 @@ DEFAULT_QA_PROMPT_TMPL = (
     "Given the context information and not prior knowledge, "
     "either pick the corresponding tool or answer the function: {query_str}\n"
 )
-DEFAULT_QA_PROMPT = QuestionAnswerPrompt(DEFAULT_QA_PROMPT_TMPL)
+DEFAULT_QA_PROMPT = PromptTemplate(DEFAULT_QA_PROMPT_TMPL)
 
 
 class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
@@ -44,7 +44,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
     Args:
         tools (List[BaseTool]): A list of tools.
         retriever (BaseRetriever): A retriever.
-        qa_prompt (Optional[QuestionAnswerPrompt]): A QA prompt.
+        qa_prompt (Optional[PromptTemplate]): A QA prompt.
         context_separator (str): A context separator.
         llm (Optional[OpenAI]): An OpenAI LLM.
         chat_history (Optional[List[ChatMessage]]): A chat history.
@@ -59,7 +59,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         self,
         tools: List[BaseTool],
         retriever: BaseRetriever,
-        qa_prompt: QuestionAnswerPrompt,
+        qa_prompt: PromptTemplate,
         context_separator: str,
         llm: OpenAI,
         memory: BaseMemory,
@@ -86,7 +86,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         cls,
         tools: List[BaseTool],
         retriever: BaseRetriever,
-        qa_prompt: Optional[QuestionAnswerPrompt] = None,
+        qa_prompt: Optional[PromptTemplate] = None,
         context_separator: str = "\n",
         llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
@@ -102,7 +102,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
 
         Args:
             retriever (BaseRetriever): A retriever.
-            qa_prompt (Optional[QuestionAnswerPrompt]): A QA prompt.
+            qa_prompt (Optional[PromptTemplate]): A QA prompt.
             context_separator (str): A context separator.
             llm (Optional[OpenAI]): An OpenAI LLM.
             chat_history (Optional[ChatMessageHistory]): A chat history.
