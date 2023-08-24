@@ -1,11 +1,12 @@
 from typing import TYPE_CHECKING, Any, Optional, Type
 
+from pydantic.v1 import BaseModel
+
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
     pydantic_to_guidance_output_template_markdown,
 )
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from guidance.llms import LLM as GuidanceLLM

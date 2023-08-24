@@ -3,7 +3,7 @@
 import json
 from unittest.mock import MagicMock
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from llama_index.llms.base import CompletionResponse
 from llama_index.output_parsers.pydantic import PydanticOutputParser

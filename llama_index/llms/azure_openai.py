@@ -1,5 +1,6 @@
-from pydantic import Field
 from typing import Any, Dict, Optional
+
+from pydantic.v1 import Field
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI

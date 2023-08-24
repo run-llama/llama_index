@@ -1,6 +1,7 @@
 """Simple node parser."""
-from pydantic import Field
-from typing import List, Callable, Optional, Sequence
+from typing import Callable, List, Optional, Sequence
+
+from pydantic.v1 import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -10,7 +11,6 @@ from llama_index.node_parser.node_utils import build_nodes_from_splits
 from llama_index.schema import BaseNode, Document
 from llama_index.text_splitter.utils import split_by_sentence_tokenizer
 from llama_index.utils import get_tqdm_iterable
-
 
 DEFAULT_WINDOW_SIZE = 3
 DEFAULT_WINDOW_METADATA_KEY = "window"

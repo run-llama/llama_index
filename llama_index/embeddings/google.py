@@ -1,10 +1,11 @@
 """Google Universal Sentence Encoder Embedding Wrapper Module."""
 
-from pydantic import PrivateAttr
 from typing import Any, List, Optional
 
+from pydantic.v1 import PrivateAttr
+
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import BaseEmbedding, DEFAULT_EMBED_BATCH_SIZE
+from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 # Google Universal Sentence Encode v5
 DEFAULT_HANDLE = "https://tfhub.dev/google/universal-sentence-encoder-large/5"

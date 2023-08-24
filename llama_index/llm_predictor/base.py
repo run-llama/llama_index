@@ -1,9 +1,10 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
-from abc import abstractmethod, ABC
-from pydantic import BaseModel, PrivateAttr
+from abc import ABC, abstractmethod
 from typing import Any, List, Optional
+
+from pydantic.v1 import BaseModel, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llm_predictor.utils import (

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from pydantic import Field, PrivateAttr
 from typing import Any, Optional, Tuple, cast
+
+from pydantic.v1 import Field, PrivateAttr
 
 from llama_index import Prompt
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata, LLM
+from llama_index.llm_predictor.base import LLM, BaseLLMPredictor, LLMMetadata
 from llama_index.llm_predictor.vellum.exceptions import VellumGenerateException
 from llama_index.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
 from llama_index.llm_predictor.vellum.types import (

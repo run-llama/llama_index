@@ -1,16 +1,17 @@
 """Palm API."""
 import os
-from pydantic import Field, PrivateAttr
-from typing import Optional, Any
+from typing import Any, Optional
+
+from pydantic.v1 import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.custom import CustomLLM
 from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
     llm_completion_callback,
 )
+from llama_index.llms.custom import CustomLLM
 
 
 class PaLM(CustomLLM):

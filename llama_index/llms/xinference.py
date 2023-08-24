@@ -1,7 +1,7 @@
 import warnings
-
-from pydantic import Field, PrivateAttr
 from typing import Any, Dict, Optional, Sequence, Tuple
+
+from pydantic.v1 import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (

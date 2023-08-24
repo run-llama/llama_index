@@ -1,10 +1,12 @@
 """Notion tool spec."""
 
-from llama_index.tools.tool_spec.base import BaseToolSpec
-from llama_index.readers.notion import NotionPageReader
-from typing import Optional, List, Type, Dict, Any
+from typing import Any, Dict, List, Optional, Type
+
 import requests
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
+
+from llama_index.readers.notion import NotionPageReader
+from llama_index.tools.tool_spec.base import BaseToolSpec
 
 SEARCH_URL = "https://api.notion.com/v1/search"
 

@@ -1,6 +1,7 @@
 """Simple node parser."""
-from pydantic import Field
 from typing import List, Optional, Sequence
+
+from pydantic.v1 import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

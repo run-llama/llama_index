@@ -6,7 +6,7 @@ from llama_index.output_parsers.utils import parse_json_markdown
 if TYPE_CHECKING:
     from guidance import Program
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 def convert_to_handlebars(text: str) -> str:

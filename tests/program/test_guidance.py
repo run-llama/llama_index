@@ -1,5 +1,5 @@
 import pytest
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 try:
     from guidance.llms import Mock as MockLLM

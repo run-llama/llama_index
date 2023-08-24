@@ -1,7 +1,8 @@
 """Sentence splitter."""
 from dataclasses import dataclass
-from pydantic import Field, PrivateAttr
 from typing import Callable, List, Optional
+
+from pydantic.v1 import Field, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

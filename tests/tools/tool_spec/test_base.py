@@ -1,9 +1,11 @@
 """Test tool spec."""
 
-from pydantic import BaseModel
+from typing import List, Type
+
+from pydantic.v1 import BaseModel
+
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.types import ToolMetadata
-from typing import List, Type
 
 
 class FooSchema(BaseModel):

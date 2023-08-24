@@ -1,15 +1,15 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from pydantic import Field, PrivateAttr
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
+from pydantic.v1 import Field, PrivateAttr
 from tenacity import (
     retry,
-    stop_all,
-    stop_after_delay,
     stop_after_attempt,
+    stop_after_delay,
+    stop_all,
     wait_random_exponential,
 )
 

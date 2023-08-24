@@ -3,10 +3,10 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from pydantic import BaseModel, Field, validator, PrivateAttr
 from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
+from pydantic.v1 import BaseModel, Field, PrivateAttr, validator
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

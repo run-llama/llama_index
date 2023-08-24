@@ -1,10 +1,12 @@
 """Base tool spec class."""
 
-from typing import List, Optional, Dict, Type
-from pydantic import BaseModel
-from llama_index.tools.types import ToolMetadata
-from llama_index.tools.function_tool import FunctionTool
 from inspect import signature
+from typing import Dict, List, Optional, Type
+
+from pydantic.v1 import BaseModel
+
+from llama_index.tools.function_tool import FunctionTool
+from llama_index.tools.types import ToolMetadata
 from llama_index.tools.utils import create_schema_from_function
 
 

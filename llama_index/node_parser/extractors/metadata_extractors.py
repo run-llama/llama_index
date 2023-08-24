@@ -21,12 +21,13 @@ disambiguate the document or subsection from other similar documents or subsecti
 """
 import json
 from abc import abstractmethod
-from pydantic import Field, PrivateAttr
-from typing import Any, List, Optional, Sequence, cast, Dict, Callable
 from functools import reduce
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
-from llama_index.llms.base import LLM
+from pydantic.v1 import Field, PrivateAttr
+
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
+from llama_index.llms.base import LLM
 from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts.base import Prompt
 from llama_index.schema import BaseNode, TextNode

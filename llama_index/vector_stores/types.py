@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable
 
 import fsspec
-from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
+from pydantic.v1 import BaseModel, StrictFloat, StrictInt, StrictStr
 
 from llama_index.schema import BaseNode
 

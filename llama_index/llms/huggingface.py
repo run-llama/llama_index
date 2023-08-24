@@ -1,15 +1,16 @@
 import logging
-from pydantic import Field, PrivateAttr
 from threading import Thread
 from typing import Any, List, Optional
 
+from pydantic.v1 import Field, PrivateAttr
+
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
     llm_completion_callback,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.custom import CustomLLM
 
 logger = logging.getLogger(__name__)

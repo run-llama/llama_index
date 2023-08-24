@@ -1,10 +1,11 @@
 """Table node mapping."""
 
-from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
+from typing import Any, Optional, Sequence
 
-from typing import Any, Sequence, Optional
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
+
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
 from llama_index.schema import BaseNode, TextNode
 
 

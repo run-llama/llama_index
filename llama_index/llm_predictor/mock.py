@@ -1,10 +1,11 @@
 """Mock LLM Predictor."""
-from pydantic import Field
 from typing import Any, Dict
+
+from pydantic.v1 import Field
 
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.llms.base import LLMMetadata, LLM
+from llama_index.llms.base import LLM, LLMMetadata
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import (

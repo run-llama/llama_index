@@ -1,6 +1,7 @@
-from typing import AsyncGenerator, Generator, Union, Protocol, Any, TypeVar
 from abc import abstractmethod
-from pydantic import BaseModel
+from typing import Any, AsyncGenerator, Generator, Protocol, TypeVar, Union
+
+from pydantic.v1 import BaseModel
 
 Model = TypeVar("Model", bound=BaseModel)
 

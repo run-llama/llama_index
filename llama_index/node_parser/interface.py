@@ -1,11 +1,10 @@
 """Node parser interface."""
-from pydantic import BaseModel
-from typing import List, Sequence, Dict
-
 from abc import ABC, abstractmethod
+from typing import Dict, List, Sequence
 
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from pydantic.v1 import BaseModel
+
+from llama_index.schema import BaseNode, Document
 
 
 class NodeParser(BaseModel, ABC):

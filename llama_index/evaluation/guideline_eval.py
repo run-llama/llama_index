@@ -1,9 +1,9 @@
 import logging
 from typing import Optional
 
-from llama_index.bridge.langchain import PydanticOutputParser
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
+from llama_index.bridge.langchain import PydanticOutputParser
 from llama_index.evaluation.base import BaseEvaluator, Evaluation
 from llama_index.indices.base import ServiceContext
 from llama_index.prompts.base import Prompt

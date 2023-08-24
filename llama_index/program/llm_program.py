@@ -1,12 +1,12 @@
 from typing import Any, Dict, Optional, Type, Union
 
+from pydantic.v1 import BaseModel
 
-from pydantic import BaseModel
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
+from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.prompts.base import Prompt
-from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 
 class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):

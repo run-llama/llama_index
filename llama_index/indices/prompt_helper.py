@@ -9,12 +9,13 @@ needed), or truncating them so that they fit in a single LLM call.
 """
 
 import logging
-from pydantic import BaseModel, Field, PrivateAttr
 from typing import Callable, List, Optional, Sequence
 
+from pydantic.v1 import BaseModel, Field, PrivateAttr
+
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.openai_utils import is_chat_model
 from llama_index.llm_predictor.base import LLMMetadata
+from llama_index.llms.openai_utils import is_chat_model
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.utils import get_empty_prompt_txt
 from llama_index.text_splitter import TokenTextSplitter

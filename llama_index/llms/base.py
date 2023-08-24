@@ -1,10 +1,10 @@
 import asyncio
-from contextlib import contextmanager
 from abc import abstractmethod
+from contextlib import contextmanager
 from enum import Enum
 from typing import Any, AsyncGenerator, Callable, Generator, Optional, Sequence, cast
 
-from pydantic import BaseModel, Field, validator
+from pydantic.v1 import BaseModel, Field, validator
 
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS

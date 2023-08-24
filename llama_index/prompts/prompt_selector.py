@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from llama_index.bridge.langchain import BasePromptTemplate
 from llama_index.llms.base import LLM

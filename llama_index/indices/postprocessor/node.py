@@ -5,7 +5,7 @@ import re
 from abc import abstractmethod
 from typing import Dict, List, Optional, cast
 
-from pydantic import BaseModel, Field, validator
+from pydantic.v1 import BaseModel, Field, validator
 
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
