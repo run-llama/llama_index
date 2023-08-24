@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import Field, PrivateAttr
 from typing import Any, Optional, Tuple, cast
 
-from llama_index import Prompt
+from llama_index.prompts import BasePromptTemplate
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata, LLM
@@ -64,7 +64,7 @@ class VellumPredictor(BaseLLMPredictor):
         """Get the LLM."""
         raise NotImplementedError("Vellum does not expose the LLM.")
 
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict the answer to a query."""
 
         from vellum import GenerateRequest
@@ -73,11 +73,13 @@ class VellumPredictor(BaseLLMPredictor):
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         result = self._vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
         completion_text = self._process_generate_response(
@@ -86,7 +88,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream the answer to a query."""
 
         from vellum import GenerateRequest, GenerateStreamResult
@@ -95,11 +97,13 @@ class VellumPredictor(BaseLLMPredictor):
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         responses = self._vellum_client.generate_stream(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
         def text_generator() -> TokenGen:
@@ -135,7 +139,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         return text_generator()
 
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Asynchronously predict the answer to a query."""
 
         from vellum import GenerateRequest
@@ -144,11 +148,13 @@ class VellumPredictor(BaseLLMPredictor):
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         result = await self._async_vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
         completion_text = self._process_generate_response(
@@ -157,7 +163,9 @@ class VellumPredictor(BaseLLMPredictor):
 
         return completion_text
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+    async def astream(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> TokenAsyncGen:
         async def gen() -> TokenAsyncGen:
             for token in self.stream(prompt, **prompt_args):
                 yield token
@@ -166,7 +174,7 @@ class VellumPredictor(BaseLLMPredictor):
         return gen()
 
     def _prepare_generate_call(
-        self, prompt: Prompt, **prompt_args: Any
+        self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> Tuple[VellumRegisteredPrompt, VellumCompiledPrompt, str]:
         """Prepare a generate call."""
 
