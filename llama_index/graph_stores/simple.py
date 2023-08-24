@@ -46,7 +46,7 @@ class SimpleGraphStoreData(DataClassJsonMixin):
         rel_map = []
         if subj in self.graph_dict:
             for rel, obj in self.graph_dict[subj]:
-                rel_map.append([rel, obj])
+                rel_map.append([subj, rel, obj])
                 rel_map += self._get_rel_map(obj, depth=depth - 1)
         return rel_map
 

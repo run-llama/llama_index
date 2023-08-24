@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Dict, Type
 
+from llama_index.graph_stores.falkordb import FalkorDBGraphStore
 from llama_index.graph_stores.kuzu import KuzuGraphStore
 from llama_index.graph_stores.nebulagraph import NebulaGraphStore
 from llama_index.graph_stores.neo4j import Neo4jGraphStore
@@ -13,6 +14,7 @@ class GraphStoreType(str, Enum):
     NEBULA = "nebulagraph"
     KUZU = "kuzu"
     NEO4J = "neo4j"
+    FALKORDB = "falkordb"
 
 
 GRAPH_STORE_TYPE_TO_GRAPH_STORE_CLASS: Dict[GraphStoreType, Type[GraphStore]] = {
@@ -20,6 +22,7 @@ GRAPH_STORE_TYPE_TO_GRAPH_STORE_CLASS: Dict[GraphStoreType, Type[GraphStore]] = 
     GraphStoreType.NEBULA: NebulaGraphStore,
     GraphStoreType.KUZU: KuzuGraphStore,
     GraphStoreType.NEO4J: Neo4jGraphStore,
+    GraphStoreType.FALKORDB: FalkorDBGraphStore,
 }
 
 GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE: Dict[Type[GraphStore], GraphStoreType] = {

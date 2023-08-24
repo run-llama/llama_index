@@ -106,6 +106,7 @@ class KGTableRetriever(BaseRetriever):
         self.graph_store_query_depth = graph_store_query_depth
         self.use_global_node_triplets = use_global_node_triplets
         self.max_knowledge_sequence = max_knowledge_sequence
+        self._verbose = kwargs.get("verbose", False)
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -133,10 +134,10 @@ class KGTableRetriever(BaseRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         """Get nodes for response."""
-        logger.info(f"> Starting query: {query_bundle.query_str}")
         node_visited = set()
         keywords = self._get_keywords(query_bundle.query_str)
-        logger.info(f"> Query keywords: {keywords}")
+        if self._verbose:
+            print_text(f"Extraced keywords: {keywords}\n", color="green")
         rel_texts = []
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
@@ -177,8 +178,8 @@ class KGTableRetriever(BaseRetriever):
                     continue
                 rel_texts.extend(
                     [
-                        f"{sub} {rel_obj}"
-                        for sub, rel_objs in rel_map.items()
+                        str(rel_obj)
+                        for rel_objs in rel_map.values()
                         for rel_obj in rel_objs
                     ]
                 )
@@ -217,7 +218,7 @@ class KGTableRetriever(BaseRetriever):
                 for node_id in node_ids:
                     chunk_indices_count[node_id] += 1
         elif len(self._index_struct.embedding_dict) == 0:
-            logger.error(
+            logger.warn(
                 "Index was not constructed with embeddings, skipping embedding usage..."
             )
 
@@ -274,16 +275,26 @@ class KGTableRetriever(BaseRetriever):
         rel_initial_text = (
             f"The following are knowledge sequence in max depth"
             f" {self.graph_store_query_depth} "
-            f"in the form of "
-            f"`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
+            f"in the form of directed graph like:\n"
+            f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+            f" object_next_hop ...`"
         )
         rel_info = [rel_initial_text] + rel_texts
         rel_node_info = {
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
         }
+        rel_info_text = "\n".join(
+            [
+                str(item)
+                for sublist in rel_info
+                for item in (sublist if isinstance(sublist, list) else [sublist])
+            ]
+        )
+        if self._verbose:
+            print_text(f"KG context:\n{rel_info_text}\n", color="blue")
         rel_text_node = TextNode(
-            text="\n".join(rel_info),
+            text=rel_info_text,
             metadata=rel_node_info,
             excluded_embed_metadata_keys=["kg_rel_map", "kg_rel_texts"],
             excluded_llm_metadata_keys=["kg_rel_map", "kg_rel_texts"],
@@ -292,8 +303,6 @@ class KGTableRetriever(BaseRetriever):
         sorted_nodes_with_scores.append(
             NodeWithScore(node=rel_text_node, score=DEFAULT_NODE_SCORE)
         )
-        rel_info_text = "\n".join(rel_info)
-        logger.info(f"> Extracted relationships: {rel_info_text}")
 
         return sorted_nodes_with_scores
 
@@ -647,8 +656,9 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         context_string = (
             f"The following are knowledge sequence in max depth"
             f" {self._graph_traversal_depth} "
-            f"in the form of "
-            f"`subject predicate, object, predicate_next_hop, object_next_hop ...`"
+            f"in the form of directed graph like:\n"
+            f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+            f" object_next_hop ...`"
             f" extracted based on key entities as subject:\n"
             f"{_new_line_char.join(knowledge_sequence)}"
         )
