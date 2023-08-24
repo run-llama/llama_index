@@ -12,6 +12,14 @@
 - Ensure temperature is a float for openai (#7382)
 - Remove duplicate subjects in knowledge graph retriever (#7378)
 
+### Breaking/Deprecated API Changes
+- Refactor prompt template (#7319)
+  - Use `BasePromptTemplate` for generic typing
+  - Use `PromptTemplate`, `ChatPromptTemplate`, `SelectorPromptTemplate` as core implementations
+  - Fully replace specific prompt classes (e.g. `SummaryPrompt`) with generic `BasePromptTemplate` for typing in codebase.
+
+
+
 ## [0.8.8] - 2023-08-23
 
 ### New Features
@@ -40,13 +48,6 @@
 - Use service context for intermediate index in retry source query engine (#7341)
 - temp fix for prompt helper + chat models (#7350)
 - Properly skip unit-tests when packages not installed (#7351)
-
-### Breaking/Deprecated API Changes
-- Refactor prompt template (#7319)
-  - Use `BasePromptTemplate` for generic typing
-  - Use `PromptTemplate`, `ChatPromptTemplate`, `SelectorPromptTemplate` as core implementations
-  - Fully replace specific prompt classes (e.g. `SummaryPrompt`) with generic `BasePromptTemplate` for typing in codebase.
-
 
 ## [0.8.5.post2] - 2023-08-20
 
