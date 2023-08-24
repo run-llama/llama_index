@@ -40,11 +40,13 @@ class BM25Retriever(BaseRetriever):
         cls,
         index: VectorStoreIndex,
         tokenizer: Optional[Callable[[str], list[str]]] = None,
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> "BM25Retriever":
         tokenizer = tokenizer or globals_helper.tokenizer
         return cls(
             index.docstore,
             tokenizer,
+            similarity_top_k=similarity_top_k,
         )
 
     def _get_scored_nodes(self, query: str) -> list[NodeWithScore]:
