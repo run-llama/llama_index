@@ -9,7 +9,7 @@ from llama_index.indices.utils import (
     default_parse_choice_select_answer_fn,
 )
 from llama_index.prompts import BasePromptTemplate
-from llama_index.prompts.choice_select import DEFAULT_CHOICE_SELECT_PROMPT
+from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.schema import NodeWithScore
 
 

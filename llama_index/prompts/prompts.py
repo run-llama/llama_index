@@ -131,3 +131,10 @@ SimpleInputPrompt = PromptTemplate
 Required template variables: `query_str`, `df_str`, `instruction_str`.
 """
 PandasPrompt = PromptTemplate
+
+
+"""Choice select prompt. Select from a list of choices.
+
+Required template variables: `context_str`, `query_str`.
+"""
+ChoiceSelectPrompt = PromptTemplate
