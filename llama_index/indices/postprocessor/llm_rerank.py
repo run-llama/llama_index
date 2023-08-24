@@ -11,6 +11,7 @@ from llama_index.indices.utils import (
 from llama_index.prompts.choice_select import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.schema import NodeWithScore
+import asyncio
 
 
 class LLMRerank(BaseNodePostprocessor):
@@ -43,6 +44,16 @@ class LLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        # run apostprocess_nodes in the current event loop
+        return asyncio.get_event_loop().run_until_complete(
+            self.apostprocess_nodes(nodes, query_bundle)
+        )
+
+    async def apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
         initial_results: List[NodeWithScore] = []
@@ -54,7 +65,7 @@ class LLMRerank(BaseNodePostprocessor):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(nodes_batch)
             # call each batch independently
-            raw_response = self._service_context.llm_predictor.predict(
+            raw_response = await self._service_context.llm_predictor.apredict(
                 self._choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,

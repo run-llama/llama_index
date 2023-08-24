@@ -32,6 +32,19 @@ class BasePydanticNodePostprocessor(BaseModel, BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
+    async def apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        """
+        Async Postprocess nodes.
+
+        Default implementation is to call the synchronous postprocess_nodes.
+        Developers are encouraged override this method to provide an async implementation for subclasses.
+        """
+        return self.postprocess_nodes(nodes, query_bundle)
+
 
 class KeywordNodePostprocessor(BasePydanticNodePostprocessor):
     """Keyword-based Node processor."""
