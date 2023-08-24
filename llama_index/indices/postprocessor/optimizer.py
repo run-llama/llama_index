@@ -68,7 +68,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

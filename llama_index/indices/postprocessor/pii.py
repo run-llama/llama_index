@@ -72,7 +72,7 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
         json_dict = json.loads(json_str_output)
         return text_output, json_dict
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -115,7 +115,7 @@ class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
             mapping[entity_group_tag] = entry["word"]
         return new_text, mapping
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

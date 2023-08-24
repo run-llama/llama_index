@@ -8,7 +8,7 @@ class MetadataReplacementPostProcessor(BaseNodePostprocessor):
     def __init__(self, target_metadata_key: str) -> None:
         self._target_metadata_key = target_metadata_key
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

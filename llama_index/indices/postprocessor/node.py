@@ -24,14 +24,6 @@ class BasePydanticNodePostprocessor(BaseModel, BaseNodePostprocessor):
     class Config:
         arbitrary_types_allowed = True
 
-    @abstractmethod
-    def postprocess_nodes(
-        self,
-        nodes: List[NodeWithScore],
-        query_bundle: Optional[QueryBundle] = None,
-    ) -> List[NodeWithScore]:
-        """Postprocess nodes."""
-
     async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -52,7 +44,7 @@ class KeywordNodePostprocessor(BasePydanticNodePostprocessor):
     required_keywords: List[str] = Field(default_factory=list)
     exclude_keywords: List[str] = Field(default_factory=list)
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -87,7 +79,7 @@ class SimilarityPostprocessor(BasePydanticNodePostprocessor):
 
     similarity_cutoff: float = Field(default=None)
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -184,7 +176,7 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             raise ValueError(f"Invalid mode: {v}")
         return v
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -314,7 +306,7 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             return "none"
         raise ValueError(f"Invalid prediction: {raw_pred}")
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

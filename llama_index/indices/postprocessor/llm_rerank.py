@@ -39,16 +39,6 @@ class LLMRerank(BaseNodePostprocessor):
         self._service_context = service_context or ServiceContext.from_defaults()
         self._top_n = top_n
 
-    def postprocess_nodes(
-        self,
-        nodes: List[NodeWithScore],
-        query_bundle: Optional[QueryBundle] = None,
-    ) -> List[NodeWithScore]:
-        # run apostprocess_nodes in the current event loop
-        return asyncio.get_event_loop().run_until_complete(
-            self.apostprocess_nodes(nodes, query_bundle)
-        )
-
     async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],

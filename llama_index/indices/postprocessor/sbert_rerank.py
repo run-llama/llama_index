@@ -25,7 +25,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH
         )
 
-    def postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
