@@ -4,6 +4,7 @@
 
 ### New Features
 - Added support for FalkorDB/RedisGraph graph store (#7346)
+- Add structured answer filtering for Refine response synthesizer (#7317)
 
 ### Bug Fixes / Nits
 - Added `max_tokens` to `Xinference` LLM (#7372)
@@ -33,9 +34,6 @@
 ### New Features
 - auto vs. recursive retriever notebook (#7353)
 - Reader and Vector Store for BagelDB with example notebooks (#7311)
-
-### New Features
-- Add structured answer filtering for Refine response synthesizer (#7317)
 
 ### Bug Fixes / Nits
 - Use service context for intermediate index in retry source query engine (#7341)
