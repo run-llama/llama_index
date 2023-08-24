@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.9] - 2023-08-24
 
 ### New Features
 - Added support for FalkorDB/RedisGraph graph store (#7346)
