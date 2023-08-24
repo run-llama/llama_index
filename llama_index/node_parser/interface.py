@@ -2,7 +2,10 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Sequence
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.schema import BaseNode, Document
 

@@ -1,7 +1,10 @@
 """Code splitter."""
 from typing import Any, List, Optional
 
-from pydantic.v1 import Field
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -19,9 +22,7 @@ class CodeSplitter(TextSplitter):
     https://docs.sweep.dev/blogs/chunking-2m-files
     """
 
-    language: str = Field(
-        description="The programming languge of the code being split."
-    )
+    language: str = Field(description="The programming languge of the code being split.")
     chunk_lines: int = Field(
         default=DEFAULT_CHUNK_LINES,
         description="The number of lines to include in each chunk.",
@@ -33,9 +34,7 @@ class CodeSplitter(TextSplitter):
     max_chars: int = Field(
         default=DEFAULT_MAX_CHARS, description="Maximum number of characters per chunk."
     )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    callback_manager: CallbackManager = Field(default_factory=CallbackManager, exclude=True)
 
     def __init__(
         self,
@@ -64,9 +63,7 @@ class CodeSplitter(TextSplitter):
                     new_chunks.append(current_chunk)
                 current_chunk = ""
                 new_chunks.extend(self._chunk_node(child, text, last_end))
-            elif (
-                len(current_chunk) + child.end_byte - child.start_byte > self.max_chars
-            ):
+            elif len(current_chunk) + child.end_byte - child.start_byte > self.max_chars:
                 # Child would make the current chunk too big, so start a new chunk
                 new_chunks.append(current_chunk)
                 current_chunk = text[last_end : child.end_byte]
@@ -85,9 +82,7 @@ class CodeSplitter(TextSplitter):
             try:
                 import tree_sitter_languages
             except ImportError:
-                raise ImportError(
-                    "Please install tree_sitter_languages to use CodeSplitter."
-                )
+                raise ImportError("Please install tree_sitter_languages to use CodeSplitter.")
 
             try:
                 parser = tree_sitter_languages.get_parser(self.language)
@@ -101,13 +96,8 @@ class CodeSplitter(TextSplitter):
 
             tree = parser.parse(bytes(text, "utf-8"))
 
-            if (
-                not tree.root_node.children
-                or tree.root_node.children[0].type != "ERROR"
-            ):
-                chunks = [
-                    chunk.strip() for chunk in self._chunk_node(tree.root_node, text)
-                ]
+            if not tree.root_node.children or tree.root_node.children[0].type != "ERROR":
+                chunks = [chunk.strip() for chunk in self._chunk_node(tree.root_node, text)]
                 event.on_end(
                     payload={EventPayload.CHUNKS: chunks},
                 )

@@ -2,7 +2,10 @@
 import logging
 from typing import Callable, List, Optional
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -27,15 +30,11 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         default=DEFAULT_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
     )
-    seperator: str = Field(
-        default=" ", description="Default seperator for splitting into words"
-    )
+    seperator: str = Field(default=" ", description="Default seperator for splitting into words")
     backup_seperators: List = Field(
         default_factory=list, description="Additional seperators for splitting."
     )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    callback_manager: CallbackManager = Field(default_factory=CallbackManager, exclude=True)
     tokenizer: Callable = Field(
         default_factory=globals_helper.tokenizer,  # type: ignore
         description="Tokenizer for splitting words into tokens.",

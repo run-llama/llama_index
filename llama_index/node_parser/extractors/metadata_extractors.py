@@ -24,7 +24,10 @@ from abc import abstractmethod
 from functools import reduce
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.llms.base import LLM
@@ -149,12 +152,8 @@ class TitleExtractor(MetadataFeatureExtractor):
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
-    llm_predictor: BaseLLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
-    nodes: int = Field(
-        default=5, description="The number of nodes to extract titles from."
-    )
+    llm_predictor: BaseLLMPredictor = Field(description="The LLMPredictor to use for generation.")
+    nodes: int = Field(default=5, description="The number of nodes to extract titles from.")
     node_template: str = Field(
         default=DEFAULT_TITLE_NODE_TEMPLATE,
         description="The prompt template to extract titles with.",
@@ -206,18 +205,14 @@ class TitleExtractor(MetadataFeatureExtractor):
             for node in nodes_to_extract_title
         ]
         if len(nodes_to_extract_title) > 1:
-            titles = reduce(
-                lambda x, y: x + "," + y, title_candidates[1:], title_candidates[0]
-            )
+            titles = reduce(lambda x, y: x + "," + y, title_candidates[1:], title_candidates[0])
 
             title = self.llm_predictor.predict(
                 Prompt(template=self.combine_template),
                 context_str=titles,
             )
         else:
-            title = title_candidates[
-                0
-            ]  # if single node, just use the title from that node
+            title = title_candidates[0]  # if single node, just use the title from that node
 
         metadata_list = [{"document_title": title.strip(' \t\n\r"')} for _ in nodes]
         return metadata_list
@@ -231,9 +226,7 @@ class KeywordExtractor(MetadataFeatureExtractor):
         keywords (int): number of keywords to extract
     """
 
-    llm_predictor: BaseLLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm_predictor: BaseLLMPredictor = Field(description="The LLMPredictor to use for generation.")
     keywords: int = Field(default=5, description="The number of keywords to extract.")
 
     def __init__(
@@ -281,12 +274,8 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         embedding_only (bool): whether to use embedding only
     """
 
-    llm_predictor: BaseLLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
-    questions: int = Field(
-        default=5, description="The number of questions to generate."
-    )
+    llm_predictor: BaseLLMPredictor = Field(description="The LLMPredictor to use for generation.")
+    questions: int = Field(default=5, description="The number of questions to generate.")
     prompt_template: Optional[str] = Field(
         default=None, description="Prompt template to use when generating questions."
     )
@@ -337,9 +326,7 @@ content: {cast(TextNode, node).text}""",
             )
             if self.embedding_only:
                 node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
-            metadata_list.append(
-                {"questions_this_excerpt_can_answer": questions.strip()}
-            )
+            metadata_list.append({"questions_this_excerpt_can_answer": questions.strip()})
         return metadata_list
 
 
@@ -358,12 +345,8 @@ class SummaryExtractor(MetadataFeatureExtractor):
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
         prompt_template (str): template for summary extraction"""
 
-    llm_predictor: BaseLLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
-    summaries: List[str] = Field(
-        description="List of summaries to extract: 'self', 'prev', 'next'"
-    )
+    llm_predictor: BaseLLMPredictor = Field(description="The LLMPredictor to use for generation.")
+    summaries: List[str] = Field(description="List of summaries to extract: 'self', 'prev', 'next'")
     prompt_template: str = Field(
         default=DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
         description="Template to use when generating summaries.",
@@ -456,9 +439,7 @@ class EntityExtractor(MetadataFeatureExtractor):
         default=0.5, description="The confidence threshold for accepting predictions."
     )
     span_joiner: str = Field(description="The seperator beween entity names.")
-    label_entities: bool = Field(
-        default=False, description="Include entity class labels or not."
-    )
+    label_entities: bool = Field(default=False, description="Include entity class labels or not.")
     device: Optional[str] = Field(
         default=None, description="Device to run model on, i.e. 'cuda', 'cpu'"
     )

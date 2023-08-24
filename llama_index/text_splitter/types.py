@@ -2,7 +2,10 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 
 class TextSplitter(ABC, BaseModel):

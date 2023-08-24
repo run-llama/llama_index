@@ -4,7 +4,11 @@ from typing import List, Optional, Set
 
 import numpy as np
 import pandas as pd
-from pydantic.v1 import Field
+
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
@@ -79,9 +83,7 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
         #     return nodes
 
         # sort nodes by date
-        node_dates = pd.to_datetime(
-            [node.node.metadata[self.date_key] for node in nodes]
-        )
+        node_dates = pd.to_datetime([node.node.metadata[self.date_key] for node in nodes])
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes = [nodes[idx] for idx in sorted_node_idxs]
 
@@ -142,9 +144,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         #     return nodes
 
         # sort nodes by date
-        node_dates = pd.to_datetime(
-            [node.node.metadata[self.date_key] for node in nodes]
-        )
+        node_dates = pd.to_datetime([node.node.metadata[self.date_key] for node in nodes])
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes: List[NodeWithScore] = [nodes[idx] for idx in sorted_node_idxs]
 
@@ -174,15 +174,10 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
                 if sorted_nodes[idx2].node.node_id in node_ids_to_skip:
                     continue
                 node2 = sorted_nodes[idx2]
-                if (
-                    np.dot(query_embedding, text_embeddings[idx2])
-                    > self.similarity_cutoff
-                ):
+                if np.dot(query_embedding, text_embeddings[idx2]) > self.similarity_cutoff:
                     node_ids_to_skip.add(node2.node.node_id)
 
-        return [
-            node for node in sorted_nodes if node.node.node_id not in node_ids_to_skip
-        ]
+        return [node for node in sorted_nodes if node.node.node_id not in node_ids_to_skip]
 
 
 class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
@@ -232,9 +227,7 @@ class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
 
         top_k = min(self.top_k, len(sorted_tups))
         result_tups = sorted_tups[:top_k]
-        result_nodes = [
-            NodeWithScore(node=n.node, score=score) for score, n in result_tups
-        ]
+        result_nodes = [NodeWithScore(node=n.node, score=score) for score, n in result_tups]
 
         # set __last_accessed__ to now
         if self.time_access_refresh:

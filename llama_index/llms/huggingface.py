@@ -2,7 +2,10 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
@@ -21,13 +24,10 @@ class HuggingFaceLLM(CustomLLM):
 
     model_name: str = Field(
         description=(
-            "The model name to use from HuggingFace. "
-            "Unused if `model` is passed in directly."
+            "The model name to use from HuggingFace. " "Unused if `model` is passed in directly."
         )
     )
-    context_window: int = Field(
-        description="The maximum number of tokens available for input."
-    )
+    context_window: int = Field(description="The maximum number of tokens available for input.")
     max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
     system_prompt: str = Field(
         description=(
@@ -51,8 +51,7 @@ class HuggingFaceLLM(CustomLLM):
     stopping_ids: List[int] = Field(
         default_factory=list,
         description=(
-            "The stopping ids to use. "
-            "Generation stops when these token IDs are predicted."
+            "The stopping ids to use. " "Generation stops when these token IDs are predicted."
         ),
     )
     tokenizer_outputs_to_remove: list = Field(
@@ -112,9 +111,7 @@ class HuggingFaceLLM(CustomLLM):
 
         # check context_window
         config_dict = self._model.config.to_dict()
-        model_context_window = int(
-            config_dict.get("max_position_embeddings", context_window)
-        )
+        model_context_window = int(config_dict.get("max_position_embeddings", context_window))
         if model_context_window and model_context_window < context_window:
             logger.warning(
                 f"Supplied context_window {context_window} is greater "

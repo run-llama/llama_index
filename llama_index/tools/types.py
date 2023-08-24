@@ -2,7 +2,10 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.bridge.langchain import StructuredTool, Tool
 
@@ -93,9 +96,7 @@ class BaseTool:
         **langchain_tool_kwargs: Any,
     ) -> Tool:
         """To langchain tool."""
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
-            langchain_tool_kwargs
-        )
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(langchain_tool_kwargs)
         return Tool.from_function(
             func=self.__call__,
             **langchain_tool_kwargs,
@@ -106,9 +107,7 @@ class BaseTool:
         **langchain_tool_kwargs: Any,
     ) -> StructuredTool:
         """To langchain structured tool."""
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
-            langchain_tool_kwargs
-        )
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(langchain_tool_kwargs)
         return StructuredTool.from_function(
             func=self.__call__,
             **langchain_tool_kwargs,

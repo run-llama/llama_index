@@ -7,7 +7,10 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 from typing import Any, Dict, List, Optional, Type
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
@@ -129,18 +132,15 @@ class LoadAndSearchToolSpec(BaseToolSpec):
                 self._index.insert(doc, **self._index_kwargs)
         else:
             self._index = self._index_cls.from_documents(docs, **self._index_kwargs)
-        return (
-            "Content loaded! You can now search the information using read_{}".format(
-                self._metadata.name
-            )
+        return "Content loaded! You can now search the information using read_{}".format(
+            self._metadata.name
         )
 
     def read(self, query: str) -> Any:
         # Query the index for the result
         if not self._index:
             err_msg = (
-                "Error: No content has been loaded into the index. "
-                "You must call {} first"
+                "Error: No content has been loaded into the index. " "You must call {} first"
             ).format(self._metadata.name)
             return err_msg
         query_engine = self._index.as_query_engine()

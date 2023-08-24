@@ -1,7 +1,10 @@
 """Mock LLM Predictor."""
 from typing import Any, Dict
 
-from pydantic.v1 import Field
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
@@ -77,9 +80,7 @@ def _mock_query_keyword_extract(prompt_args: Dict) -> str:
 
 def _mock_knowledge_graph_triplet_extract(prompt_args: Dict, max_triplets: int) -> str:
     """Mock knowledge graph triplet extract."""
-    return mock_extract_kg_triplets_response(
-        prompt_args["text"], max_triplets=max_triplets
-    )
+    return mock_extract_kg_triplets_response(prompt_args["text"], max_triplets=max_triplets)
 
 
 class MockLLMPredictor(BaseLLMPredictor):

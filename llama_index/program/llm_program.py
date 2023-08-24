@@ -1,6 +1,9 @@
 from typing import Any, Dict, Optional, Type, Union
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
@@ -43,9 +46,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     ) -> "LLMTextCompletionProgram":
         llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
         prompt = Prompt(prompt_template_str)
-        function_call = function_call or {
-            "name": output_parser.output_cls.schema()["title"]
-        }
+        function_call = function_call or {"name": output_parser.output_cls.schema()["title"]}
         return cls(
             output_parser,
             prompt=prompt,
@@ -63,9 +64,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        prompt_with_parse_instrs_tmpl = self._output_parser.format(
-            self._prompt.original_template
-        )
+        prompt_with_parse_instrs_tmpl = self._output_parser.format(self._prompt.original_template)
         prompt_with_parse_instrs = Prompt(prompt_with_parse_instrs_tmpl)
 
         formatted_prompt = prompt_with_parse_instrs.format(**kwargs)

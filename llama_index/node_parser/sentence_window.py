@@ -1,7 +1,10 @@
 """Simple node parser."""
 from typing import Callable, List, Optional, Sequence
 
-from pydantic.v1 import Field
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -55,9 +58,7 @@ class SentenceWindowNodeParser(NodeParser):
     metadata_extractor: Optional[MetadataExtractor] = Field(
         default=None, description="Metadata extraction pipeline to apply to nodes."
     )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    callback_manager: CallbackManager = Field(default_factory=CallbackManager, exclude=True)
 
     def __init__(
         self,
@@ -143,17 +144,13 @@ class SentenceWindowNodeParser(NodeParser):
 
         return all_nodes
 
-    def build_window_nodes_from_documents(
-        self, documents: Sequence[Document]
-    ) -> List[BaseNode]:
+    def build_window_nodes_from_documents(self, documents: Sequence[Document]) -> List[BaseNode]:
         """Build window nodes from documents."""
         all_nodes: List[BaseNode] = []
         for doc in documents:
             text = doc.text
             text_splits = self.sentence_splitter(text)
-            nodes = build_nodes_from_splits(
-                text_splits, doc, include_prev_next_rel=True
-            )
+            nodes = build_nodes_from_splits(text_splits, doc, include_prev_next_rel=True)
 
             # add window to each node
             for i, node in enumerate(nodes):
@@ -161,9 +158,7 @@ class SentenceWindowNodeParser(NodeParser):
                     max(0, i - self.window_size) : min(i + self.window_size, len(nodes))
                 ]
 
-                node.metadata[self.window_metadata_key] = " ".join(
-                    [n.text for n in window_nodes]
-                )
+                node.metadata[self.window_metadata_key] = " ".join([n.text for n in window_nodes])
                 node.metadata[self.original_text_metadata_key] = node.text
 
                 # exclude window metadata from embed and llm

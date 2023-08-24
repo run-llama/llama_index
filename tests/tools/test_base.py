@@ -1,6 +1,10 @@
 """Test tools."""
 import pytest
-from pydantic.v1 import BaseModel
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.tools.function_tool import FunctionTool
 
@@ -16,9 +20,7 @@ async def async_tmp_function(x: int) -> str:
 def test_function_tool() -> None:
     """Test function tool."""
 
-    function_tool = FunctionTool.from_defaults(
-        lambda x: str(x), name="foo", description="bar"
-    )
+    function_tool = FunctionTool.from_defaults(lambda x: str(x), name="foo", description="bar")
     assert function_tool.metadata.name == "foo"
     assert function_tool.metadata.description == "bar"
     assert function_tool.metadata.fn_schema is not None
@@ -31,9 +33,7 @@ def test_function_tool() -> None:
 
     # test adding typing to function
 
-    function_tool = FunctionTool.from_defaults(
-        tmp_function, name="foo", description="bar"
-    )
+    function_tool = FunctionTool.from_defaults(tmp_function, name="foo", description="bar")
     assert function_tool.metadata.fn_schema is not None
     actual_schema = function_tool.metadata.fn_schema.schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
@@ -107,9 +107,7 @@ async def test_function_tool_async() -> None:
 @pytest.mark.asyncio
 async def test_function_tool_async_defaults() -> None:
     """Test async calls to function tool when only sync function is given."""
-    function_tool = FunctionTool.from_defaults(
-        fn=tmp_function, name="foo", description="bar"
-    )
+    function_tool = FunctionTool.from_defaults(fn=tmp_function, name="foo", description="bar")
     assert function_tool.metadata.fn_schema is not None
     actual_schema = function_tool.metadata.fn_schema.schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"

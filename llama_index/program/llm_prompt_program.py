@@ -2,7 +2,10 @@
 from abc import abstractmethod
 from typing import Any, Generic, Optional, Type, TypeVar
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.types import Model

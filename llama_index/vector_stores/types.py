@@ -4,7 +4,11 @@ from enum import Enum
 from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable
 
 import fsspec
-from pydantic.v1 import BaseModel, StrictFloat, StrictInt, StrictStr
+
+try:
+    from pydantic.v1 import BaseModel, StrictFloat, StrictInt, StrictStr
+except ImportError:
+    from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
 
 from llama_index.schema import BaseNode
 
@@ -186,9 +190,7 @@ class VectorStore(Protocol):
         """Query vector store."""
         ...
 
-    async def aquery(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> VectorStoreQueryResult:
+    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
         Asynchronously query vector store.
         NOTE: this is not implemented for all vector stores. If not implemented,
@@ -196,7 +198,5 @@ class VectorStore(Protocol):
         """
         return self.query(query, **kwargs)
 
-    def persist(
-        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
-    ) -> None:
+    def persist(self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None) -> None:
         return None

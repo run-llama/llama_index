@@ -3,7 +3,10 @@
 from inspect import signature
 from typing import Dict, List, Optional, Type
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.tools.function_tool import FunctionTool
 from llama_index.tools.types import ToolMetadata
@@ -44,9 +47,7 @@ class BaseToolSpec:
                 docstring = func.__doc__ or ""
                 description = f"{name}{signature(func)}\n{docstring}"
                 fn_schema = self.get_fn_schema_from_fn_name(func_name)
-                metadata = ToolMetadata(
-                    name=name, description=description, fn_schema=fn_schema
-                )
+                metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
             tool = FunctionTool.from_defaults(
                 fn=func,
                 name=metadata.name,

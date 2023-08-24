@@ -2,7 +2,10 @@
 
 from typing import List, Type
 
-from pydantic.v1 import BaseModel, Field, create_model
+try:
+    from pydantic.v1 import BaseModel, Field, create_model
+except ImportError:
+    from pydantic import BaseModel, Field, create_model
 
 
 def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:

@@ -1,16 +1,18 @@
 from inspect import signature
 from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast
 
-from pydantic.v1 import BaseModel, create_model
-from pydantic.v1.fields import FieldInfo
+try:
+    from pydantic.v1 import BaseModel, create_model
+    from pydantic.v1.fields import FieldInfo
+except ImportError:
+    from pydantic import BaseModel, create_model
+    from pydantic.fields import FieldInfo
 
 
 def create_schema_from_function(
     name: str,
     func: Callable[..., Any],
-    additional_fields: Optional[
-        List[Union[Tuple[str, Type, Any], Tuple[str, Type]]]
-    ] = None,
+    additional_fields: Optional[List[Union[Tuple[str, Type, Any], Tuple[str, Type]]]] = None,
 ) -> Type[BaseModel]:
     """Create schema from function."""
     fields = {}
@@ -44,8 +46,7 @@ def create_schema_from_function(
             fields[field_name] = (field_type, FieldInfo())
         else:
             raise ValueError(
-                f"Invalid additional field info: {field_info}. "
-                "Must be a tuple of length 2 or 3."
+                f"Invalid additional field info: {field_info}. " "Must be a tuple of length 2 or 3."
             )
 
     return create_model(name, **fields)  # type: ignore

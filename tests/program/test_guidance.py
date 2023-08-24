@@ -1,5 +1,9 @@
 import pytest
-from pydantic.v1 import BaseModel
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 try:
     from guidance.llms import Mock as MockLLM

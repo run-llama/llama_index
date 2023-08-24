@@ -2,7 +2,10 @@
 
 from typing import List
 
-from pydantic.v1 import Field
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.bridge.langchain import BaseTool, BaseToolkit
 from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool

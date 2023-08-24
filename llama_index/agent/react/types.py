@@ -3,7 +3,10 @@
 from abc import abstractmethod
 from typing import Dict
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 
 class BaseReasoningStep(BaseModel):
@@ -29,8 +32,7 @@ class ActionReasoningStep(BaseReasoningStep):
     def get_content(self) -> str:
         """Get content."""
         return (
-            f"Thought: {self.thought}\nAction: {self.action}\n"
-            f"Action Input: {self.action_input}"
+            f"Thought: {self.thought}\nAction: {self.action}\n" f"Action Input: {self.action_input}"
         )
 
     @property

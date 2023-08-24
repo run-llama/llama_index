@@ -2,7 +2,12 @@ import os
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import requests
-from pydantic.v1 import Field, PrivateAttr
+
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
 from tqdm import tqdm
 
 from llama_index.callbacks import CallbackManager
@@ -19,9 +24,7 @@ from llama_index.llms.base import (
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import completion_response_to_chat_response
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
+from llama_index.llms.generic_utils import messages_to_prompt as generic_messages_to_prompt
 from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 from llama_index.utils import get_cache_dir
 
@@ -33,14 +36,10 @@ DEFAULT_LLAMA_CPP_MODEL = (
 
 class LlamaCPP(CustomLLM):
     model_url: str = Field(description="The URL llama-cpp model to download and use.")
-    model_path: Optional[str] = Field(
-        description="The path to the llama-cpp model to use."
-    )
+    model_path: Optional[str] = Field(description="The path to the llama-cpp model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
-    context_window: int = Field(
-        description="The maximum number of context tokens for the model."
-    )
+    context_window: int = Field(description="The maximum number of context tokens for the model.")
     messages_to_prompt: Callable = Field(
         description="The function to convert messages to a prompt.", exclude=True
     )
@@ -109,9 +108,7 @@ class LlamaCPP(CustomLLM):
         completion_to_prompt = completion_to_prompt or (lambda x: x)
 
         generate_kwargs = generate_kwargs or {}
-        generate_kwargs.update(
-            {"temperature": temperature, "max_tokens": max_new_tokens}
-        )
+        generate_kwargs.update({"temperature": temperature, "max_tokens": max_new_tokens})
 
         super().__init__(
             model_path=model_path,
@@ -172,9 +169,7 @@ class LlamaCPP(CustomLLM):
         return completion_response_to_chat_response(completion_response)
 
     @llm_chat_callback()
-    def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
         prompt = self.messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)

@@ -2,7 +2,10 @@ import asyncio
 import logging
 from typing import List, Optional, Sequence, cast
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.bridge.langchain import get_color_mapping, print_text
@@ -65,9 +68,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         self._question_gen = question_gen
         self._response_synthesizer = response_synthesizer
         self._metadatas = [x.metadata for x in query_engine_tools]
-        self._query_engines = {
-            tool.metadata.name: tool.query_engine for tool in query_engine_tools
-        }
+        self._query_engines = {tool.metadata.name: tool.query_engine for tool in query_engine_tools}
         self._verbose = verbose
         self._use_async = use_async
         super().__init__(callback_manager)
@@ -96,9 +97,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
                 # try to use OpenAI function calling based question generator.
                 # if incompatible, use general LLM question generator
                 try:
-                    question_gen = OpenAIQuestionGenerator.from_defaults(
-                        llm=service_context.llm
-                    )
+                    question_gen = OpenAIQuestionGenerator.from_defaults(llm=service_context.llm)
                 except ValueError:
                     question_gen = LLMQuestionGenerator.from_defaults(
                         service_context=service_context
@@ -162,9 +161,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
-            sub_questions = await self._question_gen.agenerate(
-                self._metadatas, query_bundle
-            )
+            sub_questions = await self._question_gen.agenerate(self._metadatas, query_bundle)
 
             colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
 
@@ -194,9 +191,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         return response
 
     def _construct_node(self, qa_pair: SubQuestionAnswerPair) -> NodeWithScore:
-        node_text = (
-            f"Sub question: {qa_pair.sub_q.sub_question}\nResponse: {qa_pair.answer}"
-        )
+        node_text = f"Sub question: {qa_pair.sub_q.sub_question}\nResponse: {qa_pair.answer}"
         return NodeWithScore(node=TextNode(text=node_text))
 
     async def _aquery_subq(

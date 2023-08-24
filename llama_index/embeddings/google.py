@@ -2,7 +2,10 @@
 
 from typing import Any, List, Optional
 
-from pydantic.v1 import PrivateAttr
+try:
+    from pydantic.v1 import PrivateAttr
+except ImportError:
+    from pydantic import PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
@@ -27,9 +30,7 @@ class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
 
             model = hub.load(handle)
         except ImportError:
-            raise ImportError(
-                "Please install tensorflow_hub: `pip install tensorflow_hub`"
-            )
+            raise ImportError("Please install tensorflow_hub: `pip install tensorflow_hub`")
 
         self._model = model
         super().__init__(

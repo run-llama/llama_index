@@ -2,7 +2,10 @@
 import os
 from typing import Any, Optional
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
@@ -19,9 +22,7 @@ class PaLM(CustomLLM):
 
     model_name: str = Field(description="The PaLM model to use.")
     num_output: int = Field(description="The number of tokens to generate.")
-    generate_kwargs: dict = Field(
-        default_factory=dict, description="Kwargs for generation."
-    )
+    generate_kwargs: dict = Field(default_factory=dict, description="Kwargs for generation.")
 
     _model: Any = PrivateAttr()
 
@@ -47,9 +48,7 @@ class PaLM(CustomLLM):
         models = palm.list_models()
         models_dict = {m.name: m for m in models}
         if model_name not in models_dict:
-            raise ValueError(
-                f"Model name {model_name} not found in {models_dict.keys()}"
-            )
+            raise ValueError(f"Model name {model_name} not found in {models_dict.keys()}")
 
         model_name = model_name
         self._model = models_dict[model_name]

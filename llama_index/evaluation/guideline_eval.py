@@ -1,7 +1,10 @@
 import logging
 from typing import Optional
 
-from pydantic.v1 import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
 
 from llama_index.bridge.langchain import PydanticOutputParser
 from llama_index.evaluation.base import BaseEvaluator, Evaluation
@@ -74,6 +77,4 @@ DEFAULT_EVAL_TEMPLATE = (
 
 class EvaluationData(BaseModel):
     passing: bool = Field(description="Whether the response passes the guidelines.")
-    feedback: str = Field(
-        description="The feedback for the response based on the guidelines."
-    )
+    feedback: str = Field(description="The feedback for the response based on the guidelines.")

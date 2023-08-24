@@ -3,7 +3,11 @@
 from typing import Any, Dict, List, Optional, Type
 
 import requests
-from pydantic.v1 import BaseModel
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.readers.notion import NotionPageReader
 from llama_index.tools.tool_spec.base import BaseToolSpec

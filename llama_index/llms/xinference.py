@@ -1,7 +1,10 @@
 import warnings
 from typing import Any, Dict, Optional, Sequence, Tuple
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
@@ -30,12 +33,8 @@ class Xinference(CustomLLM):
     endpoint: str = Field(description="The Xinference endpoint URL to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum new tokens to generate as answer.")
-    context_window: int = Field(
-        description="The maximum number of context tokens for the model."
-    )
-    model_description: Dict[str, Any] = Field(
-        description="The model description from Xinference."
-    )
+    context_window: int = Field(description="The maximum number of context tokens for the model.")
+    model_description: Dict[str, Any] = Field(description="The model description from Xinference.")
 
     _generator: Any = PrivateAttr()
 
@@ -47,9 +46,7 @@ class Xinference(CustomLLM):
         max_tokens: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        generator, context_window, model_description = self.load_model(
-            model_uid, endpoint
-        )
+        generator, context_window, model_description = self.load_model(model_uid, endpoint)
         self._generator = generator
         if max_tokens is None:
             max_tokens = context_window // 4
@@ -165,9 +162,7 @@ class Xinference(CustomLLM):
         return response
 
     @llm_chat_callback()
-    def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
         assert self._generator is not None
         prompt = messages[-1].content if len(messages) > 0 else ""
         history = [xinference_message_to_history(message) for message in messages[:-1]]

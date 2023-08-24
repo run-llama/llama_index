@@ -1,6 +1,9 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -16,18 +19,14 @@ from llama_index.llms.base import (
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import completion_response_to_chat_response
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
+from llama_index.llms.generic_utils import messages_to_prompt as generic_messages_to_prompt
 from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 
 
 class Replicate(CustomLLM):
     model: str = Field(description="The Replicate model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
-    context_window: int = Field(
-        description="The maximum number of context tokens for the model."
-    )
+    context_window: int = Field(description="The maximum number of context tokens for the model.")
     prompt_key: str = Field(description="The key to use for the prompt in API calls.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additonal kwargs for the Replicate API."
@@ -90,9 +89,7 @@ class Replicate(CustomLLM):
         return completion_response_to_chat_response(completion_response)
 
     @llm_chat_callback()
-    def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
         prompt = self._messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)

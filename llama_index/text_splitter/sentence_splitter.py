@@ -2,7 +2,10 @@
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -42,9 +45,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         default=SENTENCE_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
     )
-    seperator: str = Field(
-        default=" ", description="Default seperator for splitting into words"
-    )
+    seperator: str = Field(default=" ", description="Default seperator for splitting into words")
     paragraph_seperator: List = Field(
         default=DEFUALT_PARAGRAPH_SEP, description="Seperator between paragraphs."
     )
@@ -53,14 +54,9 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     )
     chunking_tokenizer_fn: Callable[[str], List[str]] = Field(
         exclude=True,
-        description=(
-            "Function to split text into sentences. "
-            "Defaults to `nltk.sent_tokenize`."
-        ),
+        description=("Function to split text into sentences. " "Defaults to `nltk.sent_tokenize`."),
     )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    callback_manager: CallbackManager = Field(default_factory=CallbackManager, exclude=True)
     tokenizer: Callable = Field(
         default_factory=globals_helper.tokenizer,  # type: ignore
         description="Tokenizer for splitting words into tokens.",

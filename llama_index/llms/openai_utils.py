@@ -5,7 +5,12 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import openai
 from openai import ChatCompletion, Completion
-from pydantic.v1 import BaseModel
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from tenacity import (
     before_sleep_log,
     retry,
@@ -138,9 +143,7 @@ def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) 
     return _completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry(
-    is_chat_model: bool, max_retries: int, **kwargs: Any
-) -> Any:
+async def acompletion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) -> Any:
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
@@ -178,8 +181,7 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
 
     if modelname in DISCONTINUED_MODELS:
         raise ValueError(
-            f"OpenAI model {modelname} has been discontinued. "
-            "Please choose another model."
+            f"OpenAI model {modelname} has been discontinued. " "Please choose another model."
         )
 
     context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
@@ -258,13 +260,9 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
     }
 
 
-def validate_openai_api_key(
-    api_key: Optional[str] = None, api_type: Optional[str] = None
-) -> None:
+def validate_openai_api_key(api_key: Optional[str] = None, api_type: Optional[str] = None) -> None:
     openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
-    openai_api_type = (
-        api_type or os.environ.get("OPENAI_API_TYPE", "") or openai.api_type
-    )
+    openai_api_type = api_type or os.environ.get("OPENAI_API_TYPE", "") or openai.api_type
 
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)

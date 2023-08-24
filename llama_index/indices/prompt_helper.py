@@ -11,7 +11,10 @@ needed), or truncating them so that they fit in a single LLM call.
 import logging
 from typing import Callable, List, Optional, Sequence
 
-from pydantic.v1 import BaseModel, Field, PrivateAttr
+try:
+    from pydantic.v1 import BaseModel, Field, PrivateAttr
+except ImportError:
+    from pydantic import BaseModel, Field, PrivateAttr
 
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import LLMMetadata
@@ -64,9 +67,7 @@ class PromptHelper(BaseModel):
         description="The percentage token amount that each chunk should overlap.",
     )
     chunk_size_limit: Optional[int] = Field(description="The maximum size of a chunk.")
-    separator: str = Field(
-        default=" ", description="The separator when chunking tokens."
-    )
+    separator: str = Field(default=" ", description="The separator when chunking tokens.")
 
     _tokenizer: Callable[[str], List] = PrivateAttr()
 

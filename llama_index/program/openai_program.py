@@ -1,6 +1,9 @@
 from typing import Any, Dict, Generator, Optional, Tuple, Type, Union
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
@@ -70,8 +73,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         if not llm.metadata.is_function_calling_model:
             raise ValueError(
-                f"Model name {llm.metadata.model_name} does not support "
-                "function calling API. "
+                f"Model name {llm.metadata.model_name} does not support " "function calling API. "
             )
 
         prompt = Prompt(prompt_template_str)
@@ -105,8 +107,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         message = chat_response.message
         if "function_call" not in message.additional_kwargs:
             raise ValueError(
-                "Expected function call in ai_message.additional_kwargs, "
-                "but none found."
+                "Expected function call in ai_message.additional_kwargs, " "but none found."
             )
 
         function_call = message.additional_kwargs["function_call"]
@@ -138,8 +139,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         message = chat_response.message
         if "function_call" not in message.additional_kwargs:
             raise ValueError(
-                "Expected function call in ai_message.additional_kwargs, "
-                "but none found."
+                "Expected function call in ai_message.additional_kwargs, " "but none found."
             )
 
         function_call = message.additional_kwargs["function_call"]
@@ -154,9 +154,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             output = self.output_cls.parse_raw(function_call["arguments"])
         return output
 
-    def stream_list(
-        self, *args: Any, **kwargs: Any
-    ) -> Generator[BaseModel, None, None]:
+    def stream_list(self, *args: Any, **kwargs: Any) -> Generator[BaseModel, None, None]:
         """Streams a list of objects."""
 
         formatted_prompt = self._prompt.format(**kwargs)

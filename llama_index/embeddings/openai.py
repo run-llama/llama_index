@@ -4,14 +4,13 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-from pydantic.v1 import Field, PrivateAttr
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    stop_after_delay,
-    stop_all,
-    wait_random_exponential,
-)
+
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
+from tenacity import retry, stop_after_attempt, stop_after_delay, stop_all, wait_random_exponential
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
@@ -101,9 +100,7 @@ _TEXT_MODE_MODEL_DICT = {
     wait=wait_random_exponential(min=1, max=20),
     stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
 )
-def get_embedding(
-    text: str, engine: Optional[str] = None, **kwargs: Any
-) -> List[float]:
+def get_embedding(text: str, engine: Optional[str] = None, **kwargs: Any) -> List[float]:
     """Get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
@@ -114,18 +111,14 @@ def get_embedding(
 
     """
     text = text.replace("\n", " ")
-    return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
-        "embedding"
-    ]
+    return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0]["embedding"]
 
 
 @retry(
     wait=wait_random_exponential(min=1, max=20),
     stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
 )
-async def aget_embedding(
-    text: str, engine: Optional[str] = None, **kwargs: Any
-) -> List[float]:
+async def aget_embedding(text: str, engine: Optional[str] = None, **kwargs: Any) -> List[float]:
     """Asynchronously get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
@@ -138,9 +131,9 @@ async def aget_embedding(
     # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
 
-    return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))[
-        "data"
-    ][0]["embedding"]
+    return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))["data"][0][
+        "embedding"
+    ]
 
 
 @retry(
@@ -189,9 +182,7 @@ async def aget_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = (
-        await openai.Embedding.acreate(input=list_of_text, model=engine, **kwargs)
-    ).data
+    data = (await openai.Embedding.acreate(input=list_of_text, model=engine, **kwargs)).data
     return [d["embedding"] for d in data]
 
 
@@ -251,9 +242,7 @@ class OpenAIEmbedding(BaseEmbedding):
         # Validate that either the openai.api_key property
         # or OPENAI_API_KEY env variable are set to a valid key
         # Raises ValueError if missing or doesn't match valid format
-        validate_openai_api_key(
-            kwargs.get("api_key", None), kwargs.get("api_type", None)
-        )
+        validate_openai_api_key(kwargs.get("api_key", None), kwargs.get("api_type", None))
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)

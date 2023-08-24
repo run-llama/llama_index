@@ -2,7 +2,10 @@
 
 from typing import Any, Optional, Sequence
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.objects.base_node_mapping import BaseObjectNodeMapping

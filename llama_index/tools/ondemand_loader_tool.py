@@ -7,7 +7,10 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
@@ -120,8 +123,7 @@ class OnDemandLoaderTool(AsyncBaseTool):
     def _parse_args(self, *args: Any, **kwargs: Any) -> Tuple[str, List[Document]]:
         if self._query_str_kwargs_key not in kwargs:
             raise ValueError(
-                "Missing query_str in kwargs with parameter name: "
-                f"{self._query_str_kwargs_key}"
+                "Missing query_str in kwargs with parameter name: " f"{self._query_str_kwargs_key}"
             )
         if self._use_query_str_in_loader:
             query_str = kwargs[self._query_str_kwargs_key]

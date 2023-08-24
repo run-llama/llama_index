@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Optional, Tuple, cast
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index import Prompt
 from llama_index.callbacks import CallbackManager
@@ -10,17 +13,12 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.base import LLM, BaseLLMPredictor, LLMMetadata
 from llama_index.llm_predictor.vellum.exceptions import VellumGenerateException
 from llama_index.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
-from llama_index.llm_predictor.vellum.types import (
-    VellumCompiledPrompt,
-    VellumRegisteredPrompt,
-)
+from llama_index.llm_predictor.vellum.types import VellumCompiledPrompt, VellumRegisteredPrompt
 from llama_index.types import TokenAsyncGen, TokenGen
 
 
 class VellumPredictor(BaseLLMPredictor):
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    callback_manager: CallbackManager = Field(default_factory=CallbackManager, exclude=True)
 
     _vellum_client: Any = PrivateAttr()
     _async_vellum_client = PrivateAttr()
@@ -34,9 +32,7 @@ class VellumPredictor(BaseLLMPredictor):
         vellum_api_key: str,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        import_err_msg = (
-            "`vellum` package not found, please run `pip install vellum-ai`"
-        )
+        import_err_msg = "`vellum` package not found, please run `pip install vellum-ai`"
         try:
             from vellum.client import AsyncVellum, Vellum  # noqa: F401
         except ImportError:
@@ -76,14 +72,10 @@ class VellumPredictor(BaseLLMPredictor):
 
         result = self._vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))],
         )
 
-        completion_text = self._process_generate_response(
-            result, compiled_prompt, event_id
-        )
+        completion_text = self._process_generate_response(result, compiled_prompt, event_id)
 
         return completion_text
 
@@ -98,9 +90,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         responses = self._vellum_client.generate_stream(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))],
         )
 
         def text_generator() -> TokenGen:
@@ -125,9 +115,7 @@ class VellumPredictor(BaseLLMPredictor):
                 if result.error:
                     raise VellumGenerateException(result.error.message)
                 elif not result.data:
-                    raise VellumGenerateException(
-                        "Unknown error occurred while generating"
-                    )
+                    raise VellumGenerateException("Unknown error occurred while generating")
 
                 completion_text_delta = result.data.completion.text
                 complete_text += completion_text_delta
@@ -147,14 +135,10 @@ class VellumPredictor(BaseLLMPredictor):
 
         result = await self._async_vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))],
         )
 
-        completion_text = self._process_generate_response(
-            result, compiled_prompt, event_id
-        )
+        completion_text = self._process_generate_response(result, compiled_prompt, event_id)
 
         return completion_text
 
@@ -172,9 +156,7 @@ class VellumPredictor(BaseLLMPredictor):
         """Prepare a generate call."""
 
         registered_prompt = self._prompt_registry.from_prompt(prompt)
-        compiled_prompt = self._prompt_registry.get_compiled_prompt(
-            registered_prompt, prompt_args
-        )
+        compiled_prompt = self._prompt_registry.get_compiled_prompt(registered_prompt, prompt_args)
 
         cb_payload = {
             **prompt_args,

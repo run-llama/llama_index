@@ -1,7 +1,10 @@
 import os
 from typing import Any, Optional
 
-from pydantic.v1 import Field, PrivateAttr
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
@@ -21,9 +24,7 @@ class PredibaseLLM(CustomLLM):
     predibase_api_key: str = Field(description="The Predibase API key to use.")
     max_new_tokens: int = Field(description="The number of tokens to generate.")
     temperature: float = Field(description="The temperature to use for sampling.")
-    context_window: int = Field(
-        description="The number of context tokens available to the LLM."
-    )
+    context_window: int = Field(description="The number of context tokens available to the LLM.")
 
     _client: Any = PrivateAttr()
 
@@ -37,9 +38,7 @@ class PredibaseLLM(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         predibase_api_key = (
-            predibase_api_key
-            if predibase_api_key
-            else os.environ.get("PREDIBASE_API_TOKEN")
+            predibase_api_key if predibase_api_key else os.environ.get("PREDIBASE_API_TOKEN")
         )
         assert predibase_api_key is not None
 
@@ -85,9 +84,7 @@ class PredibaseLLM(CustomLLM):
             "max_new_tokens": self.max_new_tokens,
         }
         results = self._client.prompt(prompt, self.model_name, options=model_kwargs)
-        return CompletionResponse(
-            text=results.loc[0, "response"], additional_kwargs=model_kwargs
-        )
+        return CompletionResponse(text=results.loc[0, "response"], additional_kwargs=model_kwargs)
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> "CompletionResponseGen":

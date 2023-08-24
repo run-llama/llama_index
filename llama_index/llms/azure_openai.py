@@ -1,6 +1,9 @@
 from typing import Any, Dict, Optional
 
-from pydantic.v1 import Field
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
@@ -78,9 +81,7 @@ class AzureOpenAI(OpenAI):
             if openai.api_version is None:
                 raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
         except ImportError:
-            raise ImportError(
-                "You must install the `openai` package to use Azure OpenAI."
-            )
+            raise ImportError("You must install the `openai` package to use Azure OpenAI.")
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:

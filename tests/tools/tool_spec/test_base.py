@@ -2,7 +2,10 @@
 
 from typing import List, Type
 
-from pydantic.v1 import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.types import ToolMetadata
@@ -67,9 +70,7 @@ def test_tool_spec() -> None:
     # test metadata mapping
     tools = tool_spec.to_tool_list(
         func_to_metadata_mapping={
-            "foo": ToolMetadata(
-                "foo_description", name="foo_name", fn_schema=FooSchema
-            ),
+            "foo": ToolMetadata("foo_description", name="foo_name", fn_schema=FooSchema),
         }
     )
     assert len(tools) == 3

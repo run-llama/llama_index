@@ -2,7 +2,10 @@
 
 from typing import Any, Dict, List, Optional
 
-from pydantic.v1 import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
 
 from llama_index.bridge.langchain import print_text
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
@@ -46,9 +49,7 @@ class QueryNode(BaseModel):
     tool_name: Optional[str] = Field(
         default=None, description="Name of the tool to execute the `query_str`."
     )
-    dependencies: List[int] = Field(
-        default_factory=list, description=QUERYNODE_DEPENDENCIES_DESC
-    )
+    dependencies: List[int] = Field(default_factory=list, description=QUERYNODE_DEPENDENCIES_DESC)
 
 
 class QueryPlan(BaseModel):
@@ -136,37 +137,26 @@ class QueryPlanTool(BaseTool):
 
         return metadata
 
-    def _execute_node(
-        self, node: QueryNode, nodes_dict: Dict[int, QueryNode]
-    ) -> ToolOutput:
+    def _execute_node(self, node: QueryNode, nodes_dict: Dict[int, QueryNode]) -> ToolOutput:
         """Execute node."""
         print_text(f"Executing node {node.json()}\n", color="blue")
         if len(node.dependencies) > 0:
-            print_text(
-                f"Executing {len(node.dependencies)} child nodes\n", color="pink"
-            )
-            child_query_nodes: List[QueryNode] = [
-                nodes_dict[dep] for dep in node.dependencies
-            ]
+            print_text(f"Executing {len(node.dependencies)} child nodes\n", color="pink")
+            child_query_nodes: List[QueryNode] = [nodes_dict[dep] for dep in node.dependencies]
             # execute the child nodes first
             child_responses: List[ToolOutput] = [
                 self._execute_node(child, nodes_dict) for child in child_query_nodes
             ]
             # form the child Node/NodeWithScore objects
             child_nodes = []
-            for child_query_node, child_response in zip(
-                child_query_nodes, child_responses
-            ):
+            for child_query_node, child_response in zip(child_query_nodes, child_responses):
                 node_text = (
-                    f"Query: {child_query_node.query_str}\n"
-                    f"Response: {str(child_response)}\n"
+                    f"Query: {child_query_node.query_str}\n" f"Response: {str(child_response)}\n"
                 )
                 child_node = TextNode(text=node_text)
                 child_nodes.append(child_node)
             # use response synthesizer to combine results
-            child_nodes_with_scores = [
-                NodeWithScore(node=n, score=1.0) for n in child_nodes
-            ]
+            child_nodes_with_scores = [NodeWithScore(node=n, score=1.0) for n in child_nodes]
             response_obj = self._response_synthesizer.synthesize(
                 query=node.query_str,
                 nodes=child_nodes_with_scores,
@@ -198,9 +188,7 @@ class QueryPlanTool(BaseTool):
         for node in nodes_dict.values():
             for dep in node.dependencies:
                 node_counts[dep] += 1
-        root_node_ids = [
-            node_id for node_id, count in node_counts.items() if count == 0
-        ]
+        root_node_ids = [node_id for node_id, count in node_counts.items() if count == 0]
         return [nodes_dict[node_id] for node_id in root_node_ids]
 
     def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
