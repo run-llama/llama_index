@@ -21,7 +21,7 @@ class BM25Retriever(BaseRetriever):
         try:
             from rank_bm25 import BM25Okapi
         except ImportError:
-            raise ImportError("Please install rank_bm25 to use BM25Retriever")
+            raise ImportError("Please install rank_bm25: pip install rank-bm25")
 
         self._docstore = index.docstore
         self._tokenizer = tokenizer
