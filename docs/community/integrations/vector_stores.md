@@ -12,6 +12,7 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
+- [Apache Cassandra®](https://cassandra.apache.org/) and compatible databases such as [Astra DB](https://www.datastax.com/press-release/datastax-adds-vector-search-to-astra-db-on-google-cloud-for-building-real-time-generative-ai-applications) (`CassandraVectorStore`)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
@@ -24,7 +25,7 @@ as the storage backend for `VectorStoreIndex`.
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
-- MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart] (https://www.mongodb.com/atlas/database).
+- MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
@@ -224,6 +225,33 @@ collection_name = "paul_graham"
 vector_store = QdrantVectorStore(
     client=client,
     collection_name=collection_name,
+)
+```
+
+**Cassandra** (covering DataStax Astra DB as well, which is built on Cassandra)
+
+```python
+from cassandra.cluster import Cluster
+from cassandra.auth import PlainTextAuthProvider
+from llama_index.vector_stores import CassandraVectorStore
+
+# for a Cassandra cluster:
+cluster = Cluster(["127.0.0.1"])
+# for an Astra DB cloud instance:
+cluster = Cluster(
+  cloud={"secure_connect_bundle": "/home/USER/secure-bundle.zip"},
+  auth_provider=PlainTextAuthProvider("token", "AstraCS:...")
+)
+#
+session = cluster.connect()
+keyspace = "my_cassandra_keyspace"
+
+vector_store = CassandraVectorStore(
+    session=session,
+    keyspace=keyspace,
+    table="llamaindex_vector_test_1",
+    embedding_dimension=1536,
+    #insertion_batch_size=50,  # optional
 )
 ```
 
@@ -473,6 +501,7 @@ maxdepth: 1
 ../../examples/vector_stores/ZepIndexDemo.ipynb
 ../../examples/vector_stores/OpensearchDemo.ipynb
 ../../examples/vector_stores/PineconeIndexDemo.ipynb
+../../examples/vector_stores/CassandraIndexDemo.ipynb
 ../../examples/vector_stores/ChromaIndexDemo.ipynb
 ../../examples/vector_stores/LanceDBIndexDemo.ipynb
 ../../examples/vector_stores/MilvusIndexDemo.ipynb

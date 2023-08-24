@@ -63,7 +63,7 @@ text_splitter = SentenceSplitter(
   tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode
 )
 
-node_parser = SimpleNodeParser(text_splitter=text_splitter)
+node_parser = SimpleNodeParser.from_defaults(text_splitter=text_splitter)
 ```
 
 `TokenTextSplitter` default configuration:
@@ -80,7 +80,7 @@ text_splitter = TokenTextSplitter(
   tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode
 )
 
-node_parser = SimpleNodeParser(text_splitter=text_splitter)
+node_parser = SimpleNodeParser.from_defaults(text_splitter=text_splitter)
 ```
 
 `CodeSplitter` configuration:
@@ -95,7 +95,7 @@ text_splitter = CodeSplitter(
   max_chars=1500,
 )
 
-node_parser = SimpleNodeParser(text_splitter=text_splitter)
+node_parser = SimpleNodeParser.from_defaults(text_splitter=text_splitter)
 ```
 
 ## SentenceWindowNodeParser
