@@ -41,6 +41,8 @@ By default, embeddings requests are sent to OpenAI in batches of 10. For some us
 embed_model = OpenAIEmbedding(embed_batch_size=42)
 ```
 
+(local-embedding-models)=
+
 ### Local Embedding Models
 
 The easiest way to use a local model is:
