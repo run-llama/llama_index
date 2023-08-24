@@ -1,7 +1,7 @@
 # 🗂️ LlamaIndex 🦙
-![PyPI - Downloads](https://img.shields.io/pypi/dm/llama-index)
-![GitHub contributors](https://img.shields.io/github/contributors/jerryjliu/llama_index)
-![Discord](https://img.shields.io/discord/1059199217496772688)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/llama-index)](https://pypi.org/project/llama-index/)
+[![GitHub contributors](https://img.shields.io/github/contributors/jerryjliu/llama_index)](https://github.com/jerryjliu/llama_index/graphs/contributors)
+[![Discord](https://img.shields.io/discord/1059199217496772688)](https://discord.gg/dGcwcsnxhU)
 
 
 LlamaIndex (GPT Index) is a data framework for your LLM application.
