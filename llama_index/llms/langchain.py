@@ -1,8 +1,12 @@
-from pydantic import PrivateAttr
 from threading import Thread
 from typing import Any, Generator, Optional, Sequence
 
 from langchain.base_language import BaseLanguageModel
+
+try:
+    from pydantic.v1 import PrivateAttr
+except ImportError:
+    from pydantic import PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
@@ -16,8 +20,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_completion_callback,
     llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.langchain_utils import (
     from_lc_messages,

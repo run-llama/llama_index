@@ -1,6 +1,9 @@
 from typing import Any, Dict, Optional, Type, Union
 
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI

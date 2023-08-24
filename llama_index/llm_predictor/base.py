@@ -4,7 +4,10 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, PrivateAttr
+try:
+    from pydantic.v1 import BaseModel, PrivateAttr
+except ImportError:
+    from pydantic import BaseModel, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llm_predictor.utils import (

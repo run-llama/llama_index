@@ -4,7 +4,11 @@ from typing import List, Optional, Set
 
 import numpy as np
 import pandas as pd
-from pydantic import Field
+
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
