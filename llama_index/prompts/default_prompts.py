@@ -242,7 +242,7 @@ DEFAULT_TABLE_CONTEXT_PROMPT = PromptTemplate(
     DEFAULT_TABLE_CONTEXT_TMPL, prompt_type=PromptType.TABLE_CONTEXT
 )
 
-# NOTE: by partially filling schema, we can reduce to a RefinePrompt
+# NOTE: by partially filling schema, we can reduce to a refine prompt
 # that we can feed to ur table
 DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
     "We have provided a table schema below. "
