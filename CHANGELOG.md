@@ -4,11 +4,13 @@
 
 ### New Features
 - Added support for FalkorDB/RedisGraph graph store (#7346)
+- Added directed sub-graph RAG (#7378)
 
 ### Bug Fixes / Nits
 - Added `max_tokens` to `Xinference` LLM (#7372)
 - Support cache dir creation in multithreaded apps (#7365)
 - Ensure temperature is a float for openai (#7382)
+- Remove duplicate subjects in knowledge graph retriever (#7378)
 
 ## [0.8.8] - 2023-08-23
 
