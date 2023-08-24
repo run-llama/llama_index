@@ -5,7 +5,8 @@ from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
 from pydantic import BaseModel, Field, root_validator
-from typing import Any, Dict, List, Optional, Self, Union
+from typing import Any, Dict, List, Optional, Union
+from typing_extensions import Self
 
 from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.utils import SAMPLE_TEXT
