@@ -63,7 +63,7 @@ class BM25Retriever(BaseRetriever):
 
         scored_nodes = self._get_scored_nodes(query_bundle.query_str)
 
-        # Sort and get top_k nodes, score range => 0...1, closer to 1 means more relevant
+        # Sort and get top_k nodes, score range => 0..1, closer to 1 means more relevant
         nodes = sorted(scored_nodes, key=lambda x: x.score or 0.0, reverse=True)
         top_k_nodes = nodes[: self._similarity_top_k]
 
