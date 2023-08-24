@@ -186,10 +186,14 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             if self.mode == "next":
                 all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
             elif self.mode == "previous":
-                all_nodes.update(get_backward_nodes(node, self.num_nodes, self.docstore))
+                all_nodes.update(
+                    get_backward_nodes(node, self.num_nodes, self.docstore)
+                )
             elif self.mode == "both":
                 all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
-                all_nodes.update(get_backward_nodes(node, self.num_nodes, self.docstore))
+                all_nodes.update(
+                    get_backward_nodes(node, self.num_nodes, self.docstore)
+                )
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
@@ -339,7 +343,9 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             if mode == "next":
                 all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
             elif mode == "previous":
-                all_nodes.update(get_backward_nodes(node, self.num_nodes, self.docstore))
+                all_nodes.update(
+                    get_backward_nodes(node, self.num_nodes, self.docstore)
+                )
             elif mode == "none":
                 pass
             else:

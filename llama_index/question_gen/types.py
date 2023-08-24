@@ -26,7 +26,9 @@ class SubQuestionList(BaseModel):
 
 class BaseQuestionGenerator(ABC):
     @abstractmethod
-    def generate(self, tools: Sequence[ToolMetadata], query: QueryBundle) -> List[SubQuestion]:
+    def generate(
+        self, tools: Sequence[ToolMetadata], query: QueryBundle
+    ) -> List[SubQuestion]:
         pass
 
     @abstractmethod

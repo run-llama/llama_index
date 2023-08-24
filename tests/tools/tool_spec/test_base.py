@@ -70,7 +70,9 @@ def test_tool_spec() -> None:
     # test metadata mapping
     tools = tool_spec.to_tool_list(
         func_to_metadata_mapping={
-            "foo": ToolMetadata("foo_description", name="foo_name", fn_schema=FooSchema),
+            "foo": ToolMetadata(
+                "foo_description", name="foo_name", fn_schema=FooSchema
+            ),
         }
     )
     assert len(tools) == 3

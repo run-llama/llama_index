@@ -30,7 +30,9 @@ class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
 
             model = hub.load(handle)
         except ImportError:
-            raise ImportError("Please install tensorflow_hub: `pip install tensorflow_hub`")
+            raise ImportError(
+                "Please install tensorflow_hub: `pip install tensorflow_hub`"
+            )
 
         self._model = model
         super().__init__(

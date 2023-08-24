@@ -55,7 +55,9 @@ class FunctionTool(AsyncBaseTool):
         docstring = fn.__doc__
         description = description or f"{name}{signature(fn)}\n{docstring}"
         if fn_schema is None:
-            fn_schema = create_schema_from_function(f"{name}", fn, additional_fields=None)
+            fn_schema = create_schema_from_function(
+                f"{name}", fn, additional_fields=None
+            )
         metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
         return cls(fn=fn, metadata=metadata, async_fn=async_fn)
 
@@ -99,7 +101,9 @@ class FunctionTool(AsyncBaseTool):
         **langchain_tool_kwargs: Any,
     ) -> Tool:
         """To langchain tool."""
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(langchain_tool_kwargs)
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
         return Tool.from_function(
             func=self.fn,
             coroutine=self.async_fn,
@@ -111,7 +115,9 @@ class FunctionTool(AsyncBaseTool):
         **langchain_tool_kwargs: Any,
     ) -> StructuredTool:
         """To langchain structured tool."""
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(langchain_tool_kwargs)
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
         return StructuredTool.from_function(
             func=self.fn,
             coroutine=self.async_fn,

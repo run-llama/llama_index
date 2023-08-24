@@ -40,7 +40,9 @@ class SimpleNodeParser(NodeParser):
     metadata_extractor: Optional[MetadataExtractor] = Field(
         default=None, description="Metadata extraction pipeline to apply to nodes."
     )
-    callback_manager: CallbackManager = Field(default_factory=CallbackManager, exclude=True)
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, exclude=True
+    )
 
     @classmethod
     def from_defaults(

@@ -12,7 +12,9 @@ except ImportError:
 def create_schema_from_function(
     name: str,
     func: Callable[..., Any],
-    additional_fields: Optional[List[Union[Tuple[str, Type, Any], Tuple[str, Type]]]] = None,
+    additional_fields: Optional[
+        List[Union[Tuple[str, Type, Any], Tuple[str, Type]]]
+    ] = None,
 ) -> Type[BaseModel]:
     """Create schema from function."""
     fields = {}
@@ -46,7 +48,8 @@ def create_schema_from_function(
             fields[field_name] = (field_type, FieldInfo())
         else:
             raise ValueError(
-                f"Invalid additional field info: {field_info}. " "Must be a tuple of length 2 or 3."
+                f"Invalid additional field info: {field_info}. "
+                "Must be a tuple of length 2 or 3."
             )
 
     return create_model(name, **fields)  # type: ignore

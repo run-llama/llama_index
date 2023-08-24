@@ -123,7 +123,9 @@ class DocArrayVectorStore(VectorStore, ABC):
         docs = DocList[self._schema](  # type: ignore[name-defined]
             self._schema(
                 id=result.id,
-                metadata=node_to_metadata_dict(result.node, flat_metadata=self.flat_metadata),
+                metadata=node_to_metadata_dict(
+                    result.node, flat_metadata=self.flat_metadata
+                ),
                 text=result.node.get_content(metadata_mode=MetadataMode.NONE),
                 embedding=result.embedding,
             )
@@ -162,7 +164,8 @@ class DocArrayVectorStore(VectorStore, ABC):
         if query.filters:
             # only for ExactMatchFilters
             filter_query = {
-                "metadata__" + filter.key: {"$eq": filter.value} for filter in query.filters.filters
+                "metadata__" + filter.key: {"$eq": filter.value}
+                for filter in query.filters.filters
             }
             query = (
                 self._index.build_query()  # get empty query object
@@ -190,7 +193,9 @@ class DocArrayVectorStore(VectorStore, ABC):
                 node.text = doc.text
             except Exception:
                 # TODO: legacy metadata support
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(doc.metadata)
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    doc.metadata
+                )
                 node = TextNode(
                     id_=doc.id,
                     text=doc.text,

@@ -184,7 +184,9 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
 
     def _validate_program(self, pydantic_program: BasePydanticProgram) -> None:
         if pydantic_program.output_cls != DataFrameRowsOnly:
-            raise ValueError("Output class of pydantic program must be `DataFramRowsOnly`.")
+            raise ValueError(
+                "Output class of pydantic program must be `DataFramRowsOnly`."
+            )
 
     @classmethod
     def from_defaults(
@@ -202,7 +204,8 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
         # either one of df or column_schema needs to be specified
         if df is None and column_schema is None:
             raise ValueError(
-                "Either `df` or `column_schema` must be specified for " "DFRowsOutputParser."
+                "Either `df` or `column_schema` must be specified for "
+                "DFRowsOutputParser."
             )
         # first, inject the column schema into the template string
         if column_schema is None:

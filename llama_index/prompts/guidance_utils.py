@@ -153,5 +153,7 @@ def parse_pydantic_from_guidance_program(
         json_dict = parse_json_markdown(output)
         sub_questions = cls.parse_obj(json_dict)
     except Exception as e:
-        raise OutputParserException("Failed to parse pydantic object from guidance program") from e
+        raise OutputParserException(
+            "Failed to parse pydantic object from guidance program"
+        ) from e
     return sub_questions

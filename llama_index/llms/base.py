@@ -133,7 +133,9 @@ def llm_chat_callback() -> Callable:
 
             return f_return_val
 
-        def wrapped_llm_chat(_self: Any, messages: Sequence[ChatMessage], **kwargs: Any) -> Any:
+        def wrapped_llm_chat(
+            _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 event_id = callback_manager.on_event_start(
                     CBEventType.LLM, payload={EventPayload.MESSAGES: messages}
@@ -208,7 +210,9 @@ def llm_completion_callback() -> Callable:
 
             yield callback_manager
 
-        async def wrapped_async_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
+        async def wrapped_async_llm_predict(
+            _self: Any, *args: Any, **kwargs: Any
+        ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 event_id = callback_manager.on_event_start(
                     CBEventType.LLM, payload={EventPayload.PROMPT: args[0]}
@@ -319,7 +323,9 @@ class LLM(BaseModel):
         arbitrary_types_allowed = True
 
     @validator("callback_manager", pre=True)
-    def _validate_callback_manager(cls, v: Optional[CallbackManager]) -> CallbackManager:
+    def _validate_callback_manager(
+        cls, v: Optional[CallbackManager]
+    ) -> CallbackManager:
         if v is None:
             return CallbackManager([])
         return v
@@ -341,7 +347,9 @@ class LLM(BaseModel):
         pass
 
     @abstractmethod
-    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
         """Streaming chat endpoint for LLM."""
         pass
 
@@ -352,7 +360,9 @@ class LLM(BaseModel):
 
     # ===== Async Endpoints =====
     @abstractmethod
-    async def achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         """Async chat endpoint for LLM."""
         pass
 
@@ -369,6 +379,8 @@ class LLM(BaseModel):
         pass
 
     @abstractmethod
-    async def astream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseAsyncGen:
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
         pass

@@ -44,7 +44,9 @@ from llama_index.llms.openai_utils import (
 class OpenAI(LLM):
     model: str = Field(description="The OpenAI model to use.")
     temperature: float = Field(description="The tempature to use during generation.")
-    max_tokens: Optional[int] = Field(description="The maximum number of tokens to generate.")
+    max_tokens: Optional[int] = Field(
+        description="The maximum number of tokens to generate."
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additonal kwargs for the OpenAI API."
     )
@@ -108,7 +110,9 @@ class OpenAI(LLM):
         return chat_fn(messages, **kwargs)
 
     @llm_chat_callback()
-    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
         if self._is_chat_model:
             stream_chat_fn = self._stream_chat
         else:
@@ -172,7 +176,9 @@ class OpenAI(LLM):
 
         return ChatResponse(message=message, raw=response)
 
-    def _stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
+    def _stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
         if not self._is_chat_model:
             raise ValueError("This model is not a chat model.")
 
@@ -277,7 +283,9 @@ class OpenAI(LLM):
         try:
             import tiktoken
         except ImportError:
-            raise ImportError("Please install tiktoken to use the max_tokens=None feature.")
+            raise ImportError(
+                "Please install tiktoken to use the max_tokens=None feature."
+            )
         context_window = self.metadata.context_window
         encoding = tiktoken.encoding_for_model(self._get_model_name())
         tokens = encoding.encode(prompt)
@@ -313,7 +321,9 @@ class OpenAI(LLM):
         if self._is_chat_model:
             astream_chat_fn = self._astream_chat
         else:
-            astream_chat_fn = astream_completion_to_chat_decorator(self._astream_complete)
+            astream_chat_fn = astream_completion_to_chat_decorator(
+                self._astream_complete
+            )
         return await astream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
@@ -325,14 +335,20 @@ class OpenAI(LLM):
         return await acomplete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
-    async def astream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseAsyncGen:
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
         if self._is_chat_model:
-            astream_complete_fn = astream_chat_to_completion_decorator(self._astream_chat)
+            astream_complete_fn = astream_chat_to_completion_decorator(
+                self._astream_chat
+            )
         else:
             astream_complete_fn = self._astream_complete
         return await astream_complete_fn(prompt, **kwargs)
 
-    async def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    async def _achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         if not self._is_chat_model:
             raise ValueError("This model is not a chat model.")
 
@@ -424,7 +440,9 @@ class OpenAI(LLM):
             raw=response,
         )
 
-    async def _astream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseAsyncGen:
+    async def _astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
         if self._is_chat_model:
             raise ValueError("This model is a chat model.")
 

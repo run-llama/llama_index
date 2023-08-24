@@ -132,15 +132,18 @@ class LoadAndSearchToolSpec(BaseToolSpec):
                 self._index.insert(doc, **self._index_kwargs)
         else:
             self._index = self._index_cls.from_documents(docs, **self._index_kwargs)
-        return "Content loaded! You can now search the information using read_{}".format(
-            self._metadata.name
+        return (
+            "Content loaded! You can now search the information using read_{}".format(
+                self._metadata.name
+            )
         )
 
     def read(self, query: str) -> Any:
         # Query the index for the result
         if not self._index:
             err_msg = (
-                "Error: No content has been loaded into the index. " "You must call {} first"
+                "Error: No content has been loaded into the index. "
+                "You must call {} first"
             ).format(self._metadata.name)
             return err_msg
         query_engine = self._index.as_query_engine()

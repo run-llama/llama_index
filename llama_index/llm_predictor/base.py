@@ -87,7 +87,9 @@ class LLMPredictor(BaseLLMPredictor):
         if callback_manager:
             self._llm.callback_manager = callback_manager
 
-        super().__init__(system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt)
+        super().__init__(
+            system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt
+        )
 
     @property
     def llm(self) -> LLM:
@@ -169,7 +171,9 @@ class LLMPredictor(BaseLLMPredictor):
         """Add system and query wrapper prompts to base prompt"""
         if self.system_prompt:
             prompt.prompt_selector.default_prompt.template = (
-                self.system_prompt + "\n\n" + prompt.prompt_selector.default_prompt.template
+                self.system_prompt
+                + "\n\n"
+                + prompt.prompt_selector.default_prompt.template
             )
         if self.query_wrapper_prompt:
             prompt.partial_dict["query_str"] = self.query_wrapper_prompt.format(
@@ -180,5 +184,7 @@ class LLMPredictor(BaseLLMPredictor):
     def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Add system prompt to chat message list"""
         if self.system_prompt:
-            messages = [ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt)] + messages
+            messages = [
+                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt)
+            ] + messages
         return messages

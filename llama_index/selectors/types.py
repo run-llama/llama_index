@@ -27,13 +27,17 @@ class MultiSelection(BaseModel):
     @property
     def ind(self) -> int:
         if len(self.selections) != 1:
-            raise ValueError(f"There are {len(self.selections)} selections, " "please use .inds.")
+            raise ValueError(
+                f"There are {len(self.selections)} selections, " "please use .inds."
+            )
         return self.selections[0].index
 
     @property
     def reason(self) -> str:
         if len(self.reasons) != 1:
-            raise ValueError(f"There are {len(self.reasons)} selections, " "please use .reasons.")
+            raise ValueError(
+                f"There are {len(self.reasons)} selections, " "please use .reasons."
+            )
         return self.selections[0].reason
 
     @property
@@ -68,20 +72,28 @@ def _wrap_query(query: QueryType) -> QueryBundle:
 
 
 class BaseSelector(ABC):
-    def select(self, choices: Sequence[MetadataType], query: QueryType) -> SelectorResult:
+    def select(
+        self, choices: Sequence[MetadataType], query: QueryType
+    ) -> SelectorResult:
         metadatas = [_wrap_choice(choice) for choice in choices]
         query_bundle = _wrap_query(query)
         return self._select(choices=metadatas, query=query_bundle)
 
-    async def aselect(self, choices: Sequence[MetadataType], query: QueryType) -> SelectorResult:
+    async def aselect(
+        self, choices: Sequence[MetadataType], query: QueryType
+    ) -> SelectorResult:
         metadatas = [_wrap_choice(choice) for choice in choices]
         query_bundle = _wrap_query(query)
         return await self._aselect(choices=metadatas, query=query_bundle)
 
     @abstractmethod
-    def _select(self, choices: Sequence[ToolMetadata], query: QueryBundle) -> SelectorResult:
+    def _select(
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
+    ) -> SelectorResult:
         pass
 
     @abstractmethod
-    async def _aselect(self, choices: Sequence[ToolMetadata], query: QueryBundle) -> SelectorResult:
+    async def _aselect(
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
+    ) -> SelectorResult:
         pass

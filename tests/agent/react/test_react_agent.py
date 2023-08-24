@@ -9,7 +9,12 @@ except ImportError:
 
 from llama_index.agent.react.base import ReActAgent
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
-from llama_index.llms.base import ChatMessage, ChatResponse, ChatResponseGen, MessageRole
+from llama_index.llms.base import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    MessageRole,
+)
 from llama_index.llms.mock import MockLLM
 from llama_index.tools.function_tool import FunctionTool
 
@@ -139,7 +144,9 @@ class MockStreamChatLLM(MockLLM):
 
         super().__init__()
 
-    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
         del messages  # unused
         full_message = self._responses[self._i]
         self._i += 1

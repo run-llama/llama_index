@@ -23,7 +23,11 @@ from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.langchain_utils import from_lc_messages, get_llm_metadata, to_lc_messages
+from llama_index.llms.langchain_utils import (
+    from_lc_messages,
+    get_llm_metadata,
+    to_lc_messages,
+)
 
 
 class LangChainLLM(LLM):
@@ -58,7 +62,9 @@ class LangChainLLM(LLM):
         return CompletionResponse(text=output_str)
 
     @llm_chat_callback()
-    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
         handler = StreamingGeneratorCallbackHandler()
 
         if not hasattr(self._llm, "streaming"):
@@ -111,7 +117,9 @@ class LangChainLLM(LLM):
         return gen()
 
     @llm_chat_callback()
-    async def achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         # TODO: Implement async chat
         return self.chat(messages, **kwargs)
 
@@ -133,7 +141,9 @@ class LangChainLLM(LLM):
         return gen()
 
     @llm_completion_callback()
-    async def astream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseAsyncGen:
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
         # TODO: Implement async stream_complete
 
         async def gen() -> CompletionResponseAsyncGen:

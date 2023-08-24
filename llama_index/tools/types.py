@@ -96,7 +96,9 @@ class BaseTool:
         **langchain_tool_kwargs: Any,
     ) -> Tool:
         """To langchain tool."""
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(langchain_tool_kwargs)
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
         return Tool.from_function(
             func=self.__call__,
             **langchain_tool_kwargs,
@@ -107,7 +109,9 @@ class BaseTool:
         **langchain_tool_kwargs: Any,
     ) -> StructuredTool:
         """To langchain structured tool."""
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(langchain_tool_kwargs)
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
         return StructuredTool.from_function(
             func=self.__call__,
             **langchain_tool_kwargs,

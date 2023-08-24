@@ -76,7 +76,9 @@ class BaseNode(BaseModel):
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
     )
-    embedding: Optional[List[float]] = Field(default=None, description="Embedding of the node.")
+    embedding: Optional[List[float]] = Field(
+        default=None, description="Embedding of the node."
+    )
 
     """"
     metadata fields
@@ -209,23 +211,31 @@ class BaseNode(BaseModel):
 
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
-        return RelatedNodeInfo(node_id=self.node_id, metadata=self.metadata, hash=self.hash)
+        return RelatedNodeInfo(
+            node_id=self.node_id, metadata=self.metadata, hash=self.hash
+        )
 
 
 class TextNode(BaseNode):
     text: str = Field(default="", description="Text content of the node.")
-    start_char_idx: Optional[int] = Field(default=None, description="Start char index of the node.")
-    end_char_idx: Optional[int] = Field(default=None, description="End char index of the node.")
+    start_char_idx: Optional[int] = Field(
+        default=None, description="Start char index of the node."
+    )
+    end_char_idx: Optional[int] = Field(
+        default=None, description="End char index of the node."
+    )
     text_template: str = Field(
         default=DEFAULT_TEXT_NODE_TMPL,
         description=(
-            "Template for how text is formatted, with {content} and " "{metadata_str} placeholders."
+            "Template for how text is formatted, with {content} and "
+            "{metadata_str} placeholders."
         ),
     )
     metadata_template: str = Field(
         default=DEFAULT_METADATA_TMPL,
         description=(
-            "Template for how metadata is formatted, with {key} and " "{value} placeholders."
+            "Template for how metadata is formatted, with {key} and "
+            "{value} placeholders."
         ),
     )
     metadata_seperator: str = Field(
@@ -239,7 +249,9 @@ class TextNode(BaseNode):
         text = values.get("text", "")
         metadata = values.get("metadata", {})
         doc_identity = str(text) + str(metadata)
-        values["hash"] = str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+        values["hash"] = str(
+            sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
+        )
         return values
 
     @classmethod
@@ -253,7 +265,9 @@ class TextNode(BaseNode):
         if not metadata_str:
             return self.text
 
-        return self.text_template.format(content=self.text, metadata_str=metadata_str).strip()
+        return self.text_template.format(
+            content=self.text, metadata_str=metadata_str
+        ).strip()
 
     def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
         """metadata info string."""

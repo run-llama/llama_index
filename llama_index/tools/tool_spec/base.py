@@ -47,7 +47,9 @@ class BaseToolSpec:
                 docstring = func.__doc__ or ""
                 description = f"{name}{signature(func)}\n{docstring}"
                 fn_schema = self.get_fn_schema_from_fn_name(func_name)
-                metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
+                metadata = ToolMetadata(
+                    name=name, description=description, fn_schema=fn_schema
+                )
             tool = FunctionTool.from_defaults(
                 fn=func,
                 name=metadata.name,

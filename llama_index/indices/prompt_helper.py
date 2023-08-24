@@ -67,7 +67,9 @@ class PromptHelper(BaseModel):
         description="The percentage token amount that each chunk should overlap.",
     )
     chunk_size_limit: Optional[int] = Field(description="The maximum size of a chunk.")
-    separator: str = Field(default=" ", description="The separator when chunking tokens.")
+    separator: str = Field(
+        default=" ", description="The separator when chunking tokens."
+    )
 
     _tokenizer: Callable[[str], List] = PrivateAttr()
 

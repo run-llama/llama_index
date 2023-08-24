@@ -38,8 +38,12 @@ class Anthropic(LLM):
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
 
     base_url: Optional[str] = Field(default=None, description="The base URL to use.")
-    timeout: Optional[float] = Field(default=None, description="The timeout to use in seconds.")
-    max_retries: int = Field(default=10, description="The maximum number of API retries.")
+    timeout: Optional[float] = Field(
+        default=None, description="The timeout to use in seconds."
+    )
+    max_retries: int = Field(
+        default=10, description="The maximum number of API retries."
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additonal kwargs for the anthropic API."
     )
@@ -121,9 +125,13 @@ class Anthropic(LLM):
         prompt = messages_to_anthropic_prompt(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.completions.create(prompt=prompt, stream=False, **all_kwargs)
+        response = self._client.completions.create(
+            prompt=prompt, stream=False, **all_kwargs
+        )
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=response.completion),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=response.completion
+            ),
             raw=dict(response),
         )
 
@@ -133,11 +141,15 @@ class Anthropic(LLM):
         return complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
-    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
         prompt = messages_to_anthropic_prompt(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.completions.create(prompt=prompt, stream=True, **all_kwargs)
+        response = self._client.completions.create(
+            prompt=prompt, stream=True, **all_kwargs
+        )
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -159,13 +171,19 @@ class Anthropic(LLM):
         return stream_complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
-    async def achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         prompt = messages_to_anthropic_prompt(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.completions.create(prompt=prompt, stream=False, **all_kwargs)
+        response = await self._aclient.completions.create(
+            prompt=prompt, stream=False, **all_kwargs
+        )
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=response.completion),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=response.completion
+            ),
             raw=dict(response),
         )
 
@@ -181,7 +199,9 @@ class Anthropic(LLM):
         prompt = messages_to_anthropic_prompt(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.completions.create(prompt=prompt, stream=True, **all_kwargs)
+        response = await self._aclient.completions.create(
+            prompt=prompt, stream=True, **all_kwargs
+        )
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
@@ -198,6 +218,8 @@ class Anthropic(LLM):
         return gen()
 
     @llm_completion_callback()
-    async def astream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseAsyncGen:
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)

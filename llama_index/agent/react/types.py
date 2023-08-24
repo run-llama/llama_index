@@ -32,7 +32,8 @@ class ActionReasoningStep(BaseReasoningStep):
     def get_content(self) -> str:
         """Get content."""
         return (
-            f"Thought: {self.thought}\nAction: {self.action}\n" f"Action Input: {self.action_input}"
+            f"Thought: {self.thought}\nAction: {self.action}\n"
+            f"Action Input: {self.action_input}"
         )
 
     @property

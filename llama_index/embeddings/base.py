@@ -56,7 +56,9 @@ def similarity(
 class BaseEmbedding(BaseModel):
     """Base class for embeddings."""
 
-    model_name: str = Field(default="unknown", description="The name of the embedding model.")
+    model_name: str = Field(
+        default="unknown", description="The name of the embedding model."
+    )
     embed_batch_size: int = Field(
         default=DEFAULT_EMBED_BATCH_SIZE,
         description="The batch size for embedding calls.",
@@ -70,7 +72,9 @@ class BaseEmbedding(BaseModel):
         arbitrary_types_allowed = True
 
     @validator("callback_manager", pre=True)
-    def _validate_callback_manager(cls, v: Optional[CallbackManager]) -> CallbackManager:
+    def _validate_callback_manager(
+        cls, v: Optional[CallbackManager]
+    ) -> CallbackManager:
         if v is None:
             return CallbackManager([])
         return v
@@ -159,7 +163,9 @@ class BaseEmbedding(BaseModel):
         Meant to be overriden for batch queries.
 
         """
-        result = await asyncio.gather(*[self._aget_text_embedding(text) for text in texts])
+        result = await asyncio.gather(
+            *[self._aget_text_embedding(text) for text in texts]
+        )
         return result
 
     def get_text_embedding(self, text: str) -> List[float]:
@@ -245,7 +251,9 @@ class BaseEmbedding(BaseModel):
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
                 callback_payloads.append((event_id, cur_batch_texts))
-                embeddings_coroutines.append(self._aget_text_embeddings(cur_batch_texts))
+                embeddings_coroutines.append(
+                    self._aget_text_embeddings(cur_batch_texts)
+                )
                 result_ids.extend(cur_batch_ids)
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
@@ -272,7 +280,9 @@ class BaseEmbedding(BaseModel):
             embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
 
-        for (event_id, text_batch), embeddings in zip(callback_payloads, nested_embeddings):
+        for (event_id, text_batch), embeddings in zip(
+            callback_payloads, nested_embeddings
+        ):
             self.callback_manager.on_event_end(
                 CBEventType.EMBEDDING,
                 payload={

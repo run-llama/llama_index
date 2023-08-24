@@ -148,7 +148,9 @@ class GPTIndexChatMemory(BaseChatMemory):
             if self.return_messages:
                 # get source messages from ids
                 source_ids = [sn.node.node_id for sn in source_nodes]
-                source_messages = [m for id, m in self.id_to_message.items() if id in source_ids]
+                source_messages = [
+                    m for id, m in self.id_to_message.items() if id in source_ids
+                ]
                 # NOTE: type List[BaseMessage]
                 response: Any = source_messages
             else:
@@ -173,7 +175,9 @@ class GPTIndexChatMemory(BaseChatMemory):
         human_message = HumanMessage(content=inputs[prompt_input_key])
         human_message_id = get_new_id(set(self.id_to_message.keys()))
         ai_message = AIMessage(content=outputs[output_key])
-        ai_message_id = get_new_id(set(self.id_to_message.keys()).union({human_message_id}))
+        ai_message_id = get_new_id(
+            set(self.id_to_message.keys()).union({human_message_id})
+        )
 
         self.chat_memory.messages.append(human_message)
         self.chat_memory.messages.append(ai_message)

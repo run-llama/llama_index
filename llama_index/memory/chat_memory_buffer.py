@@ -31,7 +31,9 @@ class ChatMemoryBuffer(BaseMemory):
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
-        super().__init__(token_limit=state["token_limit"], chat_history=state["chat_history"])
+        super().__init__(
+            token_limit=state["token_limit"], chat_history=state["chat_history"]
+        )
 
     @root_validator(pre=True)
     def validate_memory(cls, values: dict) -> dict:
@@ -87,12 +89,16 @@ class ChatMemoryBuffer(BaseMemory):
     def get(self) -> List[ChatMessage]:
         """Get chat history."""
         message_count = len(self.chat_history)
-        message_str = " ".join([str(m.content) for m in self.chat_history[-message_count:]])
+        message_str = " ".join(
+            [str(m.content) for m in self.chat_history[-message_count:]]
+        )
         token_count = len(self.tokenizer_fn(message_str))
 
         while token_count > self.token_limit and message_count > 1:
             message_count -= 1
-            message_str = " ".join([str(m.content) for m in self.chat_history[-message_count:]])
+            message_str = " ".join(
+                [str(m.content) for m in self.chat_history[-message_count:]]
+            )
             token_count = len(self.tokenizer_fn(message_str))
 
         # catch one message longer than token limit
