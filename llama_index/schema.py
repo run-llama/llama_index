@@ -27,8 +27,9 @@ class BaseComponent(BaseModel):
         data = self.to_dict(**kwargs)
         return json.dumps(data)
 
+    # TODO: return type here not supported by current mypy version
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         if isinstance(kwargs, dict):
             data.update(kwargs)
 
@@ -36,7 +37,7 @@ class BaseComponent(BaseModel):
         return cls(**data)
 
     @classmethod
-    def from_json(cls, data_str: str, **kwargs: Any) -> Self:
+    def from_json(cls, data_str: str, **kwargs: Any) -> Self:  # type: ignore
         data = json.loads(data_str)
         return cls.from_dict(data, **kwargs)
 
