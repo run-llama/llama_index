@@ -12,7 +12,11 @@ maxdepth: 1
 
 ```
 
-Here are the main pillars of principled development of LLM and RAG applications:
+Here are the main pillars of principled development of LLM and RAG applications.
+- The first pillar is **observability**: setting up initial tools to observe, debug your system and evaluate it on ad-hoc examples.
+- The next pillar is **evaluation**: being able to evaluate different components of your system so that you can experiment and improve it in a more systematic fashion.
+- The last pillar is **monitoring**: after the application is deployed, we want to continuously monitor and test that it is performing well in production.
+
 
 % TODO: also add UX patterns doc
 
