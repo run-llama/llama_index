@@ -3,7 +3,6 @@ from llama_index.program.base_program import BasePydanticProgram
 from typing import Optional, List, Any, Type, cast
 from pydantic import BaseModel, Field
 from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.prompts.prompts import Prompt
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 import pandas as pd
 
@@ -162,16 +161,12 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
     ) -> None:
         """Init params."""
         # partial format df parser template string with column schema
-        # NOTE: hack where we use prompt class to partial format
-        orig_prompt = Prompt(df_parser_template_str)
-        new_prompt = Prompt.from_prompt(
-            orig_prompt.partial_format(
-                column_schema=column_schema,
-            )
+        prompt_template_str = df_parser_template_str.replace(
+            "{column_schema}", column_schema or ""
         )
 
         pydantic_program = pydantic_program_cls.from_defaults(
-            DataFrameRowsOnly, new_prompt.original_template, **program_kwargs
+            DataFrameRowsOnly, prompt_template_str, **program_kwargs
         )
         self._validate_program(pydantic_program)
         self._pydantic_program = pydantic_program

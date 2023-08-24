@@ -5,12 +5,23 @@
 ### New Features
 - Added support for FalkorDB/RedisGraph graph store (#7346)
 - Added directed sub-graph RAG (#7378)
+- Added support for `BM25Retriever` (#7342)
 
 ### Bug Fixes / Nits
 - Added `max_tokens` to `Xinference` LLM (#7372)
 - Support cache dir creation in multithreaded apps (#7365)
 - Ensure temperature is a float for openai (#7382)
 - Remove duplicate subjects in knowledge graph retriever (#7378)
+
+### Breaking/Deprecated API Changes
+- Refactor prompt template (#7319)
+  - Use `BasePromptTemplate` for generic typing
+  - Use `PromptTemplate`, `ChatPromptTemplate`, `SelectorPromptTemplate` as core implementations
+  - Use `LangchainPromptTemplate` for compatibility with Langchain prompt templates
+  - Fully replace specific prompt classes (e.g. `SummaryPrompt`) with generic `BasePromptTemplate` for typing in codebase.
+  - Keep `Prompt` as an alias for `PromptTemplate` for backwards compatibility.
+  - BREAKING CHANGE: remove support for `Prompt.from_langchain_prompt`, please use `template=LangchainPromptTemplate(lc_template)` instead.
+
 
 ## [0.8.8] - 2023-08-23
 
