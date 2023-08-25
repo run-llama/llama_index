@@ -12,8 +12,6 @@ try:
 except ImportError:
     from pydantic import BaseModel
 
-from llama_index.tools.function_tool import FunctionTool
-from llama_index.tools.types import ToolMetadata
 from llama_index.tools.utils import create_schema_from_function
 import asyncio
 
