@@ -1,7 +1,12 @@
-from typing import Any, Dict, Optional, Sequence
+import warnings
+from typing import Any, Dict, Optional, Sequence, Tuple
+
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
@@ -24,26 +29,50 @@ TOKEN_RATIO = 2.5
 
 
 class Xinference(CustomLLM):
+    model_uid: str = Field(description="The Xinference model to use.")
+    endpoint: str = Field(description="The Xinference endpoint URL to use.")
+    temperature: float = Field(description="The temperature to use for sampling.")
+    max_tokens: int = Field(description="The maximum new tokens to generate as answer.")
+    context_window: int = Field(
+        description="The maximum number of context tokens for the model."
+    )
+    model_description: Dict[str, Any] = Field(
+        description="The model description from Xinference."
+    )
+
+    _generator: Any = PrivateAttr()
+
     def __init__(
         self,
         model_uid: str,
         endpoint: str,
         temperature: float = 1.0,
+        max_tokens: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.temperature = temperature
-        self.model_uid = model_uid
-        self.endpoint = endpoint
-        self.callback_manager = callback_manager or CallbackManager([])
+        generator, context_window, model_description = self.load_model(
+            model_uid, endpoint
+        )
+        self._generator = generator
+        if max_tokens is None:
+            max_tokens = context_window // 4
+        elif max_tokens > context_window:
+            raise ValueError(
+                f"received max_tokens {max_tokens} with context window {context_window}"
+                "max_tokens can not exceed the context window of the model"
+            )
 
-        self._model_description = None
-        self._context_window = None
-        self._generator = None
-        self._client = None
-        self._model = None
-        self.load()
+        super().__init__(
+            model_uid=model_uid,
+            endpoint=endpoint,
+            temperature=temperature,
+            context_window=context_window,
+            max_tokens=max_tokens,
+            model_description=model_description,
+            callback_manager=callback_manager,
+        )
 
-    def load(self) -> None:
+    def load_model(self, model_uid: str, endpoint: str) -> Tuple[Any, int, dict]:
         try:
             from xinference.client import RESTfulClient
         except ImportError:
@@ -52,51 +81,63 @@ class Xinference(CustomLLM):
                 'Please install Xinference with `pip install "xinference[all]"`'
             )
 
-        self._client = RESTfulClient(self.endpoint)
+        client = RESTfulClient(endpoint)
 
         try:
-            assert isinstance(self._client, RESTfulClient)
+            assert isinstance(client, RESTfulClient)
         except AssertionError:
             raise RuntimeError(
                 "Could not create RESTfulClient instance."
                 "Please make sure Xinference endpoint is running at the correct port."
             )
 
-        self._generator = self._client.get_model(self.model_uid)
-        self._model_description = self._client.list_models()[self.model_uid]
+        generator = client.get_model(model_uid)
+        model_description = client.list_models()[model_uid]
 
         try:
-            assert self._generator is not None
-            assert self._model_description is not None
+            assert generator is not None
+            assert model_description is not None
         except AssertionError:
             raise RuntimeError(
                 "Could not get model from endpoint."
                 "Please make sure Xinference endpoint is running at the correct port."
             )
 
-        self._model = self._model_description["model_name"]
-        self._context_window = xinference_modelname_to_contextsize(self._model)
+        model = model_description["model_name"]
+        if "context_length" in model_description:
+            context_window = model_description["context_length"]
+        else:
+            warnings.warn(
+                """
+            Parameter `context_length` not found in model description,
+            using `xinference_modelname_to_contextsize` that is no longer maintained.
+            Please update Xinference to the newest version.
+            """
+            )
+            context_window = xinference_modelname_to_contextsize(model)
+
+        return generator, context_window, model_description
 
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
-        assert isinstance(self._context_window, int)
+        assert isinstance(self.context_window, int)
         return LLMMetadata(
-            context_window=int(self._context_window // TOKEN_RATIO),
-            num_output=DEFAULT_NUM_OUTPUTS,
-            model_name=self._model,
+            context_window=int(self.context_window // TOKEN_RATIO),
+            num_output=self.max_tokens,
+            model_name=self.model_uid,
         )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
-        assert self._context_window is not None
+        assert self.context_window is not None
         base_kwargs = {
             "temperature": self.temperature,
-            "max_length": self._context_window,
+            "max_length": self.context_window,
         }
         model_kwargs = {
             **base_kwargs,
-            **self._model_description,
+            **self.model_description,
         }
         return model_kwargs
 
@@ -111,7 +152,11 @@ class Xinference(CustomLLM):
         response_text = self._generator.chat(
             prompt=prompt,
             chat_history=history,
-            generate_config={"stream": False, "temperature": self.temperature},
+            generate_config={
+                "stream": False,
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+            },
         )["choices"][0]["message"]["content"]
         response = ChatResponse(
             message=ChatMessage(
@@ -132,10 +177,14 @@ class Xinference(CustomLLM):
         response_iter = self._generator.chat(
             prompt=prompt,
             chat_history=history,
-            generate_config={"stream": True, "temperature": self.temperature},
+            generate_config={
+                "stream": True,
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+            },
         )
 
-        def gen() -> None:
+        def gen() -> ChatResponseGen:
             text = ""
             for c in response_iter:
                 delta = c["choices"][0]["delta"].get("content", "")
@@ -156,7 +205,11 @@ class Xinference(CustomLLM):
         response_text = self._generator.chat(
             prompt=prompt,
             chat_history=None,
-            generate_config={"stream": False, "temperature": self.temperature},
+            generate_config={
+                "stream": False,
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+            },
         )["choices"][0]["message"]["content"]
         response = CompletionResponse(
             delta=None,
@@ -170,7 +223,11 @@ class Xinference(CustomLLM):
         response_iter = self._generator.chat(
             prompt=prompt,
             chat_history=None,
-            generate_config={"stream": True, "temperature": self.temperature},
+            generate_config={
+                "stream": True,
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+            },
         )
 
         def gen() -> CompletionResponseGen:

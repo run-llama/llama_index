@@ -16,11 +16,17 @@ WAIT_MAX_SECONDS = 10
 logger = logging.getLogger(__name__)
 
 
-rel_query = Template(
+rel_query_sample_edge = Template(
     """
 MATCH ()-[e:`$edge_type`]->()
-  WITH e limit 1
-MATCH (m)-[:`$edge_type`]->(n) WHERE id(m) == src(e) AND id(n) == dst(e)
+RETURN [src(e), dst(e)] AS sample_edge LIMIT 1
+"""
+)
+
+rel_query_edge_type = Template(
+    """
+MATCH (m)-[:`$edge_type`]->(n)
+  WHERE id(m) == "$src_id" AND id(n) == "$dst_id"
 RETURN "(:" + tags(m)[0] + ")-[:$edge_type]->(:" + tags(n)[0] + ")" AS rels
 """
 )
@@ -297,7 +303,7 @@ class NebulaGraphStore(GraphStore):
     ) -> Dict[str, List[List[str]]]:
         """Get flat rel map."""
         # The flat means for multi-hop relation path, we could get
-        # knowledge like: subj -> rel -> obj -> rel -> obj -> rel -> obj.
+        # knowledge like: subj -rel-> obj -rel-> obj <-rel- obj.
         # This type of knowledge is useful for some tasks.
         # +-------------+------------------------------------+
         # | subj        | flattened_rels                     |
@@ -312,8 +318,19 @@ class NebulaGraphStore(GraphStore):
             return rel_map
 
         if len(self._edge_types) == 1:
+            # WITH map{`true`: "-[", `false`: "<-["} AS arrow_l,
+            #      map{`true`: "]->", `false`: "]-"} AS arrow_r
             # MATCH (s)-[e:follow*..2]-() WHERE id(s) IN ["player100", "player101"]
-            #   WITH id(s) AS subj, [rel in e | [rel.degree, dst(rel)] ] AS rels
+            #   WITH id(s) AS subj, [rel in e | [
+            #      arrow_l[tostring(typeid(rel) > 0)] +
+            #         tostring(rel.degree)+
+            #      arrow_r[tostring(typeid(rel) > 0)],
+            #      CASE typeid(rel) > 0
+            #         WHEN true THEN dst(rel)
+            #         WHEN false THEN src(rel)
+            #      END
+            #      ]
+            #   ] AS rels
             #   WITH
             #       subj,
             #       REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
@@ -321,12 +338,22 @@ class NebulaGraphStore(GraphStore):
             #   subj,
             #   REDUCE(acc = subj,l in flattened_rels|acc + ', ' + l) AS flattened_rels
             query = (
+                f"WITH map{{`true`: '-[', `false`: '<-['}} AS arrow_l,"
+                f"     map{{`true`: ']->', `false`: ']-'}} AS arrow_r "
                 f"MATCH (s)-[e:`{self._edge_types[0]}`*..{depth}]-() "
                 f"  WHERE id(s) IN $subjs "
                 f"WITH "
                 f"id(s) AS subj,"
                 f"[rel IN e | "
-                f"  [rel.`{self._rel_prop_names[0]}`, dst(rel)] "
+                f"  ["
+                f"  arrow_l[tostring(typeid(rel) > 0)] +"
+                f"      rel.`{self._rel_prop_names[0]}`+"
+                f"  arrow_r[tostring(typeid(rel) > 0)],"
+                f"  CASE typeid(rel) > 0"
+                f"    WHEN true THEN dst(rel)"
+                f"    WHEN false THEN src(rel)"
+                f"  END"
+                f"  ]"
                 f"] AS rels "
                 f"WITH "
                 f"  subj,"
@@ -340,14 +367,27 @@ class NebulaGraphStore(GraphStore):
         else:
             # edge_types = ["follow", "serve"]
             # rel_prop_names = ["degree", "start_year"]
+            # WITH map{`true`: "-[", `false`: "<-["} AS arrow_l,
+            #      map{`true`: "]->", `false`: "]-"} AS arrow_r
             # MATCH (s)-[e:follow|serve*..2]-()
             # WHERE id(s) IN ["player100", "player101"]
             #   WITH id(s) AS subj,
             #        [rel in e | [CASE type(rel)
-            #     WHEN "follow" THEN rel.degree
-            #     WHEN "serve" THEN rel.start_year
-            #     END, dst(rel)] ]
-            #     AS rels
+            #     WHEN "follow" THEN
+            #      arrow_l[tostring(typeid(rel) > 0)] +
+            #         tostring(rel.degree)+
+            #      arrow_r[tostring(typeid(rel) > 0)]
+            #     WHEN "serve" THEN
+            #      arrow_l[tostring(typeid(rel) > 0)] +
+            #         tostring(rel.start_year)+
+            #      arrow_r[tostring(typeid(rel) > 0)]
+            #     END,
+            #     CASE typeid(rel) > 0
+            #       WHEN true THEN dst(rel)
+            #       WHEN false THEN src(rel)
+            #     END
+            #     ]
+            # ] AS rels
             #   WITH
             #     subj,
             #     REDUCE(acc = collect(NULL), l in rels | acc + l) AS
@@ -358,13 +398,18 @@ class NebulaGraphStore(GraphStore):
             #       flattened_rels
             _case_when_string = "".join(
                 [
-                    f"WHEN {QUOTE}{edge_type}{QUOTE} THEN rel.`{rel_prop_name}` "
+                    f"WHEN {QUOTE}{edge_type}{QUOTE} THEN "
+                    f"  arrow_l[tostring(typeid(rel) > 0)] +"
+                    f"  rel.`{rel_prop_name}` +"
+                    f"  arrow_r[tostring(typeid(rel) > 0)] "
                     for edge_type, rel_prop_name in zip(
                         self._edge_types, self._rel_prop_names
                     )
                 ]
             )
             query = (
+                f"WITH map{{`true`: '-[', `false`: '<-['}} AS arrow_l,"
+                f"     map{{`true`: ']->', `false`: ']-'}} AS arrow_r "
                 f"MATCH (s)-[e:`{'`|`'.join(self._edge_types)}`*..{depth}]-() "
                 f"  WHERE id(s) IN $subjs "
                 f"  WITH "
@@ -372,7 +417,12 @@ class NebulaGraphStore(GraphStore):
                 f" [rel IN e | "
                 f"  [CASE type(rel) "
                 f"  {_case_when_string}"
-                f"  END, dst(rel)] "
+                f"  END, "
+                f"  CASE typeid(rel) > 0"
+                f"    WHEN true THEN dst(rel)"
+                f"    WHEN false THEN src(rel)"
+                f"  END"
+                f"  ] "
                 f"] AS rels "
                 f"  WITH"
                 f"    subj,"
@@ -523,8 +573,16 @@ class NebulaGraphStore(GraphStore):
             edge_types_schema.append(edge_schema)
 
             # build relationships types
+            sample_edge = self.execute(
+                rel_query_sample_edge.substitute(edge_type=edge_type_name)
+            ).column_values("sample_edge")
+            if len(sample_edge) == 0:
+                continue
+            src_id, dst_id = sample_edge[0].cast()
             r = self.execute(
-                rel_query.substitute(edge_type=edge_type_name)
+                rel_query_edge_type.substitute(
+                    edge_type=edge_type_name, src_id=src_id, dst_id=dst_id
+                )
             ).column_values("rels")
             if len(r) > 0:
                 relationships.append(r[0].cast())

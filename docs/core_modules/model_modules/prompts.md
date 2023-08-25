@@ -18,7 +18,7 @@ Users may also provide their own prompt templates to further customize the behav
 Defining a custom prompt is as simple as creating a format string
 
 ```python
-from llama_index import Prompt
+from llama_index.prompts import PromptTemplate
 
 template = (
     "We have provided context information below. \n"
@@ -27,10 +27,36 @@ template = (
     "\n---------------------\n"
     "Given this information, please answer the question: {query_str}\n"
 )
-qa_template = Prompt(template)
+qa_template = PromptTemplate(template)
+
+# you can create text prompt (for completion API) 
+prompt = qa_template.format(context_str=..., query_str=...)
+
+# or easily convert to message prompts (for chat API)
+messages = qa_template.format_messages(context_str=..., query_str=...)
 ```
 
-> Note: you may see references to legacy prompt subclasses such as `QuestionAnswerPrompt`, `RefinePrompt`. These have been deprecated (and now are type aliases of `Prompt`). Now you can directly specify `Prompt(template)` to construct custom prompts. But you still have to make sure the template string contains the expected parameters (e.g. `{context_str}` and `{query_str}`) when replacing a default question answer prompt.
+> Note: you may see references to legacy prompt subclasses such as `QuestionAnswerPrompt`, `RefinePrompt`. These have been deprecated (and now are type aliases of `PromptTemplate`). Now you can directly specify `PromptTemplate(template)` to construct custom prompts. But you still have to make sure the template string contains the expected parameters (e.g. `{context_str}` and `{query_str}`) when replacing a default question answer prompt.
+
+You can also define a template from chat messages 
+```python
+from llama_index.prompts import ChatPromptTemplate, ChatMessage, MessageRole
+
+message_templates = [
+    ChatMessage(content="You are an expert system.", role=MessageRole.SYSTEM),
+    ChatMessage(
+        content="Generate a short story about {topic}",
+        role=MessageRole.USER,
+    ),
+]
+chat_template = ChatPromptTemplate(message_templates=message_templates)
+
+# you can create message prompts (for chat API)
+messages = chat_template.format_messages(topic=...)
+
+# or easily convert to text prompt (for completion API)
+prompt = chat_template.format(topic=...)
+```
 
 ### Passing custom prompts into the pipeline
 
@@ -45,8 +71,8 @@ The most commonly used prompts will be the `text_qa_template` and the `refine_te
 
 #### Modify prompts used in index construction
 Different indices use different types of prompts during construction (some don't use prompts at all). 
-For instance, `TreeIndex` uses a `SummaryPrompt` to hierarchically
-summarize the nodes, and `KeywordTableIndex` uses a `KeywordExtractPrompt` to extract keywords.
+For instance, `TreeIndex` uses a summary prompt to hierarchically
+summarize the nodes, and `KeywordTableIndex` uses a keyword extract prompt to extract keywords.
 
 There are two equivalent ways to override the prompts:
 

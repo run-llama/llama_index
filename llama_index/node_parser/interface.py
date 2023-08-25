@@ -1,14 +1,20 @@
 """Node parser interface."""
-from typing import List, Sequence, Dict
-
 from abc import ABC, abstractmethod
+from typing import Dict, List, Sequence
 
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
+from llama_index.schema import BaseNode, Document
 
 
-class NodeParser(ABC):
+class NodeParser(BaseModel, ABC):
     """Base interface for node parser."""
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @abstractmethod
     def get_nodes_from_documents(
@@ -24,8 +30,11 @@ class NodeParser(ABC):
         """
 
 
-class BaseExtractor(ABC):
+class BaseExtractor(BaseModel, ABC):
     """Base interface for feature extractor."""
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @abstractmethod
     def extract(

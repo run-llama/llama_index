@@ -1,6 +1,10 @@
-from pydantic import BaseModel, Field
-from typing import List
 import enum
+from typing import List
+
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
 
 
 class NodeType(str, enum.Enum):

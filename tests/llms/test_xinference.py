@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Union, Iterator, Generator, Mapping, Sequence
+from typing import List, Dict, Any, Union, Iterator, Generator, Mapping, Sequence, Tuple
 
 import pytest
 from llama_index.llms.base import (
@@ -104,11 +104,17 @@ class MockRESTfulClient:
 
 
 class MockXinference(Xinference):
-    def load(self) -> None:
-        self._client = MockRESTfulClient()  # type: ignore[assignment]
+    def load_model(
+        self,
+        model_uid: str,
+        endpoint: str,
+    ) -> Tuple[Any, int, Dict[Any, Any]]:
+        client = MockRESTfulClient()  # type: ignore[assignment]
 
-        assert self._client is not None
-        self._generator = self._client.get_model()
+        assert client is not None
+        generator = client.get_model()
+
+        return generator, 256, {}
 
 
 def test_init() -> None:
@@ -118,7 +124,25 @@ def test_init() -> None:
     )
     assert dummy.model_uid == "uid"
     assert dummy.endpoint == "endpoint"
-    assert isinstance(dummy._client, MockRESTfulClient)
+    assert isinstance(dummy.temperature, float)
+    assert dummy.temperature == 1.0
+    assert isinstance(dummy.max_tokens, int)
+    assert dummy.max_tokens == dummy.context_window // 4
+
+    dummy_custom = MockXinference(
+        model_uid="uid_custom",
+        endpoint="endpoint_custom",
+        temperature=(dummy.temperature + 0.1) / 2,
+        max_tokens=dummy.max_tokens + 2,
+    )
+    assert dummy_custom.model_uid == "uid_custom"
+    assert dummy_custom.endpoint == "endpoint_custom"
+    assert isinstance(dummy_custom.temperature, float)
+    assert dummy_custom.temperature != dummy.temperature
+    assert dummy_custom.temperature == (dummy.temperature + 0.1) / 2
+    assert isinstance(dummy_custom.max_tokens, int)
+    assert dummy_custom.max_tokens != dummy.max_tokens
+    assert dummy_custom.max_tokens == dummy.max_tokens + 2
 
 
 @pytest.mark.parametrize("chat_history", [mock_chat_history, tuple(mock_chat_history)])

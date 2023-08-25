@@ -1,6 +1,11 @@
 """Simple node parser."""
 from typing import List, Optional, Sequence
 
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
+
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
@@ -23,28 +28,28 @@ class SimpleNodeParser(NodeParser):
 
     """
 
-    def __init__(
-        self,
-        text_splitter: Optional[TextSplitter] = None,
-        include_metadata: bool = True,
-        include_prev_next_rel: bool = True,
-        callback_manager: Optional[CallbackManager] = None,
-        metadata_extractor: Optional[MetadataExtractor] = None,
-    ) -> None:
-        """Init params."""
-        self.callback_manager = callback_manager or CallbackManager([])
-        self._text_splitter = text_splitter or get_default_text_splitter(
-            callback_manager=self.callback_manager
-        )
-        self._include_metadata = include_metadata
-        self._include_prev_next_rel = include_prev_next_rel
-        self._metadata_extractor = metadata_extractor
+    text_splitter: TextSplitter = Field(
+        description="The text splitter to use when splitting documents."
+    )
+    include_metadata: bool = Field(
+        default=True, description="Whether or not to consider metadata when splitting."
+    )
+    include_prev_next_rel: bool = Field(
+        default=True, description="Include prev/next node relationships."
+    )
+    metadata_extractor: Optional[MetadataExtractor] = Field(
+        default=None, description="Metadata extraction pipeline to apply to nodes."
+    )
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, exclude=True
+    )
 
     @classmethod
     def from_defaults(
         cls,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
+        text_splitter: Optional[TextSplitter] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
@@ -52,7 +57,7 @@ class SimpleNodeParser(NodeParser):
     ) -> "SimpleNodeParser":
         callback_manager = callback_manager or CallbackManager([])
 
-        text_splitter = get_default_text_splitter(
+        text_splitter = text_splitter or get_default_text_splitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             callback_manager=callback_manager,
@@ -88,14 +93,14 @@ class SimpleNodeParser(NodeParser):
             for document in documents_with_progress:
                 nodes = get_nodes_from_document(
                     document,
-                    self._text_splitter,
-                    self._include_metadata,
-                    include_prev_next_rel=self._include_prev_next_rel,
+                    self.text_splitter,
+                    self.include_metadata,
+                    include_prev_next_rel=self.include_prev_next_rel,
                 )
                 all_nodes.extend(nodes)
 
-            if self._metadata_extractor is not None:
-                self._metadata_extractor.process_nodes(all_nodes)
+            if self.metadata_extractor is not None:
+                self.metadata_extractor.process_nodes(all_nodes)
 
             event.on_end(payload={EventPayload.NODES: all_nodes})
 
