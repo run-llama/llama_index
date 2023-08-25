@@ -11,22 +11,19 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     llm_chat_callback,
-    llm_completion_callback
+    llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import \
-    messages_to_prompt as generic_messages_to_prompt
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
 
 
 class MonsterLLM(CustomLLM):
-
     model: str = Field(description="The Predibase model to use.")
-    monster_api_key: Optional[str] = Field(
-        description="The Predibase API key to use.")
-    max_new_tokens: int = Field(
-        description="The number of tokens to generate.")
-    temperature: float = Field(
-        description="The temperature to use for sampling.")
+    monster_api_key: Optional[str] = Field(description="The Predibase API key to use.")
+    max_new_tokens: int = Field(description="The number of tokens to generate.")
+    temperature: float = Field(description="The temperature to use for sampling.")
     context_window: int = Field(
         description="The number of context tokens available to the LLM."
     )
@@ -44,15 +41,15 @@ class MonsterLLM(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
         messages_to_prompt: Optional[Callable] = None,
     ) -> None:
-
         self._client, available_llms = self.initialize_client(monster_api_key)
         _messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         # Check if provided model is supported
         if model not in available_llms:
             error_message = (
-            f"Model: {model} is not supported. Supported models are {available_llms}. "
-            "Please update monsterapiclient to see if any models are added. "
-            "pip install --upgrade monsterapi"
+                f"Model: {model} is not supported. "
+                f"Supported models are {available_llms}. "
+                "Please update monsterapiclient to see if any models are added. "
+                "pip install --upgrade monsterapi"
             )
             raise RuntimeError(error_message)
 
@@ -109,14 +106,13 @@ class MonsterLLM(CustomLLM):
         input_dict = self._get_input_dict(prompt, **kwargs)
 
         # Send request and receive process_id
-        response = self._client.get_response(
-            model=self.model, data=input_dict)
-        process_id = response['process_id']
+        response = self._client.get_response(model=self.model, data=input_dict)
+        process_id = response["process_id"]
 
         # Wait for response and return result
         result = self._client.wait_and_get_result(process_id)
 
-        return CompletionResponse(text=result['text'])
+        return CompletionResponse(text=result["text"])
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:

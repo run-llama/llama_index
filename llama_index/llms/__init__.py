@@ -9,7 +9,7 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    MessageRole
+    MessageRole,
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.huggingface import HuggingFaceLLM
@@ -45,5 +45,5 @@ __all__ = [
     "CompletionResponseAsyncGen",
     "LLMMetadata",
     "Xinference",
-    "MonsterLLM"
+    "MonsterLLM",
 ]
