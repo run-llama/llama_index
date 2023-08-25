@@ -62,7 +62,7 @@ class BaseToolSpec:
                     metadata = ToolMetadata(
                         name=name, description=description, fn_schema=fn_schema
                     )
-            elif isinstance(func_spec, Tuple) and len(func_spec) == 2:
+            elif isinstance(func_spec, tuple) and len(func_spec) == 2:
                 func_sync = getattr(self, func_spec[0])
                 func_async = getattr(self, func_spec[1])
                 metadata = func_to_metadata_mapping.get(func_spec[0], None)
@@ -101,7 +101,7 @@ class BaseToolSpec:
 
 
 def patch_sync(func_async: AsyncCallable) -> Callable:
-    def patched_sync(*args, **kwargs):
+    def patched_sync(*args, **kwargs) -> Any:
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(func_async(*args, **kwargs))
 
