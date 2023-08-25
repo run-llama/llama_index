@@ -1,7 +1,11 @@
 """Program utils."""
 
-from pydantic import BaseModel, Field, create_model
-from typing import Type, List
+from typing import List, Type
+
+try:
+    from pydantic.v1 import BaseModel, Field, create_model
+except ImportError:
+    from pydantic import BaseModel, Field, create_model
 
 
 def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:

@@ -81,7 +81,7 @@ class JSONReader(BaseReader):
 
     def load_data(self, input_file: str) -> List[Document]:
         """Load data from the input file."""
-        with open(input_file, "r") as f:
+        with open(input_file, "r", encoding="utf-8") as f:
             data = json.load(f)
             if self.levels_back is None:
                 # If levels_back isn't set, we just format and make each

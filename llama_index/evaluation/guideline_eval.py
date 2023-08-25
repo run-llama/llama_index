@@ -1,12 +1,15 @@
 import logging
 from typing import Optional
 
-from llama_index.bridge.langchain import PydanticOutputParser
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
 
+from llama_index.bridge.langchain import PydanticOutputParser
 from llama_index.evaluation.base import BaseEvaluator, Evaluation
 from llama_index.indices.base import ServiceContext
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.response.schema import Response
 
 logger = logging.getLogger(__name__)
@@ -38,7 +41,7 @@ class GuidelineEvaluator(BaseEvaluator):
         )
         format_instructions = parser.get_format_instructions()
         response_str = response.response
-        prompt = Prompt(self.eval_template)
+        prompt = PromptTemplate(self.eval_template)
         logger.debug("prompt: %s", prompt)
         logger.debug("query: %s", query)
         logger.debug("response: %s", response_str)

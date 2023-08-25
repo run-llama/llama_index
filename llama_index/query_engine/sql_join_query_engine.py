@@ -1,36 +1,40 @@
 """SQL Join query engine."""
 
+import logging
+from typing import Callable, Dict, Optional, Union
+
 from llama_index.bridge.langchain import print_text
-from typing import Optional, Dict, Callable, Union
+from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.indices.query.query_transform.base import BaseQueryTransform
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,
     NLSQLTableQueryEngine,
 )
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.response.schema import RESPONSE_TYPE, Response
-from llama_index.tools.query_engine import QueryEngineTool
-from llama_index.indices.service_context import ServiceContext
-from llama_index.selectors.utils import get_selector_from_context
-from llama_index.selectors.llm_selectors import LLMSingleSelector
-from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
-from llama_index.prompts.base import Prompt
-from llama_index.indices.query.query_transform.base import BaseQueryTransform
-import logging
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.callbacks.base import CallbackManager
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.selectors.llm_selectors import LLMSingleSelector
+from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
+from llama_index.selectors.utils import get_selector_from_context
+from llama_index.tools.query_engine import QueryEngineTool
 
 logger = logging.getLogger(__name__)
 
 
 DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT_TMPL = """
 The original question is given below.
-This question has been translated into a SQL query. Both the SQL query and the response are given below.
-Given the SQL response, the question has also been transformed into a more detailed query,
+This question has been translated into a SQL query. Both the SQL query and \
+the response are given below.
+Given the SQL response, the question has also been transformed into a more \
+detailed query,
 and executed against another query engine.
 The transformed query and query engine response are also given below.
-Given SQL query, SQL response, transformed query, and query engine response, please synthesize a response to the original question.
+Given SQL query, SQL response, transformed query, and query engine response, \
+please synthesize a response to the original question.
 
 Original question: {query_str}
 SQL query: {sql_query_str}
@@ -39,18 +43,26 @@ Transformed query: {query_engine_query_str}
 Query engine response: {query_engine_response_str}
 Response: 
 """  # noqa
-DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT = Prompt(DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT_TMPL)
+DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT = PromptTemplate(
+    DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT_TMPL
+)
 
 
 DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL = """
 "The original question is given below.
-This question has been translated into a SQL query. Both the SQL query and the response are given below.
-The SQL response either answers the question, or should provide additional context that can be used to make the question more specific.
-Your job is to come up with a more specific question that needs to be answered to fully answer the original question, or 'None' if the original question has already been fully answered from the SQL response. Do not create a new question that is irrelevant to the original question; in that case return None instead.
+This question has been translated into a SQL query. Both the SQL query and the \
+response are given below.
+The SQL response either answers the question, or should provide additional context \
+that can be used to make the question more specific.
+Your job is to come up with a more specific question that needs to be answered to \
+fully answer the original question, or 'None' if the original question has already \
+been fully answered from the SQL response. Do not create a new question that is \
+irrelevant to the original question; in that case return None instead.
 
 Examples:
 
-Original question: Please give more details about the demographics of the city with the highest population.
+Original question: Please give more details about the demographics of the city with \
+the highest population.
 SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1
 SQL response: The city with the highest population is New York City.
 New question: Can you tell me more about the demographics of New York City?
@@ -75,7 +87,9 @@ SQL query: {sql_query_str}
 SQL response: {sql_response_str}
 New question: "
 """  # noqa
-DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT = Prompt(DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL)
+DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT = PromptTemplate(
+    DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL
+)
 
 
 def _default_check_stop(query_bundle: QueryBundle) -> bool:
@@ -96,7 +110,8 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
 
     Args:
         llm_predictor (LLMPredictor): LLM predictor to use for query transformation.
-        sql_augment_transform_prompt (Prompt): Prompt to use for query transformation.
+        sql_augment_transform_prompt (BasePromptTemplate): PromptTemplate to use
+            for query transformation.
         check_stop_parser (Optional[Callable[[str], bool]]): Check stop function.
 
     """
@@ -104,7 +119,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
     def __init__(
         self,
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        sql_augment_transform_prompt: Optional[Prompt] = None,
+        sql_augment_transform_prompt: Optional[BasePromptTemplate] = None,
         check_stop_parser: Optional[Callable[[QueryBundle], bool]] = None,
     ) -> None:
         """Initialize params."""
@@ -150,8 +165,8 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]):
             Selector to use.
         service_context (Optional[ServiceContext]): Service context to use.
-        sql_join_synthesis_prompt (Optional[Prompt]): Prompt to use for SQL join
-            synthesis.
+        sql_join_synthesis_prompt (Optional[BasePromptTemplate]):
+            PromptTemplate to use for SQL join synthesis.
         sql_augment_query_transform (Optional[SQLAugmentQueryTransform]): Query
             transform to use for SQL augmentation.
         use_sql_join_synthesis (bool): Whether to use SQL join synthesis.
@@ -166,7 +181,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         other_query_tool: QueryEngineTool,
         selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
         service_context: Optional[ServiceContext] = None,
-        sql_join_synthesis_prompt: Optional[Prompt] = None,
+        sql_join_synthesis_prompt: Optional[BasePromptTemplate] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
         use_sql_join_synthesis: bool = True,
         callback_manager: Optional[CallbackManager] = None,

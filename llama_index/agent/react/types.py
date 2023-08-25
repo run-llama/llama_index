@@ -1,8 +1,12 @@
 """Base types for ReAct agent."""
 
-from pydantic import BaseModel
 from abc import abstractmethod
 from typing import Dict
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 
 class BaseReasoningStep(BaseModel):

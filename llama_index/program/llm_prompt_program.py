@@ -1,10 +1,14 @@
 """LLM Prompt Program."""
-from llama_index.program.base_program import BasePydanticProgram
-from typing import Type, Any, Optional, TypeVar, Generic
-from llama_index.types import Model
 from abc import abstractmethod
-from pydantic import BaseModel
+from typing import Any, Generic, Optional, Type, TypeVar
 
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
+from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import Model
 
 LM = TypeVar("LM")
 

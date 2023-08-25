@@ -1,8 +1,13 @@
 """Test tool spec."""
 
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.types import ToolMetadata
+
 from typing import List, Type, Tuple, Union
 import pytest
 

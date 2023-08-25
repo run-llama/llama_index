@@ -16,9 +16,9 @@ from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
-from llama_index.prompts.choice_select import (
+from llama_index.prompts import PromptTemplate
+from llama_index.prompts.default_prompts import (
     DEFAULT_CHOICE_SELECT_PROMPT,
-    ChoiceSelectPrompt,
 )
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
@@ -38,7 +38,7 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
     def __init__(
         self,
         index: DocumentSummaryIndex,
-        choice_select_prompt: Optional[ChoiceSelectPrompt] = None,
+        choice_select_prompt: Optional[PromptTemplate] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,

@@ -46,7 +46,7 @@ def test_get_nodes_from_document(
         len(text_splitter.tokenizer(node.get_content())) for node in nodes
     ]
     assert all(
-        chunk_size <= text_splitter._chunk_size for chunk_size in actual_chunk_sizes
+        chunk_size <= text_splitter.chunk_size for chunk_size in actual_chunk_sizes
     )
 
 
@@ -65,7 +65,7 @@ def test_get_nodes_from_document_with_metadata(
         for node in nodes
     ]
     assert all(
-        chunk_size <= text_splitter._chunk_size for chunk_size in actual_chunk_sizes
+        chunk_size <= text_splitter.chunk_size for chunk_size in actual_chunk_sizes
     )
     assert all(
         [
@@ -85,7 +85,7 @@ def test_get_nodes_from_document_langchain_compatible(
     )
     nodes = get_nodes_from_document(
         documents[0],
-        text_splitter,
+        text_splitter,  # type: ignore
         include_metadata=False,
     )
     assert len(nodes) == 2

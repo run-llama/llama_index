@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 from llama_index.query_engine.flare.schema import QueryTask
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.indices.service_context import ServiceContext
 
 
@@ -117,7 +117,7 @@ Query-Answer Pairs:
 
 Synthesized Response:
 """
-DEFAULT_ANSWER_INSERT_PROMPT = Prompt(DEFAULT_ANSWER_INSERT_PROMPT_TMPL)
+DEFAULT_ANSWER_INSERT_PROMPT = PromptTemplate(DEFAULT_ANSWER_INSERT_PROMPT_TMPL)
 
 
 class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
@@ -134,7 +134,7 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
-        answer_insert_prompt: Optional[Prompt] = None,
+        answer_insert_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         """Init params."""
         self._service_context = service_context or ServiceContext.from_defaults()

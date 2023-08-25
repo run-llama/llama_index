@@ -6,7 +6,7 @@ from threading import Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
@@ -259,14 +259,19 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
 
         # Loop until no more function calls or max_function_calls is reached
+        current_func = function_call
         while True:
-            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, function_call)
+            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, current_func)
             agent_chat_response = self._get_agent_response(mode=mode, **llm_chat_kwargs)
             if not self._should_continue(self.latest_function_call, n_function_calls):
                 logger.debug("Break: should continue False")
                 break
             assert isinstance(self.latest_function_call, dict)
             self._call_function(tools, self.latest_function_call)
+            # change function call to the default value, if a custom function was given
+            # as an argument (none and auto are predefined by OpenAI)
+            if current_func not in ("auto", "none"):
+                current_func = "auto"
             n_function_calls += 1
 
         return agent_chat_response
@@ -282,8 +287,9 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
 
         # Loop until no more function calls or max_function_calls is reached
+        current_func = function_call
         while True:
-            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, function_call)
+            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, current_func)
             agent_chat_response = await self._get_async_agent_response(
                 mode=mode, **llm_chat_kwargs
             )
@@ -291,10 +297,15 @@ class BaseOpenAIAgent(BaseAgent):
                 break
             assert isinstance(self.latest_function_call, dict)
             await self._acall_function(tools, self.latest_function_call)
+            # change function call to the default value, if a custom function was given
+            # as an argument (none and auto are predefined by OpenAI)
+            if current_func not in ("auto", "none"):
+                current_func = "auto"
             n_function_calls += 1
 
         return agent_chat_response
 
+    @trace_method("chat")
     def chat(
         self,
         message: str,
@@ -307,6 +318,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, AgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     async def achat(
         self,
         message: str,
@@ -319,6 +331,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, AgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     def stream_chat(
         self,
         message: str,
@@ -331,6 +344,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     async def astream_chat(
         self,
         message: str,
