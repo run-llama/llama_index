@@ -77,7 +77,9 @@ class Refine(BaseSynthesizer):
         streaming: bool = False,
         verbose: bool = False,
         structured_answer_filtering: bool = False,
-        program_factory: Optional[Callable[[BasePromptTemplate], BasePydanticProgram]] = None,
+        program_factory: Optional[
+            Callable[[BasePromptTemplate], BasePydanticProgram]
+        ] = None,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
