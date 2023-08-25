@@ -38,7 +38,7 @@ class MonsterLLM(CustomLLM):
         self,
         model: str,
         monster_api_key: Optional[str] = None,
-        max_new_tokens: int = 256,
+        max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         temperature: float = 0.75,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         callback_manager: Optional[CallbackManager] = None,
@@ -49,8 +49,12 @@ class MonsterLLM(CustomLLM):
         _messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         # Check if provided model is supported
         if model not in available_llms:
-            raise RuntimeError(
-                f"Model: {model} is not supported.Supported models are {available_llms}. Please update monsterapiclient to see if any models are added. pip install --upgrade monsterapi")
+            error_message = (
+            f"Model: {model} is not supported. Supported models are {available_llms}. "
+            "Please update monsterapiclient to see if any models are added. "
+            "pip install --upgrade monsterapi"
+            )
+            raise RuntimeError(error_message)
 
         super().__init__(
             model=model,
