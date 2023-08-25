@@ -10,11 +10,11 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.inserter import TreeIndexInserter
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
-from llama_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt
 from llama_index.schema import BaseNode
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -45,9 +45,9 @@ class TreeIndex(BaseIndex[IndexGraph]):
     A secondary answer is to directly synthesize the answer from the root nodes.
 
     Args:
-        summary_template (Optional[SummaryPrompt]): A Summarization Prompt
+        summary_template (Optional[BasePromptTemplate]): A Summarization Prompt
             (see :ref:`Prompt-Templates`).
-        insert_prompt (Optional[TreeInsertPrompt]): An Tree Insertion Prompt
+        insert_prompt (Optional[BasePromptTemplate]): An Tree Insertion Prompt
             (see :ref:`Prompt-Templates`).
         num_children (int): The number of children each node should have.
         build_tree (bool): Whether to build the tree during index construction.
@@ -62,8 +62,8 @@ class TreeIndex(BaseIndex[IndexGraph]):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexGraph] = None,
         service_context: Optional[ServiceContext] = None,
-        summary_template: Optional[SummaryPrompt] = None,
-        insert_prompt: Optional[TreeInsertPrompt] = None,
+        summary_template: Optional[BasePromptTemplate] = None,
+        insert_prompt: Optional[BasePromptTemplate] = None,
         num_children: int = 10,
         build_tree: bool = True,
         use_async: bool = False,
@@ -74,7 +74,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
         # need to set parameters before building index in base class.
         self.num_children = num_children
         self.summary_template = summary_template or DEFAULT_SUMMARY_PROMPT
-        self.insert_prompt: TreeInsertPrompt = insert_prompt or DEFAULT_INSERT_PROMPT
+        self.insert_prompt: BasePromptTemplate = insert_prompt or DEFAULT_INSERT_PROMPT
         self.build_tree = build_tree
         self._use_async = use_async
         super().__init__(

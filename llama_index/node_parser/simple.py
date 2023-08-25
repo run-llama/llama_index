@@ -1,6 +1,10 @@
 """Simple node parser."""
-from pydantic import Field
 from typing import List, Optional, Sequence
+
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -96,7 +100,7 @@ class SimpleNodeParser(NodeParser):
                 all_nodes.extend(nodes)
 
             if self.metadata_extractor is not None:
-                self.metadata_extractor.process_nodes(all_nodes)
+                all_nodes = self.metadata_extractor.process_nodes(all_nodes)
 
             event.on_end(payload={EventPayload.NODES: all_nodes})
 

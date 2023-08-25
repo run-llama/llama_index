@@ -11,9 +11,9 @@ from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
-from llama_index.prompts.choice_select import (
+from llama_index.prompts import PromptTemplate
+from llama_index.prompts.default_prompts import (
     DEFAULT_CHOICE_SELECT_PROMPT,
-    ChoiceSelectPrompt,
 )
 from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 
@@ -123,7 +123,7 @@ class ListIndexLLMRetriever(BaseRetriever):
 
     Args:
         index (ListIndex): The index to retrieve from.
-        choice_select_prompt (Optional[ChoiceSelectPrompt]): A Choice-Select Prompt
+        choice_select_prompt (Optional[PromptTemplate]): A Choice-Select Prompt
            (see :ref:`Prompt-Templates`).)
         choice_batch_size (int): The number of nodes to query at a time.
         format_node_batch_fn (Optional[Callable]): A function that formats a
@@ -137,7 +137,7 @@ class ListIndexLLMRetriever(BaseRetriever):
     def __init__(
         self,
         index: ListIndex,
-        choice_select_prompt: Optional[ChoiceSelectPrompt] = None,
+        choice_select_prompt: Optional[PromptTemplate] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,

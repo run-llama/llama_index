@@ -1,33 +1,16 @@
 # Module Guides
-We are adding more module guides soon!
+We are actively adding more tailored retrieval guides.
 In the meanwhile, please take a look at the [API References](/api_reference/query/retrievers.rst).
 
-## Vector Index Retrievers
-* VectorIndexRetriever
-```{toctree}
----
-maxdepth: 1
----
-VectorIndexAutoRetriever </examples/vector_stores/chroma_auto_retriever.ipynb>
-```
+## Index Retrievers
 
-## List Index
-* ListIndexRetriever 
-* ListIndexEmbeddingRetriever 
-* ListIndexLLMRetriever
+Please see [the retriever modes](/core_modules/query_modules/retriever/retriever_modes.md) for more details on how to get a retriever from any given index.
 
-## Tree Index
-* TreeSelectLeafRetriever
-* TreeSelectLeafEmbeddingRetriever
-* TreeAllLeafRetriever
-* TreeRootRetriever
+If you want to import the corresponding retrievers directly, please check out our [API reference](/api_reference/query/retrievers.rst).
 
+## Advanced Retriever Guides
 
-## Keyword Table Index
-* KeywordTableGPTRetriever
-* KeywordTableSimpleRetriever
-* KeywordTableRAKERetriever
-
+Check out our comprehensive guides on various retriever modules, many of which cover advanced concepts (auto-retrieval, routing, ensembling, and more).
 
 ## Knowledge Graph Index
 ```{toctree}
@@ -43,14 +26,24 @@ Knowledge Graph RAG Retriever </examples/query_engine/knowledge_graph_rag_query_
 * DocumentSummaryIndexRetriever
 * DocumentSummaryIndexEmbeddingRetriever
 
+## External Retrievers
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/retrievers/bm25_retriever.ipynb 
+```
+
 ## Composed Retrievers
 * TransformRetriever
 ```{toctree}
 ---
 maxdepth: 1
 ---
+Auto-Retrieval (with Chroma) </examples/vector_stores/chroma_auto_retriever.ipynb>
+Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/query_engine/pdf_tables/recursive_retriever.ipynb
-/examples/retrievers/auto_vs_recursive_retriever.ipynb
 /examples/retrievers/router_retriever.ipynb
 /examples/retrievers/ensemble_retrieval.ipynb
+Custom Retriever (KG Index and Vector Store Index) </examples/index_structs/knowledge_graph/KnowledgeGraphIndex_vs_VectorStoreIndex_vs_CustomIndex_combined.ipynb>
 ```

@@ -1,8 +1,14 @@
 import os
-import requests
-from pydantic import Field, PrivateAttr
-from tqdm import tqdm
 from typing import Any, Callable, Dict, Optional, Sequence
+
+import requests
+
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
+from tqdm import tqdm
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -23,7 +29,6 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 from llama_index.utils import get_cache_dir
-
 
 DEFAULT_LLAMA_CPP_MODEL = (
     "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGML/resolve"
@@ -168,7 +173,7 @@ class LlamaCPP(CustomLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, **kwargs)
+        completion_response = self.complete(prompt, formatted=True, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
     @llm_chat_callback()
@@ -176,13 +181,16 @@ class LlamaCPP(CustomLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, **kwargs)
+        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         self.generate_kwargs.update({"stream": False})
-        prompt = self.completion_to_prompt(prompt)
+
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            prompt = self.completion_to_prompt(prompt)
 
         response = self._model(prompt=prompt, **self.generate_kwargs)
 
@@ -191,7 +199,10 @@ class LlamaCPP(CustomLLM):
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         self.generate_kwargs.update({"stream": True})
-        prompt = self.completion_to_prompt(prompt)
+
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            prompt = self.completion_to_prompt(prompt)
 
         response_iter = self._model(prompt=prompt, **self.generate_kwargs)
 

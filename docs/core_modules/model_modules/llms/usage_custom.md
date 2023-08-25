@@ -119,7 +119,7 @@ Many open-source models from HuggingFace require either some preamble before eac
 Below, this example uses both the `system_prompt` and `query_wrapper_prompt`, using specific prompts from the model card found [here](https://huggingface.co/stabilityai/stablelm-tuned-alpha-3b).
 
 ```python
-from llama_index.prompts.prompts import SimpleInputPrompt
+from llama_index.prompts import PromptTemplate
 
 system_prompt = """<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
@@ -129,7 +129,7 @@ system_prompt = """<|SYSTEM|># StableLM Tuned (Alpha version)
 """
 
 # This will wrap the default prompts that are internal to llama-index
-query_wrapper_prompt = SimpleInputPrompt("<|USER|>{query_str}<|ASSISTANT|>")
+query_wrapper_prompt = PromptTemplate("<|USER|>{query_str}<|ASSISTANT|>")
 
 import torch
 from llama_index.llms import HuggingFaceLLM

@@ -121,3 +121,16 @@ class BaseSynthesizer(ABC):
         """Get response."""
         ...
 ```
+
+## Using Structured Answer Filtering
+When using either the `"refine"` or `"compact"` response synthesis modules, you may find it beneficial to experiment with the `structured_answer_filtering` option.
+
+```
+from llama_index.response_synthesizers import get_response_synthesizer
+
+response_synthesizer = get_response_synthesizer(structured_answer_filtering=True)
+```
+
+With `structured_answer_filtering` set to `True`, our refine module is able to filter out any input nodes that are not relevant to the question being asked. This is particularly useful for RAG-based Q&A systems that involve retrieving chunks of text from external vector store for a given user query.
+
+This option is particularly useful if you're using an [OpenAI model that supports function calling](https://openai.com/blog/function-calling-and-other-api-updates). Other LLM providers or models that don't have native function calling support may be less reliable in producing the structured response this feature relies on.

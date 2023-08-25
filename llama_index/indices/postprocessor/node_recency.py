@@ -1,15 +1,19 @@
 """Node recency post-processor."""
-from pydantic import Field
-from typing import Optional, List, Set
-import pandas as pd
-import numpy as np
 from datetime import datetime
+from typing import List, Optional, Set
+
+import numpy as np
+import pandas as pd
+
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import NodeWithScore, MetadataMode
-
+from llama_index.schema import MetadataMode, NodeWithScore
 
 # NOTE: currently not being used
 # DEFAULT_INFER_RECENCY_TMPL = (
@@ -67,17 +71,6 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
-        # query_bundle = cast(QueryBundle, metadata["query_bundle"])
-        # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-        # raw_pred = self.service_context.llm_predictor.predict(
-        #     prompt=infer_recency_prompt,
-        #     query_str=query_bundle.query_str,
-        # )
-        # pred = parse_recency_pred(raw_pred)
-        # # if no need to use recency post-processor, return nodes as is
-        # if not pred:
-        #     return nodes
-
         # sort nodes by date
         node_dates = pd.to_datetime(
             [node.node.metadata[self.date_key] for node in nodes]
@@ -129,17 +122,6 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
 
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
-
-        # query_bundle = cast(QueryBundle, metadata["query_bundle"])
-        # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-        # raw_pred = self.service_context.llm_predictor.predict(
-        #     prompt=infer_recency_prompt,
-        #     query_str=query_bundle.query_str,
-        # )
-        # pred = parse_recency_pred(raw_pred)
-        # # if no need to use recency post-processor, return nodes as is
-        # if not pred:
-        #     return nodes
 
         # sort nodes by date
         node_dates = pd.to_datetime(

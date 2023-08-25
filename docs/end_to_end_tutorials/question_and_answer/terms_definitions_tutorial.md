@@ -298,14 +298,9 @@ This is due to the concept of "refining" answers in Llama Index. Since we are qu
 So, the refine process seems to be messing with our results! Rather than appending extra instructions to the `query_str`, remove that, and Llama Index will let us provide our own custom prompts! Let's create those now, using the [default prompts](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py) and [chat specific prompts](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py) as a guide. Using a new file `constants.py`, let's create some new query templates:
 
 ```python
-from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts.chat import (
-    AIMessagePromptTemplate,
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-)
-
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts import PromptTemplate, SelectorPromptTemplate, ChatPromptTemplate
+from llama_index.prompts.utils import is_chat_model
+from llama_index.llms.base import ChatMessage, MessageRole
 
 # Text QA templates
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
@@ -316,7 +311,7 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "Given the context information answer the following question "
     "(if you don't know the answer, use the best of your knowledge): {query_str}\n"
 )
-TEXT_QA_TEMPLATE = QuestionAnswerPrompt(DEFAULT_TEXT_QA_PROMPT_TMPL)
+TEXT_QA_TEMPLATE = PromptTemplate(DEFAULT_TEXT_QA_PROMPT_TMPL)
 
 # Refine templates
 DEFAULT_REFINE_PROMPT_TMPL = (
@@ -330,32 +325,29 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "Given the new context and using the best of your knowledge, improve the existing answer. "
     "If you can't improve the existing answer, just repeat it again."
 )
-DEFAULT_REFINE_PROMPT = RefinePrompt(DEFAULT_REFINE_PROMPT_TMPL)
+DEFAULT_REFINE_PROMPT = PromptTemplate(DEFAULT_REFINE_PROMPT_TMPL)
 
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
-    HumanMessagePromptTemplate.from_template("{query_str}"),
-    AIMessagePromptTemplate.from_template("{existing_answer}"),
-    HumanMessagePromptTemplate.from_template(
-        "We have the opportunity to refine the above answer "
+    ChatMessage(content="{query_str}", role=MessageRole.USER),
+    ChatMessage(content="{existing_answer}", role=MessageRole.ASSISTANT),
+    ChatMessage(
+        content="We have the opportunity to refine the above answer "
         "(only if needed) with some more context below.\n"
         "------------\n"
         "{context_msg}\n"
         "------------\n"
         "Given the new context and using the best of your knowledge, improve the existing answer. "
-    "If you can't improve the existing answer, just repeat it again."
+        "If you can't improve the existing answer, just repeat it again.",
+        role=MessageRole.USER,
     ),
 ]
 
-CHAT_REFINE_PROMPT_LC = ChatPromptTemplate.from_messages(CHAT_REFINE_PROMPT_TMPL_MSGS)
-CHAT_REFINE_PROMPT = RefinePrompt.from_langchain_prompt(CHAT_REFINE_PROMPT_LC)
+CHAT_REFINE_PROMPT = ChatPromptTemplate(CHAT_REFINE_PROMPT_TMPL_MSGS)
 
 # refine prompt selector
-DEFAULT_REFINE_PROMPT_SEL_LC = ConditionalPromptSelector(
-    default_prompt=DEFAULT_REFINE_PROMPT.get_langchain_prompt(),
-    conditionals=[(is_chat_model, CHAT_REFINE_PROMPT.get_langchain_prompt())],
-)
-REFINE_TEMPLATE = RefinePrompt(
-    langchain_prompt_selector=DEFAULT_REFINE_PROMPT_SEL_LC
+REFINE_TEMPLATE = SelectorPromptTemplate(
+    default_template=DEFAULT_REFINE_PROMPT,
+    conditionals=[(is_chat_model, CHAT_REFINE_PROMPT)],
 )
 ```
 

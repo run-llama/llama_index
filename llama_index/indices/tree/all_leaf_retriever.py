@@ -23,7 +23,7 @@ class TreeAllLeafRetriever(BaseRetriever):
     when initialized, since we rebuild the tree for each query.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
+        text_qa_template (Optional[BasePromptTemplate]): Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
 
     """

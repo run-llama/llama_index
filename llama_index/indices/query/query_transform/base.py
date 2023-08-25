@@ -18,7 +18,7 @@ from llama_index.indices.query.query_transform.prompts import (
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.response.schema import Response
 
@@ -114,7 +114,7 @@ class HyDEQueryTransform(BaseQueryTransform):
     def __init__(
         self,
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        hyde_prompt: Optional[Prompt] = None,
+        hyde_prompt: Optional[BasePromptTemplate] = None,
         include_original: bool = True,
     ) -> None:
         """Initialize HyDEQueryTransform.
@@ -122,7 +122,7 @@ class HyDEQueryTransform(BaseQueryTransform):
         Args:
             llm_predictor (Optional[LLMPredictor]): LLM for generating
                 hypothetical documents
-            hyde_prompt (Optional[Prompt]): Custom prompt for HyDE
+            hyde_prompt (Optional[BasePromptTemplate]): Custom prompt for HyDE
             include_original (bool): Whether to include original query
                 string as one of the embedding strings
         """

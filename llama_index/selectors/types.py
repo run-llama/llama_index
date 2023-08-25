@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod
-from pydantic import BaseModel
 from typing import List, Sequence, Union
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.tools.types import ToolMetadata
