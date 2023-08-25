@@ -173,7 +173,7 @@ class LlamaCPP(CustomLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, **kwargs)
+        completion_response = self.complete(prompt, formatted=True, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
     @llm_chat_callback()
@@ -181,13 +181,16 @@ class LlamaCPP(CustomLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, **kwargs)
+        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         self.generate_kwargs.update({"stream": False})
-        prompt = self.completion_to_prompt(prompt)
+
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            prompt = self.completion_to_prompt(prompt)
 
         response = self._model(prompt=prompt, **self.generate_kwargs)
 
@@ -196,7 +199,10 @@ class LlamaCPP(CustomLLM):
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         self.generate_kwargs.update({"stream": True})
-        prompt = self.completion_to_prompt(prompt)
+
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            prompt = self.completion_to_prompt(prompt)
 
         response_iter = self._model(prompt=prompt, **self.generate_kwargs)
 
