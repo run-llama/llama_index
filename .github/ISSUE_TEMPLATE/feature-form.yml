@@ -1,0 +1,31 @@
+name: Feature Request
+description: Request a new feature
+title: "[Feature Request]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request!
+        Please complete the following form to help us assist you.
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: Describe the feature you are requesting. Try to reference existing implemenations/papers/examples when possible.
+    validations:
+      required: true
+  - type: textarea
+    id: why-feature
+    attributes:
+      label: Reason
+      description: What is stopping LlamaIndex from supporting this feature today? What existing apporaches have not worked for you?
+    validations:
+      required: false
+  - type: textarea
+    id: value-add
+    attributes:
+      label: Value of Feature
+      description: Why is this feature valuable?
+    validations:
+      required: false

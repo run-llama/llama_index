@@ -1,0 +1,17 @@
+version: 2
+
+sphinx:
+  configuration: docs/conf.py
+
+build:
+  image: testing
+
+# NOTE: only build default HTML
+# formats: all
+
+python:
+  version: 3.9
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .

@@ -1,0 +1,177 @@
+{
+    "answer_accuracy": 0.9,
+    "total": 10,
+    "valid": 10,
+    "results": [
+        {
+            "db": "wta_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the name of the winner who has the highest rank points and participated in the Australian Open tourney.",
+                "sql_query": "SELECT winner_name FROM matches WHERE tourney_name  =  'Australian Open' ORDER BY winner_rank_points DESC LIMIT 1",
+                "sql_result": "[('Serena Williams',)]",
+                "answer": "Serena Williams"
+            },
+            "pred": {
+                "question": "Find the name of the winner who has the highest rank points and participated in the Australian Open tourney.",
+                "sql_query": "SELECT winner_name FROM matches WHERE tourney_name = 'Australian Open' ORDER BY winner_rank_points DESC LIMIT 1;\n",
+                "sql_result": "[('Serena Williams',)]",
+                "answer": "Serena Williams"
+            }
+        },
+        {
+            "db": "tvshow",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the content of TV Channel with serial name \"Sky Radio\"?",
+                "sql_query": "SELECT Content FROM TV_Channel WHERE series_name = \"Sky Radio\";",
+                "sql_result": "[('music',)]",
+                "answer": "The content of TV Channel with serial name \"Sky Radio\" is \"music\"."
+            },
+            "pred": {
+                "question": "What is the content of TV Channel with serial name \"Sky Radio\"?",
+                "sql_query": "SELECT Content FROM TV_Channel WHERE series_name = \"Sky Radio\"\n",
+                "sql_result": "[('music',)]",
+                "answer": "The content of TV Channel with serial name \"Sky Radio\" is \"music\"."
+            }
+        },
+        {
+            "db": "tvshow",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the TV Channel that shows the cartoon \"The Rise of the Blue Beetle!\"? List the TV Channel's series name.",
+                "sql_query": "SELECT T1.series_name FROM TV_Channel AS T1 JOIN Cartoon AS T2 ON T1.id = T2.Channel WHERE T2.Title = \"The Rise of the Blue Beetle!\";",
+                "sql_result": "[('Sky Radio',)]",
+                "answer": "The TV Channel that shows the cartoon \"The Rise of the Blue Beetle!\" is Sky Radio and the series name is not specified in the query result."
+            },
+            "pred": {
+                "question": "What is the TV Channel that shows the cartoon \"The Rise of the Blue Beetle!\"? List the TV Channel's series name.",
+                "sql_query": "SELECT series_name FROM TV_Channel WHERE id = (SELECT Channel FROM Cartoon WHERE Title = \"The Rise of the Blue Beetle!\")\n",
+                "sql_result": "[('Sky Radio',)]",
+                "answer": "The TV Channel that shows the cartoon \"The Rise of the Blue Beetle!\" is Sky Radio and the series name is not provided in the SQLResult."
+            }
+        },
+        {
+            "db": "poker_player",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the names of people who are not from Russia?",
+                "sql_query": "SELECT Name FROM people WHERE Nationality != \"Russia\"",
+                "sql_result": "[('Teodor Salparov',)]",
+                "answer": "Teodor Salparov"
+            },
+            "pred": {
+                "question": "What are the names of people who are not from Russia?",
+                "sql_query": "SELECT Name FROM people WHERE Nationality != 'Russia'\n",
+                "sql_result": "[('Teodor Salparov',)]",
+                "answer": "Teodor Salparov"
+            }
+        },
+        {
+            "db": "orchestra",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the name of the conductor who has worked the greatest number of years?",
+                "sql_query": "SELECT Name FROM conductor ORDER BY Year_of_Work DESC LIMIT 1",
+                "sql_result": "[('Robert Craft',)]",
+                "answer": "Robert Craft"
+            },
+            "pred": {
+                "question": "What is the name of the conductor who has worked the greatest number of years?",
+                "sql_query": "SELECT conductor.Name FROM conductor ORDER BY conductor.Year_of_Work DESC LIMIT 1;\n",
+                "sql_result": "[('Robert Craft',)]",
+                "answer": "Robert Craft"
+            }
+        },
+        {
+            "db": "network_1",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Which grade has the most high schoolers?",
+                "sql_query": "SELECT grade FROM Highschooler GROUP BY grade ORDER BY count(*) DESC LIMIT 1",
+                "sql_result": "[(12,)]",
+                "answer": "Grade 12 has the most high schoolers."
+            },
+            "pred": {
+                "question": "Which grade has the most high schoolers?",
+                "sql_query": "SELECT grade, COUNT(*) FROM Highschooler GROUP BY grade ORDER BY COUNT(*) DESC LIMIT 1;\n",
+                "sql_result": "[(12, 4)]",
+                "answer": "Grade 12 has the most high schoolers with a count of 4."
+            }
+        },
+        {
+            "db": "dog_kennels",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "What are the names of the dogs for which the owner has not spend more than 1000 for treatment ?",
+                "sql_query": "select name from dogs where dog_id not in ( select dog_id from treatments group by dog_id having sum(cost_of_treatment)  >  1000 )",
+                "sql_result": "[('Kacey',), ('Hipolito',), ('Mavis',), ('Houston',), ('Jeffrey',), ('Merritt',), ('Narciso',), ('George',), ('Bessie',), ('Betty',), ('Holden',), ('Jesus',)]",
+                "answer": "The names of the dogs for which the owner has not spent more than 1000 for treatment are: Kacey, Hipolito, Mavis, Houston, Jeffrey, Merritt, Narciso, George, Bessie, Betty, Holden, and Jesus."
+            },
+            "pred": {
+                "question": "What are the names of the dogs for which the owner has not spend more than 1000 for treatment ?",
+                "sql_query": "SELECT name FROM Dogs WHERE dog_id NOT IN (SELECT dog_id FROM Treatments WHERE cost_of_treatment > 1000)\n",
+                "sql_result": "[('Kacey',), ('Hipolito',), ('Mavis',), ('Houston',), ('Jeffrey',), ('Merritt',), ('Narciso',), ('George',), ('Bessie',), ('Troy',), ('Betty',), ('Holden',), ('Jesus',), ('Lyric',), ('Evangeline',)]",
+                "answer": "The names of the dogs for which the owner has not spent more than 1000 for treatment are: Kacey, Hipolito, Mavis, Houston, Jeffrey, Merritt, Narciso, George, Bessie, Troy, Betty, Holden, Jesus, Lyric, and Evangeline."
+            }
+        },
+        {
+            "db": "dog_kennels",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "List the cost of each treatment and the corresponding treatment type description.",
+                "sql_query": "SELECT T1.cost_of_treatment ,  T2.treatment_type_description FROM Treatments AS T1 JOIN treatment_types AS T2 ON T1.treatment_type_code  =  T2.treatment_type_code",
+                "sql_result": "[(567, 'Take for a Walk'), (147, 'Vaccination'), (429, 'Physical examination'), (266, 'Vaccination'), (668, 'Vaccination'), (313, 'Physical examination'), (852, 'Physical examination'), (407, 'Physical examination'), (139, 'Take for a Walk'), (681, 'Take for a Walk'), (514, 'Vaccination'), (428, 'Physical examination'), (945, 'Vaccination'), (349, 'Take for a Walk'), (656, 'Take for a Walk')]",
+                "answer": "[(567, 'Take for a Walk'), (147, 'Vaccination'), (429, 'Physical examination'), (266, 'Vaccination'), (668, 'Vaccination'), (313, 'Physical examination'), (852, 'Physical examination'), (407, 'Physical examination'), (139, 'Take for a Walk'), (681, 'Take for a Walk'), (514, 'Vaccination'), (428, 'Physical examination'), (945, 'Vaccination'), (349, 'Take for a Walk'), (656, 'Take for a Walk')]\n\nThe cost of each treatment and the corresponding treatment type description are listed in the SQLResult."
+            },
+            "pred": {
+                "question": "List the cost of each treatment and the corresponding treatment type description.",
+                "sql_query": "SELECT cost_of_treatment, treatment_type_description FROM Treatments JOIN Treatment_Types ON Treatments.treatment_type_code = Treatment_Types.treatment_type_code;\n",
+                "sql_result": "[(567, 'Take for a Walk'), (147, 'Vaccination'), (429, 'Physical examination'), (266, 'Vaccination'), (668, 'Vaccination'), (313, 'Physical examination'), (852, 'Physical examination'), (407, 'Physical examination'), (139, 'Take for a Walk'), (681, 'Take for a Walk'), (514, 'Vaccination'), (428, 'Physical examination'), (945, 'Vaccination'), (349, 'Take for a Walk'), (656, 'Take for a Walk')]",
+                "answer": "[(567, 'Take for a Walk'), (147, 'Vaccination'), (429, 'Physical examination'), (266, 'Vaccination'), (668, 'Vaccination'), (313, 'Physical examination'), (852, 'Physical examination'), (407, 'Physical examination'), (139, 'Take for a Walk'), (681, 'Take for a Walk'), (514, 'Vaccination'), (428, 'Physical examination'), (945, 'Vaccination'), (349, 'Take for a Walk'), (656, 'Take for a Walk')]. The cost of each treatment and the corresponding treatment type description are listed in the SQLResult."
+            }
+        },
+        {
+            "db": "dog_kennels",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many professionals did not operate any treatment on dogs?",
+                "sql_query": "SELECT count(*) FROM Professionals WHERE professional_id NOT IN ( SELECT professional_id FROM Treatments )",
+                "sql_result": "[(7,)]",
+                "answer": "There are 7 professionals who did not operate any treatment on dogs."
+            },
+            "pred": {
+                "question": "How many professionals did not operate any treatment on dogs?",
+                "sql_query": "SELECT COUNT(*) FROM Professionals WHERE professional_id NOT IN (SELECT professional_id FROM Treatments)\n",
+                "sql_result": "[(7,)]",
+                "answer": "There are 7 professionals who did not operate any treatment on dogs."
+            }
+        },
+        {
+            "db": "real_estate_properties",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many available features are there in total?",
+                "sql_query": "SELECT count(*) FROM Other_Available_Features",
+                "sql_result": "[(3,)]",
+                "answer": "There are 3 available features in total."
+            },
+            "pred": {
+                "question": "How many available features are there in total?",
+                "sql_query": "SELECT COUNT(*) FROM Other_Available_Features;\n",
+                "sql_result": "[(3,)]",
+                "answer": "There are 3 available features in total."
+            }
+        }
+    ]
+}

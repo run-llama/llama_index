@@ -1,0 +1,11 @@
+-e .
+sphinx>=4.3.0
+furo>=2023.3.27
+docutils<0.17
+m2r2
+myst-parser
+myst-nb
+sphinx-autobuild
+sphinx_rtd_theme
+pydantic<2.0.0
+autodoc_pydantic

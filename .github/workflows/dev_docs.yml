@@ -1,0 +1,21 @@
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - docs/**
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.PAT}}
+        with:
+          source-directory: './docs'
+          destination-github-username: 'avb-is-me'
+          destination-repository-name: 'llama_index'
+          user-email: github-actions[bot]@users.noreply.github.com
+          target-branch: main
+          target-directory: docs
