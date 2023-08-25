@@ -7,7 +7,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import NodeWithScore, MetadataMode
+from llama_index.schema import MetadataMode, NodeWithScore
 
 logger = logging.getLogger(__name__)
 
@@ -49,11 +49,21 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
 
         if tokenizer_fn is None:
             import nltk.data
+            import os
+            from llama_index.utils import get_cache_dir
+
+            cache_dir = get_cache_dir()
+            nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+
+            # update nltk path for nltk so that it finds the data
+            if nltk_data_dir not in nltk.data.path:
+                nltk.data.path.append(nltk_data_dir)
 
             try:
                 nltk.data.find("tokenizers/punkt")
             except LookupError:
-                nltk.download("punkt")
+                nltk.download("punkt", download_dir=nltk_data_dir)
+
             tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn
@@ -67,12 +77,11 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         if query_bundle is None:
             return nodes
 
-        for i in range(len(nodes)):
-            text = nodes[i].node.get_content(metadata_mode=MetadataMode.LLM)
+        for node_idx in range(len(nodes)):
+            text = nodes[node_idx].node.get_content(metadata_mode=MetadataMode.LLM)
 
             split_text = self._tokenizer_fn(text)
 
-            start_embed_token_ct = self.embed_model.total_tokens_used
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
                     self.embed_model.get_agg_embedding_from_queries(
@@ -98,22 +107,18 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                 similarity_cutoff=threshold,
             )
 
-            net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct
-            logger.info(
-                f"> [optimize] Total embedding token usage: "
-                f"{net_embed_tokens} tokens"
-            )
-
             if len(top_idxs) == 0:
                 raise ValueError("Optimizer returned zero sentences.")
 
-            top_sentences = [split_text[i] for i in top_idxs]
+            top_sentences = [split_text[idx] for idx in top_idxs]
 
             logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
             if logger.isEnabledFor(logging.DEBUG):
-                for i in range(len(top_idxs)):
-                    logger.debug(f"{i}. {top_sentences[i]} ({top_similarities[i]})")
+                for idx in range(len(top_idxs)):
+                    logger.debug(
+                        f"{idx}. {top_sentences[idx]} ({top_similarities[idx]})"
+                    )
 
-            nodes[i].node.set_content(" ".join(top_sentences))
+            nodes[node_idx].node.set_content(" ".join(top_sentences))
 
         return nodes

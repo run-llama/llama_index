@@ -46,7 +46,7 @@ class SimpleGraphStoreData(DataClassJsonMixin):
         rel_map = []
         if subj in self.graph_dict:
             for rel, obj in self.graph_dict[subj]:
-                rel_map.append([rel, obj])
+                rel_map.append([subj, rel, obj])
                 rel_map += self._get_rel_map(obj, depth=depth - 1)
         return rel_map
 
@@ -127,6 +127,14 @@ class SimpleGraphStore(GraphStore):
 
         with fs.open(persist_path, "w") as f:
             json.dump(self._data.to_dict(), f)
+
+    def get_schema(self, refresh: bool = False) -> str:
+        """Get the schema of the Simple Graph store."""
+        raise NotImplementedError("SimpleGraphStore does not support get_schema")
+
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+        """Query the Simple Graph store."""
+        raise NotImplementedError("SimpleGraphStore does not support query")
 
     @classmethod
     def from_persist_path(

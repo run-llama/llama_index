@@ -3,11 +3,15 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
-from pydantic import BaseModel, Field, root_validator
 from typing import Any, Dict, List, Optional, Union
 
-from llama_index.bridge.langchain import Document as LCDocument
+try:
+    from pydantic.v1 import BaseModel, Field, root_validator
+except ImportError:
+    from pydantic import BaseModel, Field, root_validator
 
+from llama_index.bridge.langchain import Document as LCDocument
+from llama_index.utils import SAMPLE_TEXT
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
@@ -258,6 +262,9 @@ class TextNode(BaseNode):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         """Get object content."""
         metadata_str = self.get_metadata_str(mode=metadata_mode).strip()
+        if not metadata_str:
+            return self.text
+
         return self.text_template.format(
             content=self.text, metadata_str=metadata_str
         ).strip()
@@ -380,6 +387,14 @@ class Document(TextNode):
     def from_langchain_format(cls, doc: LCDocument) -> "Document":
         """Convert struct from LangChain document format."""
         return cls(text=doc.page_content, metadata=doc.metadata)
+
+    @classmethod
+    def example(cls) -> "Document":
+        document = Document(
+            text=SAMPLE_TEXT,
+            metadata={"filename": "README.md", "category": "codebase"},
+        )
+        return document
 
 
 class ImageDocument(Document):

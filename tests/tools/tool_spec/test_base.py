@@ -1,9 +1,14 @@
 """Test tool spec."""
 
-from pydantic import BaseModel
+from typing import List, Type
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.types import ToolMetadata
-from typing import List, Type
 
 
 class FooSchema(BaseModel):
@@ -57,7 +62,7 @@ def test_tool_spec() -> None:
     assert tools[0].fn("hello", 1) == "foo hello 1"
     assert tools[1].metadata.name == "bar"
     assert tools[1].metadata.description == "bar(arg1: bool) -> str\nBar."
-    assert tools[1](True) == "bar True"
+    assert str(tools[1](True)) == "bar True"
     assert tools[2].metadata.name == "abc"
     assert tools[2].metadata.description == "abc(arg1: str) -> str\n"
     assert tools[2].metadata.fn_schema == AbcSchema
@@ -65,7 +70,9 @@ def test_tool_spec() -> None:
     # test metadata mapping
     tools = tool_spec.to_tool_list(
         func_to_metadata_mapping={
-            "foo": ToolMetadata("foo_description", name="foo_name"),
+            "foo": ToolMetadata(
+                "foo_description", name="foo_name", fn_schema=FooSchema
+            ),
         }
     )
     assert len(tools) == 3
@@ -73,6 +80,7 @@ def test_tool_spec() -> None:
     assert tools[0].metadata.description == "foo_description"
     assert tools[0].metadata.fn_schema is not None
     fn_schema = tools[0].metadata.fn_schema.schema()
+    print(fn_schema)
     assert fn_schema["properties"]["arg1"]["type"] == "string"
     assert fn_schema["properties"]["arg2"]["type"] == "integer"
     assert tools[1].metadata.name == "bar"

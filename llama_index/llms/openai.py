@@ -1,7 +1,11 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -12,6 +16,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
@@ -28,26 +34,74 @@ from llama_index.llms.openai_utils import (
     completion_with_retry,
     from_openai_message_dict,
     is_chat_model,
+    is_function_calling_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
+    validate_openai_api_key,
 )
 
 
-class OpenAI(LLM, BaseModel):
-    model: str = Field("text-davinci-003")
-    temperature: float = 0.0
-    max_tokens: Optional[int] = None
-    additional_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    max_retries: int = 10
+class OpenAI(LLM):
+    model: str = Field(description="The OpenAI model to use.")
+    temperature: float = Field(description="The tempature to use during generation.")
+    max_tokens: Optional[int] = Field(
+        description="The maximum number of tokens to generate."
+    )
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additonal kwargs for the OpenAI API."
+    )
+    max_retries: int = Field(description="The maximum number of API retries.")
+
+    def __init__(
+        self,
+        model: str = "gpt-3.5-turbo",
+        temperature: float = 0.1,
+        max_tokens: Optional[int] = None,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        max_retries: int = 10,
+        api_key: Optional[str] = None,
+        api_type: Optional[str] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
+    ) -> None:
+        validate_openai_api_key(api_key, api_type)
+
+        additional_kwargs = additional_kwargs or {}
+        if api_key is not None:
+            additional_kwargs["api_key"] = api_key
+        if api_type is not None:
+            additional_kwargs["api_type"] = api_type
+
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            max_retries=max_retries,
+            callback_manager=callback_manager,
+            **kwargs,
+        )
+
+    def _get_model_name(self) -> str:
+        model_name = self.model
+        if "ft-" in model_name:  # legacy fine-tuning
+            model_name = model_name.split(":")[0]
+        elif model_name.startswith("ft:"):
+            model_name = model_name.split(":")[1]
+
+        return model_name
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=openai_modelname_to_contextsize(self.model),
+            context_window=openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
+            is_function_calling_model=is_function_calling_model(self._get_model_name()),
+            model_name=self.model,
         )
 
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         if self._is_chat_model:
             chat_fn = self._chat
@@ -55,6 +109,7 @@ class OpenAI(LLM, BaseModel):
             chat_fn = completion_to_chat_decorator(self._complete)
         return chat_fn(messages, **kwargs)
 
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -64,6 +119,7 @@ class OpenAI(LLM, BaseModel):
             stream_chat_fn = stream_completion_to_chat_decorator(self._stream_complete)
         return stream_chat_fn(messages, **kwargs)
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         if self._is_chat_model:
             complete_fn = chat_to_completion_decorator(self._chat)
@@ -71,6 +127,7 @@ class OpenAI(LLM, BaseModel):
             complete_fn = self._complete
         return complete_fn(prompt, **kwargs)
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         if self._is_chat_model:
             stream_complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
@@ -80,7 +137,7 @@ class OpenAI(LLM, BaseModel):
 
     @property
     def _is_chat_model(self) -> bool:
-        return is_chat_model(self.model)
+        return is_chat_model(self._get_model_name())
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -230,7 +287,7 @@ class OpenAI(LLM, BaseModel):
                 "Please install tiktoken to use the max_tokens=None feature."
             )
         context_window = self.metadata.context_window
-        encoding = tiktoken.encoding_for_model(self.model)
+        encoding = tiktoken.encoding_for_model(self._get_model_name())
         tokens = encoding.encode(prompt)
         max_token = context_window - len(tokens)
         if max_token <= 0:
@@ -241,6 +298,7 @@ class OpenAI(LLM, BaseModel):
         return max_token
 
     # ===== Async Endpoints =====
+    @llm_chat_callback()
     async def achat(
         self,
         messages: Sequence[ChatMessage],
@@ -253,6 +311,7 @@ class OpenAI(LLM, BaseModel):
             achat_fn = acompletion_to_chat_decorator(self._acomplete)
         return await achat_fn(messages, **kwargs)
 
+    @llm_chat_callback()
     async def astream_chat(
         self,
         messages: Sequence[ChatMessage],
@@ -267,6 +326,7 @@ class OpenAI(LLM, BaseModel):
             )
         return await astream_chat_fn(messages, **kwargs)
 
+    @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         if self._is_chat_model:
             acomplete_fn = achat_to_completion_decorator(self._achat)
@@ -274,6 +334,7 @@ class OpenAI(LLM, BaseModel):
             acomplete_fn = self._acomplete
         return await acomplete_fn(prompt, **kwargs)
 
+    @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:

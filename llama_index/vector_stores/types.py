@@ -4,7 +4,11 @@ from enum import Enum
 from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable
 
 import fsspec
-from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
+
+try:
+    from pydantic.v1 import BaseModel, StrictFloat, StrictInt, StrictStr
+except ImportError:
+    from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
 
 from llama_index.schema import BaseNode
 
@@ -124,6 +128,8 @@ class VectorStoreQuery:
     doc_ids: Optional[List[str]] = None
     node_ids: Optional[List[str]] = None
     query_str: Optional[str] = None
+    output_fields: Optional[List[str]] = None
+    embedding_field: Optional[str] = None
 
     mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT
 
@@ -156,14 +162,43 @@ class VectorStore(Protocol):
         """Add embedding results to vector store."""
         ...
 
+    async def async_add(
+        self,
+        embedding_results: List[NodeWithEmbedding],
+    ) -> List[str]:
+        """
+        Asynchronously add embedding results to vector store.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call add synchronously.
+        """
+        return self.add(embedding_results)
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id."""
         ...
 
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call delete synchronously.
+        """
+        self.delete(ref_doc_id, **delete_kwargs)
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """
+        Asynchronously query vector store.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call query synchronously.
+        """
+        return self.query(query, **kwargs)
 
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None

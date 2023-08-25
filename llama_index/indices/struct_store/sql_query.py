@@ -1,10 +1,10 @@
 """Default query for SQLStructStoreIndex."""
 import logging
+from abc import abstractmethod
 from typing import Any, List, Optional, Union
 
 from sqlalchemy import Table
 
-from abc import abstractmethod
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -13,12 +13,12 @@ from llama_index.indices.struct_store.container_builder import (
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-from llama_index.prompts.base import Prompt
+from llama_index.objects.base import ObjectRetriever
+from llama_index.objects.table_node_mapping import SQLTableSchema
+from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
-from llama_index.objects.table_node_mapping import SQLTableSchema
-from llama_index.objects.base import ObjectRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
     "SQL Response: {sql_response_str}\n"
     "Response: "
 )
-DEFAULT_RESPONSE_SYNTHESIS_PROMPT = Prompt(
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL,
     prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
 )
@@ -85,24 +85,25 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
     Args:
         index (SQLStructStoreIndex): A SQL Struct Store Index
-        text_to_sql_prompt (Optional[Prompt]): A Text to SQL Prompt
-            to use for the query. Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
+        text_to_sql_prompt (Optional[BasePromptTemplate]): A Text to SQL
+            BasePromptTemplate to use for the query.
+            Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
         context_query_kwargs (Optional[dict]): Keyword arguments for the
             context query. Defaults to {}.
         synthesize_response (bool): Whether to synthesize a response from the
             query results. Defaults to True.
-        response_synthesis_prompt (Optional[Prompt]): A
-            Response Synthesis Prompt to use for the query. Defaults to
+        response_synthesis_prompt (Optional[BasePromptTemplate]): A
+            Response Synthesis BasePromptTemplate to use for the query. Defaults to
             DEFAULT_RESPONSE_SYNTHESIS_PROMPT.
     """
 
     def __init__(
         self,
         index: SQLStructStoreIndex,
-        text_to_sql_prompt: Optional[Prompt] = None,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -127,6 +128,10 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
+        # Find and remove SQLResult part
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
+            response = response[:sql_result_start]
         result_response = response.strip()
         return result_response
 
@@ -211,10 +216,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         sql_database: SQLDatabase,
-        text_to_sql_prompt: Optional[Prompt] = None,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
@@ -237,6 +242,15 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
+        # Find and remove SQLResult part
+        sql_result_start = response.find("SQLResult:")
+        sql_query_start = response.find("SQLQuery:")
+        if sql_result_start != -1 and sql_query_start != -1:
+            response = response[sql_query_start + 1 : sql_result_start].lstrip(
+                "SQLQuery:"
+            )
+        elif sql_result_start != -1:
+            response = response[:sql_result_start]
         result_response = response.strip()
         return result_response
 
@@ -308,10 +322,10 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
     def __init__(
         self,
         sql_database: SQLDatabase,
-        text_to_sql_prompt: Optional[Prompt] = None,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
@@ -344,13 +358,25 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
                 else:
                     raise ValueError(f"Unknown table type: {table}")
                 table_info = self._sql_database.get_single_table_info(table_str)
+
+                if self._context_query_kwargs.get(table_str, None) is not None:
+                    table_opt_context = " The table description is: "
+                    table_opt_context += self._context_query_kwargs[table_str]
+                    table_info += table_opt_context
+
                 context_strs.append(table_info)
 
         else:
             # get all tables
-            table_names = self._sql_database.get_table_names()
+            table_names = self._sql_database.get_usable_table_names()
             for table_name in table_names:
                 table_info = self._sql_database.get_single_table_info(table_name)
+
+                if self._context_query_kwargs.get(table_name, None) is not None:
+                    table_opt_context = " The table description is: "
+                    table_opt_context += self._context_query_kwargs[table_name]
+                    table_info += table_opt_context
+
                 context_strs.append(table_info)
 
         tables_desc_str = "\n\n".join(context_strs)
@@ -364,10 +390,10 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         self,
         sql_database: SQLDatabase,
         table_retriever: ObjectRetriever[SQLTableSchema],
-        text_to_sql_prompt: Optional[Prompt] = None,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         **kwargs: Any,
@@ -391,16 +417,21 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         Get tables schema + optional context as a single string.
 
         """
+        context_strs = []
         if self._context_str_prefix is not None:
             context_strs = [self._context_str_prefix]
 
-        # TODO: allow top-level context
         table_schema_objs = self._table_retriever.retrieve(query_bundle)
-        context_strs = []
         for table_schema_obj in table_schema_objs:
             table_info = self._sql_database.get_single_table_info(
                 table_schema_obj.table_name
             )
+
+            if table_schema_obj.context_str:
+                table_opt_context = " The table description is: "
+                table_opt_context += table_schema_obj.context_str
+                table_info += table_opt_context
+
             context_strs.append(table_info)
 
         tables_desc_str = "\n\n".join(context_strs)

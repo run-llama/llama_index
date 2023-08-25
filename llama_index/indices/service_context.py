@@ -5,15 +5,16 @@ from typing import Optional
 import llama_index
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.llms.base import LLM
-from llama_index.llms.utils import LLMType
+from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
+from llama_index.prompts.base import BasePromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +71,14 @@ class ServiceContext:
     def from_defaults(
         cls,
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        llm: Optional[LLMType] = None,
+        llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[BaseEmbedding] = None,
+        embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        query_wrapper_prompt: Optional[BasePromptTemplate] = None,
         # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
@@ -96,10 +99,15 @@ class ServiceContext:
             llm_predictor (Optional[BaseLLMPredictor]): LLMPredictor
             prompt_helper (Optional[PromptHelper]): PromptHelper
             embed_model (Optional[BaseEmbedding]): BaseEmbedding
+                or "local" (use local model)
             node_parser (Optional[NodeParser]): NodeParser
             llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
             chunk_size (Optional[int]): chunk_size
             callback_manager (Optional[CallbackManager]): CallbackManager
+            system_prompt (Optional[str]): System-wide prompt to be prepended
+                to all input prompts, used to guide system "decision making"
+            query_wrapper_prompt (Optional[BasePromptTemplate]): A format to wrap
+                passed-in input queries.
 
         Deprecated Args:
             chunk_size_limit (Optional[int]): renamed to chunk_size
@@ -125,15 +133,20 @@ class ServiceContext:
             )
 
         callback_manager = callback_manager or CallbackManager([])
-        if llm is not None:
+        if llm != "default":
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
-            llm_predictor = LLMPredictor(llm=llm)
-        llm_predictor = llm_predictor or LLMPredictor()
-        llm_predictor.callback_manager = callback_manager
+            llm = resolve_llm(llm)
+        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+        if isinstance(llm_predictor, LLMPredictor):
+            llm_predictor.llm.callback_manager = callback_manager
+            if system_prompt:
+                llm_predictor.system_prompt = system_prompt
+            if query_wrapper_prompt:
+                llm_predictor.query_wrapper_prompt = query_wrapper_prompt
 
         # NOTE: the embed_model isn't used in all indices
-        embed_model = embed_model or OpenAIEmbedding()
+        embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
         prompt_helper = prompt_helper or _get_default_prompt_helper(
@@ -164,12 +177,14 @@ class ServiceContext:
         cls,
         service_context: "ServiceContext",
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        llm: Optional[LLM] = None,
+        llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[BaseEmbedding] = None,
+        embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        query_wrapper_prompt: Optional[BasePromptTemplate] = None,
         # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
@@ -188,16 +203,25 @@ class ServiceContext:
             chunk_size = chunk_size_limit
 
         callback_manager = callback_manager or service_context.callback_manager
-        if llm is not None:
+        if llm != "default":
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
+            llm = resolve_llm(llm)
             llm_predictor = LLMPredictor(llm=llm)
 
         llm_predictor = llm_predictor or service_context.llm_predictor
-        llm_predictor.callback_manager = callback_manager
+        if isinstance(llm_predictor, LLMPredictor):
+            llm_predictor.llm.callback_manager = callback_manager
+            if system_prompt:
+                llm_predictor.system_prompt = system_prompt
+            if query_wrapper_prompt:
+                llm_predictor.query_wrapper_prompt = query_wrapper_prompt
 
         # NOTE: the embed_model isn't used in all indices
-        embed_model = embed_model or service_context.embed_model
+        # default to using the embed model passed from the service context
+        if embed_model == "default":
+            embed_model = service_context.embed_model
+        embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
         prompt_helper = prompt_helper or _get_default_prompt_helper(
@@ -224,6 +248,12 @@ class ServiceContext:
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
         )
+
+    @property
+    def llm(self) -> LLM:
+        if not isinstance(self.llm_predictor, LLMPredictor):
+            raise ValueError("llm_predictor must be an instance of LLMPredictor")
+        return self.llm_predictor.llm
 
 
 def set_global_service_context(service_context: Optional[ServiceContext]) -> None:

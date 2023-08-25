@@ -3,11 +3,11 @@ from typing import Any, Generator, Optional, Sequence, cast
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
-from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
-from llama_index.prompts.default_prompts import (
-    DEFAULT_TEXT_QA_PROMPT,
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompt_selectors import (
+    DEFAULT_REFINE_PROMPT_SEL,
+    DEFAULT_TEXT_QA_PROMPT_SEL,
 )
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -21,13 +21,13 @@ class Refine(BaseSynthesizer):
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
+        refine_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
         verbose: bool = False,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
-        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._verbose = verbose
 

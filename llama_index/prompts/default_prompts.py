@@ -1,6 +1,6 @@
 """Set of default prompts."""
 
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 
 ############################################
@@ -19,7 +19,7 @@ DEFAULT_SUMMARY_PROMPT_TMPL = (
     'SUMMARY:"""\n'
 )
 
-DEFAULT_SUMMARY_PROMPT = Prompt(
+DEFAULT_SUMMARY_PROMPT = PromptTemplate(
     DEFAULT_SUMMARY_PROMPT_TMPL, prompt_type=PromptType.SUMMARY
 )
 
@@ -37,7 +37,7 @@ DEFAULT_INSERT_PROMPT_TMPL = (
     "The answer should be the number corresponding to the "
     "summary that is most relevant to the question.\n"
 )
-DEFAULT_INSERT_PROMPT = Prompt(
+DEFAULT_INSERT_PROMPT = PromptTemplate(
     DEFAULT_INSERT_PROMPT_TMPL, prompt_type=PromptType.TREE_INSERT
 )
 
@@ -55,7 +55,7 @@ DEFAULT_QUERY_PROMPT_TMPL = (
     "Provide choice in the following format: 'ANSWER: <number>' and explain why "
     "this summary was selected in relation to the question.\n"
 )
-DEFAULT_QUERY_PROMPT = Prompt(
+DEFAULT_QUERY_PROMPT = PromptTemplate(
     DEFAULT_QUERY_PROMPT_TMPL, prompt_type=PromptType.TREE_SELECT
 )
 
@@ -73,13 +73,13 @@ DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
     "Provide choices in the following format: 'ANSWER: <numbers>' and explain why "
     "these summaries were selected in relation to the question.\n"
 )
-DEFAULT_QUERY_PROMPT_MULTIPLE = Prompt(
+DEFAULT_QUERY_PROMPT_MULTIPLE = PromptTemplate(
     DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL, prompt_type=PromptType.TREE_SELECT_MULTIPLE
 )
 
 
 DEFAULT_REFINE_PROMPT_TMPL = (
-    "The original question is as follows: {query_str}\n"
+    "The original query is as follows: {query_str}\n"
     "We have provided an existing answer: {existing_answer}\n"
     "We have the opportunity to refine the existing answer "
     "(only if needed) with some more context below.\n"
@@ -87,10 +87,11 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "{context_msg}\n"
     "------------\n"
     "Given the new context, refine the original answer to better "
-    "answer the question. "
-    "If the context isn't useful, return the original answer."
+    "answer the query. "
+    "If the context isn't useful, return the original answer.\n"
+    "Refined Answer: "
 )
-DEFAULT_REFINE_PROMPT = Prompt(
+DEFAULT_REFINE_PROMPT = PromptTemplate(
     DEFAULT_REFINE_PROMPT_TMPL, prompt_type=PromptType.REFINE
 )
 
@@ -101,10 +102,26 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "{context_str}\n"
     "---------------------\n"
     "Given the context information and not prior knowledge, "
-    "answer the question: {query_str}\n"
+    "answer the query.\n"
+    "Query: {query_str}\n"
+    "Answer: "
 )
-DEFAULT_TEXT_QA_PROMPT = Prompt(
+DEFAULT_TEXT_QA_PROMPT = PromptTemplate(
     DEFAULT_TEXT_QA_PROMPT_TMPL, prompt_type=PromptType.QUESTION_ANSWER
+)
+
+DEFAULT_TREE_SUMMARIZE_TMPL = (
+    "Context information from multiple sources is below.\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Given the information from multiple sources and not prior knowledge, "
+    "answer the query.\n"
+    "Query: {query_str}\n"
+    "Answer: "
+)
+DEFAULT_TREE_SUMMARIZE_PROMPT = PromptTemplate(
+    DEFAULT_TREE_SUMMARIZE_TMPL, prompt_type=PromptType.SUMMARY
 )
 
 
@@ -120,7 +137,7 @@ DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "---------------------\n"
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
-DEFAULT_KEYWORD_EXTRACT_TEMPLATE = Prompt(
+DEFAULT_KEYWORD_EXTRACT_TEMPLATE = PromptTemplate(
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL, prompt_type=PromptType.KEYWORD_EXTRACT
 )
 
@@ -136,7 +153,7 @@ DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "---------------------\n"
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
-DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = Prompt(
+DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = PromptTemplate(
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL,
     prompt_type=PromptType.QUERY_KEYWORD_EXTRACT,
 )
@@ -162,7 +179,7 @@ DEFAULT_SCHEMA_EXTRACT_TMPL = (
     "If no fields are present in the text, return a blank string.\n"
     "Fields: "
 )
-DEFAULT_SCHEMA_EXTRACT_PROMPT = Prompt(
+DEFAULT_SCHEMA_EXTRACT_PROMPT = PromptTemplate(
     DEFAULT_SCHEMA_EXTRACT_TMPL, prompt_type=PromptType.SCHEMA_EXTRACT
 )
 
@@ -191,9 +208,8 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
     "SQLQuery: "
 )
 
-DEFAULT_TEXT_TO_SQL_PROMPT = Prompt(
+DEFAULT_TEXT_TO_SQL_PROMPT = PromptTemplate(
     DEFAULT_TEXT_TO_SQL_TMPL,
-    stop_token="\nSQLResult:",
     prompt_type=PromptType.TEXT_TO_SQL,
 )
 
@@ -222,11 +238,11 @@ DEFAULT_TABLE_CONTEXT_QUERY = (
     "...\n\n"
 )
 
-DEFAULT_TABLE_CONTEXT_PROMPT = Prompt(
+DEFAULT_TABLE_CONTEXT_PROMPT = PromptTemplate(
     DEFAULT_TABLE_CONTEXT_TMPL, prompt_type=PromptType.TABLE_CONTEXT
 )
 
-# NOTE: by partially filling schema, we can reduce to a RefinePrompt
+# NOTE: by partially filling schema, we can reduce to a refine prompt
 # that we can feed to ur table
 DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
     "We have provided a table schema below. "
@@ -243,7 +259,7 @@ DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
     "answer the question. "
     "If the context isn't useful, return the original answer."
 )
-DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = Prompt(
+DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = PromptTemplate(
     DEFAULT_REFINE_TABLE_CONTEXT_TMPL, prompt_type=PromptType.TABLE_CONTEXT
 )
 
@@ -269,7 +285,7 @@ DEFAULT_KG_TRIPLET_EXTRACT_TMPL = (
     "Text: {text}\n"
     "Triplets:\n"
 )
-DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = Prompt(
+DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
     DEFAULT_KG_TRIPLET_EXTRACT_TMPL, prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
 )
 
@@ -288,7 +304,7 @@ HYDE_TMPL = (
     'Passage:"""\n'
 )
 
-DEFAULT_HYDE_PROMPT = Prompt(HYDE_TMPL, prompt_type=PromptType.SUMMARY)
+DEFAULT_HYDE_PROMPT = PromptTemplate(HYDE_TMPL, prompt_type=PromptType.SUMMARY)
 
 
 ############################################
@@ -296,7 +312,7 @@ DEFAULT_HYDE_PROMPT = Prompt(HYDE_TMPL, prompt_type=PromptType.SUMMARY)
 ############################################
 
 DEFAULT_SIMPLE_INPUT_TMPL = "{query_str}"
-DEFAULT_SIMPLE_INPUT_PROMPT = Prompt(
+DEFAULT_SIMPLE_INPUT_PROMPT = PromptTemplate(
     DEFAULT_SIMPLE_INPUT_TMPL, prompt_type=PromptType.SIMPLE_INPUT
 )
 
@@ -317,7 +333,9 @@ DEFAULT_PANDAS_TMPL = (
     "Output:\n"
 )
 
-DEFAULT_PANDAS_PROMPT = Prompt(DEFAULT_PANDAS_TMPL, prompt_type=PromptType.PANDAS)
+DEFAULT_PANDAS_PROMPT = PromptTemplate(
+    DEFAULT_PANDAS_TMPL, prompt_type=PromptType.PANDAS
+)
 
 
 ############################################
@@ -333,6 +351,38 @@ DEFAULT_JSON_PATH_TMPL = (
     "JSONPath: "
 )
 
-DEFAULT_JSON_PATH_PROMPT = Prompt(
+DEFAULT_JSON_PATH_PROMPT = PromptTemplate(
     DEFAULT_JSON_PATH_TMPL, prompt_type=PromptType.JSON_PATH
+)
+
+
+############################################
+# Choice Select
+############################################
+
+DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
+    "A list of documents is shown below. Each document has a number next to it along "
+    "with a summary of the document. A question is also provided. \n"
+    "Respond with the numbers of the documents "
+    "you should consult to answer the question, in order of relevance, as well \n"
+    "as the relevance score. The relevance score is a number from 1-10 based on "
+    "how relevant you think the document is to the question.\n"
+    "Do not include any documents that are not relevant to the question. \n"
+    "Example format: \n"
+    "Document 1:\n<summary of document 1>\n\n"
+    "Document 2:\n<summary of document 2>\n\n"
+    "...\n\n"
+    "Document 10:\n<summary of document 10>\n\n"
+    "Question: <question>\n"
+    "Answer:\n"
+    "Doc: 9, Relevance: 7\n"
+    "Doc: 3, Relevance: 4\n"
+    "Doc: 7, Relevance: 3\n\n"
+    "Let's try this now: \n\n"
+    "{context_str}\n"
+    "Question: {query_str}\n"
+    "Answer:\n"
+)
+DEFAULT_CHOICE_SELECT_PROMPT = PromptTemplate(
+    DEFAULT_CHOICE_SELECT_PROMPT_TMPL, prompt_type=PromptType.CHOICE_SELECT
 )

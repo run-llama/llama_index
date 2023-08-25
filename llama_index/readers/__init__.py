@@ -10,6 +10,7 @@ definition of a Document - the bare minimum is a `text` property.
 
 """
 
+from llama_index.readers.bagel import BagelReader
 from llama_index.readers.chatgpt_plugin import ChatGPTRetrievalPluginReader
 from llama_index.readers.chroma import ChromaReader
 from llama_index.readers.deeplake import DeepLakeReader
@@ -84,4 +85,5 @@ __all__ = [
     "ElasticsearchReader",
     "SteamshipFileReader",
     "ChatGPTRetrievalPluginReader",
+    "BagelReader",
 ]

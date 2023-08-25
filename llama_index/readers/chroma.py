@@ -37,19 +37,17 @@ class ChromaReader(BaseReader):
 
         if collection_name is None:
             raise ValueError("Please provide a collection name.")
-        from chromadb.config import Settings
+        # from chromadb.config import Settings
 
-        self._client = chromadb.Client(
-            Settings(
-                chroma_api_impl=chroma_api_impl,
-                chroma_db_impl=chroma_db_impl or "chromadb.db.duckdb.DuckDB",
-                chroma_server_host=host,
-                chroma_server_http_port=port,
-                persist_directory=persist_directory
-                if persist_directory
-                else "./chroma",
+        if persist_directory is not None:
+            self._client = chromadb.PersistentClient(
+                path=persist_directory if persist_directory else "./chroma",
             )
-        )
+        elif (host is not None) or (port is not None):
+            self._client = chromadb.HttpClient(
+                host=host,
+                port=port,
+            )
 
         self._collection = self._client.get_collection(collection_name)
 

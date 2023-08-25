@@ -1,17 +1,14 @@
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.langchain_helpers.text_splitter import (
-    SentenceSplitter,
-    TokenTextSplitter,
-)
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import PromptTemplate
+from llama_index.prompts.base import BasePromptTemplate
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
@@ -19,9 +16,10 @@ from llama_index.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.schema import NodeWithScore, TextNode
+from llama_index.text_splitter import get_default_text_splitter
+from llama_index.text_splitter.types import TextSplitter
 
-
-CITATION_QA_TEMPLATE = Prompt(
+CITATION_QA_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "
     "When referencing information from a source, "
     "cite the appropriate source(s) using their corresponding numbers. "
@@ -44,7 +42,7 @@ CITATION_QA_TEMPLATE = Prompt(
     "Answer: "
 )
 
-CITATION_REFINE_TEMPLATE = Prompt(
+CITATION_REFINE_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "
     "When referencing information from a source, "
     "cite the appropriate source(s) using their corresponding numbers. "
@@ -75,8 +73,6 @@ CITATION_REFINE_TEMPLATE = Prompt(
 DEFAULT_CITATION_CHUNK_SIZE = 512
 DEFAULT_CITATION_CHUNK_OVERLAP = 20
 
-TextSplitterType = Union[SentenceSplitter, TokenTextSplitter]
-
 
 class CitationQueryEngine(BaseQueryEngine):
     """Citation query engine.
@@ -101,16 +97,17 @@ class CitationQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
-        text_splitter: Optional[TextSplitterType] = None,
+        text_splitter: Optional[TextSplitter] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.text_splitter = text_splitter or SentenceSplitter(
+        self.text_splitter = text_splitter or get_default_text_splitter(
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
         )
         self._retriever = retriever
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            callback_manager=callback_manager
+            service_context=retriever.get_service_context(),
+            callback_manager=callback_manager,
         )
         self._node_postprocessors = node_postprocessors or []
 
@@ -123,9 +120,9 @@ class CitationQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
-        text_splitter: Optional[TextSplitterType] = None,
-        citation_qa_template: Prompt = CITATION_QA_TEMPLATE,
-        citation_refine_template: Prompt = CITATION_REFINE_TEMPLATE,
+        text_splitter: Optional[TextSplitter] = None,
+        citation_qa_template: BasePromptTemplate = CITATION_QA_TEMPLATE,
+        citation_refine_template: BasePromptTemplate = CITATION_REFINE_TEMPLATE,
         retriever: Optional[BaseRetriever] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         # response synthesizer args
@@ -143,11 +140,12 @@ class CitationQueryEngine(BaseQueryEngine):
                 Size of citation chunks, default=512. Useful for controlling
                 granularity of sources.
             citation_chunk_overlap (int): Overlap of citation nodes, default=20.
-            text_splitter (Optional[TextSplitterType]):
+            text_splitter (Optional[TextSplitter]):
                 A text splitter for creating citation source nodes. Default is
                 a SentenceSplitter.
-            citation_qa_template (Prompt): Template for initial citation QA
-            citation_refine_template (Prompt): Template for citation refinement.
+            citation_qa_template (BasePromptTemplate): Template for initial citation QA
+            citation_refine_template (BasePromptTemplate):
+                Template for citation refinement.
             retriever (BaseRetriever): A retriever object.
             service_context (Optional[ServiceContext]): A ServiceContext object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
@@ -185,25 +183,10 @@ class CitationQueryEngine(BaseQueryEngine):
         """Modify retrieved nodes to be granular sources."""
         new_nodes: List[NodeWithScore] = []
         for node in nodes:
-            splits = self.text_splitter.split_text_with_overlaps(
-                node.node.get_content()
-            )
+            text_chunks = self.text_splitter.split_text(node.node.get_content())
 
-            start_offset = 0
-            if isinstance(node.node, TextNode) and node.node.start_char_idx is not None:
-                start_offset = node.node.start_char_idx
-
-            for split in splits:
-                text = f"Source {len(new_nodes)+1}:\n{split.text_chunk}\n"
-
-                # NOTE currently this does not take into account escaped chars
-                num_char_overlap = split.num_char_overlap or 0
-                chunk_len = len(split.text_chunk)
-
-                start_char_idx = start_offset - num_char_overlap
-                end_char_idx = start_offset - num_char_overlap + chunk_len
-
-                start_offset += chunk_len + 1
+            for text_chunk in text_chunks:
+                text = f"Source {len(new_nodes)+1}:\n{text_chunk}\n"
 
                 new_nodes.append(
                     NodeWithScore(
@@ -211,8 +194,6 @@ class CitationQueryEngine(BaseQueryEngine):
                             text=text,
                             metadata=node.node.metadata or {},
                             relationships=node.node.relationships or {},
-                            start_char_idx=start_char_idx,
-                            end_char_idx=end_char_idx,
                         ),
                         score=node.score,
                     )
@@ -261,54 +242,46 @@ class CitationQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        query_id = self.callback_manager.on_event_start(
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        ) as query_event:
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = self.retrieve(query_bundle)
+                nodes = self._create_citation_nodes(nodes)
 
-        retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self.retrieve(query_bundle)
-        nodes = self._create_citation_nodes(nodes)
-        self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.NODES: nodes},
-            event_id=retrieve_id,
-        )
+                retrieve_event.on_end(payload={EventPayload.NODES: nodes})
 
-        response = self._response_synthesizer.synthesize(
-            query=query_bundle,
-            nodes=nodes,
-        )
+            response = self._response_synthesizer.synthesize(
+                query=query_bundle,
+                nodes=nodes,
+            )
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=query_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        query_id = self.callback_manager.on_event_start(
+        with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
+        ) as query_event:
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = self.retrieve(query_bundle)
+                nodes = self._create_citation_nodes(nodes)
 
-        retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self.retrieve(query_bundle)
-        nodes = self._create_citation_nodes(nodes)
-        self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.NODES: nodes},
-            event_id=retrieve_id,
-        )
+                retrieve_event.on_end(payload={EventPayload.NODES: nodes})
 
-        response = await self._response_synthesizer.asynthesize(
-            query=query_bundle,
-            nodes=nodes,
-        )
+            response = await self._response_synthesizer.asynthesize(
+                query=query_bundle,
+                nodes=nodes,
+            )
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=query_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+
         return response

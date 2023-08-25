@@ -1,32 +1,42 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
-from abc import abstractmethod
-from typing import Any, Optional, Protocol, runtime_checkable
+from abc import ABC, abstractmethod
+from typing import Any, List, Optional
+
+try:
+    from pydantic.v1 import BaseModel, PrivateAttr
+except ImportError:
+    from pydantic import BaseModel, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.utils import (
     astream_chat_response_to_tokens,
     astream_completion_response_to_tokens,
     stream_chat_response_to_tokens,
     stream_completion_response_to_tokens,
 )
-from llama_index.llms.base import LLM, LLMMetadata
+from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import (
+    BasePromptTemplate,
+    ChatPromptTemplate,
+    PromptTemplate,
+    SelectorPromptTemplate,
+)
 from llama_index.types import TokenAsyncGen, TokenGen
-from llama_index.utils import count_tokens
 
 logger = logging.getLogger(__name__)
 
 
-@runtime_checkable
-class BaseLLMPredictor(Protocol):
+class BaseLLMPredictor(BaseModel, ABC):
     """Base LLM Predictor."""
 
-    callback_manager: CallbackManager
+    @property
+    @abstractmethod
+    def llm(self) -> LLM:
+        """Get LLM."""
 
     @property
     @abstractmethod
@@ -34,19 +44,21 @@ class BaseLLMPredictor(Protocol):
         """Get LLM metadata."""
 
     @abstractmethod
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict the answer to a query."""
 
     @abstractmethod
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream the answer to a query."""
 
     @abstractmethod
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Async predict the answer to a query."""
 
     @abstractmethod
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+    async def astream(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> TokenAsyncGen:
         """Async predict the answer to a query."""
 
 
@@ -61,14 +73,29 @@ class LLMPredictor(BaseLLMPredictor):
     deprecate this class and move all functionality into the LLM class.
     """
 
+    class Config:
+        arbitrary_types_allowed = True
+
+    system_prompt: Optional[str]
+    query_wrapper_prompt: Optional[BasePromptTemplate]
+    _llm: LLM = PrivateAttr()
+
     def __init__(
         self,
         llm: Optional[LLMType] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        query_wrapper_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         """Initialize params."""
         self._llm = resolve_llm(llm)
-        self.callback_manager = callback_manager or CallbackManager([])
+
+        if callback_manager:
+            self._llm.callback_manager = callback_manager
+
+        super().__init__(
+            system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt
+        )
 
     @property
     def llm(self) -> LLM:
@@ -80,94 +107,114 @@ class LLMPredictor(BaseLLMPredictor):
         """Get LLM metadata."""
         return self._llm.metadata
 
-    def _log_start(self, prompt: Prompt, prompt_args: dict) -> str:
-        """Log start of an LLM event."""
-        llm_payload = prompt_args.copy()
-        llm_payload[EventPayload.TEMPLATE] = prompt
-        event_id = self.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload=llm_payload,
-        )
-
-        return event_id
-
-    def _log_end(self, event_id: str, output: str, formatted_prompt: str) -> None:
-        """Log end of an LLM event."""
-        prompt_tokens_count = count_tokens(formatted_prompt)
-        prediction_tokens_count = count_tokens(output)
-        self.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={
-                EventPayload.RESPONSE: output,
-                EventPayload.PROMPT: formatted_prompt,
-                # deprecated
-                "formatted_prompt_tokens_count": prompt_tokens_count,
-                "prediction_tokens_count": prediction_tokens_count,
-                "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
-            },
-            event_id=event_id,
-        )
-
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict."""
-        event_id = self._log_start(prompt, prompt_args)
-
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
-            chat_response = self._llm.chat(messages=messages)
+            messages = self._extend_messages(messages)
+            chat_response = self._llm.chat(messages)
             output = chat_response.message.content or ""
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
+            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             response = self._llm.complete(formatted_prompt)
             output = response.text
 
         logger.debug(output)
-        self._log_end(event_id, output, formatted_prompt)
 
         return output
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream."""
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
-            chat_response = self._llm.stream_chat(messages=messages)
+            messages = self._extend_messages(messages)
+            chat_response = self._llm.stream_chat(messages)
             stream_tokens = stream_chat_response_to_tokens(chat_response)
         else:
+            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             stream_response = self._llm.stream_complete(formatted_prompt)
             stream_tokens = stream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Async predict."""
-        event_id = self._log_start(prompt, prompt_args)
-
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
-            chat_response = await self._llm.achat(messages=messages)
+            messages = self._extend_messages(messages)
+            chat_response = await self._llm.achat(messages)
             output = chat_response.message.content or ""
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
+            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             response = await self._llm.acomplete(formatted_prompt)
             output = response.text
 
         logger.debug(output)
 
-        self._log_end(event_id, output, formatted_prompt)
         return output
 
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+    async def astream(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> TokenAsyncGen:
         """Async stream."""
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
-            chat_response = await self._llm.astream_chat(messages=messages)
+            messages = self._extend_messages(messages)
+            chat_response = await self._llm.astream_chat(messages)
             stream_tokens = await astream_chat_response_to_tokens(chat_response)
         else:
+            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             stream_response = await self._llm.astream_complete(formatted_prompt)
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
         return stream_tokens
+
+    def _extend_prompt(self, prompt: BasePromptTemplate) -> BasePromptTemplate:
+        """Add system and query wrapper prompts to base prompt"""
+        # TODO: avoid mutating prompt attributes
+        if self.system_prompt:
+            if isinstance(prompt, SelectorPromptTemplate):
+                default_template = prompt.default_template
+                if isinstance(default_template, PromptTemplate):
+                    default_template.template = (
+                        self.system_prompt + "\n\n" + default_template.template
+                    )
+                else:
+                    raise ValueError("PromptTemplate expected as default_template")
+            elif isinstance(prompt, ChatPromptTemplate):
+                prompt.message_templates = [
+                    ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt)
+                ] + prompt.message_templates
+            elif isinstance(prompt, PromptTemplate):
+                prompt.template = self.system_prompt + "\n\n" + prompt.template
+
+        if self.query_wrapper_prompt:
+            if isinstance(prompt, (PromptTemplate, ChatPromptTemplate)):
+                prompt.kwargs["query_str"] = self.query_wrapper_prompt.format(
+                    query_str=prompt.kwargs["query_str"]
+                )
+            elif isinstance(prompt, SelectorPromptTemplate):
+                if isinstance(default_template, PromptTemplate):
+                    prompt.default_template.kwargs[
+                        "query_str"
+                    ] = self.query_wrapper_prompt.format(
+                        query_str=prompt.default_template.kwargs["query_str"]
+                    )
+                else:
+                    raise ValueError("PromptTemplate expected as default_template")
+
+        return prompt
+
+    def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
+        """Add system prompt to chat message list"""
+        if self.system_prompt:
+            messages = [
+                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt)
+            ] + messages
+        return messages

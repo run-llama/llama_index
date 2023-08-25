@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import List
 
@@ -11,18 +10,21 @@ from llama_index.indices.loading import (
 )
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.index_store.simple_index_store import SimpleIndexStore
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.faiss import FaissVectorStore
 
+try:
+    import faiss
+except ImportError:
+    faiss = None  # type: ignore
+
 
 def test_load_index_from_storage_simple(
-    documents: List[Document],
-    tmp_path: Path,
-    mock_service_context: ServiceContext,
+    documents: List[Document], tmp_path: Path, mock_service_context: ServiceContext
 ) -> None:
     # construct simple (i.e. in memory) storage context
     storage_context = StorageContext.from_defaults()
@@ -42,7 +44,7 @@ def test_load_index_from_storage_simple(
 
     # load index
     new_index = load_index_from_storage(
-        new_storage_context, service_context=mock_service_context
+        storage_context=new_storage_context, service_context=mock_service_context
     )
 
     assert index.index_id == new_index.index_id
@@ -135,7 +137,7 @@ def test_load_index_from_storage_retrieval_result_identical(
     assert nodes == new_nodes
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
+@pytest.mark.skipif(faiss is None, reason="faiss not installed")
 def test_load_index_from_storage_faiss_vector_store(
     documents: List[Document],
     tmp_path: Path,
@@ -177,3 +179,41 @@ def test_load_index_from_storage_faiss_vector_store(
     new_nodes = new_index.as_retriever().retrieve("test query str")
 
     assert nodes == new_nodes
+
+
+def test_load_index_query_engine_service_context(
+    documents: List[Document],
+    tmp_path: Path,
+    mock_service_context: ServiceContext,
+) -> None:
+    # construct simple (i.e. in memory) storage context
+    storage_context = StorageContext.from_defaults()
+
+    # construct index
+    index = VectorStoreIndex.from_documents(
+        documents=documents,
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )
+
+    # persist storage to disk
+    storage_context.persist(str(tmp_path))
+
+    # load storage context
+    new_storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
+
+    # load index
+    new_index = load_index_from_storage(
+        storage_context=new_storage_context, service_context=mock_service_context
+    )
+
+    query_engine = index.as_query_engine()
+    new_query_engine = new_index.as_query_engine()
+
+    # make types happy
+    assert isinstance(query_engine, RetrieverQueryEngine)
+    assert isinstance(new_query_engine, RetrieverQueryEngine)
+    # Ensure that the loaded index will end up querying with the same service_context
+    assert (
+        new_query_engine._response_synthesizer.service_context == mock_service_context
+    )

@@ -1,15 +1,17 @@
 """Test ad-hoc loader Tool."""
 
 from typing import List
-from pydantic import BaseModel
-from llama_index.schema import Document
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.tools.ondemand_loader_tool import (
-    OnDemandLoaderTool,
-)
-
 from llama_index.readers.string_iterable import StringIterableReader
+from llama_index.schema import Document
+from llama_index.tools.ondemand_loader_tool import OnDemandLoaderTool
 
 
 def test_ondemand_loader_tool(
@@ -35,10 +37,10 @@ def test_ondemand_loader_tool(
         fn_schema=TestSchemaSpec,
     )
     response = tool(["Hello world."], query_str="What is?")
-    assert response == "What is?:Hello world."
+    assert str(response) == "What is?:Hello world."
 
     # convert tool to structured langchain tool
     lc_tool = tool.to_langchain_structured_tool()
     assert lc_tool.args_schema == TestSchemaSpec
     response = lc_tool.run({"texts": ["Hello world."], "query_str": "What is?"})
-    assert response == "What is?:Hello world."
+    assert str(response) == "What is?:Hello world."
