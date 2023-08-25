@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Use `utf-8` for json file reader (#7390)
+
 ## [0.8.9] - 2023-08-24
 
 ### New Features
