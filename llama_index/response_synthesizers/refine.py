@@ -2,13 +2,13 @@ import logging
 from typing import Any, Generator, Optional, Sequence, cast, Type, Callable
 from pydantic import BaseModel, Field
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.indices.utils import truncate_text
 from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_TEXT_QA_PROMPT_SEL,
     DEFAULT_REFINE_PROMPT_SEL,
+    DEFAULT_TEXT_QA_PROMPT_SEL,
 )
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, Prompt
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -43,7 +43,7 @@ class DefaultRefineProgram(BasePydanticProgram):
     query_satisfied=True. In effect, doesn't do any answer filtering.
     """
 
-    def __init__(self, prompt: Prompt, llm_predictor: BaseLLMPredictor):
+    def __init__(self, prompt: BasePromptTemplate, llm_predictor: BaseLLMPredictor):
         self._prompt = prompt
         self._llm_predictor = llm_predictor
 
@@ -72,12 +72,12 @@ class Refine(BaseSynthesizer):
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
+        refine_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
         verbose: bool = False,
         structured_answer_filtering: bool = False,
-        program_factory: Optional[Callable[[Prompt], BasePydanticProgram]] = None,
+        program_factory: Optional[Callable[[BasePromptTemplate], BasePydanticProgram]] = None,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
@@ -125,7 +125,7 @@ class Refine(BaseSynthesizer):
             response = cast(Generator, response)
         return response
 
-    def _default_program_factory(self, prompt: Prompt) -> BasePydanticProgram:
+    def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
         if self._structured_answer_filtering:
             try:
                 return OpenAIPydanticProgram.from_defaults(

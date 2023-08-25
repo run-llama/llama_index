@@ -2,19 +2,14 @@ from typing import Optional, Callable
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
+    DEFAULT_REFINE_PROMPT_SEL,
     DEFAULT_TEXT_QA_PROMPT_SEL,
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
-    DEFAULT_REFINE_PROMPT_SEL,
 )
-from llama_index.prompts.prompts import Prompt
+from llama_index.prompts.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SimpleInputPrompt,
-    SummaryPrompt,
-)
 from llama_index.response_synthesizers.accumulate import Accumulate
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.program.base_program import BasePydanticProgram
@@ -23,25 +18,25 @@ from llama_index.response_synthesizers.compact_and_accumulate import (
 )
 from llama_index.response_synthesizers.compact_and_refine import CompactAndRefine
 from llama_index.response_synthesizers.generation import Generation
+from llama_index.response_synthesizers.no_text import NoText
 from llama_index.response_synthesizers.refine import Refine
 from llama_index.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.response_synthesizers.tree_summarize import TreeSummarize
 from llama_index.response_synthesizers.type import ResponseMode
-from llama_index.response_synthesizers.no_text import NoText
 
 
 def get_response_synthesizer(
     service_context: Optional[ServiceContext] = None,
-    text_qa_template: Optional[QuestionAnswerPrompt] = None,
-    refine_template: Optional[RefinePrompt] = None,
-    summary_template: Optional[SummaryPrompt] = None,
-    simple_template: Optional[SimpleInputPrompt] = None,
+    text_qa_template: Optional[BasePromptTemplate] = None,
+    refine_template: Optional[BasePromptTemplate] = None,
+    summary_template: Optional[BasePromptTemplate] = None,
+    simple_template: Optional[BasePromptTemplate] = None,
     response_mode: ResponseMode = ResponseMode.COMPACT,
     callback_manager: Optional[CallbackManager] = None,
     use_async: bool = False,
     streaming: bool = False,
     structured_answer_filtering: bool = False,
-    program_factory: Optional[Callable[[Prompt], BasePydanticProgram]] = None,
+    program_factory: Optional[Callable[[PromptTemplate], BasePydanticProgram]] = None,
     verbose: bool = False,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""

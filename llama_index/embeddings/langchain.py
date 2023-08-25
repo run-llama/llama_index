@@ -1,11 +1,15 @@
 """Langchain Embedding Wrapper Module."""
 
-from pydantic import PrivateAttr
 from typing import List, Optional
+
+try:
+    from pydantic.v1 import PrivateAttr
+except ImportError:
+    from pydantic import PrivateAttr
 
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import BaseEmbedding, DEFAULT_EMBED_BATCH_SIZE
+from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 
 class LangchainEmbedding(BaseEmbedding):

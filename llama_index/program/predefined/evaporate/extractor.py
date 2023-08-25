@@ -11,7 +11,6 @@ from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import QuestionAnswerPrompt
 
 
 from llama_index.program.predefined.evaporate.prompts import (
@@ -179,12 +178,11 @@ class EvaporateExtractor:
         else:
             expected_output_str = ""
 
-        new_prompt = self._fn_generate_prompt.partial_format(
+        qa_prompt = self._fn_generate_prompt.partial_format(
             attribute=field,
             function_field=function_field,
             expected_output_str=expected_output_str,
         )
-        qa_prompt = QuestionAnswerPrompt.from_prompt(new_prompt)
 
         response_synthesizer = get_response_synthesizer(
             service_context=self._service_context,

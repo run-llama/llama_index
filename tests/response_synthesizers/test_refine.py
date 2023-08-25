@@ -9,7 +9,7 @@ from llama_index.response_synthesizers.refine import StructuredRefineResponse
 from llama_index.program.base_program import BasePydanticProgram
 
 
-class TestRefineProgram(BasePydanticProgram):
+class MockRefineProgram(BasePydanticProgram):
     """
     Runs the query on the LLM as normal and always returns the answer with
     query_satisfied=True. In effect, doesn't do any answer filtering.
@@ -80,7 +80,7 @@ def test_constructor_args(mock_refine_service_context: ServiceContext) -> None:
         # cant construct refine with a program factory but not answer filtering
         Refine(
             service_context=mock_refine_service_context,
-            program_factory=lambda _: TestRefineProgram({}),
+            program_factory=lambda _: MockRefineProgram({}),
             structured_answer_filtering=False,
         )
 
@@ -97,8 +97,8 @@ async def test_answer_filtering_one_answer(
         ]
     )
 
-    def program_factory(*args: Any, **kwargs: Any) -> TestRefineProgram:
-        return TestRefineProgram(input_to_query_satisfied)
+    def program_factory(*args: Any, **kwargs: Any) -> MockRefineProgram:
+        return MockRefineProgram(input_to_query_satisfied)
 
     refine_instance = Refine(
         service_context=mock_refine_service_context,
@@ -123,8 +123,8 @@ async def test_answer_filtering_no_answers(
         ]
     )
 
-    def program_factory(*args: Any, **kwargs: Any) -> TestRefineProgram:
-        return TestRefineProgram(input_to_query_satisfied)
+    def program_factory(*args: Any, **kwargs: Any) -> MockRefineProgram:
+        return MockRefineProgram(input_to_query_satisfied)
 
     refine_instance = Refine(
         service_context=mock_refine_service_context,

@@ -1,12 +1,16 @@
 from typing import TYPE_CHECKING, Any, Optional, Type, cast
 
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
     pydantic_to_guidance_output_template_markdown,
 )
-from llama_index.prompts import Prompt
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from guidance.llms import LLM as GuidanceLLM
@@ -47,7 +51,7 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         cls,
         output_cls: Type[BaseModel],
         prompt_template_str: Optional[str] = None,
-        prompt: Optional[Prompt] = None,
+        prompt: Optional[PromptTemplate] = None,
         llm: Optional["GuidanceLLM"] = None,
         **kwargs: Any,
     ) -> "BaseLLMFunctionProgram":
@@ -57,7 +61,7 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         if prompt is not None and prompt_template_str is not None:
             raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt is not None:
-            prompt_template_str = prompt.original_template
+            prompt_template_str = prompt.template
         prompt_template_str = cast(str, prompt_template_str)
         return cls(output_cls, prompt_template_str, guidance_llm=llm, **kwargs)
 
