@@ -5,6 +5,4 @@ Node Parser
    :members:
    :inherited-members:
 
-.. automodule:: llama_index.node_parser.extractors
-   :members:
-   :inherited-members:
+..  autopydantic_model:: llama_index.node_parser.extractors

@@ -19,7 +19,6 @@ The prompts used to generate the metadata are specifically aimed to help
 disambiguate the document or subsection from other similar documents or subsections.
 (similar with contrastive learning)
 """
-import json
 from abc import abstractmethod
 from functools import reduce
 from copy import deepcopy
