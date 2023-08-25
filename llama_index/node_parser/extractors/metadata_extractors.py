@@ -78,22 +78,6 @@ class MetadataExtractor(BaseExtractor):
         default=True, description="Whether to process nodes in place."
     )
 
-    # def __init__(
-    #     self,
-    #     extractors: Sequence[MetadataFeatureExtractor],
-    #     node_text_template: str = DEFAULT_NODE_TEXT_TEMPLATE,
-    #     disable_template_rewrite: bool = False,
-    #     in_place: bool = True,
-    # ) -> None:
-    #     """Init params."""
-    #     raise Exception
-    #     super().__init__(
-    #         extractors=extractors,
-    #         node_text_template=node_text_template,
-    #         disable_template_rewrite=disable_template_rewrite,
-    #         in_place=in_place,
-    #     )
-
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract metadata from a document.
 
@@ -370,22 +354,6 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
                 prompt, num_questions=self.questions, context_str=context_str
             )
 
-            #             # Extract the title from the first node
-            #             # TODO: figure out a good way to allow users to customize template
-            #             questions = self.llm_predictor.predict(
-            #                 Prompt(
-            #                     template=self.prompt_template
-            #                     or f"""\
-            # {{context_str}}. Given the contextual information, \
-            # generate {self.questions} questions this document can provide \
-            # specific answers to which are unlikely to be found elsewhere: \
-            # """
-            #                 ),
-            #                 context_str=f"""\
-            # metadata: {json.dumps(node.metadata)} \
-            # content: {cast(TextNode, node).text}""",
-            #             )
-
             if self.embedding_only:
                 node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
             metadata_list.append(
@@ -468,14 +436,6 @@ class SummaryExtractor(MetadataFeatureExtractor):
                 context_str=node_context,
             ).strip()
             node_summaries.append(summary)
-
-        # node_summaries = [
-        #     self.llm_predictor.predict(
-        #         Prompt(template=self.prompt_template),
-        #         context_str=cast(TextNode, node).text,
-        #     ).strip()
-        #     for node in nodes
-        # ]
 
         # Extract node-level summary metadata
         metadata_list: List[Dict] = [{} for _ in nodes]
