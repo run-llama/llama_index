@@ -498,7 +498,7 @@ class EntityExtractor(MetadataFeatureExtractor):
     )
 
     _tokenizer: Callable = PrivateAttr()
-    _model: Any = PrivateAttr
+    _model: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -563,7 +563,7 @@ class EntityExtractor(MetadataFeatureExtractor):
             span_joiner=span_joiner,
             label_entities=label_entities,
             device=device,
-            entity_map=entity_map,
+            entity_map=base_entity_map,
             **kwargs,
         )
 
