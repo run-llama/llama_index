@@ -73,7 +73,6 @@ class DynamoDBKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-
         self._table = table
         self._boto3_key = Key
         self._key_hash, self._key_range = parse_schema(table)
@@ -91,7 +90,7 @@ class DynamoDBKVStore(BaseKVStore):
             raise ImportError(IMPORT_ERROR_MSG)
 
         # Get the DynamoDB URL from environment variable
-        dynamodb_url = os.getenv('DYNAMODB_URL')
+        dynamodb_url = os.getenv("DYNAMODB_URL")
 
         # Create a session
         session = boto3.Session()
