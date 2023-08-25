@@ -2,6 +2,6 @@
   "python.formatting.provider": "black",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true,
+   "source.organizeImports": true,
   },
 }
