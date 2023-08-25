@@ -11,9 +11,8 @@ from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.base import Prompt, PromptType
+from llama_index.prompts import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
-from llama_index.prompts.prompts import QueryKeywordExtractPrompt
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TextNode
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import truncate_text
@@ -53,9 +52,9 @@ class KGTableRetriever(BaseRetriever):
         query_keyword_extract_template (Optional[QueryKGExtractPrompt]): A Query
             KG Extraction
             Prompt (see :ref:`Prompt-Templates`).
-        refine_template (Optional[RefinePrompt]): A Refinement Prompt
+        refine_template (Optional[BasePromptTemplate]): A Refinement Prompt
             (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question Answering Prompt
+        text_qa_template (Optional[BasePromptTemplate]): A Question Answering Prompt
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): Maximum number of keywords to extract from query.
         num_chunks_per_query (int): Maximum number of text chunks to query.
@@ -77,7 +76,7 @@ class KGTableRetriever(BaseRetriever):
     def __init__(
         self,
         index: KnowledgeGraphIndex,
-        query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
+        query_keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         include_text: bool = True,
@@ -328,7 +327,7 @@ KEYWORDS: {question}
 ----
 """
 
-DEFAULT_SYNONYM_EXPAND_PROMPT = Prompt(
+DEFAULT_SYNONYM_EXPAND_PROMPT = PromptTemplate(
     DEFAULT_SYNONYM_EXPAND_TEMPLATE,
     prompt_type=PromptType.QUERY_KEYWORD_EXTRACT,
 )
@@ -344,7 +343,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         service_context (Optional[ServiceContext]): A service context to use.
         storage_context (Optional[StorageContext]): A storage context to use.
         entity_extract_fn (Optional[Callable]): A function to extract entities.
-        entity_extract_template Optional[QueryKeywordExtractPrompt]): A Query Key Entity
+        entity_extract_template Optional[BasePromptTemplate]): A Query Key Entity
             Extraction Prompt (see :ref:`Prompt-Templates`).
         entity_extract_policy (Optional[str]): The entity extraction policy to use.
             default: "union"
@@ -376,10 +375,10 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
         entity_extract_fn: Optional[Callable] = None,
-        entity_extract_template: Optional[QueryKeywordExtractPrompt] = None,
+        entity_extract_template: Optional[BasePromptTemplate] = None,
         entity_extract_policy: Optional[str] = "union",
         synonym_expand_fn: Optional[Callable] = None,
-        synonym_expand_template: Optional[Prompt] = None,
+        synonym_expand_template: Optional[BasePromptTemplate] = None,
         synonym_expand_policy: Optional[str] = "union",
         max_entities: int = 5,
         max_synonyms: int = 5,
@@ -451,7 +450,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self,
         query_str: str,
         handle_fn: Optional[Callable],
-        handle_llm_prompt_template: Optional[Prompt],
+        handle_llm_prompt_template: Optional[BasePromptTemplate],
         cross_handle_policy: Optional[str] = "union",
         max_items: Optional[int] = 5,
         result_start_token: str = "KEYWORDS:",
@@ -501,7 +500,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self,
         query_str: str,
         handle_fn: Optional[Callable],
-        handle_llm_prompt_template: Optional[Prompt],
+        handle_llm_prompt_template: Optional[BasePromptTemplate],
         cross_handle_policy: Optional[str] = "union",
         max_items: Optional[int] = 5,
         result_start_token: str = "KEYWORDS:",

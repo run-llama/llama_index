@@ -1,7 +1,11 @@
-from pydantic import PrivateAttr
 from typing import Any, List, Sequence
 
 import pytest
+
+try:
+    from pydantic.v1 import PrivateAttr
+except ImportError:
+    from pydantic import PrivateAttr
 
 from llama_index.agent.react.base import ReActAgent
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse

@@ -1,5 +1,9 @@
-from pydantic import Field, PrivateAttr
 from typing import Any, Callable, Dict, Optional, Sequence
+
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS

@@ -2,8 +2,12 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from llama_index.bridge.langchain import StructuredTool, Tool
-from pydantic import BaseModel
 
 
 class DefaultToolFnSchema(BaseModel):
