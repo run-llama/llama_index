@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added support for `MonsterLLM` using MonsterAPI (#7343) 
+
 ### Bug Fixes / Nits
 - Use `utf-8` for json file reader (#7390)
 
