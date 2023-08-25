@@ -428,7 +428,7 @@ class NebulaGraphStore(GraphStore):
                 f"    subj,"
                 f"    REDUCE(acc = collect(NULL), l in rels | acc + l) AS "
                 f"        flattened_rels"
-                f"RETURN"
+                f" RETURN"
                 f"  subj,"
                 f"  REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l ) AS "
                 f"      flattened_rels"
