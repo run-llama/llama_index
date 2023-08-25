@@ -75,23 +75,24 @@ class MetadataExtractor(BaseExtractor):
     )
 
     in_place: bool = Field(
-        defalt=True, description="Whether to process nodes in place."
+        default=True, description="Whether to process nodes in place."
     )
 
-    def __init__(
-        self,
-        extractors: Sequence[MetadataFeatureExtractor],
-        node_text_template: str = DEFAULT_NODE_TEXT_TEMPLATE,
-        disable_template_rewrite: bool = False,
-        in_place: bool = True,
-    ) -> None:
-        """Init params."""
-        super().__init__(
-            extractors=extractors,
-            node_text_template=node_text_template,
-            disable_template_rewrite=disable_template_rewrite,
-            in_place=in_place,
-        )
+    # def __init__(
+    #     self,
+    #     extractors: Sequence[MetadataFeatureExtractor],
+    #     node_text_template: str = DEFAULT_NODE_TEXT_TEMPLATE,
+    #     disable_template_rewrite: bool = False,
+    #     in_place: bool = True,
+    # ) -> None:
+    #     """Init params."""
+    #     raise Exception
+    #     super().__init__(
+    #         extractors=extractors,
+    #         node_text_template=node_text_template,
+    #         disable_template_rewrite=disable_template_rewrite,
+    #         in_place=in_place,
+    #     )
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract metadata from a document.
@@ -296,8 +297,13 @@ Here is the context:
 {context_str}
 
 Given the contextual information, \
-generate {num_questions} questions this document can provide \
-specific answers to which are unlikely to be found elsewhere: \
+generate {num_questions} questions this context can provide \
+specific answers to which are unlikely to be found elsewhere.
+
+Higher-level summaries of surrounding context may be provided \
+as well. Try using these summaries to generate better questions \
+that this context can answer.
+
 """
 
 
@@ -389,8 +395,12 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
 
 
 DEFAULT_SUMMARY_EXTRACT_TEMPLATE = """\
-Here is the content of the section: {context_str}. \
-Summarize the key topics and entities of the section. Summary: """
+Here is the content of the section:
+{context_str}
+
+Summarize the key topics and entities of the section. \
+
+Summary: """
 
 
 class SummaryExtractor(MetadataFeatureExtractor):
@@ -450,7 +460,9 @@ class SummaryExtractor(MetadataFeatureExtractor):
         )
         node_summaries = []
         for node in nodes_queue:
-            node_context = cast(TextNode, node).get_content(mode="all")
+            node_context = cast(TextNode, node).get_content(
+                metadata_mode=self.metadata_mode
+            )
             summary = self.llm_predictor.predict(
                 PromptTemplate(template=self.prompt_template),
                 context_str=node_context,
