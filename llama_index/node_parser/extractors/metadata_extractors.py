@@ -19,9 +19,9 @@ The prompts used to generate the metadata are specifically aimed to help
 disambiguate the document or subsection from other similar documents or subsections.
 (similar with contrastive learning)
 """
-import json
 from abc import abstractmethod
 from functools import reduce
+from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 try:
@@ -33,11 +33,14 @@ from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.llms.base import LLM
 from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts import PromptTemplate
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode, TextNode, MetadataMode
+from llama_index.utils import get_tqdm_iterable
 
 
 class MetadataFeatureExtractor(BaseExtractor):
     is_text_node_only: bool = True
+    show_progress: bool = True
+    metadata_mode: MetadataMode = MetadataMode.ALL
 
     @abstractmethod
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -70,17 +73,9 @@ class MetadataExtractor(BaseExtractor):
         default=False, description="Disable the node template rewrite."
     )
 
-    def __init__(
-        self,
-        extractors: Sequence[MetadataFeatureExtractor],
-        node_text_template: str = DEFAULT_NODE_TEXT_TEMPLATE,
-        disable_template_rewrite: bool = False,
-    ) -> None:
-        super().__init__(
-            extractors=extractors,
-            node_text_template=node_text_template,
-            disable_template_rewrite=disable_template_rewrite,
-        )
+    in_place: bool = Field(
+        default=True, description="Whether to process nodes in place."
+    )
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract metadata from a document.
@@ -114,12 +109,16 @@ class MetadataExtractor(BaseExtractor):
             excluded_llm_metadata_keys (Optional[List[str]]):
                 keys to exclude from llm metadata
         """
+        if self.in_place:
+            new_nodes = nodes
+        else:
+            new_nodes = [deepcopy(node) for node in nodes]
         for extractor in self.extractors:
-            cur_metadata_list = extractor.extract(nodes)
-            for idx, node in enumerate(nodes):
+            cur_metadata_list = extractor.extract(new_nodes)
+            for idx, node in enumerate(new_nodes):
                 node.metadata.update(cur_metadata_list[idx])
 
-        for idx, node in enumerate(nodes):
+        for idx, node in enumerate(new_nodes):
             if excluded_embed_metadata_keys is not None:
                 node.excluded_embed_metadata_keys.extend(excluded_embed_metadata_keys)
             if excluded_llm_metadata_keys is not None:
@@ -127,7 +126,7 @@ class MetadataExtractor(BaseExtractor):
             if not self.disable_template_rewrite:
                 if isinstance(node, TextNode):
                     cast(TextNode, node).text_template = self.node_text_template
-        return nodes
+        return new_nodes
 
 
 DEFAULT_TITLE_NODE_TEMPLATE = """\
@@ -175,6 +174,7 @@ class TitleExtractor(MetadataFeatureExtractor):
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
         combine_template: str = DEFAULT_TITLE_COMBINE_TEMPLATE,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         if nodes < 1:
@@ -186,6 +186,7 @@ class TitleExtractor(MetadataFeatureExtractor):
             nodes=nodes,
             node_template=node_template,
             combine_template=combine_template,
+            **kwargs,
         )
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -245,12 +246,13 @@ class KeywordExtractor(MetadataFeatureExtractor):
         # TODO: llm_predictor arg is deprecated
         llm_predictor: Optional[BaseLLMPredictor] = None,
         keywords: int = 5,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         if keywords < 1:
             raise ValueError("num_keywords must be >= 1")
         llm_predictor = llm_predictor or LLMPredictor(llm=llm)
-        super().__init__(llm_predictor=llm_predictor, keywords=keywords)
+        super().__init__(llm_predictor=llm_predictor, keywords=keywords, **kwargs)
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
@@ -273,6 +275,21 @@ document. Format as comma separated. Keywords: """
         return metadata_list
 
 
+DEFAULT_QUESTION_GEN_TMPL = """\
+Here is the context:
+{context_str}
+
+Given the contextual information, \
+generate {num_questions} questions this context can provide \
+specific answers to which are unlikely to be found elsewhere.
+
+Higher-level summaries of surrounding context may be provided \
+as well. Try using these summaries to generate better questions \
+that this context can answer.
+
+"""
+
+
 class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
     """
     Questions answered extractor. Node-level extractor.
@@ -290,8 +307,9 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
     questions: int = Field(
         default=5, description="The number of questions to generate."
     )
-    prompt_template: Optional[str] = Field(
-        default=None, description="Prompt template to use when generating questions."
+    prompt_template: str = Field(
+        default=DEFAULT_QUESTION_GEN_TMPL,
+        description="Prompt template to use when generating questions.",
     )
     embedding_only: bool = Field(
         default=True, description="Whether to use metadata for emebddings only."
@@ -303,8 +321,9 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         # TODO: llm_predictor arg is deprecated
         llm_predictor: Optional[BaseLLMPredictor] = None,
         questions: int = 5,
-        prompt_template: Optional[str] = None,
+        prompt_template: str = DEFAULT_QUESTION_GEN_TMPL,
         embedding_only: bool = True,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         if questions < 1:
@@ -315,29 +334,25 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
             questions=questions,
             prompt_template=prompt_template,
             embedding_only=embedding_only,
+            **kwargs,
         )
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
-        for node in nodes:
+        nodes_queue = get_tqdm_iterable(
+            nodes, self.show_progress, "Extracting questions"
+        )
+        for node in nodes_queue:
             if self.is_text_node_only and not isinstance(node, TextNode):
                 metadata_list.append({})
                 continue
-            # Extract the title from the first node
-            # TODO: figure out a good way to allow users to customize template
+
+            context_str = node.get_content(metadata_mode=self.metadata_mode)
+            prompt = PromptTemplate(template=self.prompt_template)
             questions = self.llm_predictor.predict(
-                PromptTemplate(
-                    template=self.prompt_template
-                    or f"""\
-{{context_str}}. Given the contextual information, \
-generate {self.questions} questions this document can provide \
-specific answers to which are unlikely to be found elsewhere: \
-"""
-                ),
-                context_str=f"""\
-metadata: {json.dumps(node.metadata, ensure_ascii=False)} \
-content: {cast(TextNode, node).text}""",
+                prompt, num_questions=self.questions, context_str=context_str
             )
+
             if self.embedding_only:
                 node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
             metadata_list.append(
@@ -347,8 +362,12 @@ content: {cast(TextNode, node).text}""",
 
 
 DEFAULT_SUMMARY_EXTRACT_TEMPLATE = """\
-Here is the content of the section: {context_str}. \
-Summarize the key topics and entities of the section. Summary: """
+Here is the content of the section:
+{context_str}
+
+Summarize the key topics and entities of the section. \
+
+Summary: """
 
 
 class SummaryExtractor(MetadataFeatureExtractor):
@@ -383,6 +402,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
         llm_predictor: Optional[BaseLLMPredictor] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
+        **kwargs: Any,
     ):
         llm_predictor = llm_predictor or LLMPredictor(llm=llm)
         # validation
@@ -396,18 +416,25 @@ class SummaryExtractor(MetadataFeatureExtractor):
             llm_predictor=llm_predictor,
             summaries=summaries,
             prompt_template=prompt_template,
+            **kwargs,
         )
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         if not all([isinstance(node, TextNode) for node in nodes]):
             raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
-        node_summaries = [
-            self.llm_predictor.predict(
+        nodes_queue = get_tqdm_iterable(
+            nodes, self.show_progress, "Extracting summaries"
+        )
+        node_summaries = []
+        for node in nodes_queue:
+            node_context = cast(TextNode, node).get_content(
+                metadata_mode=self.metadata_mode
+            )
+            summary = self.llm_predictor.predict(
                 PromptTemplate(template=self.prompt_template),
-                context_str=cast(TextNode, node).text,
+                context_str=node_context,
             ).strip()
-            for node in nodes
-        ]
+            node_summaries.append(summary)
 
         # Extract node-level summary metadata
         metadata_list: List[Dict] = [{} for _ in nodes]
@@ -482,6 +509,7 @@ class EntityExtractor(MetadataFeatureExtractor):
         device: Optional[str] = None,
         entity_map: Optional[Dict[str, str]] = None,
         tokenizer: Optional[Callable[[str], List[str]]] = None,
+        **kwargs: Any,
     ):
         """
         Entity extractor for extracting entities from text and inserting
@@ -536,13 +564,14 @@ class EntityExtractor(MetadataFeatureExtractor):
             label_entities=label_entities,
             device=device,
             entity_map=entity_map,
+            **kwargs,
         )
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         # Extract node-level entity metadata
         metadata_list: List[Dict] = [{} for _ in nodes]
         for i, metadata in enumerate(metadata_list):
-            node_text = nodes[i].get_content()
+            node_text = nodes[i].get_content(metadata_mode=self.metadata_mode)
             words = self._tokenizer(node_text)
             spans = self._model.predict(words)
             for span in spans:
