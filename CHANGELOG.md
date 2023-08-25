@@ -5,6 +5,7 @@
 ### New Features
 - Added support for `MonsterLLM` using MonsterAPI (#7343) 
 - Support comments fields in NebulaGraphStore and int type VID (#7402)
+- Added configurable endpoint for DynamoDB (#6777)
 
 ### Bug Fixes / Nits
 - Use `utf-8` for json file reader (#7390)
