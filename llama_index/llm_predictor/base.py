@@ -1,13 +1,13 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod, ABC
 from typing import Any, List, Optional
 
 try:
-    from pydantic.v1 import BaseModel, PrivateAttr
+    from pydantic.v1 import PrivateAttr
 except ImportError:
-    from pydantic import BaseModel, PrivateAttr
+    from pydantic import PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llm_predictor.utils import (
@@ -25,12 +25,13 @@ from llama_index.prompts.base import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
+from llama_index.schema import BaseComponent
 from llama_index.types import TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
 
 
-class BaseLLMPredictor(BaseModel, ABC):
+class BaseLLMPredictor(BaseComponent, ABC):
     """Base LLM Predictor."""
 
     @property
@@ -82,7 +83,7 @@ class LLMPredictor(BaseLLMPredictor):
 
     def __init__(
         self,
-        llm: Optional[LLMType] = None,
+        llm: Optional[LLMType] = "default",
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         query_wrapper_prompt: Optional[BasePromptTemplate] = None,

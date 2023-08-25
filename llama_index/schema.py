@@ -1,9 +1,11 @@
 """Base schema for data structures."""
+import json
 import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
 from typing import Any, Dict, List, Optional, Union
+from typing_extensions import Self
 
 try:
     from pydantic.v1 import BaseModel, Field, root_validator
@@ -15,6 +17,33 @@ from llama_index.utils import SAMPLE_TEXT
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
+
+
+class BaseComponent(BaseModel):
+    """Base component object to caputure class names."""
+
+    def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = self.dict(**kwargs)
+        data["class_name"] = type(self).__name__
+        return data
+
+    def to_json(self, **kwargs: Any) -> str:
+        data = self.to_dict(**kwargs)
+        return json.dumps(data)
+
+    # TODO: return type here not supported by current mypy version
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        if isinstance(kwargs, dict):
+            data.update(kwargs)
+
+        data.pop("class_name", None)
+        return cls(**data)
+
+    @classmethod
+    def from_json(cls, data_str: str, **kwargs: Any) -> Self:  # type: ignore
+        data = json.loads(data_str)
+        return cls.from_dict(data, **kwargs)
 
 
 class NodeRelationship(str, Enum):
@@ -50,7 +79,7 @@ class MetadataMode(str, Enum):
     NONE = auto()
 
 
-class RelatedNodeInfo(BaseModel):
+class RelatedNodeInfo(BaseComponent):
     node_id: str
     node_type: Optional[ObjectType] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
@@ -61,9 +90,7 @@ RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
 
 
 # Node classes for indexes
-
-
-class BaseNode(BaseModel):
+class BaseNode(BaseComponent):
     """Base node Object.
 
     Generic abstract interface for retrievable nodes
@@ -335,7 +362,7 @@ class IndexNode(TextNode):
         return ObjectType.INDEX
 
 
-class NodeWithScore(BaseModel):
+class NodeWithScore(BaseComponent):
     node: BaseNode
     score: Optional[float] = None
 

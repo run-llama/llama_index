@@ -17,9 +17,9 @@ class MockEmbedding(BaseEmbedding):
 
     embed_dim: int
 
-    def __init__(self, embed_dim: int, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, embed_dim: int, **kwargs: Any) -> None:
         """Init params."""
-        super().__init__(embed_dim=embed_dim, *args, *kwargs)
+        super().__init__(embed_dim=embed_dim, **kwargs)
 
     def _get_vector(self) -> List[float]:
         return [0.5] * self.embed_dim

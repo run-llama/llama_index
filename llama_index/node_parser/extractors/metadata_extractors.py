@@ -179,7 +179,11 @@ class TitleExtractor(MetadataFeatureExtractor):
         """Init params."""
         if nodes < 1:
             raise ValueError("num_nodes must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
 
         super().__init__(
             llm_predictor=llm_predictor,
@@ -249,7 +253,12 @@ class KeywordExtractor(MetadataFeatureExtractor):
         """Init params."""
         if keywords < 1:
             raise ValueError("num_keywords must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         super().__init__(llm_predictor=llm_predictor, keywords=keywords)
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -309,7 +318,12 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         """Init params."""
         if questions < 1:
             raise ValueError("questions must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         super().__init__(
             llm_predictor=llm_predictor,
             questions=questions,
@@ -384,7 +398,11 @@ class SummaryExtractor(MetadataFeatureExtractor):
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
     ):
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         # validation
         if not all([s in ["self", "prev", "next"] for s in summaries]):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")

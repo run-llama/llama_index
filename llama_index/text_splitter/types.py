@@ -2,13 +2,10 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.schema import BaseComponent
 
 
-class TextSplitter(ABC, BaseModel):
+class TextSplitter(ABC, BaseComponent):
     class Config:
         arbitrary_types_allowed = True
 
