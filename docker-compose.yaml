@@ -1,0 +1,9 @@
+version: "3"
+services:
+  db:
+    image: ankane/pgvector
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"

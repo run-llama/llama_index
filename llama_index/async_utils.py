@@ -1,7 +1,7 @@
 """Async utils."""
 import asyncio
 from itertools import zip_longest
-from typing import Any, Coroutine, Iterable, List
+from typing import Any, Coroutine, Iterable, List, Awaitable, Callable
 
 
 def run_async_tasks(
@@ -55,3 +55,8 @@ async def batch_gather(
         if verbose:
             print(f"Completed {len(output)} out of {len(tasks)} tasks")
     return output
+
+def run_sync(func: Callable[[Any], Awaitable], *args, **kwargs) -> Any:
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(func(*args, **kwargs))
+
