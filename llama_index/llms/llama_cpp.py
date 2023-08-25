@@ -1,8 +1,14 @@
 import os
-import requests
-from pydantic import Field, PrivateAttr
-from tqdm import tqdm
 from typing import Any, Callable, Dict, Optional, Sequence
+
+import requests
+
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
+from tqdm import tqdm
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -23,7 +29,6 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 from llama_index.utils import get_cache_dir
-
 
 DEFAULT_LLAMA_CPP_MODEL = (
     "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGML/resolve"

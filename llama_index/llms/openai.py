@@ -1,5 +1,9 @@
-from pydantic import Field
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
+
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
@@ -12,8 +16,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_completion_callback,
     llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
@@ -39,7 +43,7 @@ from llama_index.llms.openai_utils import (
 
 class OpenAI(LLM):
     model: str = Field(description="The OpenAI model to use.")
-    temperature: int = Field(description="The tempature to use during generation.")
+    temperature: float = Field(description="The tempature to use during generation.")
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate."
     )

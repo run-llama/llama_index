@@ -1,8 +1,12 @@
 from inspect import signature
 from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast
 
-from pydantic import BaseModel, create_model
-from pydantic.fields import FieldInfo
+try:
+    from pydantic.v1 import BaseModel, create_model
+    from pydantic.v1.fields import FieldInfo
+except ImportError:
+    from pydantic import BaseModel, create_model
+    from pydantic.fields import FieldInfo
 
 
 def create_schema_from_function(

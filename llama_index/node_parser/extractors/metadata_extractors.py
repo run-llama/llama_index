@@ -21,15 +21,19 @@ disambiguate the document or subsection from other similar documents or subsecti
 """
 import json
 from abc import abstractmethod
-from pydantic import Field, PrivateAttr
-from typing import Any, List, Optional, Sequence, cast, Dict, Callable
 from functools import reduce
 from copy import deepcopy
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
-from llama_index.llms.base import LLM
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
+from llama_index.llms.base import LLM
 from llama_index.node_parser.interface import BaseExtractor
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode, MetadataMode
 from llama_index.utils import get_tqdm_iterable
 
@@ -216,7 +220,7 @@ class TitleExtractor(MetadataFeatureExtractor):
 
         title_candidates = [
             self.llm_predictor.predict(
-                Prompt(template=self.node_template),
+                PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
             for node in nodes_to_extract_title
@@ -227,7 +231,7 @@ class TitleExtractor(MetadataFeatureExtractor):
             )
 
             title = self.llm_predictor.predict(
-                Prompt(template=self.combine_template),
+                PromptTemplate(template=self.combine_template),
                 context_str=titles,
             )
         else:
@@ -275,7 +279,7 @@ class KeywordExtractor(MetadataFeatureExtractor):
 
             # TODO: figure out a good way to allow users to customize keyword template
             keywords = self.llm_predictor.predict(
-                Prompt(
+                PromptTemplate(
                     template=f"""\
 {{context_str}}. Give {self.keywords} unique keywords for this \
 document. Format as comma separated. Keywords: """
@@ -355,7 +359,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
                 continue
 
             context_str = node.get_content(metadata_mode=self.metadata_mode)
-            prompt = Prompt(template=self.prompt_template)
+            prompt = PromptTemplate(template=self.prompt_template)
             questions = self.llm_predictor.predict(
                 prompt, num_questions=self.questions, context_str=context_str
             )
@@ -448,7 +452,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
         for node in nodes_queue:
             node_context = cast(TextNode, node).get_content(mode="all")
             summary = self.llm_predictor.predict(
-                Prompt(template=self.prompt_template),
+                PromptTemplate(template=self.prompt_template),
                 context_str=node_context,
             ).strip()
             node_summaries.append(summary)
