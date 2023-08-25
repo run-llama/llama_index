@@ -74,5 +74,6 @@ maxdepth: 1
 ---
 integrations/chatgpt_plugins.md
 Poe <https://github.com/poe-platform/poe-protocol/tree/main/llama_poe>
+Airbyte <https://airbyte.com/tutorials/airbyte-and-llamaindex-elt-and-chat-with-your-data-warehouse-without-writing-sql>
 
 ```
