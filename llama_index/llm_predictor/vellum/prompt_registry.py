@@ -3,12 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List, Tuple
 from uuid import uuid4
 
-from llama_index import Prompt
 from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
 from llama_index.llm_predictor.vellum.utils import convert_to_kebab_case
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.base import PromptTemplate
 
 if TYPE_CHECKING:
     import vellum  # noqa: F401
@@ -33,7 +34,7 @@ class VellumPromptRegistry:
 
         self._vellum_client = Vellum(api_key=vellum_api_key)
 
-    def from_prompt(self, initial_prompt: Prompt) -> VellumRegisteredPrompt:
+    def from_prompt(self, initial_prompt: BasePromptTemplate) -> VellumRegisteredPrompt:
         """Accepts a LlamaIndex prompt and retrieves a corresponding registered prompt
         from Vellum.
 
@@ -46,7 +47,7 @@ class VellumPromptRegistry:
 
         You can reference a previously registered prompt by providing either
         `vellum_deployment_id` or `vellum_deployment_name` as key/value pairs within
-        `Prompt.metadata`.
+        `BasePromptTemplate.metadata`.
         """
 
         from vellum.core import ApiError
@@ -112,7 +113,7 @@ class VellumPromptRegistry:
             prompt_id=prompt_id,
         )
 
-    def _register_prompt(self, prompt: Prompt) -> VellumRegisteredPrompt:
+    def _register_prompt(self, prompt: BasePromptTemplate) -> VellumRegisteredPrompt:
         """Registers a prompt with Vellum.
 
         By registering a prompt, Vellum will:
@@ -151,7 +152,7 @@ class VellumPromptRegistry:
             parameters=params,
             meta={
                 "source": "llamaindex",
-                "prompt_type": prompt.prompt_type,
+                "prompt_type": prompt.metadata["prompt_type"],
             },
         )
 
@@ -164,22 +165,24 @@ class VellumPromptRegistry:
             prompt_id=resp.prompt.id,
         )
 
-    def _generate_default_label(self, prompt: Prompt) -> str:
-        return f"LlamaIndex Demo: {prompt.prompt_type}"
+    def _generate_default_label(self, prompt: BasePromptTemplate) -> str:
+        prompt_type = prompt.metadata["prompt_type"]
+        return f"LlamaIndex Demo: {prompt_type}'"
 
-    def _generate_default_name(self, prompt: Prompt) -> str:
+    def _generate_default_name(self, prompt: BasePromptTemplate) -> str:
         default_label = self._generate_default_label(prompt)
         return convert_to_kebab_case(default_label)
 
     def _construct_prompt_info(
-        self, prompt: Prompt, for_chat_model: bool = True
+        self, prompt: BasePromptTemplate, for_chat_model: bool = True
     ) -> vellum.RegisterPromptPromptInfoRequest:
         """Converts a LlamaIndex prompt into Vellum's prompt representation."""
 
         import vellum
 
-        prompt_template = prompt.original_template
-        for input_variable in prompt.get_langchain_prompt().input_variables:
+        assert isinstance(prompt, PromptTemplate)
+        prompt_template = prompt.template
+        for input_variable in prompt.template_vars:
             prompt_template = prompt_template.replace(
                 input_variable, f"{{ {input_variable} }}"
             )
@@ -190,8 +193,8 @@ class VellumPromptRegistry:
             block_type=vellum.BlockTypeEnum.JINJA,
             properties=vellum.PromptTemplateBlockPropertiesRequest(
                 template=self._prepare_prompt_jinja_template(
-                    prompt.original_template,
-                    prompt.get_langchain_prompt().input_variables,
+                    prompt.template,
+                    prompt.template_vars,
                 ),
             ),
         )
@@ -213,10 +216,7 @@ class VellumPromptRegistry:
                 version=1,
                 blocks=[block],
             ),
-            input_variables=[
-                {"key": input_var}
-                for input_var in prompt.get_langchain_prompt().input_variables
-            ],
+            input_variables=[{"key": input_var} for input_var in prompt.template_vars],
         )
 
     def _prepare_prompt_jinja_template(

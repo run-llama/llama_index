@@ -12,7 +12,7 @@ from llama_index.graph_stores.registery import (
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.base import Prompt, PromptType
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
@@ -49,7 +49,7 @@ Question: {query_str}
 
 NebulaGraph Cypher dialect query:
 """
-DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT = Prompt(
+DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT = PromptTemplate(
     DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT_TMPL,
     prompt_type=PromptType.TEXT_TO_GRAPH_QUERY,
 )
@@ -71,7 +71,7 @@ DEFAULT_NEO4J_NL2CYPHER_PROMPT_TMPL = (
     "{query_str}\n"
 )
 
-DEFAULT_NEO4J_NL2CYPHER_PROMPT = Prompt(
+DEFAULT_NEO4J_NL2CYPHER_PROMPT = PromptTemplate(
     DEFAULT_NEO4J_NL2CYPHER_PROMPT_TMPL,
     prompt_type=PromptType.TEXT_TO_GRAPH_QUERY,
 )
@@ -93,7 +93,7 @@ Graph response: {kg_response_str}
 Response: 
 """
 
-DEFAULT_KG_RESPONSE_ANSWER_PROMPT = Prompt(
+DEFAULT_KG_RESPONSE_ANSWER_PROMPT = PromptTemplate(
     DEFAULT_KG_RESPONSE_ANSWER_PROMPT_TMPL,
     prompt_type=PromptType.QUESTION_ANSWER,
 )
@@ -119,8 +119,8 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         self,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
-        graph_query_synthesis_prompt: Optional[Prompt] = None,
-        graph_response_answer_prompt: Optional[Prompt] = None,
+        graph_query_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        graph_response_answer_prompt: Optional[BasePromptTemplate] = None,
         refresh_schema: bool = False,
         verbose: bool = False,
         response_synthesizer: Optional[BaseSynthesizer] = None,

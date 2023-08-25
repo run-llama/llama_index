@@ -1,5 +1,63 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Use `utf-8` for json file reader (#7390)
+
+## [0.8.9] - 2023-08-24
+
+### New Features
+- Added support for FalkorDB/RedisGraph graph store (#7346)
+- Added directed sub-graph RAG (#7378)
+- Added support for `BM25Retriever` (#7342)
+
+### Bug Fixes / Nits
+- Added `max_tokens` to `Xinference` LLM (#7372)
+- Support cache dir creation in multithreaded apps (#7365)
+- Ensure temperature is a float for openai (#7382)
+- Remove duplicate subjects in knowledge graph retriever (#7378)
+- Added support for both pydantic v1 and v2 to allow other apps to move forward (#7394)
+
+### Breaking/Deprecated API Changes
+- Refactor prompt template (#7319)
+  - Use `BasePromptTemplate` for generic typing
+  - Use `PromptTemplate`, `ChatPromptTemplate`, `SelectorPromptTemplate` as core implementations
+  - Use `LangchainPromptTemplate` for compatibility with Langchain prompt templates
+  - Fully replace specific prompt classes (e.g. `SummaryPrompt`) with generic `BasePromptTemplate` for typing in codebase.
+  - Keep `Prompt` as an alias for `PromptTemplate` for backwards compatibility.
+  - BREAKING CHANGE: remove support for `Prompt.from_langchain_prompt`, please use `template=LangchainPromptTemplate(lc_template)` instead.
+
+
+## [0.8.8] - 2023-08-23
+
+### New Features
+- `OpenAIFineTuningHandler` for collecting LLM inputs/outputs for OpenAI fine tuning (#7367)
+
+### Bug Fixes / Nits
+- Add support for `claude-instant-1.2` (#7369)
+
+## [0.8.7] - 2023-08-22
+
+### New Features
+- Support fine-tuned OpenAI models (#7364)
+- Added support for Cassandra vector store (#6784)
+- Support pydantic fields in tool functions (#7348)
+
+### Bug Fixes / Nits
+- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+
+## [0.8.6] - 2023-08-22
+
+### New Features
+- auto vs. recursive retriever notebook (#7353)
+- Reader and Vector Store for BagelDB with example notebooks (#7311)
+
+### Bug Fixes / Nits
+- Use service context for intermediate index in retry source query engine (#7341)
+- temp fix for prompt helper + chat models (#7350)
+- Properly skip unit-tests when packages not installed (#7351)
+
 ## [0.8.5.post2] - 2023-08-20
 
 ### New Features

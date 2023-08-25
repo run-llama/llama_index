@@ -1,7 +1,6 @@
 """Kùzu graph store index."""
 from typing import Any, Dict, List, Optional
 
-
 from llama_index.graph_stores.types import GraphStore
 
 
@@ -106,8 +105,6 @@ class KuzuGraphStore(GraphStore):
                 curr_path.append(predicate)
             # Add the last node
             curr_path.append(obj["ID"])
-            # Remove subject as it is the key of the map
-            curr_path = curr_path[1:]
             if subj["ID"] not in retval:
                 retval[subj["ID"]] = []
             retval[subj["ID"]].append(curr_path)

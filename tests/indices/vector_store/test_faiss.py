@@ -1,6 +1,5 @@
 """Test vector store indexes."""
 
-import os
 from pathlib import Path
 from typing import List
 
@@ -8,14 +7,18 @@ import pytest
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import TextNode
-from llama_index.schema import Document
+from llama_index.schema import Document, TextNode
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
 
+try:
+    import faiss
+except ImportError:
+    faiss = None  # type: ignore
 
-@pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
+
+@pytest.mark.skipif(faiss is None, reason="faiss not installed")
 def test_build_faiss(
     documents: List[Document],
     faiss_storage_context: StorageContext,
@@ -38,7 +41,7 @@ def test_build_faiss(
     assert "This is a test v2." in node_texts
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
+@pytest.mark.skipif(faiss is None, reason="faiss not installed")
 def test_faiss_insert(
     documents: List[Document],
     faiss_storage_context: StorageContext,
@@ -62,7 +65,7 @@ def test_faiss_insert(
     assert "This is a test v3." in node_texts
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
+@pytest.mark.skipif(faiss is None, reason="faiss not installed")
 def test_persist(tmp_path: Path) -> None:
     import faiss
 

@@ -1,11 +1,15 @@
-from pydantic import Field, PrivateAttr
 from typing import Any, Dict, Optional, Sequence
 
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.anthropic_utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_prompt,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,

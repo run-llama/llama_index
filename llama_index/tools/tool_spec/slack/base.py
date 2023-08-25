@@ -1,13 +1,18 @@
 """Slack tool spec."""
 
-from llama_index.tools.tool_spec.base import BaseToolSpec
+import logging
+from datetime import datetime
+from ssl import SSLContext
+from typing import List, Optional, Type
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from llama_index.readers.slack import SlackReader
 from llama_index.schema import Document
-from typing import Optional, List, Type
-from pydantic import BaseModel
-import logging
-from ssl import SSLContext
-from datetime import datetime
+from llama_index.tools.tool_spec.base import BaseToolSpec
 
 logger = logging.getLogger(__name__)
 
