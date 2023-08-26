@@ -145,7 +145,7 @@ class SentenceWindowNodeParser(NodeParser):
                 all_nodes.extend(nodes)
 
             if self.metadata_extractor is not None:
-                self.metadata_extractor.process_nodes(all_nodes)
+                all_nodes = self.metadata_extractor.process_nodes(all_nodes)
 
             event.on_end(payload={EventPayload.NODES: all_nodes})
 

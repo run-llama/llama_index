@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import Optional, cast
+from typing import Optional, cast, List
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
@@ -17,7 +17,7 @@ class BM25Retriever(BaseRetriever):
     def __init__(
         self,
         docstore: BaseDocumentStore,
-        tokenizer: Callable[[str], list[str]],
+        tokenizer: Callable[[str], List[str]],
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
         try:
