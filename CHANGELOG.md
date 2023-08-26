@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.10] - 2023-08-25
 
 ### New Features
 - Added support for `MonsterLLM` using MonsterAPI (#7343) 
