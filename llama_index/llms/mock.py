@@ -11,13 +11,14 @@ from llama_index.llms.custom import CustomLLM
 
 
 class MockLLM(CustomLLM):
+    max_tokens: Optional[int]
+
     def __init__(
         self,
         max_tokens: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.callback_manager = callback_manager or CallbackManager([])
-        self.max_tokens = max_tokens
+        super().__init__(max_tokens=max_tokens, callback_manager=callback_manager)
 
     @property
     def metadata(self) -> LLMMetadata:

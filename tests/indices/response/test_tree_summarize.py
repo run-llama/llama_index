@@ -8,7 +8,7 @@ import pytest
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.response_synthesizers import TreeSummarize
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 
 
@@ -16,7 +16,9 @@ from llama_index.prompts.prompt_type import PromptType
 def mock_service_context_merge_chunks(
     mock_service_context: ServiceContext,
 ) -> ServiceContext:
-    def mock_repack(prompt_template: Prompt, text_chunks: Sequence[str]) -> List[str]:
+    def mock_repack(
+        prompt_template: PromptTemplate, text_chunks: Sequence[str]
+    ) -> List[str]:
         merged_chunks = []
         for chunks in zip(*[iter(text_chunks)] * 2):
             merged_chunks.append("\n".join(chunks))
@@ -30,7 +32,7 @@ def mock_service_context_merge_chunks(
 
 def test_tree_summarize(mock_service_context_merge_chunks: ServiceContext) -> None:
     mock_summary_prompt_tmpl = "{context_str}{query_str}"
-    mock_summary_prompt = Prompt(
+    mock_summary_prompt = PromptTemplate(
         mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
     )
 
@@ -55,7 +57,7 @@ def test_tree_summarize_use_async(
     mock_service_context_merge_chunks: ServiceContext,
 ) -> None:
     mock_summary_prompt_tmpl = "{context_str}{query_str}"
-    mock_summary_prompt = Prompt(
+    mock_summary_prompt = PromptTemplate(
         mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
     )
 
@@ -82,7 +84,7 @@ async def test_tree_summarize_async(
     mock_service_context_merge_chunks: ServiceContext,
 ) -> None:
     mock_summary_prompt_tmpl = "{context_str}{query_str}"
-    mock_summary_prompt = Prompt(
+    mock_summary_prompt = PromptTemplate(
         mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
     )
 

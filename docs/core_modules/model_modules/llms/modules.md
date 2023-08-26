@@ -99,3 +99,13 @@ maxdepth: 1
 ---
 /examples/llm/XinferenceLocalDeployment.ipynb
 ```
+
+## MonsterAPI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/monsterapi.ipynb
+
+```

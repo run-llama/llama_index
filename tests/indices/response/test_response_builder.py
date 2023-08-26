@@ -6,7 +6,7 @@ from typing import List
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response_synthesizers import ResponseMode, get_response_synthesizer
 from llama_index.schema import Document
@@ -58,10 +58,14 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
     # test response with ResponseMode.COMPACT
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_refine_prompt_tmpl = "{query_str}{existing_answer}{context_msg}"
-    mock_refine_prompt = Prompt(mock_refine_prompt_tmpl, prompt_type=PromptType.REFINE)
+    mock_refine_prompt = PromptTemplate(
+        mock_refine_prompt_tmpl, prompt_type=PromptType.REFINE
+    )
 
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+    mock_qa_prompt = PromptTemplate(
+        mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER
+    )
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -106,7 +110,9 @@ def test_accumulate_response(
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+    mock_qa_prompt = PromptTemplate(
+        mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER
+    )
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -163,7 +169,9 @@ def test_accumulate_response_async(
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+    mock_qa_prompt = PromptTemplate(
+        mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER
+    )
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -221,7 +229,9 @@ def test_accumulate_response_aget(
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+    mock_qa_prompt = PromptTemplate(
+        mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER
+    )
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -281,7 +291,9 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+    mock_qa_prompt = PromptTemplate(
+        mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER
+    )
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens

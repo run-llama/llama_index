@@ -26,7 +26,7 @@ def _to_filter_expr(filters: MetadataFilters) -> str:
     conditions = []
     for f in filters.filters:
         value = str(f.value)
-        if type(f.value) == str:
+        if isinstance(f.value, str):
             value = '"' + value + '"'
         conditions.append("%s==%s" % (f.key, value))
     return "&&".join(conditions)

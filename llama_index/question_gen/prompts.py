@@ -1,12 +1,12 @@
 import json
 from typing import Sequence
 
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.question_gen.types import SubQuestion
 from llama_index.tools.types import ToolMetadata
 
 # deprecated, kept for backward compatibility
-SubQuestionPrompt = Prompt
+SubQuestionPrompt = PromptTemplate
 
 
 def build_tools_text(tools: Sequence[ToolMetadata]) -> str:

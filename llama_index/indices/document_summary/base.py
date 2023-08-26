@@ -9,7 +9,6 @@ import logging
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union, cast
-from llama_index.utils import get_tqdm_iterable
 
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
@@ -18,17 +17,18 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
-    get_response_synthesizer,
     ResponseMode,
+    get_response_synthesizer,
 )
 from llama_index.schema import (
     BaseNode,
-    NodeWithScore,
     NodeRelationship,
+    NodeWithScore,
     RelatedNodeInfo,
     TextNode,
 )
 from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.utils import get_tqdm_iterable
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     """Document Summary Index.
 
     Args:
-        summary_template (Optional[SummaryPrompt]): A Summary Prompt
+        summary_template (Optional[BasePromptTemplate]): A Summary Prompt
             (see :ref:`Prompt-Templates`).
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
 

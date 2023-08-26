@@ -2,6 +2,11 @@ from typing import Any, List, Sequence
 
 import pytest
 
+try:
+    from pydantic.v1 import PrivateAttr
+except ImportError:
+    from pydantic import PrivateAttr
+
 from llama_index.agent.react.base import ReActAgent
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import (
@@ -24,6 +29,9 @@ def add_tool() -> FunctionTool:
 
 
 class MockChatLLM(MockLLM):
+    _i: int = PrivateAttr()
+    _responses: List[ChatMessage] = PrivateAttr()
+
     def __init__(self, responses: List[ChatMessage]) -> None:
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
@@ -127,6 +135,9 @@ async def test_achat_basic(
 
 
 class MockStreamChatLLM(MockLLM):
+    _i: int = PrivateAttr()
+    _responses: List[ChatMessage] = PrivateAttr()
+
     def __init__(self, responses: List[ChatMessage]) -> None:
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
