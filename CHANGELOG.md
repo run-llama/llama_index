@@ -10,6 +10,7 @@
 
 ### Bug Fixes / Nits
 - Use `utf-8` for json file reader (#7390)
+- Fix entity extractor initialization (#7407)
 
 ## [0.8.9] - 2023-08-24
 
