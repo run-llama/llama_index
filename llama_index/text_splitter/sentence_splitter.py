@@ -8,8 +8,8 @@ from llama_index.constants import DEFAULT_CHUNK_SIZE
 from llama_index.text_splitter.types import MetadataAwareTextSplitter
 from llama_index.text_splitter.utils import (
     split_by_char,
-    split_by_sentence_tokenizer,
     split_by_regex,
+    split_by_sentence_tokenizer,
     split_by_sep,
 )
 from llama_index.utils import globals_helper
@@ -124,8 +124,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             if split_len <= chunk_size:
                 new_splits.append(_Split(split, is_sentence=is_sentence))
             else:
+                ns = self._split(split, chunk_size=chunk_size)
+                if len(ns) == 0:
+                    print("0 length split")
                 # recursively split
-                new_splits.extend(self._split(split, chunk_size=chunk_size))
+                new_splits.extend(ns)
         return new_splits
 
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
@@ -138,7 +141,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             cur_len = len(self.tokenizer(cur_token.text))
             if cur_len > chunk_size:
                 raise ValueError("Single token exceed chunk size")
-            if cur_tokens + cur_len > chunk_size:
+            # Ensure no infinite looping by always checking we collected some chunks.
+            if cur_tokens + cur_len > chunk_size and len(cur_chunk) > 0:
                 chunks.append("".join(cur_chunk).strip())
                 cur_chunk = []
                 cur_tokens = 0
@@ -146,6 +150,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 if (
                     cur_token.is_sentence
                     or cur_tokens + cur_len < chunk_size - self._chunk_overlap
+                    or len(cur_chunk) == 0
                 ):
                     cur_tokens += cur_len
                     cur_chunk.append(cur_token.text)

@@ -45,10 +45,11 @@ class OpenAI(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
+        api_type: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        validate_openai_api_key(api_key, kwargs.get("api_type", None))
+        validate_openai_api_key(api_key, api_type)
 
         self.model = model
         self.temperature = temperature
@@ -56,6 +57,8 @@ class OpenAI(LLM):
         self.additional_kwargs = additional_kwargs or {}
         if api_key is not None:
             self.additional_kwargs["api_key"] = api_key
+        if api_type is not None:
+            self.additional_kwargs["api_type"] = api_type
         self.max_retries = max_retries
         self.callback_manager = callback_manager or CallbackManager([])
 
