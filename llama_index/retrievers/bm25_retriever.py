@@ -38,7 +38,7 @@ class BM25Retriever(BaseRetriever):
     def from_defaults(
         cls,
         index: VectorStoreIndex,
-        tokenizer: Optional[Callable[[str], list[str]]] = None,
+        tokenizer: Optional[Callable[[str], List[str]]] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> "BM25Retriever":
         tokenizer = tokenizer or globals_helper.tokenizer
