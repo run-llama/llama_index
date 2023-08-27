@@ -1,5 +1,15 @@
 from enum import Enum
-from typing import List, Dict, Any, Optional, Union, Mapping, TypedDict, Literal, TypeVar
+from typing import (
+    List,
+    Dict,
+    Any,
+    Optional,
+    Union,
+    Mapping,
+    TypedDict,
+    Literal,
+    TypeVar,
+)
 from pydantic import BaseModel
 from llama_index.llms.base import ChatMessage
 

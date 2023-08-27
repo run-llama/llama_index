@@ -11,7 +11,7 @@ from llama_index.llms.rubeus_utils import (
     Message,
     ProviderTypesLiteral,
     Body,
-    RubeusResponse
+    RubeusResponse,
 )
 
 from .rubeus_client import APIClient
@@ -78,7 +78,7 @@ class Completions(APIResource):
             body=[llm],
             stream=stream or False,
             mode=RubeusModes.SINGLE.value,
-            cast_to=RubeusResponse
+            cast_to=RubeusResponse,
         )
 
     def with_fallbacks(self, llms: List[LLMBase]) -> RubeusResponse:
@@ -86,9 +86,11 @@ class Completions(APIResource):
         for i in llms:
             body.append(cast(Body, i))
         return self._post(
-            "/v1/chatComplete", body=body, mode=RubeusModes.FALLBACK, stream=False,
-            cast_to=RubeusResponse
-
+            "/v1/chatComplete",
+            body=body,
+            mode=RubeusModes.FALLBACK,
+            stream=False,
+            cast_to=RubeusResponse,
         )
 
     def with_loadbalancing(self, llms: List[LLMBase]) -> RubeusResponse:
@@ -96,9 +98,11 @@ class Completions(APIResource):
         for i in llms:
             body.append(cast(Body, i))
         return self._post(
-            "/v1/chatComplete", body=body, mode=RubeusModes.LOADBALANCE, stream=False,
-            cast_to=RubeusResponse
-
+            "/v1/chatComplete",
+            body=body,
+            mode=RubeusModes.LOADBALANCE,
+            stream=False,
+            cast_to=RubeusResponse,
         )
 
 
@@ -150,8 +154,7 @@ class ChatCompletions(APIResource):
             body=[llm],
             stream=stream or False,
             mode=RubeusModes.SINGLE.value,
-            cast_to=RubeusResponse
-
+            cast_to=RubeusResponse,
         )
 
     def with_fallbacks(self, llms: List[LLMBase]) -> RubeusResponse:
@@ -159,8 +162,11 @@ class ChatCompletions(APIResource):
         for i in llms:
             body.append(cast(Body, i))
         res = self._post(
-            "/v1/chatComplete", body=body, mode=RubeusModes.FALLBACK, stream=False,
-            cast_to=RubeusResponse
+            "/v1/chatComplete",
+            body=body,
+            mode=RubeusModes.FALLBACK,
+            stream=False,
+            cast_to=RubeusResponse,
         )
         return res
 
@@ -169,7 +175,9 @@ class ChatCompletions(APIResource):
         for i in llms:
             body.append(cast(Body, i))
         return self._post(
-            "/v1/chatComplete", body=body, mode=RubeusModes.LOADBALANCE, stream=False,
-            cast_to=RubeusResponse
-
+            "/v1/chatComplete",
+            body=body,
+            mode=RubeusModes.LOADBALANCE,
+            stream=False,
+            cast_to=RubeusResponse,
         )

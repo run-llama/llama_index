@@ -9,7 +9,7 @@ from llama_index.llms.rubeus_utils import (
     Options,
     Config,
     ProviderOptions,
-    RubeusResponse
+    RubeusResponse,
 )
 from pydantic import BaseModel
 from llama_index.llms import rubeus_exceptions as exceptions
@@ -45,7 +45,13 @@ class APIClient:
         return None
 
     def post(
-        self, path: str, *, body: List[Body], stream: bool, mode: str, cast_to: Type[RubeusResponse]
+        self,
+        path: str,
+        *,
+        body: List[Body],
+        stream: bool,
+        mode: str,
+        cast_to: Type[RubeusResponse],
     ) -> RubeusResponse:
         body = cast(List[Body], body)
         opts = self._construct(method="post", url=path, body=body, mode=mode)
@@ -74,7 +80,7 @@ class APIClient:
                 apiKey=item.get("model_api_key"),
                 weight=item.get("weight"),
                 retry=item.get("retry"),
-                override_params=item.get("override_params")
+                override_params=item.get("override_params"),
             )
             config.options.append(options)
         return config
@@ -135,7 +141,9 @@ class APIClient:
         )
         return request
 
-    def _request(self, *, options: Options, stream: bool, cast_to: Type[RubeusResponse]) -> RubeusResponse:
+    def _request(
+        self, *, options: Options, stream: bool, cast_to: Type[RubeusResponse]
+    ) -> RubeusResponse:
         request = self._build_request(options)
         try:
             res = self._client.send(request, auth=self.custom_auth, stream=stream)
@@ -149,7 +157,9 @@ class APIClient:
             raise exceptions.APITimeoutError(request=request) from err
         except Exception as err:
             raise exceptions.APIConnectionError(request=request) from err
-        response = cast(RubeusResponse, BaseModel.construct(**res.json(), raw_body=res.json()))
+        response = cast(
+            RubeusResponse, BaseModel.construct(**res.json(), raw_body=res.json())
+        )
         return response
 
     def _make_status_error_from_response(

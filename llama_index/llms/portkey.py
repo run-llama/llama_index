@@ -31,7 +31,7 @@ from llama_index.llms.rubeus_utils import (
     ProviderTypes,
     ProviderTypesLiteral,
     RubeusCacheType,
-    RubeusCacheLiteral
+    RubeusCacheLiteral,
 )
 from llama_index.llms.rubeus import Rubeus
 from llama_index.llms.rubeus_utils import LLMBase
@@ -240,7 +240,8 @@ class Portkey(CustomLLM):
             self.llm = self._get_llm(response)
         else:
             response = self._client.chat_completion.create(
-                messages=messages_dict, **kwargs)  # type: ignore
+                messages=messages_dict, **kwargs
+            )  # type: ignore
 
         message = response.choices[0]["message"]
         raw = response.raw_body
