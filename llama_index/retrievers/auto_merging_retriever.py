@@ -1,11 +1,10 @@
 # Auto Merging Retriever
 
 from llama_index.indices.base_retriever import BaseRetriever
-from abc import ABC, abstractmethod
-from typing import Optional, Tuple, cast
+from typing import Tuple, cast
 
-from llama_index.schema import NodeWithScore, TextNode
-from llama_index.indices.query.schema import QueryBundle, QueryType
+from llama_index.schema import NodeWithScore, BaseNode
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
 from typing import List, Dict
 from collections import defaultdict
@@ -28,7 +27,7 @@ class AutoMergingRetriever(BaseRetriever):
         self,
         vector_retriever: VectorIndexRetriever,
         storage_context: StorageContext,
-        simple_ratio_thresh: Optional[float] = 0.5,
+        simple_ratio_thresh: float = 0.5,
         verbose: bool = False,
     ) -> None:
         """Init params."""
@@ -42,18 +41,20 @@ class AutoMergingRetriever(BaseRetriever):
     ) -> Tuple[List[NodeWithScore], bool]:
         """Get parents and merge nodes."""
         # retrieve all parent nodes
-        parent_nodes = {}
+        parent_nodes: Dict[str, BaseNode] = {}
         parent_cur_children_dict: Dict[str, List[NodeWithScore]] = defaultdict(list)
         for node in nodes:
             if node.node.parent_node is None:
                 continue
             parent_node_info = node.node.parent_node
 
-            # TODO: fetch actual parent node
+            # Fetch actual parent node if doesn't exist in `parent_nodes` cache yet
             parent_node_id = parent_node_info.node_id
-            parent_node = self._storage_context.docstore.get_document(parent_node_id)
-
-            parent_nodes[parent_node_id] = parent_node
+            if parent_node_id not in parent_nodes:
+                parent_node = self._storage_context.docstore.get_document(
+                    parent_node_id
+                )
+                parent_nodes[parent_node_id] = cast(BaseNode, parent_node)
 
             # add reference to child from parent
             parent_cur_children_dict[parent_node_id].append(node)
@@ -61,7 +62,7 @@ class AutoMergingRetriever(BaseRetriever):
         # compute ratios and "merge" nodes
         # merging: delete some children nodes, add some parent nodes
         node_ids_to_delete = set()
-        nodes_to_add = {}
+        nodes_to_add: Dict[str, BaseNode] = {}
         for parent_node_id, parent_node in parent_nodes.items():
             parent_child_nodes = parent_node.child_nodes
             parent_num_children = len(parent_child_nodes) if parent_child_nodes else 0
@@ -87,9 +88,9 @@ class AutoMergingRetriever(BaseRetriever):
                 # add parent node
                 # can try averaging score across embeddings for now
 
-                avg_score = sum([n.score for n in parent_cur_children]) / len(
-                    parent_cur_children
-                )
+                avg_score = sum(
+                    [n.get_score() or 0.0 for n in parent_cur_children]
+                ) / len(parent_cur_children)
                 parent_node_with_score = NodeWithScore(
                     node=parent_node, score=avg_score
                 )
@@ -115,20 +116,21 @@ class AutoMergingRetriever(BaseRetriever):
             if idx >= len(nodes) - 1:
                 continue
 
-            text_node = cast(TextNode, node.node)
+            cur_node = cast(BaseNode, node.node)
             # if there's a node in the middle, add that to the queue
             if (
-                text_node.next_node is not None
-                and text_node.next_node == nodes[idx + 1].node.prev_node
+                cur_node.next_node is not None
+                and cur_node.next_node == nodes[idx + 1].node.prev_node
             ):
                 is_changed = True
                 next_node = self._storage_context.docstore.get_document(
-                    text_node.next_node.node_id
+                    cur_node.next_node.node_id
                 )
+                next_node = cast(BaseNode, next_node)
 
-                next_node_text = truncate_text(next_node.text, 100)
+                next_node_text = truncate_text(next_node.get_text(), 100)
                 info_str = (
-                    f"> Filling in node. Node id: {text_node.next_node.node_id}"
+                    f"> Filling in node. Node id: {cur_node.next_node.node_id}"
                     f"> Node text: {next_node_text}\n"
                 )
                 logger.info(info_str)
@@ -136,7 +138,7 @@ class AutoMergingRetriever(BaseRetriever):
                     print(info_str)
 
                 # set score to be average of current node and next node
-                avg_score = (node.score + nodes[idx + 1].score) / 2
+                avg_score = (node.get_score() + nodes[idx + 1].get_score()) / 2
                 new_nodes.append(NodeWithScore(node=next_node, score=avg_score))
         return new_nodes, is_changed
 
@@ -150,7 +152,7 @@ class AutoMergingRetriever(BaseRetriever):
         nodes, is_changed_1 = self._get_parents_and_merge(nodes)
         return nodes, is_changed_0 or is_changed_1
 
-    def _retrieve(self, query_bundle: QueryBundle) -> Tuple[List[NodeWithScore], bool]:
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes given query.
 
         Implemented by the user.
@@ -165,6 +167,6 @@ class AutoMergingRetriever(BaseRetriever):
             # cur_nodes, is_changed = self._get_parents_and_merge(cur_nodes)
 
         # sort by similarity
-        cur_nodes.sort(key=lambda x: x.score, reverse=True)
+        cur_nodes.sort(key=lambda x: x.get_score(), reverse=True)
 
         return cur_nodes

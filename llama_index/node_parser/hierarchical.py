@@ -17,7 +17,7 @@ from llama_index.utils import get_tqdm_iterable
 from llama_index.text_splitter import TextSplitter, get_default_text_splitter
 
 
-def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode):
+def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode) -> None:
     """Add parent/child relationship between nodes."""
     child_list = parent_node.relationships.get(NodeRelationship.CHILD, [])
     child_list.append(child_node.as_related_node_info())
@@ -48,8 +48,10 @@ class HierarchicalNodeParser(NodeParser):
 
     For instance, this may return a list of nodes like:
     - list of top-level nodes with chunk size 2048
-    - list of second-level nodes, where each node is a child of a top-level node, chunk size 512
-    - list of third-level nodes, where each node is a child of a second-level node, chunk size 128
+    - list of second-level nodes, where each node is a child of a top-level node,
+        chunk size 512
+    - list of third-level nodes, where each node is a child of a second-level node,
+        chunk size 128
 
     Args:
         text_splitter (Optional[TextSplitter]): text splitter
@@ -60,7 +62,9 @@ class HierarchicalNodeParser(NodeParser):
 
     chunk_sizes: Optional[List[int]] = Field(
         default=None,
-        description="The chunk sizes to use when splitting documents, in order of level.",
+        description=(
+            "The chunk sizes to use when splitting documents, in order of level.",
+        ),
     )
     text_splitter_ids: List[str] = Field(
         default_factory=list,
@@ -90,7 +94,7 @@ class HierarchicalNodeParser(NodeParser):
         cls,
         chunk_sizes: Optional[List[int]] = None,
         text_splitter_ids: Optional[List[str]] = None,
-        text_splitter_map: Optional[TextSplitter] = None,
+        text_splitter_map: Optional[Dict[str, TextSplitter]] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
@@ -196,9 +200,10 @@ class HierarchicalNodeParser(NodeParser):
                 documents, show_progress, "Parsing documents into nodes"
             )
 
-            all_nodes = self._recursively_get_nodes_from_nodes(
-                documents_with_progress, 0
-            )
+            # TODO: a bit of a hack rn for tqdm
+            for doc in documents_with_progress:
+                nodes_from_doc = self._recursively_get_nodes_from_nodes([doc], 0)
+                all_nodes.extend(nodes_from_doc)
 
             if self.metadata_extractor is not None:
                 all_nodes = self.metadata_extractor.process_nodes(all_nodes)
