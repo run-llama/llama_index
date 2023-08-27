@@ -1,8 +1,12 @@
 from typing import Any, Optional, Sequence, Dict
-from pydantic import Field
 import json
-import requests
-import sseclient
+
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
+
+
 from llama_index.llms.base import (
     LLM,
     LLMMetadata,
@@ -48,6 +52,10 @@ class RunGptLLM(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ):
+        if endpoint.startswith("http://"):
+            base_url = endpoint
+        else:
+            base_url = "http://" + endpoint
         super().__init__(
             model=model,
             endpoint=endpoint,
@@ -56,7 +64,7 @@ class RunGptLLM(LLM):
             context_window=context_window,
             additional_kwargs=additional_kwargs or {},
             callback_manager=callback_manager or CallbackManager([]),
-            base_url="http://" + endpoint,
+            base_url=base_url,
         )
 
     @property
@@ -64,13 +72,19 @@ class RunGptLLM(LLM):
         """LLM metadata."""
         return LLMMetadata(
             context_window=self.context_window,
-            num_output=DEFAULT_NUM_OUTPUTS,
+            num_output=self.max_tokens,
             model_name=self._model,
         )
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-
+        try:
+            import requests
+        except ImportError:
+            raise ImportError(
+                "Could not import requests library."
+                "Please install requests with `pip install requests`"
+            )
         response_gpt = requests.post(
             self.base_url + "/generate",
             json=self._request_pack("complete", prompt, **kwargs),
@@ -86,13 +100,25 @@ class RunGptLLM(LLM):
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-
+        try:
+            import requests
+        except ImportError:
+            raise ImportError(
+                "Could not import requests library."
+                "Please install requests with `pip install requests`"
+            )
         response_gpt = requests.post(
             self.base_url + "/generate_stream",
             json=self._request_pack("complete", prompt, **kwargs),
             stream=True,
         )
-
+        try:
+            import sseclient
+        except ImportError:
+            raise ImportError(
+                "Could not import sseclient-py library."
+                "Please install requests with `pip install sseclient-py`"
+            )
         client = sseclient.SSEClient(response_gpt)
         response_iter = client.events()
 
@@ -101,31 +127,32 @@ class RunGptLLM(LLM):
             for item in response_iter:
                 item_dict = json.loads(json.dumps(eval(item.data)))
                 delta = item_dict["choices"][0]["text"]
+                additional_kwargs = item_dict["usage"]
                 text = text + delta
-                yield CompletionResponse(text=text, delta=delta, raw=item_dict)
-
+                yield CompletionResponse(
+                    text=text,
+                    delta=delta,
+                    raw=item_dict,
+                    additional_kwargs=additional_kwargs,
+                )
         return gen()
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        message_list = list()
-        for message in messages:
-            role = message.role.value
-            content = message.content
-            message_list.append({"role": role, "content": content})
+        message_list = self._message_wrapper(messages)
+        try:
+            import requests
+        except ImportError:
+            raise ImportError(
+                "Could not import requests library."
+                "Please install requests with `pip install requests`"
+            )
         response_gpt = requests.post(
             self.base_url + "/chat",
             json=self._request_pack("chat", message_list, **kwargs),
             stream=False,
         ).json()
-        message = response_gpt["choices"][0]["message"]
-        role = message["role"]
-        content = message["content"]
-        key = MessageRole.SYSTEM
-        for r in MessageRole:
-            if r.value == role:
-                key = r
-        chat_message = ChatMessage(role=key, content=content)
+        chat_message, _ = self._message_unpacker(response_gpt)
         response_gpt = ChatResponse(message=chat_message, raw=response_gpt)
         return response_gpt
 
@@ -133,16 +160,26 @@ class RunGptLLM(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        message_list = list()
-        for message in messages:
-            role = message.role.value
-            content = message.content
-            message_list.append({"role": role, "content": content})
+        message_list = self._message_wrapper(messages)
+        try:
+            import requests
+        except ImportError:
+            raise ImportError(
+                "Could not import requests library."
+                "Please install requests with `pip install requests`"
+            )
         response_gpt = requests.post(
             self.base_url + "/chat_stream",
             json=self._request_pack("chat", message_list, **kwargs),
             stream=True,
         )
+        try:
+            import sseclient
+        except ImportError:
+            raise ImportError(
+                "Could not import sseclient-py library."
+                "Please install requests with `pip install sseclient-py`"
+            )
         client = sseclient.SSEClient(response_gpt)
         chat_iter = client.events()
 
@@ -150,15 +187,9 @@ class RunGptLLM(LLM):
             content = ""
             for item in chat_iter:
                 item_dict = json.loads(json.dumps(eval(item.data)))
-                message = item_dict["choices"][0]["message"]
-                role = message["role"]
-                delta = message["content"]
+                chat_message, delta = self._message_unpacker(item_dict)
                 content = content + delta
-                key = MessageRole.SYSTEM
-                for r in MessageRole:
-                    if r.value == role:
-                        key = r
-                chat_message = ChatMessage(role=key, content=content)
+                chat_message.content = content
                 yield ChatResponse(message=chat_message, raw=item_dict, delta=delta)
 
         return gen()
@@ -195,9 +226,30 @@ class RunGptLLM(LLM):
         async def gen() -> CompletionResponseAsyncGen:
             for message in self.stream_complete(prompt, **kwargs):
                 yield message
-
-        # NOTE: convert generator to async generator
         return gen()
+    
+    def _message_wrapper(self, messages):
+        message_list = list()
+        for message in messages:
+            role = message.role.value
+            content = message.content
+            message_list.append({"role": role, "content": content})
+        return message_list
+    
+    def _message_unpacker(self, response_gpt):
+        message = response_gpt["choices"][0]["message"]
+        additional_kwargs = response_gpt["usage"]
+        role = message["role"]
+        content = message["content"]
+        key = MessageRole.SYSTEM
+        for r in MessageRole:
+            if r.value == role:
+                key = r
+        chat_message = ChatMessage(
+            role=key, content=content, additional_kwargs=additional_kwargs
+        )
+        return chat_message, content
+    
 
     def _request_pack(self, mode: str, prompt: str, **kwargs: Any) -> dict:
         if mode == "complete":
