@@ -28,7 +28,7 @@ class BM25Retriever(BaseRetriever):
         self._tokenizer = tokenizer
         self._similarity_top_k = similarity_top_k
         self._documents = cast(
-            list[Document], [doc for doc in self._docstore.docs.values()]
+            List[Document], [doc for doc in self._docstore.docs.values()]
         )
         self._corpus = [self._tokenizer(doc.text) for doc in self._documents]
 
@@ -48,17 +48,17 @@ class BM25Retriever(BaseRetriever):
             similarity_top_k=similarity_top_k,
         )
 
-    def _get_scored_nodes(self, query: str) -> list[NodeWithScore]:
+    def _get_scored_nodes(self, query: str) -> List[NodeWithScore]:
         tokenized_query = self._tokenizer(query)
         doc_scores = self.bm25.get_scores(tokenized_query)
 
-        nodes: list[NodeWithScore] = []
+        nodes: List[NodeWithScore] = []
         for i, doc in enumerate(self._documents):
             nodes.append(NodeWithScore(node=doc, score=doc_scores[i]))
 
         return nodes
 
-    def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         if query_bundle.custom_embedding_strs or query_bundle.embedding:
             logger.warning("BM25Retriever does not support embeddings, skipping...")
 
