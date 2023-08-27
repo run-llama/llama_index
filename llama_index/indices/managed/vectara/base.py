@@ -9,7 +9,7 @@ import logging
 import requests
 import json
 
-from typing import Any, Optional
+from typing import Any, Optional, List
 from llama_index.indices.managed.base import ManagedIndex
 from llama_index.schema import Document
 from llama_index.indices.base_retriever import BaseRetriever
@@ -154,6 +154,8 @@ class VectaraIndex(ManagedIndex):
 
     def _insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
+        metadata = document.metadata.copy()
+        metadata["framework"] = "llama_index"
         doc = {
             "document_id": document.doc_id,
             "metadataJson": json.dumps(document.metadata),
@@ -164,6 +166,56 @@ class VectaraIndex(ManagedIndex):
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         self._insert(document)
+
+    def insert_file(
+        self,
+        file_path: str,
+        metadata: Optional[dict] = {},
+        **insert_kwargs: Any,
+    ) -> str:
+        """Vectara provides a way to add files (binary or text) directly via our API where
+        pre-processing and chunking occurs internally in an optimal way
+        This method provides a way to use that API in Llama_index
+
+        Args:
+            file_path: local file path
+                Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc.
+                see API docs for full list
+            metadatas: Optional list of metadatas associated with each file
+
+        Returns:
+            List of ids associated with each of the files indexed
+        """
+        if not os.path.exists(file_path):
+            _logger.error(f"File {file_path} does not exist")
+            return
+        metadata["framework"] = "llama_index"
+        files: dict = {
+            "file": (file_path, open(file_path, "rb")),
+            "doc_metadata": json.dumps(metadata),
+        }
+        headers = self._get_post_headers()
+        headers.pop("Content-Type")
+        response = self._session.post(
+            f"https://api.vectara.io/upload?c={self._vectara_customer_id}&o={self._vectara_corpus_id}&d=True",
+            files=files,
+            verify=True,
+            headers=headers,
+            timeout=self.vectara_api_timeout,
+        )
+
+        if response.status_code == 409:
+            doc_id = response.json()["document"]["documentId"]
+            _logger.info(
+                f"File {file_path} already exists on Vectara (doc_id={doc_id}), skipping"
+            )
+            return None
+        elif response.status_code == 200:
+            doc_id = response.json()["document"]["documentId"]
+            return doc_id
+        else:
+            _logger.info(f"Error indexing file {file_path}: {response.json()}")
+            return None
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any

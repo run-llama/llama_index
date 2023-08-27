@@ -35,11 +35,6 @@ index = VectaraIndex.from_documents(documents, vectara_customer_id=vectara_custo
 # Query index
 query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
-
-# Query with metadata
-filters = MetadataFilters(filters=[ExactMatchFilter(key="theme", value="Mafia")])
-retriever = index.as_retriever(filters=filters)
-result = retriever.retrieve("What is inception about?")
 ```
 
 

@@ -46,34 +46,49 @@ def add_documents(vs, docs):
 
 
 def test_simple_query() -> None:
-    vs = VectaraIndex()
+    index = VectaraIndex()
     docs, ids = get_docs()
-    add_documents(vs, docs)
+    add_documents(index, docs)
 
-    assert isinstance(vs, VectaraIndex)
+    assert isinstance(index, VectaraIndex)
     q = VectaraQuery(query_str="how will I look?", similarity_top_k=1)
-    qe = vs.as_retriever()
+    qe = index.as_retriever()
     res = qe.retrieve(q)
     assert len(res) == 1
     assert res[0].node.text == docs[2].text
 
-    remove_docs(vs, ids)
+    remove_docs(index, ids)
 
 
 def test_with_filter_query() -> None:
-    vs = VectaraIndex()
+    index = VectaraIndex()
     docs, ids = get_docs()
-    add_documents(vs, docs)
+    add_documents(index, docs)
 
-    assert isinstance(vs, VectaraIndex)
+    assert isinstance(index, VectaraIndex)
     q = VectaraQuery(
         query_str="how will I look?",
         similarity_top_k=1,
         filter="doc.test_num = '1'",
     )
-    qe = vs.as_retriever()
+    qe = index.as_retriever()
     res = qe.retrieve(q)
     assert len(res) == 1
     assert res[0].node.text == docs[0].text
 
-    remove_docs(vs, ids)
+    remove_docs(index, ids)
+
+
+def test_file_upload() -> None:
+    index = VectaraIndex()
+    file_path = "docs/examples/data/paul_graham/paul_graham_essay.txt"
+    id = index.insert_file(file_path)
+
+    assert isinstance(index, VectaraIndex)
+    q = VectaraQuery(query_str="What is a Manager Schedule?", similarity_top_k=3)
+
+    query_engine = index.as_query_engine()
+    res = query_engine.query(q)
+    assert "A manager schedule is" in str(res)
+
+    remove_docs(index, [id])
