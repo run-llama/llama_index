@@ -1,7 +1,11 @@
 """Text splitter implementations."""
-from abc import abstractmethod, ABC
-from pydantic import BaseModel
+from abc import ABC, abstractmethod
 from typing import List
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 
 class TextSplitter(ABC, BaseModel):

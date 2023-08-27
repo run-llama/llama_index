@@ -63,10 +63,10 @@ Here's an example where we configure the following:
 * print verbose debug message.
 
 ```python
-from llama_index.prompts  import Prompt
+from llama_index.prompts  import PromptTemplate
 from llama_index.llms import ChatMessage, MessageRole
 
-custom_prompt = Prompt("""\
+custom_prompt = PromptTemplate("""\
 Given a conversation (between Human and Assistant) and a follow up message from Human, \
 rewrite the message to be a standalone question that captures all relevant context \
 from the conversation.

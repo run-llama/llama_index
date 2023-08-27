@@ -1,10 +1,15 @@
 """LLM Prompt Program."""
-from llama_index.program.base_program import BasePydanticProgram
-from typing import Type, Any, Optional, TypeVar, Generic
-from llama_index.types import Model
 from abc import abstractmethod
-from pydantic import BaseModel
+from typing import Any, Generic, Optional, Type, TypeVar
 
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
+from llama_index.program.base_program import BasePydanticProgram
+from llama_index.prompts.base import PromptTemplate
+from llama_index.types import Model
 
 LM = TypeVar("LM")
 
@@ -25,7 +30,8 @@ class BaseLLMFunctionProgram(BasePydanticProgram[BaseModel], Generic[LM]):
     def from_defaults(
         cls,
         output_cls: Type[Model],
-        prompt_template_str: str,
+        prompt_template_str: Optional[str] = None,
+        prompt: Optional[PromptTemplate] = None,
         llm: Optional[LM] = None,
         **kwargs: Any,
     ) -> "BaseLLMFunctionProgram":
