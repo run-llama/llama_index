@@ -25,17 +25,6 @@ class CodeSplitter(TextSplitter):
     language: str = Field(
         description="The programming languge of the code being split."
     )
-    chunk_lines: int = Field(
-        default=DEFAULT_CHUNK_LINES,
-        description="The number of lines to include in each chunk.",
-    )
-    chunk_lines_overlap: int = Field(
-        default=DEFAULT_LINES_OVERLAP,
-        description="How many lines of code each chunk overlaps with.",
-    )
-    max_chars: int = Field(
-        default=DEFAULT_MAX_CHARS, description="Maximum number of characters per chunk."
-    )
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
@@ -43,17 +32,11 @@ class CodeSplitter(TextSplitter):
     def __init__(
         self,
         language: str,
-        chunk_lines: int = 40,
-        chunk_lines_overlap: int = 15,
-        max_chars: int = 1500,
         callback_manager: Optional[CallbackManager] = None,
     ):
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
             language=language,
-            chunk_lines=chunk_lines,
-            chunk_lines_overlap=chunk_lines_overlap,
-            max_chars=max_chars,
             callback_manager=callback_manager,
         )
 
@@ -62,37 +45,27 @@ class CodeSplitter(TextSplitter):
             context_list = []
 
         new_chunks = []
-        current_context_str = '\n'.join(context_list)
-        current_chunk = current_context_str  # Initialize current_chunk with current context
+        context_str = ''.join(context_list)
+        current_chunk = context_str  # Initialize current_chunk with current context
 
         for child in node.children:
-            new_context_str = '\n'.join(context_list)
 
-            if child.end_byte - child.start_byte > self.max_chars - len(new_context_str):
-                # Child is too big, recursively chunk the child
-                if len(current_chunk) > len(current_context_str):  # If current_chunk has more than just the context
-                    new_chunks.append(current_chunk)
-                current_chunk = new_context_str  # Reset to only the new context string
-
-                # Add the new signature or header to the context list before recursing
-                new_context_list = context_list.copy()
-                if len(child.children) > 0 and child.children[-1].type == 'block':
-                    # Get only the 'signature' or 'header' of the new context.
-                    new_context = text[child.children[0].start_byte:child.children[-2].end_byte]
-                    new_context_list.append(new_context)
-
-                next_chunks = self._chunk_node(child, text, last_end, new_context_list)
+            # Add the new signature or header to the context list before recursing
+            new_context_list = context_list.copy()
+            if len(child.children) > 0 and child.children[-1].type == 'block':
+                # Get only the 'signature' or 'header' of the new context.
+                # In python, last_end will represent the spaces before child
+                # In any language, since child.children[-1] is a block, child.children[-2] will be the end of the signature
+                new_context = text[last_end:child.children[-2].end_byte]
+                new_context_list.append(new_context)
+                next_chunks = self._chunk_node(child.children[-1], text, child.children[-2].end_byte, new_context_list)
                 new_chunks.extend(next_chunks)
-            elif len(current_chunk) + child.end_byte - child.start_byte > self.max_chars:
-                # Child would make the current chunk too big, so start a new chunk
-                new_chunks.append(current_chunk)
-                current_chunk = new_context_str + text[last_end:child.end_byte]  # Start new chunk with new context
             else:
                 current_chunk += text[last_end:child.end_byte]
 
             last_end = child.end_byte
 
-        if len(current_chunk) > len(current_context_str):  # If current_chunk has more than just the context
+        if len(current_chunk) > len(context_str):  # If current_chunk has more than just the context
             new_chunks.append(current_chunk)
 
         return new_chunks

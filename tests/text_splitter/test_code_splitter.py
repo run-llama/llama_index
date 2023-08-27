@@ -11,7 +11,7 @@ def test_python_code_splitter() -> None:
         return
 
     code_splitter = CodeSplitter(
-        language="python", chunk_lines=4, chunk_lines_overlap=1, max_chars=30
+        language="python"
     )
 
     text = """\
@@ -25,6 +25,29 @@ def baz():
     assert chunks[0] == "def foo():\n    print(\"bar\")"
     assert chunks[1] == "def baz():\n    print(\"bbq\")"
 
+
+def test_python_code_splitter_class() -> None:
+    """Test case for code splitting using python including classes"""
+
+    if "CI" in os.environ:
+        return
+
+    code_splitter = CodeSplitter(
+        language="python"
+    )
+
+    text = """\
+class Foo:
+    a: int = 1
+    def foo(self):
+        print("foo")
+    def bar(self):
+        print("bar")"""
+
+    chunks = code_splitter.split_text(text)
+    assert chunks[0] == "class Foo:\n    def foo(self):\n        print(\"foo\")"
+    assert chunks[1] == "class Foo:\n    def bar(self):\n        print(\"bar\")"
+    assert chunks[2] == "class Foo:\n    a: int = 1"
 
 # def test_typescript_code_splitter() -> None:
 #     """Test case for code splitting using typescript"""
