@@ -2,31 +2,19 @@ from llama_index.storage import StorageContext
 from llama_index import load_index_from_storage
 from llama_index.llms import Portkey
 from llama_index import ServiceContext
-#  > provider: Optional[ProviderTypes]
-# > model: str
-# > temperature: float
-# > max_tokens: Optional[int]
-# > max_retries: int
-# > trace_id: Optional[str]
-# > cache_status: Optional[RubeusCacheType]
-# > cache: Optional[bool]
-# > metadata: Dict[str, Any]
-# > weight: Optional[float]
-llm = Portkey(mode="fallback", api_key="x2trk").add_llms(llm_params=[{
-    "provider": "openai",
-    "model_api_key": ""
-}])
+from llama_index.llms import ChatMessage
+from llama_index.llms.portkey_utils import LLMBase, ProviderTypes
 
-service_context = ServiceContext.from_defaults(llm=llm)
+openai_llm = LLMBase(
+    provider="openai",
+    model="gpt-3.5-turbo",
+    model_api_key="",
+)
+llm = Portkey(mode="fallback", api_key="x2trk").add_llms(llm_params=[openai_llm])
 
-# rebuild storage context
-storage_context = StorageContext.from_defaults(persist_dir="./storage")
-# load index
-index = load_index_from_storage(storage_context, service_context=service_context)
-
-print('Starts the query engine here..')
-query_engine = index.as_chat_engine(service_context=service_context)
-
-print('Starts the query here..')
-response = query_engine.chat("What did the author do after his time at Y Combinator?")
+messages = [
+    ChatMessage(role="system", content="You are a pirate with a colorful personality"),
+    ChatMessage(role="user", content="What is your name"),
+]
+response = llm.chat(messages)
 print(response)

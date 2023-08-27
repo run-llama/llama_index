@@ -1,4 +1,5 @@
 from llama_index.llms.rubeus import Rubeus
+from llama_index.llms.portkey_utils import LLMBase, ProviderTypes
 
 client = Rubeus(
     api_key="",
@@ -14,12 +15,11 @@ client = Rubeus(
 )
 
 print("This is done..")
-
-res = client.chat_completion.create(
+openai_llm = LLMBase(
     provider="openai",
-    model_api_key="",
-    weight=1.0,
     model="gpt-3.5-turbo",
+    model_api_key="",
 )
+res = client.chat_completion.with_fallbacks(llms=[openai_llm])
 
 print(res.json())
