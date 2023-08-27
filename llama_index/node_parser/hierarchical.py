@@ -1,4 +1,4 @@
-"""Recursive node parser."""
+"""Hierarchical node parser."""
 
 from typing import List, Optional, Sequence, Dict
 
@@ -37,10 +37,19 @@ def get_leaf_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
     return leaf_nodes
 
 
-class RecursiveNodeParser(NodeParser):
-    """Recursive node parser.
+class HierarchicalNodeParser(NodeParser):
+    """Hierarchical node parser.
 
-    Splits a document recursively into Nodes using a TextSplitter.
+    Splits a document into a recursive hierarchy Nodes using a TextSplitter.
+
+    NOTE: this will return a hierarchy of nodes in a flat list, where there will be
+    overlap between parent nodes (e.g. with a bigger chunk size), and child nodes
+    per parent (e.g. with a smaller chunk size).
+
+    For instance, this may return a list of nodes like:
+    - list of top-level nodes with chunk size 2048
+    - list of second-level nodes, where each node is a child of a top-level node, chunk size 512
+    - list of third-level nodes, where each node is a child of a second-level node, chunk size 128
 
     Args:
         text_splitter (Optional[TextSplitter]): text splitter
@@ -86,7 +95,7 @@ class RecursiveNodeParser(NodeParser):
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         metadata_extractor: Optional[MetadataExtractor] = None,
-    ) -> "RecursiveNodeParser":
+    ) -> "HierarchicalNodeParser":
         callback_manager = callback_manager or CallbackManager([])
 
         if text_splitter_ids is None:
