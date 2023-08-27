@@ -66,20 +66,23 @@ class CodeSplitter(TextSplitter):
         current_chunk = current_context_str  # Initialize current_chunk with current context
 
         for child in node.children:
-            new_context_list = context_list.copy()
-            if len(child.children) > 0:  # New context
-                # Get only the 'signature' or 'header' of the new context.
-                new_context = text[node.start_byte:child.start_byte].strip() + '\n'
-                new_context_list.append(new_context)
-
-            new_context_str = '\n'.join(new_context_list)
+            new_context_str = '\n'.join(context_list)
 
             if child.end_byte - child.start_byte > self.max_chars - len(new_context_str):
                 # Child is too big, recursively chunk the child
                 if len(current_chunk) > len(current_context_str):  # If current_chunk has more than just the context
                     new_chunks.append(current_chunk)
                 current_chunk = new_context_str  # Reset to only the new context string
-                new_chunks.extend(self._chunk_node(child, text, last_end, new_context_list))
+
+                # Add the new signature or header to the context list before recursing
+                new_context_list = context_list.copy()
+                if len(child.children) > 0 and child.children[-1].type == 'block':
+                    # Get only the 'signature' or 'header' of the new context.
+                    new_context = text[child.children[0].start_byte:child.children[-2].end_byte]
+                    new_context_list.append(new_context)
+
+                next_chunks = self._chunk_node(child, text, last_end, new_context_list)
+                new_chunks.extend(next_chunks)
             elif len(current_chunk) + child.end_byte - child.start_byte > self.max_chars:
                 # Child would make the current chunk too big, so start a new chunk
                 new_chunks.append(current_chunk)
