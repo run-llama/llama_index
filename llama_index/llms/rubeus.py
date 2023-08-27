@@ -37,7 +37,7 @@ class Rubeus(APIClient):
         self._default_params = default_params or {}
         self._timeout = timeout
         self._max_retries = max_retries
-        print('default_headers: ', self._default_params)
+        print("default_headers: ", self._default_params)
         self._default_headers = default_headers
         self._default_query = default_query
         super().__init__(

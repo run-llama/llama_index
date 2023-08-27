@@ -9,7 +9,7 @@ from llama_index.llms.rubeus_utils import (
     ProviderBase,
     RubeusModes,
     RetrySettings,
-    Message
+    Message,
 )
 
 from .rubeus_client import APIClient
@@ -151,7 +151,9 @@ class ChatCompletions(APIResource):
         body = []
         for i in llms:
             body.append(i.json())
-        return self._post("/v1/chatComplete", body=body, mode=RubeusModes.FALLBACK, stream=False)
+        return self._post(
+            "/v1/chatComplete", body=body, mode=RubeusModes.FALLBACK, stream=False
+        )
 
     def with_loadbalancing(self, llms: List[ProviderBase]) -> httpx.Response:
         body = []

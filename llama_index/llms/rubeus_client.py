@@ -9,7 +9,7 @@ from llama_index.llms.rubeus_utils import (
     Body,
     Options,
     Config,
-    ProviderOptions
+    ProviderOptions,
 )
 
 
@@ -133,6 +133,7 @@ class APIClient:
             timeout=options.timeout,
         )
         import json
+
         print("options: ", json.dumps(options.json_body))
         return request
 

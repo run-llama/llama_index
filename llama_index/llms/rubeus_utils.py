@@ -163,7 +163,7 @@ def remove_empty_values(data: Dict[str, Any]) -> Dict[str, Any]:
         return cleaned_dict
     elif isinstance(data, list):
         cleaned_list = []
-        
+
         for item in data:
             cleaned_item = remove_empty_values(item)
             if cleaned_item is not None and cleaned_item != "":
