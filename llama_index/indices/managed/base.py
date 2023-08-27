@@ -26,7 +26,7 @@ class ManagedIndex(BaseIndex[IndexDict], ABC):
 
     def __init__(
         self,
-        index_struct: Optional[IS] = None,
+        index_struct: Optional[IndexDict] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -64,8 +64,9 @@ class ManagedIndex(BaseIndex[IndexDict], ABC):
             "_build_index_from_nodes not supported for a Managed index."
         )
 
-    def _delete_node(self, nodes: Sequence[BaseNode]) -> IndexDict:
-        """delete node."""
+    @abstractmethod
+    def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
         raise NotImplementedError("_delete_node not supported for a Managed index.")
 
     @property

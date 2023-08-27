@@ -76,6 +76,7 @@ class VectaraIndex(ManagedIndex):
                 "Can't find Vectara credentials, customer_id or corpus_id in "
                 "environment."
             )
+            raise ValueError("Missing Vectara credentials")
         else:
             _logger.debug(f"Using corpus id {self._vectara_corpus_id}")
 

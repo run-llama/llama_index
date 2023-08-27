@@ -1,4 +1,4 @@
-from typing import List, Any, Dict, Union, Generator
+from typing import List, Any, Dict, Union, Tuple
 from hashlib import md5
 
 import pytest
@@ -8,7 +8,7 @@ from llama_index.indices.managed.vectara.retriever import VectaraQuery
 from llama_index.schema import Document
 
 
-def get_docs() -> List[Dict]:
+def get_docs() -> Tuple[List[Document], List[str]]:
     inputs = [
         {
             "text": "This is test text for Vectara integration with LlamaIndex",
@@ -35,18 +35,22 @@ def get_docs() -> List[Dict]:
     return docs, ids
 
 
-def remove_docs(vs, ids):
+def remove_docs(index: VectaraIndex, ids: List) -> None:
     for id in ids:
-        vs.delete_ref_doc(id)
+        index.delete_ref_doc(id)
 
 
-def add_documents(vs, docs):
+def add_documents(index: VectaraIndex, docs: List[Document]) -> None:
     for doc in docs:
-        vs.insert(doc)
+        index.insert(doc)
 
 
 def test_simple_query() -> None:
-    index = VectaraIndex()
+    try:
+        index = VectaraIndex()
+    except ValueError as e:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
     docs, ids = get_docs()
     add_documents(index, docs)
 
@@ -61,7 +65,11 @@ def test_simple_query() -> None:
 
 
 def test_with_filter_query() -> None:
-    index = VectaraIndex()
+    try:
+        index = VectaraIndex()
+    except ValueError as e:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
     docs, ids = get_docs()
     add_documents(index, docs)
 
@@ -80,7 +88,11 @@ def test_with_filter_query() -> None:
 
 
 def test_file_upload() -> None:
-    index = VectaraIndex()
+    try:
+        index = VectaraIndex()
+    except ValueError as e:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
     file_path = "docs/examples/data/paul_graham/paul_graham_essay.txt"
     id = index.insert_file(file_path)
 
