@@ -6,6 +6,10 @@ from llama_index.llms.base import (
     MessageRole,
 )
 from llama_index.llms.rungpt import RunGptLLM
+try:
+    import sseclient
+except ImportError:
+    sseclient = None
 
 
 def mock_completion(*args: Any, **kwargs: Any) -> str:
@@ -203,7 +207,7 @@ def test_chat(chat_history: List[ChatMessage]) -> None:
         assert response.message.content == "This is an indeed test."
         assert response.message.role == "assistant"
 
-
+@pytest.mark.skipif(sseclient is None, reason="sseclient not installed")
 @pytest.mark.parametrize(
     "chat_history", [mock_chat_history(), tuple(mock_chat_history())]
 )
@@ -226,6 +230,7 @@ def test_stream_chat(chat_history: List[ChatMessage]) -> None:
         assert responses[-1].message.role == "assistant"
 
 
+@pytest.mark.skipif(sseclient is None, reason="sseclient not installed")
 def test_stream_complete() -> None:
     mock_events = [
         MagicMock(data=event_data) for event_data in mock_completion_stream()
