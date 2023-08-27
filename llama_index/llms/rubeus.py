@@ -1,7 +1,6 @@
 """Rubeus implementation."""
 import os
-from typing import Optional, Union, Mapping
-from httpx import Timeout
+from typing import Optional, Union, Mapping, Dict, Any
 from llama_index.llms.rubeus_utils import (
     MISSING_API_KEY_ERROR_MESSAGE,
     DEFAULT_MAX_RETRIES,
@@ -15,39 +14,41 @@ __all__ = ["Rubeus"]
 
 
 class Rubeus(APIClient):
-    completion = rubeus_apis.Completions
-    chat_completion = rubeus_apis.ChatCompletions
+    completion: rubeus_apis.Completions
+    chat_completion: rubeus_apis.ChatCompletions
 
     def __init__(
         self,
         *,
-        api_key: Optional[str] = None,
+        api_key: str,
         base_url: Optional[str] = None,
-        timeout: Union[float, Timeout, None] = DEFAULT_TIMEOUT,
+        timeout: Union[float, None] = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
         default_headers: Mapping[str, str] | None = None,
         default_query: Optional[Mapping[str, object]] = None,
-        default_params: Params = None,
+        default_params: Optional[Mapping[str, str]] = None,
     ) -> None:
         if base_url is None:
             self.base_url = "https://api.portkey.ai"
         self.api_key = api_key or os.environ.get("PORTKEY_API_KEY", "")
         if not self.api_key:
             raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-        self._default_params = default_params or {}
-        self._timeout = timeout
-        self._max_retries = max_retries
-        print("default_headers: ", self._default_params)
-        self._default_headers = default_headers
-        self._default_query = default_query
+        self.default_params = default_params or {}
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.default_headers = default_headers
+        self.default_query = default_query
         super().__init__(
             base_url=self.base_url,
             api_key=self.api_key,
-            timeout=self._timeout,
-            max_retries=self._max_retries,
-            custom_headers=self._default_headers,
-            custom_query=self._default_query,
-            custom_params=self._default_params,
+            timeout=self.timeout,
+            max_retries=self.max_retries,
+            custom_headers=self.default_headers,
+            custom_query=self.default_query,
+            custom_params=self.default_params,
         )
         self.completion = rubeus_apis.Completions(self)
         self.chat_completion = rubeus_apis.ChatCompletions(self)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        setattr(self, key, value)

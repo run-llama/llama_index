@@ -1,7 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional, Union, Mapping, TypedDict
 from enum import Enum
-from httpx import Timeout
+from typing import List, Dict, Any, Optional, Union, Mapping, TypedDict, Literal, TypeVar
+from pydantic import BaseModel
+from llama_index.llms.base import ChatMessage
 
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for Portkey.
@@ -26,6 +26,9 @@ class RubeusCacheType(Enum):
     SIMPLE = "simple"
 
 
+RubeusCacheLiteral = Literal["semantic", "simple"]
+
+
 class ProviderTypes(str, Enum):
     """_summary_
 
@@ -43,6 +46,11 @@ class ProviderTypes(str, Enum):
     HUGGING_FACE = "huggingface"
 
 
+ProviderTypesLiteral = Literal[
+    "openai", "cohere", "anthropic", "azure-openai", "huggingface"
+]
+
+
 class RubeusModes(str, Enum):
     """_summary_
 
@@ -54,6 +62,9 @@ class RubeusModes(str, Enum):
     LOADBALANCE = "loadbalance"
     SINGLE = "single"
     PROXY = "proxy"
+
+
+RubeusModesLiteral = Literal["fallback", "loadbalance", "single", "proxy"]
 
 
 class RubeusApiPaths(Enum):
@@ -74,25 +85,6 @@ class Options(BaseModel):
     json_body: Mapping[str, Any]
 
 
-class Body(TypedDict):
-    timeout: Union[float, None]
-    max_retries: int
-    provider: ProviderTypes
-    model: str
-    model_api_key: str
-    temperature: float
-    top_k: Optional[int]
-    top_p: Optional[float]
-    stop_sequences: List[str]
-    stream: Optional[bool]
-    max_tokens: Optional[int]
-    trace_id: Optional[str]
-    cache_status: Optional[RubeusCacheType]
-    cache: Optional[bool]
-    metadata: Optional[Dict[str, Any]]
-    weight: float
-
-
 class OverrideParams(BaseModel):
     model: str
 
@@ -102,15 +94,15 @@ class RetrySettings(TypedDict):
     on_status_codes: list
 
 
-class ProviderOptions(TypedDict):
-    provider: str
-    apiKey: str
-    weight: float
-    override_params: OverrideParams
-    retry: RetrySettings
+class ProviderOptions(BaseModel):
+    provider: Optional[str]
+    apiKey: Optional[str]
+    weight: Optional[float]
+    override_params: Optional[OverrideParams]
+    retry: Optional[RetrySettings]
 
 
-class Config(TypedDict):
+class Config(BaseModel):
     mode: str
     options: List[ProviderOptions]
 
@@ -124,32 +116,6 @@ class Function(BaseModel):
     name: str
     description: str
     parameters: str
-
-
-class Params(BaseModel):
-    messages: List[Message]
-    prompt: Union[str, List[str]]
-    max_tokens: int
-    model: str
-    functions: List[Function]
-    function_call: Union[None, str, Function]
-    temperature: int
-    top_p: int
-    n: int
-    stream: bool
-    logprobs: int
-    echo: bool
-    stop: Union[str, List[str]]
-    presence_penalty: int
-    frequency_penalty: int
-    best_of: int
-    logit_bias: Dict[str, int]
-    user: str
-
-
-class RequestData(BaseModel):
-    config: Config
-    params: Params
 
 
 def remove_empty_values(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -173,58 +139,73 @@ def remove_empty_values(data: Dict[str, Any]) -> Dict[str, Any]:
         return data
 
 
-class ProviderBase:
-    def __init__(
-        self,
-        *,
-        prompt: str = "",
-        messages: Message = [],
-        timeout: Union[float, Timeout, None] = DEFAULT_TIMEOUT,
-        max_retries: int = DEFAULT_MAX_RETRIES,
-        provider: Optional[ProviderTypes] = ProviderTypes.OPENAI,
-        model: str = "gpt-3.5-turbo",
-        model_api_key: Optional[str] = None,
-        temperature: float = 0.1,
-        top_k: Optional[int] = None,
-        top_p: Optional[float] = None,
-        stop_sequences: List[str] = [],
-        # stream: Optional[bool] = False,
-        max_tokens: Optional[int] = None,
-        # trace_id: Optional[str] = "",
-        # cache_status: Optional[RubeusCacheType] = "",
-        # cache: Optional[bool] = False,
-        metadata: Optional[Dict[str, Any]] = None,
-        weight: Optional[float] = 1.0,
-    ) -> None:
-        self.timeout = timeout
-        self.max_retries = max_retries
-        self.provider = provider
-        self.model = model
-        self.model_api_key = model_api_key
-        self.temperature = temperature
-        self.top_k = top_k
-        self.top_p = top_p
-        self.stop_sequences = stop_sequences
-        self.max_tokens = max_tokens
-        self.metadata = metadata or {}
-        self.weight = weight
-        self.prompt = prompt
-        self.messages = messages
+class LLMBase(BaseModel):
+    """
+    provider (Optional[ProviderTypes]): The LLM provider to be used for the Portkey integration.
+        Eg: openai, anthropic etc.
+        NOTE: Check the ProviderTypes to see the supported list of LLMs.
+    model (str): The name of the language model to use (default: "gpt-3.5-turbo").
+    temperature (float): The temperature parameter for text generation (default: 0.1).
+    max_tokens (Optional[int]): The maximum number of tokens in the generated text.
+    max_retries (int): The maximum number of retries for failed requests (default: 5).
+    trace_id (Optional[str]): A unique identifier for tracing requests.
+    cache_status (Optional[RubeusCacheType]): The type of cache to use (default: "").
+        If cache_status is set, then cache is automatically set to True
+    cache (Optional[bool]): Whether to use caching (default: False).
+    metadata (Optional[Dict[str, Any]]): Metadata associated with the request (default: {}).
+    weight (Optional[float]): The weight of the LLM in the ensemble (default: 1.0).
+    """
 
-    def json(self) -> Dict[str, Any]:
-        return {
-            "prompt": self.prompt,
-            "messages": self.messages,
-            "timeout": self.timeout,
-            "max_retries": self.max_retries,
-            "provider": self.provider,
-            "model": self.model,
-            "model_api_key": self.model_api_key,
-            "temperature": self.temperature,
-            "top_k": self.top_k,
-            "top_p": self.top_p,
-            "stop_sequences": self.stop_sequences,
-            "max_tokens": self.max_tokens,
-            "metadata": self.metadata,
-            "weight": self.weight,
-        }
+    prompt: Optional[str] = None
+    messages: Optional[List[Message]] = None
+    provider: ProviderTypes | ProviderTypesLiteral
+    model: str
+    model_api_key: str
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+    max_retries: Optional[int] = None
+    trace_id: Optional[str] = None
+    cache_status: Optional[RubeusCacheType] = None
+    cache: Optional[bool] = None
+    metadata: Optional[Dict[str, Any]] = None
+    weight: Optional[float] = None
+    top_k: Optional[int] = None
+    top_p: Optional[float] = None
+    stop_sequences: Optional[List[str]] = None
+    stream: Optional[bool] = False
+    timeout: Union[float, None] = None
+    retry_settings: Optional[RetrySettings] = None
+    # functions: Optional[List[Function]]
+    # function_call: Optional[Union[None, str, Function]]
+    # n: Optional[int]
+    # logprobs: Optional[int]
+    # echo: Optional[bool]
+    # stop: Optional[Union[str, List[str]]]
+    # presence_penalty: Optional[int]
+    # frequency_penalty: Optional[int]
+    # best_of: Optional[int]
+    # logit_bias: Optional[Dict[str, int]]
+    # user: Optional[str]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        setattr(self, key, value)
+
+
+class Body(LLMBase):
+    pass
+
+
+class Params(LLMBase):
+    def __setitem__(self, key: str, value: Any) -> None:
+        setattr(self, key, value)
+
+
+class RequestData(BaseModel):
+    config: Config
+    params: Params
+
+
+class RubeusResponse(BaseModel):
+    model: str
+    choices: List[Any]
+    raw_body: Dict[str, Any]

@@ -3,34 +3,43 @@
 Returns:
     _type_: _description_
 """
-import json
 from typing import Any, Optional, Sequence, Dict, Union, List
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.base import (
-    LLM,
     ChatMessage,
     LLMMetadata,
     ChatResponse,
     CompletionResponse,
     ChatResponseGen,
-    CompletionResponseGen,
     llm_completion_callback,
     llm_chat_callback,
 )
 from llama_index.llms.portkey_utils import (
     is_chat_model,
     generate_llm_metadata,
-    get_fallback_llm,
-    PortkeyParams
+    get_llm,
 )
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
     chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.rubeus_utils import RubeusModes, ProviderTypes, RubeusCacheType
+from llama_index.llms.rubeus_utils import (
+    RubeusModes,
+    RubeusResponse,
+    RubeusModesLiteral,
+    ProviderTypes,
+    ProviderTypesLiteral,
+    RubeusCacheType,
+    RubeusCacheLiteral
+)
 from llama_index.llms.rubeus import Rubeus
-from llama_index.llms.rubeus_utils import ProviderBase
+from llama_index.llms.rubeus_utils import LLMBase
+
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
 
 
 class Portkey(CustomLLM):
@@ -40,22 +49,38 @@ class Portkey(CustomLLM):
         LLM (_type_): _description_
     """
 
+    mode: Optional[RubeusModes | RubeusModesLiteral] = Field(
+        description="The mode for using the Portkey integration (default: RubeusModes.PROXY)",
+        default=RubeusModes.SINGLE,
+    )
+
+    model: str = Field(default="gpt-3.5-turbo")
+    provider: ProviderTypes | ProviderTypesLiteral = Field(default=ProviderTypes.OPENAI)
+    llm: LLMBase = Field(description="LLM parameter", default_factory=dict)
+
+    llms: List[LLMBase] = Field(description="LLM parameters", default_factory=list)
+
+    _client: Rubeus = PrivateAttr()
+    _portkey_response: Any = PrivateAttr()
+    _model: Any = PrivateAttr()
+
     def __init__(
         self,
-        api_key: Optional[str] = "",
-        mode: Optional[RubeusModes] = RubeusModes.SINGLE,
-        provider: ProviderTypes = None,
+        *,
+        api_key: str = "",
+        provider: ProviderTypes | ProviderTypesLiteral = ProviderTypes.OPENAI,
+        mode: Optional[RubeusModes | RubeusModesLiteral] = RubeusModes.SINGLE,
         model: str = "gpt-3.5-turbo",
         model_api_key: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         max_retries: int = 5,
         trace_id: Optional[str] = "",
-        cache_status: Optional[RubeusCacheType] = "",
+        cache_status: Optional[RubeusCacheType | RubeusCacheLiteral] = None,
         cache: Optional[bool] = False,
         metadata: Optional[Dict[str, Any]] = {},
         weight: Optional[float] = 1.0,
-        **kwargs: Any,
+        # **kwargs: Any,
     ) -> None:
         """
         Initialize a Portkey instance.
@@ -85,41 +110,39 @@ class Portkey(CustomLLM):
         Raises:
             ValueError: If neither 'llm' nor 'llms' are provided during Portkey initialization.
         """
-        self._mode = mode
-        self._llms = []
-        self._llm = None
-
         self._client = Rubeus(api_key=api_key)
-
-        self._model = self.metadata.model_name
         self._portkey_response = None
-        self._provider = provider
-        self._model_api_key = model_api_key
-        self._temperature = temperature
-        self._max_tokens = max_tokens
-        self._max_retries = max_retries
-        self._trace_id = trace_id
-        self._cache_status = cache_status
-        self._cache = cache
-        self._metadata = metadata
-        self._weight = weight
-        self._kwargs = kwargs
+        super().__init__(
+            mode=mode,
+            model=model,
+            provider=provider,
+            model_api_key=model_api_key,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            max_retries=max_retries,
+            trace_id=trace_id,
+            cache_status=cache_status,
+            cache=cache,
+            metadata=metadata,
+            weight=weight,
+        )
+
+        self.model = model
+        self.provider = provider
 
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
-        return generate_llm_metadata(self._llm)
+        return generate_llm_metadata(self.llm)
 
-    def add_llms(
-        self, llm_params: Union[PortkeyParams, List[PortkeyParams]]
-    ) -> "Portkey":
+    def add_llms(self, llm_params: Union[LLMBase, List[LLMBase]]) -> "Portkey":
         """
         Adds the specified LLM parameters to the list of LLMs. This may be used for fallbacks or
         load-balancing as specified in the mode.
 
         Args:
-            llm_params (Union[PortkeyParams, List[PortkeyParams]]): A single LLM parameter set or
-            a list of LLM parameter sets. Each set should be an instance of PortkeyParams with
+            llm_params (Union[LLMBase, List[LLMBase]]): A single LLM parameter set or
+            a list of LLM parameter sets. Each set should be an instance of LLMBase with
             the specified attributes.
                 > provider: Optional[ProviderTypes]
                 > model: str
@@ -136,18 +159,18 @@ class Portkey(CustomLLM):
         Returns:
             self
         """
-        if isinstance(llm_params, PortkeyParams):
+        if isinstance(llm_params, LLMBase):
             llm_params = [llm_params]
-        self._llms.extend(llm_params)
+        self.llms.extend(llm_params)
         return self
 
-    def add_llm(self, llm_params: PortkeyParams) -> "Portkey":
+    def add_llm(self, llm_params: LLMBase) -> "Portkey":
         """
         Adds the specified LLM parameters to the list of fallback LLMs.
 
         Args:
-            llm_params (PortkeyParams): The parameters representing the LLM to be added.
-                Should be an instance of PortkeyParams with the following attributes:
+            llm_params (LLMBase): The parameters representing the LLM to be added.
+                Should be an instance of LLMBase with the following attributes:
                 - provider: Optional[ProviderTypes]
                 - model: str
                 - temperature: float
@@ -162,20 +185,20 @@ class Portkey(CustomLLM):
         Returns:
             None
         """
-        if self._llm is not None:
+        if self.llm is not None:
             raise ValueError(
                 "Duplicate LLM: An LLM is already add as part of the configuration."
             )
-        self._llm = llm_params
+        self.llm = llm_params
         return self
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint for LLM."""
         if self._is_chat_model:
-            complete_fn = chat_to_completion_decorator(self._chat)
+            complete_fn = chat_to_completion_decorator(self.chat)
         else:
-            complete_fn = self._complete
+            complete_fn = self.complete
         return complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
@@ -189,59 +212,52 @@ class Portkey(CustomLLM):
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint for LLM."""
-        return self._fallback(prompt)
+        if self._is_chat_model:
+            complete_fn = chat_to_completion_decorator(self.chat)
+        else:
+            complete_fn = self.complete
+        return complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         if self._is_chat_model:
-            stream_chat_fn = self._stream_chat
+            stream_chat_fn = self.stream_chat
         else:
-            stream_chat_fn = stream_completion_to_chat_decorator(self._stream_complete)
+            stream_chat_fn = stream_completion_to_chat_decorator(self.stream_complete)
         return stream_chat_fn(messages, **kwargs)
 
-    def _fallback_chat(self, messages: Sequence[ChatMessage]) -> ChatResponse:
-        print('Comes to fallback chat...')
-        base_providers = [ProviderBase(**i) for i in self._llms]
-        # [(key, value) for d in list_of_dicts for key, value in d.items()]
-        messages = [{"role": i.role.value, "content": i.content} for i in messages]
-        print("messages: ", messages)
-        self._client._default_params["messages"] = messages
-        print("self._client.default_params: ", self._client._default_params)
-        response = self._client.chat_completion.with_fallbacks(base_providers)
-        self._portkey_response = response.json()
-        print(self._portkey_response, response)
-        message = self._portkey_response["choices"][0]["message"]
-        self._llm = self._get_fallback_llm
-        return ChatResponse(message=message, raw=self._portkey_response)
-
-    def _fallback(self, prompt) -> CompletionResponse:
-        base_providers = [ProviderBase(**i) for i in self._llms]
-        response = self._client.completion.with_fallbacks(base_providers)
-        self._portkey_response = response.json()
-        text = self._portkey_response["choices"][0]["text"]
-        self._llm = self._get_fallback_llm
-        return CompletionResponse(text=text, raw=self._portkey_response)
-
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        if self._mode == RubeusModes.FALLBACK:
-            return self._fallback_chat(messages)
-        return self._client.chat_completion.create(messages=messages, **kwargs)
+        messages_dict = [{"role": i.role.value, "content": i.content} for i in messages]
+        self._client.default_params["messages"] = messages_dict  # type: ignore
+        if self.mode == RubeusModes.FALLBACK:
+            response = self._client.chat_completion.with_fallbacks(self.llms)
+            self.llm = self._get_llm(response)
+
+        elif self.mode == RubeusModes.LOADBALANCE:
+            response = self._client.chat_completion.with_loadbalancing(self.llms)
+            self.llm = self._get_llm(response)
+        else:
+            response = self._client.chat_completion.create(
+                messages=messages_dict, **kwargs)  # type: ignore
+
+        message = response.choices[0]["message"]
+        raw = response.raw_body
+        return ChatResponse(message=message, raw=raw)
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        if self._mode == RubeusModes.FALLBACK:
-            return self._fallback(prompt)
+        self._client.default_params["prompt"] = prompt  # type: ignore
+        if self.mode == RubeusModes.FALLBACK:
+            response = self._client.completion.with_fallbacks(self.llms)
+        elif self.mode == RubeusModes.LOADBALANCE:
+            response = self._client.completion.with_loadbalancing(self.llms)
+        else:
+            response = self._client.completion.create(prompt=prompt, **kwargs)
 
-        return self._client.completion.create(prompt=prompt, **kwargs)
-
-    def _stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        pass
-
-    def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        pass
+        text = response.choices[0]["text"]
+        raw = response.raw_body
+        return CompletionResponse(text=text, raw=raw)
 
     @property
     def _is_chat_model(self) -> bool:
@@ -250,7 +266,7 @@ class Portkey(CustomLLM):
         Returns:
             bool: True if the provided model is a chat-based language model, False otherwise.
         """
-        return is_chat_model(self._model)
+        return is_chat_model(self.model)
 
     @property
     def _is_fallback_mode(self) -> bool:
@@ -259,8 +275,7 @@ class Portkey(CustomLLM):
         Returns:
             bool: True if the provided mode is fallback type, False otherwise.
         """
-        return self._mode == RubeusModes.FALLBACK
+        return self.mode == RubeusModes.FALLBACK
 
-    @property
-    def _get_fallback_llm(self) -> LLM:
-        return get_fallback_llm(self._portkey_response, self._llms)
+    def _get_llm(self, response: RubeusResponse) -> LLMBase:
+        return get_llm(response, self.llms)
