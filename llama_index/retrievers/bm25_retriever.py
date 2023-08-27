@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import Callable, Optional, cast, List
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
