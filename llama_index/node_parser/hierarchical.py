@@ -63,14 +63,14 @@ class HierarchicalNodeParser(NodeParser):
     chunk_sizes: Optional[List[int]] = Field(
         default=None,
         description=(
-            "The chunk sizes to use when splitting documents, in order of level.",
+            "The chunk sizes to use when splitting documents, in order of level."
         ),
     )
     text_splitter_ids: List[str] = Field(
         default_factory=list,
         description=(
             "List of ids for the text splitters to use when splitting documents, "
-            + "in order of level (first id used for first level, etc.).",
+            + "in order of level (first id used for first level, etc.)."
         ),
     )
     text_splitter_map: Dict[str, TextSplitter] = Field(
