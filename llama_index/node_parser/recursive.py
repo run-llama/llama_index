@@ -17,6 +17,26 @@ from llama_index.utils import get_tqdm_iterable
 from llama_index.text_splitter import TextSplitter, get_default_text_splitter
 
 
+def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode):
+    """Add parent/child relationship between nodes."""
+    child_list = parent_node.relationships.get(NodeRelationship.CHILD, [])
+    child_list.append(child_node.as_related_node_info())
+    parent_node.relationships[NodeRelationship.CHILD] = child_list
+
+    child_node.relationships[
+        NodeRelationship.PARENT
+    ] = parent_node.as_related_node_info()
+
+
+def get_leaf_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
+    """Get leaf nodes."""
+    leaf_nodes = []
+    for node in nodes:
+        if NodeRelationship.CHILD not in node.relationships:
+            leaf_nodes.append(node)
+    return leaf_nodes
+
+
 class RecursiveNodeParser(NodeParser):
     """Recursive node parser.
 
@@ -126,10 +146,12 @@ class RecursiveNodeParser(NodeParser):
                 include_prev_next_rel=self.include_prev_next_rel,
             )
             # add parent relationship from sub node to parent node
+            # add child relationship from parent node to sub node
             for sub_node in cur_sub_nodes:
-                sub_node.relationships[
-                    NodeRelationship.PARENT
-                ] = node.as_related_node_info()
+                _add_parent_child_relationship(
+                    parent_node=node,
+                    child_node=sub_node,
+                )
 
             sub_nodes.extend(cur_sub_nodes)
 

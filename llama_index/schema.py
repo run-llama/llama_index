@@ -181,7 +181,7 @@ class BaseNode(BaseModel):
         if NodeRelationship.CHILD not in self.relationships:
             return None
 
-        relation = self.relationships[NodeRelationship.PARENT]
+        relation = self.relationships[NodeRelationship.CHILD]
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
