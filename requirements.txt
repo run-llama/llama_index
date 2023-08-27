@@ -8,6 +8,7 @@ pytest-asyncio==0.21.0
 # third-party (libraries)
 rake_nltk==1.0.6
 ipython==8.10.0
+httpx==0.24.1
 
 # linting stubs
 types-requests==2.28.11.8
