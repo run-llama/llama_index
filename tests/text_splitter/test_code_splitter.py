@@ -22,8 +22,8 @@ def baz():
     print("bbq")"""
 
     chunks = code_splitter.split_text(text)
-    assert chunks[0].startswith("def foo():")
-    assert chunks[1].startswith("def baz():")
+    assert chunks[0] == "def foo():\n    print(\"bar\")"
+    assert chunks[1] == "def baz():\n    print(\"bbq\")"
 
 
 # def test_typescript_code_splitter() -> None:
