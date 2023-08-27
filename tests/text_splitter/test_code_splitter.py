@@ -1,7 +1,26 @@
 """Test text splitter."""
 import os
 
-from llama_index.text_splitter import CodeSplitter
+from llama_index.text_splitter.code_splitter import ELLIPSES_COMMENT, CodeSplitter, _generate_comment_line
+
+
+def test_generate_comment_line_python() -> None:
+    assert _generate_comment_line('Python', 'This is a Python comment') == '# This is a Python comment'
+
+def test_generate_comment_line_c_lowercase() -> None:
+    assert _generate_comment_line('c', 'This is a C comment') == '// This is a C comment'
+
+def test_generate_comment_line_java() -> None:
+    assert _generate_comment_line('Java', 'This is a Java comment') == '// This is a Java comment'
+
+def test_generate_comment_line_html() -> None:
+    assert _generate_comment_line('HTML', 'This is an HTML comment') == '<!-- This is an HTML comment -->'
+
+def test_generate_comment_line_unknown() -> None:
+    assert _generate_comment_line('Unknown', 'This is an unknown language comment') == '🦙This is an unknown language comment🦙'
+
+def test_generate_comment_line_unknown_random() -> None:
+    assert _generate_comment_line('asdf', 'This is an unknown language comment') == '🦙This is an unknown language comment🦙'
 
 
 def test_python_code_splitter() -> None:
@@ -45,9 +64,10 @@ class Foo:
         print("bar")"""
 
     chunks = code_splitter.split_text(text)
-    assert chunks[0] == "class Foo:\n    def foo(self):\n        print(\"foo\")"
-    assert chunks[1] == "class Foo:\n    def bar(self):\n        print(\"bar\")"
-    assert chunks[2] == "class Foo:\n    a: int = 1"
+    ellipsis_comment = _generate_comment_line('Python', ELLIPSES_COMMENT)
+    assert chunks[0] == f"class Foo:\n{ellipsis_comment}\n    def foo(self):\n        print(\"foo\")"
+    assert chunks[1] == f"class Foo:\n{ellipsis_comment}\n    def bar(self):\n        print(\"bar\")"
+    assert chunks[2] == f"class Foo:\n    a: int = 1\n{ellipsis_comment}"
 
 # def test_typescript_code_splitter() -> None:
 #     """Test case for code splitting using typescript"""
