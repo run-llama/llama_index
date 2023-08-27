@@ -1,4 +1,4 @@
-from typing import List, Any, Generator
+from typing import List, Any, Generator, Dict
 import pytest
 from unittest.mock import patch, MagicMock
 from llama_index.llms.base import (
@@ -6,13 +6,14 @@ from llama_index.llms.base import (
     MessageRole,
 )
 from llama_index.llms.rungpt import RunGptLLM
+
 try:
     import sseclient
 except ImportError:
     sseclient = None
 
 
-def mock_completion(*args: Any, **kwargs: Any) -> str:
+def mock_completion(*args: Any, **kwargs: Any) -> Dict[str, Any]:
     # Example taken from rungpt example inferece code on github repo.
     return {
         "id": None,
@@ -26,7 +27,7 @@ def mock_completion(*args: Any, **kwargs: Any) -> str:
     }
 
 
-def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
+def mock_chat_completion(*args: Any, **kwargs: Any) -> Dict[str, Any]:
     # Example taken from rungpt example inferece code on github repo.
     return {
         "id": None,
@@ -44,7 +45,7 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
     }
 
 
-def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
+def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[str, None, None]:
     # Example taken from rungpt example inferece code on github repo.
     events = [
         str(
@@ -96,7 +97,7 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
 
 def mock_chat_completion_stream(
     *args: Any, **kwargs: Any
-) -> Generator[dict, None, None]:
+) -> Generator[str, None, None]:
     # Example taken from rungpt example inferece code on github repo.
     events = [
         str(
@@ -206,6 +207,7 @@ def test_chat(chat_history: List[ChatMessage]) -> None:
         response = dummy.chat(chat_history)
         assert response.message.content == "This is an indeed test."
         assert response.message.role == "assistant"
+
 
 @pytest.mark.skipif(sseclient is None, reason="sseclient not installed")
 @pytest.mark.parametrize(

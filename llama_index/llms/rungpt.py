@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Dict
+from typing import Any, Optional, Sequence, Dict, List, Tuple
 import json
 
 try:
@@ -45,7 +45,7 @@ class RunGptLLM(LLM):
     def __init__(
         self,
         model: Optional[str] = "rungpt",
-        endpoint: Optional[str] = "0.0.0.0:51002",
+        endpoint: str = "0.0.0.0:51002",
         temperature: float = 0.75,
         max_tokens: Optional[int] = 256,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -135,6 +135,7 @@ class RunGptLLM(LLM):
                     raw=item_dict,
                     additional_kwargs=additional_kwargs,
                 )
+
         return gen()
 
     @llm_chat_callback()
@@ -183,7 +184,7 @@ class RunGptLLM(LLM):
         client = sseclient.SSEClient(response_gpt)
         chat_iter = client.events()
 
-        def gen() -> ChatResponse:
+        def gen() -> ChatResponseGen:
             content = ""
             for item in chat_iter:
                 item_dict = json.loads(json.dumps(eval(item.data)))
@@ -226,17 +227,18 @@ class RunGptLLM(LLM):
         async def gen() -> CompletionResponseAsyncGen:
             for message in self.stream_complete(prompt, **kwargs):
                 yield message
+
         return gen()
-    
-    def _message_wrapper(self, messages):
+
+    def _message_wrapper(self, messages) -> List[Dict[str, Any]]:
         message_list = list()
         for message in messages:
             role = message.role.value
             content = message.content
             message_list.append({"role": role, "content": content})
         return message_list
-    
-    def _message_unpacker(self, response_gpt):
+
+    def _message_unpacker(self, response_gpt) -> Tuple[ChatMessage, str]:
         message = response_gpt["choices"][0]["message"]
         additional_kwargs = response_gpt["usage"]
         role = message["role"]
@@ -249,7 +251,6 @@ class RunGptLLM(LLM):
             role=key, content=content, additional_kwargs=additional_kwargs
         )
         return chat_message, content
-    
 
     def _request_pack(self, mode: str, prompt: str, **kwargs: Any) -> dict:
         if mode == "complete":
@@ -278,3 +279,4 @@ class RunGptLLM(LLM):
                 "n": kwargs.pop("n", 1),
                 "stop": kwargs.pop("stop", "."),
             }
+        return None
