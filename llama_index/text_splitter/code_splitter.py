@@ -57,27 +57,41 @@ class CodeSplitter(TextSplitter):
             callback_manager=callback_manager,
         )
 
-    def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
+    def _chunk_node(self, node: Any, text: str, last_end: int = 0, context_list: Optional[List[str]] = None) -> List[str]:
+        if context_list is None:
+            context_list = []
+
         new_chunks = []
-        current_chunk = ""
+        current_context_str = '\n'.join(context_list)
+        current_chunk = current_context_str  # Initialize current_chunk with current context
+
         for child in node.children:
-            if child.end_byte - child.start_byte > self.max_chars:
+            new_context_list = context_list.copy()
+            if len(child.children) > 0:  # New context
+                # Get only the 'signature' or 'header' of the new context.
+                new_context = text[node.start_byte:child.start_byte].strip() + '\n'
+                new_context_list.append(new_context)
+
+            new_context_str = '\n'.join(new_context_list)
+
+            if child.end_byte - child.start_byte > self.max_chars - len(new_context_str):
                 # Child is too big, recursively chunk the child
-                if len(current_chunk) > 0:
+                if len(current_chunk) > len(current_context_str):  # If current_chunk has more than just the context
                     new_chunks.append(current_chunk)
-                current_chunk = ""
-                new_chunks.extend(self._chunk_node(child, text, last_end))
-            elif (
-                len(current_chunk) + child.end_byte - child.start_byte > self.max_chars
-            ):
+                current_chunk = new_context_str  # Reset to only the new context string
+                new_chunks.extend(self._chunk_node(child, text, last_end, new_context_list))
+            elif len(current_chunk) + child.end_byte - child.start_byte > self.max_chars:
                 # Child would make the current chunk too big, so start a new chunk
                 new_chunks.append(current_chunk)
-                current_chunk = text[last_end : child.end_byte]
+                current_chunk = new_context_str + text[last_end:child.end_byte]  # Start new chunk with new context
             else:
-                current_chunk += text[last_end : child.end_byte]
+                current_chunk += text[last_end:child.end_byte]
+
             last_end = child.end_byte
-        if len(current_chunk) > 0:
+
+        if len(current_chunk) > len(current_context_str):  # If current_chunk has more than just the context
             new_chunks.append(current_chunk)
+
         return new_chunks
 
     def split_text(self, text: str) -> List[str]:
