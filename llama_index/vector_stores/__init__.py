@@ -21,7 +21,6 @@ from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from llama_index.vector_stores.postgres import PGVectorStore
 from llama_index.vector_stores.zep import ZepVectorStore
-from llama_index.vector_stores.vectara import VectaraVectorStore
 from llama_index.vector_stores.docarray import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
@@ -49,5 +48,4 @@ __all__ = [
     "SupabaseVectorStore",
     "PGVectorStore",
     "ZepVectorStore",
-    "VectaraVectorStore",
 ]

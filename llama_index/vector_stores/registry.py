@@ -16,7 +16,6 @@ from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.types import VectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
-from llama_index.vector_stores.vectara import VectaraVectorStore
 
 
 class VectorStoreType(str, Enum):
@@ -34,7 +33,6 @@ class VectorStoreType(str, Enum):
     DEEPLAKE = "deeplake"
     MYSCALE = "myscale"
     SUPABASE = "supabase"
-    VECTARA = "vectara"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -49,7 +47,6 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.OPENSEARCH: OpensearchVectorStore,
     VectorStoreType.FAISS: FaissVectorStore,
     VectorStoreType.CHROMA: ChromaVectorStore,
-    VectorStoreType.VECTARA: VectaraVectorStore,
     VectorStoreType.CHATGPT_PLUGIN: ChatGPTRetrievalPluginClient,
     VectorStoreType.DEEPLAKE: DeepLakeVectorStore,
     VectorStoreType.MYSCALE: MyScaleVectorStore,
