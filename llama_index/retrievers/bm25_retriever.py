@@ -1,6 +1,5 @@
 import logging
-from collections.abc import Callable
-from typing import Optional, cast, List
+from typing import Callable, Optional, cast, List
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
