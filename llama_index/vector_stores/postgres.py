@@ -196,9 +196,9 @@ class PGVectorStore(VectorStore):
                         node_id=item.node_id,
                         text=item.text,
                         metadata=item.metadata_,
-                        similarity=(1 - sim),
+                        similarity=(1 - distance),
                     )
-                    for item, sim in res.all()
+                    for item, distance in res.all()
                 ]
 
     async def _aquery_with_score(
@@ -216,9 +216,9 @@ class PGVectorStore(VectorStore):
                         node_id=item.node_id,
                         text=item.text,
                         metadata=item.metadata_,
-                        similarity=(1 - sim),
+                        similarity=(1 - distance),
                     )
-                    for item, sim in res.all()
+                    for item, distance in res.all()
                 ]
 
     def _db_rows_to_query_result(

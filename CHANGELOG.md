@@ -1,9 +1,195 @@
 # ChangeLog
 
-## [0.7.23] - 2023-08-10
+## [0.8.11.post3] - 2023-08-27
+
+### New Features
+- AutoMergingRetriever (#7420)
+
+## [0.8.10.post1] - 2023-08-25
+
+### New Features
+- Added support for `MonsterLLM` using MonsterAPI (#7343) 
+- Support comments fields in NebulaGraphStore and int type VID (#7402)
+- Added configurable endpoint for DynamoDB (#6777)
+- Add structured answer filtering for Refine response synthesizer (#7317)
+
+### Bug Fixes / Nits
+- Use `utf-8` for json file reader (#7390)
+- Fix entity extractor initialization (#7407)
+
+## [0.8.9] - 2023-08-24
+
+### New Features
+- Added support for FalkorDB/RedisGraph graph store (#7346)
+- Added directed sub-graph RAG (#7378)
+- Added support for `BM25Retriever` (#7342)
+
+### Bug Fixes / Nits
+- Added `max_tokens` to `Xinference` LLM (#7372)
+- Support cache dir creation in multithreaded apps (#7365)
+- Ensure temperature is a float for openai (#7382)
+- Remove duplicate subjects in knowledge graph retriever (#7378)
+- Added support for both pydantic v1 and v2 to allow other apps to move forward (#7394)
+
+### Breaking/Deprecated API Changes
+- Refactor prompt template (#7319)
+  - Use `BasePromptTemplate` for generic typing
+  - Use `PromptTemplate`, `ChatPromptTemplate`, `SelectorPromptTemplate` as core implementations
+  - Use `LangchainPromptTemplate` for compatibility with Langchain prompt templates
+  - Fully replace specific prompt classes (e.g. `SummaryPrompt`) with generic `BasePromptTemplate` for typing in codebase.
+  - Keep `Prompt` as an alias for `PromptTemplate` for backwards compatibility.
+  - BREAKING CHANGE: remove support for `Prompt.from_langchain_prompt`, please use `template=LangchainPromptTemplate(lc_template)` instead.
+
+
+## [0.8.8] - 2023-08-23
+
+### New Features
+- `OpenAIFineTuningHandler` for collecting LLM inputs/outputs for OpenAI fine tuning (#7367)
+
+### Bug Fixes / Nits
+- Add support for `claude-instant-1.2` (#7369)
+
+## [0.8.7] - 2023-08-22
+
+### New Features
+- Support fine-tuned OpenAI models (#7364)
+- Added support for Cassandra vector store (#6784)
+- Support pydantic fields in tool functions (#7348)
+
+### Bug Fixes / Nits
+- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+
+## [0.8.6] - 2023-08-22
+
+### New Features
+- auto vs. recursive retriever notebook (#7353)
+- Reader and Vector Store for BagelDB with example notebooks (#7311)
+
+### Bug Fixes / Nits
+- Use service context for intermediate index in retry source query engine (#7341)
+- temp fix for prompt helper + chat models (#7350)
+- Properly skip unit-tests when packages not installed (#7351)
+
+## [0.8.5.post2] - 2023-08-20
+
+### New Features
+- Added FireStore docstore/index store support (#7305)
+- add recursive agent notebook (#7330)
+
+### Bug Fixes / Nits
+- Fix Azure pydantic error (#7329)
+- fix callback trace ids (make them a context var)  (#7331)
+
+## [0.8.5.post1] - 2023-08-18
+
+### New Features
+- Awadb Vector Store (#7291)
+
+### Bug Fixes / Nits
+- Fix bug in OpenAI llm temperature type 
+
+## [0.8.5] - 2023-08-18
+
+### New Features
+- Expose a system prompt/query wrapper prompt in the service context for open-source LLMs (#6647)
+- Changed default MyScale index format to `MSTG` (#7288)
+- Added tracing to chat engines/agents (#7304)
+- move LLM and embeddings to pydantic (#7289)
+
+### Bug Fixes / Nits
+- Fix sentence splitter bug (#7303)
+- Fix sentence splitter infinite loop (#7295)
+
+## [0.8.4] - 2023-08-17
+
+### Bug Fixes / Nits
+- Improve SQL Query parsing (#7283)
+- Fix loading embed_model from global service context (#7284)
+- Limit langchain version until we migrate to pydantic v2 (#7297)
+
+## [0.8.3] - 2023-08-16
+
+### New Features
+- Added Knowledge Graph RAG Retriever (#7204)
+
+### Bug Fixes / Nits
+- accept `api_key` kwarg in OpenAI LLM class constructor (#7263)
+- Fix to create separate queue instances for separate instances of `StreamingAgentChatResponse` (#7264)
+
+## [0.8.2.post1] - 2023-08-14
+
+### New Features
+- Added support for Rockset as a vector store (#7111)
+
+### Bug Fixes
+- Fixed bug in service context definition that could disable LLM (#7261)
+
+## [0.8.2] - 2023-08-14
+
+### New Features
+- Enable the LLM or embedding model to be disabled by setting to `None` in the service context (#7255)
+- Resolve nearly any huggingface embedding model using the `embed_model="local:<model_name>"` syntax (#7255)
+- Async tool-calling support (#7239)
+
+### Bug Fixes / Nits
+- Updated supabase kwargs for add and query (#7103)
+- Small tweak to default prompts to allow for more general purpose queries (#7254)
+- Make callback manager optional for `CustomLLM` + docs update (#7257)
+
+## [0.8.1] - 2023-08-13
+
+### New Features
+- feat: add node_postprocessors to ContextChatEngine (#7232)
+- add ensemble query engine tutorial (#7247)
+
+### Smaller Features
+- Allow EMPTY keys for Fastchat/local OpenAI API endpoints (#7224) 
+
+## [0.8.0] - 2023-08-11
+
+### New Features
+- Added "LLAMA_INDEX_CACHE_DIR" to control cached files (#7233)
+- Default to pydantic selectors when possible (#7154, #7223)
+- Remove the need for langchain wrappers on `embed_model` in the service context (#7157)
+- Metadata extractors take an `LLM` object now, in addition to `LLMPredictor` (#7202)
+- Added local mode + fallback to llama.cpp + llama2 (#7200)
+- Added local fallback for embeddings to `BAAI/bge-small-en` (#7200)
+- Added `SentenceWindowNodeParser` + `MetadataReplacementPostProcessor` (#7211)
+
+### Breaking Changes
+- Change default LLM to gpt-3.5-turbo from text-davinci-003 (#7223)
+- Change prompts for compact/refine/tree_summarize to work better with gpt-3.5-turbo (#7150, #7179, #7223)
+- Increase default LLM temperature to 0.1 (#7180)
+
+## [0.7.24.post1] - 2023-08-11
+
+### Other Changes
+- Reverted #7223 changes to defaults (#7235)
+
+## [0.7.24] - 2023-08-10
+
+### New Features
+- Default to pydantic selectors when possible (#7154, #7223)
+- Remove the need for langchain wrappers on `embed_model` in the service context (#7157)
+- Metadata extractors take an `LLM` object now, in addition to `LLMPredictor` (#7202)
+- Added local mode + fallback to llama.cpp + llama2 (#7200)
+- Added local fallback for embeddings to `BAAI/bge-small-en` (#7200)
+- Added `SentenceWindowNodeParser` + `MetadataReplacementPostProcessor` (#7211)
+
+### Breaking Changes
+- Change default LLM to gpt-3.5-turbo from text-davinci-003 (#7223)
+- Change prompts for compact/refine/tree_summarize to work better with gpt-3.5-turbo (#7150, #7179, #7223)
+- Increase default LLM temperature to 0.1 (#7180)
+
+### Other Changes
+- docs: Improvements to Mendable Search (#7220)
+- Refactor openai agent (#7077)
 
 ### Bug Fixes / Nits
 - Use `1 - cosine_distance` for pgvector/postgres vector db (#7217)
+- fix metadata formatting and extraction (#7216)
+- fix(readers): Fix non-ASCII JSON Reader bug (#7086)
+- Chore: change PgVectorStore variable name from `sim` to `distance` for clarity (#7226)
 
 ## [0.7.23] - 2023-08-10
 

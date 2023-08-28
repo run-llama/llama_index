@@ -3,8 +3,12 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
-from pydantic import BaseModel, Field, root_validator
 from typing import Any, Dict, List, Optional, Union
+
+try:
+    from pydantic.v1 import BaseModel, Field, root_validator
+except ImportError:
+    from pydantic import BaseModel, Field, root_validator
 
 from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.utils import SAMPLE_TEXT
@@ -177,7 +181,7 @@ class BaseNode(BaseModel):
         if NodeRelationship.CHILD not in self.relationships:
             return None
 
-        relation = self.relationships[NodeRelationship.PARENT]
+        relation = self.relationships[NodeRelationship.CHILD]
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
@@ -334,6 +338,16 @@ class IndexNode(TextNode):
 class NodeWithScore(BaseModel):
     node: BaseNode
     score: Optional[float] = None
+
+    def get_score(self, raise_error: bool = False) -> float:
+        """Get score."""
+        if self.score is None:
+            if raise_error:
+                raise ValueError("Score not set.")
+            else:
+                return 0.0
+        else:
+            return self.score
 
 
 # Document Classes for Readers

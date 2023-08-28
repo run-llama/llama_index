@@ -2,9 +2,12 @@
 
 from typing import Any, Dict, List
 
-from llama_index.bridge.langchain import BaseTool
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
 
+from llama_index.bridge.langchain import BaseTool
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import TextNode
@@ -60,14 +63,14 @@ class LlamaIndexTool(BaseTool):
             **tool_config.tool_kwargs,
         )
 
-    def _run(self, tool_input: str) -> str:
-        response = self.query_engine.query(tool_input)
+    def _run(self, input: str) -> str:
+        response = self.query_engine.query(input)
         if self.return_sources:
             return _get_response_with_sources(response)
         return str(response)
 
-    async def _arun(self, tool_input: str) -> str:
-        response = await self.query_engine.aquery(tool_input)
+    async def _arun(self, input: str) -> str:
+        response = await self.query_engine.aquery(input)
         if self.return_sources:
             return _get_response_with_sources(response)
         return str(response)

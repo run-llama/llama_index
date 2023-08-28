@@ -48,7 +48,7 @@ For instance, you can do
 ```python
 from llama_index.node_parser import SimpleNodeParser
 
-parser = SimpleNodeParser()
+parser = SimpleNodeParser.from_defaults()
 
 nodes = parser.get_nodes_from_documents(documents)
 ```
@@ -181,6 +181,15 @@ index = VectorStoreIndex.from_documents(
     documents
 )
 ```
+
+To save costs, you may want to use a local model.
+
+```python
+from llama_index import ServiceContext
+service_context = ServiceContext.from_defaults(llm="local")
+```
+
+This will use llama2-chat-13B from with LlamaCPP, and assumes you have `llama-cpp-python` installed. Full LlamaCPP usage guide is available in a [notebook here](/examples/llm/llama_2_llama_cpp.ipynb).
 
 See the [Custom LLM's How-To](/core_modules/model_modules/llms/usage_custom.md) for more details.
 

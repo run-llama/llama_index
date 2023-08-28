@@ -5,7 +5,12 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import openai
 from openai import ChatCompletion, Completion
-from pydantic import BaseModel
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from tenacity import (
     before_sleep_log,
     retry,
@@ -171,8 +176,10 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         https://github.com/hwchase17/langchain/blob/master/langchain/llms/openai.py
     """
     # handling finetuned models
-    if "ft-" in modelname:
+    if "ft-" in modelname:  # legacy fine-tuning
         modelname = modelname.split(":")[0]
+    elif modelname.startswith("ft:"):
+        modelname = modelname.split(":")[1]
 
     if modelname in DISCONTINUED_MODELS:
         raise ValueError(
@@ -266,7 +273,9 @@ def validate_openai_api_key(
 
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-    elif openai_api_type == "open_ai" and not OPENAI_API_KEY_FORMAT.search(
-        openai_api_key
+    elif (
+        openai_api_type == "open_ai"
+        and openai_api_key != "EMPTY"  # Exempt EMPTY key for fastchat/local models
+        and not OPENAI_API_KEY_FORMAT.search(openai_api_key)
     ):
         raise ValueError(INVALID_API_KEY_ERROR_MESSAGE)

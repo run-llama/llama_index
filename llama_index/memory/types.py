@@ -1,8 +1,12 @@
 from abc import abstractmethod
-from pydantic import BaseModel
 from typing import List, Optional
 
-from llama_index.llms.base import ChatMessage, LLM
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
+from llama_index.llms.base import LLM, ChatMessage
 
 
 class BaseMemory(BaseModel):

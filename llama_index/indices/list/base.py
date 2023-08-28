@@ -7,7 +7,6 @@ in sequence in order to answer a given query.
 
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union
-from llama_index.utils import get_tqdm_iterable
 
 from llama_index.data_structs.data_structs import IndexList
 from llama_index.indices.base import BaseIndex
@@ -15,6 +14,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import BaseNode
 from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.utils import get_tqdm_iterable
 
 
 class ListRetrieverMode(str, Enum):
@@ -35,7 +35,7 @@ class ListIndex(BaseIndex[IndexList]):
     answer from all the nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
+        text_qa_template (Optional[BasePromptTemplate]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
             NOTE: this is a deprecated field.
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.

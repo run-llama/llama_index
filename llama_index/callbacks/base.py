@@ -11,6 +11,8 @@ from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_EV
 
 logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
+empty_trace_ids: List[str] = []
+global_stack_trace_ids = ContextVar("trace_ids", default=empty_trace_ids)
 
 
 class CallbackManager(BaseCallbackHandler, ABC):
@@ -42,9 +44,11 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     """
 
-    def __init__(self, handlers: List[BaseCallbackHandler]):
+    def __init__(self, handlers: Optional[List[BaseCallbackHandler]] = None):
         """Initialize the manager with a list of handlers."""
         from llama_index import global_handler
+
+        handlers = handlers or []
 
         # add eval handlers based on global defaults
         if global_handler is not None:
@@ -61,7 +65,6 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
         self.handlers = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
-        self._trace_id_stack: List[str] = []
 
     def on_event_start(
         self,
@@ -154,16 +157,19 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         """Run when an overall trace is launched."""
+        current_trace_stack_ids = global_stack_trace_ids.get().copy()
         if trace_id is not None:
-            if len(self._trace_id_stack) == 0:
+            if len(current_trace_stack_ids) == 0:
                 self._reset_trace_events()
 
                 for handler in self.handlers:
                     handler.start_trace(trace_id=trace_id)
 
-                self._trace_id_stack = [trace_id]
+                current_trace_stack_ids = [trace_id]
             else:
-                self._trace_id_stack.append(trace_id)
+                current_trace_stack_ids.append(trace_id)
+
+        global_stack_trace_ids.set(current_trace_stack_ids)
 
     def end_trace(
         self,
@@ -171,12 +177,15 @@ class CallbackManager(BaseCallbackHandler, ABC):
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """Run when an overall trace is exited."""
-        if trace_id is not None and len(self._trace_id_stack) > 0:
-            self._trace_id_stack.pop()
-            if len(self._trace_id_stack) == 0:
+        current_trace_stack_ids = global_stack_trace_ids.get().copy()
+        if trace_id is not None and len(current_trace_stack_ids) > 0:
+            current_trace_stack_ids.pop()
+            if len(current_trace_stack_ids) == 0:
                 for handler in self.handlers:
                     handler.end_trace(trace_id=trace_id, trace_map=self._trace_map)
-                self._trace_id_stack = []
+                current_trace_stack_ids = []
+
+        global_stack_trace_ids.set(current_trace_stack_ids)
 
     def _reset_trace_events(self) -> None:
         """Helper function to reset the current trace."""

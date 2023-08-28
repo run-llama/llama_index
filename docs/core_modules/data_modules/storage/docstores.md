@@ -17,7 +17,7 @@ from llama_index.storage.docstore import MongoDocumentStore
 from llama_index.node_parser import SimpleNodeParser
 
 # create parser and parse document into nodes 
-parser = SimpleNodeParser()
+parser = SimpleNodeParser.from_defaults()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create (or load) docstore and add nodes
@@ -50,7 +50,7 @@ from llama_index.storage.docstore import RedisDocumentStore
 from llama_index.node_parser import SimpleNodeParser
 
 # create parser and parse document into nodes 
-parser = SimpleNodeParser()
+parser = SimpleNodeParser.from_defaults()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create (or load) docstore and add nodes
@@ -74,3 +74,36 @@ Under the hood, `RedisDocumentStore` connects to a redis database and adds your 
 You can easily reconnect to your Redis client and reload the index by re-initializing a `RedisDocumentStore` with an existing `host`, `port`, and `namespace`.
 
 A more complete example can be found [here](../../examples/docstore/RedisDocstoreIndexStoreDemo.ipynb)
+
+### Firestore Document Store
+
+We support Firestore as an alternative document store backend that persists data as `Node` objects are ingested.
+
+```python
+from llama_index.storage.docstore import FirestoreDocumentStore
+from llama_index.node_parser import SimpleNodeParser
+
+# create parser and parse document into nodes
+parser = SimpleNodeParser.from_defaults()
+nodes = parser.get_nodes_from_documents(documents)
+
+# create (or load) docstore and add nodes
+docstore = FirestoreDocumentStore.from_dataabse(
+  project="project-id",
+  database="(default)",
+)
+docstore.add_documents(nodes)
+
+# create storage context
+storage_context = StorageContext.from_defaults(docstore=docstore)
+
+# build index
+index = VectorStoreIndex(nodes, storage_context=storage_context)
+```
+
+Under the hood, `FirestoreDocumentStore` connects to a firestore database in Google Cloud and adds your nodes to a namespace stored under `{namespace}/docs`.
+> Note: You can configure the `namespace` when instantiating `FirestoreDocumentStore`, otherwise it defaults `namespace="docstore"`.
+
+You can easily reconnect to your Firestore database and reload the index by re-initializing a `FirestoreDocumentStore` with an existing `project`, `database`, and `namespace`.
+
+A more complete example can be found [here](../../examples/docstore/FirestoreDemo.ipynb)
