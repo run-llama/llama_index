@@ -204,8 +204,8 @@ class VectaraIndex(BaseManagedIndex):
         where pre-processing and chunking occurs internally in an optimal way
         This method provides a way to use that API in Llama_index
 
-        # ruff: noqa: E501
-        Full API Docs: https://docs.vectara.com/docs/api-reference/indexing-apis/file-upload/file-upload-filetypes
+        Full API Docs: https://docs.vectara.com/docs/api-reference/indexing-apis/
+        file-upload/file-upload-filetypes
 
         Args:
             file_path: local file path
