@@ -1,6 +1,11 @@
 import logging
 from typing import Any, Generator, Optional, Sequence, cast, Type, Callable
-from pydantic import BaseModel, Field
+
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
+
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.llm_predictor.base import BaseLLMPredictor

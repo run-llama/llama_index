@@ -1,5 +1,23 @@
 # ChangeLog
 
+## [0.8.12] - 2023-08-28
+
+### New Features
+
+- add openai finetuning class (#7442)
+- Service Context to/from dict (#7395)
+- add finetuning guide (#7429)
+
+### Smaller Features / Nits / Bug Fixes
+- Add example how to run FalkorDB docker (#7441)
+- Update root.md to use get_response_synthesizer expected type. (#7437) 
+- Bugfix MonsterAPI Pydantic version v2/v1 support. Doc Update (#7432)
+
+## [0.8.11.post3] - 2023-08-27
+
+### New Features
+- AutoMergingRetriever (#7420)
+
 ## [0.8.10.post1] - 2023-08-25
 
 ### New Features
