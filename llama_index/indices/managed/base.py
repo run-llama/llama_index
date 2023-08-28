@@ -7,10 +7,9 @@ from abc import ABC, abstractmethod
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.data_structs.data_structs import IndexDict
+from llama_index.data_structs.data_structs import IndexDict, IndexStruct
 from llama_index.indices.base import BaseIndex, IS
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -26,7 +25,7 @@ class ManagedIndex(BaseIndex[IndexDict], ABC):
 
     def __init__(
         self,
-        index_struct: Optional[IndexDict] = None,
+        index_struct: Optional[IndexStruct] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:

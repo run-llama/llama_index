@@ -181,15 +181,15 @@ class VectaraIndex(ManagedIndex):
         Args:
             file_path: local file path
                 Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc.
-                see API docs for full list
-            metadatas: Optional list of metadatas associated with each file
+                see API docs (https://docs.vectara.com/docs/api-reference/indexing-apis/file-upload/file-upload-filetypes) for full list
+            metadata: Optional list of metadata associated with the file
 
         Returns:
             List of ids associated with each of the files indexed
         """
         if not os.path.exists(file_path):
             _logger.error(f"File {file_path} does not exist")
-            return
+            return None
         metadata["framework"] = "llama_index"
         files: dict = {
             "file": (file_path, open(file_path, "rb")),
