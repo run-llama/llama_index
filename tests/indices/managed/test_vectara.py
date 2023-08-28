@@ -40,19 +40,12 @@ def remove_docs(index: VectaraIndex, ids: List) -> None:
         index.delete_ref_doc(id)
 
 
-def add_documents(index: VectaraIndex, docs: List[Document]) -> None:
-    for doc in docs:
-        index.insert(doc)
-
-
 def test_simple_query() -> None:
+    docs, ids = get_docs()
     try:
-        index = VectaraIndex()
+        index = VectaraIndex.from_documents(docs)
     except ValueError as e:
         pytest.skip("Missing Vectara credentials, skipping test")
-
-    docs, ids = get_docs()
-    add_documents(index, docs)
 
     assert isinstance(index, VectaraIndex)
     q = VectaraQuery(query_str="how will I look?", similarity_top_k=1)
@@ -65,13 +58,11 @@ def test_simple_query() -> None:
 
 
 def test_with_filter_query() -> None:
+    docs, ids = get_docs()
     try:
-        index = VectaraIndex()
+        index = VectaraIndex.from_documents(docs)
     except ValueError as e:
         pytest.skip("Missing Vectara credentials, skipping test")
-
-    docs, ids = get_docs()
-    add_documents(index, docs)
 
     assert isinstance(index, VectaraIndex)
     q = VectaraQuery(

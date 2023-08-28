@@ -5,10 +5,10 @@ An index that that is built on top of a managed service.
 """
 from abc import ABC, abstractmethod
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Type
 
 from llama_index.data_structs.data_structs import IndexDict, IndexStruct
-from llama_index.indices.base import BaseIndex, IS
+from llama_index.indices.base import BaseIndex, IS, IndexType
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.types import RefDocInfo
@@ -25,13 +25,14 @@ class ManagedIndex(BaseIndex[IndexDict], ABC):
 
     def __init__(
         self,
+        nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexStruct] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
-            nodes=None,
+            nodes=nodes,
             index_struct=index_struct,
             service_context=None,
             storage_context=None,
@@ -71,3 +72,12 @@ class ManagedIndex(BaseIndex[IndexDict], ABC):
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
         """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
         raise NotImplementedError("ref_doc_info not supported for a Managed index.")
+
+    @classmethod
+    def from_documents(
+        cls: Type[IndexType],
+        documents: Sequence[Document],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> IndexType:
+        """Build an index from a sequence of documents."""

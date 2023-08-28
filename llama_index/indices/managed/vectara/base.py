@@ -9,12 +9,13 @@ import logging
 import requests
 import json
 
-from typing import Any, Optional, List
-from llama_index.indices.managed.base import ManagedIndex
+from typing import Any, Optional, Sequence, Type
+from llama_index.indices.managed.base import ManagedIndex, IndexType
 from llama_index.schema import Document
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 from llama_index.data_structs.data_structs import IndexStruct, IndexStructType
+from llama_index.schema import BaseNode, TextNode
 
 _logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ class VectaraIndex(ManagedIndex):
     def __init__(
         self,
         show_progress: bool = False,
+        nodes: Optional[Sequence[BaseNode]] = None,
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
@@ -85,6 +87,14 @@ class VectaraIndex(ManagedIndex):
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 60
+
+        # if nodes is specified, consider each node as a single document and use _add_documents() to add them to the index
+        if nodes is not None:
+            self._build_index_from_nodes(nodes)
+
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexStruct:
+        docs = [Document(text=node.text, metadata=node.metadata) for node in nodes]
+        self.add_documents(docs)
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -168,6 +178,12 @@ class VectaraIndex(ManagedIndex):
         """Insert a document."""
         self._insert(document)
 
+    def add_documents(
+        self, docs: Sequence[Document], allow_update: bool = True
+    ) -> None:
+        for doc in docs:
+            self._insert(doc)
+
     def insert_file(
         self,
         file_path: str,
@@ -232,3 +248,21 @@ class VectaraIndex(ManagedIndex):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
         return VectaraRetriever(self, **kwargs)
+
+    @classmethod
+    def from_documents(
+        cls: Type[IndexType],
+        documents: Sequence[Document],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> IndexType:
+        """Build a Vectara index from a sequence of documents."""
+        nodes = [
+            TextNode(text=document.text, metadata=document.metadata)
+            for document in documents
+        ]
+        return cls(
+            nodes=nodes,
+            show_progress=show_progress,
+            **kwargs,
+        )
