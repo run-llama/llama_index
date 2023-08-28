@@ -52,5 +52,5 @@ See the associated guides below:
 ---
 maxdepth: 1
 ---
-FalkorDB Graph Store </examples/index_structs/knowledge_graph/FalkorDBGraphKGIndexDemo.ipynb>
+FalkorDB Graph Store </examples/index_structs/knowledge_graph/FalkorDBGraphDemo.ipynb>
 ```

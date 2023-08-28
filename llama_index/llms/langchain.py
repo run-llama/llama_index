@@ -41,6 +41,11 @@ class LangChainLLM(LLM):
         self._llm = llm
         super().__init__(callback_manager=callback_manager)
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "LangChainLLM"
+
     @property
     def llm(self) -> BaseLanguageModel:
         return self._llm
