@@ -1,6 +1,6 @@
 # ChangeLog
 
-## [0.8.11] - 2023-08-27
+## [0.8.11.post3] - 2023-08-27
 
 ### New Features
 - AutoMergingRetriever (#7420)
