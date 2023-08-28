@@ -1,4 +1,6 @@
-from typing import List, Optional, Sequence, Type, Dict
+from typing import Any, List, Optional, Sequence, Type, Dict
+
+from pydantic import BaseModel, Field
 
 from llama_index.schema import BaseNode, TextNode
 
@@ -8,10 +10,17 @@ from llama_index.node_parser.extractors.metadata_extractors import (
 
 
 class MarvinEntityExtractor(MetadataFeatureExtractor):
+    marvin_model: Type[BaseModel] = Field(
+        description="The Marvin model to use for extracting entities"
+    )
+    llm_model_string: Optional[str] = Field(
+        description="The LLM model string to use for extracting entities"
+    )
+
     """Entity extractor for cusstom entities using Marvin. Node-level extractor. Extracts
     `marvin_entities` metadata field.
     Args:
-        marvin_model: : Type[AIModel] Marvin model to use for extracting entities
+        marvin_model: Marvin model to use for extracting entities
         llm_model_string: (optional) LLM model string to use for extracting entities
     Usage:
         #create metadata extractor
@@ -33,15 +42,25 @@ class MarvinEntityExtractor(MetadataFeatureExtractor):
         print(nodes)
     """
 
-    def __init__(self, marvin_model, llm_model_string: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        marvin_model: Type[BaseModel],
+        llm_model_string: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         """Init params."""
-        from marvin import AIModel, settings
+        import marvin
+        from marvin import AIModel
 
-        self._marvin_model: Type[AIModel] = marvin_model
-        self.llm_model_string = llm_model_string
+        if not issubclass(marvin_model, AIModel):
+            raise ValueError("marvin_model must be a subclass of AIModel")
 
-        if self.llm_model_string:
-            settings.llm_model = llm_model_string
+        if llm_model_string:
+            marvin.settings.llm_model = llm_model_string
+
+        super().__init__(
+            marvin_model=marvin_model, llm_model_string=llm_model_string, **kwargs
+        )
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
@@ -50,7 +69,7 @@ class MarvinEntityExtractor(MetadataFeatureExtractor):
                 metadata_list.append({})
                 continue
 
-            entities = self._marvin_model(node.get_content())
+            entities = self.marvin_model(node.get_content())
 
             metadata_list.append({"marvin_entities": entities.dict()})
         return metadata_list
