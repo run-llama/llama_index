@@ -64,7 +64,6 @@ class ManagedIndex(BaseIndex[IndexDict], ABC):
             "_build_index_from_nodes not supported for a Managed index."
         )
 
-    @abstractmethod
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         raise NotImplementedError("_delete_node not supported for a Managed index.")

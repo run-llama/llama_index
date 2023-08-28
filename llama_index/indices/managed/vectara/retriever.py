@@ -23,7 +23,8 @@ class VectaraQuery:
     similarity_top_k: int = 1
     query_str: Optional[str] = None
 
-    # For Hybrid search: 0 = neural search only, 1 = bm25 only. In between values are a linear interpolation
+    # For Hybrid search: 0 = neural search only, 1 = keyword match only. In between values are a linear interpolation
+    # see https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching for more details
     lambda_val: Optional[float] = None
 
     # define how many sentences before/after the matched sentence to return in the node
