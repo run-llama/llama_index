@@ -78,7 +78,10 @@ class OpenAIFinetuneEngine(BaseFinetuningEngine):
             except openai.error.InvalidRequestError:
                 print("Waiting for file to be ready...")
                 time.sleep(60)
-        info_str = f"Training job {output['id']} launched. You will be emailed when it's complete."
+        info_str = (
+            f"Training job {output['id']} launched. "
+            "You will be emailed when it's complete."
+        )
         logger.info(info_str)
         if self._verbose:
             print(info_str)
