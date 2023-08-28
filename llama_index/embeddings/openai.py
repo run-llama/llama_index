@@ -272,6 +272,11 @@ class OpenAIEmbedding(BaseEmbedding):
             openai_kwargs=kwargs,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "OpenAIEmbedding"
+
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return get_embedding(
