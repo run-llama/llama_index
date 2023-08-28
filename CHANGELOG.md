@@ -1,6 +1,11 @@
 # ChangeLog
 
-## [0.8.10] - 2023-08-25
+## [0.8.11.post3] - 2023-08-27
+
+### New Features
+- AutoMergingRetriever (#7420)
+
+## [0.8.10.post1] - 2023-08-25
 
 ### New Features
 - Added support for `MonsterLLM` using MonsterAPI (#7343) 
