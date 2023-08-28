@@ -3,15 +3,13 @@ An index that that is built on top of Vectara
 """
 
 import logging
-from typing import Any, List, Optional, Sequence, Dict
+from typing import Any, List, Optional
 import json
 
 from llama_index.schema import TextNode
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.managed.vectara.base import VectaraIndex
 from llama_index.schema import NodeWithScore
-from llama_index.indices.managed.base import ManagedIndex
-from dataclasses import dataclass
-from llama_index.schema import BaseNode
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.query.schema import QueryBundle
 
@@ -19,29 +17,25 @@ from llama_index.indices.query.schema import QueryBundle
 _logger = logging.getLogger(__name__)
 
 
-@dataclass
-class VectaraQueryResult:
-    """Vectara query result."""
-
-    nodes: Optional[Sequence[BaseNode]] = None
-    similarities: Optional[List[float]] = None
-    ids: Optional[List[str]] = None
-
-
 class VectaraRetriever(BaseRetriever):
     """Vectara Retriever.
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return.
-        lambda_val (float): for hybrid search, 0 = neural search only, 1 = keyword match only. In between values are a linear interpolation
-        n_sentences_before (int): number of sentences before the matched sentence to return in the node
-        n_sentences_after (int): number of sentences after the matched sentence to return in the node
+        lambda_val (float): for hybrid search.
+            0 = neural search only.
+            1 = keyword match only.
+            In between values are a linear interpolation
+        n_sentences_before (int):
+            number of sentences before the matched sentence to return in the node
+        n_sentences_after (int):
+             number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
     """
 
     def __init__(
         self,
-        index: ManagedIndex,
+        index: VectaraIndex,
         similarity_top_k: Optional[int] = DEFAULT_SIMILARITY_TOP_K,
         lambda_val: Optional[float] = None,
         n_sentences_before: Optional[int] = 2,
@@ -122,7 +116,7 @@ class VectaraRetriever(BaseRetriever):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return VectaraQueryResult(nodes=[], similarities=[], ids=[])
+            return []
 
         result = response.json()
         responses = result["responseSet"][0]["response"]

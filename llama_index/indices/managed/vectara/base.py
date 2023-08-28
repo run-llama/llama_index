@@ -1,6 +1,7 @@
 """Managed index.
 
-A managed Index - where the index is accessible via some API that interfaces a managed service.
+A managed Index - where the index is accessible via some API that 
+interfaces a managed service.
 
 """
 
@@ -10,17 +11,18 @@ import requests
 import json
 
 from typing import Any, Optional, Sequence, Type
-from llama_index.indices.managed.base import ManagedIndex, IndexType
+from llama_index.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.schema import Document
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.managed.vectara.retriever import VectaraRetriever
-from llama_index.data_structs.data_structs import IndexStruct, IndexStructType
-from llama_index.schema import BaseNode, TextNode
+from llama_index.indices.service_context import ServiceContext
+from llama_index.data_structs.data_structs import IndexDict, IndexStructType
+from llama_index.schema import BaseNode, TextNode, MetadataMode
+from llama_index.storage.storage_context import StorageContext
 
 _logger = logging.getLogger(__name__)
 
 
-class VectaraIndexStruct(IndexStruct):
+class VectaraIndexStruct(IndexDict):
     """Vectara Index Struct."""
 
     @classmethod
@@ -29,7 +31,7 @@ class VectaraIndexStruct(IndexStruct):
         return IndexStructType.VECTARA
 
 
-class VectaraIndex(ManagedIndex):
+class VectaraIndex(BaseManagedIndex):
     """Vectara Index.
 
     The Vectara index implements a managed index that uses Vectara as the backend.
@@ -82,19 +84,28 @@ class VectaraIndex(ManagedIndex):
         else:
             _logger.debug(f"Using corpus id {self._vectara_corpus_id}")
 
-        # setup requests session with max 3 retries and 60s timeout for calling Vectara API
+        # setup requests session with max 3 retries and 60s timeout
+        # for calling Vectara API
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 60
 
-        # if nodes is specified, consider each node as a single document and use _add_documents() to add them to the index
+        # if nodes is specified, consider each node as a single document
+        # and use _add_documents() to add them to the index
         if nodes is not None:
             self._build_index_from_nodes(nodes)
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexStruct:
-        docs = [Document(text=node.text, metadata=node.metadata) for node in nodes]
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
+        docs = [
+            Document(
+                text=node.get_content(metadata_mode=MetadataMode.NONE),
+                metadata=node.metadata,
+            )
+            for node in nodes
+        ]
         self.add_documents(docs)
+        return self.index_struct
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -163,16 +174,19 @@ class VectaraIndex(ManagedIndex):
         else:
             return "E_SUCCEEDED"
 
-    def _insert(self, document: Document, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
-        metadata = document.metadata.copy()
-        metadata["framework"] = "llama_index"
-        doc = {
-            "document_id": document.doc_id,
-            "metadataJson": json.dumps(document.metadata),
-            "section": [{"text": document.text}],
-        }
-        self._index_doc(doc)
+        for node in nodes:
+            metadata = node.metadata.copy()
+            metadata["framework"] = "llama_index"
+            doc = {
+                "document_id": node.id_,
+                "metadataJson": json.dumps(node.metadata),
+                "section": [
+                    {"text": node.get_content(metadata_mode=MetadataMode.NONE)}
+                ],
+            }
+            self._index_doc(doc)
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
@@ -187,17 +201,20 @@ class VectaraIndex(ManagedIndex):
     def insert_file(
         self,
         file_path: str,
-        metadata: Optional[dict] = {},
+        metadata: Optional[dict] = None,
         **insert_kwargs: Any,
-    ) -> str:
-        """Vectara provides a way to add files (binary or text) directly via our API where
-        pre-processing and chunking occurs internally in an optimal way
+    ) -> Optional[str]:
+        """Vectara provides a way to add files (binary or text) directly via our API
+        where pre-processing and chunking occurs internally in an optimal way
         This method provides a way to use that API in Llama_index
+
+        # ruff: noqa: E501
+        Full API Docs: https://docs.vectara.com/docs/api-reference/indexing-apis/file-upload/file-upload-filetypes
 
         Args:
             file_path: local file path
                 Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc.
-                see API docs (https://docs.vectara.com/docs/api-reference/indexing-apis/file-upload/file-upload-filetypes) for full list
+                see API docs for full list
             metadata: Optional list of metadata associated with the file
 
         Returns:
@@ -206,6 +223,8 @@ class VectaraIndex(ManagedIndex):
         if not os.path.exists(file_path):
             _logger.error(f"File {file_path} does not exist")
             return None
+
+        metadata = metadata or {}
         metadata["framework"] = "llama_index"
         files: dict = {
             "file": (file_path, open(file_path, "rb")),
@@ -224,7 +243,8 @@ class VectaraIndex(ManagedIndex):
         if response.status_code == 409:
             doc_id = response.json()["document"]["documentId"]
             _logger.info(
-                f"File {file_path} already exists on Vectara (doc_id={doc_id}), skipping"
+                f"File {file_path} already exists on Vectara "
+                f"(doc_id={doc_id}), skipping"
             )
             return None
         elif response.status_code == 200:
@@ -247,12 +267,16 @@ class VectaraIndex(ManagedIndex):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
+        from llama_index.indices.managed.vectara.retriever import VectaraRetriever
+
         return VectaraRetriever(self, **kwargs)
 
     @classmethod
     def from_documents(
         cls: Type[IndexType],
         documents: Sequence[Document],
+        storage_context: Optional[StorageContext] = None,
+        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> IndexType:
