@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Dict, List, Tuple
+from typing import Any, Optional, Sequence, Dict, List, Tuple, Union
 import json
 
 try:
@@ -255,8 +255,8 @@ class RunGptLLM(LLM):
         return chat_message, content
 
     def _request_pack(
-        self, mode: str, prompt: Tuple[str, List[Dict[str, Any]]], **kwargs: Any
-    ) -> Tuple[dict, None]:
+        self, mode: str, prompt: Union[str, List[Dict[str, Any]]], **kwargs: Any
+    ) -> Optional[Dict[str, Any]]:
         if mode == "complete":
             return {
                 "prompt": prompt,
