@@ -97,7 +97,7 @@ class BaseNode(BaseModel):
         default_factory=list,
         description="Metadata keys that are exluded from text for the LLM.",
     )
-    relationships: Dict[NodeRelationship, Union[str, List[str]]] = Field(
+    relationships: Dict[NodeRelationship, Union[RelatedNodeInfo, List[RelatedNodeInfo]]] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
