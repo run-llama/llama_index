@@ -3,6 +3,11 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 from typing import Optional
 
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 import llama_index
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding

@@ -22,9 +22,14 @@ DEFAULT_METADATA_TMPL = "{key}: {value}"
 class BaseComponent(BaseModel):
     """Base component object to caputure class names."""
 
+    @classmethod
+    @abstractmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)
-        data["class_name"] = type(self).__name__
+        data["class_name"] = self.class_name()
         return data
 
     def to_json(self, **kwargs: Any) -> str:
@@ -84,6 +89,11 @@ class RelatedNodeInfo(BaseComponent):
     node_type: Optional[ObjectType] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "RelatedNodeInfo"
 
 
 RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
@@ -208,7 +218,7 @@ class BaseNode(BaseComponent):
         if NodeRelationship.CHILD not in self.relationships:
             return None
 
-        relation = self.relationships[NodeRelationship.PARENT]
+        relation = self.relationships[NodeRelationship.CHILD]
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
@@ -269,6 +279,11 @@ class TextNode(BaseNode):
         default="\n",
         description="Seperator between metadata fields when converting to string.",
     )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "TextNode"
 
     @root_validator
     def _check_hash(cls, values: dict) -> dict:
@@ -351,6 +366,11 @@ class ImageNode(TextNode):
     def get_type(cls) -> str:
         return ObjectType.IMAGE
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "ImageNode"
+
 
 class IndexNode(TextNode):
     """Node with reference to an index."""
@@ -361,10 +381,30 @@ class IndexNode(TextNode):
     def get_type(cls) -> str:
         return ObjectType.INDEX
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "IndexNode"
+
 
 class NodeWithScore(BaseComponent):
     node: BaseNode
     score: Optional[float] = None
+
+    def get_score(self, raise_error: bool = False) -> float:
+        """Get score."""
+        if self.score is None:
+            if raise_error:
+                raise ValueError("Score not set.")
+            else:
+                return 0.0
+        else:
+            return self.score
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "NodeWithScore"
 
 
 # Document Classes for Readers
@@ -423,9 +463,19 @@ class Document(TextNode):
         )
         return document
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "Document"
+
 
 class ImageDocument(Document):
     """Data document containing an image."""
 
     # base64 encoded image str
     image: Optional[str] = None
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "ImageDocument"

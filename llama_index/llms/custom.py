@@ -71,3 +71,8 @@ class CustomLLM(LLM):
 
         # NOTE: convert generator to async generator
         return gen()
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "custom_llm"

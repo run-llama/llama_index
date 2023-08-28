@@ -20,20 +20,17 @@ def load_extractor(
     if extractor_name is None:
         raise ValueError("Extractor loading requires a class_name")
 
-    # remove unused key
-    data.pop("is_text_node_only", None)
-
-    if extractor_name == MetadataExtractor.__name__:
+    if extractor_name == MetadataExtractor.class_name():
         return MetadataExtractor.from_dict(data, extractors=extractors)
-    elif extractor_name == SummaryExtractor.__name__:
+    elif extractor_name == SummaryExtractor.class_name():
         return SummaryExtractor.from_dict(data, llm=llm)
-    elif extractor_name == QuestionsAnsweredExtractor.__name__:
+    elif extractor_name == QuestionsAnsweredExtractor.class_name():
         return QuestionsAnsweredExtractor.from_dict(data, llm=llm)
-    elif extractor_name == EntityExtractor.__name__:
+    elif extractor_name == EntityExtractor.class_name():
         return EntityExtractor.from_dict(data)
-    elif extractor_name == TitleExtractor.__name__:
+    elif extractor_name == TitleExtractor.class_name():
         return TitleExtractor.from_dict(data, llm=llm)
-    elif extractor_name == KeywordExtractor.__name__:
+    elif extractor_name == KeywordExtractor.class_name():
         return KeywordExtractor.from_dict(data, llm=llm)
     else:
         raise ValueError(f"Unknown extractor name: {extractor_name}")
