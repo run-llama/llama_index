@@ -12,6 +12,7 @@ from typing import List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
+from llama_index.async_utils import run_sync
 
 logger = logging.getLogger(__name__)
 
@@ -104,12 +105,9 @@ class DiscordReader(BaseReader):
         self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
     ) -> str:
         """Read channel."""
-        result = asyncio.get_event_loop().run_until_complete(
-            read_channel(
-                self.discord_token, channel_id, limit=limit, oldest_first=oldest_first
-            )
+        return run_sync(
+            read_channel(self.discord_token, channel_id, limit=limit, oldest_first=oldest_first)
         )
-        return result
 
     def load_data(
         self,

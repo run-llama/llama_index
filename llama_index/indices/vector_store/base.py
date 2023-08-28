@@ -16,6 +16,7 @@ from llama_index.schema import BaseNode, ImageNode, IndexNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
+from llama_index.async_utils import run_sync
 
 
 class VectorStoreIndex(BaseIndex[IndexDict]):
@@ -95,7 +96,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        return asyncio.get_event_loop().run_until_complete(
+        return run_sync(
             self._aget_node_embedding_results(nodes, show_progress)
         )
 
@@ -175,7 +176,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         show_progress: bool = False,
     ) -> None:
         """Add document to index."""
-        return asyncio.get_event_loop().run_until_complete(
+        return run_sync(
             self._async_add_nodes_to_index(index_struct, nodes, show_progress)
         )
 

@@ -56,7 +56,6 @@ async def batch_gather(
             print(f"Completed {len(output)} out of {len(tasks)} tasks")
     return output
 
-def run_sync(func: Callable[[Any], Awaitable], *args, **kwargs) -> Any:
+def run_sync(awaitable: Awaitable) -> Any:
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(func(*args, **kwargs))
-
+    return loop.run_until_complete(awaitable)

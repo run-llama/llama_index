@@ -21,6 +21,7 @@ from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.response.schema import Response
+from llama_index.async_utils import run_sync
 
 
 class BaseQueryTransform:
@@ -34,9 +35,7 @@ class BaseQueryTransform:
     """
 
     def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
-        return asyncio.get_event_loop().run_until_complete(
-            self._arun(query_bundle, metadata)
-        )
+        return run_sync(self._arun(query_bundle, metadata))
     
     @abstractmethod
     async def _arun(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
@@ -47,9 +46,7 @@ class BaseQueryTransform:
         query_bundle_or_str: QueryType,
         metadata: Optional[Dict] = None,
     ) -> QueryBundle:
-        return asyncio.get_event_loop().run_until_complete(
-            self.arun(query_bundle_or_str, metadata=metadata)
-        )
+        return run_sync(self._arun(query_bundle_or_str, metadata=metadata))
 
     async def arun(
         self,

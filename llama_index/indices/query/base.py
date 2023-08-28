@@ -9,6 +9,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
+from llama_index.async_utils import run_sync
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,7 @@ class BaseQueryEngine(ABC):
         self.callback_manager = callback_manager or CallbackManager([])
 
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
-        return asyncio.get_event_loop().run_until_complete(
-            self.aquery(str_or_query_bundle)
-        )
+        return run_sync(self.aquery(str_or_query_bundle))
 
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         with self.callback_manager.as_trace("query"):
@@ -60,9 +59,7 @@ class BaseQueryEngine(ABC):
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        return asyncio.get_event_loop().run_until_complete(
-            self._aquery(query_bundle)
-        )
+        return run_sync(self._aquery(query_bundle))
 
     @abstractmethod
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:

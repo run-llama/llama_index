@@ -15,7 +15,7 @@ class BaseNodePostprocessor(ABC):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        return run_sync(self.apostprocess_nodes, nodes, query_bundle)
+        return run_sync(self.apostprocess_nodes(nodes, query_bundle))
 
     @abstractmethod
     async def apostprocess_nodes(
