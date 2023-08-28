@@ -3,7 +3,7 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from typing import Any, Dict, List, Optional, Union
 
 try:
     from pydantic.v1 import BaseModel, Field, root_validator
