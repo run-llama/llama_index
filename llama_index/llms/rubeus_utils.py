@@ -6,7 +6,6 @@ from typing import (
     Optional,
     Union,
     Mapping,
-    TypedDict,
     Literal,
 )
 from pydantic import BaseModel
@@ -97,7 +96,7 @@ class OverrideParams(BaseModel):
     model: str
 
 
-class RetrySettings(TypedDict):
+class RetrySettings(BaseModel):
     attempts: int
     on_status_codes: list
 
