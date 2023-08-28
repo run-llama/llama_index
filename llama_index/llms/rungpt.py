@@ -230,7 +230,7 @@ class RunGptLLM(LLM):
 
         return gen()
 
-    def _message_wrapper(self, messages) -> List[Dict[str, Any]]:
+    def _message_wrapper(self, messages: Sequence[ChatMessage]) -> List[Dict[str, Any]]:
         message_list = list()
         for message in messages:
             role = message.role.value
@@ -238,7 +238,9 @@ class RunGptLLM(LLM):
             message_list.append({"role": role, "content": content})
         return message_list
 
-    def _message_unpacker(self, response_gpt) -> Tuple[ChatMessage, str]:
+    def _message_unpacker(
+        self, response_gpt: Dict[str, Any]
+    ) -> Tuple[ChatMessage, str]:
         message = response_gpt["choices"][0]["message"]
         additional_kwargs = response_gpt["usage"]
         role = message["role"]
@@ -252,7 +254,9 @@ class RunGptLLM(LLM):
         )
         return chat_message, content
 
-    def _request_pack(self, mode: str, prompt: str, **kwargs: Any) -> dict:
+    def _request_pack(
+        self, mode: str, prompt: Tuple[str, List[Dict[str, Any]]], **kwargs: Any
+    ) -> Tuple[dict, None]:
         if mode == "complete":
             return {
                 "prompt": prompt,
