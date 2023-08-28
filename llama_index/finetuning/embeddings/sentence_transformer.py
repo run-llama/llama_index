@@ -9,9 +9,11 @@ from llama_index.schema import TextNode, MetadataMode
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.base import LLM
 from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.finetuning.types import BaseEmbeddingFinetuningEngine
 from tqdm import tqdm
 import uuid
 import re
+import json
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):
@@ -20,6 +22,18 @@ class EmbeddingQAFinetuneDataset(BaseModel):
     queries: Dict[str, str]  # dict id -> query
     corpus: Dict[str, str]  # dict id -> string
     relevant_docs: Dict[str, List[str]]  # query id -> list of doc ids
+
+    def save_json(self, path: str) -> None:
+        """Save json."""
+        with open(path, "w") as f:
+            json.dump(self.dict(), f, indent=4)
+
+    @classmethod
+    def from_json(cls, path: str) -> "EmbeddingQAFinetuneDataset":
+        """Load json."""
+        with open(path, "r") as f:
+            data = json.load(f)
+        return cls(**data)
 
 
 DEFAULT_QA_GENERATE_PROMPT_TMPL = """\
@@ -73,10 +87,16 @@ def generate_qa_embedding_pairs(
             question_id = str(uuid.uuid4())
             queries[question_id] = question
             relevant_docs[question_id] = [node_id]
-    return queries, relevant_docs
+
+    # construct dataset
+    dataset = EmbeddingQAFinetuneDataset(
+        queries=queries, corpus=node_dict, relevant_docs=relevant_docs
+    )
+
+    return dataset
 
 
-class SentenceTransformersFinetuningEngine:
+class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuningEngine):
     """Sentence Transformers Finetuning Engine."""
 
     def __init__(
