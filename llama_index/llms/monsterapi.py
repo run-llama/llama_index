@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Sequence
+
 try:
     from pydantic.v1 import Field, PrivateAttr
 except ImportError:
