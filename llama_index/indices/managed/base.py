@@ -45,8 +45,8 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         )
 
     @abstractmethod
-    def insert(self, document: Document, **insert_kwargs: Any) -> None:
-        """Insert a document."""
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        """Insert a set of documents (each a node)."""
 
     @abstractmethod
     def delete_ref_doc(

@@ -175,7 +175,7 @@ class VectaraIndex(BaseManagedIndex):
             return "E_SUCCEEDED"
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
-        """Insert a document."""
+        """Insert a set of documents (each a node)."""
         for node in nodes:
             metadata = node.metadata.copy()
             metadata["framework"] = "llama_index"
@@ -188,15 +188,11 @@ class VectaraIndex(BaseManagedIndex):
             }
             self._index_doc(doc)
 
-    def insert(self, document: Document, **insert_kwargs: Any) -> None:
-        """Insert a document."""
-        self._insert(document)
-
     def add_documents(
         self, docs: Sequence[Document], allow_update: bool = True
     ) -> None:
-        for doc in docs:
-            self._insert(doc)
+        nodes = [TextNode(text=doc.text, metadata=doc.metadata) for doc in docs]
+        self._insert(nodes)
 
     def insert_file(
         self,

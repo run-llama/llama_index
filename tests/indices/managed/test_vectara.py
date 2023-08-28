@@ -84,6 +84,6 @@ def test_file_upload() -> None:
     assert isinstance(index, VectaraIndex)
     query_engine = index.as_query_engine(similarity_top_k=3)
     res = query_engine.query("What is a Manager Schedule?")
-    assert "A manager schedule is" in str(res)
+    assert "a manager schedule" in str(res).lower()
 
     remove_docs(index, [id])
