@@ -1,6 +1,23 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.11.post3] - 2023-08-27
+
+### New Features
+- AutoMergingRetriever (#7420)
+
+## [0.8.10.post1] - 2023-08-25
+
+### New Features
+- Added support for `MonsterLLM` using MonsterAPI (#7343) 
+- Support comments fields in NebulaGraphStore and int type VID (#7402)
+- Added configurable endpoint for DynamoDB (#6777)
+- Add structured answer filtering for Refine response synthesizer (#7317)
+
+### Bug Fixes / Nits
+- Use `utf-8` for json file reader (#7390)
+- Fix entity extractor initialization (#7407)
+
+## [0.8.9] - 2023-08-24
 
 ### New Features
 - Added support for FalkorDB/RedisGraph graph store (#7346)

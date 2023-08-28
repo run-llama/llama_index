@@ -49,7 +49,9 @@ def hash_string_to_rank(string: str) -> int:
     return unsigned_hash
 
 
-def prepare_subjs_param(subjs: Optional[List[str]]) -> dict:
+def prepare_subjs_param(
+    subjs: Optional[List[str]], vid_type: str = "FIXED_STRING(256)"
+) -> Dict:
     """Prepare parameters for query."""
     if subjs is None:
         return {}
@@ -57,11 +59,19 @@ def prepare_subjs_param(subjs: Optional[List[str]]) -> dict:
 
     subjs_list = []
     subjs_byte = ttypes.Value()
+
     for subj in subjs:
         if not isinstance(subj, str):
             raise TypeError(f"Subject should be str, but got {type(subj).__name__}.")
         subj_byte = ttypes.Value()
-        subj_byte.set_sVal(subj)
+        if vid_type == "INT64":
+            assert subj.isdigit(), (
+                "Subject should be a digit string in current "
+                "graph store, where vid type is INT64."
+            )
+            subj_byte.set_iVal(int(subj))
+        else:
+            subj_byte.set_sVal(subj)
         subjs_list.append(subj_byte)
     subjs_nlist = ttypes.NList(values=subjs_list)
     subjs_byte.set_lVal(subjs_nlist)
@@ -119,6 +129,8 @@ class NebulaGraphStore(GraphStore):
         if session_pool is None:
             self.init_session_pool()
 
+        self._vid_type = self._get_vid_type()
+
         self._tags = tags or ["entity"]
         self._edge_types = edge_types or ["rel"]
         self._rel_prop_names = rel_prop_names or ["predicate"]
@@ -164,6 +176,14 @@ class NebulaGraphStore(GraphStore):
         session_pool.init(seesion_pool_config)
         self._session_pool = session_pool
         return self._session_pool
+
+    def _get_vid_type(self) -> str:
+        """Get vid type."""
+        return (
+            self.execute(f"DESCRIBE SPACE {self._space_name}")
+            .column_values("Vid Type")[0]
+            .cast()
+        )
 
     def __del__(self) -> None:
         """Close NebulaGraph session pool."""
@@ -264,13 +284,21 @@ class NebulaGraphStore(GraphStore):
         Returns:
             Triplets.
         """
+        if self._vid_type == "INT64":
+            assert subj.isdigit(), (
+                "Subject should be a digit string in current "
+                "graph store, where vid type is INT64."
+            )
+            subj_field = str(int(subj))
+        else:
+            subj_field = f"{QUOTE}{subj}{QUOTE}"
         if len(self._edge_types) == 1:
             # edge_types = ["follow"]
             # rel_prop_names = ["degree"]
             # GO FROM "player100" OVER `follow``
             # YIELD `follow`.`degree`` AS rel, dst(edge) AS obj
             query = (
-                f"GO FROM {QUOTE}{subj}{QUOTE} OVER `{self._edge_types[0]}`"
+                f"GO FROM {subj_field} OVER `{self._edge_types[0]}`"
                 f"YIELD `{self._edge_types[0]}`.`{self._rel_prop_names[0]}` AS rel, "
                 f"dst(edge) AS obj"
             )
@@ -281,14 +309,14 @@ class NebulaGraphStore(GraphStore):
             # YIELD [value IN [follow.degree,serve.start_year]
             # WHERE value IS NOT EMPTY ][0] AS rel, dst(edge) AS obj
             query = (
-                f"GO FROM {QUOTE}{subj}{QUOTE} OVER "
+                f"GO FROM {subj_field} OVER "
                 f"`{'`, `'.join(self._edge_types)}` "
                 f"YIELD "
                 f"[value IN [{', '.join(self._edge_dot_rel)}] "
                 f"WHERE value IS NOT EMPTY][0] AS rel, "
                 f"dst(edge) AS obj"
             )
-        logger.debug(f"Query: {query}")
+        logger.debug(f"get()\nQuery: {query}")
         result = self.execute(query)
 
         # get raw data
@@ -428,13 +456,13 @@ class NebulaGraphStore(GraphStore):
                 f"    subj,"
                 f"    REDUCE(acc = collect(NULL), l in rels | acc + l) AS "
                 f"        flattened_rels"
-                f"RETURN"
+                f" RETURN"
                 f"  subj,"
                 f"  REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l ) AS "
                 f"      flattened_rels"
             )
-        subjs_param = prepare_subjs_param(subjs)
-        logger.debug(f"get_flat_rel_map() subjs_param: {subjs}, query: {query}")
+        subjs_param = prepare_subjs_param(subjs, self._vid_type)
+        logger.debug(f"get_flat_rel_map()\nsubjs_param: {subjs},\nquery: {query}")
         result = self.execute(query, subjs_param)
         if result is None:
             return rel_map
@@ -480,6 +508,16 @@ class NebulaGraphStore(GraphStore):
         subj = escape_str(subj)
         rel = escape_str(rel)
         obj = escape_str(obj)
+        if self._vid_type == "INT64":
+            assert all(
+                [subj.isdigit(), obj.isdigit()]
+            ), "Subject and object should be digit strings in current graph store."
+            subj_field = subj
+            obj_field = obj
+        else:
+            subj_field = f"{QUOTE}{subj}{QUOTE}"
+            obj_field = f"{QUOTE}{obj}{QUOTE}"
+        edge_field = f"{subj_field}->{obj_field}"
 
         edge_type = self._edge_types[0]
         rel_prop_name = self._rel_prop_names[0]
@@ -487,15 +525,15 @@ class NebulaGraphStore(GraphStore):
         rel_hash = hash_string_to_rank(rel)
         dml_query = (
             f"INSERT VERTEX `{entity_type}`(name) "
-            f"  VALUES {QUOTE}{subj}{QUOTE}:({QUOTE}{subj}{QUOTE});"
+            f"  VALUES {subj_field}:({QUOTE}{subj}{QUOTE});"
             f"INSERT VERTEX `{entity_type}`(name) "
-            f"  VALUES {QUOTE}{obj}{QUOTE}:({QUOTE}{obj}{QUOTE});"
+            f"  VALUES {obj_field}:({QUOTE}{obj}{QUOTE});"
             f"INSERT EDGE `{edge_type}`(`{rel_prop_name}`) "
             f"  VALUES "
-            f"{QUOTE}{subj}{QUOTE}->{QUOTE}{obj}{QUOTE}"
+            f"{edge_field}"
             f"@{rel_hash}:({QUOTE}{rel}{QUOTE});"
         )
-        logger.debug(f"upsert_triplet() DML query: {dml_query}")
+        logger.debug(f"upsert_triplet()\nDML query: {dml_query}")
         result = self.execute(dml_query)
         assert (
             result and result.is_succeeded()
@@ -515,15 +553,23 @@ class NebulaGraphStore(GraphStore):
         rel = escape_str(rel)
         obj = escape_str(obj)
 
+        if self._vid_type == "INT64":
+            assert all(
+                [subj.isdigit(), obj.isdigit()]
+            ), "Subject and object should be digit strings in current graph store."
+            subj_field = subj
+            obj_field = obj
+        else:
+            subj_field = f"{QUOTE}{subj}{QUOTE}"
+            obj_field = f"{QUOTE}{obj}{QUOTE}"
+        edge_field = f"{subj_field}->{obj_field}"
+
         # DELETE EDGE serve "player100" -> "team204"@7696463696635583936;
         edge_type = self._edge_types[0]
         # rel_prop_name = self._rel_prop_names[0]
         rel_hash = hash_string_to_rank(rel)
-        dml_query = (
-            f"DELETE EDGE `{edge_type}`"
-            f"  {QUOTE}{subj}{QUOTE}->{QUOTE}{obj}{QUOTE}@{rel_hash};"
-        )
-        logger.debug(f"delete() DML query: {dml_query}")
+        dml_query = f"DELETE EDGE `{edge_type}`" f"  {edge_field}@{rel_hash};"
+        logger.debug(f"delete()\nDML query: {dml_query}")
         result = self.execute(dml_query)
         assert (
             result and result.is_succeeded()
@@ -533,7 +579,7 @@ class NebulaGraphStore(GraphStore):
         # RETURN id(s) AS isolated
         query = (
             f"MATCH (s) "
-            f"  WHERE id(s) IN [{QUOTE}{subj}{QUOTE}, {QUOTE}{obj}{QUOTE}] "
+            f"  WHERE id(s) IN [{subj_field}, {obj_field}] "
             f"  AND NOT (s)-[]-() "
             f"RETURN id(s) AS isolated"
         )
@@ -541,8 +587,11 @@ class NebulaGraphStore(GraphStore):
         isolated = result.column_values("isolated")
         if not isolated:
             return
-        # DELETE VERTEX "player700"
-        vertex_ids = ",".join([f"{QUOTE}{v.cast()}{QUOTE}" for v in isolated])
+        # DELETE VERTEX "player700" or DELETE VERTEX 700
+        quote_field = QUOTE if self._vid_type != "INT64" else ""
+        vertex_ids = ",".join(
+            [f"{quote_field}{v.cast()}{quote_field}" for v in isolated]
+        )
         dml_query = f"DELETE VERTEX {vertex_ids};"
 
         result = self.execute(dml_query)
@@ -559,17 +608,37 @@ class NebulaGraphStore(GraphStore):
             tag_name = tag.cast()
             tag_schema = {"tag": tag_name, "properties": []}
             r = self.execute(f"DESCRIBE TAG `{tag_name}`")
-            props, types = r.column_values("Field"), r.column_values("Type")
+            props, types, comments = (
+                r.column_values("Field"),
+                r.column_values("Type"),
+                r.column_values("Comment"),
+            )
             for i in range(r.row_size()):
-                tag_schema["properties"].append((props[i].cast(), types[i].cast()))
+                # back compatible with old version of nebula-python
+                property_defination = (
+                    (props[i].cast(), types[i].cast())
+                    if comments[i].is_empty()
+                    else (props[i].cast(), types[i].cast(), comments[i].cast())
+                )
+                tag_schema["properties"].append(property_defination)
             tags_schema.append(tag_schema)
         for edge_type in self.execute("SHOW EDGES").column_values("Name"):
             edge_type_name = edge_type.cast()
             edge_schema = {"edge": edge_type_name, "properties": []}
             r = self.execute(f"DESCRIBE EDGE `{edge_type_name}`")
-            props, types = r.column_values("Field"), r.column_values("Type")
+            props, types, comments = (
+                r.column_values("Field"),
+                r.column_values("Type"),
+                r.column_values("Comment"),
+            )
             for i in range(r.row_size()):
-                edge_schema["properties"].append((props[i].cast(), types[i].cast()))
+                # back compatible with old version of nebula-python
+                property_defination = (
+                    (props[i].cast(), types[i].cast())
+                    if comments[i].is_empty()
+                    else (props[i].cast(), types[i].cast(), comments[i].cast())
+                )
+                edge_schema["properties"].append(property_defination)
             edge_types_schema.append(edge_schema)
 
             # build relationships types
@@ -598,7 +667,7 @@ class NebulaGraphStore(GraphStore):
         if self.schema and not refresh:
             return self.schema
         self.refresh_schema()
-        logger.debug(f"get_schema() schema:\n{self.schema}")
+        logger.debug(f"get_schema()\nschema: {self.schema}")
         return self.schema
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:

@@ -16,6 +16,7 @@ from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.mock import MockLLM
+from llama_index.llms.monsterapi import MonsterLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.palm import PaLM
 from llama_index.llms.predibase import PredibaseLLM
@@ -44,4 +45,5 @@ __all__ = [
     "CompletionResponseAsyncGen",
     "LLMMetadata",
     "Xinference",
+    "MonsterLLM",
 ]

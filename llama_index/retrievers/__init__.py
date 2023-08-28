@@ -21,6 +21,7 @@ from llama_index.indices.vector_store.retrievers import (
 )
 from llama_index.retrievers.transform_retriever import TransformRetriever
 from llama_index.retrievers.recursive_retriever import RecursiveRetriever
+from llama_index.retrievers.auto_merging_retriever import AutoMergingRetriever
 from llama_index.retrievers.router_retriever import RouterRetriever
 from llama_index.retrievers.bm25_retriever import BM25Retriever
 
@@ -40,6 +41,7 @@ __all__ = [
     "KeywordTableSimpleRetriever",
     "BaseRetriever",
     "RecursiveRetriever",
+    "AutoMergingRetriever",
     "RouterRetriever",
     "BM25Retriever",
 ]

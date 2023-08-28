@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, Optional, Tuple, Type, Union
+from typing import Any, Dict, Generator, Optional, Tuple, Type, Union, cast
 
 try:
     from pydantic.v1 import BaseModel
@@ -63,7 +63,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     def from_defaults(
         cls,
         output_cls: Type[Model],
-        prompt_template_str: str,
+        prompt_template_str: Optional[str] = None,
+        prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
@@ -71,18 +72,28 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     ) -> "OpenAIPydanticProgram":
         llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
 
+        if not isinstance(llm, OpenAI):
+            raise ValueError(
+                "OpenAIPydanticProgram only supports OpenAI LLMs. " f"Got: {type(llm)}"
+            )
+
         if not llm.metadata.is_function_calling_model:
             raise ValueError(
                 f"Model name {llm.metadata.model_name} does not support "
                 "function calling API. "
             )
 
-        prompt = PromptTemplate(prompt_template_str)
+        if prompt is None and prompt_template_str is None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt is not None and prompt_template_str is not None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt_template_str is not None:
+            prompt = PromptTemplate(prompt_template_str)
         function_call = function_call or _default_function_call(output_cls)
         return cls(
             output_cls=output_cls,
             llm=llm,
-            prompt=prompt,
+            prompt=cast(PromptTemplate, prompt),
             function_call=function_call,
             verbose=verbose,
         )

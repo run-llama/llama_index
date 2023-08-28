@@ -208,7 +208,7 @@ class BaseNode(BaseComponent):
         if NodeRelationship.CHILD not in self.relationships:
             return None
 
-        relation = self.relationships[NodeRelationship.PARENT]
+        relation = self.relationships[NodeRelationship.CHILD]
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
@@ -365,6 +365,16 @@ class IndexNode(TextNode):
 class NodeWithScore(BaseComponent):
     node: BaseNode
     score: Optional[float] = None
+
+    def get_score(self, raise_error: bool = False) -> float:
+        """Get score."""
+        if self.score is None:
+            if raise_error:
+                raise ValueError("Score not set.")
+            else:
+                return 0.0
+        else:
+            return self.score
 
 
 # Document Classes for Readers
