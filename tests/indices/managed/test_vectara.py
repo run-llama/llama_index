@@ -1,11 +1,9 @@
-from typing import List, Any, Dict, Union, Tuple
-from hashlib import md5
+from typing import List, Tuple
 
 import pytest
 
 from llama_index.indices.managed.vectara.base import VectaraIndex
 from llama_index.schema import Document
-from llama_index.indices.query.schema import QueryBundle
 
 
 def get_docs() -> Tuple[List[Document], List[str]]:
@@ -44,7 +42,7 @@ def test_simple_query() -> None:
     docs, ids = get_docs()
     try:
         index = VectaraIndex.from_documents(docs)
-    except ValueError as e:
+    except ValueError:
         pytest.skip("Missing Vectara credentials, skipping test")
 
     assert isinstance(index, VectaraIndex)
@@ -60,7 +58,7 @@ def test_with_filter_query() -> None:
     docs, ids = get_docs()
     try:
         index = VectaraIndex.from_documents(docs)
-    except ValueError as e:
+    except ValueError:
         pytest.skip("Missing Vectara credentials, skipping test")
 
     assert isinstance(index, VectaraIndex)
@@ -75,7 +73,7 @@ def test_with_filter_query() -> None:
 def test_file_upload() -> None:
     try:
         index = VectaraIndex()
-    except ValueError as e:
+    except ValueError:
         pytest.skip("Missing Vectara credentials, skipping test")
 
     file_path = "docs/examples/data/paul_graham/paul_graham_essay.txt"
