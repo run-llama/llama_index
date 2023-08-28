@@ -77,6 +77,11 @@ class MetadataExtractor(BaseExtractor):
         default=True, description="Whether to process nodes in place."
     )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MetadataExtractor"
+
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract metadata from a document.
 
@@ -193,6 +198,11 @@ class TitleExtractor(MetadataFeatureExtractor):
             **kwargs,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "TitleExtractor"
+
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         nodes_to_extract_title: List[BaseNode] = []
         for node in nodes:
@@ -262,6 +272,11 @@ class KeywordExtractor(MetadataFeatureExtractor):
             llm_predictor = LLMPredictor()
 
         super().__init__(llm_predictor=llm_predictor, keywords=keywords, **kwargs)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "KeywordExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
@@ -351,6 +366,11 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
             **kwargs,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "QuestionsAnsweredExtractor"
+
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
         nodes_queue = get_tqdm_iterable(
@@ -436,6 +456,11 @@ class SummaryExtractor(MetadataFeatureExtractor):
             prompt_template=prompt_template,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "SummaryExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         if not all([isinstance(node, TextNode) for node in nodes]):
@@ -584,6 +609,11 @@ class EntityExtractor(MetadataFeatureExtractor):
             entity_map=base_entity_map,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "EntityExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         # Extract node-level entity metadata

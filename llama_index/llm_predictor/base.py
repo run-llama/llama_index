@@ -98,6 +98,11 @@ class LLMPredictor(BaseLLMPredictor):
             system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "LLMPredictor"
+
     @property
     def llm(self) -> LLM:
         """Get LLM."""

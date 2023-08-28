@@ -21,6 +21,11 @@ class MockEmbedding(BaseEmbedding):
         """Init params."""
         super().__init__(embed_dim=embed_dim, **kwargs)
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MockEmbedding"
+
     def _get_vector(self) -> List[float]:
         return [0.5] * self.embed_dim
 

@@ -17,11 +17,11 @@ def load_parser(
     if parser_name is None:
         raise ValueError("Parser loading requires a class_name")
 
-    if parser_name == SimpleNodeParser.__name__:
+    if parser_name == SimpleNodeParser.class_name():
         return SimpleNodeParser.from_dict(
             data, text_splitter=text_splitter, metadata_extractor=metadata_extractor
         )
-    elif parser_name == SentenceWindowNodeParser.__name__:
+    elif parser_name == SentenceWindowNodeParser.class_name():
         assert isinstance(text_splitter, (type(None), SentenceSplitter))
         return SentenceWindowNodeParser.from_dict(
             data, sentence_splitter=text_splitter, metadata_extractor=metadata_extractor
