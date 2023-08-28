@@ -8,10 +8,8 @@ from typing import (
     Mapping,
     TypedDict,
     Literal,
-    TypeVar,
 )
 from pydantic import BaseModel
-from llama_index.llms.base import ChatMessage
 
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for Portkey.
@@ -85,14 +83,14 @@ class RubeusApiPaths(Enum):
 class Options(BaseModel):
     method: str
     url: str
-    params: Mapping[str, str] | None
-    headers: Mapping[str, str] | None
-    max_retries: int
-    timeout: Union[float, None]
+    params: Optional[Mapping[str, str]]
+    headers: Optional[Mapping[str, str]]
+    max_retries: Optional[int]
+    timeout: Optional[Union[float, None]]
     # stringified json
-    data: Mapping[str, Any]
+    data: Optional[Mapping[str, Any]]
     # json structure
-    json_body: Mapping[str, Any]
+    json_body: Optional[Mapping[str, Any]]
 
 
 class OverrideParams(BaseModel):
@@ -140,18 +138,19 @@ def remove_empty_values(data: Dict[str, Any]) -> Dict[str, Any]:
     elif isinstance(data, list):
         cleaned_list = []
 
-        for item in data:
+        for item in data:  # type: ignore
             cleaned_item = remove_empty_values(item)
             if cleaned_item is not None and cleaned_item != "":
                 cleaned_list.append(cleaned_item)
-        return cleaned_list
+        return cleaned_list  # type: ignore
     else:
         return data
 
 
 class LLMBase(BaseModel):
     """
-    provider (Optional[ProviderTypes]): The LLM provider to be used for the Portkey integration.
+    provider (Optional[ProviderTypes]): The LLM provider to be used for the Portkey
+    integration.
         Eg: openai, anthropic etc.
         NOTE: Check the ProviderTypes to see the supported list of LLMs.
     model (str): The name of the language model to use (default: "gpt-3.5-turbo").
@@ -162,13 +161,14 @@ class LLMBase(BaseModel):
     cache_status (Optional[RubeusCacheType]): The type of cache to use (default: "").
         If cache_status is set, then cache is automatically set to True
     cache (Optional[bool]): Whether to use caching (default: False).
-    metadata (Optional[Dict[str, Any]]): Metadata associated with the request (default: {}).
+    metadata (Optional[Dict[str, Any]]): Metadata associated with the request
+    (default: {}).
     weight (Optional[float]): The weight of the LLM in the ensemble (default: 1.0).
     """
 
     prompt: Optional[str] = None
     messages: Optional[List[Message]] = None
-    provider: ProviderTypes | ProviderTypesLiteral
+    provider: Union[ProviderTypes, ProviderTypesLiteral]
     model: str
     model_api_key: str
     temperature: Optional[float] = None

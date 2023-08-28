@@ -32,6 +32,7 @@ from llama_index.llms.rubeus_utils import (
     ProviderTypesLiteral,
     RubeusCacheType,
     RubeusCacheLiteral,
+    Message,
 )
 from llama_index.llms.rubeus import Rubeus
 from llama_index.llms.rubeus_utils import LLMBase
@@ -49,13 +50,16 @@ class Portkey(CustomLLM):
         LLM (_type_): _description_
     """
 
-    mode: Optional[RubeusModes | RubeusModesLiteral] = Field(
-        description="The mode for using the Portkey integration (default: RubeusModes.PROXY)",
+    mode: Optional[Union[RubeusModes, RubeusModesLiteral]] = Field(
+        description="The mode for using the Portkey integration\
+            (default: RubeusModes.PROXY)",
         default=RubeusModes.SINGLE,
     )
 
     model: str = Field(default="gpt-3.5-turbo")
-    provider: ProviderTypes | ProviderTypesLiteral = Field(default=ProviderTypes.OPENAI)
+    provider: Union[ProviderTypes, ProviderTypesLiteral] = Field(
+        default=ProviderTypes.OPENAI
+    )
     llm: LLMBase = Field(description="LLM parameter", default_factory=dict)
 
     llms: List[LLMBase] = Field(description="LLM parameters", default_factory=list)
@@ -68,15 +72,15 @@ class Portkey(CustomLLM):
         self,
         *,
         api_key: str = "",
-        provider: ProviderTypes | ProviderTypesLiteral = ProviderTypes.OPENAI,
-        mode: Optional[RubeusModes | RubeusModesLiteral] = RubeusModes.SINGLE,
+        provider: Union[ProviderTypes, ProviderTypesLiteral] = ProviderTypes.OPENAI,
+        mode: Optional[Union[RubeusModes, RubeusModesLiteral]] = RubeusModes.SINGLE,
         model: str = "gpt-3.5-turbo",
         model_api_key: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         max_retries: int = 5,
         trace_id: Optional[str] = "",
-        cache_status: Optional[RubeusCacheType | RubeusCacheLiteral] = None,
+        cache_status: Optional[Union[RubeusCacheType, RubeusCacheLiteral]] = None,
         cache: Optional[bool] = False,
         metadata: Optional[Dict[str, Any]] = {},
         weight: Optional[float] = 1.0,
@@ -92,23 +96,32 @@ class Portkey(CustomLLM):
             provider (Optional[ProviderTypes]): The LLM provider to be used for the
                 Portkey integration.
                 Eg: openai, anthropic etc.
-                NOTE: Check the ProviderTypes to see the supported list of LLMs.
-            model (str): The name of the language model to use (default: "gpt-3.5-turbo").
+                NOTE: Check the ProviderTypes to see the supported list
+                of LLMs.
+            model (str): The name of the language model to use
+            (default: "gpt-3.5-turbo").
             model_api_key (Optional[str]): The api key of the provider being used.
                 Eg: api key of openai.
-            temperature (float): The temperature parameter for text generation (default: 0.1).
-            max_tokens (Optional[int]): The maximum number of tokens in the generated text.
-            max_retries (int): The maximum number of retries for failed requests (default: 5).
+            temperature (float): The temperature parameter for text generation
+            (default: 0.1).
+            max_tokens (Optional[int]): The maximum number of tokens in the generated
+            text.
+            max_retries (int): The maximum number of retries for failed requests
+            (default: 5).
             trace_id (Optional[str]): A unique identifier for tracing requests.
-            cache_status (Optional[RubeusCacheType]): The type of cache to use (default: "").
+            cache_status (Optional[RubeusCacheType]): The type of cache to use
+            (default: "").
                 If cache_status is set, then cache is automatically set to True
             cache (Optional[bool]): Whether to use caching (default: False).
-            metadata (Optional[Dict[str, Any]]): Metadata associated with the request (default: {}).
-            weight (Optional[float]): The weight of the LLM in the ensemble (default: 1.0).
+            metadata (Optional[Dict[str, Any]]): Metadata associated with the
+            request (default: {}).
+            weight (Optional[float]): The weight of the LLM in the ensemble
+            (default: 1.0).
             **kwargs (Any): Additional keyword arguments.
 
         Raises:
-            ValueError: If neither 'llm' nor 'llms' are provided during Portkey initialization.
+            ValueError: If neither 'llm' nor 'llms' are provided during
+            Portkey initialization.
         """
         self._client = Rubeus(api_key=api_key)
         self._portkey_response = None
@@ -137,8 +150,8 @@ class Portkey(CustomLLM):
 
     def add_llms(self, llm_params: Union[LLMBase, List[LLMBase]]) -> "Portkey":
         """
-        Adds the specified LLM parameters to the list of LLMs. This may be used for fallbacks or
-        load-balancing as specified in the mode.
+        Adds the specified LLM parameters to the list of LLMs. This may be used for
+        fallbacks or load-balancing as specified in the mode.
 
         Args:
             llm_params (Union[LLMBase, List[LLMBase]]): A single LLM parameter set or
@@ -239,9 +252,12 @@ class Portkey(CustomLLM):
             response = self._client.chat_completion.with_loadbalancing(self.llms)
             self.llm = self._get_llm(response)
         else:
+            messages_input = [
+                Message(role=i.role.value, content=i.content or "") for i in messages
+            ]
             response = self._client.chat_completion.create(
-                messages=messages_dict, **kwargs
-            )  # type: ignore
+                messages=messages_input, **kwargs
+            )
 
         message = response.choices[0]["message"]
         raw = response.raw_body
@@ -265,7 +281,8 @@ class Portkey(CustomLLM):
         """Check if a given model is a chat-based language model.
 
         Returns:
-            bool: True if the provided model is a chat-based language model, False otherwise.
+            bool: True if the provided model is a chat-based language model,
+            False otherwise.
         """
         return is_chat_model(self.model)
 

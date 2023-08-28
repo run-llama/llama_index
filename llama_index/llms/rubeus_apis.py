@@ -1,5 +1,4 @@
 from typing import Optional, Union, List, Dict, Any, cast
-import httpx
 
 from llama_index.llms.rubeus_utils import (
     DEFAULT_MAX_RETRIES,
@@ -39,7 +38,7 @@ class Completions(APIResource):
         prompt: str = "",
         timeout: Union[float, None] = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
-        provider: ProviderTypes | ProviderTypesLiteral = ProviderTypes.OPENAI,
+        provider: Union[ProviderTypes, ProviderTypesLiteral] = ProviderTypes.OPENAI,
         model: str = "gpt-3.5-turbo",
         model_api_key: str = "",
         temperature: float = 0.1,

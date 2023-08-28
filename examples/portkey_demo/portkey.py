@@ -10,7 +10,7 @@ openai_llm = LLMBase(
     model="gpt-3.5-turbo",
     model_api_key="",
 )
-llm = Portkey(mode="fallback", api_key="x2trk").add_llms(llm_params=[openai_llm])
+llm = Portkey(mode="fallback", api_key="").add_llms(llm_params=[openai_llm])
 
 messages = [
     ChatMessage(role="system", content="You are a pirate with a colorful personality"),

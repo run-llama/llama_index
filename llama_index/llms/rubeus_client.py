@@ -25,7 +25,7 @@ class APIClient:
         api_key: str,
         timeout: Union[float, None],
         max_retries: int = DEFAULT_MAX_RETRIES,
-        custom_headers: Mapping[str, str] | None = None,
+        custom_headers: Optional[Mapping[str, str]] = None,
         custom_query: Optional[Mapping[str, object]],
         custom_params: Optional[Mapping[str, str]] = None,
     ) -> None:
@@ -41,7 +41,7 @@ class APIClient:
         )
 
     @property
-    def custom_auth(self) -> httpx.Auth | None:
+    def custom_auth(self) -> Optional[httpx.Auth]:
         return None
 
     def post(
@@ -121,9 +121,9 @@ class APIClient:
 
     def __exit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc: BaseException | None,
-        exc_tb: TracebackType | None,
+        exc_type: Optional[type[BaseException]],
+        exc: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         self.close()
 

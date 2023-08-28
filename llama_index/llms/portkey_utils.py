@@ -4,7 +4,7 @@ Utility Tools for the Portkey Class
 This file module contains a collection of utility functions designed to enhance
 the functionality and usability of the Portkey class
 """
-from typing import Dict, Any, List
+from typing import List
 from enum import Enum
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
@@ -59,7 +59,8 @@ def is_chat_model(model: str) -> bool:
         model (str): The name or identifier of the model to be checked.
 
     Returns:
-        bool: True if the provided model is a chat-based language model, False otherwise.
+        bool: True if the provided model is a chat-based language model,
+        False otherwise.
     """
     return model in CHAT_MODELS
 
@@ -83,7 +84,8 @@ def generate_llm_metadata(llm: LLMBase) -> LLMMetadata:
             model name.
 
     Raises:
-        ValueError: If the provided 'llm' is not an instance of llama_index.llms.base.LLM.
+        ValueError: If the provided 'llm' is not an instance of
+        llama_index.llms.base.LLM.
     """
     # if not isinstance(llm, LLM):
     #     raise ValueError("llm must be an instance of llama_index.llms.base.LLM")

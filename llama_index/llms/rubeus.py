@@ -1,11 +1,10 @@
 """Rubeus implementation."""
 import os
-from typing import Optional, Union, Mapping, Dict, Any
+from typing import Optional, Union, Mapping, Any
 from llama_index.llms.rubeus_utils import (
     MISSING_API_KEY_ERROR_MESSAGE,
     DEFAULT_MAX_RETRIES,
     DEFAULT_TIMEOUT,
-    Params,
 )
 from llama_index.llms.rubeus_client import APIClient
 from . import rubeus_apis
@@ -24,7 +23,7 @@ class Rubeus(APIClient):
         base_url: Optional[str] = None,
         timeout: Union[float, None] = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
-        default_headers: Mapping[str, str] | None = None,
+        default_headers: Optional[Mapping[str, str]] = None,
         default_query: Optional[Mapping[str, object]] = None,
         default_params: Optional[Mapping[str, str]] = None,
     ) -> None:
