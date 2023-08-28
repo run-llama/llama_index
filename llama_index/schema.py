@@ -60,16 +60,6 @@ class RelatedNodeInfo(BaseModel):
 RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
 
 
-# Node classes for indexes
-class NodeRelationshipDict(TypedDict):
-    """Node relationship dict."""
-    source: Optional[RelatedNodeType]
-    previous: Optional[RelatedNodeType]
-    next: Optional[RelatedNodeType]
-    parent: Optional[RelatedNodeType]
-    child: Optional[List[RelatedNodeType]]
-
-
 class BaseNode(BaseModel):
     """Base node Object.
 
@@ -107,7 +97,7 @@ class BaseNode(BaseModel):
         default_factory=list,
         description="Metadata keys that are exluded from text for the LLM.",
     )
-    relationships: NodeRelationshipDict = Field(
+    relationships: Dict[NodeRelationship, Union[str, List[str]]] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
