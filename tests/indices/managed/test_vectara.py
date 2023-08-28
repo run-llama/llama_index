@@ -4,8 +4,8 @@ from hashlib import md5
 import pytest
 
 from llama_index.indices.managed.vectara.base import VectaraIndex
-from llama_index.indices.managed.vectara.retriever import VectaraQuery
 from llama_index.schema import Document
+from llama_index.indices.query.schema import QueryBundle
 
 
 def get_docs() -> Tuple[List[Document], List[str]]:
@@ -48,9 +48,8 @@ def test_simple_query() -> None:
         pytest.skip("Missing Vectara credentials, skipping test")
 
     assert isinstance(index, VectaraIndex)
-    q = VectaraQuery(query_str="how will I look?", similarity_top_k=1)
-    qe = index.as_retriever()
-    res = qe.retrieve(q)
+    qe = index.as_retriever(similarity_top_k=1)
+    res = qe.retrieve("how will I look?")
     assert len(res) == 1
     assert res[0].node.text == docs[2].text
 
@@ -65,13 +64,8 @@ def test_with_filter_query() -> None:
         pytest.skip("Missing Vectara credentials, skipping test")
 
     assert isinstance(index, VectaraIndex)
-    q = VectaraQuery(
-        query_str="how will I look?",
-        similarity_top_k=1,
-        filter="doc.test_num = '1'",
-    )
-    qe = index.as_retriever()
-    res = qe.retrieve(q)
+    qe = index.as_retriever(similarity_top_k=1, filter="doc.test_num = '1'")
+    res = qe.retrieve("how will I look?")
     assert len(res) == 1
     assert res[0].node.text == docs[0].text
 
@@ -88,10 +82,8 @@ def test_file_upload() -> None:
     id = index.insert_file(file_path)
 
     assert isinstance(index, VectaraIndex)
-    q = VectaraQuery(query_str="What is a Manager Schedule?", similarity_top_k=3)
-
-    query_engine = index.as_query_engine()
-    res = query_engine.query(q)
+    query_engine = index.as_query_engine(similarity_top_k=3)
+    res = query_engine.query("What is a Manager Schedule?")
     assert "A manager schedule is" in str(res)
 
     remove_docs(index, [id])

@@ -13,27 +13,10 @@ from llama_index.indices.managed.base import ManagedIndex
 from dataclasses import dataclass
 from llama_index.schema import BaseNode
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.indices.query.schema import QueryBundle
+
 
 _logger = logging.getLogger(__name__)
-
-
-@dataclass
-class VectaraQuery:
-    """Vectara query."""
-
-    query_str: Optional[str] = None
-    similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K
-
-    # For Hybrid search: 0 = neural search only, 1 = keyword match only. In between values are a linear interpolation
-    # see https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching for more details
-    lambda_val: Optional[float] = None
-
-    # define how many sentences before/after the matched sentence to return in the node
-    n_sentences_before: int = 2
-    n_sentences_after: int = 2
-
-    # metadata filters
-    filter: Optional[str] = None
 
 
 @dataclass
@@ -84,62 +67,43 @@ class VectaraRetriever(BaseRetriever):
 
     def _retrieve(
         self,
-        query: VectaraQuery,
+        query_bundle: QueryBundle,
         **kwargs: Any,
     ) -> List[NodeWithScore]:
         """Query Vectara index to get for top k most similar nodes.
 
         Args:
-            query: VectaraQuery which includes the query_str, similarity_top_k, alpha (for hybrid search) and filters
+            query: Query Bundle
         """
 
         similarity_top_k = (
-            query.similarity_top_k
-            if query.similarity_top_k
-            else self._similarity_top_k
+            self._similarity_top_k
             if self._similarity_top_k
             else DEFAULT_SIMILARITY_TOP_K
         )
-        n_sentences_before = (
-            query.n_sentences_before
-            if query.n_sentences_before
-            else self._n_sentences_before
-            if self._n_sentences_before
-            else 2
-        )
-        n_sentences_after = (
-            query.n_sentences_after
-            if query.n_sentences_after
-            else self._n_sentences_after
-            if self._n_sentences_after
-            else 2
-        )
-        lambda_val = (
-            query.lambda_val
-            if query.lambda_val
-            else self._lambda_val
-            if self._lambda_val
-            else 0.025
-        )
+        n_sentences_before = self._n_sentences_before if self._n_sentences_before else 2
+        n_sentences_after = self._n_sentences_after if self._n_sentences_after else 2
+        lambda_val = self._lambda_val if self._lambda_val else 0.025
+        corpus_key = {
+            "customer_id": self._index._vectara_customer_id,
+            "corpus_id": self._index._vectara_corpus_id,
+            "lexical_interpolation_config": {"lambda": lambda_val},
+        }
+        if self._filter:
+            corpus_key["metadataFilter"] = self._filter if self._filter else None
+
         data = json.dumps(
             {
                 "query": [
                     {
-                        "query": query.query_str,
+                        "query": query_bundle.query_str,
                         "start": 0,
                         "num_results": similarity_top_k,
                         "context_config": {
                             "sentences_before": n_sentences_before,
                             "sentences_after": n_sentences_after,
                         },
-                        "corpus_key": [
-                            {
-                                "customer_id": self._index._vectara_customer_id,
-                                "corpus_id": self._index._vectara_corpus_id,
-                                "metadataFilter": query.filter,
-                                "lexical_interpolation_config": {"lambda": lambda_val},
-                            }
-                        ],
+                        "corpus_key": [corpus_key],
                     }
                 ]
             }
