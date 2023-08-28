@@ -3,7 +3,7 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 try:
     from pydantic.v1 import BaseModel, Field, root_validator
@@ -61,6 +61,13 @@ RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
 
 
 # Node classes for indexes
+class NodeRelationshipDict(TypedDict):
+    """Node relationship dict."""
+    source: Optional[RelatedNodeType]
+    previous: Optional[RelatedNodeType]
+    next: Optional[RelatedNodeType]
+    parent: Optional[RelatedNodeType]
+    child: Optional[List[RelatedNodeType]]
 
 
 class BaseNode(BaseModel):
@@ -100,7 +107,7 @@ class BaseNode(BaseModel):
         default_factory=list,
         description="Metadata keys that are exluded from text for the LLM.",
     )
-    relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
+    relationships: NodeRelationshipDict = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
@@ -181,7 +188,7 @@ class BaseNode(BaseModel):
         if NodeRelationship.CHILD not in self.relationships:
             return None
 
-        relation = self.relationships[NodeRelationship.PARENT]
+        relation = self.relationships[NodeRelationship.CHILD]
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
