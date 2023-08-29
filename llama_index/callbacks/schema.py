@@ -36,6 +36,10 @@ class CBEventType(str, Enum):
     SYNTHESIZE = "synthesize"
     TREE = "tree"
     SUB_QUESTION = "sub_question"
+    TEMPLATING = "templating"
+    FUNCTION_CALL = "function_call"
+    RERANKING = "reranking"
+    EXCEPTION = "exception"
 
 
 class EventPayload(str, Enum):
@@ -46,10 +50,21 @@ class EventPayload(str, Enum):
     MESSAGES = "messages"  # list of messages sent to LLM
     COMPLETION = "completion"  # completion from LLM
     RESPONSE = "response"  # message response from LLM
-    TEMPLATE = "template"  # template used in LLM call
     QUERY_STR = "query_str"  # query used for query engine
     SUB_QUESTION = "sub_question"  # a sub question & answer + sources
     EMBEDDINGS = "embeddings"  # list of embeddings
+    TOP_K = "top_k"  # top k nodes retrieved
+    ADDITIONAL_KWARGS = "additional_kwargs"  # additional kwargs for event call
+    SERIALIZED = "serialized"  # serialized object for event caller
+    FUNCTION_CALL = "function_call"  # function call for the LLM
+    FUNCTION_OUTPUT = "function_call_response"  # function call output
+    TOOL = "tool"  # tool used in LLM call
+    MODEL_NAME = "model_name"  # model name used in an event
+    TEMPLATE = "template"  # template used in LLM call
+    TEMPLATE_VARS = "template_vars"  # template variables used in LLM call
+    SYSTEM_PROMPT = "system_prompt"  # system prompt used in LLM call
+    QUERY_WRAPPER_PROMPT = "query_wrapper_prompt"  # query wrapper prompt used in LLM
+    EXCEPTION = "exception"  # exception raised in an event
 
 
 # events that will never have children events

@@ -87,11 +87,6 @@ class SentenceWindowNodeParser(NodeParser):
             metadata_extractor=metadata_extractor,
         )
 
-    @property
-    def text_splitter(self) -> Callable[[str], List[str]]:
-        """Get text splitter."""
-        return self.sentence_splitter
-
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""

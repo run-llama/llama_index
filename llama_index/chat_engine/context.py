@@ -49,7 +49,10 @@ class ContextChatEngine(BaseChatEngine):
         self._prefix_messages = prefix_messages
         self._node_postprocessors = node_postprocessors or []
         self._context_template = context_template or DEFAULT_CONTEXT_TEMPALTE
+
         self.callback_manager = callback_manager or CallbackManager([])
+        for node_postprocessor in self._node_postprocessors:
+            node_postprocessor.callback_manager = self.callback_manager
 
     @classmethod
     def from_defaults(
