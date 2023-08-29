@@ -62,6 +62,11 @@ class MarvinEntityExtractor(MetadataFeatureExtractor):
             marvin_model=marvin_model, llm_model_string=llm_model_string, **kwargs
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MarvinEntityExtractor"
+    
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
         for node in nodes:
