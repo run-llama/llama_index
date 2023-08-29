@@ -11,7 +11,6 @@ from llama_index.indices.utils import (
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.schema import NodeWithScore
-import asyncio
 
 
 class LLMRerank(BaseNodePostprocessor):

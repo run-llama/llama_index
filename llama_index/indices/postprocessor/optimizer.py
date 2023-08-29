@@ -77,19 +77,19 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         if query_bundle is None:
             return nodes
 
-        for node_idx in range(len(nodes)):
-            text = nodes[node_idx].node.get_content(metadata_mode=MetadataMode.LLM)
+        for node_w_score in nodes:
+            text = node_w_score.get_content(metadata_mode=MetadataMode.LLM)
 
             split_text = self._tokenizer_fn(text)
 
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
-                    self.embed_model.get_agg_embedding_from_queries(
+                    await self.embed_model.aget_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
                 )
 
-            text_embeddings = self.embed_model._get_text_embeddings(split_text)
+            text_embeddings = await self.embed_model._aget_text_embeddings(split_text)
 
             num_top_k = None
             threshold = None
@@ -119,6 +119,6 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                         f"{idx}. {top_sentences[idx]} ({top_similarities[idx]})"
                     )
 
-            nodes[node_idx].node.set_content(" ".join(top_sentences))
+            node_w_score.node.set_content(" ".join(top_sentences))
 
         return nodes
