@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union, cast
 
 try:
     from pydantic.v1 import BaseModel
@@ -38,20 +38,26 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def from_defaults(
         cls,
         output_parser: PydanticOutputParser,
-        prompt_template_str: str,
+        prompt_template_str: Optional[str] = None,
+        prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
         llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
-        prompt = PromptTemplate(prompt_template_str)
+        if prompt is None and prompt_template_str is None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt is not None and prompt_template_str is not None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt_template_str is not None:
+            prompt = PromptTemplate(prompt_template_str)
         function_call = function_call or {
             "name": output_parser.output_cls.schema()["title"]
         }
         return cls(
             output_parser,
-            prompt=prompt,
+            prompt=cast(PromptTemplate, prompt),
             llm=llm,
             function_call=function_call,
             verbose=verbose,
@@ -67,11 +73,11 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         prompt_with_parse_instrs_tmpl = self._output_parser.format(
-            self._prompt.template
+            self._prompt.format(**kwargs)
         )
         prompt_with_parse_instrs = PromptTemplate(prompt_with_parse_instrs_tmpl)
 
-        formatted_prompt = prompt_with_parse_instrs.format(**kwargs)
+        formatted_prompt = prompt_with_parse_instrs.format()
 
         response = self._llm.complete(formatted_prompt)
         raw_output = response.text

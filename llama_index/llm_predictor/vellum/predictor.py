@@ -54,6 +54,11 @@ class VellumPredictor(BaseLLMPredictor):
 
         super().__init__(callback_manager=callback_manager)
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "VellumPredictor"
+
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""

@@ -7,10 +7,6 @@ from contextlib import contextmanager
 from typing import Optional, List, Any, Set, Tuple, Dict
 
 from llama_index.indices.service_context import ServiceContext
-from llama_index.response_synthesizers import (
-    ResponseMode,
-    get_response_synthesizer,
-)
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 
@@ -166,6 +162,12 @@ class EvaporateExtractor:
         self, nodes: List[BaseNode], field: str, expected_output: Optional[Any] = None
     ) -> str:
         """Extract function from nodes."""
+        # avoid circular import
+        from llama_index.response_synthesizers import (
+            ResponseMode,
+            get_response_synthesizer,
+        )
+
         function_field = get_function_field_from_attribute(field)
         # TODO: replace with new response synthesis module
 

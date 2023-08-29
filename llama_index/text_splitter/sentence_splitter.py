@@ -45,11 +45,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         default=SENTENCE_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
     )
-    seperator: str = Field(
-        default=" ", description="Default seperator for splitting into words"
+    separator: str = Field(
+        default=" ", description="Default separator for splitting into words"
     )
-    paragraph_seperator: List = Field(
-        default=DEFUALT_PARAGRAPH_SEP, description="Seperator between paragraphs."
+    paragraph_separator: str = Field(
+        default=DEFUALT_PARAGRAPH_SEP, description="Separator between paragraphs."
     )
     secondary_chunking_regex: str = Field(
         default=CHUNKING_REGEX, description="Backup regex for splitting into sentences."
@@ -116,6 +116,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             callback_manager=callback_manager,
             tokenizer=tokenizer,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "SentenceSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         metadata_len = len(self.tokenizer(metadata_str))

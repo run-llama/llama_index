@@ -1,9 +1,34 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.12] - 2023-08-28
+
+### New Features
+
+- add openai finetuning class (#7442)
+- Service Context to/from dict (#7395)
+- add finetuning guide (#7429)
+
+### Smaller Features / Nits / Bug Fixes
+- Add example how to run FalkorDB docker (#7441)
+- Update root.md to use get_response_synthesizer expected type. (#7437) 
+- Bugfix MonsterAPI Pydantic version v2/v1 support. Doc Update (#7432)
+
+## [0.8.11.post3] - 2023-08-27
+
+### New Features
+- AutoMergingRetriever (#7420)
+
+## [0.8.10.post1] - 2023-08-25
+
+### New Features
+- Added support for `MonsterLLM` using MonsterAPI (#7343) 
+- Support comments fields in NebulaGraphStore and int type VID (#7402)
+- Added configurable endpoint for DynamoDB (#6777)
+- Add structured answer filtering for Refine response synthesizer (#7317)
 
 ### Bug Fixes / Nits
 - Use `utf-8` for json file reader (#7390)
+- Fix entity extractor initialization (#7407)
 
 ## [0.8.9] - 2023-08-24
 

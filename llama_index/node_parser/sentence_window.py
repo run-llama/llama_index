@@ -88,6 +88,16 @@ class SentenceWindowNodeParser(NodeParser):
         )
 
     @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "SentenceWindowNodeParser"
+
+    @property
+    def text_splitter(self) -> Callable[[str], List[str]]:
+        """Get text splitter."""
+        return self.sentence_splitter
+
+    @classmethod
     def from_defaults(
         cls,
         sentence_splitter: Optional[Callable[[str], List[str]]] = None,
@@ -140,7 +150,7 @@ class SentenceWindowNodeParser(NodeParser):
                 all_nodes.extend(nodes)
 
             if self.metadata_extractor is not None:
-                self.metadata_extractor.process_nodes(all_nodes)
+                all_nodes = self.metadata_extractor.process_nodes(all_nodes)
 
             event.on_end(payload={EventPayload.NODES: all_nodes})
 

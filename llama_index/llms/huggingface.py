@@ -167,6 +167,11 @@ class HuggingFaceLLM(CustomLLM):
             callback_manager=callback_manager,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "HuggingFace_LLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
