@@ -144,3 +144,10 @@ data_generator = DatasetGenerator.from_documents(documents)
 
 eval_questions = data_generator.generate_questions_from_nodes()
 ```
+
+## Integrations
+
+We also integrate with community evaluation tools.
+
+- [DeepEval](../../../community/integrations/deepeval.md)
+- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/integrations/llamaindex.ipynb)
