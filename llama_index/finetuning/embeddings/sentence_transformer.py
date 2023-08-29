@@ -67,7 +67,7 @@ def generate_qa_embedding_pairs(
         for node in nodes
     }
 
-    llm = OpenAI(model="gpt-3.5-turbo")
+    llm = llm or OpenAI(model="gpt-3.5-turbo")
 
     queries = {}
     relevant_docs = {}
