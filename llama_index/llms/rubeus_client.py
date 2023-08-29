@@ -69,6 +69,7 @@ class APIClient:
         }
         opts.json_body = remove_empty_values(json_body)
         opts.headers = self._custom_headers or None
+        opts.params = {}
         return opts
 
     def _config(self, mode: str, body: List[Body]) -> Config:
@@ -157,8 +158,9 @@ class APIClient:
             raise exceptions.APITimeoutError(request=request) from err
         except Exception as err:
             raise exceptions.APIConnectionError(request=request) from err
+        
         response = cast(
-            RubeusResponse, BaseModel.construct(**res.json(), raw_body=res.json())
+            RubeusResponse, RubeusResponse.construct(**res.json(), raw_body=res.json())
         )
         return response
 

@@ -121,8 +121,8 @@ def get_llm(response: RubeusResponse, llms: List[LLMBase]) -> LLMBase:
         if model == response.model:
             fallback_llm = llm
             break
-    if fallback_llm is None:
-        raise ValueError("Failed to get the fallback LLM")
+    # if fallback_llm is None:
+    #     raise ValueError("Failed to get the fallback LLM")
     return fallback_llm
 
 

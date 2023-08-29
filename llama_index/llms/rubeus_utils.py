@@ -82,14 +82,14 @@ class RubeusApiPaths(Enum):
 class Options(BaseModel):
     method: str
     url: str
-    params: Optional[Mapping[str, str]]
-    headers: Optional[Mapping[str, str]]
-    max_retries: Optional[int]
-    timeout: Optional[Union[float, None]]
+    params: Optional[Mapping[str, str]] = None
+    headers: Optional[Mapping[str, str]] = None
+    max_retries: Optional[int] = None
+    timeout: Optional[float] = None
     # stringified json
-    data: Optional[Mapping[str, Any]]
+    data: Optional[Mapping[str, Any]] = None
     # json structure
-    json_body: Optional[Mapping[str, Any]]
+    json_body: Optional[Mapping[str, Any]] = None
 
 
 class OverrideParams(BaseModel):
