@@ -68,6 +68,8 @@ filename_fn = lambda filename: {'file_name': filename}
 documents = SimpleDirectoryReader('./data', file_metadata=filename_fn).load_data()
 ```
 
+This functionality also exists in the `SimpleWebPageReader`.
+
 ### Customizing the id
 
 As detailed in the section [Document Management](../index/document_management.md), the doc `id_` is used to enable effecient refreshing of documents in the index. When using the `SimpleDirectoryReader`, you can automatically set the doc `id_` to be the full path to each document:
