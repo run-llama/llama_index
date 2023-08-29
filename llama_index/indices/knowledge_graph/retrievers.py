@@ -107,6 +107,8 @@ class KGTableRetriever(BaseRetriever):
         self.use_global_node_triplets = use_global_node_triplets
         self.max_knowledge_sequence = max_knowledge_sequence
         self._verbose = kwargs.get("verbose", False)
+        refresh_schema = kwargs.get("refresh_schema", False)
+        self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -283,6 +285,7 @@ class KGTableRetriever(BaseRetriever):
         rel_node_info = {
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
+            "kg_schema": self._graph_schema,
         }
         rel_info_text = "\n".join(
             [
@@ -445,6 +448,8 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self._graph_traversal_depth = graph_traversal_depth
         self._max_knowledge_sequence = max_knowledge_sequence
         self._verbose = verbose
+        refresh_schema = kwargs.get("refresh_schema", False)
+        self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
 
     def _process_entities(
         self,
@@ -666,7 +671,10 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 metadata={
                     "kg_rel_text": knowledge_sequence,
                     "kg_rel_map": rel_map,
+                    "kg_schema": self._graph_schema,
                 },
+                excluded_embed_metadata_keys=["kg_rel_map", "kg_rel_text"],
+                excluded_llm_metadata_keys=["kg_rel_map", "kg_rel_text"],
             )
         )
         return [node]
