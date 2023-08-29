@@ -1,6 +1,5 @@
 import logging
-from collections.abc import Callable
-from typing import Optional, cast
+from typing import Callable, Optional, cast, List
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
@@ -17,7 +16,7 @@ class BM25Retriever(BaseRetriever):
     def __init__(
         self,
         docstore: BaseDocumentStore,
-        tokenizer: Callable[[str], list[str]],
+        tokenizer: Callable[[str], List[str]],
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
         try:
@@ -29,7 +28,7 @@ class BM25Retriever(BaseRetriever):
         self._tokenizer = tokenizer
         self._similarity_top_k = similarity_top_k
         self._documents = cast(
-            list[Document], [doc for doc in self._docstore.docs.values()]
+            List[Document], [doc for doc in self._docstore.docs.values()]
         )
         self._corpus = [self._tokenizer(doc.text) for doc in self._documents]
 
@@ -39,7 +38,7 @@ class BM25Retriever(BaseRetriever):
     def from_defaults(
         cls,
         index: VectorStoreIndex,
-        tokenizer: Optional[Callable[[str], list[str]]] = None,
+        tokenizer: Optional[Callable[[str], List[str]]] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> "BM25Retriever":
         tokenizer = tokenizer or globals_helper.tokenizer
@@ -49,17 +48,17 @@ class BM25Retriever(BaseRetriever):
             similarity_top_k=similarity_top_k,
         )
 
-    def _get_scored_nodes(self, query: str) -> list[NodeWithScore]:
+    def _get_scored_nodes(self, query: str) -> List[NodeWithScore]:
         tokenized_query = self._tokenizer(query)
         doc_scores = self.bm25.get_scores(tokenized_query)
 
-        nodes: list[NodeWithScore] = []
+        nodes: List[NodeWithScore] = []
         for i, doc in enumerate(self._documents):
             nodes.append(NodeWithScore(node=doc, score=doc_scores[i]))
 
         return nodes
 
-    def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         if query_bundle.custom_embedding_strs or query_bundle.embedding:
             logger.warning("BM25Retriever does not support embeddings, skipping...")
 

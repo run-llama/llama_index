@@ -41,6 +41,11 @@ class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
             model_name=handle,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "GoogleUnivSentEncoderEmbedding"
+
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return self._get_embedding(query)

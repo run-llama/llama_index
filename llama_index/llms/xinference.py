@@ -118,6 +118,11 @@ class Xinference(CustomLLM):
 
         return generator, context_window, model_description
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "Xinference_llm"
+
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""

@@ -71,6 +71,11 @@ class PredibaseLLM(CustomLLM):
         except ValueError as e:
             raise ValueError("Your API key is not correct. Please try again") from e
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "PredibaseLLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
