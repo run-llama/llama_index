@@ -6,6 +6,11 @@ the functionality and usability of the Portkey class
 """
 from typing import List
 from enum import Enum
+from rubeus import (
+    LLMBase,
+    RubeusResponse,
+    ProviderTypes
+)
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.anthropic import Anthropic
@@ -18,10 +23,10 @@ from llama_index.llms.openai_utils import (
     AZURE_TURBO_MODELS,
 )
 from llama_index.llms.anthropic_utils import CLAUDE_MODELS
-from llama_index.llms.rubeus_utils import (
-    ProviderTypes,
-)
-from .rubeus_utils import LLMBase, RubeusResponse
+# from llama_index.llms.rubeus_utils import (
+#     ProviderTypes,
+# )
+# from .rubeus_utils import LLMBase, RubeusResponse
 
 DEFAULT_MODEL = "gpt-3.5-turbo"
 

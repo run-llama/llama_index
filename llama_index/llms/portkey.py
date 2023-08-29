@@ -4,6 +4,19 @@ Returns:
     _type_: _description_
 """
 from typing import Any, Optional, Sequence, Dict, Union, List
+# from rubeus import Rubeus, LLMBase
+from rubeus import (
+    Rubeus,
+    LLMBase,
+    RubeusModes,
+    RubeusResponse,
+    RubeusModesLiteral,
+    ProviderTypes,
+    ProviderTypesLiteral,
+    RubeusCacheType,
+    RubeusCacheLiteral,
+    Message,
+)
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.base import (
     ChatMessage,
@@ -24,18 +37,6 @@ from llama_index.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.rubeus_utils import (
-    RubeusModes,
-    RubeusResponse,
-    RubeusModesLiteral,
-    ProviderTypes,
-    ProviderTypesLiteral,
-    RubeusCacheType,
-    RubeusCacheLiteral,
-    Message,
-)
-from llama_index.llms.rubeus import Rubeus
-from llama_index.llms.rubeus_utils import LLMBase
 
 try:
     from pydantic.v1 import Field, PrivateAttr
