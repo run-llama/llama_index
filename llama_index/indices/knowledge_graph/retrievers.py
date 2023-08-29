@@ -385,7 +385,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         retriever_mode: Optional[str] = "keyword",
         with_nl2graphquery: bool = False,
         graph_traversal_depth: int = 2,
-        max_knowledge_sequence: int = 30,
+        max_knowledge_sequence: int = REL_TEXT_LIMIT,
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -600,7 +600,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         """Get knowledge sequence from entities."""
         # Get SubGraph from Graph Store as Knowledge Sequence
         rel_map: Optional[Dict] = self._graph_store.get_rel_map(
-            entities, self._graph_traversal_depth
+            entities, self._graph_traversal_depth, limit=self._max_knowledge_sequence
         )
         logger.debug(f"rel_map: {rel_map}")
 
@@ -613,9 +613,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         else:
             logger.info("> No knowledge sequence extracted from entities.")
             return [], None
-        # truncate knowledge sequence
-        if len(knowledge_sequence) > self._max_knowledge_sequence:
-            knowledge_sequence = knowledge_sequence[: self._max_knowledge_sequence]
 
         return knowledge_sequence, rel_map
 
@@ -626,9 +623,9 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         # Get SubGraph from Graph Store as Knowledge Sequence
         # TBD: async in graph store
         rel_map: Optional[Dict] = self._graph_store.get_rel_map(
-            entities, self._graph_traversal_depth
+            entities, self._graph_traversal_depth, limit=self._max_knowledge_sequence
         )
-        logger.debug(f"rel_map: {rel_map}")
+        logger.debug(f"rel_map from GraphStore:\n{rel_map}")
 
         # Build Knowledge Sequence
         knowledge_sequence = []
@@ -639,9 +636,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         else:
             logger.info("> No knowledge sequence extracted from entities.")
             return [], None
-        # truncate knowledge sequence
-        if len(knowledge_sequence) > self._max_knowledge_sequence:
-            knowledge_sequence = knowledge_sequence[: self._max_knowledge_sequence]
 
         return knowledge_sequence, rel_map
 
