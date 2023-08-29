@@ -91,3 +91,8 @@ class AzureOpenAI(OpenAI):
         model_kwargs.pop("model")
         model_kwargs["engine"] = self.engine
         return model_kwargs
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "azure_openai_llm"

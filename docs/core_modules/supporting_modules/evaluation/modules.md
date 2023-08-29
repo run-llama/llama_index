@@ -10,4 +10,5 @@ maxdepth: 1
 ../../../examples/evaluation/TestNYC-Evaluation.ipynb
 ../../../examples/evaluation/TestNYC-Evaluation-Query.ipynb
 ../../../examples/evaluation/QuestionGeneration.ipynb
+../../../examples/evaluation/Deepeval.ipynb
 ```

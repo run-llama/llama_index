@@ -92,6 +92,11 @@ class MonsterLLM(CustomLLM):
 
         return MonsterClient(monster_api_key), llm_models_enabled
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MonsterLLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""

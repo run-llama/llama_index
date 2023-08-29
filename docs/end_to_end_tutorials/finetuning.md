@@ -40,6 +40,14 @@ Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can t
 ---
 maxdepth: 1
 ---
+Embedding Fine-tuning Guide </examples/finetuning/embeddings/finetune_embedding.ipynb>
+```
+
+**Old**
+```{toctree}
+---
+maxdepth: 1
+---
 Embedding Fine-tuning Repo <https://github.com/run-llama/finetune-embedding>
 Embedding Fine-tuning Blog <https://medium.com/llamaindex-blog/fine-tuning-embeddings-for-rag-with-synthetic-data-e534409a3971>
 ```
@@ -51,6 +59,16 @@ We released a guide showing how to use OpenAI's finetuning endpoints to fine-tun
 We use GPT-4 to automatically generate questions from any unstructured context, and use a GPT-4 query engine pipeline to generate "ground-truth" answers. Our `OpenAIFineTuningHandler` callback automatically logs questions/answers to a dataset. 
 
 We then launch a finetuning job, and get back a distilled model. We can evaluate this model with [Ragas](https://github.com/explodinggradients/ragas) to benchmark against a naive GPT-3.5 pipeline.
+
+```{toctree}
+---
+maxdepth: 1
+---
+GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing>
+GPT-3.5 Fine-tuning Notebook </examples/finetuning/openai_fine_tuning.ipynb>
+```
+
+**Old**
 
 ```{toctree}
 ---
