@@ -5,11 +5,7 @@ from llama_index import ServiceContext
 from llama_index.llms import ChatMessage
 from llama_index.llms.portkey_utils import LLMBase, ProviderTypes
 
-openai_llm = LLMBase(
-    provider="openai",
-    model="gpt-3.5-turbo",
-    model_api_key="",
-)
+openai_llm = LLMBase(provider="openai", model="gpt-3.5-turbo")
 llm = Portkey(mode="fallback", api_key="").add_llms(llm_params=[openai_llm])
 
 messages = [
