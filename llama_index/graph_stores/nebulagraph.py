@@ -413,7 +413,7 @@ class NebulaGraphStore(GraphStore):
             f"WITH map{{`true`: '-[', `false`: '<-['}} AS arrow_l,"
             f"     map{{`true`: ']->', `false`: ']-'}} AS arrow_r,"
             f"     {self._edge_prop_map_cypher_string} AS edge_type_map "
-            f"MATCH p=(start)-[e:`{self._edge_types[0]}`*..{depth}]-() "
+            f"MATCH p=(start)-[e:`{'`|`'.join(self._edge_types)}`*..{depth}]-() "
             f"  WHERE id(start) IN $subjs "
             f"WITH start, id(start) AS vid, nodes(p) AS nodes, e AS rels,"
             f"  length(p) AS rel_count, arrow_l, arrow_r, edge_type_map "
