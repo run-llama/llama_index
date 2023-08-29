@@ -6,7 +6,7 @@ the functionality and usability of the Portkey class
 """
 from typing import List
 from enum import Enum
-from rubeus import LLMBase, ProviderTypes, RubeusResponse
+from rubeus import LLMBase, RubeusResponse
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.anthropic import Anthropic
@@ -19,10 +19,6 @@ from llama_index.llms.openai_utils import (
 )
 from llama_index.llms.anthropic_utils import CLAUDE_MODELS
 
-# from llama_index.llms.rubeus_utils import (
-#     ProviderTypes,
-# )
-# from .rubeus_utils import LLMBase, RubeusResponse
 
 DISCONTINUED_MODELS = {
     "code-davinci-002": 8001,
