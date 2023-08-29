@@ -108,7 +108,13 @@ class KGTableRetriever(BaseRetriever):
         self.max_knowledge_sequence = max_knowledge_sequence
         self._verbose = kwargs.get("verbose", False)
         refresh_schema = kwargs.get("refresh_schema", False)
-        self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
+        try:
+            self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
+        except NotImplementedError:
+            self._graph_schema = None
+        except Exception as e:
+            logger.warn(f"Failed to get graph schema: {e}")
+            self._graph_schema = None
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -285,8 +291,9 @@ class KGTableRetriever(BaseRetriever):
         rel_node_info = {
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
-            "kg_schema": self._graph_schema,
         }
+        if self._graph_schema:
+            rel_node_info["kg_schema"] = self._graph_schema
         rel_info_text = "\n".join(
             [
                 str(item)
@@ -449,7 +456,13 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self._max_knowledge_sequence = max_knowledge_sequence
         self._verbose = verbose
         refresh_schema = kwargs.get("refresh_schema", False)
-        self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
+        try:
+            self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
+        except NotImplementedError:
+            self._graph_schema = None
+        except Exception as e:
+            logger.warn(f"Failed to get graph schema: {e}")
+            self._graph_schema = None
 
     def _process_entities(
         self,
