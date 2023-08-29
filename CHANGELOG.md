@@ -1,8 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.13] - 2023-08-29
 
 ### New Features
+- Add embedding finetuning (#7452)
 - Added support for RunGPT LLM (#7401)
 - Integration guide and notebook with DeepEval (#7425)
 - Added `VectorIndex` and `VectaraRetriever` as a managed index (#7440)
