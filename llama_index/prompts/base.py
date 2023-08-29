@@ -316,7 +316,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
             lc_template = self.selector.default_prompt
 
         try:
-            return str(lc_template.template)
+            return str(lc_template.template)  # type: ignore
         except AttributeError:
             return str(lc_template)
 
