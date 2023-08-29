@@ -27,7 +27,7 @@ install_requires = [
     "typing_extensions>=4.5.0",
     "beautifulsoup4",  # hotfix for langchain 0.0.212 bug
     "nest_asyncio",
-    "rubeus==0.1.4"
+    "rubeus"
 ]
 
 setup(

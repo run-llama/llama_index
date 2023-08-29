@@ -248,11 +248,11 @@ class Portkey(CustomLLM):
         self._client.default_params["messages"] = messages_dict  # type: ignore
         if self.mode == RubeusModes.FALLBACK:
             response = self._client.chat_completion.with_fallbacks(self.llms)
-            self.llm = self._get_llm(response)
+            # self.llm = self._get_llm(response)
 
         elif self.mode == RubeusModes.LOADBALANCE:
             response = self._client.chat_completion.with_loadbalancing(self.llms)
-            self.llm = self._get_llm(response)
+            # self.llm = self._get_llm(response)
         else:
             messages_input = [
                 Message(role=i.role.value, content=i.content or "") for i in messages
@@ -297,5 +297,5 @@ class Portkey(CustomLLM):
         """
         return self.mode == RubeusModes.FALLBACK
 
-    def _get_llm(self, response: RubeusResponse) -> LLMBase:
-        return get_llm(response, self.llms)
+    # def _get_llm(self, response: RubeusResponse) -> LLMBase:
+    #     return get_llm(response, self.llms)

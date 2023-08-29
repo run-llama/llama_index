@@ -115,17 +115,17 @@ def generate_llm_metadata(llm: LLMBase) -> LLMMetadata:
     )
 
 
-def get_llm(response: RubeusResponse, llms: List[LLMBase]) -> LLMBase:
-    fallback_llm = None
-    for llm in llms:
-        model = llm.model
+# def get_llm(response: RubeusResponse, llms: List[LLMBase]) -> LLMBase:
+#     fallback_llm = LLMBase.construct()
+#     for llm in llms:
+#         model = llm.model
 
-        if model == response.model:
-            fallback_llm = llm
-            break
-    # if fallback_llm is None:
-    #     raise ValueError("Failed to get the fallback LLM")
-    return fallback_llm
+#         if model == response.model:
+#             fallback_llm = llm
+#             break
+#     # if fallback_llm is None:
+#     #     raise ValueError("Failed to get the fallback LLM")
+#     return fallback_llm
 
 
 class RubeusApiPaths(str, Enum):
