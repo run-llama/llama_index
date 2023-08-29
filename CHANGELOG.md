@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Improve openai fine-tuned model parsing (#7474)
+
 ## [0.8.13] - 2023-08-29
 
 ### New Features
