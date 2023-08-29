@@ -1,4 +1,6 @@
-from typing import Any, List, Optional, Sequence, Type, Dict
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type, Dict, cast
+if TYPE_CHECKING:
+    from marvin import AIModel
 
 from pydantic import BaseModel, Field
 
@@ -10,9 +12,9 @@ from llama_index.node_parser.extractors.metadata_extractors import (
 
 
 class MarvinEntityExtractor(MetadataFeatureExtractor):
-    marvin_model: Type[BaseModel] = Field(
-        description="The Marvin model to use for extracting entities"
-    )
+    # Forward reference to handle circular imports
+    marvin_model: Type["AIModel"] = Field(
+        description="The Marvin model to use for extracting entities")
     llm_model_string: Optional[str] = Field(
         description="The LLM model string to use for extracting entities"
     )
@@ -66,15 +68,18 @@ class MarvinEntityExtractor(MetadataFeatureExtractor):
     def class_name(cls) -> str:
         """Get class name."""
         return "MarvinEntityExtractor"
-    
+
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        from marvin import AIModel
+        
+        ai_model = cast(AIModel, self.marvin_model)
         metadata_list: List[Dict] = []
         for node in nodes:
             if self.is_text_node_only and not isinstance(node, TextNode):
                 metadata_list.append({})
                 continue
 
-            entities = self.marvin_model(node.get_content())
+            entities = ai_model(node.get_content())
 
             metadata_list.append({"marvin_entities": entities.dict()})
         return metadata_list
