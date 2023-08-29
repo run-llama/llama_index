@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### New Features
+- Added support for RunGPT LLM (#7401)
 - Integration guide and notebook with DeepEval (#7425)
 - Added `VectorIndex` and `VectaraRetriever` as a managed index (#7440)
 
