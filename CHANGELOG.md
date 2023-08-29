@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added support for RunGPT LLM (#7401)
+
 ## [0.8.12] - 2023-08-28
 
 ### New Features
