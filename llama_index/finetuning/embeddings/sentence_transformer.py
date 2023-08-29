@@ -96,8 +96,8 @@ def generate_qa_embedding_pairs(
     return dataset
 
 
-class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuneEngine):
-    """Sentence Transformers Finetuning Engine."""
+class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
+    """Sentence Transformers Finetune Engine."""
 
     def __init__(
         self,
