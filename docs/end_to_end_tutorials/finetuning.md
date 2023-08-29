@@ -40,6 +40,14 @@ Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can t
 ---
 maxdepth: 1
 ---
+Embedding Fine-tuning Guide </examples/finetuning/embeddings/finetune_embedding.ipynb>
+```
+
+**Old**
+```{toctree}
+---
+maxdepth: 1
+---
 Embedding Fine-tuning Repo <https://github.com/run-llama/finetune-embedding>
 Embedding Fine-tuning Blog <https://medium.com/llamaindex-blog/fine-tuning-embeddings-for-rag-with-synthetic-data-e534409a3971>
 ```
