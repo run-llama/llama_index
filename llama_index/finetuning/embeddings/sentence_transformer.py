@@ -59,7 +59,7 @@ def generate_qa_embedding_pairs(
     nodes: List[TextNode],
     llm: Optional[LLM] = None,
     qa_generate_prompt_tmpl: str = DEFAULT_QA_GENERATE_PROMPT_TMPL,
-    num_questions_per_chunk=2,
+    num_questions_per_chunk: int = 2,
 ) -> EmbeddingQAFinetuneDataset:
     """Generate examples given a set of nodes."""
     node_dict = {
@@ -122,7 +122,7 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
         self.model = SentenceTransformer(model_id)
 
         # TODO: support more than 1 doc per query
-        examples = []
+        examples: Any = []
         for query_id, query in dataset.queries.items():
             node_id = dataset.relevant_docs[query_id][0]
             text = dataset.corpus[node_id]
@@ -130,7 +130,7 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
             examples.append(example)
         self.examples = examples
 
-        self.loader = DataLoader(examples, batch_size=batch_size)
+        self.loader: DataLoader = DataLoader(examples, batch_size=batch_size)
 
         # define evaluator
         from sentence_transformers.evaluation import InformationRetrievalEvaluator
