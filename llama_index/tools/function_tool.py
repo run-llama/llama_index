@@ -60,7 +60,9 @@ class FunctionTool(AsyncBaseTool):
                 fn_schema = create_schema_from_function(
                     f"{name}", fn, additional_fields=None
                 )
-            tool_metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
+            tool_metadata = ToolMetadata(
+                name=name, description=description, fn_schema=fn_schema
+            )
         return cls(fn=fn, metadata=tool_metadata, async_fn=async_fn)
 
     @property
