@@ -77,6 +77,11 @@ class MetadataExtractor(BaseExtractor):
         default=True, description="Whether to process nodes in place."
     )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MetadataExtractor"
+
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract metadata from a document.
 
@@ -179,7 +184,11 @@ class TitleExtractor(MetadataFeatureExtractor):
         """Init params."""
         if nodes < 1:
             raise ValueError("num_nodes must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
 
         super().__init__(
             llm_predictor=llm_predictor,
@@ -188,6 +197,11 @@ class TitleExtractor(MetadataFeatureExtractor):
             combine_template=combine_template,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "TitleExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         nodes_to_extract_title: List[BaseNode] = []
@@ -251,8 +265,18 @@ class KeywordExtractor(MetadataFeatureExtractor):
         """Init params."""
         if keywords < 1:
             raise ValueError("num_keywords must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         super().__init__(llm_predictor=llm_predictor, keywords=keywords, **kwargs)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "KeywordExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
@@ -328,7 +352,12 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         """Init params."""
         if questions < 1:
             raise ValueError("questions must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         super().__init__(
             llm_predictor=llm_predictor,
             questions=questions,
@@ -336,6 +365,11 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
             embedding_only=embedding_only,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "QuestionsAnsweredExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
@@ -404,7 +438,11 @@ class SummaryExtractor(MetadataFeatureExtractor):
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
         **kwargs: Any,
     ):
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         # validation
         if not all([s in ["self", "prev", "next"] for s in summaries]):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
@@ -418,6 +456,11 @@ class SummaryExtractor(MetadataFeatureExtractor):
             prompt_template=prompt_template,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "SummaryExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         if not all([isinstance(node, TextNode) for node in nodes]):
@@ -566,6 +609,11 @@ class EntityExtractor(MetadataFeatureExtractor):
             entity_map=base_entity_map,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "EntityExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         # Extract node-level entity metadata

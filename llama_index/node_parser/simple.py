@@ -70,6 +70,11 @@ class SimpleNodeParser(NodeParser):
             metadata_extractor=metadata_extractor,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "SimpleNodeParser"
+
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],

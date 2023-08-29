@@ -11,6 +11,7 @@ except ImportError:
 
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.schema import BaseComponent
 
 
 class MessageRole(str, Enum):
@@ -312,7 +313,7 @@ def llm_completion_callback() -> Callable:
     return wrap
 
 
-class LLM(BaseModel):
+class LLM(BaseComponent):
     """LLM interface."""
 
     callback_manager: Optional[CallbackManager] = Field(
