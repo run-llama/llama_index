@@ -8,7 +8,13 @@ from typing import Any, Dict
 
 from llama_index.readers import SimpleWebPageReader
 
+try:
+    import html2text
+except ImportError:
+    html2text = None
 
+
+@pytest.mark.skipif(html2text is None, reason="html2text not installed")
 def test_error_40x() -> None:
     """Test simple web reader for 40x error."""
     # Generate a random URL that doesn't exist.
@@ -25,6 +31,7 @@ def test_error_40x() -> None:
         )
 
 
+@pytest.mark.skipif(html2text is None, reason="html2text not installed")
 def test_url_metadata() -> None:
     """Test simple web reader with metadata hook."""
     # Set up a reader to return the URL as metadata.
