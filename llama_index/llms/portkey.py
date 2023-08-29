@@ -16,7 +16,7 @@ from rubeus import (
     RubeusCacheType,
     RubeusCacheLiteral,
     Message,
-    RubeusResponse
+    RubeusResponse,
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.base import (
