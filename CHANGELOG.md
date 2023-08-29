@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added support for `MarvinEntityExtractor` metadata extractor (#7438)
+
 ### Bug Fixes / Nits
 - Improve openai fine-tuned model parsing (#7474)
 
