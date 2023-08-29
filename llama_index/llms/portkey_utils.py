@@ -4,9 +4,8 @@ Utility Tools for the Portkey Class
 This file module contains a collection of utility functions designed to enhance
 the functionality and usability of the Portkey class
 """
-from typing import List
 from enum import Enum
-from rubeus import LLMBase, RubeusResponse, ProviderTypes
+from rubeus import LLMBase, ProviderTypes
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.anthropic import Anthropic

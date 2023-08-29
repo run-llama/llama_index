@@ -10,7 +10,6 @@ from rubeus import (
     Rubeus,
     LLMBase,
     RubeusModes,
-    RubeusResponse,
     RubeusModesLiteral,
     ProviderTypes,
     ProviderTypesLiteral,
