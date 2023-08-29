@@ -6,7 +6,7 @@ from llama_index.embeddings.base import BaseEmbedding
 from typing import Any
 
 
-class BaseLLMFinetuningEngine(ABC):
+class BaseLLMFinetuneEngine(ABC):
     """Base LLM finetuning engine."""
 
     @abstractmethod
@@ -18,7 +18,7 @@ class BaseLLMFinetuningEngine(ABC):
         """Gets finetuned model."""
 
 
-class BaseEmbeddingFinetuningEngine(ABC):
+class BaseEmbeddingFinetuneEngine(ABC):
     """Base Embedding finetuning engine."""
 
     @abstractmethod

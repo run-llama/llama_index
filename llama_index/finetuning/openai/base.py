@@ -1,6 +1,6 @@
 """OpenAI Finetuning."""
 
-from llama_index.finetuning.types import BaseLLMFinetuningEngine
+from llama_index.finetuning.types import BaseLLMFinetuneEngine
 from llama_index.callbacks import OpenAIFineTuningHandler
 from llama_index.finetuning.openai.validate_json import validate_json
 from typing import Any, Optional
@@ -15,7 +15,7 @@ from llama_index.llms.base import LLM
 logger = logging.getLogger(__name__)
 
 
-class OpenAIFinetuneEngine(BaseLLMFinetuningEngine):
+class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
     """OpenAI Finetuning Engine."""
 
     def __init__(

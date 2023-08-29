@@ -9,7 +9,7 @@ from llama_index.schema import TextNode, MetadataMode
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.base import LLM
 from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.finetuning.types import BaseEmbeddingFinetuningEngine
+from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from tqdm import tqdm
 import uuid
 import re
@@ -96,7 +96,7 @@ def generate_qa_embedding_pairs(
     return dataset
 
 
-class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuningEngine):
+class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuneEngine):
     """Sentence Transformers Finetuning Engine."""
 
     def __init__(
@@ -106,9 +106,10 @@ class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuningEngine):
         model_output_path: str = "exp_finetune",
         batch_size: int = 10,
         val_dataset: Optional[EmbeddingQAFinetuneDataset] = None,
+        loss: Optional[Any] = None,
     ) -> None:
         """Init params."""
-        from sentence_transformers import InputExample, SentenceTransformer
+        from sentence_transformers import InputExample, SentenceTransformer, losses
         from torch.utils.data import DataLoader
 
         self.dataset = dataset
@@ -138,11 +139,11 @@ class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuningEngine):
             )
         self.evaluator = evaluator
 
+        # define loss
+        self.loss = loss or losses.MultipleNegativesRankingLoss(self.model)
+
     def finetune(self, **train_kwargs: Any) -> None:
         """Finetune model."""
-        from sentence_transformers import losses
-
-        loss = losses.MultipleNegativesRankingLoss(self.model)
         epochs = train_kwargs.get("epochs", 2)
         warmup_steps = int(len(self.loader) * epochs * 0.1)
         output_path = train_kwargs.get("output_path", "exp_finetune")
@@ -150,7 +151,7 @@ class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuningEngine):
         evaluation_steps = train_kwargs.get("evaluation_steps", 50)
 
         self.model.fit(
-            train_objectives=[(self.loader, loss)],
+            train_objectives=[(self.loader, self.loss)],
             epochs=epochs,
             warmup_steps=warmup_steps,
             output_path=output_path,
