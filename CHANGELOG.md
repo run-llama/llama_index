@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Integration guide and notebook with DeepEval (#7425)
+- Added `VectorIndex` and `VectaraRetriever` as a managed index (#7440)
+
 ## [0.8.12] - 2023-08-28
 
 ### New Features
