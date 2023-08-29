@@ -18,7 +18,9 @@ class SimpleWebPageReader(BaseReader):
     Args:
         html_to_text (bool): Whether to convert HTML to text.
             Requires `html2text` package.
-
+        metadata (Optional[Callable[[str], Dict]]): A function that takes in
+            a URL and returns a dictionary of metadata.
+            Default is None.
     """
 
     def __init__(
