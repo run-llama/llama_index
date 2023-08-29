@@ -31,8 +31,8 @@ class SubQuestionAnswerPair(BaseModel):
     """
 
     sub_q: SubQuestion
-    answer: Optional[str]
-    sources: Optional[List[NodeWithScore]]
+    answer: Optional[str] = None
+    sources: Optional[List[NodeWithScore]] = None
 
 
 class SubQuestionQueryEngine(BaseQueryEngine):

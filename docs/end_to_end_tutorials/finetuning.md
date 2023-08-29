@@ -56,6 +56,16 @@ We then launch a finetuning job, and get back a distilled model. We can evaluate
 ---
 maxdepth: 1
 ---
+GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing>
+GPT-3.5 Fine-tuning Notebook </examples/finetuning/openai_fine_tuning.ipynb>
+```
+
+**Old**
+
+```{toctree}
+---
+maxdepth: 1
+---
 GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1vWeJBXdFEObuihO7Z8ui2CAYkdHQORqo?usp=sharing>
 GPT-3.5 Fine-tuning Notebook (in Repo) <https://github.com/jerryjliu/llama_index/blob/main/experimental/openai_fine_tuning/openai_fine_tuning.ipynb>
 ```

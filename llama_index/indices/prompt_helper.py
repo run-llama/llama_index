@@ -12,9 +12,9 @@ import logging
 from typing import Callable, List, Optional, Sequence
 
 try:
-    from pydantic.v1 import BaseModel, Field, PrivateAttr
+    from pydantic.v1 import Field, PrivateAttr
 except ImportError:
-    from pydantic import BaseModel, Field, PrivateAttr
+    from pydantic import Field, PrivateAttr
 
 
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -24,6 +24,7 @@ from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.prompt_utils import get_empty_prompt_txt
 from llama_index.text_splitter import TokenTextSplitter
 from llama_index.text_splitter.utils import truncate_text
+from llama_index.schema import BaseComponent
 from llama_index.utils import globals_helper
 
 DEFAULT_PADDING = 5
@@ -32,7 +33,7 @@ DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
 logger = logging.getLogger(__name__)
 
 
-class PromptHelper(BaseModel):
+class PromptHelper(BaseComponent):
     """Prompt helper.
 
     General prompt helper that can help deal with LLM context window token limitations.
@@ -131,6 +132,11 @@ class PromptHelper(BaseModel):
             tokenizer=tokenizer,
             separator=separator,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "PromptHelper"
 
     def _get_available_context_size(self, prompt: BasePromptTemplate) -> int:
         """Get available context size.
