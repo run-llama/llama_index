@@ -16,6 +16,7 @@ from rubeus import (
     RubeusCacheType,
     RubeusCacheLiteral,
     Message,
+    RubeusResponse
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.base import (
@@ -30,7 +31,7 @@ from llama_index.llms.base import (
 from llama_index.llms.portkey_utils import (
     is_chat_model,
     generate_llm_metadata,
-    # get_llm,
+    get_llm,
 )
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
@@ -247,12 +248,13 @@ class Portkey(CustomLLM):
         self._client.default_params["messages"] = messages_dict  # type: ignore
         if self.mode == RubeusModes.FALLBACK:
             response = self._client.chat_completion.with_fallbacks(self.llms)
-            # self.llm = self._get_llm(response)
+            self.llm = self._get_llm(response)
 
         elif self.mode == RubeusModes.LOADBALANCE:
             response = self._client.chat_completion.with_loadbalancing(self.llms)
-            # self.llm = self._get_llm(response)
+            self.llm = self._get_llm(response)
         else:
+            # Single mode
             messages_input = [
                 Message(role=i.role.value, content=i.content or "") for i in messages
             ]
@@ -268,9 +270,12 @@ class Portkey(CustomLLM):
         self._client.default_params["prompt"] = prompt  # type: ignore
         if self.mode == RubeusModes.FALLBACK:
             response = self._client.completion.with_fallbacks(self.llms)
+            self.llm = self._get_llm(response)
         elif self.mode == RubeusModes.LOADBALANCE:
             response = self._client.completion.with_loadbalancing(self.llms)
+            self.llm = self._get_llm(response)
         else:
+            # Single mode
             response = self._client.completion.create(prompt=prompt, **kwargs)
 
         text = response.choices[0]["text"]
@@ -296,5 +301,5 @@ class Portkey(CustomLLM):
         """
         return self.mode == RubeusModes.FALLBACK
 
-    # def _get_llm(self, response: RubeusResponse) -> LLMBase:
-    #     return get_llm(response, self.llms)
+    def _get_llm(self, response: RubeusResponse) -> LLMBase:
+        return get_llm(response, self.llms)

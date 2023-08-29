@@ -4,13 +4,13 @@ Utility Tools for the Portkey Class
 This file module contains a collection of utility functions designed to enhance
 the functionality and usability of the Portkey class
 """
+from typing import List
 from enum import Enum
-from rubeus import LLMBase, ProviderTypes
+from rubeus import LLMBase, ProviderTypes, RubeusResponse
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.openai_utils import (
-    openai_modelname_to_contextsize,
     GPT3_5_MODELS,
     GPT4_MODELS,
     GPT3_MODELS,
@@ -23,6 +23,13 @@ from llama_index.llms.anthropic_utils import CLAUDE_MODELS
 #     ProviderTypes,
 # )
 # from .rubeus_utils import LLMBase, RubeusResponse
+
+DISCONTINUED_MODELS = {
+    "code-davinci-002": 8001,
+    "code-davinci-001": 8001,
+    "code-cushman-002": 2048,
+    "code-cushman-001": 2048,
+}
 
 DEFAULT_MODEL = "gpt-3.5-turbo"
 
@@ -66,6 +73,43 @@ def is_chat_model(model: str) -> bool:
     return model in CHAT_MODELS
 
 
+def modelname_to_contextsize(modelname: str) -> int:
+    """Calculate the maximum number of tokens possible to generate for a model.
+
+    Args:
+        modelname: The modelname we want to know the context size for.
+
+    Returns:
+        The maximum context size
+
+    Example:
+        .. code-block:: python
+
+            max_tokens = modelname_to_contextsize("text-davinci-003")
+    """
+    # handling finetuned models
+    if "ft-" in modelname:  # legacy fine-tuning
+        modelname = modelname.split(":")[0]
+    elif modelname.startswith("ft:"):
+        modelname = modelname.split(":")[1]
+
+    if modelname in DISCONTINUED_MODELS:
+        raise ValueError(
+            f"Model {modelname} has been discontinued. "
+            "Please choose another model."
+        )
+
+    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
+
+    if context_size is None:
+        raise ValueError(
+            f"Unknown model: {modelname}. Please provide a valid model name."
+            "Known models are: " + ", ".join(ALL_AVAILABLE_MODELS.keys())
+        )
+
+    return context_size
+
+
 def generate_llm_metadata(llm: LLMBase) -> LLMMetadata:
     """
     Generate metadata for a Language Model (LLM) instance.
@@ -88,43 +132,30 @@ def generate_llm_metadata(llm: LLMBase) -> LLMMetadata:
         ValueError: If the provided 'llm' is not an instance of
         llama_index.llms.base.LLM.
     """
-    # if not isinstance(llm, LLM):
-    #     raise ValueError("llm must be an instance of llama_index.llms.base.LLM")
-
-    _num_output = None
-    _context_window = None
-    _is_chat_model = None
-    _model_name = None
-    if llm.provider == ProviderTypes.OPENAI:
-        _context_window = openai_modelname_to_contextsize(llm.model)
-        # _num_output = llm.max_tokens or -1
-        # _is_chat_model = is_chat_model(llm.model)
-        # _model_name = llm.model if hasattr(llm, "model") else None
-    # elif isinstance(llm, Anthropic):
-    #     _context_window = anthropic_modelname_to_contextsize(llm._model)
-    #     _is_chat_model = is_chat_model(llm._model)
-    #     _num_output = llm._max_tokens or -1
-    #     _model_name = llm._model if hasattr(llm, "_model") else None
+    if not isinstance(llm, LLMBase):
+        raise ValueError("llm must be an instance of rubeus.LLMBase")
 
     return LLMMetadata(
-        _context_window=_context_window,
-        num_output=250,
-        is_chat_model=True,
-        model_name="gpt-3.5-turbo",
+        _context_window=modelname_to_contextsize(llm.model),
+        num_output=10000,
+        is_chat_model=is_chat_model(llm.model),
+        model_name=llm.model,
     )
 
 
-# def get_llm(response: RubeusResponse, llms: List[LLMBase]) -> LLMBase:
-#     fallback_llm = LLMBase.construct()
-#     for llm in llms:
-#         model = llm.model
+def get_llm(response: RubeusResponse, llms: List[LLMBase]) -> LLMBase:
+    # TODO: Update this logic over here.
+    fallback_llm = LLMBase.construct()
+    for llm in llms:
+        model = llm.model
 
-#         if model == response.model:
-#             fallback_llm = llm
-#             break
-#     # if fallback_llm is None:
-#     #     raise ValueError("Failed to get the fallback LLM")
-#     return fallback_llm
+        if model == response.model:
+            fallback_llm = llm
+            break
+
+    if fallback_llm is None:
+        raise ValueError("Failed to get the fallback LLM")
+    return fallback_llm
 
 
 class RubeusApiPaths(str, Enum):
