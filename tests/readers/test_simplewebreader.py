@@ -4,8 +4,6 @@ from random import choice
 
 import pytest
 
-from typing import Any, Dict
-
 from llama_index.readers import SimpleWebPageReader
 
 try:
