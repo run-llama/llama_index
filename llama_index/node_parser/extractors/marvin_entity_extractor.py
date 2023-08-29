@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type, Dict, cast
+
 if TYPE_CHECKING:
     from marvin import AIModel
 
@@ -14,12 +15,14 @@ from llama_index.node_parser.extractors.metadata_extractors import (
 class MarvinEntityExtractor(MetadataFeatureExtractor):
     # Forward reference to handle circular imports
     marvin_model: Type["AIModel"] = Field(
-        description="The Marvin model to use for extracting entities")
+        description="The Marvin model to use for extracting entities"
+    )
     llm_model_string: Optional[str] = Field(
         description="The LLM model string to use for extracting entities"
     )
 
-    """Entity extractor for cusstom entities using Marvin. Node-level extractor. Extracts
+    """Entity extractor for cusstom entities using Marvin. 
+    Node-level extractor. Extracts
     `marvin_entities` metadata field.
     Args:
         marvin_model: Marvin model to use for extracting entities
@@ -29,7 +32,7 @@ class MarvinEntityExtractor(MetadataFeatureExtractor):
         metadata_extractor = MetadataExtractor(
             extractors=[
                 TitleExtractor(nodes=1, llm=llm),
-                MarvinEntityExtractor(marvin_model=BusinessDocExcerpt), #let's extract custom entities for each node.
+                MarvinEntityExtractor(marvin_model=BusinessDocExcerpt),
             ],
         )
 
@@ -71,7 +74,7 @@ class MarvinEntityExtractor(MetadataFeatureExtractor):
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         from marvin import AIModel
-        
+
         ai_model = cast(AIModel, self.marvin_model)
         metadata_list: List[Dict] = []
         for node in nodes:
