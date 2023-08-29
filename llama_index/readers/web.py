@@ -21,7 +21,11 @@ class SimpleWebPageReader(BaseReader):
 
     """
 
-    def __init__(self, html_to_text: bool = False, metadata: Optional[Callable[[str], Dict]] = None) -> None:
+    def __init__(
+        self,
+        html_to_text: bool = False,
+        metadata: Optional[Callable[[str], Dict]] = None,
+    ) -> None:
         """Initialize with parameters."""
         try:
             import html2text  # noqa: F401
@@ -30,7 +34,7 @@ class SimpleWebPageReader(BaseReader):
                 "`html2text` package not found, please run `pip install html2text`"
             )
         self._html_to_text = html_to_text
-        
+
         self._metadata = metadata
 
     def load_data(self, urls: List[str]) -> List[Document]:
