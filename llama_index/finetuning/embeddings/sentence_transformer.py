@@ -107,6 +107,9 @@ class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuneEngine):
         batch_size: int = 10,
         val_dataset: Optional[EmbeddingQAFinetuneDataset] = None,
         loss: Optional[Any] = None,
+        epochs: int = 2,
+        show_progress_bar: bool = True,
+        evaluation_steps: int = 50,
     ) -> None:
         """Init params."""
         from sentence_transformers import InputExample, SentenceTransformer, losses
@@ -142,22 +145,21 @@ class SentenceTransformersFinetuningEngine(BaseEmbeddingFinetuneEngine):
         # define loss
         self.loss = loss or losses.MultipleNegativesRankingLoss(self.model)
 
+        self.epochs = epochs
+        self.show_progress_bar = show_progress_bar
+        self.evaluation_steps = evaluation_steps
+        self.warmup_steps = int(len(self.loader) * epochs * 0.1)
+
     def finetune(self, **train_kwargs: Any) -> None:
         """Finetune model."""
-        epochs = train_kwargs.get("epochs", 2)
-        warmup_steps = int(len(self.loader) * epochs * 0.1)
-        output_path = train_kwargs.get("output_path", "exp_finetune")
-        show_progress_bar = train_kwargs.get("show_progress_bar", True)
-        evaluation_steps = train_kwargs.get("evaluation_steps", 50)
-
         self.model.fit(
             train_objectives=[(self.loader, self.loss)],
-            epochs=epochs,
-            warmup_steps=warmup_steps,
-            output_path=output_path,
-            show_progress_bar=show_progress_bar,
+            epochs=self.epochs,
+            warmup_steps=self.warmup_steps,
+            output_path=self.model_output_path,
+            show_progress_bar=self.show_progress_bar,
             evaluator=self.evaluator,
-            evaluation_steps=evaluation_steps,
+            evaluation_steps=self.evaluation_steps,
         )
 
     def get_finetuned_model(self, **model_kwargs: Any) -> BaseEmbedding:
