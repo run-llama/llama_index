@@ -15,6 +15,7 @@ types-requests==2.28.11.8
 types-setuptools==67.1.0.0
 
 # linting
+rubeus==0.1.4
 black[jupyter]==23.7.0
 mypy==0.991
 pre-commit==3.2.0
