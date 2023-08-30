@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### New Features
+- Added support for `MarvinEntityExtractor` metadata extractor (#7438)
 - Added a url_metadata callback to SimpleWebPageReader (#7445)
 
 ### Bug Fixes / Nits
