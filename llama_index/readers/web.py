@@ -18,10 +18,16 @@ class SimpleWebPageReader(BaseReader):
     Args:
         html_to_text (bool): Whether to convert HTML to text.
             Requires `html2text` package.
-
+        metadata_fn (Optional[Callable[[str], Dict]]): A function that takes in
+            a URL and returns a dictionary of metadata.
+            Default is None.
     """
 
-    def __init__(self, html_to_text: bool = False) -> None:
+    def __init__(
+        self,
+        html_to_text: bool = False,
+        metadata_fn: Optional[Callable[[str], Dict]] = None,
+    ) -> None:
         """Initialize with parameters."""
         try:
             import html2text  # noqa: F401
@@ -30,6 +36,7 @@ class SimpleWebPageReader(BaseReader):
                 "`html2text` package not found, please run `pip install html2text`"
             )
         self._html_to_text = html_to_text
+        self._metadata_fn = metadata_fn
 
     def load_data(self, urls: List[str]) -> List[Document]:
         """Load data from the input directory.
@@ -51,7 +58,11 @@ class SimpleWebPageReader(BaseReader):
 
                 response = html2text.html2text(response)
 
-            documents.append(Document(text=response))
+            metadata: Optional[Dict] = None
+            if self._metadata_fn is not None:
+                metadata = self._metadata_fn(url)
+
+            documents.append(Document(text=response, metadata=metadata))
 
         return documents
 
