@@ -92,6 +92,11 @@ class Anthropic(LLM):
             callback_manager=callback_manager,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "Anthropic_LLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(

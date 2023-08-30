@@ -46,6 +46,11 @@ class LangchainEmbedding(BaseEmbedding):
             model_name=model_name,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "LangchainEmbedding"
+
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return self._langchain_embedding.embed_query(query)

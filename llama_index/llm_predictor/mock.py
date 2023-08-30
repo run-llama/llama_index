@@ -93,6 +93,11 @@ class MockLLMPredictor(BaseLLMPredictor):
         default=DEFAULT_NUM_OUTPUTS, description="Number of tokens to mock generate."
     )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MockLLMPredictor"
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata()

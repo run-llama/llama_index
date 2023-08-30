@@ -1,6 +1,6 @@
 import logging
 from threading import Thread
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 try:
     from pydantic.v1 import Field, PrivateAttr
@@ -15,6 +15,7 @@ from llama_index.llms.base import (
     llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
+from llama_index.prompts.base import PromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,8 @@ class HuggingFaceLLM(CustomLLM):
     query_wrapper_prompt: str = Field(
         description=(
             "The query wrapper prompt, containing the query placeholder. "
-            "The model card on HuggingFace should specify if this is needed."
+            "The model card on HuggingFace should specify if this is needed. "
+            "Should contain a `{query_str}` placeholder."
         ),
     )
     tokenizer_name: str = Field(
@@ -86,7 +88,7 @@ class HuggingFaceLLM(CustomLLM):
         context_window: int = 4096,
         max_new_tokens: int = 256,
         system_prompt: str = "",
-        query_wrapper_prompt: str = "",
+        query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
         tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model: Optional[Any] = None,
@@ -151,6 +153,9 @@ class HuggingFaceLLM(CustomLLM):
 
         self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
+        if isinstance(query_wrapper_prompt, PromptTemplate):
+            query_wrapper_prompt = query_wrapper_prompt.template
+
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
@@ -166,6 +171,11 @@ class HuggingFaceLLM(CustomLLM):
             generate_kwargs=generate_kwargs or {},
             callback_manager=callback_manager,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "HuggingFace_LLM"
 
     @property
     def metadata(self) -> LLMMetadata:

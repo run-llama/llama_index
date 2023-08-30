@@ -94,3 +94,6 @@ class IndexStructType(str, Enum):
     PANDAS = "pandas"
 
     DOCUMENT_SUMMARY = "document_summary"
+
+    # Managed
+    VECTARA = "vectara"

@@ -20,6 +20,11 @@ class MockLLM(CustomLLM):
     ) -> None:
         super().__init__(max_tokens=max_tokens, callback_manager=callback_manager)
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MockLLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(num_output=self.max_tokens or -1)
