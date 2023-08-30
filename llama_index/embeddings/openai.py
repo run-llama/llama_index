@@ -147,7 +147,7 @@ async def aget_embedding(
 
     """
     if (
-        engined is not None
+        engine is not None
         and engine.endswith("001")
         and not engine.endswith("code-001")
     ):
