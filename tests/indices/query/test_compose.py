@@ -19,7 +19,7 @@ def test_recursive_query_list_tree(
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = SummaryIndexdex.from_documents(
+    list1 = SummaryIndex.from_documents(
         documents[0:2], service_context=mock_service_context, **list_kwargs
     )
     list2 = SummaryIndex.from_documents(
@@ -28,7 +28,7 @@ def test_recursive_query_list_tree(
     list3 = SummaryIndex.from_documents(
         documents[4:6], service_context=mock_service_context, **list_kwargs
     )
-    list4 = SummaryIndexdex.from_documents(
+    list4 = SummaryIndex.from_documents(
         documents[6:8], service_context=mock_service_context, **list_kwargs
     )
 
@@ -89,7 +89,7 @@ def test_recursive_query_tree_list(
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     graph = ComposableGraph.from_indices(
-        SummaryIndexdex,
+        SummaryIndex,
         [tree1, tree2],
         index_summaries=summaries,
         service_context=mock_service_context,

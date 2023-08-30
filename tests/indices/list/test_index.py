@@ -98,7 +98,7 @@ def test_list_insert(
     # test insert with ID
     document = documents[0]
     document.doc_id = "test_id"  # type: ignore[misc]
-    list_index = SummaryIndexdexdex([])
+    list_index = SummaryIndex([])
     list_index.insert(document)
     # check contents of nodes
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)

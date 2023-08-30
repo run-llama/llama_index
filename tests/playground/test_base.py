@@ -117,7 +117,9 @@ def test_validation() -> None:
         _ = Playground(indices=["VectorStoreIndex"])  # type: ignore
 
     with pytest.raises(ValueError):
-        _ = Playground(indices=[VectorStoreIndex, SummaryIndex, TreeIndex])  # type: ignore
+        _ = Playground(
+            indices=[VectorStoreIndex, SummaryIndex, TreeIndex]  # type: ignore
+        )
 
     with pytest.raises(ValueError):
         _ = Playground(indices=[])  # type: ignore
