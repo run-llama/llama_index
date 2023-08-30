@@ -209,4 +209,4 @@ class BaseStructDatapointExtractor:
         struct_datapoint = StructDatapoint(fields)
         if struct_datapoint is not None:
             self._insert_datapoint(struct_datapoint)
-            logger.debug(f"> Added datapoint: {fields}")
+            logger.debug("> Added datapoint: %s", fields)

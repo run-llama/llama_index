@@ -171,7 +171,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             triplets = self._extract_triplets(
                 n.get_content(metadata_mode=MetadataMode.LLM)
             )
-            logger.debug(f"> Extracted triplets: {triplets}")
+            logger.debug("> Extracted triplets: %s", triplets)
+
             for triplet in triplets:
                 subj, _, obj = triplet
                 self.upsert_triplet(triplet)
@@ -199,7 +200,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             triplets = self._extract_triplets(
                 n.get_content(metadata_mode=MetadataMode.LLM)
             )
-            logger.debug(f"Extracted triplets: {triplets}")
+            logger.debug("Extracted triplets: ", triplets)
+
             for triplet in triplets:
                 subj, _, obj = triplet
                 triplet_str = str(triplet)

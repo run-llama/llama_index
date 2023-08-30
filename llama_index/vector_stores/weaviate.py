@@ -207,7 +207,7 @@ class WeaviateVectorStore(VectorStore):
                     }
                 )
         elif query.mode == VectorStoreQueryMode.HYBRID:
-            logger.debug(f"Using hybrid search with alpha {query.alpha}")
+            logger.debug("Using hybrid search with alpha %s", query.alpha)
             query_builder = query_builder.with_hybrid(
                 query=query.query_str,
                 alpha=query.alpha,
@@ -221,7 +221,7 @@ class WeaviateVectorStore(VectorStore):
             filter = kwargs.pop("filter", {})
 
         query_builder = query_builder.with_limit(query.similarity_top_k)
-        logger.debug(f"Using limit of {query.similarity_top_k}")
+        logger.debug("Using limit of %s", query.similarity_top_k)
 
         # execute query
         query_result = query_builder.do()

@@ -61,7 +61,7 @@ def log_vector_store_query_result(
             {float(node_similarity):.6}] {truncate_text(node.get_content(), 100)}"
         fmt_txts.append(fmt_txt)
     top_k_node_text = "\n".join(fmt_txts)
-    logger.debug(f"> Top {len(result.nodes)} nodes:\n{top_k_node_text}")
+    logger.debug("> Top %s nodes:\n%s", len(result.nodes), top_k_node_text)
 
 
 def default_format_node_batch_fn(

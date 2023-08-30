@@ -71,7 +71,7 @@ class SimpleKVStore(BaseInMemoryKVStore):
     ) -> "SimpleKVStore":
         """Load a SimpleKVStore from a persist path and filesystem."""
         fs = fs or fsspec.filesystem("file")
-        logger.debug(f"Loading {__name__} from {persist_path}.")
+        logger.debug("Loading %s from %s.", __name__, persist_path)
         with fs.open(persist_path, "rb") as f:
             data = json.load(f)
         return cls(data)

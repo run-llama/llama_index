@@ -201,7 +201,7 @@ class SimpleVectorStore(VectorStore):
                 f"No existing {__name__} found at {persist_path}, skipping load."
             )
 
-        logger.debug(f"Loading {__name__} from {persist_path}.")
+        logger.debug("Loading %s from %s.", __name__, persist_path)
         with fs.open(persist_path, "rb") as f:
             data_dict = json.load(f)
             data = SimpleVectorStoreData.from_dict(data_dict)

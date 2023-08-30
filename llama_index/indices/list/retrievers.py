@@ -87,9 +87,9 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
         for node, similarity in zip(top_k_nodes, top_similarities):
             node_with_scores.append(NodeWithScore(node=node, score=similarity))
 
-        logger.debug(f"> Top {len(top_idxs)} nodes:\n")
+        logger.debug("> Top %s nodes:\n", len(top_idxs))
         nl = "\n"
-        logger.debug(f"{ nl.join([n.get_content() for n in top_k_nodes]) }")
+        logger.debug("%s", nl.join([n.get_text() for n in top_k_nodes]))
         return node_with_scores
 
     def _get_embeddings(

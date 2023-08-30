@@ -176,7 +176,7 @@ class QdrantVectorStore(VectorStore):
             query_filter=cast(Filter, self._build_query_filter(query)),
         )
 
-        logger.debug(f"> Top {len(response)} nodes:")
+        logger.debug("> Top %s nodes:", len(response))
 
         nodes = []
         similarities = []

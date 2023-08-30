@@ -33,7 +33,7 @@ def build_nodes_from_splits(
 
     nodes: List[TextNode] = []
     for i, text_chunk in enumerate(text_splits):
-        logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
+        logger.debug("> Adding chunk: %s", truncate_text(text_chunk, 50))
 
         node_metadata = {}
         if include_metadata:

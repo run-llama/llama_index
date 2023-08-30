@@ -137,11 +137,13 @@ class MilvusVectorStore(VectorStore):
                 utility.drop_collection(self.collection_name, using=self.alias)
                 self.collection = None
                 logger.debug(
-                    f"Successfully removed old collection: {self.collection_name}"
+                    "Successfully removed old collection: %s", self.collection_name
                 )
-            except MilvusException as e:
-                logger.debug(f"Failed to remove old collection: {self.collection_name}")
-                raise e
+            except MilvusException as err:
+                logger.debug(
+                    "Failed to remove old collection: %s", self.collection_name
+                )
+                raise err
 
         # If there is no collection and a dim is provided, we can create a collection
         if self.collection is None and self.dim is not None:
@@ -176,7 +178,7 @@ class MilvusVectorStore(VectorStore):
                 and (addr["user"] == tmp_user)
             ):
                 self.alias = x[0]
-                logger.debug(f"Using previous connection: {self.alias}")
+                logger.debug("Using previous connection: %s", self.alias)
                 break
 
         # Connect to the Milvus instance using the passed in Environment variables
@@ -190,7 +192,7 @@ class MilvusVectorStore(VectorStore):
                 password=self.password,  # type: ignore
                 secure=self.use_secure,
             )
-            logger.debug(f"Creating new connection: {self.alias}")
+            logger.debug("Creating new connection: %s", self.alias)
 
     def _create_collection(self) -> None:
         from pymilvus import (
@@ -245,12 +247,12 @@ class MilvusVectorStore(VectorStore):
                 consistency_level=self.consistency_level,
             )
             logger.debug(
-                f"Successfully created a new collection: {self.collection_name}"
+                "Successfully created a new collection: %s", self.collection_name
             )
 
-        except MilvusException as e:
-            logger.debug(f"Failure to create a new collection: {self.collection_name}")
-            raise e
+        except MilvusException as err:
+            logger.debug("Failure to create a new collection: %s", self.collection_name)
+            raise err
 
     def _create_index(self) -> None:
         from pymilvus import MilvusException
@@ -291,14 +293,14 @@ class MilvusVectorStore(VectorStore):
                     self.index_params["index_type"]
                 ]
             logger.debug(
-                f"Successfully created an index on collection: {self.collection_name}"
+                "Successfully created an index on collection: %s", self.collection_name
             )
 
-        except MilvusException as e:
+        except MilvusException as err:
             logger.debug(
-                f"Failed to create an index on collection: {self.collection_name}"
+                "Failed to create an index on collection: %s", self.collection_name
             )
-            raise e
+            raise err
 
     def _create_search_params(self) -> None:
         index = self.collection.indexes[0]._index_params
@@ -357,12 +359,13 @@ class MilvusVectorStore(VectorStore):
             # Insert the data into milvus
             self.collection.insert([ids, doc_ids, texts, embeddings, nodes])
             logger.debug(
-                f"Successfully inserted embeddings into: {self.collection_name} "
-                f"Num Inserted: {len(ids)}"
+                "Successfully inserted embeddings into: %s Num Inserted: %s",
+                self.collection_name,
+                len(ids),
             )
-        except MilvusException as e:
-            logger.debug(f"Failed to insert embeddings into: {self.collection_name}")
-            raise e
+        except MilvusException as error:
+            logger.debug("Failed to insert embeddings into: %s", self.collection_name)
+            raise error
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -396,10 +399,10 @@ class MilvusVectorStore(VectorStore):
             ids = [entry["id"] for entry in entries]
             ids = ['"' + entry + '"' for entry in ids]
             self.collection.delete(f"id in [{','.join(ids)}]")
-            logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
-        except MilvusException as e:
-            logger.debug(f"Unsuccessfully deleted embedding with doc_id: {doc_ids}")
-            raise e
+            logger.debug("Successfully deleted embedding with doc_id: %s", doc_ids)
+        except MilvusException as err:
+            logger.debug("Unsuccessfully deleted embedding with doc_id: %s", doc_ids)
+            raise err
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.

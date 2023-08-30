@@ -172,7 +172,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
         sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
-        logger.debug(f"> Predicted SQL query: {sql_query_str}")
+        logger.debug("> Predicted SQL query: %s", sql_query_str)
 
         raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
         metadata["sql_query"] = sql_query_str
@@ -193,7 +193,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
-        logger.info(f"> Table desc str: {table_desc_str}")
+        logger.info("> Table desc str: %s", table_desc_str)
 
         response_str = await self._service_context.llm_predictor.apredict(
             self._text_to_sql_prompt,
@@ -204,7 +204,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
         sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
-        logger.debug(f"> Predicted SQL query: {sql_query_str}")
+        logger.debug("> Predicted SQL query: %s", sql_query_str)
 
         response_str, metadata = self._sql_database.run_sql(sql_query_str)
         metadata["sql_query"] = sql_query_str
@@ -265,7 +265,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
-        logger.info(f"> Table desc str: {table_desc_str}")
+        logger.info("> Table desc str: %s", table_desc_str)
 
         response_str = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
@@ -276,7 +276,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
-        logger.debug(f"> Predicted SQL query: {sql_query_str}")
+        logger.debug("> Predicted SQL query: %s", sql_query_str)
 
         raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
         metadata["sql_query"] = sql_query_str
@@ -308,7 +308,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
-        logger.debug(f"> Predicted SQL query: {sql_query_str}")
+        logger.debug("> Predicted SQL query: %s", sql_query_str)
 
         response_str, metadata = self._sql_database.run_sql(sql_query_str)
         metadata["sql_query"] = sql_query_str

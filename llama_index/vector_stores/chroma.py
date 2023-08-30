@@ -134,7 +134,7 @@ class ChromaVectorStore(VectorStore):
             **kwargs,
         )
 
-        logger.debug(f"> Top {len(results['documents'])} nodes:")
+        logger.debug("> Top %s nodes:", len(results["documents"]))
         nodes = []
         similarities = []
         ids = []

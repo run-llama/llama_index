@@ -35,7 +35,7 @@ def get_text_from_node(
     """Get text from node."""
     level_str = "" if level is None else f"[Level {level}]"
     fmt_text_chunk = truncate_text(node.get_content(metadata_mode=MetadataMode.LLM), 50)
-    logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
+    logger.debug(">%s Searching in chunk: %s", level_str, fmt_text_chunk)
 
     response_txt = node.get_content(metadata_mode=MetadataMode.LLM)
     fmt_response = truncate_text(response_txt, 200)
@@ -115,7 +115,9 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 query_str, [node_text], prev_response=prev_response
             )
             cur_response = cast(str, cur_response)
-            logger.debug(f">[Level {level}] Current answer response: {cur_response} ")
+            logger.debug(
+                ">[Level %s] Current answer response: %s ", level, cur_response
+            )
         else:
             cur_response = self._query_level(
                 self._index_struct.get_children(selected_node),
@@ -133,8 +135,9 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 existing_answer=prev_response,
                 context_msg=context_msg,
             )
-
-            logger.debug(f">[Level {level}] Current refined response: {cur_response} ")
+            logger.debug(
+                ">[Level %s] Current refined response: %s ", level, cur_response
+            )
             return cur_response
 
     def _query_level(
@@ -152,7 +155,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         if len(cur_node_list) == 1:
-            logger.debug(f">[Level {level}] Only one node left. Querying node.")
+            logger.debug(">[Level %s] Only one node left. Querying node.", level)
             return self._query_with_selected_node(
                 cur_node_list[0], query_bundle, level=level
             )
