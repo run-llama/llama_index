@@ -17,7 +17,7 @@ The cost of building and querying each index is a TODO in the reference document
 
 #### Indices with no LLM calls
 The following indices don't require LLM calls at all during building (0 cost):
-- `ListIndex`
+- `SummaryIndex`
 - `SimpleKeywordTableIndex` - uses a regex keyword extractor to extract keywords from each document
 - `RAKEKeywordTableIndex` - uses a RAKE keyword extractor to extract keywords from each document
 
@@ -29,12 +29,12 @@ The following indices do require LLM calls during build time:
 ### Query Time
 
 There will always be >= 1 LLM call during query time, in order to synthesize the final answer. 
-Some indices contain cost tradeoffs between index building and querying. `ListIndex`, for instance,
+Some indices contain cost tradeoffs between index building and querying. `SummaryIndex`, for instance,
 is free to build, but running a query over a list index (without filtering or embedding lookups), will
 call the LLM {math}`N` times.
 
 Here are some notes regarding each of the indices:
-- `ListIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
+- `SummaryIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
 - `TreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes. 
     - Setting `child_branch_factor=2` will be more expensive than the default `child_branch_factor=1` (polynomial vs logarithmic), because we traverse 2 children instead of just 1 for each parent node.
 - `KeywordTableIndex`: by default requires an LLM call to extract query keywords.

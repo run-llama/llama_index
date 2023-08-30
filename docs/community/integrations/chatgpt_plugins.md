@@ -78,8 +78,8 @@ reader = ChatGPTRetrievalPluginReader(
 documents = reader.load_data("What did the author do growing up?")
 
 # build and query index
-from llama_index import ListIndex
-index = ListIndex(documents)
+from llama_index import SummaryIndex
+index = SummaryIndex(documents)
 # set Logging to DEBUG for more detailed outputs
 query_engine = vector_index.as_query_engine(
     response_mode="compact"

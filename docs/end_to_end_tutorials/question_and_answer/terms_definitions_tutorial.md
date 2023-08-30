@@ -77,7 +77,7 @@ Now that we are able to define LLM settings and upload text, we can try using Ll
 We can add the following functions to both initialize our LLM, as well as use it to extract terms from the input text.
 
 ```python
-from llama_index import Document, ListIndex, LLMPredictor, ServiceContext, load_index_from_storage
+from llama_index import Document, SummaryIndex, LLMPredictor, ServiceContext, load_index_from_storage
 from llama_index.llms import OpenAI
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
@@ -90,7 +90,7 @@ def extract_terms(documents, term_extract_str, llm_name, model_temperature, api_
     service_context = ServiceContext.from_defaults(llm=llm,
                                                    chunk_size=1024)
 
-    temp_index = ListIndex.from_documents(documents, service_context=service_context)
+    temp_index = SummaryIndex.from_documents(documents, service_context=service_context)
     query_engine = temp_index.as_query_engine(response_mode="tree_summarize")
     terms_definitions = str(query_engine.query(term_extract_str))
     terms_definitions = [x for x in terms_definitions.split("\n") if x and 'Term:' in x and 'Definition:' in x]

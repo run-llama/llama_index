@@ -1,8 +1,8 @@
-## 🔗 ListIndex
+## 🔗 SummaryIndex
 
 ### Index Construction
 
-ListIndex is a simple list-based data structure. During index construction, ListIndex takes in a dataset of text documents as input, chunks them up into smaller document chunks, and concatenates them into a list. GPT is not called at all during index construction.
+SummaryIndex is a simple list-based data structure. During index construction, SummaryIndex takes in a dataset of text documents as input, chunks them up into smaller document chunks, and concatenates them into a list. GPT is not called at all during index construction.
 
 ### Query
 
@@ -11,11 +11,11 @@ During query-time, List Index constructs an answer using the _create and refine_
 **Usage**
 
 ```python
-from llama_index import ListIndex, SimpleDirectoryReader
+from llama_index import SummaryIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader('data').load_data()
-index = ListIndex.from_documents(documents)
+index = SummaryIndex.from_documents(documents)
 # query
 query_engine = index.as_query_engine()
 response = query_engine.query("<question text>")

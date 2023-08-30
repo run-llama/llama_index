@@ -66,7 +66,7 @@ We can query, save, and load the graph to/from disk as any other index.
 from llama_index.indices.composability import ComposableGraph
 
 graph = ComposableGraph.from_indices(
-    ListIndex,
+    SummaryIndex,
     [index1, index2, index3],
     index_summaries=[index1_summary, index2_summary, index3_summary],
     storage_context=storage_context,

@@ -4,7 +4,7 @@ from typing import Any
 from unittest.mock import patch
 
 from llama_index.indices.keyword_table.base import KeywordTableIndex
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.llm_predictor.mock import MockLLMPredictor
@@ -41,6 +41,8 @@ def test_token_predictor(mock_split: Any) -> None:
     query_engine.query("What is?")
 
     # test list index
-    index_list = ListIndex.from_documents([document], service_context=service_context)
+    index_list = SummaryIndex.from_documents(
+        [document], service_context=service_context
+    )
     query_engine = index_list.as_query_engine()
     query_engine.query("What is?")

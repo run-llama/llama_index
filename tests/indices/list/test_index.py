@@ -3,7 +3,7 @@
 from typing import Dict, List, Tuple
 
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.list.base import ListIndex, ListRetrieverMode
+from llama_index.indices.list.base import SummaryIndex, ListRetrieverMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import Document
 from llama_index.schema import BaseNode
@@ -13,7 +13,7 @@ def test_build_list(
     documents: List[Document], mock_service_context: ServiceContext
 ) -> None:
     """Test build list."""
-    list_index = ListIndex.from_documents(
+    list_index = SummaryIndex.from_documents(
         documents, service_context=mock_service_context
     )
     assert len(list_index.index_struct.nodes) == 4
@@ -39,7 +39,7 @@ def test_refresh_list(
         more_documents[i].doc_id = str(i)  # type: ignore[misc]
 
     # create index
-    list_index = ListIndex.from_documents(
+    list_index = SummaryIndex.from_documents(
         more_documents, service_context=mock_service_context
     )
 
@@ -68,7 +68,7 @@ def test_build_list_multiple(mock_service_context: ServiceContext) -> None:
         Document(text="Hello world.\nThis is a test."),
         Document(text="This is another test.\nThis is a test v2."),
     ]
-    list_index = ListIndex.from_documents(
+    list_index = SummaryIndex.from_documents(
         documents, service_context=mock_service_context
     )
     assert len(list_index.index_struct.nodes) == 4
@@ -85,7 +85,7 @@ def test_list_insert(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test insert to list."""
-    list_index = ListIndex([], service_context=mock_service_context)
+    list_index = SummaryIndex([], service_context=mock_service_context)
     assert len(list_index.index_struct.nodes) == 0
     list_index.insert(documents[0])
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
@@ -98,7 +98,7 @@ def test_list_insert(
     # test insert with ID
     document = documents[0]
     document.doc_id = "test_id"  # type: ignore[misc]
-    list_index = ListIndex([])
+    list_index = SummaryIndexdexdex([])
     list_index.insert(document)
     # check contents of nodes
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
@@ -118,7 +118,7 @@ def test_list_delete(
         Document(text="This is a test v2.", id_="test_id_3"),
     ]
 
-    list_index = ListIndex.from_documents(
+    list_index = SummaryIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
 
@@ -139,7 +139,7 @@ def test_list_delete(
     source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
     assert source_doc is None
 
-    list_index = ListIndex.from_documents(
+    list_index = SummaryIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
     list_index.delete_ref_doc("test_id_2")
@@ -174,7 +174,7 @@ def test_as_retriever(
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:
-    list_index = ListIndex.from_documents(
+    list_index = SummaryIndex.from_documents(
         documents, service_context=mock_service_context
     )
     default_retriever = list_index.as_retriever(

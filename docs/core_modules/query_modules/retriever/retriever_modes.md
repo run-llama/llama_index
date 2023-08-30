@@ -8,9 +8,9 @@ Specifying `retriever_mode` has no effect (silently ignored).
 
 
 ## List Index
-* `default`: ListIndexRetriever 
-* `embedding`: ListIndexEmbeddingRetriever 
-* `llm`: ListIndexLLMRetriever
+* `default`: SummaryIndexRetriever 
+* `embedding`: SummaryIndexEmbeddingRetriever 
+* `llm`: SummaryIndexLLMRetriever
 
 ## Tree Index
 * `select_leaf`: TreeSelectLeafRetriever
