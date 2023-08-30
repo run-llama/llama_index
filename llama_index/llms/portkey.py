@@ -27,6 +27,7 @@ from llama_index.llms.base import (
     ChatResponseGen,
     llm_completion_callback,
     llm_chat_callback,
+    CompletionResponseGen,
 )
 from llama_index.llms.portkey_utils import (
     is_chat_model,
@@ -37,6 +38,7 @@ from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
     chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
+    stream_chat_to_completion_decorator,
 )
 
 try:
@@ -225,12 +227,12 @@ class Portkey(CustomLLM):
         return chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Completion endpoint for LLM."""
         if self._is_chat_model:
-            complete_fn = chat_to_completion_decorator(self.chat)
+            complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
-            complete_fn = self.complete
+            complete_fn = self._stream_complete
         return complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
@@ -238,16 +240,16 @@ class Portkey(CustomLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         if self._is_chat_model:
-            stream_chat_fn = self.stream_chat
+            stream_chat_fn = self._stream_chat
         else:
-            stream_chat_fn = stream_completion_to_chat_decorator(self.stream_complete)
+            stream_chat_fn = stream_completion_to_chat_decorator(self._stream_complete)
         return stream_chat_fn(messages, **kwargs)
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         messages_dict = [{"role": i.role.value, "content": i.content} for i in messages]
         self._client.default_params["messages"] = messages_dict  # type: ignore
         if self.mode == RubeusModes.FALLBACK:
-            response = self._client.chat_completion.with_fallbacks(self.llms)
+            response = self._client.chat_completion.with_fallbacks(llms=self.llms)
             self.llm = self._get_llm(response)
 
         elif self.mode == RubeusModes.LOADBALANCE:
@@ -269,7 +271,7 @@ class Portkey(CustomLLM):
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         self._client.default_params["prompt"] = prompt  # type: ignore
         if self.mode == RubeusModes.FALLBACK:
-            response = self._client.completion.with_fallbacks(self.llms)
+            response = self._client.completion.with_fallbacks(llms=self.llms)
             self.llm = self._get_llm(response)
         elif self.mode == RubeusModes.LOADBALANCE:
             response = self._client.completion.with_loadbalancing(self.llms)
@@ -281,6 +283,94 @@ class Portkey(CustomLLM):
         text = response.choices[0]["text"]
         raw = response.raw_body
         return CompletionResponse(text=text, raw=raw)
+
+    def _stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        messages_dict = [{"role": i.role.value, "content": i.content} for i in messages]
+        self._client.default_params["messages"] = messages_dict  # type: ignore
+        if self.mode == RubeusModes.FALLBACK:
+            response = self._client.chat_completion.with_fallbacks(
+                llms=self.llms, stream=True
+            )
+
+        elif self.mode == RubeusModes.LOADBALANCE:
+            response = self._client.chat_completion.with_loadbalancing(
+                self.llms, stream=True
+            )
+        else:
+            # Single mode
+            messages_input = [
+                Message(role=i.role.value, content=i.content or "") for i in messages
+            ]
+            response = self._client.chat_completion.create(
+                messages=messages_input, **kwargs, stream=True
+            )
+
+        def gen() -> ChatResponseGen:
+            content = ""
+            function_call: Optional[dict] = {}
+            for resp in response:
+                if resp.choices == [{}]:
+                    continue
+                delta = resp.choices[0]["delta"]
+                role = delta.get("role", "assistant")
+                content_delta = delta.get("content", "") or ""
+                content += content_delta
+
+                function_call_delta = delta.get("function_call", None)
+                if function_call_delta is not None:
+                    if function_call is None:
+                        function_call = function_call_delta
+
+                        # ensure we do not add a blank function call
+                        if function_call.get("function_name", "") is None:
+                            del function_call["function_name"]
+                    else:
+                        function_call["arguments"] += function_call_delta["arguments"]
+
+                additional_kwargs = {}
+                if function_call is not None:
+                    additional_kwargs["function_call"] = function_call
+
+                yield ChatResponse(
+                    message=ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs=additional_kwargs,
+                    ),
+                    delta=content_delta,
+                    raw=resp,
+                )
+
+        return gen()
+
+    def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        self._client.default_params["prompt"] = prompt  # type: ignore
+        if self.mode == RubeusModes.FALLBACK:
+            response = self._client.completion.with_fallbacks(
+                llms=self.llms, stream=True
+            )
+        elif self.mode == RubeusModes.LOADBALANCE:
+            response = self._client.completion.with_loadbalancing(
+                self.llms, stream=True
+            )
+        else:
+            # Single mode
+            response = self._client.completion.create(prompt=prompt, **kwargs)
+
+        def gen() -> CompletionResponseGen:
+            text = ""
+            for resp in response:
+                delta = resp.choices[0]["text"]
+                text += delta
+                yield CompletionResponse(
+                    delta=delta,
+                    text=text,
+                    raw=response,
+                )
+
+        return gen()
 
     @property
     def _is_chat_model(self) -> bool:
