@@ -12,27 +12,27 @@ from llama_index.node_parser.extractors.metadata_extractors import (
 )
 
 
-class MarvinEntityExtractor(MetadataFeatureExtractor):
+class MarvinMetadataExtractor(MetadataFeatureExtractor):
     # Forward reference to handle circular imports
     marvin_model: Type["AIModel"] = Field(
-        description="The Marvin model to use for extracting entities"
+        description="The Marvin model to use for extracting custom metadata"
     )
     llm_model_string: Optional[str] = Field(
-        description="The LLM model string to use for extracting entities"
+        description="The LLM model string to use for extracting custom metadata"
     )
 
-    """Entity extractor for cusstom entities using Marvin. 
+    """Metadata extractor for custom metadata using Marvin. 
     Node-level extractor. Extracts
-    `marvin_entities` metadata field.
+    `marvin_metadata` metadata field.
     Args:
-        marvin_model: Marvin model to use for extracting entities
-        llm_model_string: (optional) LLM model string to use for extracting entities
+        marvin_model: Marvin model to use for extracting metadata
+        llm_model_string: (optional) LLM model string to use for extracting metadata
     Usage:
         #create metadata extractor
         metadata_extractor = MetadataExtractor(
             extractors=[
                 TitleExtractor(nodes=1, llm=llm),
-                MarvinEntityExtractor(marvin_model=BusinessDocExcerpt),
+                MarvinMetadataExtractor(marvin_model=YourMarvinMetadataModel),
             ],
         )
 
@@ -82,7 +82,7 @@ class MarvinEntityExtractor(MetadataFeatureExtractor):
                 metadata_list.append({})
                 continue
 
-            entities = ai_model(node.get_content())
+            metadata = ai_model(node.get_content())
 
-            metadata_list.append({"marvin_entities": entities.dict()})
+            metadata_list.append({"marvin_metadata": metadata.dict()})
         return metadata_list
