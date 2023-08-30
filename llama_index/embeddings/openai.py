@@ -118,7 +118,11 @@ def get_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    if engine.endswith("001") and not engine.endswith("code-001"):
+    if (
+        engine is not None
+        and engine.endswith("001")
+        and not engine.endswith("code-001")
+    ):
         # replace newlines, which can negatively affect performance on text-001 models.
         text = text.replace("\n", " ")
     return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
@@ -142,7 +146,11 @@ async def aget_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    if engine.endswith("001") and not engine.endswith("code-001"):
+    if (
+        engined is not None
+        and engine.endswith("001")
+        and not engine.endswith("code-001")
+    ):
         # replace newlines, which can negatively affect performance on text-001 models.
         text = text.replace("\n", " ")
 
@@ -169,7 +177,11 @@ def get_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    if engine.endswith("001") and not engine.endswith("code-001"):
+    if (
+        engine is not None
+        and engine.endswith("001")
+        and not engine.endswith("code-001")
+    ):
         # replace newlines, which can negatively affect performance on text-001 models.
         list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
@@ -195,7 +207,11 @@ async def aget_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    if engine.endswith("001") and not engine.endswith("code-001"):
+    if (
+        engine is not None
+        and engine.endswith("001")
+        and not engine.endswith("code-001")
+    ):
         # replace newlines, which can negatively affect performance on text-001 models.
         list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
