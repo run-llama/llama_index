@@ -111,10 +111,10 @@ class KGTableRetriever(BaseRetriever):
         try:
             self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
         except NotImplementedError:
-            self._graph_schema = None
+            self._graph_schema = ""
         except Exception as e:
             logger.warn(f"Failed to get graph schema: {e}")
-            self._graph_schema = None
+            self._graph_schema = ""
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -292,8 +292,8 @@ class KGTableRetriever(BaseRetriever):
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
         }
-        if self._graph_schema:
-            rel_node_info["kg_schema"] = self._graph_schema
+        if self._graph_schema != "":
+            rel_node_info["kg_schema"] = {"schema": self._graph_schema}
         rel_info_text = "\n".join(
             [
                 str(item)
@@ -459,10 +459,10 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         try:
             self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
         except NotImplementedError:
-            self._graph_schema = None
+            self._graph_schema = ""
         except Exception as e:
             logger.warn(f"Failed to get graph schema: {e}")
-            self._graph_schema = None
+            self._graph_schema = ""
 
     def _process_entities(
         self,
@@ -677,15 +677,17 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if self._verbose:
             print_text(f"Graph RAG context:\n{context_string}\n", color="blue")
 
+        rel_node_info = {
+            "kg_rel_map": rel_map,
+            "kg_rel_text": knowledge_sequence,
+        }
+        if self._graph_schema != "":
+            rel_node_info["kg_schema"] = {"schema": self._graph_schema}
         node = NodeWithScore(
             node=TextNode(
                 text=context_string,
                 score=1.0,
-                metadata={
-                    "kg_rel_text": knowledge_sequence,
-                    "kg_rel_map": rel_map,
-                    "kg_schema": self._graph_schema,
-                },
+                metadata=rel_node_info,
                 excluded_embed_metadata_keys=["kg_rel_map", "kg_rel_text"],
                 excluded_llm_metadata_keys=["kg_rel_map", "kg_rel_text"],
             )

@@ -480,7 +480,9 @@ class NebulaGraphStore(GraphStore):
         # But this makes more sense for multi-hop relation path.
 
         if subjs is not None:
-            subjs = [escape_str(subj) for subj in subjs]
+            subjs = [
+                escape_str(subj) for subj in subjs if isinstance(subj, str) and subj
+            ]
             if len(subjs) == 0:
                 return {}
 
