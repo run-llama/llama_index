@@ -1,5 +1,32 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Improve openai fine-tuned model parsing (#7474)
+
+## [0.8.13] - 2023-08-29
+
+### New Features
+- Add embedding finetuning (#7452)
+- Added support for RunGPT LLM (#7401)
+- Integration guide and notebook with DeepEval (#7425)
+- Added `VectorIndex` and `VectaraRetriever` as a managed index (#7440)
+- Added support for `to_tool_list` to detect and use async functions (#7282)
+
+## [0.8.12] - 2023-08-28
+
+### New Features
+
+- add openai finetuning class (#7442)
+- Service Context to/from dict (#7395)
+- add finetuning guide (#7429)
+
+### Smaller Features / Nits / Bug Fixes
+- Add example how to run FalkorDB docker (#7441)
+- Update root.md to use get_response_synthesizer expected type. (#7437) 
+- Bugfix MonsterAPI Pydantic version v2/v1 support. Doc Update (#7432)
+
 ## [0.8.11.post3] - 2023-08-27
 
 ### New Features

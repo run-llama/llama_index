@@ -42,6 +42,8 @@ from llama_index.llms.openai_utils import (
 
 
 class OpenAI(LLM):
+    class_type = "openai"
+
     model: str = Field(description="The OpenAI model to use.")
     temperature: float = Field(description="The tempature to use during generation.")
     max_tokens: Optional[int] = Field(
@@ -90,6 +92,11 @@ class OpenAI(LLM):
             model_name = model_name.split(":")[1]
 
         return model_name
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "openai_llm"
 
     @property
     def metadata(self) -> LLMMetadata:

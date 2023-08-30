@@ -107,5 +107,12 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/monsterapi.ipynb
+```
 
+## RunGPT
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/rungpt.ipynb
 ```

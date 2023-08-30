@@ -62,6 +62,11 @@ class LlamaAPI(CustomLLM):
             callback_manager=callback_manager,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "llama_api_llm"
+
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
