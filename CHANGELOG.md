@@ -1,7 +1,12 @@
 # ChangeLog
 
 ## Unreleased
+
+### New Features
 - Added a url_metadata callback to SimpleWebPageReader (#7445)
+
+### Bug Fixes / Nits
+- Only convert newlines to spaces for text 001 embedding models in OpenAI (#7484)
 
 ## [0.8.14] - 2023-08-30
 
