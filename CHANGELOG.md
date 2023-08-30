@@ -1,5 +1,8 @@
 # ChangeLog
 
+## Unreleased
+- Added a url_metadata callback to SimpleWebPageReader (#7445)
+
 ## [0.8.14] - 2023-08-30
 
 ### New Features
