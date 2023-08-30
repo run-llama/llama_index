@@ -1,5 +1,12 @@
 # ChangeLog
 
+## [0.8.12] - 2023-08-xx
+
+### New Features
+
+### Bug Fixes / Nits
+- Only convert newlines to spaces for text 001 embedding models in OpenAI
+
 ## [0.8.11.post3] - 2023-08-27
 
 ### New Features
