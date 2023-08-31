@@ -82,7 +82,7 @@ class Portkey(CustomLLM):
         cache_age: Optional[int] = None,
         cache_force_refresh: Optional[bool] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        retry: Optional[int] = 3
+        retry: Optional[int] = 3,
     ) -> None:
         """
         Initialize a Portkey instance.
@@ -128,8 +128,8 @@ class Portkey(CustomLLM):
                 "x-portkey-cache": cache_status,
                 "x-portkey-metadata": json.dumps(metadata),
                 "x-portkey-cache-force-refresh": cache_force_refresh,
-                "x-portkey-cache-age": cache_age,
-                "x-portkey-retry-count": retry
+                "x-portkey-cache-age": f"max-age={cache_age}",
+                "x-portkey-retry-count": f"{retry}",
             },
         )
         self._portkey_response = None

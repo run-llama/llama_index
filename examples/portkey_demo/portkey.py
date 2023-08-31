@@ -13,9 +13,9 @@ from rubeus import LLMBase
 # print(response)
 
 openai_llm = LLMBase(provider="openai", model="gpt-3.5-turbo")
-llm = Portkey(mode="fallback", cache_status="semantic", metadata={"_user": "noble-varghese"}).add_llms(
-    llm_params=[openai_llm]
-)
+llm = Portkey(
+    mode="fallback", cache_status="simple", metadata={"_user": "noble-varghese"}
+).add_llms(llm_params=[openai_llm])
 
 print("Testing stream chat functionality:")
 stream_messages = [
