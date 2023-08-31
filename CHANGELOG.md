@@ -11,6 +11,7 @@
 - Only convert newlines to spaces for text 001 embedding models in OpenAI (#7484)
 - Fix `KnowledgeGraphRagRetriever` for non-nebula indexes (#7488)
 - Support defined embedding dimension in `PGVectorStore` (#7491)
+- Greatly improved similarity calculation speed for the base vector store (#7494)
 
 ## [0.8.14] - 2023-08-30
 
