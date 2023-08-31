@@ -6,7 +6,12 @@ from threading import Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
-from llama_index.callbacks import CallbackManager, trace_method
+from llama_index.callbacks import (
+    CallbackManager,
+    trace_method,
+    CBEventType,
+    EventPayload,
+)
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
@@ -203,16 +208,36 @@ class BaseOpenAIAgent(BaseAgent):
         return chat_stream_response
 
     def _call_function(self, tools: List[BaseTool], function_call: dict) -> None:
-        function_message, tool_output = call_function(
-            tools, function_call, verbose=self._verbose
-        )
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: function_call["arguments"],
+                EventPayload.TOOL: get_function_by_name(
+                    tools, function_call["name"]
+                ).metadata,
+            },
+        ) as event:
+            function_message, tool_output = call_function(
+                tools, function_call, verbose=self._verbose
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
     async def _acall_function(self, tools: List[BaseTool], function_call: dict) -> None:
-        function_message, tool_output = await acall_function(
-            tools, function_call, verbose=self._verbose
-        )
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: function_call["arguments"],
+                EventPayload.TOOL: get_function_by_name(
+                    tools, function_call["name"]
+                ).metadata,
+            },
+        ) as event:
+            function_message, tool_output = await acall_function(
+                tools, function_call, verbose=self._verbose
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
@@ -399,6 +424,10 @@ class OpenAIAgent(BaseOpenAIAgent):
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+
+        if callback_manager is not None:
+            llm.callback_manager = callback_manager
+
         memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):
@@ -486,6 +515,10 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+
+        if callback_manager is not None:
+            llm.callback_manager = callback_manager
+
         memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):

@@ -22,13 +22,21 @@ class SimpleWebPageReader(PydanticBaseReader):
     Args:
         html_to_text (bool): Whether to convert HTML to text.
             Requires `html2text` package.
-
+        metadata_fn (Optional[Callable[[str], Dict]]): A function that takes in
+            a URL and returns a dictionary of metadata.
+            Default is None.
     """
 
     is_remote: bool = True
     html_to_text: bool
+      
+    _metadata_fn: Optional[Callable[[str], Dict]] = PrivateAttr()
 
-    def __init__(self, html_to_text: bool = False) -> None:
+    def __init__(
+        self,
+        html_to_text: bool = False,
+        metadata_fn: Optional[Callable[[str], Dict]] = None,
+    ) -> None:
         """Initialize with parameters."""
         try:
             import html2text  # noqa: F401
@@ -36,6 +44,7 @@ class SimpleWebPageReader(PydanticBaseReader):
             raise ImportError(
                 "`html2text` package not found, please run `pip install html2text`"
             )
+        self._metadata_fn = metadata_fn
         super().__init__(html_to_text=html_to_text)
 
     @classmethod
@@ -63,7 +72,11 @@ class SimpleWebPageReader(PydanticBaseReader):
 
                 response = html2text.html2text(response)
 
-            documents.append(Document(text=response))
+            metadata: Optional[Dict] = None
+            if self._metadata_fn is not None:
+                metadata = self._metadata_fn(url)
+
+            documents.append(Document(text=response, metadata=metadata))
 
         return documents
 
