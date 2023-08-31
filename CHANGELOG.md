@@ -1,5 +1,29 @@
 # ChangeLog
 
+## [0.8.15] - 2023-08-31
+
+### New Features
+- Added support for `MarvinEntityExtractor` metadata extractor (#7438)
+- Added a url_metadata callback to SimpleWebPageReader (#7445)
+- Expanded callback logging events (#7472)
+
+### Bug Fixes / Nits
+- Only convert newlines to spaces for text 001 embedding models in OpenAI (#7484)
+- Fix `KnowledgeGraphRagRetriever` for non-nebula indexes (#7488)
+- Support defined embedding dimension in `PGVectorStore` (#7491)
+- Greatly improved similarity calculation speed for the base vector store (#7494)
+
+## [0.8.14] - 2023-08-30
+
+### New Features
+- feat: non-kg heterogeneous graph support in Graph RAG (#7459)
+- rag guide (#7480)
+
+### Bug Fixes / Nits
+- Improve openai fine-tuned model parsing (#7474)
+- doing some code de-duplication (#7468)
+- support both str and templates for query_wrapper_prompt in HF LLMs (#7473)
+
 ## [0.8.13] - 2023-08-29
 
 ### New Features

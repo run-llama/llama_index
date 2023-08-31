@@ -10,7 +10,7 @@ try:
 except ImportError:
     from pydantic import Field
 
-from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import MetadataMode, NodeWithScore
@@ -44,7 +44,7 @@ from llama_index.schema import MetadataMode, NodeWithScore
 #         raise ValueError(f"Invalid recency prediction: {pred}.")
 
 
-class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
+class FixedRecencyPostprocessor(BaseNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
@@ -60,6 +60,10 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
     top_k: int = 1
     # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "FixedRecencyPostprocessor"
 
     def postprocess_nodes(
         self,
@@ -93,7 +97,7 @@ DEFAULT_QUERY_EMBEDDING_TMPL = (
 )
 
 
-class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
+class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
@@ -112,6 +116,10 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
     date_key: str = "date"
     similarity_cutoff: float = Field(default=0.7)
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "EmbeddingRecencyPostprocessor"
 
     def postprocess_nodes(
         self,
@@ -167,7 +175,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         ]
 
 
-class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
+class TimeWeightedPostprocessor(BaseNodePostprocessor):
     """Time-weighted post-processor.
 
     Reranks a set of nodes based on their recency.
@@ -180,6 +188,10 @@ class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
     # optionally set now (makes it easier to test)
     now: Optional[float] = None
     top_k: int = 1
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "TimeWeightedPostprocessor"
 
     def postprocess_nodes(
         self,

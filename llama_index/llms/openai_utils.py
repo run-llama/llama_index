@@ -176,10 +176,10 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         https://github.com/hwchase17/langchain/blob/master/langchain/llms/openai.py
     """
     # handling finetuned models
-    if "ft-" in modelname:  # legacy fine-tuning
-        modelname = modelname.split(":")[0]
-    elif modelname.startswith("ft:"):
+    if modelname.startswith("ft:"):
         modelname = modelname.split(":")[1]
+    elif ":ft-" in modelname:  # legacy fine-tuning
+        modelname = modelname.split(":")[0]
 
     if modelname in DISCONTINUED_MODELS:
         raise ValueError(

@@ -21,7 +21,8 @@ def get_data_model(
     base: Type,
     index_name: str,
     hybrid_search: bool,
-    text_search_config: str
+    text_search_config: str,
+    embed_dim: int = 1536
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table
@@ -37,7 +38,6 @@ def get_data_model(
     class TSVector(TypeDecorator):
         impl = TSVECTOR
 
-
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
 
@@ -48,7 +48,7 @@ def get_data_model(
             text = Column(VARCHAR, nullable=False)
             metadata_ = Column(JSON)
             node_id = Column(VARCHAR)
-            embedding = Column(Vector(1536))  # type: ignore
+            embedding = Column(Vector(embed_dim))  # type: ignore
             text_search_tsv = Column(
                                 TSVector(),
                                 Computed("to_tsvector('%s', text)" % text_search_config,
@@ -69,7 +69,7 @@ def get_data_model(
             text = Column(VARCHAR, nullable=False)
             metadata_ = Column(JSON)
             node_id = Column(VARCHAR)
-            embedding = Column(Vector(1536))  # type: ignore
+            embedding = Column(Vector(embed_dim))  # type: ignore
 
         model = type(class_name, (AbstractData,), {"__tablename__": tablename})
 
@@ -90,6 +90,7 @@ class PGVectorStore(VectorStore):
         hybrid_search: bool = False,
         text_search_config = 'english',
         hybrid_search_cross_encoder = 'cross-encoder/ms-marco-MiniLM-L-6-v2',
+        embed_dim: int = 1536,
     ) -> None:
         try:
             import sqlalchemy  # noqa: F401
@@ -121,7 +122,7 @@ class PGVectorStore(VectorStore):
 
         self._base = declarative_base()
         # sqlalchemy model
-        self.table_class = get_data_model(self._base, self.table_name, self._hybrid_search, self._text_search_config)
+        self.table_class = get_data_model(self._base, self.table_name, self._hybrid_search, self._text_search_config, embed_dim=embed_dim)
         self._connect()
         self._create_extension()
         self._create_tables_if_not_exists()
@@ -141,7 +142,8 @@ class PGVectorStore(VectorStore):
         user: str,
         password: str,
         table_name: str,
-        hybrid_search: bool = False
+        hybrid_search: bool = False,
+        embed_dim: int = 1536,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
@@ -153,6 +155,7 @@ class PGVectorStore(VectorStore):
             async_connection_string=async_conn_str,
             table_name=table_name,
             hybrid_search=hybrid_search,
+            embed_dim=embed_dim,
         )
 
     def _connect(self) -> Any:
