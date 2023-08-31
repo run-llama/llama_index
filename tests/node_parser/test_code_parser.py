@@ -38,7 +38,7 @@ class Foo:
     assert chunks[0].text.startswith("class Foo:")
     assert "scopes" in chunks[0].metadata
     assert chunks[0].metadata["module"] == "example.foo"
-    assert chunks[0].metadata["scopes"] == []
+    assert chunks[0].metadata["inclusive_scopes"] == [{'name': "Foo", 'type': "class"}]
     assert chunks[0].relationships[NodeRelationship.PARENT] is None
     assert chunks[0].relationships[NodeRelationship.PREVIOUS] is None
     assert chunks[0].relationships[NodeRelationship.NEXT] == chunks[1].id
@@ -48,7 +48,7 @@ class Foo:
     assert chunks[1].text.startswith("def foo():")
     assert "scopes" in chunks[1].metadata
     assert chunks[1].metadata["module"] == "example.foo"
-    assert chunks[1].metadata["scopes"] == [{'name': "Foo", 'type': "class"}]
+    assert chunks[1].metadata["inclusive_scopes"] == [{'name': "Foo", 'type': "class"}, {'name': "foo", 'type': "function"}]
     assert chunks[1].relationships[NodeRelationship.PARENT] == chunks[0].id
     assert chunks[1].relationships[NodeRelationship.PREVIOUS] == chunks[0].id
     assert chunks[1].relationships[NodeRelationship.NEXT] == chunks[2].id
@@ -58,7 +58,7 @@ class Foo:
     assert chunks[2].text.startswith("def baz():")
     assert "scopes" in chunks[2].metadata
     assert chunks[2].metadata["module"] == "example.foo"
-    assert chunks[2].metadata["scopes"] == [{'name': "Foo", 'type': "class"}]
+    assert chunks[2].metadata["inclusive_scopes"] == [{'name': "Foo", 'type': "class"}, {'name': "baz", 'type': "function"}]
     assert chunks[2].relationships[NodeRelationship.PARENT] == chunks[0].id
     assert chunks[2].relationships[NodeRelationship.PREVIOUS] == chunks[1].id
     assert chunks[2].relationships[NodeRelationship.NEXT] is None
