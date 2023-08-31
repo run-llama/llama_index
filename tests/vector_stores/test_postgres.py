@@ -73,6 +73,7 @@ def pg(db: None) -> Any:
 
     asyncio.run(pg.close())
 
+
 @pytest.fixture
 def pg_hybrid(db: None) -> Any:
     pg = PGVectorStore.from_params(
@@ -85,6 +86,7 @@ def pg_hybrid(db: None) -> Any:
     yield pg
 
     asyncio.run(pg.close())
+
 
 @pytest.fixture(scope="session")
 def node_embeddings() -> List[NodeWithEmbedding]:
@@ -107,6 +109,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
             ),
         ),
     ]
+
 
 @pytest.fixture(scope="session")
 def hybrid_node_embeddings() -> List[TextNode]:
@@ -146,6 +149,7 @@ def hybrid_node_embeddings() -> List[TextNode]:
             ),
         ),
     ]
+
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
@@ -237,11 +241,14 @@ async def test_add_to_db_query_and_delete(
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "aaa"
 
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True,), (False,)])
 async def test_hybrid_query(
-    pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], use_async: bool
+    pg_hybrid: PGVectorStore,
+    hybrid_node_embeddings: List[NodeWithEmbedding],
+    use_async: bool,
 ) -> None:
     if use_async:
         await pg_hybrid.async_add(hybrid_node_embeddings)
@@ -320,11 +327,14 @@ async def test_hybrid_query(
     assert res.nodes[0].node_id == "ccc"
     assert res.nodes[1].node_id == "ddd"
 
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True,), (False,)])
 async def test_add_to_db_and_hybrid_query_with_metadata_filters(
-        pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding], use_async: bool
+    pg_hybrid: PGVectorStore,
+    hybrid_node_embeddings: List[NodeWithEmbedding],
+    use_async: bool,
 ) -> None:
     if use_async:
         await pg_hybrid.async_add(hybrid_node_embeddings)
@@ -351,8 +361,9 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
     assert res.nodes[0].node_id == "ddd"
     assert res.nodes[1].node_id == "bbb"
 
+
 def test_hybrid_query_fails_if_no_query_str_provided(
-        pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
+    pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
 ) -> None:
     q = VectorStoreQuery(
         query_embedding=[1.0] * 1536,

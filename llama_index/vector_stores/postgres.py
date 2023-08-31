@@ -22,7 +22,7 @@ def get_data_model(
     index_name: str,
     hybrid_search: bool,
     text_search_config: str,
-    embed_dim: int = 1536
+    embed_dim: int = 1536,
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table
@@ -35,6 +35,7 @@ def get_data_model(
 
     from sqlalchemy.dialects.postgresql import TSVECTOR
     from sqlalchemy.types import TypeDecorator
+
     class TSVector(TypeDecorator):
         impl = TSVECTOR
 
@@ -42,6 +43,7 @@ def get_data_model(
     class_name = "Data%s" % index_name  # dynamic class name
 
     if hybrid_search:
+
         class HybridAbstractData(base):  # type: ignore
             __abstract__ = True  # this line is necessary
             id = Column(BIGINT, primary_key=True, autoincrement=True)
@@ -50,19 +52,17 @@ def get_data_model(
             node_id = Column(VARCHAR)
             embedding = Column(Vector(embed_dim))  # type: ignore
             text_search_tsv = Column(
-                                TSVector(),
-                                Computed("to_tsvector('%s', text)" % text_search_config,
-                                persisted=True)
-                              )
+                TSVector(),
+                Computed(
+                    "to_tsvector('%s', text)" % text_search_config, persisted=True
+                ),
+            )
 
         model = type(class_name, (HybridAbstractData,), {"__tablename__": tablename})
 
-        Index(
-            'text_search_tsv_idx',
-            model.text_search_tsv,
-            postgresql_using='gin'
-        )
+        Index("text_search_tsv_idx", model.text_search_tsv, postgresql_using="gin")
     else:
+
         class AbstractData(base):  # type: ignore
             __abstract__ = True  # this line is necessary
             id = Column(BIGINT, primary_key=True, autoincrement=True)
@@ -88,8 +88,8 @@ class PGVectorStore(VectorStore):
         async_connection_string: str,
         table_name: str,
         hybrid_search: bool = False,
-        text_search_config = 'english',
-        hybrid_search_cross_encoder = 'cross-encoder/ms-marco-MiniLM-L-6-v2',
+        text_search_config="english",
+        hybrid_search_cross_encoder="cross-encoder/ms-marco-MiniLM-L-6-v2",
         embed_dim: int = 1536,
     ) -> None:
         try:
@@ -122,7 +122,13 @@ class PGVectorStore(VectorStore):
 
         self._base = declarative_base()
         # sqlalchemy model
-        self.table_class = get_data_model(self._base, self.table_name, self._hybrid_search, self._text_search_config, embed_dim=embed_dim)
+        self.table_class = get_data_model(
+            self._base,
+            self.table_name,
+            self._hybrid_search,
+            self._text_search_config,
+            embed_dim=embed_dim,
+        )
         self._connect()
         self._create_extension()
         self._create_tables_if_not_exists()
@@ -225,6 +231,7 @@ class PGVectorStore(VectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
     ):
         import sqlalchemy
+
         if metadata_filters:
             for filter_ in metadata_filters.filters:
                 bind_parameter = f"value_{filter_.key}"
@@ -249,7 +256,7 @@ class PGVectorStore(VectorStore):
             self.table_class, self.table_class.embedding.cosine_distance(embedding)
         ).order_by(self.table_class.embedding.cosine_distance(embedding))
 
-        return self._apply_filters_and_limit(stmt,limit,metadata_filters)
+        return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
     def _query_with_score(
         self,
@@ -306,18 +313,36 @@ class PGVectorStore(VectorStore):
 
         # re-rank
         encoder = CrossEncoder(self._hybrid_search_cross_encoder)
-        scores = encoder.predict([(query.query_str, item[0].text) for item in all_results])
+        scores = encoder.predict(
+            [(query.query_str, item[0].text) for item in all_results]
+        )
         max_score = max(scores)
         min_score = min(scores)
         score_range = max_score - min_score
-        normalized_scores = [(score-min_score)/score_range for score in scores] if score_range != 0 else scores
-        results_with_weighted_scores = [(tup[0] * tup[1][1], tup[1][0], tup[1][1]) for tup in zip(normalized_scores, all_results)]
+        normalized_scores = (
+            [(score - min_score) / score_range for score in scores]
+            if score_range != 0
+            else scores
+        )
+        results_with_weighted_scores = [
+            (tup[0] * tup[1][1], tup[1][0], tup[1][1])
+            for tup in zip(normalized_scores, all_results)
+        ]
+
         def compare_results(x, y):
             # if scores are equal, fallback to comparing weights
             if x[0] == y[0]:
                 return x[2] - y[2]
             return x[0] - y[0]
-        sorted_scaled_results = [v for _, v, _ in sorted(results_with_weighted_scores, reverse=True, key=functools.cmp_to_key(compare_results))]
+
+        sorted_scaled_results = [
+            v
+            for _, v, _ in sorted(
+                results_with_weighted_scores,
+                reverse=True,
+                key=functools.cmp_to_key(compare_results),
+            )
+        ]
 
         # deduplicate
         seen = set()
@@ -330,32 +355,36 @@ class PGVectorStore(VectorStore):
         return uniq_results
 
     def _build_sparse_query(
-            self,
-            query_str: Optional[str],
-            limit: int,
-            metadata_filters: Optional[MetadataFilters] = None,
+        self,
+        query_str: Optional[str],
+        limit: int,
+        metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
         import sqlalchemy
         from sqlalchemy import select
         from sqlalchemy.sql import func, text
 
         if query_str is None:
-            raise ValueError(
-                "query_str must be specified for a sparse vector query."
-            )
+            raise ValueError("query_str must be specified for a sparse vector query.")
 
-        stmt = select(  # type: ignore
-            self.table_class,
-            func.ts_rank(self.table_class.text_search_tsv, func.plainto_tsquery(query_str)).label('rank')
-        ).where(self.table_class.text_search_tsv.match(query_str)).order_by(text("rank desc"))
+        stmt = (
+            select(  # type: ignore
+                self.table_class,
+                func.ts_rank(
+                    self.table_class.text_search_tsv, func.plainto_tsquery(query_str)
+                ).label("rank"),
+            )
+            .where(self.table_class.text_search_tsv.match(query_str))
+            .order_by(text("rank desc"))
+        )
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)  # type: ignore
 
     async def _async_sparse_query_with_rank(
-            self,
-            query: VectorStoreQuery,
-            limit: int,
-            metadata_filters: Optional[MetadataFilters] = None,
+        self,
+        query: VectorStoreQuery,
+        limit: int,
+        metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_sparse_query(query.query_str, limit, metadata_filters)
         async with self._async_session() as async_session:
@@ -372,10 +401,10 @@ class PGVectorStore(VectorStore):
                 ]
 
     def _sparse_query_with_rank(
-            self,
-            query: VectorStoreQuery,
-            limit: int,
-            metadata_filters: Optional[MetadataFilters] = None,
+        self,
+        query: VectorStoreQuery,
+        limit: int,
+        metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_sparse_query(query.query_str, limit, metadata_filters)
         with self._session() as session:
@@ -393,20 +422,26 @@ class PGVectorStore(VectorStore):
 
     async def _async_hybrid_query(self, query):
         import asyncio
+
         results = await asyncio.gather(
             self._aquery_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
             ),
-            self._async_sparse_query_with_rank(query, query.similarity_top_k, query.filters)
+            self._async_sparse_query_with_rank(
+                query, query.similarity_top_k, query.filters
+            ),
         )
 
         alpha = query.alpha if query.alpha is not None else 1
-        weights = [alpha, 1-alpha]
-        results = [[(res, weights[idx]) for res in result] for idx, result in enumerate(results)]
+        weights = [alpha, 1 - alpha]
+        results = [
+            [(res, weights[idx]) for res in result]
+            for idx, result in enumerate(results)
+        ]
 
         results = self._rerank(query, results)
 
-        return results[:query.similarity_top_k]
+        return results[: query.similarity_top_k]
 
     def _hybrid_query(self, query):
         alpha = query.alpha if query.alpha is not None else 1
@@ -416,14 +451,16 @@ class PGVectorStore(VectorStore):
         )
         dense_results = [(res, alpha) for res in dense_results]
 
-        sparse_results = self._sparse_query_with_rank(query, query.similarity_top_k, query.filters)
-        sparse_results = [(res, 1-alpha) for res in sparse_results]
+        sparse_results = self._sparse_query_with_rank(
+            query, query.similarity_top_k, query.filters
+        )
+        sparse_results = [(res, 1 - alpha) for res in sparse_results]
 
         combined_results = [dense_results, sparse_results]
 
         results = self._rerank(query, combined_results)
 
-        return results[:query.similarity_top_k]
+        return results[: query.similarity_top_k]
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]
