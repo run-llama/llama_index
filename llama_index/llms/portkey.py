@@ -124,12 +124,12 @@ class Portkey(CustomLLM):
         self._client = Rubeus(
             api_key=api_key,
             default_headers={
-                "x-portkey-trace-id": trace_id,
-                "x-portkey-cache": cache_status,
-                "x-portkey-metadata": json.dumps(metadata),
-                "x-portkey-cache-force-refresh": cache_force_refresh,
-                "x-portkey-cache-age": f"max-age={cache_age}",
-                "x-portkey-retry-count": f"{retry}",
+                "trace-id": trace_id,
+                "cache": cache_status,
+                "metadata": metadata,
+                "cache-force-refresh": cache_force_refresh,
+                "cache-age": f"max-age={cache_age}",
+                "retry-count": retry,
             },
         )
         self._portkey_response = None
