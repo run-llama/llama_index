@@ -5,6 +5,7 @@
 ### New Features
 - Added support for `MarvinEntityExtractor` metadata extractor (#7438)
 - Added a url_metadata callback to SimpleWebPageReader (#7445)
+- Expanded callback logging events (#7472)
 
 ### Bug Fixes / Nits
 - Only convert newlines to spaces for text 001 embedding models in OpenAI (#7484)
