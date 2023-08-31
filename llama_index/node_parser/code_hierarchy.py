@@ -11,7 +11,28 @@ from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.schema import BaseNode, Document, NodeRelationship, TextNode
 from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.utils import get_tqdm_iterable
+from pydantic import BaseModel
 
+class _ScopeItem(BaseModel):
+    """Like a Node from tree_sitter, but with only the str information we need."""
+    name: str
+    type: str
+
+def _get_name(node: Node) -> str:
+    """Get the name of a node."""
+    if not node.is_named:
+        raise ValueError("Node is not named.")
+
+    for child in node.children:
+        if child.type == "identifier":
+            return child.text
+
+    raise ValueError("Node does not have an identifier child.")
+
+class _ChunkNodeOutput(BaseModel):
+    """The output of a chunk_node call."""
+    this_document: Optional[TextNode]
+    children_documents: List[TextNode]
 
 class CodeBlockNodeParser(NodeParser):
     """Split code using a AST parser.
@@ -19,6 +40,11 @@ class CodeBlockNodeParser(NodeParser):
     Add metadata about the scope of the code block and relationships between
     code blocks.
     """
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return cls.__name__
 
     language: str = Field(
         description="The programming languge of the code being split."
@@ -53,77 +79,69 @@ class CodeBlockNodeParser(NodeParser):
             code_splitter=code_splitter,
         )
 
-    def _chunk_node(self, parent: Node, text: str, context_list: Optional[List[str]] = None) -> List[TextNode]:
-        if context_list is None:
-            context_list = []
+    def _chunk_node(self, parent: Node, text: str, _context_list: Optional[List[_ScopeItem]] = None, _root=True) -> _ChunkNodeOutput:
+        """
+        Args:
+            parent (Node): The parent node to chunk
+            text (str): The text of the entire document
+            _context_list (Optional[List[_ScopeItem]]): The scope context of the parent node
+            _root (bool): Whether or not this is the root node
+        """
+        if _context_list is None:
+            _context_list = []
 
-        new_nodes: List[TextNode] = []
+        child_documents: List[TextNode] = []
 
-        # We will assemble the context string from the context list
-        # For anything other than the last context, we will add an ellipses comment
-        # to indicate that there is more context before the current chunk
-        context_str = "".join(context_list)
-
-        current_chunk = str(context_str)  # Initialize current_chunk with current context
-
-        last_child: Optional[Node] = None
-        for child in parent.children:
-
-            # Add the new signature or header to the context list before recursing
-            if child.type in self.split_on_types:
-                if len(current_chunk) > 0:  # If current_chunk has more than just the context
-                    # Stop the current chunk
-                    new_node = TextNode(
-                        text=current_chunk,
-                        relationships={
-                            NodeRelationship.PARENT: parent,
-                            NodeRelationship.CHILD: [],
-                            NodeRelationship.NEXT: None,
-                            NodeRelationship.PREVIOUS: last_child.as_related_node_info() if last_child is not None else None,
-                        }
-                    )
-                    new_nodes.append(new_node)
-                else:
-                    new_node = None
-
-                # Create a new chunk recursively
-                if last_child is not None:
-                    new_context = text[last_child.start_bytes:last_child.end_bytes]
-                    context_list.append(new_context)
-                next_chunks = self._chunk_node(child, text, context_list=context_list.copy())
-
-                # Create relationship heirarchy
-                if new_node is not None:
-                    new_node.relationships[NodeRelationship.CHILD] = [chunk.as_related_node_info() for chunk in next_chunks]
-                    for chunk in next_chunks:
-                        chunk.relationships[NodeRelationship.PARENT] = new_node.as_related_node_info()
-
-                new_nodes.extend(next_chunks)
-            else:
-                current_chunk += text[child.start_bytes:child.end_byte]
-
-            last_child = child
-
-        if len(current_chunk) > 0:  # If current_chunk has more than just the context
-            new_node = TextNode(
+        # Create this node
+        current_chunk = text[parent.start_byte:parent.end_byte]
+        if parent.type in self.split_on_types or _root:
+            # Get the new context
+            if not _root:
+                new_context = _ScopeItem(
+                    name=_get_name(parent),
+                    type=parent.type,
+                )
+                _context_list.append(new_context)
+            this_document = TextNode(
                 text=current_chunk,
+                metadata={
+                    "inclusive_scopes": [cl.dict() for cl in _context_list],
+                },
                 relationships={
-                    NodeRelationship.PARENT: None,
                     NodeRelationship.CHILD: [],
-                    NodeRelationship.NEXT: None,
-                    NodeRelationship.PREVIOUS: None,
                 }
             )
-            new_nodes.append(new_node)
+        else:
+            this_document = None
 
-        # Add ordered relationships between chunks
-        for i in range(len(new_nodes)):
-            if i > 0:
-                new_nodes[i].relationships[NodeRelationship.PREVIOUS] = new_nodes[i-1].as_related_node_info()
-            if i < len(new_nodes) - 1:
-                new_nodes[i].relationships[NodeRelationship.NEXT] = new_nodes[i+1].as_related_node_info()
+        # Iterate over children
+        for child in parent.children:
+            if child.children:
+                # Recurse on the child
+                next_chunks = self._chunk_node(child, text, _context_list=_context_list.copy(), _root=False)
 
-        return new_nodes
+                # If there is a this_document, then we need to add the children to this_document
+                if this_document is not None:
+                    # If there is both a this_document inside next_chunks and this_document, then we need to add the next_chunks.this_document to this_document as a child
+                    if next_chunks.this_document is not None:
+                        this_document.relationships[NodeRelationship.CHILD].append(next_chunks.this_document.as_related_node_info())
+                        next_chunks.this_document.relationships[NodeRelationship.PARENT] = this_document.as_related_node_info()
+
+                    # If there is not a this_document inside next_chunks then we need to add the children to this_document as children
+                    else:
+                        this_document.relationships[NodeRelationship.CHILD].extend(next_chunks.children_documents)
+                        for child_document in next_chunks.children_documents:
+                            child_document.relationships[NodeRelationship.PARENT] = this_document.as_related_node_info()
+
+                # Add the new document to the list, flatten the structure by adding the next_chunks.this_document to the list as well
+                if next_chunks.this_document is not None:
+                    child_documents.append(next_chunks.this_document)
+                child_documents.extend(next_chunks.children_documents)
+
+        return _ChunkNodeOutput(
+            this_document=this_document,
+            children_documents=child_documents,
+        )
 
 
     def get_nodes_from_documents(
@@ -170,12 +188,15 @@ class CodeBlockNodeParser(NodeParser):
                     or tree.root_node.children[0].type != "ERROR"
                 ):
                     # Chunk the code
-                    chunks = self._chunk_node(tree.root_node, document.text)
+                    _chunks = self._chunk_node(tree.root_node, document.text)
+                    assert _chunks.this_document is not None, "Root node must be a chunk"
+                    chunks = [_chunks.this_document] + _chunks.children_documents
 
                     # Add your metadata to the chunks here
                     for chunk in chunks:
                         chunk.metadata = {
                             "language": self.language,
+                            **chunk.metadata,
                             **document.metadata,
                         }
                         chunk.relationships[NodeRelationship.SOURCE] = document.as_related_node_info()
