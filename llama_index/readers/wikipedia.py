@@ -1,18 +1,20 @@
 """Simple reader that reads wikipedia."""
-from typing import Any, List
+from typing import Any, List, Optional
 
-from llama_index.readers.base import BaseReader
+from llama_index.readers.base import PydanticBaseReader
 from llama_index.schema import Document
 
 
-class WikipediaReader(BaseReader):
+class WikipediaReader(PydanticBaseReader):
     """Wikipedia reader.
 
     Reads a page.
 
     """
 
-    def __init__(self) -> None:
+    is_remote: bool = True
+
+    def __init__(self, pages: Optional[List[str]] = None) -> None:
         """Initialize with parameters."""
         try:
             import wikipedia  # noqa: F401
@@ -20,6 +22,11 @@ class WikipediaReader(BaseReader):
             raise ImportError(
                 "`wikipedia` package not found, please run `pip install wikipedia`"
             )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "WikipediaReader"
 
     def load_data(self, pages: List[str], **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.

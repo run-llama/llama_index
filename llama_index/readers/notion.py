@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 import requests  # type: ignore
 
-from llama_index.readers.base import BaseReader
+from llama_index.readers.base import PydanticBaseReader
 from llama_index.schema import Document
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: Notion DB reader coming soon!
-class NotionPageReader(BaseReader):
+class NotionPageReader(PydanticBaseReader):
     """Notion Page reader.
 
     Reads a set of Notion pages.
@@ -27,7 +27,13 @@ class NotionPageReader(BaseReader):
 
     """
 
-    def __init__(self, integration_token: Optional[str] = None) -> None:
+    is_remote: bool = True
+    integration_token: str
+    headers: Dict[str, str]
+
+    def __init__(
+        self, integration_token: Optional[str] = None, headers: Optional[Dict] = None
+    ) -> None:
         """Initialize with parameters."""
         if integration_token is None:
             integration_token = os.getenv(INTEGRATION_TOKEN_NAME)
@@ -36,12 +42,18 @@ class NotionPageReader(BaseReader):
                     "Must specify `integration_token` or set environment "
                     "variable `NOTION_INTEGRATION_TOKEN`."
                 )
-        self.token = integration_token
-        self.headers = {
-            "Authorization": "Bearer " + self.token,
+
+        headers = headers or {
+            "Authorization": "Bearer " + integration_token,
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28",
         }
+        super().__init__(integration_token=integration_token, headers=headers)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "NotionPageReader"
 
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Read a block."""

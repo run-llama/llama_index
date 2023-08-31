@@ -1,11 +1,11 @@
 """Simple reader that reads tweets of a twitter handle."""
 from typing import Any, List, Optional
 
-from llama_index.readers.base import BaseReader
+from llama_index.readers.base import PydanticBaseReader
 from llama_index.schema import Document
 
 
-class TwitterTweetReader(BaseReader):
+class TwitterTweetReader(PydanticBaseReader):
     """Twitter tweets reader.
 
     Read tweets of user twitter handle.
@@ -20,6 +20,10 @@ class TwitterTweetReader(BaseReader):
             Default is 100 tweets.
     """
 
+    is_remote: bool = True
+    bearer_token: str
+    num_tweets: Optional[int]
+
     def __init__(
         self,
         bearer_token: str,
@@ -28,6 +32,19 @@ class TwitterTweetReader(BaseReader):
         """Initialize with parameters."""
         self.bearer_token = bearer_token
         self.num_tweets = num_tweets
+        super().__init__(
+            is_remote=True,
+            num_tweets=num_tweets,
+            bearer_token=bearer_token,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "TwitterTweetReader"
+
+    def load_from_self(self) -> List[Document]:
+        return self.load_data(self.twitterhandles)
 
     def load_data(
         self, twitterhandles: List[str], **load_kwargs: Any

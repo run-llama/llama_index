@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Any, List
 
-from llama_index.readers.base import BaseReader
+from llama_index.readers.base import PydanticBaseReader
 from llama_index.schema import Document
 
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
@@ -26,12 +26,14 @@ logger = logging.getLogger(__name__)
 # limitations under the License.
 
 
-class GoogleDocsReader(BaseReader):
+class GoogleDocsReader(PydanticBaseReader):
     """Google Docs reader.
 
     Reads a page from Google Docs
 
     """
+
+    is_remote: bool = True
 
     def __init__(self) -> None:
         """Initialize with parameters."""
@@ -46,6 +48,11 @@ class GoogleDocsReader(BaseReader):
                 "Please run `pip install --upgrade google-api-python-client "
                 "google-auth-httplib2 google-auth-oauthlib`."
             )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "GoogleDocsReader"
 
     def load_data(self, document_ids: List[str]) -> List[Document]:
         """Load data from the input directory.

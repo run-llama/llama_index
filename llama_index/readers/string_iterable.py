@@ -1,11 +1,11 @@
 """Simple reader that turns an iterable of strings into a list of Documents."""
 from typing import List
 
-from llama_index.readers.base import BaseReader
+from llama_index.readers.base import PydanticBaseReader
 from llama_index.schema import Document
 
 
-class StringIterableReader(BaseReader):
+class StringIterableReader(PydanticBaseReader):
     """String Iterable Reader.
 
     Gets a list of documents, given an iterable (e.g. list) of strings.
@@ -23,6 +23,13 @@ class StringIterableReader(BaseReader):
 
             # response should be something like "You bought an apple."
     """
+
+    is_remote: bool = False
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "StringIterableReader"
 
     def load_data(self, texts: List[str]) -> List[Document]:
         """Load the data."""
