@@ -1,4 +1,3 @@
-
 from typing import Any, List, Optional, Sequence
 
 from pydantic import Field
@@ -15,30 +14,46 @@ from pydantic import BaseModel
 
 # TODO: Expand these for new languages
 DEFAULT_NAME_IDENTIFIERS = {
-    'python': ["identifier"],
-    'javascript': ["identifier", "type_identifier", "property_identifier"],
-    'typescript': ["identifier", "type_identifier", "property_identifier"],
-    'html': ["start_tag"],
-    'cpp': ["function_declarator", "type_identifier"]
+    "python": ["identifier"],
+    "javascript": ["identifier", "type_identifier", "property_identifier"],
+    "typescript": ["identifier", "type_identifier", "property_identifier"],
+    "html": ["start_tag"],
+    "cpp": ["function_declarator", "type_identifier"],
 }
 
 DEFAULT_SPLIT_ON_TYPES = {
-    'python': ["function_definition", "class_definition"],
-    'javascript': ["function_declaration", "class_declaration", "lexical_declaration", "method_definition"],
-    'typescript': ["function_declaration", "class_declaration", "interface_declaration", "method_definition", "lexical_declaration"],
-    'html': ["element"],
-    'cpp': ["class_specifier", "function_definition"]
+    "python": ["function_definition", "class_definition"],
+    "javascript": [
+        "function_declaration",
+        "class_declaration",
+        "lexical_declaration",
+        "method_definition",
+    ],
+    "typescript": [
+        "function_declaration",
+        "class_declaration",
+        "interface_declaration",
+        "method_definition",
+        "lexical_declaration",
+    ],
+    "html": ["element"],
+    "cpp": ["class_specifier", "function_definition"],
 }
+
 
 class _ScopeItem(BaseModel):
     """Like a Node from tree_sitter, but with only the str information we need."""
+
     name: str
     type: str
 
+
 class _ChunkNodeOutput(BaseModel):
     """The output of a chunk_node call."""
+
     this_document: Optional[TextNode]
     children_documents: List[TextNode]
+
 
 class CodeBlockNodeParser(NodeParser):
     """Split code using a AST parser.
@@ -55,9 +70,7 @@ class CodeBlockNodeParser(NodeParser):
     language: str = Field(
         description="The programming languge of the code being split."
     )
-    split_on_types: List[str] = Field(
-        description="The types of nodes to split on."
-    )
+    split_on_types: List[str] = Field(description="The types of nodes to split on.")
     name_identifiers: List[str] = Field(
         description="The types of nodes to use as the name of the scope."
     )
@@ -113,9 +126,9 @@ class CodeBlockNodeParser(NodeParser):
             min_characters=min_characters,
         )
 
-
     def _get_node_name(self, node: Node) -> str:
         """Get the name of a node."""
+
         def recur(node: Node) -> str:
             for child in node.children:
                 if child.type in self.name_identifiers:
@@ -126,7 +139,13 @@ class CodeBlockNodeParser(NodeParser):
 
         return recur(node)
 
-    def _chunk_node(self, parent: Node, text: str, _context_list: Optional[List[_ScopeItem]] = None, _root: bool =True) -> _ChunkNodeOutput:
+    def _chunk_node(
+        self,
+        parent: Node,
+        text: str,
+        _context_list: Optional[List[_ScopeItem]] = None,
+        _root: bool = True,
+    ) -> _ChunkNodeOutput:
         """
         Args:
             parent (Node): The parent node to chunk
@@ -140,7 +159,7 @@ class CodeBlockNodeParser(NodeParser):
         child_documents: List[TextNode] = []
 
         # Create this node
-        current_chunk = text[parent.start_byte:parent.end_byte]
+        current_chunk = text[parent.start_byte : parent.end_byte]
 
         # Return early if the chunk is too small
         if len(current_chunk) < self.min_characters and not _root:
@@ -164,7 +183,7 @@ class CodeBlockNodeParser(NodeParser):
                 },
                 relationships={
                     NodeRelationship.CHILD: [],
-                }
+                },
             )
         else:
             this_document = None
@@ -173,20 +192,30 @@ class CodeBlockNodeParser(NodeParser):
         for child in parent.children:
             if child.children:
                 # Recurse on the child
-                next_chunks = self._chunk_node(child, text, _context_list=_context_list.copy(), _root=False)
+                next_chunks = self._chunk_node(
+                    child, text, _context_list=_context_list.copy(), _root=False
+                )
 
                 # If there is a this_document, then we need to add the children to this_document
                 if this_document is not None:
                     # If there is both a this_document inside next_chunks and this_document, then we need to add the next_chunks.this_document to this_document as a child
                     if next_chunks.this_document is not None:
-                        this_document.relationships[NodeRelationship.CHILD].append(next_chunks.this_document.as_related_node_info())
-                        next_chunks.this_document.relationships[NodeRelationship.PARENT] = this_document.as_related_node_info()
+                        this_document.relationships[NodeRelationship.CHILD].append(
+                            next_chunks.this_document.as_related_node_info()
+                        )
+                        next_chunks.this_document.relationships[
+                            NodeRelationship.PARENT
+                        ] = this_document.as_related_node_info()
 
                     # If there is not a this_document inside next_chunks then we need to add the children to this_document as children
                     else:
-                        this_document.relationships[NodeRelationship.CHILD].extend(next_chunks.children_documents)
+                        this_document.relationships[NodeRelationship.CHILD].extend(
+                            next_chunks.children_documents
+                        )
                         for child_document in next_chunks.children_documents:
-                            child_document.relationships[NodeRelationship.PARENT] = this_document.as_related_node_info()
+                            child_document.relationships[
+                                NodeRelationship.PARENT
+                            ] = this_document.as_related_node_info()
 
                 # Add the new document to the list, flatten the structure by adding the next_chunks.this_document to the list as well
                 if next_chunks.this_document is not None:
@@ -197,7 +226,6 @@ class CodeBlockNodeParser(NodeParser):
             this_document=this_document,
             children_documents=child_documents,
         )
-
 
     def get_nodes_from_documents(
         self,
@@ -212,7 +240,8 @@ class CodeBlockNodeParser(NodeParser):
         """
         out: List[BaseNode] = []
         with self.callback_manager.event(
-            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [document.text for document in documents]}
+            CBEventType.CHUNKING,
+            payload={EventPayload.CHUNKS: [document.text for document in documents]},
         ) as event:
             try:
                 import tree_sitter_languages
@@ -244,7 +273,9 @@ class CodeBlockNodeParser(NodeParser):
                 ):
                     # Chunk the code
                     _chunks = self._chunk_node(tree.root_node, document.text)
-                    assert _chunks.this_document is not None, "Root node must be a chunk"
+                    assert (
+                        _chunks.this_document is not None
+                    ), "Root node must be a chunk"
                     chunks = [_chunks.this_document] + _chunks.children_documents
 
                     # Add your metadata to the chunks here
@@ -254,7 +285,9 @@ class CodeBlockNodeParser(NodeParser):
                             **chunk.metadata,
                             **document.metadata,
                         }
-                        chunk.relationships[NodeRelationship.SOURCE] = document.as_related_node_info()
+                        chunk.relationships[
+                            NodeRelationship.SOURCE
+                        ] = document.as_related_node_info()
 
                     # Now further split the code by lines and characters
                     if self.code_splitter:
@@ -277,8 +310,8 @@ class CodeBlockNodeParser(NodeParser):
 
                     out += chunks
                 else:
-                    raise ValueError(f"Could not parse code with language {self.language}.")
+                    raise ValueError(
+                        f"Could not parse code with language {self.language}."
+                    )
 
         return out
-
-
