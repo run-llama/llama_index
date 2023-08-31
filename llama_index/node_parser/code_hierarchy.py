@@ -2,6 +2,7 @@
 from typing import Any, List, Optional, Sequence
 
 from pydantic import Field
+from tree_sitter import Node
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
@@ -52,7 +53,7 @@ class CodeBlockNodeParser(NodeParser):
             code_splitter=code_splitter,
         )
 
-    def _chunk_node(self, parent: Any, text: str, context_list: Optional[List[str]] = None) -> List[TextNode]:
+    def _chunk_node(self, parent: Node, text: str, context_list: Optional[List[str]] = None) -> List[TextNode]:
         if context_list is None:
             context_list = []
 
@@ -65,9 +66,9 @@ class CodeBlockNodeParser(NodeParser):
 
         current_chunk = str(context_str)  # Initialize current_chunk with current context
 
-        last_child = None
+        last_child: Optional[Node] = None
         for child in parent.children:
-            breakpoint()
+
             # Add the new signature or header to the context list before recursing
             if child.type in self.split_on_types:
                 if len(current_chunk) > 0:  # If current_chunk has more than just the context
@@ -86,8 +87,9 @@ class CodeBlockNodeParser(NodeParser):
                     new_node = None
 
                 # Create a new chunk recursively
-                new_context = text[last_child.start_bytes:last_child.end_bytes]
-                context_list.append(new_context)
+                if last_child is not None:
+                    new_context = text[last_child.start_bytes:last_child.end_bytes]
+                    context_list.append(new_context)
                 next_chunks = self._chunk_node(child, text, context_list=context_list.copy())
 
                 # Create relationship heirarchy
@@ -99,7 +101,6 @@ class CodeBlockNodeParser(NodeParser):
                 new_nodes.extend(next_chunks)
             else:
                 current_chunk += text[child.start_bytes:child.end_byte]
-
 
             last_child = child
 
@@ -124,7 +125,7 @@ class CodeBlockNodeParser(NodeParser):
 
         return new_nodes
 
-        @abstractmethod
+
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
@@ -136,9 +137,9 @@ class CodeBlockNodeParser(NodeParser):
             documents (Sequence[Document]): documents to parse
 
         """
-
+        out: List[BaseNode] = []
         with self.callback_manager.event(
-            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [document.text for document in documents]}
         ) as event:
             try:
                 import tree_sitter_languages
@@ -198,8 +199,10 @@ class CodeBlockNodeParser(NodeParser):
                         payload={EventPayload.CHUNKS: chunks},
                     )
 
-                    return chunks
+                    out += chunks
                 else:
                     raise ValueError(f"Could not parse code with language {self.language}.")
+
+        return out
 
 
