@@ -132,7 +132,6 @@ def generate_llm_metadata(llm: LLMBase) -> LLMMetadata:
 
     return LLMMetadata(
         _context_window=modelname_to_contextsize(llm.model),
-        num_output=100,
         is_chat_model=is_chat_model(llm.model),
         model_name=llm.model,
     )

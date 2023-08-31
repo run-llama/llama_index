@@ -3,9 +3,9 @@
 Returns:
     _type_: _description_
 """
+import json
 from typing import Any, Optional, Sequence, Dict, Union, List
 
-# from rubeus import Rubeus, LLMBase
 from rubeus import (
     Rubeus,
     LLMBase,
@@ -60,8 +60,8 @@ class Portkey(CustomLLM):
         default=RubeusModes.SINGLE,
     )
 
-    model: str = Field(default="gpt-3.5-turbo")
-    provider: Union[ProviderTypes, ProviderTypesLiteral] = Field(
+    model: Optional[str] = Field(default="gpt-3.5-turbo")
+    provider: Optional[Union[ProviderTypes, ProviderTypesLiteral]] = Field(
         default=ProviderTypes.OPENAI
     )
     llm: LLMBase = Field(description="LLM parameter", default_factory=dict)
@@ -75,20 +75,14 @@ class Portkey(CustomLLM):
     def __init__(
         self,
         *,
-        api_key: str = "",
-        provider: Union[ProviderTypes, ProviderTypesLiteral] = ProviderTypes.OPENAI,
         mode: Optional[Union[RubeusModes, RubeusModesLiteral]] = RubeusModes.SINGLE,
-        model: str = "gpt-3.5-turbo",
-        model_api_key: Optional[str] = None,
-        temperature: float = 0.1,
-        max_tokens: Optional[int] = None,
-        max_retries: int = 5,
-        trace_id: Optional[str] = "",
+        api_key: str = "",
         cache_status: Optional[Union[RubeusCacheType, RubeusCacheLiteral]] = None,
-        cache: Optional[bool] = False,
-        metadata: Optional[Dict[str, Any]] = {},
-        weight: Optional[float] = 1.0,
-        # **kwargs: Any,
+        trace_id: Optional[str] = "",
+        cache_age: Optional[int] = None,
+        cache_force_refresh: Optional[bool] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        retry: Optional[int] = 3
     ) -> None:
         """
         Initialize a Portkey instance.
@@ -127,30 +121,32 @@ class Portkey(CustomLLM):
             ValueError: If neither 'llm' nor 'llms' are provided during
             Portkey initialization.
         """
-        self._client = Rubeus(api_key=api_key)
+        self._client = Rubeus(
+            api_key=api_key,
+            default_headers={
+                "x-portkey-trace-id": trace_id,
+                "x-portkey-cache": cache_status,
+                "x-portkey-metadata": json.dumps(metadata),
+                "x-portkey-cache-force-refresh": cache_force_refresh,
+                "x-portkey-cache-age": cache_age,
+                "x-portkey-retry-count": retry
+            },
+        )
         self._portkey_response = None
         super().__init__(
             mode=mode,
-            model=model,
-            provider=provider,
-            model_api_key=model_api_key,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            max_retries=max_retries,
             trace_id=trace_id,
             cache_status=cache_status,
-            cache=cache,
             metadata=metadata,
-            weight=weight,
+            cache_force_refresh=cache_force_refresh,
+            cache_age=cache_age,
         )
-
-        self.model = model
-        self.provider = provider
+        self.model = None
 
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
-        return generate_llm_metadata(self.llm)
+        return generate_llm_metadata(self.llms[0])
 
     def add_llms(self, llm_params: Union[LLMBase, List[LLMBase]]) -> "Portkey":
         """
@@ -179,43 +175,17 @@ class Portkey(CustomLLM):
         if isinstance(llm_params, LLMBase):
             llm_params = [llm_params]
         self.llms.extend(llm_params)
-        return self
-
-    def add_llm(self, llm_params: LLMBase) -> "Portkey":
-        """
-        Adds the specified LLM parameters to the list of fallback LLMs.
-
-        Args:
-            llm_params (LLMBase): The parameters representing the LLM to be added.
-                Should be an instance of LLMBase with the following attributes:
-                - provider: Optional[ProviderTypes]
-                - model: str
-                - temperature: float
-                - max_tokens: Optional[int]
-                - max_retries: int
-                - trace_id: Optional[str]
-                - cache_status: Optional[RubeusCacheType]
-                - cache: Optional[bool]
-                - metadata: Dict[str, Any]
-                - weight: Optional[float]
-
-        Returns:
-            None
-        """
-        if self.llm is not None:
-            raise ValueError(
-                "Duplicate LLM: An LLM is already add as part of the configuration."
-            )
-        self.llm = llm_params
+        if self.model is None:
+            self.model = self.llms[0].model
         return self
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint for LLM."""
         if self._is_chat_model:
-            complete_fn = chat_to_completion_decorator(self.chat)
+            complete_fn = chat_to_completion_decorator(self._chat)
         else:
-            complete_fn = self.complete
+            complete_fn = self._complete
         return complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
@@ -289,6 +259,7 @@ class Portkey(CustomLLM):
     ) -> ChatResponseGen:
         messages_dict = [{"role": i.role.value, "content": i.content} for i in messages]
         self._client.default_params["messages"] = messages_dict  # type: ignore
+        self._client.default_params["stream"] = True
         if self.mode == RubeusModes.FALLBACK:
             response = self._client.chat_completion.with_fallbacks(
                 llms=self.llms, stream=True
@@ -347,6 +318,7 @@ class Portkey(CustomLLM):
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         self._client.default_params["prompt"] = prompt  # type: ignore
+        self._client.default_params["stream"] = True
         if self.mode == RubeusModes.FALLBACK:
             response = self._client.completion.with_fallbacks(
                 llms=self.llms, stream=True
@@ -380,7 +352,7 @@ class Portkey(CustomLLM):
             bool: True if the provided model is a chat-based language model,
             False otherwise.
         """
-        return is_chat_model(self.model)
+        return is_chat_model(self.model or "")
 
     @property
     def _is_fallback_mode(self) -> bool:
