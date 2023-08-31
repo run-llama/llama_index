@@ -65,6 +65,7 @@ class ContextChatEngine(BaseChatEngine):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        context_template: Optional[str] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
@@ -95,6 +96,7 @@ class ContextChatEngine(BaseChatEngine):
             prefix_messages=prefix_messages,
             node_postprocessors=node_postprocessors,
             callback_manager=service_context.callback_manager,
+            context_template=context_template,
         )
 
     def _generate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:

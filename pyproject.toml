@@ -12,4 +12,5 @@ exclude = [
     ".ruff_cache",
     "examples",
     "notebooks",
+    ".git"
 ]

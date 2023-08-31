@@ -1,5 +1,48 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added support for `MarvinEntityExtractor` metadata extractor (#7438)
+- Added a url_metadata callback to SimpleWebPageReader (#7445)
+
+### Bug Fixes / Nits
+- Only convert newlines to spaces for text 001 embedding models in OpenAI (#7484)
+- Fix `KnowledgeGraphRagRetriever` for non-nebula indexes (#7488)
+
+## [0.8.14] - 2023-08-30
+
+### New Features
+- feat: non-kg heterogeneous graph support in Graph RAG (#7459)
+- rag guide (#7480)
+
+### Bug Fixes / Nits
+- Improve openai fine-tuned model parsing (#7474)
+- doing some code de-duplication (#7468)
+- support both str and templates for query_wrapper_prompt in HF LLMs (#7473)
+
+## [0.8.13] - 2023-08-29
+
+### New Features
+- Add embedding finetuning (#7452)
+- Added support for RunGPT LLM (#7401)
+- Integration guide and notebook with DeepEval (#7425)
+- Added `VectorIndex` and `VectaraRetriever` as a managed index (#7440)
+- Added support for `to_tool_list` to detect and use async functions (#7282)
+
+## [0.8.12] - 2023-08-28
+
+### New Features
+
+- add openai finetuning class (#7442)
+- Service Context to/from dict (#7395)
+- add finetuning guide (#7429)
+
+### Smaller Features / Nits / Bug Fixes
+- Add example how to run FalkorDB docker (#7441)
+- Update root.md to use get_response_synthesizer expected type. (#7437) 
+- Bugfix MonsterAPI Pydantic version v2/v1 support. Doc Update (#7432)
+
 ## [0.8.11.post3] - 2023-08-27
 
 ### New Features

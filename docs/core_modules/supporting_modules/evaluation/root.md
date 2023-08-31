@@ -42,6 +42,13 @@ if it matches the query.
 
 In addition to evaluating queries, LlamaIndex can also use your data to generate questions to evaluate on. This means that you can automatically generate questions, and then run an evaluation pipeline to test if the LLM can actually answer questions accurately using your data.
 
+## Integrations
+
+We also integrate with community evaluation tools.
+
+- [DeepEval](../../../community/integrations/deepeval.md)
+- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/integrations/llamaindex.ipynb)
+
 ## Usage Pattern
 
 For full usage details, see the usage pattern below.
