@@ -33,7 +33,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
 | MyScale                  | cloud               |                    |               |        | ✓               |       |
 | Tair                     | cloud               | ✓                  |               | ✓      | ✓               |       |
-| Simple                   | in-memory           |                    |               | ✓      |                 |       |
+| Simple                   | in-memory           | ✓                  |               | ✓      |                 |       |
 | FAISS                    | in-memory           |                    |               |        |                 |       |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
