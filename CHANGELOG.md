@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.15] - 2023-08-31
 
 ### New Features
 - Added support for `MarvinEntityExtractor` metadata extractor (#7438)
