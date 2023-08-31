@@ -302,7 +302,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             )
 
         g = nx.Graph()
-        subjs = self.index_struct.table.keys()
+        subjs = list(self.index_struct.table.keys())
 
         # add edges
         rel_map = self._graph_store.get_rel_map(subjs=subjs, depth=1, limit=limit)
