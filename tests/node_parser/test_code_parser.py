@@ -114,13 +114,16 @@ def test_html_code_splitter() -> None:
 
     chunks = code_splitter.get_nodes_from_documents([TextNode(text=text)])
 
-    # Test the first chunk (DOCTYPE)
+    # This is the DOCTYPE scope
     assert chunks[0].text.startswith("<!DOCTYPE html>")
+    assert chunks[0].metadata["module"] == "example.html"
     assert chunks[0].metadata["inclusive_scopes"] == []
-    assert chunks[0].relationships[NodeRelationship.PARENT] is None
-    assert chunks[0].relationships[NodeRelationship.PREVIOUS] is None
-    assert chunks[0].relationships[NodeRelationship.NEXT] == chunks[1].id_
-    assert chunks[0].relationships[NodeRelationship.CHILD] == []
+    assert NodeRelationship.PARENT not in chunks[0].relationships
+    assert [c.node_id for c in chunks[0].relationships[NodeRelationship.CHILD]] == [chunks[1].id_]
+    assert isinstance(chunks[0].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
+    assert chunks[0].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert NodeRelationship.PREVIOUS not in chunks[0].relationships
+    assert NodeRelationship.NEXT not in chunks[0].relationships
 
     # Test the second chunk (<html> tag and its content)
     assert chunks[1].text.startswith("<html>")
