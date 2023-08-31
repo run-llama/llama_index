@@ -111,6 +111,10 @@ class CitationQueryEngine(BaseQueryEngine):
         )
         self._node_postprocessors = node_postprocessors or []
 
+        callback_manager = callback_manager or CallbackManager()
+        for node_postprocessor in self._node_postprocessors:
+            node_postprocessor.callback_manager = callback_manager
+
         super().__init__(callback_manager)
 
     @classmethod

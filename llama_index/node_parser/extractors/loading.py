@@ -20,9 +20,6 @@ def load_extractor(
     if extractor_name is None:
         raise ValueError("Extractor loading requires a class_name")
 
-    # remove unused key
-    data.pop("is_text_node_only", None)
-
     if extractor_name == MetadataExtractor.class_name():
         return MetadataExtractor.from_dict(data, extractors=extractors)
     elif extractor_name == SummaryExtractor.class_name():

@@ -42,6 +42,7 @@ class ChatResponse(BaseModel):
     message: ChatMessage
     raw: Optional[dict] = None
     delta: Optional[str] = None
+    additional_kwargs: dict = Field(default_factory=dict)
 
     def __str__(self) -> str:
         return str(self.message)
@@ -100,7 +101,12 @@ def llm_chat_callback() -> Callable:
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 event_id = callback_manager.on_event_start(
-                    CBEventType.LLM, payload={EventPayload.MESSAGES: messages}
+                    CBEventType.LLM,
+                    payload={
+                        EventPayload.MESSAGES: messages,
+                        EventPayload.ADDITIONAL_KWARGS: kwargs,
+                        EventPayload.SERIALIZED: _self.to_dict(),
+                    },
                 )
 
                 f_return_val = await f(_self, messages, **kwargs)
@@ -139,7 +145,12 @@ def llm_chat_callback() -> Callable:
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 event_id = callback_manager.on_event_start(
-                    CBEventType.LLM, payload={EventPayload.MESSAGES: messages}
+                    CBEventType.LLM,
+                    payload={
+                        EventPayload.MESSAGES: messages,
+                        EventPayload.ADDITIONAL_KWARGS: kwargs,
+                        EventPayload.SERIALIZED: _self.to_dict(),
+                    },
                 )
                 f_return_val = f(_self, messages, **kwargs)
 
@@ -216,7 +227,12 @@ def llm_completion_callback() -> Callable:
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 event_id = callback_manager.on_event_start(
-                    CBEventType.LLM, payload={EventPayload.PROMPT: args[0]}
+                    CBEventType.LLM,
+                    payload={
+                        EventPayload.PROMPT: args[0],
+                        EventPayload.ADDITIONAL_KWARGS: kwargs,
+                        EventPayload.SERIALIZED: _self.to_dict(),
+                    },
                 )
 
                 f_return_val = await f(_self, *args, **kwargs)
@@ -232,7 +248,7 @@ def llm_completion_callback() -> Callable:
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
-                                EventPayload.MESSAGES: args[0],
+                                EventPayload.PROMPT: args[0],
                                 EventPayload.COMPLETION: last_response,
                             },
                             event_id=event_id,
@@ -243,7 +259,7 @@ def llm_completion_callback() -> Callable:
                     callback_manager.on_event_end(
                         CBEventType.LLM,
                         payload={
-                            EventPayload.MESSAGES: args[0],
+                            EventPayload.PROMPT: args[0],
                             EventPayload.RESPONSE: f_return_val,
                         },
                         event_id=event_id,
@@ -254,7 +270,12 @@ def llm_completion_callback() -> Callable:
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 event_id = callback_manager.on_event_start(
-                    CBEventType.LLM, payload={EventPayload.PROMPT: args[0]}
+                    CBEventType.LLM,
+                    payload={
+                        EventPayload.PROMPT: args[0],
+                        EventPayload.ADDITIONAL_KWARGS: kwargs,
+                        EventPayload.SERIALIZED: _self.to_dict(),
+                    },
                 )
 
                 f_return_val = f(_self, *args, **kwargs)
@@ -316,7 +337,7 @@ def llm_completion_callback() -> Callable:
 class LLM(BaseComponent):
     """LLM interface."""
 
-    callback_manager: Optional[CallbackManager] = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
 
@@ -324,9 +345,7 @@ class LLM(BaseComponent):
         arbitrary_types_allowed = True
 
     @validator("callback_manager", pre=True)
-    def _validate_callback_manager(
-        cls, v: Optional[CallbackManager]
-    ) -> CallbackManager:
+    def _validate_callback_manager(cls, v: CallbackManager) -> CallbackManager:
         if v is None:
             return CallbackManager([])
         return v
