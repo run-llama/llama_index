@@ -98,8 +98,7 @@ def test_html_code_splitter() -> None:
 
     # Test the first chunk (DOCTYPE)
     assert chunks[0].text.startswith("<!DOCTYPE html>")
-    assert "inclusive_scopes" in chunks[0].metadata
-    assert chunks[0].metadata["scopes"] == []
+    assert chunks[0].metadata["inclusive_scopes"] == []
     assert chunks[0].relationships[NodeRelationship.PARENT] is None
     assert chunks[0].relationships[NodeRelationship.PREVIOUS] is None
     assert chunks[0].relationships[NodeRelationship.NEXT] == chunks[1].id
@@ -162,8 +161,7 @@ function baz() {
 
     # Test the first chunk (function foo)
     assert chunks[0].text.startswith("function foo()")
-    assert "inclusive_scopes" in chunks[0].metadata
-    assert chunks[0].metadata["scopes"] == []
+    assert chunks[0].metadata["inclusive_scopes"] == [{'name': "foo", 'type': "function"}]
     assert chunks[0].relationships[NodeRelationship.PARENT] is None
     assert chunks[0].relationships[NodeRelationship.PREVIOUS] is None
     assert chunks[0].relationships[NodeRelationship.NEXT] == chunks[1].id
@@ -171,7 +169,7 @@ function baz() {
 
     # Test the second chunk (function baz)
     assert chunks[1].text.startswith("function baz()")
-    assert chunks[1].metadata["inclusive_scopes"] == []
+    assert chunks[1].metadata["inclusive_scopes"] == [{'name': "baz", 'type': "function"}]
     assert chunks[1].relationships[NodeRelationship.PARENT] is None
     assert chunks[1].relationships[NodeRelationship.PREVIOUS] == chunks[0].id
     assert chunks[1].relationships[NodeRelationship.NEXT] == None
@@ -208,8 +206,7 @@ function baz() {
 
     # Test the first chunk (function foo)
     assert chunks[0].text.startswith("function foo()")
-    assert "inclusive_scopes" in chunks[0].metadata
-    assert chunks[0].metadata["scopes"] == []
+    assert chunks[0].metadata["inclusive_scopes"] == [{"name": "foo", "type": "function"}]
     assert chunks[0].relationships[NodeRelationship.PARENT] is None
     assert chunks[0].relationships[NodeRelationship.PREVIOUS] is None
     assert chunks[0].relationships[NodeRelationship.NEXT] == chunks[1].id
@@ -217,7 +214,7 @@ function baz() {
 
     # Test the second chunk (class Example)
     assert chunks[1].text.startswith("class Example")
-    assert chunks[1].metadata["inclusive_scopes"] == []
+    assert chunks[1].metadata["inclusive_scopes"] == [{"name": "Example", "type": "class"}]
     assert chunks[1].relationships[NodeRelationship.PARENT] is None
     assert chunks[1].relationships[NodeRelationship.PREVIOUS] == chunks[0].id
     assert chunks[1].relationships[NodeRelationship.NEXT] == chunks[2].id
@@ -225,7 +222,7 @@ function baz() {
 
     # Test the third chunk (exampleMethod in class Example)
     assert chunks[2].text.startswith("exampleMethod()")
-    assert chunks[2].metadata["inclusive_scopes"] == [{'name': "Example", 'type': "class"}]
+    assert chunks[2].metadata["inclusive_scopes"] == [{'name': "Example", 'type': "class"}, {'name': "exampleMethod", 'type': "function"}]
     assert chunks[2].relationships[NodeRelationship.PARENT] == chunks[1].id
     assert chunks[2].relationships[NodeRelationship.PREVIOUS] == chunks[1].id
     assert chunks[2].relationships[NodeRelationship.NEXT] is chunks[3].id
@@ -233,7 +230,7 @@ function baz() {
 
     # Test the fourth chunk (function baz)
     assert chunks[3].text.startswith("function baz()")
-    assert chunks[3].metadata["inclusive_scopes"] == []
+    assert chunks[3].metadata["inclusive_scopes"] == [{'name': "baz", 'type': "function"}]
     assert chunks[3].relationships[NodeRelationship.PARENT] is None
     assert chunks[3].relationships[NodeRelationship.PREVIOUS] == chunks[2].id
     assert chunks[3].relationships[NodeRelationship.NEXT] is None
@@ -281,8 +278,7 @@ export default ExampleComponent;"""
 
     # Test the first chunk (import statement)
     assert chunks[0].text.startswith("import React from 'react';")
-    assert "inclusive_scopes" in chunks[0].metadata
-    assert chunks[0].metadata["scopes"] == []
+    assert chunks[0].metadata["inclusive_scopes"] == []
     assert chunks[0].relationships[NodeRelationship.PARENT] is None
     assert chunks[0].relationships[NodeRelationship.PREVIOUS] is None
     assert chunks[0].relationships[NodeRelationship.NEXT] == chunks[1].id
@@ -290,7 +286,7 @@ export default ExampleComponent;"""
 
     # Test the second chunk (interface definition)
     assert chunks[1].text.startswith("interface Person")
-    assert chunks[1].metadata["inclusive_scopes"] == []
+    assert chunks[1].metadata["inclusive_scopes"] == [{'name': "Person", 'type': "interface"}]
     assert chunks[1].relationships[NodeRelationship.PARENT] is None
     assert chunks[1].relationships[NodeRelationship.PREVIOUS] == chunks[0].id
     assert chunks[1].relationships[NodeRelationship.NEXT] == chunks[2].id
@@ -298,7 +294,7 @@ export default ExampleComponent;"""
 
     # Test the third chunk (ExampleComponent function definition)
     assert chunks[2].text.startswith("const ExampleComponent: React.FC = () => {")
-    assert chunks[2].metadata["inclusive_scopes"] == []
+    assert chunks[2].metadata["inclusive_scopes"] == [{'name': "ExampleComponent", 'type': "function"}]
     assert chunks[2].relationships[NodeRelationship.PARENT] is None
     assert chunks[2].relationships[NodeRelationship.PREVIOUS] == chunks[1].id
     assert chunks[2].relationships[NodeRelationship.NEXT] is chunks[3].id  # Assuming no more chunks after this
@@ -306,7 +302,7 @@ export default ExampleComponent;"""
 
     # Test the fourth chunk (div)
     assert chunks[3].text.startswith("<div>")
-    assert chunks[3].metadata["inclusive_scopes"] == [{'name': "ExampleComponent", 'type': "function"}]
+    assert chunks[3].metadata["inclusive_scopes"] == [{'name': "ExampleComponent", 'type': "function"}, {'name': "div", 'type': "div"}]
     assert chunks[3].relationships[NodeRelationship.PARENT] == chunks[2].id
     assert chunks[3].relationships[NodeRelationship.PREVIOUS] is None
     assert chunks[3].relationships[NodeRelationship.NEXT] is None  # Assuming no more chunks after this
@@ -322,7 +318,7 @@ def test_cpp_code_splitter() -> None:
         return
 
     code_splitter = CodeBlockNodeParser(
-        language="cpp"  # Removing chunk_lines, chunk_lines_overlap, and max_chars to focus on scopes
+        language="cpp",  # Removing chunk_lines, chunk_lines_overlap, and max_chars to focus on scopes
         split_on_types=["FunctionDefinition", "ClassDefinition"],
     )
 
@@ -338,8 +334,7 @@ int main() {
 
     # Test the first chunk (#include statement)
     assert chunks[0].text.startswith("#include <iostream>")
-    assert "inclusive_scopes" in chunks[0].metadata
-    assert chunks[0].metadata["scopes"] == []
+    assert chunks[0].metadata["inclusive_scopes"] == []
     assert chunks[0].relationships[NodeRelationship.PARENT] is None
     assert chunks[0].relationships[NodeRelationship.PREVIOUS] is None
     assert chunks[0].relationships[NodeRelationship.NEXT] == chunks[1].id
