@@ -85,6 +85,7 @@ class IndexStructType(str, Enum):
     KG = "kg"
     SIMPLE_KG = "simple_kg"
     NEBULAGRAPH = "nebulagraph"
+    FALKORDB = "falkordb"
 
     # EMPTY
     EMPTY = "empty"
@@ -93,3 +94,6 @@ class IndexStructType(str, Enum):
     PANDAS = "pandas"
 
     DOCUMENT_SUMMARY = "document_summary"
+
+    # Managed
+    VECTARA = "vectara"

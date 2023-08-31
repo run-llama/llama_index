@@ -26,6 +26,11 @@ def documents() -> List[Document]:
 
 
 class MockEmbedding(BaseEmbedding):
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MockEmbedding"
+
     async def _aget_query_embedding(self, query: str) -> List[float]:
         text_embed_map: Dict[str, List[float]] = {
             "It is what it is.": [1.0, 0.0, 0.0, 0.0, 0.0],

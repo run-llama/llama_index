@@ -1,5 +1,10 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -21,6 +26,19 @@ from llama_index.llms.generic_utils import stream_completion_response_to_chat_re
 
 
 class Replicate(CustomLLM):
+    model: str = Field(description="The Replicate model to use.")
+    temperature: float = Field(description="The temperature to use for sampling.")
+    context_window: int = Field(
+        description="The maximum number of context tokens for the model."
+    )
+    prompt_key: str = Field(description="The key to use for the prompt in API calls.")
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additonal kwargs for the Replicate API."
+    )
+
+    _messages_to_prompt: Callable = PrivateAttr()
+    _completion_to_prompt: Callable = PrivateAttr()
+
     def __init__(
         self,
         model: str,
@@ -32,40 +50,46 @@ class Replicate(CustomLLM):
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self._model = model
-        self._context_window = context_window
-        self._prompt_key = prompt_key
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-        self.callback_manager = callback_manager or CallbackManager([])
 
-        # model kwargs
-        self._temperature = temperature
-        self._additional_kwargs = additional_kwargs or {}
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            additional_kwargs=additional_kwargs or {},
+            context_window=context_window,
+            prompt_key=prompt_key,
+            callback_manager=callback_manager,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "Replicate_llm"
 
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self._context_window,
+            context_window=self.context_window,
             num_output=DEFAULT_NUM_OUTPUTS,
-            model_name=self._model,
+            model_name=self.model,
         )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
-            "temperature": self._temperature,
-            "max_length": self._context_window,
+            "temperature": self.temperature,
+            "max_length": self.context_window,
         }
         model_kwargs = {
             **base_kwargs,
-            **self._additional_kwargs,
+            **self.additional_kwargs,
         }
         return model_kwargs
 
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
-        return {self._prompt_key: prompt, **self._model_kwargs, **kwargs}
+        return {self.prompt_key: prompt, **self._model_kwargs, **kwargs}
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -101,7 +125,7 @@ class Replicate(CustomLLM):
 
         prompt = self._completion_to_prompt(prompt)
         input_dict = self._get_input_dict(prompt, **kwargs)
-        response_iter = replicate.run(self._model, input=input_dict)
+        response_iter = replicate.run(self.model, input=input_dict)
 
         def gen() -> CompletionResponseGen:
             text = ""

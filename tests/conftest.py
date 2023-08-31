@@ -62,11 +62,6 @@ def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     monkeypatch.setattr(
         LLMPredictor,
-        "__init__",
-        lambda x: None,
-    )
-    monkeypatch.setattr(
-        LLMPredictor,
         "metadata",
         LLMMetadata(),
     )

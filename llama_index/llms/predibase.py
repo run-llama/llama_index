@@ -1,6 +1,11 @@
 import os
 from typing import Any, Optional
 
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.base import (
@@ -15,6 +20,16 @@ from llama_index.llms.custom import CustomLLM
 class PredibaseLLM(CustomLLM):
     """Predibase LLM"""
 
+    model_name: str = Field(description="The Predibase model to use.")
+    predibase_api_key: str = Field(description="The Predibase API key to use.")
+    max_new_tokens: int = Field(description="The number of tokens to generate.")
+    temperature: float = Field(description="The temperature to use for sampling.")
+    context_window: int = Field(
+        description="The number of context tokens available to the LLM."
+    )
+
+    _client: Any = PrivateAttr()
+
     def __init__(
         self,
         model_name: str,
@@ -24,19 +39,25 @@ class PredibaseLLM(CustomLLM):
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.predibase_api_key = (
+        predibase_api_key = (
             predibase_api_key
             if predibase_api_key
             else os.environ.get("PREDIBASE_API_TOKEN")
         )
-        self.model_name = model_name
-        self.max_new_tokens = max_new_tokens
-        self.temperature = temperature
-        self.context_window = context_window
-        self.client = self.initialize_client()
-        self.callback_manager = callback_manager or CallbackManager([])
+        assert predibase_api_key is not None
 
-    def initialize_client(self) -> Any:
+        self._client = self.initialize_client(predibase_api_key)
+
+        super().__init__(
+            model_name=model_name,
+            predibase_api_key=predibase_api_key,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            context_window=context_window,
+            callback_manager=callback_manager,
+        )
+
+    def initialize_client(self, predibase_api_key: str) -> Any:
         try:
             from predibase import PredibaseClient
 
@@ -49,6 +70,11 @@ class PredibaseLLM(CustomLLM):
             ) from e
         except ValueError as e:
             raise ValueError("Your API key is not correct. Please try again") from e
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "PredibaseLLM"
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -66,7 +92,7 @@ class PredibaseLLM(CustomLLM):
             "temperature": self.temperature,
             "max_new_tokens": self.max_new_tokens,
         }
-        results = self.client.prompt(prompt, self.model_name, options=model_kwargs)
+        results = self._client.prompt(prompt, self.model_name, options=model_kwargs)
         return CompletionResponse(
             text=results.loc[0, "response"], additional_kwargs=model_kwargs
         )

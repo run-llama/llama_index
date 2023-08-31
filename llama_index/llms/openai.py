@@ -1,5 +1,10 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
+try:
+    from pydantic.v1 import Field
+except ImportError:
+    from pydantic import Field
+
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
@@ -11,8 +16,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_completion_callback,
     llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
@@ -37,6 +42,18 @@ from llama_index.llms.openai_utils import (
 
 
 class OpenAI(LLM):
+    class_type = "openai"
+
+    model: str = Field(description="The OpenAI model to use.")
+    temperature: float = Field(description="The tempature to use during generation.")
+    max_tokens: Optional[int] = Field(
+        description="The maximum number of tokens to generate."
+    )
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additonal kwargs for the OpenAI API."
+    )
+    max_retries: int = Field(description="The maximum number of API retries.")
+
     def __init__(
         self,
         model: str = "gpt-3.5-turbo",
@@ -44,27 +61,50 @@ class OpenAI(LLM):
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
+        api_key: Optional[str] = None,
+        api_type: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        validate_openai_api_key(
-            kwargs.get("api_key", None), kwargs.get("api_type", None)
+        validate_openai_api_key(api_key, api_type)
+
+        additional_kwargs = additional_kwargs or {}
+        if api_key is not None:
+            additional_kwargs["api_key"] = api_key
+        if api_type is not None:
+            additional_kwargs["api_type"] = api_type
+
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            max_retries=max_retries,
+            callback_manager=callback_manager,
+            **kwargs,
         )
 
-        self.model = model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.additional_kwargs = additional_kwargs or {}
-        self.max_retries = max_retries
-        self.callback_manager = callback_manager or CallbackManager([])
+    def _get_model_name(self) -> str:
+        model_name = self.model
+        if "ft-" in model_name:  # legacy fine-tuning
+            model_name = model_name.split(":")[0]
+        elif model_name.startswith("ft:"):
+            model_name = model_name.split(":")[1]
+
+        return model_name
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "openai_llm"
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=openai_modelname_to_contextsize(self.model),
+            context_window=openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
-            is_function_calling_model=is_function_calling_model(self.model),
+            is_function_calling_model=is_function_calling_model(self._get_model_name()),
             model_name=self.model,
         )
 
@@ -104,7 +144,7 @@ class OpenAI(LLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        return is_chat_model(self.model)
+        return is_chat_model(self._get_model_name())
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -254,7 +294,7 @@ class OpenAI(LLM):
                 "Please install tiktoken to use the max_tokens=None feature."
             )
         context_window = self.metadata.context_window
-        encoding = tiktoken.encoding_for_model(self.model)
+        encoding = tiktoken.encoding_for_model(self._get_model_name())
         tokens = encoding.encode(prompt)
         max_token = context_window - len(tokens)
         if max_token <= 0:

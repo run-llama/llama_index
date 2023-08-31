@@ -1,9 +1,15 @@
 """Test tool spec."""
 
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.types import ToolMetadata
-from typing import List, Type
+
+from typing import List, Type, Tuple, Union
+import pytest
 
 
 class FooSchema(BaseModel):
@@ -20,7 +26,7 @@ class AbcSchema(BaseModel):
 
 
 class TestToolSpec(BaseToolSpec):
-    spec_functions: List[str] = ["foo", "bar", "abc"]
+    spec_functions: List[Union[str, Tuple[str, str]]] = ["foo", "bar", "abc"]
 
     def foo(self, arg1: str, arg2: int) -> str:
         """Foo."""
@@ -30,6 +36,14 @@ class TestToolSpec(BaseToolSpec):
         """Bar."""
         return f"bar {arg1}"
 
+    async def afoo(self, arg1: str, arg2: int) -> str:
+        """Afoo."""
+        return self.foo(arg1=arg1, arg2=arg2)
+
+    async def abar(self, arg1: bool) -> str:
+        """Abar."""
+        return self.bar(arg1=arg1)
+
     def abc(self, arg1: str) -> str:
         # NOTE: no docstring
         return f"bar {arg1}"
@@ -37,6 +51,8 @@ class TestToolSpec(BaseToolSpec):
     def get_fn_schema_from_fn_name(self, fn_name: str) -> Type[BaseModel]:
         """Return map from function name."""
         if fn_name == "foo":
+            return FooSchema
+        elif fn_name == "afoo":
             return FooSchema
         elif fn_name == "bar":
             return BarSchema
@@ -83,6 +99,25 @@ def test_tool_spec() -> None:
     assert tools[1].metadata.fn_schema is not None
     fn_schema = tools[1].metadata.fn_schema.schema()
     assert fn_schema["properties"]["arg1"]["type"] == "boolean"
+
+
+@pytest.mark.asyncio
+async def test_tool_spec_async() -> None:
+    """Test async_fn of tool spec."""
+    tool_spec = TestToolSpec()
+    tools = tool_spec.to_tool_list()
+    assert len(tools) == 3
+    assert await tools[0].async_fn("hello", 1) == "foo hello 1"
+    assert str(await tools[1].acall(True)) == "bar True"
+
+
+def test_async_patching() -> None:
+    # test sync patching of async function
+    tool_spec = TestToolSpec()
+    tool_spec.spec_functions = ["afoo"]
+    tools = tool_spec.to_tool_list()
+    assert len(tools) == 1
+    assert tools[0].fn("hello", 1) == "foo hello 1"
 
 
 def test_tool_spec_schema() -> None:

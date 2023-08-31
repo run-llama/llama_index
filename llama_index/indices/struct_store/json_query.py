@@ -7,7 +7,7 @@ from llama_index.bridge.langchain import print_text
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import PromptTemplate, BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
@@ -31,7 +31,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
     "Query: {query_str}\n"
     "Response: "
 )
-DEFAULT_RESPONSE_SYNTHESIS_PROMPT = Prompt(
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL,
     prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
 )
@@ -58,7 +58,7 @@ class JSONQueryEngine(BaseQueryEngine):
         json_value (JSONType): JSON value
         json_schema (JSONType): JSON schema
         service_context (ServiceContext): ServiceContext
-        json_path_prompt (Prompt): The JSON Path prompt to use.
+        json_path_prompt (BasePromptTemplate): The JSON Path prompt to use.
         output_processor (Callable): The output processor that executes the
             JSON Path query.
         output_kwargs (dict): Additional output processor kwargs for the
@@ -71,11 +71,11 @@ class JSONQueryEngine(BaseQueryEngine):
         json_value: JSONType,
         json_schema: JSONType,
         service_context: ServiceContext,
-        json_path_prompt: Optional[Prompt] = None,
+        json_path_prompt: Optional[BasePromptTemplate] = None,
         output_processor: Optional[Callable] = None,
         output_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[Prompt] = None,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:

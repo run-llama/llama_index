@@ -6,9 +6,10 @@ from llama_index.evaluation.base import QueryResponseEvaluator
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.schema import Document
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +21,14 @@ class RetrySourceQueryEngine(BaseQueryEngine):
         self,
         query_engine: RetrieverQueryEngine,
         evaluator: QueryResponseEvaluator,
+        service_context: Optional[ServiceContext] = None,
         max_retries: int = 3,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Run a BaseQueryEngine with retries."""
         self._query_engine = query_engine
         self._evaluator = evaluator
+        self._service_context = service_context
         self.max_retries = max_retries
         super().__init__(callback_manager)
 
@@ -55,10 +58,16 @@ class RetrySourceQueryEngine(BaseQueryEngine):
                     new_docs.append(Document(text=node.node.get_content()))
             if len(new_docs) == 0:
                 raise ValueError("No source nodes passed evaluation.")
-            new_index = ListIndex.from_documents(new_docs)
+            new_index = ListIndex.from_documents(
+                new_docs,
+                service_context=self._service_context,
+            )
             new_retriever_engine = RetrieverQueryEngine(new_index.as_retriever())
             new_query_engine = RetrySourceQueryEngine(
-                new_retriever_engine, self._evaluator, self.max_retries - 1
+                new_retriever_engine,
+                self._evaluator,
+                self._service_context,
+                self.max_retries - 1,
             )
             return new_query_engine.query(query_bundle)
 

@@ -1,13 +1,28 @@
-from typing import Any, Optional, Callable, Type
-
-from pydantic import BaseModel
-from llama_index.tools.types import BaseTool, ToolMetadata, ToolOutput
-from llama_index.bridge.langchain import Tool, StructuredTool
 from inspect import signature
+from typing import Any, Awaitable, Callable, Optional, Type
+
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
+
+from llama_index.bridge.langchain import StructuredTool, Tool
+from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.tools.utils import create_schema_from_function
 
+AsyncCallable = Callable[..., Awaitable[Any]]
 
-class FunctionTool(BaseTool):
+
+def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
+    """Sync to async."""
+
+    async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
+        return fn(*args, **kwargs)
+
+    return _async_wrapped_fn
+
+
+class FunctionTool(AsyncBaseTool):
     """Function Tool.
 
     A tool that takes in a function.
@@ -18,8 +33,13 @@ class FunctionTool(BaseTool):
         self,
         fn: Callable[..., Any],
         metadata: ToolMetadata,
+        async_fn: Optional[AsyncCallable] = None,
     ) -> None:
         self._fn = fn
+        if async_fn is not None:
+            self._async_fn = async_fn
+        else:
+            self._async_fn = sync_to_async(self._fn)
         self._metadata = metadata
 
     @classmethod
@@ -29,6 +49,7 @@ class FunctionTool(BaseTool):
         name: Optional[str] = None,
         description: Optional[str] = None,
         fn_schema: Optional[Type[BaseModel]] = None,
+        async_fn: Optional[AsyncCallable] = None,
     ) -> "FunctionTool":
         name = name or fn.__name__
         docstring = fn.__doc__
@@ -38,7 +59,7 @@ class FunctionTool(BaseTool):
                 f"{name}", fn, additional_fields=None
             )
         metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
-        return cls(fn=fn, metadata=metadata)
+        return cls(fn=fn, metadata=metadata, async_fn=async_fn)
 
     @property
     def metadata(self) -> ToolMetadata:
@@ -50,9 +71,24 @@ class FunctionTool(BaseTool):
         """Function."""
         return self._fn
 
-    def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
+    @property
+    def async_fn(self) -> AsyncCallable:
+        """Async function."""
+        return self._async_fn
+
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Call."""
         tool_output = self._fn(*args, **kwargs)
+        return ToolOutput(
+            content=str(tool_output),
+            tool_name=self.metadata.name,
+            raw_input={"args": args, "kwargs": kwargs},
+            raw_output=tool_output,
+        )
+
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        """Call."""
+        tool_output = await self._async_fn(*args, **kwargs)
         return ToolOutput(
             content=str(tool_output),
             tool_name=self.metadata.name,
@@ -70,6 +106,7 @@ class FunctionTool(BaseTool):
         )
         return Tool.from_function(
             func=self.fn,
+            coroutine=self.async_fn,
             **langchain_tool_kwargs,
         )
 
@@ -83,5 +120,6 @@ class FunctionTool(BaseTool):
         )
         return StructuredTool.from_function(
             func=self.fn,
+            coroutine=self.async_fn,
             **langchain_tool_kwargs,
         )

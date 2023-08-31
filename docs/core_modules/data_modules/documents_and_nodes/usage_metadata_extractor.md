@@ -26,7 +26,7 @@ metadata_extractor = MetadataExtractor(
     ],
 )
 
-node_parser = SimpleNodeParser(
+node_parser = SimpleNodeParser.from_defaults(
     text_splitter=text_splitter,
     metadata_extractor=metadata_extractor,
 )
@@ -41,5 +41,6 @@ caption: Metadata Extraction Guides
 maxdepth: 1
 ---
 /examples/metadata_extraction/MetadataExtractionSEC.ipynb
+/examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb
 /examples/metadata_extraction/EntityExtractionClimate.ipynb
 ```

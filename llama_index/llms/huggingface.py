@@ -2,16 +2,19 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional
 
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
     llm_completion_callback,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.custom import CustomLLM
-from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
-from llama_index.prompts.prompts import SimpleInputPrompt
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +22,71 @@ logger = logging.getLogger(__name__)
 class HuggingFaceLLM(CustomLLM):
     """HuggingFace LLM."""
 
+    model_name: str = Field(
+        description=(
+            "The model name to use from HuggingFace. "
+            "Unused if `model` is passed in directly."
+        )
+    )
+    context_window: int = Field(
+        description="The maximum number of tokens available for input."
+    )
+    max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
+    system_prompt: str = Field(
+        description=(
+            "The system prompt, containing any extra instructions or context. "
+            "The model card on HuggingFace should specify if this is needed."
+        ),
+    )
+    query_wrapper_prompt: str = Field(
+        description=(
+            "The query wrapper prompt, containing the query placeholder. "
+            "The model card on HuggingFace should specify if this is needed."
+        ),
+    )
+    tokenizer_name: str = Field(
+        description=(
+            "The name of the tokenizer to use from HuggingFace. "
+            "Unused if `tokenizer` is passed in directly."
+        )
+    )
+    device_map: str = Field(description="The device_map to use. Defaults to 'auto'.")
+    stopping_ids: List[int] = Field(
+        default_factory=list,
+        description=(
+            "The stopping ids to use. "
+            "Generation stops when these token IDs are predicted."
+        ),
+    )
+    tokenizer_outputs_to_remove: list = Field(
+        default_factory=list,
+        description=(
+            "The outputs to remove from the tokenizer. "
+            "Sometimes huggingface tokenizers return extra inputs that cause errors."
+        ),
+    )
+    tokenizer_kwargs: dict = Field(
+        default_factory=dict, description="The kwargs to pass to the tokenizer."
+    )
+    model_kwargs: dict = Field(
+        default_factory=dict,
+        description="The kwargs to pass to the model during initialization.",
+    )
+    generate_kwargs: dict = Field(
+        default_factory=dict,
+        description="The kwargs to pass to the model during generation.",
+    )
+
+    _model: Any = PrivateAttr()
+    _tokenizer: Any = PrivateAttr()
+    _stopping_criteria: Any = PrivateAttr()
+
     def __init__(
         self,
         context_window: int = 4096,
         max_new_tokens: int = 256,
         system_prompt: str = "",
-        query_wrapper_prompt: SimpleInputPrompt = DEFAULT_SIMPLE_INPUT_PROMPT,
+        query_wrapper_prompt: str = "",
         tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model: Optional[Any] = None,
@@ -47,13 +109,12 @@ class HuggingFaceLLM(CustomLLM):
         )
 
         model_kwargs = model_kwargs or {}
-        self._model_name = model_name
-        self.model = model or AutoModelForCausalLM.from_pretrained(
+        self._model = model or AutoModelForCausalLM.from_pretrained(
             model_name, device_map=device_map, **model_kwargs
         )
 
         # check context_window
-        config_dict = self.model.config.to_dict()
+        config_dict = self._model.config.to_dict()
         model_context_window = int(
             config_dict.get("max_position_embeddings", context_window)
         )
@@ -69,21 +130,9 @@ class HuggingFaceLLM(CustomLLM):
         if "max_length" not in tokenizer_kwargs:
             tokenizer_kwargs["max_length"] = context_window
 
-        self.tokenizer = tokenizer or AutoTokenizer.from_pretrained(
+        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(
             tokenizer_name, **tokenizer_kwargs
         )
-
-        self._context_window = context_window
-        self._max_new_tokens = max_new_tokens
-
-        self._generate_kwargs = generate_kwargs or {}
-        self._device_map = device_map
-        self._tokenizer_outputs_to_remove = tokenizer_outputs_to_remove or []
-        self._system_prompt = system_prompt
-        self._query_wrapper_prompt = query_wrapper_prompt
-        self._total_tokens_used = 0
-        self._last_token_usage: Optional[int] = None
-        self.callback_manager = callback_manager or CallbackManager([])
 
         # setup stopping criteria
         stopping_ids_list = stopping_ids or []
@@ -102,40 +151,62 @@ class HuggingFaceLLM(CustomLLM):
 
         self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
+        super().__init__(
+            context_window=context_window,
+            max_new_tokens=max_new_tokens,
+            system_prompt=system_prompt,
+            query_wrapper_prompt=query_wrapper_prompt,
+            tokenizer_name=tokenizer_name,
+            model_name=model_name,
+            device_map=device_map,
+            stopping_ids=stopping_ids or [],
+            tokenizer_kwargs=tokenizer_kwargs or {},
+            tokenizer_outputs_to_remove=tokenizer_outputs_to_remove or [],
+            model_kwargs=model_kwargs or {},
+            generate_kwargs=generate_kwargs or {},
+            callback_manager=callback_manager,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "HuggingFace_LLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self._context_window,
-            num_output=self._max_new_tokens,
-            model_name=self._model_name,
+            context_window=self.context_window,
+            num_output=self.max_new_tokens,
+            model_name=self.model_name,
         )
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
 
-        full_prompt = self._query_wrapper_prompt.format(query_str=prompt)
-        if self._system_prompt:
-            full_prompt = f"{self._system_prompt} {full_prompt}"
+        full_prompt = prompt
+        if self.query_wrapper_prompt:
+            full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
+        if self.system_prompt:
+            full_prompt = f"{self.system_prompt} {full_prompt}"
 
-        inputs = self.tokenizer(full_prompt, return_tensors="pt")
-        inputs = inputs.to(self.model.device)
+        inputs = self._tokenizer(full_prompt, return_tensors="pt")
+        inputs = inputs.to(self._model.device)
 
         # remove keys from the tokenizer if needed, to avoid HF errors
-        for key in self._tokenizer_outputs_to_remove:
+        for key in self.tokenizer_outputs_to_remove:
             if key in inputs:
                 inputs.pop(key, None)
 
-        tokens = self.model.generate(
+        tokens = self._model.generate(
             **inputs,
-            max_new_tokens=self._max_new_tokens,
+            max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
-            **self._generate_kwargs,
+            **self.generate_kwargs,
         )
         completion_tokens = tokens[0][inputs["input_ids"].size(1) :]
-        self._total_tokens_used += len(completion_tokens) + inputs["input_ids"].size(1)
-        completion = self.tokenizer.decode(completion_tokens, skip_special_tokens=True)
+        completion = self._tokenizer.decode(completion_tokens, skip_special_tokens=True)
 
         return CompletionResponse(text=completion, raw={"model_output": tokens})
 
@@ -144,34 +215,36 @@ class HuggingFaceLLM(CustomLLM):
         """Streaming completion endpoint."""
         from transformers import TextIteratorStreamer
 
-        full_prompt = self._query_wrapper_prompt.format(query_str=prompt)
-        if self._system_prompt:
-            full_prompt = f"{self._system_prompt} {full_prompt}"
+        full_prompt = prompt
+        if self.query_wrapper_prompt:
+            full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
+        if self.system_prompt:
+            full_prompt = f"{self.system_prompt} {full_prompt}"
 
-        inputs = self.tokenizer(full_prompt, return_tensors="pt")
-        inputs = inputs.to(self.model.device)
+        inputs = self._tokenizer(full_prompt, return_tensors="pt")
+        inputs = inputs.to(self._model.device)
 
         # remove keys from the tokenizer if needed, to avoid HF errors
-        for key in self._tokenizer_outputs_to_remove:
+        for key in self.tokenizer_outputs_to_remove:
             if key in inputs:
                 inputs.pop(key, None)
 
         streamer = TextIteratorStreamer(
-            self.tokenizer,
+            self._tokenizer,
             skip_prompt=True,
             decode_kwargs={"skip_special_tokens": True},
         )
         generation_kwargs = dict(
             inputs,
             streamer=streamer,
-            max_new_tokens=self._max_new_tokens,
+            max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
-            **self._generate_kwargs,
+            **self.generate_kwargs,
         )
 
         # generate in background thread
         # NOTE/TODO: token counting doesn't work with streaming
-        thread = Thread(target=self.model.generate, kwargs=generation_kwargs)
+        thread = Thread(target=self._model.generate, kwargs=generation_kwargs)
         thread.start()
 
         # create generator based off of streamer

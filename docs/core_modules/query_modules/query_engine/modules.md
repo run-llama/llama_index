@@ -17,6 +17,7 @@ maxdepth: 1
 /examples/query_engine/json_query_engine.ipynb
 /examples/query_engine/pandas_query_engine.ipynb
 /examples/query_engine/knowledge_graph_query_engine.ipynb
+/examples/query_engine/knowledge_graph_rag_query_engine.ipynb
 ```
 
 ## Advanced
@@ -38,6 +39,8 @@ Retry Source Query Engine </examples/evaluation/RetryQuery.ipynb>
 Retry Guideline Query Engine </examples/evaluation/RetryQuery.ipynb>
 /examples/query_engine/citation_query_engine.ipynb
 /examples/query_engine/pdf_tables/recursive_retriever.ipynb
+/examples/query_engine/recursive_retriever_agents.ipynb
+/examples/query_engine/ensemble_query_engine.ipynb
 ```
 
 ## Experimental

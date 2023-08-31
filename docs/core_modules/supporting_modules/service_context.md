@@ -71,7 +71,7 @@ from llama_index.node_parser import SimpleNodeParser
 
 llm = OpenAI(model='text-davinci-003', temperature=0, max_tokens=256)
 embed_model = OpenAIEmbedding()
-node_parser = SimpleNodeParser(
+node_parser = SimpleNodeParser.from_defaults(
   text_splitter=TokenTextSplitter(chunk_size=1024, chunk_overlap=20)
 )
 prompt_helper = PromptHelper(

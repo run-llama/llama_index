@@ -1,15 +1,17 @@
-from typing import Any, Dict, Optional, Type, Union, Generator
+from typing import Any, Dict, Generator, Optional, Tuple, Type, Union, cast
 
-from pydantic import BaseModel
+try:
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import BaseModel
 
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import to_openai_function
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.prompts.base import Prompt
-from llama_index.types import Model
 from llama_index.program.utils import create_list_model
-from typing import Tuple
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.types import Model
 
 
 def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
@@ -46,7 +48,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self,
         output_cls: Type[Model],
         llm: LLM,
-        prompt: Prompt,
+        prompt: BasePromptTemplate,
         function_call: Union[str, Dict[str, Any]],
         verbose: bool = False,
     ) -> None:
@@ -61,7 +63,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     def from_defaults(
         cls,
         output_cls: Type[Model],
-        prompt_template_str: str,
+        prompt_template_str: Optional[str] = None,
+        prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
@@ -69,18 +72,28 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     ) -> "OpenAIPydanticProgram":
         llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
 
+        if not isinstance(llm, OpenAI):
+            raise ValueError(
+                "OpenAIPydanticProgram only supports OpenAI LLMs. " f"Got: {type(llm)}"
+            )
+
         if not llm.metadata.is_function_calling_model:
             raise ValueError(
                 f"Model name {llm.metadata.model_name} does not support "
                 "function calling API. "
             )
 
-        prompt = Prompt(prompt_template_str)
+        if prompt is None and prompt_template_str is None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt is not None and prompt_template_str is not None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt_template_str is not None:
+            prompt = PromptTemplate(prompt_template_str)
         function_call = function_call or _default_function_call(output_cls)
         return cls(
             output_cls=output_cls,
             llm=llm,
-            prompt=prompt,
+            prompt=cast(PromptTemplate, prompt),
             function_call=function_call,
             verbose=verbose,
         )

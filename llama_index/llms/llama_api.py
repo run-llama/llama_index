@@ -1,5 +1,10 @@
 from typing import Any, Dict, Optional, Sequence
 
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -21,6 +26,15 @@ from llama_index.llms.openai_utils import (
 
 
 class LlamaAPI(CustomLLM):
+    model: str = Field(description="The llama-api model to use.")
+    temperature: float = Field(description="The temperature to use for sampling.")
+    max_tokens: int = Field(description="The maximum number of tokens to generate.")
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additonal kwargs for the llama-api API."
+    )
+
+    _client: Any = PrivateAttr()
+
     def __init__(
         self,
         model: str = "llama-13b-chat",
@@ -39,22 +53,30 @@ class LlamaAPI(CustomLLM):
             ) from e
 
         self._client = Client(api_key)
-        self._model = model
-        self._temperature = temperature
-        self._max_tokens = max_tokens
-        self._additional_kwargs = additional_kwargs or {}
-        self.callback_manager = callback_manager or CallbackManager([])
+
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs or {},
+            callback_manager=callback_manager,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "llama_api_llm"
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
-            "model": self._model,
-            "temperature": self._temperature,
-            "max_length": self._max_tokens,
+            "model": self.model,
+            "temperature": self.temperature,
+            "max_length": self.max_tokens,
         }
         model_kwargs = {
             **base_kwargs,
-            **self._additional_kwargs,
+            **self.additional_kwargs,
         }
         return model_kwargs
 
