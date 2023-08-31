@@ -6,7 +6,7 @@ from llama_index.readers.string_iterable import StringIterableReader
 from llama_index.readers.web import BeautifulSoupWebReader
 
 
-def test_loading_readers():
+def test_loading_readers() -> None:
     notion = NotionPageReader(integration_token="test")
     string_iterable = StringIterableReader()
     soup = BeautifulSoupWebReader(website_extractor={"test": lambda x: x})
