@@ -180,21 +180,27 @@ function baz() {
 
     chunks: List[RelatedNodeInfo] = code_splitter.get_nodes_from_documents([TextNode(text=text)])
 
-    # Test the first chunk (function foo)
+    # This is the first function scope
     assert chunks[0].text.startswith("function foo()")
-    assert chunks[0].metadata["inclusive_scopes"] == [{'name': "foo", 'type': "function"}]
-    assert chunks[0].relationships[NodeRelationship.PARENT] is None
-    assert chunks[0].relationships[NodeRelationship.PREVIOUS] is None
-    assert chunks[0].relationships[NodeRelationship.NEXT] == chunks[1].id_
+    assert chunks[0].metadata["module"] == "example.ts"
+    assert chunks[0].metadata["inclusive_scopes"] == [{'name': "foo", 'type': "function_definition"}]
+    assert NodeRelationship.PARENT not in chunks[0].relationships
     assert chunks[0].relationships[NodeRelationship.CHILD] == []
+    assert isinstance(chunks[0].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
+    assert chunks[0].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert NodeRelationship.PREVIOUS not in chunks[0].relationships
+    assert NodeRelationship.NEXT not in chunks[0].relationships
 
-    # Test the second chunk (function baz)
+    # This is the second function scope
     assert chunks[1].text.startswith("function baz()")
-    assert chunks[1].metadata["inclusive_scopes"] == [{'name': "baz", 'type': "function"}]
-    assert chunks[1].relationships[NodeRelationship.PARENT] is None
-    assert chunks[1].relationships[NodeRelationship.PREVIOUS] == chunks[0].id_
-    assert chunks[1].relationships[NodeRelationship.NEXT] == None
+    assert chunks[1].metadata["module"] == "example.ts"
+    assert chunks[1].metadata["inclusive_scopes"] == [{'name': "baz", 'type': "function_definition"}]
+    assert NodeRelationship.PARENT not in chunks[1].relationships
     assert chunks[1].relationships[NodeRelationship.CHILD] == []
+    assert isinstance(chunks[1].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
+    assert chunks[1].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert NodeRelationship.PREVIOUS not in chunks[1].relationships
+    assert NodeRelationship.NEXT not in chunks[1].relationships
 
 
 def test_typescript_code_splitter() -> None:
