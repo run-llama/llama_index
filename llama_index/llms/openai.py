@@ -181,7 +181,11 @@ class OpenAI(LLM):
         message_dict = response["choices"][0]["message"]
         message = from_openai_message_dict(message_dict)
 
-        return ChatResponse(message=message, raw=response)
+        return ChatResponse(
+            message=message,
+            raw=response,
+            additional_kwargs=self._get_response_token_counts(response),
+        )
 
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -230,6 +234,7 @@ class OpenAI(LLM):
                     ),
                     delta=content_delta,
                     raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
                 )
 
         return gen()
@@ -255,6 +260,7 @@ class OpenAI(LLM):
         return CompletionResponse(
             text=text,
             raw=response,
+            additional_kwargs=self._get_response_token_counts(response),
         )
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
@@ -282,6 +288,7 @@ class OpenAI(LLM):
                     delta=delta,
                     text=text,
                     raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
                 )
 
         return gen()
@@ -303,6 +310,18 @@ class OpenAI(LLM):
                 f"Please use a prompt that is less than {context_window} tokens."
             )
         return max_token
+
+    def _get_response_token_counts(self, raw_response: Any) -> dict:
+        """Get the token usage reported by the response."""
+        if not isinstance(raw_response, dict):
+            return {}
+
+        usage = raw_response.get("usage", {})
+        return {
+            "prompt_tokens": usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "total_tokens": usage.get("total_tokens", 0),
+        }
 
     # ===== Async Endpoints =====
     @llm_chat_callback()
@@ -371,7 +390,11 @@ class OpenAI(LLM):
         message_dict = response["choices"][0]["message"]
         message = from_openai_message_dict(message_dict)
 
-        return ChatResponse(message=message, raw=response)
+        return ChatResponse(
+            message=message,
+            raw=response,
+            additional_kwargs=self._get_response_token_counts(response),
+        )
 
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -420,6 +443,7 @@ class OpenAI(LLM):
                     ),
                     delta=content_delta,
                     raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
                 )
 
         return gen()
@@ -445,6 +469,7 @@ class OpenAI(LLM):
         return CompletionResponse(
             text=text,
             raw=response,
+            additional_kwargs=self._get_response_token_counts(response),
         )
 
     async def _astream_complete(
@@ -474,6 +499,7 @@ class OpenAI(LLM):
                     delta=delta,
                     text=text,
                     raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
                 )
 
         return gen()

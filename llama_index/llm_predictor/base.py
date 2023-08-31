@@ -10,6 +10,7 @@ except ImportError:
     from pydantic import PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import EventPayload, CBEventType
 from llama_index.llm_predictor.utils import (
     astream_chat_response_to_tokens,
     astream_completion_response_to_tokens,
@@ -38,6 +39,11 @@ class BaseLLMPredictor(BaseComponent, ABC):
     @abstractmethod
     def llm(self) -> LLM:
         """Get LLM."""
+
+    @property
+    @abstractmethod
+    def callback_manager(self) -> CallbackManager:
+        """Get callback manager."""
 
     @property
     @abstractmethod
@@ -109,12 +115,33 @@ class LLMPredictor(BaseLLMPredictor):
         return self._llm
 
     @property
+    def callback_manager(self) -> CallbackManager:
+        """Get callback manager."""
+        return self._llm.callback_manager
+
+    @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return self._llm.metadata
 
+    def _log_template_data(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> None:
+        with self.callback_manager.event(
+            CBEventType.TEMPLATING,
+            payload={
+                EventPayload.TEMPLATE: prompt.get_template(llm=self._llm),
+                EventPayload.TEMPLATE_VARS: prompt_args,
+                EventPayload.SYSTEM_PROMPT: self.system_prompt,
+                EventPayload.QUERY_WRAPPER_PROMPT: self.query_wrapper_prompt,
+            },
+        ):
+            pass
+
     def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict."""
+        self._log_template_data(prompt, **prompt_args)
+
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
@@ -134,6 +161,8 @@ class LLMPredictor(BaseLLMPredictor):
 
     def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream."""
+        self._log_template_data(prompt, **prompt_args)
+
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
@@ -148,6 +177,8 @@ class LLMPredictor(BaseLLMPredictor):
 
     async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Async predict."""
+        self._log_template_data(prompt, **prompt_args)
+
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
@@ -169,6 +200,8 @@ class LLMPredictor(BaseLLMPredictor):
         self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> TokenAsyncGen:
         """Async stream."""
+        self._log_template_data(prompt, **prompt_args)
+
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)

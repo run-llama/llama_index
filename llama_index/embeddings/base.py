@@ -90,7 +90,9 @@ class BaseEmbedding(BaseComponent):
 
     def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             query_embedding = self._get_query_embedding(query)
 
             event.on_end(
@@ -103,7 +105,9 @@ class BaseEmbedding(BaseComponent):
 
     async def aget_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             query_embedding = await self._aget_query_embedding(query)
 
             event.on_end(
@@ -171,7 +175,9 @@ class BaseEmbedding(BaseComponent):
 
     def get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             text_embedding = self._get_text_embedding(text)
 
             event.on_end(
@@ -212,7 +218,10 @@ class BaseEmbedding(BaseComponent):
             cur_batch.append((text_id, text))
             if idx == len(text_queue) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+                with self.callback_manager.event(
+                    CBEventType.EMBEDDING,
+                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                ) as event:
                     cur_batch_ids = [text_id for text_id, _ in cur_batch]
                     cur_batch_texts = [text for _, text in cur_batch]
                     embeddings = self._get_text_embeddings(cur_batch_texts)
@@ -248,7 +257,10 @@ class BaseEmbedding(BaseComponent):
             cur_batch.append((text_id, text))
             if idx == len(text_queue) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
+                event_id = self.callback_manager.on_event_start(
+                    CBEventType.EMBEDDING,
+                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                )
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
                 callback_payloads.append((event_id, cur_batch_texts))

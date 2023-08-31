@@ -2,11 +2,12 @@
 from typing import Any, Dict
 
 try:
-    from pydantic.v1 import Field
+    from pydantic.v1 import Field, PrivateAttr
 except ImportError:
-    from pydantic import Field
+    from pydantic import Field, PrivateAttr
 
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.llms.base import LLM, LLMMetadata
@@ -93,6 +94,8 @@ class MockLLMPredictor(BaseLLMPredictor):
         default=DEFAULT_NUM_OUTPUTS, description="Number of tokens to mock generate."
     )
 
+    _callback_manager: CallbackManager = PrivateAttr(default_factory=CallbackManager)
+
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
@@ -101,6 +104,10 @@ class MockLLMPredictor(BaseLLMPredictor):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata()
+
+    @property
+    def callback_manager(self) -> CallbackManager:
+        return self.callback_manager
 
     @property
     def llm(self) -> LLM:
