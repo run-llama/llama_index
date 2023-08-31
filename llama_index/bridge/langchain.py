@@ -15,11 +15,10 @@ from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_
 from langchain.chat_models import ChatAnyscale, ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.document import Document
-from langchain.embeddings import HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings
 
 # embeddings
 from langchain.embeddings.base import Embeddings
-from langchain.input import get_color_mapping, print_text
+from langchain.embeddings import HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings
 
 # LLMs
 from langchain.llms import AI21, BaseLLM, Cohere, FakeListLLM, OpenAI
@@ -51,6 +50,7 @@ from langchain.schema import (
 
 # misc
 from langchain.sql_database import SQLDatabase
+from langchain.input import get_color_mapping, print_text
 
 # input & output
 from langchain.text_splitter import RecursiveCharacterTextSplitter
