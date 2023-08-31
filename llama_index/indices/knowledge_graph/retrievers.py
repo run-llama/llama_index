@@ -626,7 +626,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         knowledge_sequence = []
         if rel_map:
             knowledge_sequence.extend(
-                [rel_obj for rel_objs in rel_map.values() for rel_obj in rel_objs]
+                [str(rel_obj) for rel_objs in rel_map.values() for rel_obj in rel_objs]
             )
         else:
             logger.info("> No knowledge sequence extracted from entities.")
@@ -649,7 +649,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         knowledge_sequence = []
         if rel_map:
             knowledge_sequence.extend(
-                [rel_obj for rel_objs in rel_map.values() for rel_obj in rel_objs]
+                [str(rel_obj) for rel_objs in rel_map.values() for rel_obj in rel_objs]
             )
         else:
             logger.info("> No knowledge sequence extracted from entities.")
