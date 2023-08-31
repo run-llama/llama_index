@@ -22,6 +22,9 @@ def get_top_k_embeddings(
 
     similarity_fn = similarity_fn or default_similarity_fn
 
+    embeddings = np.array(embeddings)
+    query_embedding = np.array(query_embedding)
+
     similarity_heap: List[Tuple[float, Any]] = []
     for i, emb in enumerate(embeddings):
         similarity = similarity_fn(query_embedding, emb)
