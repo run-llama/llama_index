@@ -13,21 +13,27 @@ from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.utils import get_tqdm_iterable
 from pydantic import BaseModel
 
+# TODO: Expand these for new languages
+DEFAULT_NAME_IDENTIFIERS = {
+    'python': ["identifier"],
+    'javascript': ["identifier", "type_identifier", "property_identifier"],
+    'typescript': ["identifier", "type_identifier", "property_identifier"],
+    'html': ["start_tag"],
+    'cpp': ["function_declarator", "type_identifier"]
+}
+
+DEFAULT_SPLIT_ON_TYPES = {
+    'python': ["function_definition", "class_definition"],
+    'javascript': ["function_declaration", "class_declaration", "lexical_declaration", "method_definition"],
+    'typescript': ["function_declaration", "class_declaration", "interface_declaration", "method_definition", "lexical_declaration"],
+    'html': ["element"],
+    'cpp': ["class_specifier", "function_definition"]
+}
+
 class _ScopeItem(BaseModel):
     """Like a Node from tree_sitter, but with only the str information we need."""
     name: str
     type: str
-
-def _get_name(node: Node) -> str:
-    """Get the name of a node."""
-    if not node.is_named:
-        raise ValueError("Node is not named.")
-
-    for child in node.children:
-        if child.type == "identifier":
-            return child.text
-
-    raise ValueError("Node does not have an identifier child.")
 
 class _ChunkNodeOutput(BaseModel):
     """The output of a chunk_node call."""
@@ -52,6 +58,12 @@ class CodeBlockNodeParser(NodeParser):
     split_on_types: List[str] = Field(
         description="The types of nodes to split on."
     )
+    name_identifiers: List[str] = Field(
+        description="The types of nodes to use as the name of the scope."
+    )
+    min_characters: int = Field(
+        default=0, description="Minimum number of characters per chunk."
+    )
     code_splitter: Optional[CodeSplitter] = Field(
         description="The text splitter to use when splitting documents."
     )
@@ -65,21 +77,56 @@ class CodeBlockNodeParser(NodeParser):
     def __init__(
         self,
         language: str,
-        split_on_types: List[str],
+        split_on_types: Optional[List[str]] = None,
+        name_identifiers: Optional[List[str]] = None,
         code_splitter: Optional[CodeSplitter] = None,
         callback_manager: Optional[CallbackManager] = None,
         metadata_extractor: Optional[MetadataExtractor] = None,
+        min_characters: int = 0,
     ):
         callback_manager = callback_manager or CallbackManager([])
+        if split_on_types is None:
+            try:
+                split_on_types = DEFAULT_SPLIT_ON_TYPES[language]
+            except KeyError:
+                # TODO: Provide documentation on how to discover this
+                # TODO: request user make a PR to add this language
+                raise ValueError(
+                    f"Must provide split_on_types for language {language}."
+                )
+
+        if name_identifiers is None:
+            try:
+                name_identifiers = DEFAULT_NAME_IDENTIFIERS[language]
+            except KeyError:
+                raise ValueError(
+                    f"Must provide name_identifiers for language {language}."
+                )
+
         super().__init__(
             language=language,
             callback_manager=callback_manager,
             metadata_extractor=metadata_extractor,
             split_on_types=split_on_types,
+            name_identifiers=name_identifiers,
             code_splitter=code_splitter,
+            min_characters=min_characters,
         )
 
-    def _chunk_node(self, parent: Node, text: str, _context_list: Optional[List[_ScopeItem]] = None, _root=True) -> _ChunkNodeOutput:
+
+    def _get_node_name(self, node: Node) -> str:
+        """Get the name of a node."""
+        def recur(node: Node) -> str:
+            for child in node.children:
+                if child.type in self.name_identifiers:
+                    return child.text
+                if child.children:
+                    return recur(child)
+            return ""
+
+        return recur(node)
+
+    def _chunk_node(self, parent: Node, text: str, _context_list: Optional[List[_ScopeItem]] = None, _root: bool =True) -> _ChunkNodeOutput:
         """
         Args:
             parent (Node): The parent node to chunk
@@ -94,11 +141,19 @@ class CodeBlockNodeParser(NodeParser):
 
         # Create this node
         current_chunk = text[parent.start_byte:parent.end_byte]
+
+        # Return early if the chunk is too small
+        if len(current_chunk) < self.min_characters and not _root:
+            return _ChunkNodeOutput(
+                this_document=None,
+                children_documents=[],
+            )
+
         if parent.type in self.split_on_types or _root:
             # Get the new context
             if not _root:
                 new_context = _ScopeItem(
-                    name=_get_name(parent),
+                    name=self._get_node_name(parent),
                     type=parent.type,
                 )
                 _context_list.append(new_context)
