@@ -191,6 +191,7 @@ class BeautifulSoupWebReader(PydanticBaseReader):
             )
 
         self._website_extractor = website_extractor or DEFAULT_WEBSITE_EXTRACTOR
+        super().__init__()
 
     @classmethod
     def class_name(cls) -> str:
