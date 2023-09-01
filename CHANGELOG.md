@@ -1,6 +1,6 @@
 # ChangeLog
 
-## [0.8.16] - 2023-0901
+## [0.8.16] - 2023-09-01
 
 ### Bug Fixes / Nits
 - fix link to Marvin notebook in docs (#7504)
