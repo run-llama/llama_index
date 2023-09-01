@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Ensure metadata is not `None` in `SimpleWebPageReader` (#7499)
+
 ## [0.8.15] - 2023-08-31
 
 ### New Features
