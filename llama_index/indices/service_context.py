@@ -18,6 +18,7 @@ from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.prompts.base import BasePromptTemplate
+from llama_index.text_splitter.types import TextSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -283,7 +284,9 @@ class ServiceContext:
         metadata_extractor_dict = None
         extractor_dicts = None
         text_splitter_dict = None
-        if isinstance(self.node_parser, SimpleNodeParser):
+        if isinstance(self.node_parser, SimpleNodeParser) and isinstance(
+            self.node_parser.text_splitter, TextSplitter
+        ):
             text_splitter_dict = self.node_parser.text_splitter.to_dict()
 
         if isinstance(self.node_parser, (SimpleNodeParser, SentenceWindowNodeParser)):
