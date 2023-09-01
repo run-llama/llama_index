@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Raise informative error when metadata is too large during splitting (#7513)
+
 ## [0.8.16] - 2023-09-01
 
 ### Bug Fixes / Nits
