@@ -82,7 +82,7 @@ class Portkey(CustomLLM):
         cache_force_refresh: Optional[bool] = None,
         metadata: Optional[Dict[str, Any]] = None,
         retry: Optional[int] = 3,
-        base_url: Optional[str] = None
+        base_url: Optional[str] = None,
     ) -> None:
         """
         Initialize a Portkey instance.
