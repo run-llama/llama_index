@@ -1,4 +1,11 @@
-from typing import List, Optional
+from typing import Any, List, Optional
+
+try:
+    from pydantic.v1 import Field, PrivateAttr
+except ImportError:
+    from pydantic import Field, PrivateAttr
+
+from llama_index.callbacks import EventPayload, CBEventType
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import MetadataMode, NodeWithScore
@@ -7,10 +14,15 @@ DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH = 512
 
 
 class SentenceTransformerRerank(BaseNodePostprocessor):
+    model: str = Field(ddescription="Sentence transformer model name.")
+    top_n: int = Field(description="Number of nodes to return sorted by score.")
+
+    _model: Any = PrivateAttr()
+
     def __init__(
         self,
         top_n: int = 2,
-        model: str = "cross-encoder/ms-marco-TinyBERT-L-2-v2",
+        model: str = "cross-encoder/stsb-distilroberta-base",
     ):
         try:
             from sentence_transformers import CrossEncoder
@@ -20,10 +32,14 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
                 "please `pip install sentence-transformers`",
             )
 
-        self._top_n = top_n
         self._model = CrossEncoder(
             model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH
         )
+        super().__init__(top_n=top_n, model=model)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "SentenceTransformerRerank"
 
     def postprocess_nodes(
         self,
@@ -41,15 +57,25 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             for node in nodes
         ]
 
-        scores = self._model.predict(query_and_nodes)
+        with self.callback_manager.event(
+            CBEventType.RERANKING,
+            payload={
+                EventPayload.NODES: nodes,
+                EventPayload.MODEL_NAME: self.model,
+                EventPayload.QUERY_STR: query_bundle.query_str,
+                EventPayload.TOP_K: self.top_n,
+            },
+        ) as event:
+            scores = self._model.predict(query_and_nodes)
 
-        assert len(scores) == len(nodes)
+            assert len(scores) == len(nodes)
 
-        for node, score in zip(nodes, scores):
-            node.score = score
+            for node, score in zip(nodes, scores):
+                node.score = score
 
-        new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
-            : self._top_n
-        ]
+            new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
+                : self.top_n
+            ]
+            event.on_end(payload={EventPayload.NODES: new_nodes})
 
         return new_nodes

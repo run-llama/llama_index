@@ -16,7 +16,7 @@ DBEmbeddingRow = namedtuple(
 )
 
 
-def get_data_model(base: Type, index_name: str) -> Any:
+def get_data_model(base: Type, index_name: str, embed_dim: int = 1536) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table
     """
@@ -30,7 +30,7 @@ def get_data_model(base: Type, index_name: str) -> Any:
         text = Column(VARCHAR, nullable=False)
         metadata_ = Column(JSON)
         node_id = Column(VARCHAR)
-        embedding = Column(Vector(1536))  # type: ignore
+        embedding = Column(Vector(embed_dim))  # type: ignore
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
@@ -43,7 +43,11 @@ class PGVectorStore(VectorStore):
     flat_metadata = False
 
     def __init__(
-        self, connection_string: str, async_connection_string: str, table_name: str
+        self,
+        connection_string: str,
+        async_connection_string: str,
+        table_name: str,
+        embed_dim: int = 1536,
     ) -> None:
         try:
             import sqlalchemy  # noqa: F401
@@ -66,7 +70,9 @@ class PGVectorStore(VectorStore):
 
         self._base = declarative_base()
         # sqlalchemy model
-        self.table_class = get_data_model(self._base, self.table_name)
+        self.table_class = get_data_model(
+            self._base, self.table_name, embed_dim=embed_dim
+        )
         self._connect()
         self._create_extension()
         self._create_tables_if_not_exists()
@@ -86,6 +92,7 @@ class PGVectorStore(VectorStore):
         user: str,
         password: str,
         table_name: str,
+        embed_dim: int = 1536,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
@@ -96,6 +103,7 @@ class PGVectorStore(VectorStore):
             connection_string=conn_str,
             async_connection_string=async_conn_str,
             table_name=table_name,
+            embed_dim=embed_dim,
         )
 
     def _connect(self) -> Any:

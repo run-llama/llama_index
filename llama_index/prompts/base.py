@@ -44,6 +44,10 @@ class BasePromptTemplate(BaseModel, ABC):
     ) -> List[ChatMessage]:
         ...
 
+    @abstractmethod
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        ...
+
 
 class PromptTemplate(BasePromptTemplate):
     template: str
@@ -92,6 +96,9 @@ class PromptTemplate(BasePromptTemplate):
         del llm  # unused
         prompt = self.format(**kwargs)
         return prompt_to_messages(prompt)
+
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        return self.template
 
 
 class ChatPromptTemplate(BasePromptTemplate):
@@ -157,6 +164,9 @@ class ChatPromptTemplate(BasePromptTemplate):
 
         return messages
 
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        return messages_to_prompt(self.message_templates)
+
 
 class SelectorPromptTemplate(BasePromptTemplate):
     default_template: BasePromptTemplate
@@ -218,6 +228,10 @@ class SelectorPromptTemplate(BasePromptTemplate):
         """Format the prompt into a list of chat messages."""
         prompt = self._select(llm=llm)
         return prompt.format_messages(**kwargs)
+
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        prompt = self._select(llm=llm)
+        return prompt.get_template(llm=llm)
 
 
 class LangchainPromptTemplate(BasePromptTemplate):
@@ -292,6 +306,19 @@ class LangchainPromptTemplate(BasePromptTemplate):
         lc_messages = lc_prompt_value.to_messages()
         messages = from_lc_messages(lc_messages)
         return messages
+
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        if llm is not None:
+            if not isinstance(llm, LangChainLLM):
+                raise ValueError("Must provide a LangChainLLM.")
+            lc_template = self.selector.get_prompt(llm=llm.llm)
+        else:
+            lc_template = self.selector.default_prompt
+
+        try:
+            return str(lc_template.template)  # type: ignore
+        except AttributeError:
+            return str(lc_template)
 
 
 # NOTE: only for backwards compatibility

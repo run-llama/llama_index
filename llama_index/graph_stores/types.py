@@ -37,7 +37,7 @@ class GraphStore(Protocol):
         ...
 
     def get_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2
+        self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> Dict[str, List[List[str]]]:
         """Get depth-aware rel map."""
         ...
