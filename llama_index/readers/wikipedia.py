@@ -1,11 +1,11 @@
 """Simple reader that reads wikipedia."""
-from typing import Any, List, Optional
+from typing import Any, List
 
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 
-class WikipediaReader(PydanticBaseReader):
+class WikipediaReader(BasePydanticReader):
     """Wikipedia reader.
 
     Reads a page.
@@ -14,7 +14,7 @@ class WikipediaReader(PydanticBaseReader):
 
     is_remote: bool = True
 
-    def __init__(self, pages: Optional[List[str]] = None) -> None:
+    def __init__(self) -> None:
         """Initialize with parameters."""
         try:
             import wikipedia  # noqa: F401

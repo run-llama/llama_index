@@ -6,18 +6,14 @@ from datetime import datetime
 from ssl import SSLContext
 from typing import Any, List, Optional
 
-try:
-    from pydantic.v1 import PrivateAttr
-except ImportError:
-    from pydantic import PrivateAttr
-
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
 
-class SlackReader(PydanticBaseReader):
+class SlackReader(BasePydanticReader):
     """Slack reader.
 
     Reads conversations from channels. If an earliest_date is provided, an

@@ -7,16 +7,12 @@ This only uses the basic search api, so it will work with Elasticsearch and Open
 
 from typing import Any, List, Optional
 
-try:
-    from pydantic.v1 import PrivateAttr
-except ImportError:
-    from pydantic import PrivateAttr
-
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 
-class ElasticsearchReader(PydanticBaseReader):
+class ElasticsearchReader(BasePydanticReader):
     """
     Read documents from an Elasticsearch/Opensearch index.
 

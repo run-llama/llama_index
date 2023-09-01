@@ -2,11 +2,7 @@
 from abc import abstractmethod
 from typing import Any, Dict, List
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
-
+from llama_index.bridge.pydantic import Field
 from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.schema import Document, BaseComponent
 
@@ -24,16 +20,19 @@ class BaseReader:
         return [d.to_langchain_format() for d in docs]
 
 
-class PydanticBaseReader(BaseReader, BaseComponent):
+class BasePydanticReader(BaseReader, BaseComponent):
     """Serialiable Data Loader with Pydatnic."""
 
-    is_remote: bool = False
+    is_remote: bool = Field(
+        default=False,
+        description="Whether the data is loaded from a remote API or a local file.",
+    )
 
     class Config:
         arbitrary_types_allowed = True
 
 
-class LoaderConfig(BaseComponent):
+class ReaderConfig(BaseComponent):
     """Represents a loader and it's input arguments."""
 
     loader: BaseReader = Field(..., description="Loader to use.")

@@ -1,11 +1,11 @@
 """Simple Reader that reads transcript of youtube video."""
 from typing import Any, List
 
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 
-class YoutubeTranscriptReader(PydanticBaseReader):
+class YoutubeTranscriptReader(BasePydanticReader):
     """Youtube Transcript reader."""
 
     is_remote: bool = True

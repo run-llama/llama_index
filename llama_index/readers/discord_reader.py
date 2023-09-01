@@ -10,7 +10,7 @@ import logging
 import os
 from typing import List, Optional
 
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ async def read_channel(
     return "\n\n".join(msg_txt_list)
 
 
-class DiscordReader(PydanticBaseReader):
+class DiscordReader(BasePydanticReader):
     """Discord reader.
 
     Reads conversations from channels.

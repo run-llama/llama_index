@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 import requests  # type: ignore
 
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: Notion DB reader coming soon!
-class NotionPageReader(PydanticBaseReader):
+class NotionPageReader(BasePydanticReader):
     """Notion Page reader.
 
     Reads a set of Notion pages.

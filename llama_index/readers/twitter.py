@@ -1,11 +1,11 @@
 """Simple reader that reads tweets of a twitter handle."""
 from typing import Any, List, Optional
 
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 
-class TwitterTweetReader(PydanticBaseReader):
+class TwitterTweetReader(BasePydanticReader):
     """Twitter tweets reader.
 
     Read tweets of user twitter handle.
@@ -33,7 +33,6 @@ class TwitterTweetReader(PydanticBaseReader):
         self.bearer_token = bearer_token
         self.num_tweets = num_tweets
         super().__init__(
-            is_remote=True,
             num_tweets=num_tweets,
             bearer_token=bearer_token,
         )
@@ -43,11 +42,11 @@ class TwitterTweetReader(PydanticBaseReader):
         """Get the name identifier of the class."""
         return "TwitterTweetReader"
 
-    def load_from_self(self) -> List[Document]:
-        return self.load_data(self.twitterhandles)
-
     def load_data(
-        self, twitterhandles: List[str], **load_kwargs: Any
+        self,
+        twitterhandles: List[str],
+        num_tweets: Optional[int] = None,
+        **load_kwargs: Any
     ) -> List[Document]:
         """Load tweets of twitter handles.
 
@@ -67,7 +66,9 @@ class TwitterTweetReader(PydanticBaseReader):
         for username in twitterhandles:
             # tweets = api.user_timeline(screen_name=user, count=self.num_tweets)
             user = client.get_user(username=username)
-            tweets = client.get_users_tweets(user.data.id, max_results=self.num_tweets)
+            tweets = client.get_users_tweets(
+                user.data.id, max_results=num_tweets or self.num_tweets
+            )
             response = " "
             for tweet in tweets.data:
                 response = response + tweet.text + "\n"

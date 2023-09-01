@@ -1,11 +1,11 @@
 """Simple reader that turns an iterable of strings into a list of Documents."""
 from typing import List
 
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 
-class StringIterableReader(PydanticBaseReader):
+class StringIterableReader(BasePydanticReader):
     """String Iterable Reader.
 
     Gets a list of documents, given an iterable (e.g. list) of strings.

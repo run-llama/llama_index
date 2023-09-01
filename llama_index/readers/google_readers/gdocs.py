@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Any, List
 
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # limitations under the License.
 
 
-class GoogleDocsReader(PydanticBaseReader):
+class GoogleDocsReader(BasePydanticReader):
     """Google Docs reader.
 
     Reads a page from Google Docs

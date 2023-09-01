@@ -3,18 +3,14 @@ import logging
 import requests
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-try:
-    from pydanitc.v1 import PrivateAttr
-except ImportError:
-    from pydantic import PrivateAttr
-
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
 
-class SimpleWebPageReader(PydanticBaseReader):
+class SimpleWebPageReader(BasePydanticReader):
     """Simple web page reader.
 
     Reads pages from the web.
@@ -81,7 +77,7 @@ class SimpleWebPageReader(PydanticBaseReader):
         return documents
 
 
-class TrafilaturaWebReader(PydanticBaseReader):
+class TrafilaturaWebReader(BasePydanticReader):
     """Trafilatura web page reader.
 
     Reads pages from the web.
@@ -159,7 +155,7 @@ DEFAULT_WEBSITE_EXTRACTOR: Dict[str, Callable[[Any], Tuple[str, Dict[str, Any]]]
 }
 
 
-class BeautifulSoupWebReader(PydanticBaseReader):
+class BeautifulSoupWebReader(BasePydanticReader):
     """BeautifulSoup web page reader.
 
     Reads pages from the web.
@@ -241,7 +237,7 @@ class BeautifulSoupWebReader(PydanticBaseReader):
         return documents
 
 
-class RssReader(PydanticBaseReader):
+class RssReader(BasePydanticReader):
     """RSS reader.
 
     Reads content from an RSS feed.

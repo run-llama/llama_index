@@ -1,6 +1,6 @@
 from typing import Any, Dict, Type
 
-from llama_index.readers.base import PydanticBaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.readers.discord_reader import DiscordReader
 from llama_index.readers.elasticsearch import ElasticsearchReader
 from llama_index.readers.google_readers.gdocs import GoogleDocsReader
@@ -18,7 +18,7 @@ from llama_index.readers.web import (
 from llama_index.readers.wikipedia import WikipediaReader
 from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
 
-ALL_READERS: Dict[str, Type[PydanticBaseReader]] = {
+ALL_READERS: Dict[str, Type[BasePydanticReader]] = {
     DiscordReader.class_name(): DiscordReader,
     ElasticsearchReader.class_name(): ElasticsearchReader,
     GoogleDocsReader.class_name(): GoogleDocsReader,
@@ -36,7 +36,7 @@ ALL_READERS: Dict[str, Type[PydanticBaseReader]] = {
 }
 
 
-def load_reader(data: Dict[str, Any]) -> PydanticBaseReader:
+def load_reader(data: Dict[str, Any]) -> BasePydanticReader:
     class_name = data.get("class_name", None)
     if class_name is None:
         raise ValueError("Must specify `class_name` in reader data.")
