@@ -29,7 +29,7 @@ class SimpleWebPageReader(PydanticBaseReader):
 
     is_remote: bool = True
     html_to_text: bool
-      
+
     _metadata_fn: Optional[Callable[[str], Dict]] = PrivateAttr()
 
     def __init__(
