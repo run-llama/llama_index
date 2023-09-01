@@ -6,11 +6,12 @@ An index that is built on top of an existing Qdrant collection.
 import logging
 from typing import Any, List, Optional, cast
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.schema import TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -21,9 +22,12 @@ from llama_index.vector_stores.utils import (
 )
 
 logger = logging.getLogger(__name__)
+import_err_msg = (
+    "`qdrant-client` package not found, please run `pip install qdrant-client`"
+)
 
 
-class QdrantVectorStore(VectorStore):
+class QdrantVectorStore(BasePydanticVectorStore):
     """Qdrant Vector Store.
 
     In this vector store, embeddings and docs are stored within a
@@ -40,13 +44,26 @@ class QdrantVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
+    collection_name: str
+    url: Optional[str]
+    api_key: Optional[str]
+    batch_size: int
+    client_kwargs: dict = Field(default_factory=dict)
+
+    _client: Any = PrivateAttr()
+    _collection_initialized: bool = PrivateAttr()
+
     def __init__(
-        self, collection_name: str, client: Optional[Any] = None, **kwargs: Any
+        self,
+        collection_name: str,
+        client: Optional[Any] = None,
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        batch_size: int = 100,
+        client_kwargs: Optional[dict] = None,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
-        import_err_msg = (
-            "`qdrant-client` package not found, please run `pip install qdrant-client`"
-        )
         try:
             import qdrant_client  # noqa: F401
         except ImportError:
@@ -56,10 +73,48 @@ class QdrantVectorStore(VectorStore):
             raise ValueError("Missing Qdrant client!")
 
         self._client = cast(qdrant_client.QdrantClient, client)
-        self._collection_name = collection_name
         self._collection_initialized = self._collection_exists(collection_name)
 
-        self._batch_size = kwargs.get("batch_size", 100)
+        super().__init__(
+            collection_name=collection_name,
+            url=url,
+            api_key=api_key,
+            batch_size=batch_size,
+            client_kwargs=client_kwargs,
+        )
+
+    @classmethod
+    def from_params(
+        cls,
+        collection_name: str,
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        client_kwargs: Optional[dict] = None,
+        batch_size: int = 100,
+        **kwargs: Any,
+    ) -> "QdrantVectorStore":
+        """Create a connection to a remote Qdrant vector store from a config."""
+        try:
+            import qdrant_client  # noqa: F401
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        client_kwargs = client_kwargs or {}
+        return cls(
+            collection_name=collection_name,
+            client=qdrant_client.QdrantClient(
+                url=url, api_key=api_key, **client_kwargs
+            ),
+            batch_size=batch_size,
+            client_kwargs=client_kwargs,
+            url=url,
+            api_key=api_key,
+            **kwargs,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "QdraantVectorStore"
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add embedding results to index.

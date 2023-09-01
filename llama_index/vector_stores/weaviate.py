@@ -8,10 +8,11 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -46,7 +47,12 @@ def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
         return {"operands": operands, "operator": "And"}
 
 
-class WeaviateVectorStore(VectorStore):
+import_err_msg = (
+    "`weaviate` package not found, please run `pip install weaviate-client`"
+)
+
+
+class WeaviateVectorStore(BasePydanticVectorStore):
     """Weaviate vector store.
 
     In this vector store, embeddings and docs are stored within a
@@ -64,18 +70,28 @@ class WeaviateVectorStore(VectorStore):
 
     stores_text: bool = True
 
+    index_name: Optional[str] = Field(description="Index name for the Weaviate index.")
+    text_key: str = Field(default=DEFAULT_TEXT_KEY, description="Text key in Weaviate.")
+    auth_config: Dict[str, Any] = Field(
+        default_factory={}, description="Auth config for client connections."
+    )
+    client_kwargs: Dict[str, Any] = Field(
+        default_factory={}, description="Client kwargs for client connections."
+    )
+
+    _client = PrivateAttr()
+
     def __init__(
         self,
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_name: Optional[str] = None,
         text_key: str = DEFAULT_TEXT_KEY,
+        auth_config: Optional[Any] = None,
+        client_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        import_err_msg = (
-            "`weaviate` package not found, please run `pip install weaviate-client`"
-        )
         try:
             import weaviate  # noqa: F401
             from weaviate import Client  # noqa: F401
@@ -92,16 +108,52 @@ class WeaviateVectorStore(VectorStore):
             # legacy, kept for backward compatibility
             index_name = f"{class_prefix}_Node"
 
-        self._index_name = index_name or f"LlamaIndex_{uuid4().hex}"
-        if not self._index_name[0].isupper():
+        index_name = index_name or f"LlamaIndex_{uuid4().hex}"
+        if not index_name[0].isupper():
             raise ValueError(
                 "Index name must start with a capital letter, e.g. 'LlamaIndex'"
             )
-        self._text_key = text_key
 
         # create default schema if does not exist
-        if not class_schema_exists(self._client, self._index_name):
-            create_default_schema(self._client, self._index_name)
+        if not class_schema_exists(self._client, index_name):
+            create_default_schema(self._client, index_name)
+
+        super().__init__(
+            index_name=index_name,
+            text_key=text_key,
+            auth_config=auth_config,
+            client_kwargs=client_kwargs,
+        )
+
+    @classmethod
+    def from_params(
+        cls,
+        url: str,
+        auth_config: Any,
+        client_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> "WeaviateVectorStore":
+        """Create WeaviateVectorStore from config."""
+        try:
+            import weaviate  # noqa: F401
+            from weaviate import Client, AuthApiKey  # noqa: F401
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        client_kwargs = client_kwargs or {}
+        weaviate_client = Client(
+            url=url, auth_client_secret=auth_config, **client_kwargs
+        )
+        return cls(
+            weaviate_client=weaviate_client,
+            auth_config=auth_config.__dict__,
+            client_kwargs=client_kwargs,
+            kwargs=kwargs,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "WeaviateVectorStore"
 
     @property
     def client(self) -> Any:

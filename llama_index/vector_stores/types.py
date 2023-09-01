@@ -5,9 +5,8 @@ from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_check
 
 import fsspec
 
-
 from llama_index.bridge.pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, BaseComponent
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
@@ -146,6 +145,74 @@ class VectorStore(Protocol):
 
     stores_text: bool
     is_embedding_query: bool = True
+
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        ...
+
+    def add(
+        self,
+        embedding_results: List[NodeWithEmbedding],
+    ) -> List[str]:
+        """Add embedding results to vector store."""
+        ...
+
+    async def async_add(
+        self,
+        embedding_results: List[NodeWithEmbedding],
+    ) -> List[str]:
+        """
+        Asynchronously add embedding results to vector store.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call add synchronously.
+        """
+        return self.add(embedding_results)
+
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id."""
+        ...
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call delete synchronously.
+        """
+        self.delete(ref_doc_id, **delete_kwargs)
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """Query vector store."""
+        ...
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """
+        Asynchronously query vector store.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call query synchronously.
+        """
+        return self.query(query, **kwargs)
+
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> None:
+        return None
+
+
+# TODO: Temp copy of VectorStore for pydantic, can't mix with runtime_checkable
+class BasePydanticVectorStore(BaseComponent):
+    """Abstract vector store protocol."""
+
+    stores_text: bool
+    is_embedding_query: bool = True
+
+    @classmethod
+    def from_params(cls, **kwargs: Any) -> "VectorStore":
+        """Create vector store from config."""
+        ...
 
     @property
     def client(self) -> Any:

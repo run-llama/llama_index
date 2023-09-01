@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -38,9 +38,17 @@ def get_data_model(base: Type, index_name: str, embed_dim: int = 1536) -> Any:
     return model
 
 
-class PGVectorStore(VectorStore):
+class PGVectorStore(BasePydanticVectorStore):
     stores_text = True
     flat_metadata = False
+
+    connection_string: str
+    async_connection_string: str
+    table_name: str
+    embed_dim: int
+
+    _base: Any = PrivateAttr()
+    _table_class: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -61,21 +69,26 @@ class PGVectorStore(VectorStore):
                 "packages should be pre installed"
             )
 
-        self.connection_string = connection_string
-        self.async_connection_string = async_connection_string
-        self.table_name: str = table_name.lower()
+        table_name = table_name.lower()
 
         # def __enter__(self):
         from sqlalchemy.orm import declarative_base
 
         self._base = declarative_base()
         # sqlalchemy model
-        self.table_class = get_data_model(
+        self._table_class = get_data_model(
             self._base, self.table_name, embed_dim=embed_dim
         )
         self._connect()
         self._create_extension()
         self._create_tables_if_not_exists()
+
+        super().__init__(
+            connection_string=connection_string,
+            async_connection_string=async_connection_string,
+            table_name=table_name,
+            embed_dim=embed_dim,
+        )
 
     async def close(self) -> None:
         self._session.close_all()
@@ -92,11 +105,16 @@ class PGVectorStore(VectorStore):
         user: str,
         password: str,
         table_name: str,
+        conn_str: Optional[str] = None,
+        async_conn_str: Optional[str] = None,
         embed_dim: int = 1536,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
-        conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-        async_conn_str = (
+        conn_str = (
+            conn_str
+            or f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+        )
+        async_conn_str = async_conn_str or (
             f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
         )
         return cls(
