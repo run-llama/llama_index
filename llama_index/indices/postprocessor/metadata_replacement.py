@@ -1,9 +1,6 @@
 from typing import List, Optional
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle

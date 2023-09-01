@@ -1,10 +1,7 @@
 """Mock LLM Predictor."""
 from typing import Any, Dict
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 
 from llama_index.callbacks.base import CallbackManager

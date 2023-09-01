@@ -2,10 +2,7 @@
 import logging
 from typing import Callable, List, Optional
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

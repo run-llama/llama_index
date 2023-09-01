@@ -76,7 +76,7 @@ class SimpleWebPageReader(PydanticBaseReader):
             if self._metadata_fn is not None:
                 metadata = self._metadata_fn(url)
 
-            documents.append(Document(text=response, metadata=metadata))
+            documents.append(Document(text=response, metadata=metadata or {}))
 
         return documents
 

@@ -5,10 +5,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
