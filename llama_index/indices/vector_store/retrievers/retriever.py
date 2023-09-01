@@ -9,7 +9,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import NodeWithScore, ObjectType
+from llama_index.schema import ImageNode, IndexNode, NodeWithScore
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
@@ -121,17 +121,13 @@ class VectorIndexRetriever(BaseRetriever):
             # NOTE: vector store keeps text, returns nodes.
             # Only need to recover image or index nodes from docstore
             for i in range(len(query_result.nodes)):
-                source_node = query_result.nodes[i].source_node
                 if (not self._vector_store.stores_text) or (
-                    source_node is not None and source_node.node_type != ObjectType.TEXT
+                    isinstance(query_result.nodes[i], (ImageNode, IndexNode))
                 ):
                     node_id = query_result.nodes[i].node_id
                     if node_id in self._docstore.docs:
-                        query_result.nodes[
-                            i
-                        ] = self._docstore.get_node(  # type: ignore[index]
-                            node_id
-                        )
+                        query_result.nodes[i] = self._docstore.get_node(node_id)
+                        # type: ignore[index]
 
         log_vector_store_query_result(query_result)
 
