@@ -1,7 +1,5 @@
-"""_summary_
-
-Returns:
-    _type_: _description_
+"""
+    Portkey intergation with Llama_index for enchanced monitoring
 """
 from typing import Any, Optional, Sequence, Dict, Union, List
 
@@ -191,7 +189,6 @@ class Portkey(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        print("Model: ", self.model, self._is_chat_model)
         if self._is_chat_model:
             chat_fn = self._chat
         else:
@@ -292,7 +289,10 @@ class Portkey(CustomLLM):
                         function_call = function_call_delta
 
                         # ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
+                        if (
+                            function_call
+                            and function_call.get("function_name", "") is None
+                        ):
                             del function_call["function_name"]
                     else:
                         function_call["arguments"] += function_call_delta["arguments"]
