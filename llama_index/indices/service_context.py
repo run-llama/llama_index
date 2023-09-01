@@ -2,10 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 import llama_index
 from llama_index.callbacks.base import CallbackManager

@@ -5,10 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import openai
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from tenacity import (
     retry,

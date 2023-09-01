@@ -1,10 +1,7 @@
 import os
 from typing import Any, List, Optional
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import EventPayload, CBEventType
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
