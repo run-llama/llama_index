@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+- Ensure metadata is not `None` in `SimpleWebPageReader` (#7499)
+
+## [0.8.15] - 2023-08-31
+
 ### New Features
 - Added support for `MarvinEntityExtractor` metadata extractor (#7438)
 - Added a url_metadata callback to SimpleWebPageReader (#7445)
@@ -11,6 +16,7 @@
 - Only convert newlines to spaces for text 001 embedding models in OpenAI (#7484)
 - Fix `KnowledgeGraphRagRetriever` for non-nebula indexes (#7488)
 - Support defined embedding dimension in `PGVectorStore` (#7491)
+- Greatly improved similarity calculation speed for the base vector store (#7494)
 
 ## [0.8.14] - 2023-08-30
 
