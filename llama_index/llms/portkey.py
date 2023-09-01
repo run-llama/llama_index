@@ -82,6 +82,7 @@ class Portkey(CustomLLM):
         cache_force_refresh: Optional[bool] = None,
         metadata: Optional[Dict[str, Any]] = None,
         retry: Optional[int] = 3,
+        base_url: Optional[str] = None,
     ) -> None:
         """
         Initialize a Portkey instance.
@@ -121,6 +122,7 @@ class Portkey(CustomLLM):
             Portkey initialization.
         """
         self._client = Rubeus(
+            base_url=base_url,
             api_key=api_key,
             default_headers={
                 "trace-id": trace_id,
