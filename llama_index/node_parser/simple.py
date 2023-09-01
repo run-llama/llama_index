@@ -1,7 +1,6 @@
 """Simple node parser."""
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Sequence
 
-from llama_index.bridge.langchain import TextSplitter as LC_TextSplitter
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -9,10 +8,8 @@ from llama_index.node_parser.extractors.metadata_extractors import MetadataExtra
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.schema import BaseNode, Document
-from llama_index.text_splitter import TextSplitter, get_default_text_splitter
+from llama_index.text_splitter import get_default_text_splitter, SplitterType
 from llama_index.utils import get_tqdm_iterable
-
-SplitterType = Union[TextSplitter, LC_TextSplitter]
 
 
 class SimpleNodeParser(NodeParser):
