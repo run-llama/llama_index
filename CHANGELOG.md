@@ -4,6 +4,8 @@
 
 ### Bug Fixes / Nits
 - Ensure metadata is not `None` in `SimpleWebPageReader` (#7499)
+- Fixed KGIndex visualization (#7493)
+- Improved empty response in KG Index (#7493)
 
 ## [0.8.15] - 2023-08-31
 
