@@ -9,7 +9,7 @@ from llama_index.readers import SimpleWebPageReader
 try:
     import html2text
 except ImportError:
-    html2text = None
+    html2text = None  # type: ignore
 
 
 @pytest.mark.skipif(html2text is None, reason="html2text not installed")

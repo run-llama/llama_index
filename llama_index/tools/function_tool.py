@@ -1,10 +1,7 @@
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Type
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.bridge.langchain import StructuredTool, Tool
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput

@@ -7,11 +7,7 @@ from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
-try:
-    from pydantic.v1 import Field, validator, PrivateAttr
-except ImportError:
-    from pydantic import Field, validator, PrivateAttr
-
+from llama_index.bridge.pydantic import Field, validator, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.schema import BaseComponent

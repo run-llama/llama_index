@@ -2,10 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 from llama_index.bridge.langchain import AIMessage, BaseChatMemory
 from llama_index.bridge.langchain import BaseMemory as Memory
