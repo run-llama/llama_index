@@ -191,6 +191,7 @@ class Portkey(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        print("Model: ", self.model, self._is_chat_model)
         if self._is_chat_model:
             chat_fn = self._chat
         else:
@@ -249,7 +250,7 @@ class Portkey(CustomLLM):
             self.llm = self._get_llm(response)
         else:
             # Single mode
-            response = self._client.completion.create(prompt=prompt, **kwargs)
+            response = self._client.completion.single(llms=self.llms)
 
         text = response.choices[0]["text"]
         raw = response.raw_body
@@ -272,12 +273,7 @@ class Portkey(CustomLLM):
             )
         else:
             # Single mode
-            messages_input = [
-                Message(role=i.role.value, content=i.content or "") for i in messages
-            ]
-            response = self._client.chat_completion.create(
-                messages=messages_input, **kwargs, stream=True
-            )
+            response = self._client.chat_completion.single(llms=self.llms, stream=True)
 
         def gen() -> ChatResponseGen:
             content = ""
