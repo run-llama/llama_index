@@ -4,10 +4,7 @@ from typing import Any, Dict, List, Optional, Type
 
 import numpy as np
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
