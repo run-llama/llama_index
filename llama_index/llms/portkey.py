@@ -328,7 +328,7 @@ class Portkey(CustomLLM):
             )
         else:
             # Single mode
-            response = self._client.completion.create(prompt=prompt, **kwargs)
+            response = self._client.completion.create(prompt=prompt, stream=True, **kwargs)
 
         def gen() -> CompletionResponseGen:
             text = ""
@@ -338,7 +338,7 @@ class Portkey(CustomLLM):
                 yield CompletionResponse(
                     delta=delta,
                     text=text,
-                    raw=response,
+                    raw=resp,
                 )
 
         return gen()
