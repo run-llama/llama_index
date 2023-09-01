@@ -112,7 +112,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
 
 
 @pytest.fixture(scope="session")
-def hybrid_node_embeddings() -> List[TextNode]:
+def hybrid_node_embeddings() -> List[NodeWithEmbedding]:
     return [
         NodeWithEmbedding(
             embedding=[0.1] * 1536,

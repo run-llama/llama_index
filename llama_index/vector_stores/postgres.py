@@ -1,4 +1,4 @@
-from typing import List, Any, Type, Optional
+from typing import List, Any, Type, Optional, Tuple
 from collections import namedtuple
 
 from llama_index.schema import MetadataMode, TextNode
@@ -51,7 +51,7 @@ def get_data_model(
             metadata_ = Column(JSON)
             node_id = Column(VARCHAR)
             embedding = Column(Vector(embed_dim))  # type: ignore
-            text_search_tsv = Column(
+            text_search_tsv = Column(  # type: ignore
                 TSVector(),
                 Computed(
                     "to_tsvector('%s', text)" % text_search_config, persisted=True
@@ -88,8 +88,8 @@ class PGVectorStore(VectorStore):
         async_connection_string: str,
         table_name: str,
         hybrid_search: bool = False,
-        text_search_config="english",
-        hybrid_search_cross_encoder="cross-encoder/ms-marco-MiniLM-L-6-v2",
+        text_search_config: str = "english",
+        hybrid_search_cross_encoder: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
         embed_dim: int = 1536,
     ) -> None:
         try:
@@ -229,7 +229,7 @@ class PGVectorStore(VectorStore):
         stmt: Select,
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
-    ):
+    ) -> Any:
         import sqlalchemy
 
         if metadata_filters:
@@ -298,7 +298,9 @@ class PGVectorStore(VectorStore):
                     for item, distance in res.all()
                 ]
 
-    def _rerank(self, query, results):
+    def _rerank(
+        self, query: VectorStoreQuery, results: List[List[Tuple[DBEmbeddingRow, float]]]
+    ) -> List[DBEmbeddingRow]:
         try:
             from sentence_transformers import CrossEncoder
         except ImportError:
@@ -329,11 +331,13 @@ class PGVectorStore(VectorStore):
             for tup in zip(normalized_scores, all_results)
         ]
 
-        def compare_results(x, y):
+        def compare_results(
+            x: Tuple[Any, DBEmbeddingRow, float], y: Tuple[Any, DBEmbeddingRow, float]
+        ) -> int:
             # if scores are equal, fallback to comparing weights
             if x[0] == y[0]:
-                return x[2] - y[2]
-            return x[0] - y[0]
+                return x[2] - y[2]  # type: ignore
+            return x[0] - y[0]  # type: ignore
 
         sorted_scaled_results = [
             v
@@ -360,7 +364,6 @@ class PGVectorStore(VectorStore):
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
-        import sqlalchemy
         from sqlalchemy import select
         from sqlalchemy.sql import func, text
 
@@ -420,7 +423,9 @@ class PGVectorStore(VectorStore):
                     for item, rank in res.all()
                 ]
 
-    async def _async_hybrid_query(self, query):
+    async def _async_hybrid_query(
+        self, query: VectorStoreQuery
+    ) -> List[VectorStoreQueryResult]:
         import asyncio
 
         results = await asyncio.gather(
@@ -443,7 +448,7 @@ class PGVectorStore(VectorStore):
 
         return results[: query.similarity_top_k]
 
-    def _hybrid_query(self, query):
+    def _hybrid_query(self, query: VectorStoreQuery) -> List[DBEmbeddingRow]:
         alpha = query.alpha if query.alpha is not None else 1
 
         dense_results = self._query_with_score(
@@ -489,11 +494,11 @@ class PGVectorStore(VectorStore):
             ids=ids,
         )
 
-    async def a_query(
+    async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         if query.mode is VectorStoreQueryMode.HYBRID:
-            results = await self._hybrid_query(query)
+            results = self._hybrid_query(query)
         else:
             results = await self._aquery_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
