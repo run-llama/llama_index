@@ -15,9 +15,7 @@ from llama_index.graph_stores.types import (
     GraphStore,
 )
 
-logging.basicConfig(filename='loggy.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.info('simple HERE')
 
 
 @dataclass
@@ -89,24 +87,20 @@ class SimpleGraphStore(GraphStore):
         """Get client.
         Not applicable for this store.
         """
-        logger.info('#### simple client(self) called')
         return None
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
-        logger.info('#### simple get called')
         return self._data.graph_dict.get(subj, [])
 
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2
     ) -> Dict[str, List[List[str]]]:
         """Get depth-aware rel map."""
-        logger.info('#### simple get_rel_map called')
         return self._data.get_rel_map(subjs=subjs, depth=depth)
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
-        logger.info('#### simple upsert_triplet called')
         if subj not in self._data.graph_dict:
             self._data.graph_dict[subj] = []
         if (rel, obj) not in self._data.graph_dict[subj]:
@@ -114,7 +108,6 @@ class SimpleGraphStore(GraphStore):
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
-        logger.info('#### simple delete called')
         if subj in self._data.graph_dict:
             if (rel, obj) in self._data.graph_dict[subj]:
                 self._data.graph_dict[subj].remove([rel, obj])
@@ -123,12 +116,10 @@ class SimpleGraphStore(GraphStore):
 
     def persist(
         self,
-        persist_path: str = os.path.join(
-            DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
+        persist_path: str = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the SimpleGraphStore to a directory."""
-        logger.info('#### simple persist called')
         fs = fs or self._fs
         dirpath = os.path.dirname(persist_path)
         if not fs.exists(dirpath):
@@ -139,13 +130,10 @@ class SimpleGraphStore(GraphStore):
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the Simple Graph store."""
-        logger.info('#### simple get_schema called')
-        raise NotImplementedError(
-            "SimpleGraphStore does not support get_schema")
+        raise NotImplementedError("SimpleGraphStore does not support get_schema")
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         """Query the Simple Graph store."""
-        logger.info('#### simple query called')
         raise NotImplementedError("SimpleGraphStore does not support query")
 
     @classmethod
