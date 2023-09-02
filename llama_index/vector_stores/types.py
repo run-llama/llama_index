@@ -142,6 +142,9 @@ class VectorStoreQuery:
     # only for mmr
     mmr_threshold: Optional[float] = None
 
+    # NOTE: currently only used by postgres hybrid search
+    sparse_top_k: Optional[int] = None
+
 
 @runtime_checkable
 class VectorStore(Protocol):

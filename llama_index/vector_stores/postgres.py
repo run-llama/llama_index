@@ -1,3 +1,4 @@
+import logging
 from typing import List, Any, Type, Optional
 from collections import namedtuple
 
@@ -15,6 +16,9 @@ from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict
 DBEmbeddingRow = namedtuple(
     "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"]
 )
+
+
+_logger = logging.getLogger(__name__)
 
 
 def get_data_model(
@@ -247,7 +251,6 @@ class PGVectorStore(VectorStore):
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
-        import sqlalchemy
         from sqlalchemy import select
 
         stmt = select(  # type: ignore
@@ -366,40 +369,38 @@ class PGVectorStore(VectorStore):
     ) -> List[VectorStoreQueryResult]:
         import asyncio
 
+        if query.alpha is not None:
+            _logger.warning("postgres hybrid search does not support alpha parameter.")
+
+        sparse_top_k = query.sparse_top_k or query.similarity_top_k
+
         results = await asyncio.gather(
             self._aquery_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
             ),
-            self._async_sparse_query_with_rank(
-                query, query.similarity_top_k, query.filters
-            ),
+            self._async_sparse_query_with_rank(query, sparse_top_k, query.filters),
         )
 
-        alpha = query.alpha if query.alpha is not None else 1
-        weights = [alpha, 1 - alpha]
-        results = [
-            [(res, weights[idx]) for res in result]
-            for idx, result in enumerate(results)
-        ]
-
-        return results[: query.similarity_top_k]
+        dense_results, sparse_results = results
+        all_results = dense_results + sparse_results
+        return _dedup_results(all_results)
 
     def _hybrid_query(self, query: VectorStoreQuery) -> List[DBEmbeddingRow]:
-        alpha = query.alpha if query.alpha is not None else 1
+        if query.alpha is not None:
+            _logger.warning("postgres hybrid search does not support alpha parameter.")
+
+        sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
         dense_results = self._query_with_score(
             query.query_embedding, query.similarity_top_k, query.filters
         )
-        dense_results = [(res, alpha) for res in dense_results]
 
         sparse_results = self._sparse_query_with_rank(
-            query, query.similarity_top_k, query.filters
+            query, sparse_top_k, query.filters
         )
-        sparse_results = [(res, 1 - alpha) for res in sparse_results]
 
-        combined_results = [dense_results, sparse_results]
-
-        return combined_results[: query.similarity_top_k]
+        all_results = dense_results + sparse_results
+        return _dedup_results(all_results)
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]
@@ -462,3 +463,13 @@ class PGVectorStore(VectorStore):
 
                 session.execute(stmt)
                 session.commit()
+
+
+def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:
+    seen_ids = set()
+    deduped_results = []
+    for result in results:
+        if result.node_id not in seen_ids:
+            deduped_results.append(result)
+            seen_ids.add(result.node_id)
+    return deduped_results
