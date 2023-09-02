@@ -1,7 +1,7 @@
 """
     Portkey intergation with Llama_index for enchanced monitoring
 """
-from typing import Any, Optional, Sequence, Dict, Union, List, TYPE_CHECKING, Type
+from typing import Any, Optional, Sequence, Dict, Union, List, TYPE_CHECKING
 
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.base import (
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
         RubeusCacheType,
         RubeusCacheLiteral,
         RubeusResponse,
+        RubeusModesLiteral,
     )
 
 
@@ -47,12 +48,7 @@ class Portkey(CustomLLM):
         LLM (_type_): _description_
     """
 
-    try:
-        from rubeus import RubeusModes, RubeusModesLiteral
-    except ImportError as exc:
-        raise ImportError(IMPORT_ERROR_MESSAGE) from exc
-
-    mode: Optional[Union[Type["RubeusModes"], RubeusModesLiteral]] = Field(
+    mode: Optional[Union["RubeusModes", "RubeusModesLiteral"]] = Field(
         description="The mode for using the Portkey integration"
     )
 
@@ -66,7 +62,7 @@ class Portkey(CustomLLM):
     def __init__(
         self,
         *,
-        mode: Optional[Union["RubeusModes", RubeusModesLiteral]] = RubeusModes.SINGLE,
+        mode: Optional[Union["RubeusModes", "RubeusModesLiteral"]] = None,
         api_key: str = "",
         cache_status: Optional[Union["RubeusCacheType", "RubeusCacheLiteral"]] = None,
         trace_id: Optional[str] = "",
@@ -117,6 +113,7 @@ class Portkey(CustomLLM):
             from rubeus import Rubeus
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
+
         self._client = Rubeus(
             base_url=base_url,
             api_key=api_key,
@@ -130,7 +127,6 @@ class Portkey(CustomLLM):
             },
         )
         super().__init__(
-            mode=mode,
             trace_id=trace_id,
             cache_status=cache_status,
             metadata=metadata,
@@ -138,6 +134,7 @@ class Portkey(CustomLLM):
             cache_age=cache_age,
         )
         self.model = None
+        self.mode = mode
 
     @property
     def metadata(self) -> LLMMetadata:
