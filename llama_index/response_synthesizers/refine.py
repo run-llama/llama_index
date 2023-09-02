@@ -170,12 +170,16 @@ class Refine(BaseSynthesizer):
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if response is None and not self._streaming:
-                structured_response = cast(
-                    StructuredRefineResponse, program(context_str=cur_text_chunk)
-                )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
-                    response = structured_response.answer
+                try:
+                    structured_response = cast(
+                        StructuredRefineResponse, program(context_str=cur_text_chunk)
+                    )
+                    query_satisfied = structured_response.query_satisfied
+                    if query_satisfied:
+                        response = structured_response.answer
+                except Exception as e:
+                    logger.error(f'Error: {e}', exc_info=True)
+                    return response
             elif response is None and self._streaming:
                 response = self._service_context.llm_predictor.stream(
                     text_qa_template,
@@ -304,13 +308,17 @@ class Refine(BaseSynthesizer):
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if not self._streaming:
-                structured_response = await program.acall(context_msg=cur_text_chunk)
-                structured_response = cast(
-                    StructuredRefineResponse, structured_response
-                )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
-                    response = structured_response.answer
+                try:
+                    structured_response = await program.acall(context_msg=cur_text_chunk)
+                    structured_response = cast(
+                        StructuredRefineResponse, structured_response
+                    )
+                    query_satisfied = structured_response.query_satisfied
+                    if query_satisfied:
+                        response = structured_response.answer
+                except Exception as e:
+                    logger.error(f'Error: {e}', exc_info=True)
+                    return response
             else:
                 raise ValueError("Streaming not supported for async")
 
@@ -338,13 +346,17 @@ class Refine(BaseSynthesizer):
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                structured_response = await program.acall(context_str=cur_text_chunk)
-                structured_response = cast(
-                    StructuredRefineResponse, structured_response
-                )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
-                    response = structured_response.answer
+                try:
+                    structured_response = await program.acall(context_str=cur_text_chunk)
+                    structured_response = cast(
+                        StructuredRefineResponse, structured_response
+                    )
+                    query_satisfied = structured_response.query_satisfied
+                    if query_satisfied:
+                        response = structured_response.answer
+                except Exception as e:
+                    logger.error(f'Error: {e}', exc_info=True)
+                    return response
             elif response is None and self._streaming:
                 raise ValueError("Streaming not supported for async")
             else:
