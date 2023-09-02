@@ -1,4 +1,4 @@
-from typing import List, Any, Type, Optional, Tuple
+from typing import List, Any, Type, Optional
 from collections import namedtuple
 
 from llama_index.schema import MetadataMode, TextNode
@@ -89,7 +89,6 @@ class PGVectorStore(VectorStore):
         table_name: str,
         hybrid_search: bool = False,
         text_search_config: str = "english",
-        hybrid_search_cross_encoder: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
         embed_dim: int = 1536,
     ) -> None:
         try:
@@ -109,7 +108,6 @@ class PGVectorStore(VectorStore):
         self.table_name: str = table_name.lower()
         self._hybrid_search = hybrid_search
         self._text_search_config = text_search_config
-        self._hybrid_search_cross_encoder = hybrid_search_cross_encoder
 
         if self._hybrid_search and text_search_config is None:
             raise ValueError(
@@ -298,66 +296,6 @@ class PGVectorStore(VectorStore):
                     for item, distance in res.all()
                 ]
 
-    def _rerank(
-        self, query: VectorStoreQuery, results: List[List[Tuple[DBEmbeddingRow, float]]]
-    ) -> List[DBEmbeddingRow]:
-        try:
-            from sentence_transformers import CrossEncoder
-        except ImportError:
-            raise ImportError(
-                "Cannot import sentence-transformers package,",
-                "please `pip install sentence-transformers`",
-            )
-
-        import functools
-
-        all_results = [res for result in results for res in result]
-
-        # re-rank
-        encoder = CrossEncoder(self._hybrid_search_cross_encoder)
-        scores = encoder.predict(
-            [(query.query_str, item[0].text) for item in all_results]
-        )
-        max_score = max(scores)
-        min_score = min(scores)
-        score_range = max_score - min_score
-        normalized_scores = (
-            [(score - min_score) / score_range for score in scores]
-            if score_range != 0
-            else scores
-        )
-        results_with_weighted_scores = [
-            (tup[0] * tup[1][1], tup[1][0], tup[1][1])
-            for tup in zip(normalized_scores, all_results)
-        ]
-
-        def compare_results(
-            x: Tuple[Any, DBEmbeddingRow, float], y: Tuple[Any, DBEmbeddingRow, float]
-        ) -> int:
-            # if scores are equal, fallback to comparing weights
-            if x[0] == y[0]:
-                return x[2] - y[2]  # type: ignore
-            return x[0] - y[0]  # type: ignore
-
-        sorted_scaled_results = [
-            v
-            for _, v, _ in sorted(
-                results_with_weighted_scores,
-                reverse=True,
-                key=functools.cmp_to_key(compare_results),
-            )
-        ]
-
-        # deduplicate
-        seen = set()
-        uniq_results = []
-        for result in sorted_scaled_results:
-            if result.node_id not in seen:
-                seen.add(result.node_id)
-                uniq_results.append(result)
-
-        return uniq_results
-
     def _build_sparse_query(
         self,
         query_str: Optional[str],
@@ -444,8 +382,6 @@ class PGVectorStore(VectorStore):
             for idx, result in enumerate(results)
         ]
 
-        results = self._rerank(query, results)
-
         return results[: query.similarity_top_k]
 
     def _hybrid_query(self, query: VectorStoreQuery) -> List[DBEmbeddingRow]:
@@ -463,9 +399,7 @@ class PGVectorStore(VectorStore):
 
         combined_results = [dense_results, sparse_results]
 
-        results = self._rerank(query, combined_results)
-
-        return results[: query.similarity_top_k]
+        return combined_results[: query.similarity_top_k]
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]
@@ -498,7 +432,7 @@ class PGVectorStore(VectorStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         if query.mode is VectorStoreQueryMode.HYBRID:
-            results = self._hybrid_query(query)
+            results = await self._async_hybrid_query(query)
         else:
             results = await self._aquery_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
