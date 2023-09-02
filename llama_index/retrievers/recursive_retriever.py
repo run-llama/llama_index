@@ -142,7 +142,7 @@ class RecursiveRetriever(BaseRetriever):
         obj = self._get_object(query_id)
         if isinstance(obj, BaseNode):
             nodes_to_add = [NodeWithScore(node=obj, score=1.0)]
-            additional_nodes = []
+            additional_nodes: List[NodeWithScore] = []
         elif isinstance(obj, BaseRetriever):
             with self.callback_manager.event(
                 CBEventType.RETRIEVE,
