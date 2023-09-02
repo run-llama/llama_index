@@ -224,12 +224,16 @@ class Refine(BaseSynthesizer):
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if not self._streaming:
-                structured_response = cast(
-                    StructuredRefineResponse, program(context_msg=cur_text_chunk)
-                )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
-                    response = structured_response.answer
+                try:
+                    structured_response = cast(
+                        StructuredRefineResponse, program(context_msg=cur_text_chunk)
+                    )
+                    query_satisfied = structured_response.query_satisfied
+                    if query_satisfied:
+                        response = structured_response.answer
+                except Exception as e:
+                    logger.error(f'Error: {e}', exc_info=True)
+                    return response
             else:
                 response = self._service_context.llm_predictor.stream(
                     refine_template,
