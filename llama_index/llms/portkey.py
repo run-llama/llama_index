@@ -1,20 +1,8 @@
 """
     Portkey intergation with Llama_index for enchanced monitoring
 """
-from typing import Any, Optional, Sequence, Dict, Union, List
+from typing import Any, Optional, Sequence, Dict, Union, List, TYPE_CHECKING, Type
 
-from rubeus import (
-    Rubeus,
-    LLMBase,
-    RubeusModes,
-    RubeusModesLiteral,
-    ProviderTypes,
-    ProviderTypesLiteral,
-    RubeusCacheType,
-    RubeusCacheLiteral,
-    Message,
-    RubeusResponse,
-)
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.base import (
     ChatMessage,
@@ -30,6 +18,7 @@ from llama_index.llms.portkey_utils import (
     is_chat_model,
     generate_llm_metadata,
     get_llm,
+    IMPORT_ERROR_MESSAGE
 )
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
@@ -38,10 +27,17 @@ from llama_index.llms.generic_utils import (
     stream_chat_to_completion_decorator,
 )
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
+
+if TYPE_CHECKING:
+    from rubeus import (
+        Rubeus,
+        LLMBase,
+        RubeusModes,
+        RubeusCacheType,
+        RubeusCacheLiteral,
+        RubeusResponse,
+    )
 
 
 class Portkey(CustomLLM):
@@ -51,30 +47,28 @@ class Portkey(CustomLLM):
         LLM (_type_): _description_
     """
 
-    mode: Optional[Union[RubeusModes, RubeusModesLiteral]] = Field(
-        description="The mode for using the Portkey integration\
-            (default: RubeusModes.PROXY)",
-        default=RubeusModes.SINGLE,
+    try:
+        from rubeus import RubeusModes, RubeusModesLiteral
+    except ImportError as exc:
+        raise ImportError(IMPORT_ERROR_MESSAGE) from exc
+
+    mode: Optional[Union[Type["RubeusModes"], RubeusModesLiteral]] = Field(
+        description="The mode for using the Portkey integration"
     )
 
     model: Optional[str] = Field(default="gpt-3.5-turbo")
-    provider: Optional[Union[ProviderTypes, ProviderTypesLiteral]] = Field(
-        default=ProviderTypes.OPENAI
-    )
-    llm: LLMBase = Field(description="LLM parameter", default_factory=dict)
+    llm: "LLMBase" = Field(description="LLM parameter", default_factory=dict)
 
-    llms: List[LLMBase] = Field(description="LLM parameters", default_factory=list)
+    llms: List["LLMBase"] = Field(description="LLM parameters", default_factory=list)
 
-    _client: Rubeus = PrivateAttr()
-    _portkey_response: Any = PrivateAttr()
-    _model: Any = PrivateAttr()
+    _client: "Rubeus" = PrivateAttr()
 
     def __init__(
         self,
         *,
-        mode: Optional[Union[RubeusModes, RubeusModesLiteral]] = RubeusModes.SINGLE,
+        mode: Optional[Union["RubeusModes", RubeusModesLiteral]] = RubeusModes.SINGLE,
         api_key: str = "",
-        cache_status: Optional[Union[RubeusCacheType, RubeusCacheLiteral]] = None,
+        cache_status: Optional[Union["RubeusCacheType", "RubeusCacheLiteral"]] = None,
         trace_id: Optional[str] = "",
         cache_age: Optional[int] = None,
         cache_force_refresh: Optional[bool] = None,
@@ -88,7 +82,7 @@ class Portkey(CustomLLM):
         Args:
             api_key (Optional[str]): The API key to authenticate with Portkey.
             mode (Optional[RubeusModes]): The mode for using the Portkey integration
-            (default: RubeusModes.PROXY).
+            (default: RubeusModes.SINGLE).
             provider (Optional[ProviderTypes]): The LLM provider to be used for the
                 Portkey integration.
                 Eg: openai, anthropic etc.
@@ -119,6 +113,10 @@ class Portkey(CustomLLM):
             ValueError: If neither 'llm' nor 'llms' are provided during
             Portkey initialization.
         """
+        try:
+            from rubeus import Rubeus
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         self._client = Rubeus(
             base_url=base_url,
             api_key=api_key,
@@ -131,7 +129,6 @@ class Portkey(CustomLLM):
                 "retry-count": retry,
             },
         )
-        self._portkey_response = None
         super().__init__(
             mode=mode,
             trace_id=trace_id,
@@ -147,7 +144,7 @@ class Portkey(CustomLLM):
         """LLM metadata."""
         return generate_llm_metadata(self.llms[0])
 
-    def add_llms(self, llm_params: Union[LLMBase, List[LLMBase]]) -> "Portkey":
+    def add_llms(self, llm_params: Union["LLMBase", List["LLMBase"]]) -> "Portkey":
         """
         Adds the specified LLM parameters to the list of LLMs. This may be used for
         fallbacks or load-balancing as specified in the mode.
@@ -171,6 +168,10 @@ class Portkey(CustomLLM):
         Returns:
             self
         """
+        try:
+            from rubeus import LLMBase
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         if isinstance(llm_params, LLMBase):
             llm_params = [llm_params]
         self.llms.extend(llm_params)
@@ -215,6 +216,10 @@ class Portkey(CustomLLM):
         return stream_chat_fn(messages, **kwargs)
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        try:
+            from rubeus import RubeusModes, Message
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         messages_dict = [{"role": i.role.value, "content": i.content} for i in messages]
         self._client.default_params["messages"] = messages_dict  # type: ignore
         if self.mode == RubeusModes.FALLBACK:
@@ -238,6 +243,10 @@ class Portkey(CustomLLM):
         return ChatResponse(message=message, raw=raw)
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        try:
+            from rubeus import RubeusModes
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         self._client.default_params["prompt"] = prompt  # type: ignore
         if self.mode == RubeusModes.FALLBACK:
             response = self._client.completion.with_fallbacks(llms=self.llms)
@@ -256,6 +265,10 @@ class Portkey(CustomLLM):
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        try:
+            from rubeus import RubeusModes
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         messages_dict = [{"role": i.role.value, "content": i.content} for i in messages]
         self._client.default_params["messages"] = messages_dict  # type: ignore
         self._client.default_params["stream"] = True
@@ -316,6 +329,10 @@ class Portkey(CustomLLM):
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         self._client.default_params["prompt"] = prompt  # type: ignore
         self._client.default_params["stream"] = True
+        try:
+            from rubeus import RubeusModes
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         if self.mode == RubeusModes.FALLBACK:
             response = self._client.completion.with_fallbacks(
                 llms=self.llms, stream=True
@@ -360,7 +377,11 @@ class Portkey(CustomLLM):
         Returns:
             bool: True if the provided mode is fallback type, False otherwise.
         """
+        try:
+            from rubeus import RubeusModes
+        except ImportError as exc:
+            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         return self.mode == RubeusModes.FALLBACK
 
-    def _get_llm(self, response: RubeusResponse) -> LLMBase:
+    def _get_llm(self, response: "RubeusResponse") -> "LLMBase":
         return get_llm(response, self.llms)

@@ -7,7 +7,6 @@ discord.py
 boto3
 moto[s3,dynamodb]
 jsonpath-ng
-rubeus
 
 # google
 google-api-python-client
