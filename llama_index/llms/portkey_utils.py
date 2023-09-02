@@ -25,7 +25,9 @@ if TYPE_CHECKING:
     )
 
 
-IMPORT_ERROR_MESSAGE = "Rubeus is not installed.Please install it with `pip install rubeus`."
+IMPORT_ERROR_MESSAGE = (
+    "Rubeus is not installed.Please install it with `pip install rubeus`."
+)
 
 
 DISCONTINUED_MODELS = {

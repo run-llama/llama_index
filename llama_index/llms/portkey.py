@@ -18,7 +18,7 @@ from llama_index.llms.portkey_utils import (
     is_chat_model,
     generate_llm_metadata,
     get_llm,
-    IMPORT_ERROR_MESSAGE
+    IMPORT_ERROR_MESSAGE,
 )
 from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
