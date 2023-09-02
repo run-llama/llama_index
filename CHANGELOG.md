@@ -1,8 +1,19 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.17] - 2023-09-02
+
+### New Features
+- Make (some) loaders serializable (#7498)
+- add node references to recursive retrieval (#7522)
 
 ### Bug Fixes / Nits
+- Raise informative error when metadata is too large during splitting (#7513)
+- Allow langchain splitter in simple node parser (#7517)
+
+## [0.8.16] - 2023-09-01
+
+### Bug Fixes / Nits
+- fix link to Marvin notebook in docs (#7504)
 - Ensure metadata is not `None` in `SimpleWebPageReader` (#7499)
 - Fixed KGIndex visualization (#7493)
 - Improved empty response in KG Index (#7493)

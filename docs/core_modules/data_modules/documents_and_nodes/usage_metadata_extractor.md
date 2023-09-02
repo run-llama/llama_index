@@ -43,5 +43,5 @@ maxdepth: 1
 /examples/metadata_extraction/MetadataExtractionSEC.ipynb
 /examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb
 /examples/metadata_extraction/EntityExtractionClimate.ipynb
-/examples/metadata_extraction/MarvinEntityExtractorDemo.ipynb
+/examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
 ```

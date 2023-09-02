@@ -1,18 +1,14 @@
 """Simple node parser."""
 from typing import List, Optional, Sequence
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
-
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.schema import BaseNode, Document
-from llama_index.text_splitter import TextSplitter, get_default_text_splitter
+from llama_index.text_splitter import get_default_text_splitter, SplitterType
 from llama_index.utils import get_tqdm_iterable
 
 
@@ -28,7 +24,7 @@ class SimpleNodeParser(NodeParser):
 
     """
 
-    text_splitter: TextSplitter = Field(
+    text_splitter: SplitterType = Field(
         description="The text splitter to use when splitting documents."
     )
     include_metadata: bool = Field(
@@ -49,7 +45,7 @@ class SimpleNodeParser(NodeParser):
         cls,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        text_splitter: Optional[SplitterType] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,

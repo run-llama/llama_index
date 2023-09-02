@@ -1,10 +1,7 @@
 from typing import Any, Dict, Optional, Type, cast
 from collections import OrderedDict
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 import pytest
 from llama_index.indices.service_context import ServiceContext

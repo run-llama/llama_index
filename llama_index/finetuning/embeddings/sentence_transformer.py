@@ -3,8 +3,8 @@
 from llama_index.embeddings.base import BaseEmbedding
 
 from typing import Dict, Any, List, Optional
-from pydantic import BaseModel
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.schema import TextNode, MetadataMode
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.base import LLM
