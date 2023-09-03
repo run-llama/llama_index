@@ -13,7 +13,7 @@ from sqlalchemy import (
     select,
 )
 
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql import (
@@ -278,10 +278,10 @@ def test_sql_index_with_derive_index(mock_service_context: ServiceContext) -> No
         sql_database, context_dict=table_context_dict
     )
     context_index_no_ignore = context_builder.derive_index_from_context(
-        ListIndex,
+        SummaryIndex,
     )
     context_index_with_ignore = context_builder.derive_index_from_context(
-        ListIndex, ignore_db_schema=True
+        SummaryIndex, ignore_db_schema=True
     )
     assert len(context_index_with_ignore.index_struct.nodes) == 1
     assert len(context_index_no_ignore.index_struct.nodes) > 1
@@ -313,7 +313,7 @@ def test_sql_index_with_index_context(
         sql_database, context_dict=table_context_dict
     )
     context_index = context_builder.derive_index_from_context(
-        ListIndex, ignore_db_schema=True
+        SummaryIndex, ignore_db_schema=True
     )
     # NOTE: the response only contains the first line (metadata), since
     # with the mock patch, newlines are treated as separate calls.

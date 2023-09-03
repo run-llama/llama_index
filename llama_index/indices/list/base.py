@@ -23,10 +23,10 @@ class ListRetrieverMode(str, Enum):
     LLM = "llm"
 
 
-class ListIndex(BaseIndex[IndexList]):
-    """List Index.
+class SummaryIndex(BaseIndex[IndexList]):
+    """Summary Index.
 
-    The list index is a simple data structure where nodes are stored in
+    The summary index is a simple data structure where nodes are stored in
     a sequence. During index construction, the document texts are
     chunked up, converted to nodes, and stored in a list.
 
@@ -67,17 +67,17 @@ class ListIndex(BaseIndex[IndexList]):
         **kwargs: Any,
     ) -> BaseRetriever:
         from llama_index.indices.list.retrievers import (
-            ListIndexEmbeddingRetriever,
-            ListIndexLLMRetriever,
-            ListIndexRetriever,
+            SummaryIndexEmbeddingRetriever,
+            SummaryIndexLLMRetriever,
+            SummaryIndexRetriever,
         )
 
         if retriever_mode == ListRetrieverMode.DEFAULT:
-            return ListIndexRetriever(self, **kwargs)
+            return SummaryIndexRetriever(self, **kwargs)
         elif retriever_mode == ListRetrieverMode.EMBEDDING:
-            return ListIndexEmbeddingRetriever(self, **kwargs)
+            return SummaryIndexEmbeddingRetriever(self, **kwargs)
         elif retriever_mode == ListRetrieverMode.LLM:
-            return ListIndexLLMRetriever(self, **kwargs)
+            return SummaryIndexLLMRetriever(self, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
@@ -133,4 +133,7 @@ class ListIndex(BaseIndex[IndexList]):
 
 
 # Legacy
-GPTListIndex = ListIndex
+GPTListIndex = SummaryIndex
+
+# New name
+ListIndex = SummaryIndex

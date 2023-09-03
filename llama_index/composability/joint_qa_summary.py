@@ -3,7 +3,7 @@
 
 from typing import Optional, Sequence
 
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.query_engine.router_query_engine import RouterQueryEngine
@@ -67,7 +67,7 @@ class QASummaryQueryEngineBuilder:
             service_context=self._service_context,
             storage_context=self._storage_context,
         )
-        list_index = ListIndex(
+        list_index = SummaryIndex(
             nodes,
             service_context=self._service_context,
             storage_context=self._storage_context,

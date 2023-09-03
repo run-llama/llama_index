@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List
 
 from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.loading import load_graph_from_storage
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
@@ -33,7 +33,7 @@ def test_load_graph_from_storage_simple(
     )
 
     # construct index
-    list_index = ListIndex.from_documents(
+    list_index = SummaryIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,
@@ -41,7 +41,7 @@ def test_load_graph_from_storage_simple(
 
     # construct graph
     graph = ComposableGraph.from_indices(
-        ListIndex,
+        SummaryIndex,
         children_indices=[vector_index_1, vector_index_2, list_index],
         index_summaries=["vector index 1", "vector index 2", "list index"],
         storage_context=storage_context,
