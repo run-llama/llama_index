@@ -33,3 +33,20 @@ The `RelatedNodeInfo` class can also store additional `metadata` if needed:
 ```python
 node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=node1.node_id, metadata={"key": "val"})
 ```
+
+### Customizing the ID
+
+Each node has an `node_id` property that is automatically generated if not manually specified. This ID can be used for 
+a variety of purposes; this includes being able to update nodes in storage, being able to define relationships
+between nodes (through `IndexNode`), and more.
+
+
+You can also get and set the `node_id` of any `TextNode` directly (and also `Document` objects as well)!
+
+```python
+print(node.node_id)
+node.node_id = "My new node_id!"
+
+```
+
+

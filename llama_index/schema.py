@@ -160,6 +160,10 @@ class BaseNode(BaseComponent):
     def node_id(self) -> str:
         return self.id_
 
+    @node_id.setter
+    def node_id(self, value: str) -> None:
+        self.id_ = value
+
     @property
     def source_node(self) -> Optional[RelatedNodeInfo]:
         """Source object node.

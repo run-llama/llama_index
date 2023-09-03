@@ -70,7 +70,7 @@ documents = SimpleDirectoryReader('./data', file_metadata=filename_fn).load_data
 
 ### Customizing the id
 
-As detailed in the section [Document Management](../index/document_management.md), the doc `id_` is used to enable effecient refreshing of documents in the index. When using the `SimpleDirectoryReader`, you can automatically set the doc `id_` to be the full path to each document:
+As detailed in the section [Document Management](../index/document_management.md), the `doc_id` is used to enable effecient refreshing of documents in the index. When using the `SimpleDirectoryReader`, you can automatically set the doc `doc_id` to be the full path to each document:
 
 ```python
 from llama_index import SimpleDirectoryReader
@@ -79,11 +79,13 @@ documents = SimpleDirectoryReader("./data", filename_as_id=True).load_data()
 print([x.doc_id for x in documents])
 ```
 
-You can also set the `id_` of any `Document` or `TextNode` directly!
+You can also set the `doc_id` of any `Document` directly!
 
 ```python
-document.id_ = "My new document id!"
+document.doc_id = "My new document id!"
 ```
+
+Note: the ID can also be set through the `node_id` or `id_` property on a Document object, similar to a `TextNode` object.
 
 ### Advanced - Metadata Customization
 
