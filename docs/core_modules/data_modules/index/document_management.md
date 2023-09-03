@@ -6,7 +6,7 @@ Most LlamaIndex index structures allow for **insertion**, **deletion**, **update
 
 You can "insert" a new Document into any index data structure, after building the index initially. This document will be broken down into nodes and ingested into the index.
 
-The underlying mechanism behind insertion depends on the index structure. For instance, for the list index, a new Document is inserted as additional node(s) in the list.
+The underlying mechanism behind insertion depends on the index structure. For instance, for the summary index, a new Document is inserted as additional node(s) in the list.
 For the vector store index, a new Document (and embeddings) is inserted into the underlying document/embedding store.
 
 An example notebook showcasing our insert capabilities is given [here](https://github.com/jerryjliu/llama_index/blob/main/examples/paul_graham_essay/InsertDemo.ipynb).

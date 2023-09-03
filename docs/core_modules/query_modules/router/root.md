@@ -7,7 +7,7 @@ They can be used on their own (as "selector modules"), or used as a query engine
 
 They are simple but powerful modules that use LLMs for decision making capabilities. They can be used for the following use cases and more:
 - Selecting the right data source among a diverse range of data sources
-- Deciding whether to do summarization (e.g. using list index query engine) or semantic search (e.g. using vector index query engine)
+- Deciding whether to do summarization (e.g. using summary index query engine) or semantic search (e.g. using vector index query engine)
 - Deciding whether to "try" out a bunch of choices at once and combine the results (using multi-routing capabilities).
 
 The core router modules exist in the following forms:

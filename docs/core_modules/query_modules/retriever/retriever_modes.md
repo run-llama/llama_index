@@ -7,7 +7,7 @@ Specifying `retriever_mode` has no effect (silently ignored).
 `vector_index.as_retriever(...)` always returns a VectorIndexRetriever.
 
 
-## List Index
+## Summary Index
 * `default`: SummaryIndexRetriever 
 * `embedding`: SummaryIndexEmbeddingRetriever 
 * `llm`: SummaryIndexLLMRetriever
