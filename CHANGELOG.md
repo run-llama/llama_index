@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [0.8.18] - 2023-09-03
+
+### New Features
+- add agent finetuning guide (#7526)
+
 ## [0.8.17] - 2023-09-02
 
 ### New Features
