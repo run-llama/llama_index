@@ -20,11 +20,11 @@ nodes = retriever.retrieve('Who is Paul Graham?')
 You can select the index-specific retriever class via `retriever_mode`. 
 For example, with a `SummaryIndex`:
 ```python
-retriever = list_index.as_retriever(
+retriever = summary_index.as_retriever(
     retriever_mode='llm',
 )
 ```
-This creates a [SummaryIndexLLMRetriever](/api_reference/query/retrievers/list.rst) on top of the list index.
+This creates a [SummaryIndexLLMRetriever](/api_reference/query/retrievers/list.rst) on top of the summary index.
 
 See [**Retriever Modes**](/core_modules/query_modules/retriever/retriever_modes.md) for a full list of (index-specific) retriever modes
 and the retriever classes they map to.
@@ -43,7 +43,7 @@ In the same way, you can pass kwargs to configure the selected retriever.
 
 For example, if we selected the "llm" retriever mode, we might do the following:
 ```python
-retriever = list_index.as_retriever(
+retriever = summary_index.as_retriever(
     retriever_mode='llm',
     choice_batch_size=5,
 )
@@ -58,7 +58,7 @@ To achieve the same outcome as above, you can directly import and construct the 
 from llama_index.indices.list import SummaryIndexLLMRetriever
 
 retriever = SummaryIndexLLMRetriever(
-    index=list_index,
+    index=summary_index,
     choice_batch_size=5,
 )
 ```

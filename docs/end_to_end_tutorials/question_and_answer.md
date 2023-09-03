@@ -37,7 +37,7 @@ For instance, a summarization query could look like one of the following:
 - "What is a summary of this collection of text?"
 - "Give me a summary of person X's experience with the company."
 
-In general, a list index would be suited for this use case. A list index by default goes through all the data.
+In general, a summary index would be suited for this use case. A summary index by default goes through all the data.
 
 Empirically, setting `response_mode="tree_summarize"` also leads to better summarization results.
 
@@ -68,7 +68,7 @@ Here are some relevant resources:
 ### Synthesis over Heterogeneous Data
 
 LlamaIndex supports synthesizing across heterogeneous data sources. This can be done by composing a graph over your existing data.
-Specifically, compose a list index over your subindices. A list index inherently combines information for each node; therefore
+Specifically, compose a summary index over your subindices. A summary index inherently combines information for each node; therefore
 it can synthesize information across your heterogeneous data sources.
 
 ```python

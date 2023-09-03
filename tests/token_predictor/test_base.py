@@ -40,7 +40,7 @@ def test_token_predictor(mock_split: Any) -> None:
     query_engine = index_keyword.as_query_engine()
     query_engine.query("What is?")
 
-    # test list index
+    # test summary index
     index_list = SummaryIndex.from_documents(
         [document], service_context=service_context
     )

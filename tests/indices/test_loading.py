@@ -69,13 +69,13 @@ def test_load_index_from_storage_multiple(
     )
     vector_id = vector_index.index_id
 
-    list_index = SummaryIndex(
+    summary_index = SummaryIndex(
         nodes=nodes,
         storage_context=storage_context,
         service_context=mock_service_context,
     )
 
-    list_id = list_index.index_id
+    list_id = summary_index.index_id
 
     # persist storage to disk
     storage_context.persist(str(tmp_path))

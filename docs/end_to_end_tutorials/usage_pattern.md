@@ -346,7 +346,7 @@ In the following, we discuss some commonly used configurations in detail.
 ### Configuring retriever
 
 An index can have a variety of index-specific retrieval modes.
-For instance, a list index supports the default `SummaryIndexRetriever` that retrieves all nodes, and
+For instance, a summary index supports the default `SummaryIndexRetriever` that retrieves all nodes, and
 `SummaryIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
 
 For convienience, you can also use the following shorthand:

@@ -67,7 +67,7 @@ class QASummaryQueryEngineBuilder:
             service_context=self._service_context,
             storage_context=self._storage_context,
         )
-        list_index = SummaryIndex(
+        summary_index = SummaryIndex(
             nodes,
             service_context=self._service_context,
             storage_context=self._storage_context,
@@ -76,7 +76,7 @@ class QASummaryQueryEngineBuilder:
         vector_query_engine = vector_index.as_query_engine(
             service_context=self._service_context
         )
-        list_query_engine = list_index.as_query_engine(
+        list_query_engine = summary_index.as_query_engine(
             service_context=self._service_context,
             response_mode="tree_summarize",
         )

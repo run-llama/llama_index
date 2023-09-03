@@ -114,6 +114,7 @@ class DatasetGenerator:
         questions: List[str] = []
 
         for node in nodes:
+            print(f"NODE: {node.get_content()}")
             if num is not None and len(questions) >= num:
                 break
             index = SummaryIndex.from_documents(
@@ -139,6 +140,8 @@ class DatasetGenerator:
                 re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
             ]
             questions.extend(cleaned_questions)
+            print(f"QUESTIONS: {cleaned_questions}")
+            print("=====================================")
 
         questions = [question for question in questions if question != ""]
 
