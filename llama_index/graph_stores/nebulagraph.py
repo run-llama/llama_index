@@ -246,7 +246,7 @@ class NebulaGraphStore(GraphStore):
 
     @property
     def client(self) -> Any:
-        logger.info('#### nebulagraph client(self) called')
+        logger.info('\n#### nebulagraph client(self) called')
         """Return NebulaGraph session pool."""
         return self._session_pool
 
@@ -270,7 +270,7 @@ class NebulaGraphStore(GraphStore):
         Returns:
             Triplets.
         """
-        logger.info('#### nebulagraph get(self, subj: str) called')
+        logger.info('\n#### nebulagraph get(self, subj: str) called')
         logger.info('subj = '+subj)
 
         if len(self._edge_types) == 1:
@@ -297,7 +297,7 @@ class NebulaGraphStore(GraphStore):
                 f"WHERE value IS NOT EMPTY][0] AS rel, "
                 f"dst(edge) AS obj"
             )
-        logger.debug(f"Query: {query}")
+        logger.info(f"Query: {query}")
         result = self.execute(query)
 
         # get raw data
@@ -306,8 +306,10 @@ class NebulaGraphStore(GraphStore):
 
         lol = [[str(rel.cast()), str(obj.cast())]
                for rel, obj in zip(rels, objs)]
+
         logger.info('lol = '+str(lol))
         logger.info('#### nebulagraph get(self, subj: str) end')
+
         # convert to list of list
         return lol
 
@@ -472,13 +474,14 @@ class NebulaGraphStore(GraphStore):
         # We put rels in a long list for depth>= 1, this is different from
         # SimpleGraphStore.get_rel_map() though.
         # But this makes more sense for multi-hop relation path.
-        logger.info('#### nebulagraph get_rel_map called')
+        logger.info('\n#### nebulagraph get_rel_map called')
         if subjs is not None:
             subjs = [escape_str(subj) for subj in subjs]
             if len(subjs) == 0:
                 return {}
-
-        return self.get_flat_rel_map(subjs, depth)
+        rel_map = self.get_flat_rel_map(subjs, depth)
+        logger.info('rel_map = \n'+str(rel_map))
+        return rel_map
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
@@ -491,7 +494,11 @@ class NebulaGraphStore(GraphStore):
         # thus we have to assume subj to be the first entity.tag_name
 
         # lower case subj, rel, obj
-        logger.info('#### nebulagraph upsert_triplet called')
+        logger.info('\n#### nebulagraph upsert_triplet called')
+        logger.info('subj = '+subj)
+        logger.info('rel = '+rel)
+        logger.info('obj = '+obj)
+
         subj = escape_str(subj)
         rel = escape_str(rel)
         obj = escape_str(obj)
@@ -524,7 +531,7 @@ class NebulaGraphStore(GraphStore):
            obj are isolated vertices,
            if so, delete them, too.
         """
-        logger.info('#### nebulagraph delete called')
+        logger.info('\n#### nebulagraph delete called')
         # lower case subj, rel, obj
         subj = escape_str(subj)
         rel = escape_str(rel)
@@ -612,15 +619,22 @@ class NebulaGraphStore(GraphStore):
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the NebulaGraph store."""
-        logger.info('#### nebulagraph get_schema called')
+        logger.info('\n#### nebulagraph get_schema called')
         if self.schema and not refresh:
             return self.schema
         self.refresh_schema()
-        logger.debug(f"get_schema() schema:\n{self.schema}")
+        logger.info(f"get_schema() schema:\n{self.schema}")
         return self.schema
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        logger.info('#### nebulagraph query called')
+        logger.info('\n#### nebulagraph query called')
+        logger.info('query = '+query)
+
+        # logger.info('param_map = '+param_map)
+        logger.info('param_map = ')
+        for key, value in param_map.items():
+            logger.info(key + ' = '+value)
+
         result = self.execute(query, param_map)
         columns = result.keys()
         d: Dict[str, list] = {}
