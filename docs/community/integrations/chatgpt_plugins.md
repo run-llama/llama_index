@@ -79,7 +79,7 @@ documents = reader.load_data("What did the author do growing up?")
 
 # build and query index
 from llama_index import SummaryIndex
-index = SummaryIndex(documents)
+index = SummaryIndex.from_documents(documents)
 # set Logging to DEBUG for more detailed outputs
 query_engine = vector_index.as_query_engine(
     response_mode="compact"
