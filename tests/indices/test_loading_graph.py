@@ -33,7 +33,7 @@ def test_load_graph_from_storage_simple(
     )
 
     # construct index
-    list_index = SummaryIndex.from_documents(
+    summary_index = SummaryIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,
@@ -42,8 +42,8 @@ def test_load_graph_from_storage_simple(
     # construct graph
     graph = ComposableGraph.from_indices(
         SummaryIndex,
-        children_indices=[vector_index_1, vector_index_2, list_index],
-        index_summaries=["vector index 1", "vector index 2", "list index"],
+        children_indices=[vector_index_1, vector_index_2, summary_index],
+        index_summaries=["vector index 1", "vector index 2", "summary index"],
         storage_context=storage_context,
         service_context=mock_service_context,
     )

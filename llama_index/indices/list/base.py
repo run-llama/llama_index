@@ -1,4 +1,4 @@
-"""List index.
+"""Summary index.
 
 A simple data structure where LlamaIndex iterates through document chunks
 in sequence in order to answer a given query.
@@ -30,7 +30,7 @@ class SummaryIndex(BaseIndex[IndexList]):
     a sequence. During index construction, the document texts are
     chunked up, converted to nodes, and stored in a list.
 
-    During query time, the list index iterates through the nodes
+    During query time, the summary index iterates through the nodes
     with some optional filter parameters, and synthesizes an
     answer from all the nodes.
 
@@ -90,7 +90,7 @@ class SummaryIndex(BaseIndex[IndexList]):
             documents (List[BaseDocument]): A list of documents.
 
         Returns:
-            IndexList: The created list index.
+            IndexList: The created summary index.
         """
         index_struct = IndexList()
         nodes_with_progress = get_tqdm_iterable(

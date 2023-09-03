@@ -30,7 +30,7 @@ The following indices do require LLM calls during build time:
 
 There will always be >= 1 LLM call during query time, in order to synthesize the final answer. 
 Some indices contain cost tradeoffs between index building and querying. `SummaryIndex`, for instance,
-is free to build, but running a query over a list index (without filtering or embedding lookups), will
+is free to build, but running a query over a summary index (without filtering or embedding lookups), will
 call the LLM {math}`N` times.
 
 Here are some notes regarding each of the indices:
