@@ -2,10 +2,7 @@
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -125,6 +122,21 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         metadata_len = len(self.tokenizer(metadata_str))
         effective_chunk_size = self.chunk_size - metadata_len
+        if effective_chunk_size <= 0:
+            raise ValueError(
+                f"Metadata length ({metadata_len}) is longer than chunk size "
+                f"({self.chunk_size}). Consider increasing the chunk size or "
+                "decreasing the size of your metadata to avoid this."
+            )
+        elif effective_chunk_size < 50:
+            print(
+                f"Metadata length ({metadata_len}) is close to chunk size "
+                f"({self.chunk_size}). Resulting chunks are less than 50 tokens. "
+                "Consider increasing the chunk size or decreasing the size of "
+                "your metadata to avoid this.",
+                flush=True,
+            )
+
         return self._split_text(text, chunk_size=effective_chunk_size)
 
     def split_text(self, text: str) -> List[str]:

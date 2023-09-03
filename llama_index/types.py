@@ -9,10 +9,7 @@ from typing import (
     runtime_checkable,
 )
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 Model = TypeVar("Model", bound=BaseModel)
 
