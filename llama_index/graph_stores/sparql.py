@@ -1,6 +1,11 @@
+import re
+import random
+import string
+from SPARQLWrapper import SPARQLWrapper, POST, DIGEST
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 import logging
 import fsspec
+from llama_index.graph_stores.types import GraphStore
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "graph_store.json"
@@ -10,8 +15,7 @@ logger = logging.getLogger(__name__)
 logger.info('sparql HERE')
 
 
-@runtime_checkable
-class SparqlStore(GraphStore):
+class SparqlGraphStore(GraphStore):
     """SPARQL graph store
 
     #### TODO This protocol defines the interface for a graph store, which is responsible
@@ -29,12 +33,94 @@ class SparqlStore(GraphStore):
         get_schema: Callable[[bool], str]: Get the schema of the graph store.
     """
 
-    schema: str = ""
+    def __init__(  # - BATCH SIZE?
+        self,
+        sparql_endpoint: str,
+        sparql_graph: str,
+        sparql_base_uri: str,
+        # **kwargs: Keyword arguments. (might be useful later)
+        **kwargs: Any,
+    ):
+        self.sparql_endpoint = sparql_endpoint
+        self.sparql_graph = sparql_graph
+        self.create_graph(sparql_graph)
 
-    @property
+        self.sparql_prefixes = f"""
+            PREFIX er:  <http://purl.org/stuff/er#>
+            BASE <{sparql_base_uri}>
+        """
+
+# SPARQL comms --------------------------------------------
+
+    def create_graph(self, uri):
+        self.sparql_update('CREATE GRAPH <'+uri+'>')
+
+    def sparql_update(self, query_string):
+        sparql_client = SPARQLWrapper(self.sparql_endpoint)
+        sparql_client.setMethod(POST)
+        sparql_client.setQuery(query_string)
+        results = sparql_client.query()
+        message = results.response.read().decode('utf-8')
+        print('Endpoint says : ' + message)
+        logger.info('Endpoint says : ' + message)
+
+    def insert_data(self, data):  # data is 'floating' string, without prefixes
+        insert_query = self.sparql_prefixes + \
+            'INSERT DATA { GRAPH <'+self.sparql_graph+'> { '+data+' }}'
+        self.sparql_update(insert_query)
+
+# Helpers --------------------------------------------------
+    def make_id(self):
+        """
+        Generate a random 4-character string using only numeric characters and capital letters.
+        """
+        characters = string.ascii_uppercase + string.digits  # available characters
+        return ''.join(random.choice(characters) for _ in range(4))
+
+    def escape_for_rdf(self, str):
+        # control characters
+        str = str.encode("unicode_escape").decode("utf-8")
+        # single and double quotes
+        str = re.sub(r'(["\'])', r'\\\1', input_str)
+        return str
+
+    # TODO unescape from RDF?
+
+# From interface types.py ----------------------------------
+# DOES IT ONE-BY-ONE!!!!!!!!!!!!!!!!!!!!!!
+    def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
+        """Add triplet."""
+        logger.info('#### sparql upsert_triplet called')
+
+        subj = self.escape_for_rdf(subj)
+        rel = self.escape_for_rdf(rel)
+        obj = self.escape_for_rdf(obj)
+
+        triplet_fragment = '#T'+self.make_id()
+        s_fragment = '#E_'+self.make_id()
+        p_fragment = '#R_'+self.make_id()
+        o_fragment = '#E_'+self.make_id()
+
+        triple = f"""
+            <{triplet_fragment}> a er:Triplet ;
+                        er:subject <{s_fragment}> ;
+                        er:property <{p_fragment}> ;
+                        er:object <{o_fragment}> .
+
+            <{s_fragment}> a er:Entity ;
+                        er:value "{subj}" .
+
+            <{p_fragment}> a er:Relationship ;
+                        er:value "{rel}" .
+
+            <{o_fragment}> a er:Entity ;
+                        er:value "{obj}" .
+                """
+        self.insert_data(triple)
+
     def client(self) -> Any:
         """Get client."""
-        logger.info('#### sparql client(self) called')
+        # logger.info('#### sparql client(self) called')
         ...
 
     def get(self, subj: str) -> List[List[str]]:
@@ -47,11 +133,6 @@ class SparqlStore(GraphStore):
     ) -> Dict[str, List[List[str]]]:
         """Get depth-aware rel map."""
         logger.info('#### sparql get_rel_map called')
-        ...
-
-    def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
-        """Add triplet."""
-        logger.info('#### sparql upsert_triplet called')
         ...
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
