@@ -239,37 +239,32 @@ class CognitiveSearchVectorStore(VectorStore):
     ) -> None:
         # ruff: noqa: E501
         """
-        Embeddings and documents are stored in an Azure Cognitive Search index, a merge or upload approach is used when adding embeddings.
-        When adding multiple embeddings the index is updated by this vector store in batches of 10 documents,
-        very large nodes may result in failure due to the batch byte size being exceeded.
+        Embeddings and documents are stored in an Azure Cognitive Search index,
+        a merge or upload approach is used when adding embeddings.
+        When adding multiple embeddings the index is updated by this vector store
+        in batches of 10 documents, very large nodes may result in failure due to
+        the batch byte size being exceeded.
 
         Args:
-            search_or_index_client (azure.search.documents.SearchClient, azure.search.documents.SearchIndexClient): Client for index to be
-                populated / queried. Supplying SearchIndexClient allows the option of creating a default index if one does not exist
+            search_client (azure.search.documents.SearchClient):
+                Client for index to populated / queried.
             id_field_key (str): Index field storing the id
             chunk_field_key (str): Index field storing the node text
             embedding_field_key (str): Index field storing the embedding vector
-            metadata_string_field_key (str): Index field storing node metadata as a json string. Schema is arbitrary, to filter on
-                metadata values they must be stored as separate fields in the index, use filterable_metadata_field_keys
+            metadata_string_field_key (str):
+                Index field storing node metadata as a json string.
+                Schema is arbitrary, to filter on metadata values they must be stored
+                as separate fields in the index, use filterable_metadata_field_keys
                 to specify the metadata values that should be stored in these filterable fields
             doc_id_field_key (str): Index field storing doc_id
-            filterable_metadata_field_keys: Optional, provides a list of index field names that will store the values of
-                metadata fields for each node being added to or queried from the index.
-                The index fields names and their mapping to metadata fields can be supplied as:
-                    - a list of index field names. Metadata fields names are assumed to be indentically named and of type string
-                      if the index is being created
-                    - a dictionary mapping index field names to metadata field names. Fields are assumed to be of type string if
-                      the index is being created
-                    - a dictionary mapping index field names to metadata field names as well as their Azure Cogntive Search
-                      field types used if the index is being created
-            index_name (str): Optional, only required if a azure.search.documents.SearchIndexClient is supplied as the
-                search_or_index_client
-            create_index_if_not_exists (bool): Optional, can be set only if a azure.search.documents.SearchIndexClient is supplied.
-                Index will be created if the index_name does not exist.
-            index_mapping: Optional function with definition (enriched_doc: Dict[str, str], metadata: Dict[str, Any]): Dict[str,str]
-                used to map document fields to the Cognitive search index fields (return value of function).
-                If none is specified a default mapping is provided which uses the field keys
-                The keys in the enriched_doc are ["id", "chunk", "embedding", "metadata"]
+            index_mapping:
+                Optional function with definition
+                (enriched_doc: Dict[str, str], metadata: Dict[str, Any]): Dict[str,str]
+                used to map document fields to the Cognitive search index fields
+                (return value of function).
+                If none is specified a default mapping is provided which uses
+                the field keys. The keys in the enriched_doc are
+                ["id", "chunk", "embedding", "metadata"]
                 The default mapping is:
                     - "id" to id_field_key
                     - "chunk" to chunk_field_key
@@ -280,13 +275,18 @@ class CognitiveSearchVectorStore(VectorStore):
         Raises:
             ImportError: Unable to import `azure-search-documents`
             ValueError: If `search_or_index_client` is not provided
-            ValueError: If `index_name` is not provided and `search_or_index_client` is of type azure.search.documents.SearchIndexClient
-            ValueError: If `index_name` is provided and `search_or_index_client` is of type azure.search.documents.SearchClient
-            ValueError: If `create_index_if_not_exists` is true and `search_or_index_client` is of type azure.search.documents.SearchClient
+            ValueError: If `index_name` is not provided and `search_or_index_client`
+                is of type azure.search.documents.SearchIndexClient
+            ValueError: If `index_name` is provided and `search_or_index_client`
+                is of type azure.search.documents.SearchClient
+            ValueError: If `create_index_if_not_exists` is true and
+                `search_or_index_client` is of type azure.search.documents.SearchClient
         """
 
-        import_err_msg = "`azure-search-documents` package not found, "
-        "please run `pip install azure-search-documents==11.4.0b8`"
+        import_err_msg = (
+            "`azure-search-documents` package not found, please run "
+            "`pip install azure-search-documents==11.4.0b8`"
+        )
 
         try:
             import azure.search.documents  # noqa: F401
@@ -422,8 +422,8 @@ class CognitiveSearchVectorStore(VectorStore):
 
             if len(documents) >= 10:
                 logger.info(
-                    f"Uploading batch of size {len(documents)}, current progress "
-                    "{len(ids)} of {len(embedding_results)}"
+                    f"Uploading batch of size {len(documents)}, "
+                    f"current progress {len(ids)} of {len(embedding_results)}"
                 )
                 self._search_client.merge_or_upload_documents(documents)
                 documents = []
@@ -431,8 +431,8 @@ class CognitiveSearchVectorStore(VectorStore):
         # Upload remaining batch of less than 10 documents
         if len(documents) > 0:
             logger.info(
-                f"Uploading remaining batch of size {len(documents)}, current progress "
-                "{len(ids)} of {len(embedding_results)}"
+                f"Uploading remaining batch of size {len(documents)}, "
+                f"current progress {len(ids)} of {len(embedding_results)}"
             )
             self._search_client.merge_or_upload_documents(documents)
             documents = []
@@ -552,7 +552,6 @@ class CognitiveSearchVectorStore(VectorStore):
             logger.info("Vector search with supplied embedding")
 
         odata_filter = None
-
         if query.filters is not None:
             odata_filter = self._create_odata_filter(query.filters)
 
