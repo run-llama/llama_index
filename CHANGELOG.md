@@ -1,10 +1,11 @@
 # ChangeLog
 
 ## Unreleased
+
 ### New Features
 - Added Portkey LLM integration (#7508)
 - Support postgres/pgvector hybrid search (#7501)
-
+- Added support for Azure Cognitive Search vector store (#7469)
 
 ## [0.8.19] - 2023-09-03
 
