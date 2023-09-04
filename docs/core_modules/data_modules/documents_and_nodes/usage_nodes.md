@@ -40,8 +40,7 @@ Each node has an `node_id` property that is automatically generated if not manua
 a variety of purposes; this includes being able to update nodes in storage, being able to define relationships
 between nodes (through `IndexNode`), and more.
 
-
-You can also get and set the `node_id` of any `TextNode` directly (and also `Document` objects as well)!
+You can also get and set the `node_id` of any `TextNode` directly.
 
 ```python
 print(node.node_id)
