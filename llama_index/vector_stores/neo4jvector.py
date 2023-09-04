@@ -25,7 +25,7 @@ def sort_by_index_name(
 
 
 def clean_params(params: List[NodeWithEmbedding]) -> List[Dict[str, Any]]:
-    """Convert NodeWithEmbedding object to a dictionary ready to be imported into Neo4j"""
+    """Convert NodeWithEmbedding object to a dictionary to be imported into Neo4j"""
     clean_params = []
     for record in params:
         text = record.node.get_content(metadata_mode=MetadataMode.NONE)
@@ -53,7 +53,6 @@ class Neo4jVectorStore(VectorStore):
         password: str,
         url: str,
         embedding_dimension: int,
-        *,
         database: str = "neo4j",
         index_name: str = "vector",
         node_label: str = "Chunk",
@@ -61,7 +60,7 @@ class Neo4jVectorStore(VectorStore):
         text_node_property: str = "text",
         distance_strategy: str = "cosine",
         retrieval_query: str = "",
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         try:
             import neo4j
@@ -202,7 +201,7 @@ class Neo4jVectorStore(VectorStore):
             return False
 
     def database_query(
-        self, query: str, *, params: Optional[dict] = None
+        self, query: str, params: Optional[dict] = None
     ) -> List[Dict[str, Any]]:
         """
         This method sends a Cypher query to the connected Neo4j database
