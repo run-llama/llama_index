@@ -1,7 +1,7 @@
 import re
 import random
 import string
-from SPARQLWrapper import SPARQLWrapper, POST, DIGEST
+from SPARQLWrapper import SPARQLWrapper, GET, POST, DIGEST
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 import logging
 import fsspec
@@ -55,6 +55,15 @@ class SparqlGraphStore(GraphStore):
     def create_graph(self, uri):
         self.sparql_update('CREATE GRAPH <'+uri+'>')
 
+    def sparql_query(self, query_string):
+        sparql_client = SPARQLWrapper(self.sparql_endpoint)
+        sparql_client.setMethod(GET)
+        sparql_client.setQuery(query_string)
+        results = sparql_client.query()
+        message = results.response.read().decode('utf-8')
+        logger.info('Endpoint says : ' + message)
+        return message
+
     def sparql_update(self, query_string):
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
         sparql_client.setMethod(POST)
@@ -86,8 +95,28 @@ class SparqlGraphStore(GraphStore):
 
     # TODO unescape from RDF?
 
+    def select_triplets(self, subj):
+        logger.info('#### sparql get_triplets called')
+        query_string = self.sparql_prefixes + """
+            SELECT DISTINCT ?rel ?obj WHERE {
+                GRAPH <http://purl.org/stuff/guardians> {
+                    ?triplet a er:Triplet ;
+                    er:subject ?subject ;
+                    er:property ?property ;
+                er:object ?object .
+
+                ?subject er:value {subj} .
+                ?property er:value ?rel .
+                ?object er:value ?obj .
+                }
+            }
+        """
+        triplets = self.sparql_query(query_string)
+        logger.info('triplets = \n'+str(triplets))
+
 # From interface types.py ----------------------------------
 # DOES IT ONE-BY-ONE!!!!!!!!!!!!!!!!!!!!!!
+
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
         logger.info('#### sparql upsert_triplet called')
@@ -126,7 +155,9 @@ class SparqlGraphStore(GraphStore):
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
         logger.info('#### sparql get called')
-        ...
+        triplets = get_triplets(str)
+        logger.info('triplets = ' + triplets)
+        return triplets
 
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2
