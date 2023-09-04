@@ -1,9 +1,7 @@
-from collections import namedtuple
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import MetadataMode
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
@@ -286,5 +284,5 @@ class Neo4jVectorStore(VectorStore):
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self.database_query(
             f"MATCH (n:`{self.node_label}`) WHERE n.ref_doc_id = $id DETACH DELETE n",
-            {"id": ref_doc_id},
+            params={"id": ref_doc_id},
         )
