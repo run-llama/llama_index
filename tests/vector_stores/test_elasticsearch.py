@@ -206,6 +206,27 @@ def test_add_to_es_query_with_filters(
     assert res.nodes[0].node_id == "bbb"
 
 
+def test_add_to_es_query_with_es_filters(
+    index_name, elasticsearch_connection, node_embeddings: List[NodeWithEmbedding]
+) -> None:
+    es_store = ElasticsearchStore(
+        **elasticsearch_connection,
+        index_name=index_name,
+        distance_strategy="COSINE",
+    )
+
+    print(index_name)
+
+    es_store.add(node_embeddings)
+
+    q = VectorStoreQuery(query_embedding=[0.5] * 1536, similarity_top_k=10)
+
+    res = es_store.query(q, es_filter={"wildcard": {"metadata.test_key": "test_valu*"}})
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "bbb"
+
+
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )

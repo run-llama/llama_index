@@ -210,11 +210,11 @@ class ElasticsearchStore(VectorStore):
                     "you have provided an embedding function."
                 )
 
-            if self.distance_strategy is "COSINE":
+            if self.distance_strategy == "COSINE":
                 similarityAlgo = "cosine"
-            elif self.distance_strategy is "EUCLIDEAN_DISTANCE":
+            elif self.distance_strategy == "EUCLIDEAN_DISTANCE":
                 similarityAlgo = "l2_norm"
-            elif self.distance_strategy is "DOT_PRODUCT":
+            elif self.distance_strategy == "DOT_PRODUCT":
                 similarityAlgo = "dot_product"
             else:
                 raise ValueError(f"Similarity {self.distance_strategy} not supported.")
@@ -342,6 +342,7 @@ class ElasticsearchStore(VectorStore):
         custom_query: Optional[
             Callable[[Dict, Union[VectorStoreQuery, None]], Dict]
         ] = None,
+        es_filter: Optional[Dict] = None,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -351,7 +352,7 @@ class ElasticsearchStore(VectorStore):
             custom_query: Optional. custom query function that takes in the es query body
                             and returns a modified query body. This can be used to add
                             additional query parameters to the Elasticsearch query.
-            filter: Optional. Elasticsearch filter to apply to the query. If filter is provided
+            es_filter: Optional. Elasticsearch filter to apply to the query. If filter is provided
                     in the query, this filter will be ignored.
 
         Returns:
@@ -366,16 +367,16 @@ class ElasticsearchStore(VectorStore):
         es_query = {}
 
         if query.filters is not None and len(query.filters.filters) > 0:
-            filter = _to_elasticsearch_filter(query.filters)
+            filter = [_to_elasticsearch_filter(query.filters)]
         else:
-            filter = kwargs.pop("filter", {"match_all": {}})
+            filter = es_filter or []
 
         if query.mode in (
             VectorStoreQueryMode.DEFAULT,
             VectorStoreQueryMode.HYBRID,
         ):
             es_query["knn"] = {
-                "filter": [filter],
+                "filter": filter,
                 "field": self.vector_field,
                 "query_vector": query_embedding,
                 "k": query.similarity_top_k,
@@ -389,7 +390,7 @@ class ElasticsearchStore(VectorStore):
             es_query["query"] = {
                 "bool": {
                     "must": {"match": {self.text_field: {"query": query.query_str}}},
-                    "filter": [filter],
+                    "filter": filter,
                 }
             }
 
