@@ -21,6 +21,7 @@ PARAMS: Dict[str, Union[str, int]] = dict(
 )
 TEST_DB = "test_vector_db"
 TEST_TABLE_NAME = "lorem_ipsum"
+TEST_EMBED_DIM = 2
 
 
 try:
@@ -37,6 +38,14 @@ try:
     postgres_not_available = False
 except (ImportError, Exception):
     postgres_not_available = True
+
+
+def _get_sample_vector(num: float) -> List[float]:
+    """
+    Get sample embedding vector of the form [num, 1, 1, ..., 1]
+    where the length of the vector is TEST_EMBED_DIM.
+    """
+    return [num] + [1.0] * (TEST_EMBED_DIM - 1)
 
 
 @pytest.fixture(scope="session")
@@ -67,6 +76,7 @@ def pg(db: None) -> Any:
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
+        embed_dim=TEST_EMBED_DIM,
     )
 
     yield pg
@@ -81,6 +91,7 @@ def pg_hybrid(db: None) -> Any:
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
         hybrid_search=True,
+        embed_dim=TEST_EMBED_DIM,
     )
 
     yield pg
@@ -92,7 +103,7 @@ def pg_hybrid(db: None) -> Any:
 def node_embeddings() -> List[NodeWithEmbedding]:
     return [
         NodeWithEmbedding(
-            embedding=[1.0] * 1536,
+            embedding=_get_sample_vector(1.0),
             node=TextNode(
                 text="lorem ipsum",
                 id_="aaa",
@@ -100,7 +111,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
             ),
         ),
         NodeWithEmbedding(
-            embedding=[0.1] * 1536,
+            embedding=_get_sample_vector(0.1),
             node=TextNode(
                 text="dolor sit amet",
                 id_="bbb",
@@ -115,7 +126,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
 def hybrid_node_embeddings() -> List[NodeWithEmbedding]:
     return [
         NodeWithEmbedding(
-            embedding=[0.1] * 1536,
+            embedding=_get_sample_vector(0.1),
             node=TextNode(
                 text="lorem ipsum",
                 id_="aaa",
@@ -123,7 +134,7 @@ def hybrid_node_embeddings() -> List[NodeWithEmbedding]:
             ),
         ),
         NodeWithEmbedding(
-            embedding=[1.0] * 1536,
+            embedding=_get_sample_vector(1.0),
             node=TextNode(
                 text="dolor sit amet",
                 id_="bbb",
@@ -132,7 +143,7 @@ def hybrid_node_embeddings() -> List[NodeWithEmbedding]:
             ),
         ),
         NodeWithEmbedding(
-            embedding=[5.0] * 1536,
+            embedding=_get_sample_vector(5.0),
             node=TextNode(
                 text="The quick brown fox jumped over the lazy dog (fox).",
                 id_="ccc",
@@ -140,7 +151,7 @@ def hybrid_node_embeddings() -> List[NodeWithEmbedding]:
             ),
         ),
         NodeWithEmbedding(
-            embedding=[10.0] * 1536,
+            embedding=_get_sample_vector(10.0),
             node=TextNode(
                 text="The fox and the hound",
                 id_="ddd",
@@ -174,7 +185,7 @@ async def test_add_to_db_and_query(
     else:
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
-    q = VectorStoreQuery(query_embedding=[1] * 1536, similarity_top_k=1)
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(1.0), similarity_top_k=1)
     if use_async:
         res = await pg.aquery(q)
     else:
@@ -199,7 +210,7 @@ async def test_add_to_db_and_query_with_metadata_filters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
     )
     q = VectorStoreQuery(
-        query_embedding=[0.5] * 1536, similarity_top_k=10, filters=filters
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
     )
     if use_async:
         res = await pg.aquery(q)
@@ -222,7 +233,7 @@ async def test_add_to_db_query_and_delete(
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
 
-    q = VectorStoreQuery(query_embedding=[0.1] * 1536, similarity_top_k=1)
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.1), similarity_top_k=1)
 
     if use_async:
         res = await pg.aquery(q)
@@ -257,7 +268,7 @@ async def test_hybrid_query(
     assert isinstance(pg_hybrid, PGVectorStore)
 
     q = VectorStoreQuery(
-        query_embedding=[0.1] * 1536,
+        query_embedding=_get_sample_vector(0.1),
         query_str="fox",
         similarity_top_k=2,
         mode=VectorStoreQueryMode.HYBRID,
@@ -276,7 +287,7 @@ async def test_hybrid_query(
 
     # if sparse_top_k is not specified, it should default to similarity_top_k
     q = VectorStoreQuery(
-        query_embedding=[0.1] * 1536,
+        query_embedding=_get_sample_vector(0.1),
         query_str="fox",
         similarity_top_k=2,
         mode=VectorStoreQueryMode.HYBRID,
@@ -311,7 +322,7 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
     )
     q = VectorStoreQuery(
-        query_embedding=[0.1] * 1536,
+        query_embedding=_get_sample_vector(0.1),
         query_str="fox",
         similarity_top_k=10,
         filters=filters,
@@ -331,7 +342,7 @@ def test_hybrid_query_fails_if_no_query_str_provided(
     pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
 ) -> None:
     q = VectorStoreQuery(
-        query_embedding=[1.0] * 1536,
+        query_embedding=_get_sample_vector(1.0),
         similarity_top_k=10,
         mode=VectorStoreQueryMode.HYBRID,
     )
