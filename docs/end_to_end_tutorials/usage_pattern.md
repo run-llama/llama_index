@@ -7,6 +7,7 @@ The general usage pattern of LlamaIndex is as follows:
 3. Construct Index (from Nodes or Documents)
 4. [Optional, Advanced] Building indices on top of other indices
 5. Query the index
+6. Parsing the response
 
 ## 1. Load in Documents
 
@@ -445,7 +446,7 @@ query_engine = RetrieverQueryEngine.from_args(
 response = query_engine.query("What did the author do growing up?")
 ```
 
-## 5. Parsing the response
+## 6. Parsing the response
 
 The object returned is a [`Response` object](/api_reference/response.rst).
 The object contains both the response text as well as the "sources" of the response:
