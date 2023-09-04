@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added Portkey LLM integration (#7508)
+
 ## [0.8.19] - 2023-09-03
 
 ### New Features
