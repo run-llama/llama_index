@@ -103,7 +103,7 @@ class SupabaseVectorStore(VectorStore):
             data.append((result.id, result.embedding, metadata_dict))
             ids.append(result.id)
 
-        self._collection.upsert(vectors=data)
+        self._collection.upsert(records=data)
 
         return ids
 
@@ -118,7 +118,7 @@ class SupabaseVectorStore(VectorStore):
         }
 
         result = self._collection.query(
-            query_vector=None,
+            data=None,
             limit=1,
             filters=filters,
             include_value=False,
