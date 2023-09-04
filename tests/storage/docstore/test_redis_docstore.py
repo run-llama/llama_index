@@ -79,7 +79,7 @@ def test_redis_docstore_deserialization(
     redis_docstore: RedisDocumentStore, documents: List[Document]
 ) -> None:
     from llama_index import (
-        ListIndex,
+        SummaryIndex,
         StorageContext,
         Document,
     )
@@ -93,7 +93,7 @@ def test_redis_docstore_deserialization(
 
     storage_context = StorageContext.from_defaults(docstore=ds, index_store=idxs)
 
-    index = ListIndex.from_documents(
+    index = SummaryIndex.from_documents(
         [Document(text="hello world2")], storage_context=storage_context
     )
     # fails here

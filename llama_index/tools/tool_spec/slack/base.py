@@ -5,10 +5,7 @@ from datetime import datetime
 from ssl import SSLContext
 from typing import List, Optional, Type
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.readers.slack import SlackReader
 from llama_index.schema import Document

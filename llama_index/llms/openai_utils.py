@@ -6,10 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 import openai
 from openai import ChatCompletion, Completion
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from tenacity import (
     before_sleep_log,
@@ -176,10 +173,10 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         https://github.com/hwchase17/langchain/blob/master/langchain/llms/openai.py
     """
     # handling finetuned models
-    if "ft-" in modelname:  # legacy fine-tuning
-        modelname = modelname.split(":")[0]
-    elif modelname.startswith("ft:"):
+    if modelname.startswith("ft:"):
         modelname = modelname.split(":")[1]
+    elif ":ft-" in modelname:  # legacy fine-tuning
+        modelname = modelname.split(":")[0]
 
     if modelname in DISCONTINUED_MODELS:
         raise ValueError(

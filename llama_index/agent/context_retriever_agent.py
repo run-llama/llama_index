@@ -116,6 +116,9 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+        if callback_manager is not None:
+            llm.callback_manager = callback_manager
+
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):

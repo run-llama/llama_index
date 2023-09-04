@@ -2,10 +2,7 @@ import asyncio
 import logging
 from typing import List, Optional, Sequence, cast
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.bridge.langchain import get_color_mapping, print_text

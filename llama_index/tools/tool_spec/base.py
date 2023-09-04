@@ -6,10 +6,7 @@ from llama_index.tools.types import ToolMetadata
 from llama_index.tools.function_tool import FunctionTool
 from inspect import signature
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.tools.utils import create_schema_from_function
 import asyncio
@@ -36,6 +33,24 @@ class BaseToolSpec:
 
         raise ValueError(f"Invalid function name: {fn_name}")
 
+    def get_metadata_from_fn_name(self, fn_name: str) -> Optional[ToolMetadata]:
+        """Return map from function name.
+
+        Return type is Optional, meaning that the schema can be None.
+        In this case, it's up to the downstream tool implementation to infer the schema.
+
+        """
+        try:
+            func = getattr(self, fn_name)
+        except AttributeError:
+            return None
+        name = fn_name
+        docstring = func.__doc__ or ""
+        description = f"{name}{signature(func)}\n{docstring}"
+        fn_schema = self.get_fn_schema_from_fn_name(fn_name)
+        metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
+        return metadata
+
     def to_tool_list(
         self,
         func_to_metadata_mapping: Optional[Dict[str, ToolMetadata]] = None,
@@ -54,13 +69,7 @@ class BaseToolSpec:
                     func_sync = func
                 metadata = func_to_metadata_mapping.get(func_spec, None)
                 if metadata is None:
-                    name = func_spec
-                    docstring = func.__doc__ or ""
-                    description = f"{name}{signature(func)}\n{docstring}"
-                    fn_schema = self.get_fn_schema_from_fn_name(func_spec)
-                    metadata = ToolMetadata(
-                        name=name, description=description, fn_schema=fn_schema
-                    )
+                    metadata = self.get_metadata_from_fn_name(func_spec)
             elif isinstance(func_spec, tuple) and len(func_spec) == 2:
                 func_sync = getattr(self, func_spec[0])
                 func_async = getattr(self, func_spec[1])
@@ -68,13 +77,7 @@ class BaseToolSpec:
                 if metadata is None:
                     metadata = func_to_metadata_mapping.get(func_spec[1], None)
                     if metadata is None:
-                        name = func_spec[0]
-                        docstring = func_sync.__doc__ or ""
-                        description = f"{name}{signature(func_sync)}\n{docstring}"
-                        fn_schema = self.get_fn_schema_from_fn_name(func_spec[0])
-                        metadata = ToolMetadata(
-                            name=name, description=description, fn_schema=fn_schema
-                        )
+                        metadata = self.get_metadata_from_fn_name(func_spec[0])
             else:
                 raise ValueError(
                     "spec_functions must be of type: List[Union[str, Tuple[str, str]]]"
@@ -90,10 +93,8 @@ class BaseToolSpec:
 
             tool = FunctionTool.from_defaults(
                 fn=func_sync,
-                name=metadata.name,
-                description=metadata.description,
-                fn_schema=metadata.fn_schema,
                 async_fn=func_async,
+                tool_metadata=metadata,
             )
             tool_list.append(tool)
         return tool_list

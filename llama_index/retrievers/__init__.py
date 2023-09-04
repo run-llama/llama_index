@@ -8,6 +8,9 @@ from llama_index.indices.knowledge_graph.retrievers import (
 from llama_index.indices.list.retrievers import (
     ListIndexEmbeddingRetriever,
     ListIndexRetriever,
+    SummaryIndexEmbeddingRetriever,
+    SummaryIndexLLMRetriever,
+    SummaryIndexRetriever,
 )
 from llama_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
 from llama_index.indices.tree.select_leaf_embedding_retriever import (
@@ -28,8 +31,9 @@ from llama_index.retrievers.bm25_retriever import BM25Retriever
 __all__ = [
     "VectorIndexRetriever",
     "VectorIndexAutoRetriever",
-    "ListIndexEmbeddingRetriever",
-    "ListIndexRetriever",
+    "SummaryIndexRetriever",
+    "SummaryIndexEmbeddingRetriever",
+    "SummaryIndexLLMRetriever",
     "KGTableRetriever",
     "KnowledgeGraphRAGRetriever",
     "EmptyIndexRetriever",
@@ -44,4 +48,7 @@ __all__ = [
     "AutoMergingRetriever",
     "RouterRetriever",
     "BM25Retriever",
+    # legacy
+    "ListIndexEmbeddingRetriever",
+    "ListIndexRetriever",
 ]
