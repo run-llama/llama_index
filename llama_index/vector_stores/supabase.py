@@ -41,11 +41,11 @@ class SupabaseVectorStore(VectorStore):
     flat_metadata = False
 
     def __init__(
-            self,
-            postgres_connection_string: str,
-            collection_name: str,
-            dimension: int = DEFAULT_EMBEDDING_DIM,
-            **kwargs: Any,
+        self,
+        postgres_connection_string: str,
+        collection_name: str,
+        dimension: int = DEFAULT_EMBEDDING_DIM,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         import_err_msg = "`vecs` package not found, please run `pip install vecs`"
@@ -113,9 +113,7 @@ class SupabaseVectorStore(VectorStore):
         Args:
             doc_id (str): document id
         """
-        filters = {
-            "doc_id": {"$eq": doc_id}
-        }
+        filters = {"doc_id": {"$eq": doc_id}}
 
         result = self._collection.query(
             data=None,
@@ -140,9 +138,9 @@ class SupabaseVectorStore(VectorStore):
             self._collection.delete(row_ids)
 
     def query(
-            self,
-            query: VectorStoreQuery,
-            **kwargs: Any,
+        self,
+        query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
