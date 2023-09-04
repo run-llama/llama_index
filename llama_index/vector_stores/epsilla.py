@@ -40,15 +40,15 @@ class EpsillaVectorStore(VectorStore):
     Args:
         client (Any): Epsilla client to connect to.
         collection_name (Optional[str]): Which collection to use.
-                        Defaults to "llama_collection".
+                    Defaults to "llama_collection".
         db_path (Optional[str]): The path where the database will be persisted.
-                        Defaults to "/tmp/langchain-epsilla".
+                    Defaults to "/tmp/langchain-epsilla".
         db_name (Optional[str]): Give a name to the loaded database.
-                        Defaults to "langchain_store".
+                    Defaults to "langchain_store".
         dimension (Optional[int]): The dimension of the embeddings. If not provided,
-                        collection creation will be done on first insert. Defaults to None.
+                    collection creation will be done on first insert. Defaults to None.
         overwrite (Optional[bool]): Whether to overwrite existing collection with same
-                        name. Defaults to False.
+                    name. Defaults to False.
 
     Returns:
         EpsillaVectorStore: Vectorstore that supports add, delete, and query.
