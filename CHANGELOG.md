@@ -2,7 +2,9 @@
 
 ## Unreleased
 ### New Features
+- Added Portkey LLM integration (#7508)
 - Support postgres/pgvector hybrid search (#7501)
+
 
 ## [0.8.19] - 2023-09-03
 
