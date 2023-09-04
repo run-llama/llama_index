@@ -1,6 +1,6 @@
 """Azure Cognitive Search vector store."""
 import logging
-from typing import Any, List, cast, Dict, Callable, Optional, Union
+from typing import Any, List, cast, Dict, Callable, Optional, Tuple, Union
 import enum
 from enum import auto
 
@@ -57,11 +57,11 @@ class CognitiveSearchVectorStore(VectorStore):
         filterable_metadata_field_keys: Union[
             List[str],
             Dict[str, str],
-            Dict[str, tuple[str, MetadataIndexFieldType]],
+            Dict[str, Tuple[str, MetadataIndexFieldType]],
             None,
         ] = [],
-    ) -> Dict[str, tuple[str, MetadataIndexFieldType]]:
-        index_field_spec: Dict[str, tuple[str, MetadataIndexFieldType]] = {}
+    ) -> Dict[str, Tuple[str, MetadataIndexFieldType]]:
+        index_field_spec: Dict[str, Tuple[str, MetadataIndexFieldType]] = {}
 
         if isinstance(filterable_metadata_field_keys, List):
             for field in filterable_metadata_field_keys:
@@ -229,7 +229,7 @@ class CognitiveSearchVectorStore(VectorStore):
             Union[
                 List[str],
                 Dict[str, str],
-                Dict[str, tuple[str, MetadataIndexFieldType]],
+                Dict[str, Tuple[str, MetadataIndexFieldType]],
             ]
         ] = None,
         index_name: Optional[str] = None,
