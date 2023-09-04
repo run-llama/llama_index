@@ -5,7 +5,7 @@ from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.text_splitter.sentence_splitter import SentenceSplitter
 from llama_index.text_splitter.token_splitter import TokenTextSplitter
-from llama_index.text_splitter.types import TextSplitter
+from llama_index.text_splitter.types import TextSplitter, SplitterType
 
 
 def get_default_text_splitter(
@@ -31,4 +31,5 @@ __all__ = [
     "TokenTextSplitter",
     "SentenceSplitter",
     "CodeSplitter",
+    "SplitterType",
 ]

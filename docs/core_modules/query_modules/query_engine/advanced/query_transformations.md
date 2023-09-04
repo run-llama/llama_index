@@ -66,7 +66,7 @@ Here's a corresponding example code snippet over a composed graph.
 
 ```python
 
-# Setting: a list index composed over multiple vector indices
+# Setting: a summary index composed over multiple vector indices
 # llm_predictor_chatgpt corresponds to the ChatGPT LLM interface
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(

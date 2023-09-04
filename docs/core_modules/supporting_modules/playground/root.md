@@ -23,7 +23,7 @@ WikipediaReader = download_loader("WikipediaReader")
 loader = WikipediaReader()
 documents = loader.load_data(pages=['Berlin'])
 
-# define multiple index data structures (vector index, list index)
+# define multiple index data structures (vector index, summary index)
 indices = [VectorStoreIndex(documents), TreeIndex(documents)]
 
 # initialize playground

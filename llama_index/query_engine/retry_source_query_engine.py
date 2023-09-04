@@ -3,7 +3,7 @@ from typing import Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.evaluation.base import QueryResponseEvaluator
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -58,7 +58,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
                     new_docs.append(Document(text=node.node.get_content()))
             if len(new_docs) == 0:
                 raise ValueError("No source nodes passed evaluation.")
-            new_index = ListIndex.from_documents(
+            new_index = SummaryIndex.from_documents(
                 new_docs,
                 service_context=self._service_context,
             )

@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Tuple, cast
 
-try:
-    from pydantic.v1 import PrivateAttr
-except ImportError:
-    from pydantic import PrivateAttr
+from llama_index.bridge.pydantic import PrivateAttr
 
 from llama_index.prompts import BasePromptTemplate
 from llama_index.callbacks import CallbackManager

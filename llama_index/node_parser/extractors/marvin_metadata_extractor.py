@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type, Dict, cas
 if TYPE_CHECKING:
     from marvin import AIModel
 
-from pydantic import BaseModel, Field
-
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.schema import BaseNode, TextNode
 
 from llama_index.node_parser.extractors.metadata_extractors import (
