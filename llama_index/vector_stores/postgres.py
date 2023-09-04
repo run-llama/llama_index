@@ -85,6 +85,8 @@ def get_data_model(
 
 
 class PGVectorStore(BasePydanticVectorStore):
+    from sqlalchemy.sql.selectable import Select
+
     stores_text = True
     flat_metadata = False
 
@@ -132,14 +134,14 @@ class PGVectorStore(BasePydanticVectorStore):
             )
 
         from sqlalchemy.orm import declarative_base
-        
+
         # sqlalchemy model
         self._base = declarative_base()
         self._table_class = get_data_model(
-            self._base, 
-            table_name, 
-            hybrid_search, 
-            text_search_config, 
+            self._base,
+            table_name,
+            hybrid_search,
+            text_search_config,
             embed_dim=embed_dim,
         )
 
