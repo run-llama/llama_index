@@ -96,7 +96,9 @@ Associated projects
 
    end_to_end_tutorials/usage_pattern.md
    end_to_end_tutorials/one_click_observability.md
+   end_to_end_tutorials/principled_dev_practices.md
    end_to_end_tutorials/discover_llamaindex.md
+   end_to_end_tutorials/finetuning.md
    end_to_end_tutorials/use_cases.md
    
 .. toctree::

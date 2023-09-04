@@ -16,11 +16,17 @@ WAIT_MAX_SECONDS = 10
 logger = logging.getLogger(__name__)
 
 
-rel_query = Template(
+rel_query_sample_edge = Template(
     """
 MATCH ()-[e:`$edge_type`]->()
-  WITH e limit 1
-MATCH (m)-[:`$edge_type`]->(n) WHERE id(m) == src(e) AND id(n) == dst(e)
+RETURN [src(e), dst(e)] AS sample_edge LIMIT 1
+"""
+)
+
+rel_query_edge_type = Template(
+    """
+MATCH (m)-[:`$edge_type`]->(n)
+  WHERE id(m) == $quote$src_id$quote AND id(n) == $quote$dst_id$quote
 RETURN "(:" + tags(m)[0] + ")-[:$edge_type]->(:" + tags(n)[0] + ")" AS rels
 """
 )
@@ -43,7 +49,9 @@ def hash_string_to_rank(string: str) -> int:
     return unsigned_hash
 
 
-def prepare_subjs_param(subjs: Optional[List[str]]) -> dict:
+def prepare_subjs_param(
+    subjs: Optional[List[str]], vid_type: str = "FIXED_STRING(256)"
+) -> Dict:
     """Prepare parameters for query."""
     if subjs is None:
         return {}
@@ -51,11 +59,29 @@ def prepare_subjs_param(subjs: Optional[List[str]]) -> dict:
 
     subjs_list = []
     subjs_byte = ttypes.Value()
+
+    # filter non-digit string for INT64 vid type
+    if vid_type == "INT64":
+        subjs = [subj for subj in subjs if subj.isdigit()]
+        if len(subjs) == 0:
+            logger.warning(
+                f"KG is with INT64 vid type, but no digit string is provided."
+                f"Return empty subjs, and no query will be executed."
+                f"subjs: {subjs}"
+            )
+            return {}
     for subj in subjs:
         if not isinstance(subj, str):
             raise TypeError(f"Subject should be str, but got {type(subj).__name__}.")
         subj_byte = ttypes.Value()
-        subj_byte.set_sVal(subj)
+        if vid_type == "INT64":
+            assert subj.isdigit(), (
+                "Subject should be a digit string in current "
+                "graph store, where vid type is INT64."
+            )
+            subj_byte.set_iVal(int(subj))
+        else:
+            subj_byte.set_sVal(subj)
         subjs_list.append(subj_byte)
     subjs_nlist = ttypes.NList(values=subjs_list)
     subjs_byte.set_lVal(subjs_nlist)
@@ -84,8 +110,10 @@ class NebulaGraphStore(GraphStore):
         session_pool: Optional[Any] = None,
         space_name: Optional[str] = None,
         edge_types: Optional[List[str]] = ["relationship"],
-        rel_prop_names: Optional[List[str]] = ["relationship"],
+        rel_prop_names: Optional[List[str]] = ["relationship,"],
         tags: Optional[List[str]] = ["entity"],
+        tag_prop_names: Optional[List[str]] = ["name,"],
+        include_vid: bool = True,
         session_pool_kwargs: Optional[Dict[str, Any]] = {},
         **kwargs: Any,
     ) -> None:
@@ -96,6 +124,8 @@ class NebulaGraphStore(GraphStore):
             space_name: NebulaGraph space name.
             edge_types: Edge types.
             rel_prop_names: Relation property names corresponding to edge types.
+            tags: Tags.
+            tag_prop_names: Tag property names corresponding to tags.
             session_pool_kwargs: Keyword arguments for NebulaGraph session pool.
             **kwargs: Keyword arguments.
         """
@@ -113,22 +143,69 @@ class NebulaGraphStore(GraphStore):
         if session_pool is None:
             self.init_session_pool()
 
+        self._vid_type = self._get_vid_type()
+
         self._tags = tags or ["entity"]
         self._edge_types = edge_types or ["rel"]
-        self._rel_prop_names = rel_prop_names or ["predicate"]
+        self._rel_prop_names = rel_prop_names or ["predicate,"]
         if len(self._edge_types) != len(self._rel_prop_names):
             raise ValueError(
                 "edge_types and rel_prop_names to define relation and relation name"
-                "should be provided."
+                "should be provided, yet with same length."
             )
         if len(self._edge_types) == 0:
             raise ValueError("Length of `edge_types` should be greater than 0.")
+
+        if tag_prop_names is None or len(self._tags) != len(tag_prop_names):
+            raise ValueError(
+                "tag_prop_names to define tag and tag property name should be "
+                "provided, yet with same length."
+            )
+
+        if len(self._tags) == 0:
+            raise ValueError("Length of `tags` should be greater than 0.")
 
         # for building query
         self._edge_dot_rel = [
             f"`{edge_type}`.`{rel_prop_name}`"
             for edge_type, rel_prop_name in zip(self._edge_types, self._rel_prop_names)
         ]
+
+        self._edge_prop_map = {}
+        for edge_type, rel_prop_name in zip(self._edge_types, self._rel_prop_names):
+            self._edge_prop_map[edge_type] = [
+                prop.strip() for prop in rel_prop_name.split(",")
+            ]
+
+        # cypher string like: map{`follow`: "degree", `serve`: "start_year,end_year"}
+        self._edge_prop_map_cypher_string = (
+            "map{"
+            + ", ".join(
+                [
+                    f"`{edge_type}`: \"{','.join(rel_prop_names)}\""
+                    for edge_type, rel_prop_names in self._edge_prop_map.items()
+                ]
+            )
+            + "}"
+        )
+
+        # build tag_prop_names map
+        self._tag_prop_names_map = {}
+        for tag, prop_names in zip(self._tags, tag_prop_names or []):
+            if prop_names is not None:
+                self._tag_prop_names_map[tag] = f"`{tag}`.`{prop_names}`"
+        self._tag_prop_names: List[str] = list(
+            set(
+                [
+                    prop_name.strip()
+                    for prop_names in tag_prop_names or []
+                    if prop_names is not None
+                    for prop_name in prop_names.split(",")
+                ]
+            )
+        )
+
+        self._include_vid = include_vid
 
     def init_session_pool(self) -> Any:
         """Return NebulaGraph session pool."""
@@ -158,6 +235,14 @@ class NebulaGraphStore(GraphStore):
         session_pool.init(seesion_pool_config)
         self._session_pool = session_pool
         return self._session_pool
+
+    def _get_vid_type(self) -> str:
+        """Get vid type."""
+        return (
+            self.execute(f"DESCRIBE SPACE {self._space_name}")
+            .column_values("Vid Type")[0]
+            .cast()
+        )
 
     def __del__(self) -> None:
         """Close NebulaGraph session pool."""
@@ -258,133 +343,118 @@ class NebulaGraphStore(GraphStore):
         Returns:
             Triplets.
         """
-        if len(self._edge_types) == 1:
-            # edge_types = ["follow"]
-            # rel_prop_names = ["degree"]
-            # GO FROM "player100" OVER `follow``
-            # YIELD `follow`.`degree`` AS rel, dst(edge) AS obj
-            query = (
-                f"GO FROM {QUOTE}{subj}{QUOTE} OVER `{self._edge_types[0]}`"
-                f"YIELD `{self._edge_types[0]}`.`{self._rel_prop_names[0]}` AS rel, "
-                f"dst(edge) AS obj"
-            )
-        else:
-            # edge_types = ["follow", "serve"]
-            # rel_prop_names = ["degree", "start_year"]
-            # GO FROM "player100" OVER `follow`, `serve`
-            # YIELD [value IN [follow.degree,serve.start_year]
-            # WHERE value IS NOT EMPTY ][0] AS rel, dst(edge) AS obj
-            query = (
-                f"GO FROM {QUOTE}{subj}{QUOTE} OVER "
-                f"`{'`, `'.join(self._edge_types)}` "
-                f"YIELD "
-                f"[value IN [{', '.join(self._edge_dot_rel)}] "
-                f"WHERE value IS NOT EMPTY][0] AS rel, "
-                f"dst(edge) AS obj"
-            )
-        logger.debug(f"Query: {query}")
-        result = self.execute(query)
-
-        # get raw data
-        rels = result.column_values("rel")
-        objs = result.column_values("obj")
-
-        # convert to list of list
-        return [[str(rel.cast()), str(obj.cast())] for rel, obj in zip(rels, objs)]
+        rel_map = self.get_flat_rel_map([subj], depth=1)
+        rels = list(rel_map.values())
+        if len(rels) == 0:
+            return []
+        return rels[0]
 
     def get_flat_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2
+        self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> Dict[str, List[List[str]]]:
         """Get flat rel map."""
         # The flat means for multi-hop relation path, we could get
-        # knowledge like: subj -> rel -> obj -> rel -> obj -> rel -> obj.
+        # knowledge like: subj -rel-> obj -rel-> obj <-rel- obj.
         # This type of knowledge is useful for some tasks.
-        # +-------------+------------------------------------+
-        # | subj        | flattened_rels                     |
-        # +-------------+------------------------------------+
-        # | "player101" | [95, "player125", 2002, "team204"] |
-        # | "player100" | [1997, "team204"]                  |
+        # +---------------------+---------------------------------------------...-----+
+        # | subj                | flattened_rels                              ...     |
+        # +---------------------+---------------------------------------------...-----+
+        # | "{name:Tony Parker}"| "{name: Tony Parker}-[follow:{degree:95}]-> ...ili}"|
+        # | "{name:Tony Parker}"| "{name: Tony Parker}-[follow:{degree:95}]-> ...r}"  |
         # ...
-        # +-------------+------------------------------------+
         rel_map: Dict[Any, List[Any]] = {}
         if subjs is None or len(subjs) == 0:
             # unlike simple graph_store, we don't do get_all here
             return rel_map
 
-        if len(self._edge_types) == 1:
-            # MATCH (s)-[e:follow*..2]-() WHERE id(s) IN ["player100", "player101"]
-            #   WITH id(s) AS subj, [rel in e | [rel.degree, dst(rel)] ] AS rels
-            #   WITH
-            #       subj,
-            #       REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
-            # RETURN
-            #   subj,
-            #   REDUCE(acc = subj,l in flattened_rels|acc + ', ' + l) AS flattened_rels
-            query = (
-                f"MATCH (s)-[e:`{self._edge_types[0]}`*..{depth}]-() "
-                f"  WHERE id(s) IN $subjs "
-                f"WITH "
-                f"id(s) AS subj,"
-                f"[rel IN e | "
-                f"  [rel.`{self._rel_prop_names[0]}`, dst(rel)] "
-                f"] AS rels "
-                f"WITH "
-                f"  subj,"
-                f"  REDUCE(acc = collect(NULL), l in rels | acc + l)"
-                f"    AS flattened_rels"
-                f" RETURN"
-                f"  subj,"
-                f"  REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l )"
-                f"    AS flattened_rels"
-            )
-        else:
-            # edge_types = ["follow", "serve"]
-            # rel_prop_names = ["degree", "start_year"]
-            # MATCH (s)-[e:follow|serve*..2]-()
-            # WHERE id(s) IN ["player100", "player101"]
-            #   WITH id(s) AS subj,
-            #        [rel in e | [CASE type(rel)
-            #     WHEN "follow" THEN rel.degree
-            #     WHEN "serve" THEN rel.start_year
-            #     END, dst(rel)] ]
-            #     AS rels
-            #   WITH
-            #     subj,
-            #     REDUCE(acc = collect(NULL), l in rels | acc + l) AS
-            #       flattened_rels
-            # RETURN
-            #   subj,
-            #   REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l ) AS
-            #       flattened_rels
-            _case_when_string = "".join(
-                [
-                    f"WHEN {QUOTE}{edge_type}{QUOTE} THEN rel.`{rel_prop_name}` "
-                    for edge_type, rel_prop_name in zip(
-                        self._edge_types, self._rel_prop_names
-                    )
-                ]
-            )
-            query = (
-                f"MATCH (s)-[e:`{'`|`'.join(self._edge_types)}`*..{depth}]-() "
-                f"  WHERE id(s) IN $subjs "
-                f"  WITH "
-                f"    id(s) AS subj,"
-                f" [rel IN e | "
-                f"  [CASE type(rel) "
-                f"  {_case_when_string}"
-                f"  END, dst(rel)] "
-                f"] AS rels "
-                f"  WITH"
-                f"    subj,"
-                f"    REDUCE(acc = collect(NULL), l in rels | acc + l) AS "
-                f"        flattened_rels"
-                f"RETURN"
-                f"  subj,"
-                f"  REDUCE(acc = subj, l in flattened_rels | acc + ', ' + l ) AS "
-                f"      flattened_rels"
-            )
-        subjs_param = prepare_subjs_param(subjs)
-        logger.debug(f"get_flat_rel_map() subjs_param: {subjs}, query: {query}")
+        # WITH map{`true`: "-[", `false`: "<-["} AS arrow_l,
+        #      map{`true`: "]->", `false`: "]-"} AS arrow_r,
+        #      map{`follow`: "degree", `serve`: "start_year,end_year"} AS edge_type_map
+        # MATCH p=(start)-[e:follow|serve*..2]-()
+        #     WHERE id(start) IN ["player100", "player101"]
+        #   WITH start, id(start) AS vid, nodes(p) AS nodes, e AS rels,
+        #     length(p) AS rel_count, arrow_l, arrow_r, edge_type_map
+        #   WITH
+        #     REDUCE(s = vid + '{', key IN [key_ in ["name"]
+        #       WHERE properties(start)[key_] IS NOT NULL]  | s + key + ': ' +
+        #         COALESCE(TOSTRING(properties(start)[key]), 'null') + ', ')
+        #         + '}'
+        #       AS subj,
+        #     [item in [i IN RANGE(0, rel_count - 1) | [nodes[i], nodes[i + 1],
+        #         rels[i], typeid(rels[i]) > 0, type(rels[i]) ]] | [
+        #      arrow_l[tostring(item[3])] +
+        #          item[4] + ':' +
+        #          REDUCE(s = '{', key IN SPLIT(edge_type_map[item[4]], ',') |
+        #            s + key + ': ' + COALESCE(TOSTRING(properties(item[2])[key]),
+        #            'null') + ', ') + '}'
+        #           +
+        #      arrow_r[tostring(item[3])],
+        #      REDUCE(s = id(item[1]) + '{', key IN [key_ in ["name"]
+        #           WHERE properties(item[1])[key_] IS NOT NULL]  | s + key + ': ' +
+        #           COALESCE(TOSTRING(properties(item[1])[key]), 'null') + ', ') + '}'
+        #      ]
+        #   ] AS rels
+        #   WITH
+        #       REPLACE(subj, ', }', '}') AS subj,
+        #       REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
+        #   RETURN
+        #     subj,
+        #     REPLACE(REDUCE(acc = subj,l in flattened_rels|acc + ' ' + l),
+        #       ', }', '}')
+        #       AS flattened_rels
+        #   LIMIT 30
+
+        # Based on self._include_vid
+        # {name: Tim Duncan} or player100{name: Tim Duncan} for entity
+        s_prefix = "vid + '{'" if self._include_vid else "'{'"
+        s1 = "id(item[1]) + '{'" if self._include_vid else "'{'"
+
+        query = (
+            f"WITH map{{`true`: '-[', `false`: '<-['}} AS arrow_l,"
+            f"     map{{`true`: ']->', `false`: ']-'}} AS arrow_r,"
+            f"     {self._edge_prop_map_cypher_string} AS edge_type_map "
+            f"MATCH p=(start)-[e:`{'`|`'.join(self._edge_types)}`*..{depth}]-() "
+            f"  WHERE id(start) IN $subjs "
+            f"WITH start, id(start) AS vid, nodes(p) AS nodes, e AS rels,"
+            f"  length(p) AS rel_count, arrow_l, arrow_r, edge_type_map "
+            f"WITH "
+            f"  REDUCE(s = {s_prefix}, key IN [key_ in {str(self._tag_prop_names)} "
+            f"    WHERE properties(start)[key_] IS NOT NULL]  | s + key + ': ' + "
+            f"      COALESCE(TOSTRING(properties(start)[key]), 'null') + ', ')"
+            f"      + '}}'"
+            f"    AS subj,"
+            f"  [item in [i IN RANGE(0, rel_count - 1)|[nodes[i], nodes[i + 1],"
+            f"      rels[i], typeid(rels[i]) > 0, type(rels[i]) ]] | ["
+            f"    arrow_l[tostring(item[3])] +"
+            f"      item[4] + ':' +"
+            f"      REDUCE(s = '{{', key IN SPLIT(edge_type_map[item[4]], ',') | "
+            f"        s + key + ': ' + COALESCE(TOSTRING(properties(item[2])[key]),"
+            f"        'null') + ', ') + '}}'"
+            f"      +"
+            f"    arrow_r[tostring(item[3])],"
+            f"    REDUCE(s = {s1}, key IN [key_ in "
+            f"        {str(self._tag_prop_names)} WHERE properties(item[1])[key_] "
+            f"        IS NOT NULL]  | s + key + ': ' + "
+            f"        COALESCE(TOSTRING(properties(item[1])[key]), 'null') + ', ')"
+            f"        + '}}'"
+            f"    ]"
+            f"  ] AS rels "
+            f"WITH "
+            f"  REPLACE(subj, ', }}', '}}') AS subj,"
+            f"  REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels "
+            f"RETURN "
+            f"  subj,"
+            f"  REPLACE(REDUCE(acc = subj, l in flattened_rels | acc + ' ' + l), "
+            f"    ', }}', '}}') "
+            f"    AS flattened_rels"
+            f"  LIMIT {limit}"
+        )
+        subjs_param = prepare_subjs_param(subjs, self._vid_type)
+        logger.debug(f"get_flat_rel_map()\nsubjs_param: {subjs},\nquery: {query}")
+        if subjs_param == {}:
+            # This happens when subjs is None after prepare_subjs_param()
+            # Probably because vid type is INT64, but no digit string is provided.
+            return rel_map
         result = self.execute(query, subjs_param)
         if result is None:
             return rel_map
@@ -402,7 +472,7 @@ class NebulaGraphStore(GraphStore):
         return rel_map
 
     def get_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2
+        self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> Dict[str, List[List[str]]]:
         """Get rel map."""
         # We put rels in a long list for depth>= 1, this is different from
@@ -410,11 +480,13 @@ class NebulaGraphStore(GraphStore):
         # But this makes more sense for multi-hop relation path.
 
         if subjs is not None:
-            subjs = [escape_str(subj) for subj in subjs]
+            subjs = [
+                escape_str(subj) for subj in subjs if isinstance(subj, str) and subj
+            ]
             if len(subjs) == 0:
                 return {}
 
-        return self.get_flat_rel_map(subjs, depth)
+        return self.get_flat_rel_map(subjs, depth, limit)
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
@@ -430,6 +502,16 @@ class NebulaGraphStore(GraphStore):
         subj = escape_str(subj)
         rel = escape_str(rel)
         obj = escape_str(obj)
+        if self._vid_type == "INT64":
+            assert all(
+                [subj.isdigit(), obj.isdigit()]
+            ), "Subject and object should be digit strings in current graph store."
+            subj_field = subj
+            obj_field = obj
+        else:
+            subj_field = f"{QUOTE}{subj}{QUOTE}"
+            obj_field = f"{QUOTE}{obj}{QUOTE}"
+        edge_field = f"{subj_field}->{obj_field}"
 
         edge_type = self._edge_types[0]
         rel_prop_name = self._rel_prop_names[0]
@@ -437,15 +519,15 @@ class NebulaGraphStore(GraphStore):
         rel_hash = hash_string_to_rank(rel)
         dml_query = (
             f"INSERT VERTEX `{entity_type}`(name) "
-            f"  VALUES {QUOTE}{subj}{QUOTE}:({QUOTE}{subj}{QUOTE});"
+            f"  VALUES {subj_field}:({QUOTE}{subj}{QUOTE});"
             f"INSERT VERTEX `{entity_type}`(name) "
-            f"  VALUES {QUOTE}{obj}{QUOTE}:({QUOTE}{obj}{QUOTE});"
+            f"  VALUES {obj_field}:({QUOTE}{obj}{QUOTE});"
             f"INSERT EDGE `{edge_type}`(`{rel_prop_name}`) "
             f"  VALUES "
-            f"{QUOTE}{subj}{QUOTE}->{QUOTE}{obj}{QUOTE}"
+            f"{edge_field}"
             f"@{rel_hash}:({QUOTE}{rel}{QUOTE});"
         )
-        logger.debug(f"upsert_triplet() DML query: {dml_query}")
+        logger.debug(f"upsert_triplet()\nDML query: {dml_query}")
         result = self.execute(dml_query)
         assert (
             result and result.is_succeeded()
@@ -465,15 +547,23 @@ class NebulaGraphStore(GraphStore):
         rel = escape_str(rel)
         obj = escape_str(obj)
 
+        if self._vid_type == "INT64":
+            assert all(
+                [subj.isdigit(), obj.isdigit()]
+            ), "Subject and object should be digit strings in current graph store."
+            subj_field = subj
+            obj_field = obj
+        else:
+            subj_field = f"{QUOTE}{subj}{QUOTE}"
+            obj_field = f"{QUOTE}{obj}{QUOTE}"
+        edge_field = f"{subj_field}->{obj_field}"
+
         # DELETE EDGE serve "player100" -> "team204"@7696463696635583936;
         edge_type = self._edge_types[0]
         # rel_prop_name = self._rel_prop_names[0]
         rel_hash = hash_string_to_rank(rel)
-        dml_query = (
-            f"DELETE EDGE `{edge_type}`"
-            f"  {QUOTE}{subj}{QUOTE}->{QUOTE}{obj}{QUOTE}@{rel_hash};"
-        )
-        logger.debug(f"delete() DML query: {dml_query}")
+        dml_query = f"DELETE EDGE `{edge_type}`" f"  {edge_field}@{rel_hash};"
+        logger.debug(f"delete()\nDML query: {dml_query}")
         result = self.execute(dml_query)
         assert (
             result and result.is_succeeded()
@@ -483,7 +573,7 @@ class NebulaGraphStore(GraphStore):
         # RETURN id(s) AS isolated
         query = (
             f"MATCH (s) "
-            f"  WHERE id(s) IN [{QUOTE}{subj}{QUOTE}, {QUOTE}{obj}{QUOTE}] "
+            f"  WHERE id(s) IN [{subj_field}, {obj_field}] "
             f"  AND NOT (s)-[]-() "
             f"RETURN id(s) AS isolated"
         )
@@ -491,8 +581,11 @@ class NebulaGraphStore(GraphStore):
         isolated = result.column_values("isolated")
         if not isolated:
             return
-        # DELETE VERTEX "player700"
-        vertex_ids = ",".join([f"{QUOTE}{v.cast()}{QUOTE}" for v in isolated])
+        # DELETE VERTEX "player700" or DELETE VERTEX 700
+        quote_field = QUOTE if self._vid_type != "INT64" else ""
+        vertex_ids = ",".join(
+            [f"{quote_field}{v.cast()}{quote_field}" for v in isolated]
+        )
         dml_query = f"DELETE VERTEX {vertex_ids};"
 
         result = self.execute(dml_query)
@@ -509,22 +602,53 @@ class NebulaGraphStore(GraphStore):
             tag_name = tag.cast()
             tag_schema = {"tag": tag_name, "properties": []}
             r = self.execute(f"DESCRIBE TAG `{tag_name}`")
-            props, types = r.column_values("Field"), r.column_values("Type")
+            props, types, comments = (
+                r.column_values("Field"),
+                r.column_values("Type"),
+                r.column_values("Comment"),
+            )
             for i in range(r.row_size()):
-                tag_schema["properties"].append((props[i].cast(), types[i].cast()))
+                # back compatible with old version of nebula-python
+                property_defination = (
+                    (props[i].cast(), types[i].cast())
+                    if comments[i].is_empty()
+                    else (props[i].cast(), types[i].cast(), comments[i].cast())
+                )
+                tag_schema["properties"].append(property_defination)
             tags_schema.append(tag_schema)
         for edge_type in self.execute("SHOW EDGES").column_values("Name"):
             edge_type_name = edge_type.cast()
             edge_schema = {"edge": edge_type_name, "properties": []}
             r = self.execute(f"DESCRIBE EDGE `{edge_type_name}`")
-            props, types = r.column_values("Field"), r.column_values("Type")
+            props, types, comments = (
+                r.column_values("Field"),
+                r.column_values("Type"),
+                r.column_values("Comment"),
+            )
             for i in range(r.row_size()):
-                edge_schema["properties"].append((props[i].cast(), types[i].cast()))
+                # back compatible with old version of nebula-python
+                property_defination = (
+                    (props[i].cast(), types[i].cast())
+                    if comments[i].is_empty()
+                    else (props[i].cast(), types[i].cast(), comments[i].cast())
+                )
+                edge_schema["properties"].append(property_defination)
             edge_types_schema.append(edge_schema)
 
             # build relationships types
+            sample_edge = self.execute(
+                rel_query_sample_edge.substitute(edge_type=edge_type_name)
+            ).column_values("sample_edge")
+            if len(sample_edge) == 0:
+                continue
+            src_id, dst_id = sample_edge[0].cast()
             r = self.execute(
-                rel_query.substitute(edge_type=edge_type_name)
+                rel_query_edge_type.substitute(
+                    edge_type=edge_type_name,
+                    src_id=src_id,
+                    dst_id=dst_id,
+                    quote="" if self._vid_type == "INT64" else QUOTE,
+                )
             ).column_values("rels")
             if len(r) > 0:
                 relationships.append(r[0].cast())
@@ -540,7 +664,7 @@ class NebulaGraphStore(GraphStore):
         if self.schema and not refresh:
             return self.schema
         self.refresh_schema()
-        logger.debug(f"get_schema() schema:\n{self.schema}")
+        logger.debug(f"get_schema()\nschema: {self.schema}")
         return self.schema
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:

@@ -29,7 +29,7 @@ from llama_index.indices.knowledge_graph import (
     KnowledgeGraphIndex,
     GPTKnowledgeGraphIndex,
 )
-from llama_index.indices.list import ListIndex, GPTListIndex
+from llama_index.indices.list import ListIndex, GPTListIndex, SummaryIndex
 from llama_index.indices.tree import TreeIndex, GPTTreeIndex
 from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
 from llama_index.indices.document_summary import (
@@ -76,7 +76,14 @@ from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 
 # prompts
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import (
+    BasePromptTemplate,
+    PromptTemplate,
+    ChatPromptTemplate,
+    SelectorPromptTemplate,
+    # backwards compatibility
+    Prompt,
+)
 from llama_index.prompts.prompts import (
     KeywordExtractPrompt,
     QueryKeywordExtractPrompt,
@@ -144,8 +151,8 @@ __all__ = [
     "ServiceContext",
     "ComposableGraph",
     # indices
+    "SummaryIndex",
     "VectorStoreIndex",
-    "ListIndex",
     "SimpleKeywordTableIndex",
     "KeywordTableIndex",
     "RAKEKeywordTableIndex",
@@ -161,6 +168,7 @@ __all__ = [
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "GPTListIndex",
+    "ListIndex",
     "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTVectorStoreIndex",
@@ -168,6 +176,10 @@ __all__ = [
     "GPTSQLStructStoreIndex",
     "GPTDocumentSummaryIndex",
     "Prompt",
+    "PromptTemplate",
+    "BasePromptTemplate",
+    "ChatPromptTemplate",
+    "SelectorPromptTemplate",
     "LangchainEmbedding",
     "OpenAIEmbedding",
     "SummaryPrompt",

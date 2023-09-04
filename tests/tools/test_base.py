@@ -1,7 +1,9 @@
 """Test tools."""
 import pytest
+
+from llama_index.bridge.pydantic import BaseModel
+
 from llama_index.tools.function_tool import FunctionTool
-from pydantic import BaseModel
 
 
 def tmp_function(x: int) -> str:

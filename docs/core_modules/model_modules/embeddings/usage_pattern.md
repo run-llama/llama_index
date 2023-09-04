@@ -11,7 +11,7 @@ from llama_index import ServiceContext, VectorStoreIndex, SimpleDirectoryReader
 from llama_index.embeddings import OpenAIEmbedding
 
 embed_model = OpenAIEmbedding()
-service_context = serviceContext.from_defaults(embed_model=embed_model)
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # optionally set a global service context to avoid passing it into other objects every time
 from llama_index import set_global_service_context
@@ -40,6 +40,8 @@ By default, embeddings requests are sent to OpenAI in batches of 10. For some us
 # set the batch size to 42
 embed_model = OpenAIEmbedding(embed_batch_size=42)
 ```
+
+(local-embedding-models)=
 
 ### Local Embedding Models
 

@@ -1,6 +1,9 @@
 """Vector stores."""
 
+
+from llama_index.vector_stores.bagel import BagelVectorStore
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
+from llama_index.vector_stores.cassandra import CassandraVectorStore
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
@@ -26,6 +29,9 @@ from llama_index.vector_stores.docarray import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
+from llama_index.vector_stores.cogsearch import CognitiveSearchVectorStore
+from llama_index.vector_stores.awadb import AwaDBVectorStore
+from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
 
 __all__ = [
     "SimpleVectorStore",
@@ -35,6 +41,7 @@ __all__ = [
     "PineconeVectorStore",
     "WeaviateVectorStore",
     "QdrantVectorStore",
+    "CassandraVectorStore",
     "ChromaVectorStore",
     "MetalVectorStore",
     "OpensearchVectorStore",
@@ -50,4 +57,8 @@ __all__ = [
     "SupabaseVectorStore",
     "PGVectorStore",
     "ZepVectorStore",
+    "AwaDBVectorStore",
+    "BagelVectorStore",
+    "Neo4jVectorStore",
+    "CognitiveSearchVectorStore",
 ]

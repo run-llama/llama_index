@@ -6,7 +6,12 @@ from threading import Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from llama_index.agent.types import BaseAgent
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import (
+    CallbackManager,
+    trace_method,
+    CBEventType,
+    EventPayload,
+)
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
@@ -203,16 +208,36 @@ class BaseOpenAIAgent(BaseAgent):
         return chat_stream_response
 
     def _call_function(self, tools: List[BaseTool], function_call: dict) -> None:
-        function_message, tool_output = call_function(
-            tools, function_call, verbose=self._verbose
-        )
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: function_call["arguments"],
+                EventPayload.TOOL: get_function_by_name(
+                    tools, function_call["name"]
+                ).metadata,
+            },
+        ) as event:
+            function_message, tool_output = call_function(
+                tools, function_call, verbose=self._verbose
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
     async def _acall_function(self, tools: List[BaseTool], function_call: dict) -> None:
-        function_message, tool_output = await acall_function(
-            tools, function_call, verbose=self._verbose
-        )
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: function_call["arguments"],
+                EventPayload.TOOL: get_function_by_name(
+                    tools, function_call["name"]
+                ).metadata,
+            },
+        ) as event:
+            function_message, tool_output = await acall_function(
+                tools, function_call, verbose=self._verbose
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
@@ -259,14 +284,19 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
 
         # Loop until no more function calls or max_function_calls is reached
+        current_func = function_call
         while True:
-            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, function_call)
+            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, current_func)
             agent_chat_response = self._get_agent_response(mode=mode, **llm_chat_kwargs)
             if not self._should_continue(self.latest_function_call, n_function_calls):
                 logger.debug("Break: should continue False")
                 break
             assert isinstance(self.latest_function_call, dict)
             self._call_function(tools, self.latest_function_call)
+            # change function call to the default value, if a custom function was given
+            # as an argument (none and auto are predefined by OpenAI)
+            if current_func not in ("auto", "none"):
+                current_func = "auto"
             n_function_calls += 1
 
         return agent_chat_response
@@ -282,8 +312,9 @@ class BaseOpenAIAgent(BaseAgent):
         n_function_calls = 0
 
         # Loop until no more function calls or max_function_calls is reached
+        current_func = function_call
         while True:
-            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, function_call)
+            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, current_func)
             agent_chat_response = await self._get_async_agent_response(
                 mode=mode, **llm_chat_kwargs
             )
@@ -291,10 +322,15 @@ class BaseOpenAIAgent(BaseAgent):
                 break
             assert isinstance(self.latest_function_call, dict)
             await self._acall_function(tools, self.latest_function_call)
+            # change function call to the default value, if a custom function was given
+            # as an argument (none and auto are predefined by OpenAI)
+            if current_func not in ("auto", "none"):
+                current_func = "auto"
             n_function_calls += 1
 
         return agent_chat_response
 
+    @trace_method("chat")
     def chat(
         self,
         message: str,
@@ -307,6 +343,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, AgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     async def achat(
         self,
         message: str,
@@ -319,6 +356,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, AgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     def stream_chat(
         self,
         message: str,
@@ -331,6 +369,7 @@ class BaseOpenAIAgent(BaseAgent):
         assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
+    @trace_method("chat")
     async def astream_chat(
         self,
         message: str,
@@ -385,6 +424,10 @@ class OpenAIAgent(BaseOpenAIAgent):
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+
+        if callback_manager is not None:
+            llm.callback_manager = callback_manager
+
         memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):
@@ -472,6 +515,10 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
+
+        if callback_manager is not None:
+            llm.callback_manager = callback_manager
+
         memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
 
         if not is_function_calling_model(llm.model):

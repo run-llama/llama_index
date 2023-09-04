@@ -1,17 +1,20 @@
 """Test deeplake indexes."""
 
-import os
 from typing import List
 
 import pytest
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.vector_stores.types import NodeWithEmbedding
-from llama_index.vector_stores import DeepLakeVectorStore
-from llama_index.schema import Document
-from llama_index.schema import TextNode
+from llama_index.schema import Document, TextNode
 from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores import DeepLakeVectorStore
+from llama_index.vector_stores.types import NodeWithEmbedding
+
+try:
+    import deeplake
+except ImportError:
+    deeplake = None  # type: ignore
 
 
 EMBEDDING_DIM = 100
@@ -34,7 +37,7 @@ def documents() -> List[Document]:
     ]
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no DeepLake in CI")
+@pytest.mark.skipif(deeplake is None, reason="deeplake not installed")
 def test_build_deeplake(
     documents: List[Document],
     mock_service_context: ServiceContext,
@@ -76,7 +79,7 @@ def test_build_deeplake(
     deeplake.delete(dataset_path)
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no DeepLake in CI")
+@pytest.mark.skipif(deeplake is None, reason="deeplake not installed")
 def test_node_with_metadata(
     mock_service_context: ServiceContext,
 ) -> None:
@@ -105,7 +108,7 @@ def test_node_with_metadata(
     deeplake.delete(dataset_path)
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no DeepLake in CI")
+@pytest.mark.skipif(deeplake is None, reason="deeplake not installed")
 def test_backwards_compatibility() -> None:
     import deeplake
     from deeplake.core.vectorstore import utils

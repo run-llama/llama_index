@@ -3,10 +3,10 @@ import json
 from copy import deepcopy
 from typing import List, Optional, Dict, Tuple, Callable
 
-from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import NodeWithScore, MetadataMode
 
 
@@ -38,7 +38,7 @@ DEFAULT_PII_TMPL = (
 )
 
 
-class PIINodePostprocessor(BasePydanticNodePostprocessor):
+class PIINodePostprocessor(BaseNodePostprocessor):
     """PII Node processor.
 
     NOTE: the ServiceContext should contain a LOCAL model, not an external API.
@@ -54,9 +54,13 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
     pii_str_tmpl: str = DEFAULT_PII_TMPL
     pii_node_info_key: str = "__pii_node_info__"
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "PIINodePostprocessor"
+
     def mask_pii(self, text: str) -> Tuple[str, Dict]:
         """Mask PII in text."""
-        pii_prompt = QuestionAnswerPrompt(self.pii_str_tmpl)
+        pii_prompt = PromptTemplate(self.pii_str_tmpl)
         # TODO: allow customization
         task_str = (
             "Mask out the PII, replace each PII with a tag, and return the text. "
@@ -95,7 +99,7 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
         return new_nodes
 
 
-class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
+class NERPIINodePostprocessor(BaseNodePostprocessor):
     """NER PII Node processor.
 
     Uses a HF transformers model.
@@ -103,6 +107,10 @@ class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
     """
 
     pii_node_info_key: str = "__pii_node_info__"
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "NERPIINodePostprocessor"
 
     def mask_pii(self, ner: Callable, text: str) -> Tuple[str, Dict]:
         """Mask PII in text."""

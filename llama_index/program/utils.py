@@ -1,7 +1,8 @@
 """Program utils."""
 
-from pydantic import BaseModel, Field, create_model
-from typing import Type, List
+from typing import List, Type
+
+from llama_index.bridge.pydantic import BaseModel, Field, create_model
 
 
 def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:

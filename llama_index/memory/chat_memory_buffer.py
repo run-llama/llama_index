@@ -1,7 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from pydantic import Field, root_validator
-
+from llama_index.bridge.pydantic import Field, root_validator
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory.types import BaseMemory
 from llama_index.utils import GlobalsHelper

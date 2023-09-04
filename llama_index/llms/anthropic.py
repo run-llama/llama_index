@@ -1,10 +1,12 @@
 from typing import Any, Dict, Optional, Sequence
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
+
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.anthropic_utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_prompt,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -28,6 +30,24 @@ from llama_index.llms.generic_utils import (
 
 
 class Anthropic(LLM):
+    model: str = Field(description="The anthropic model to use.")
+    temperature: float = Field(description="The temperature to use for sampling.")
+    max_tokens: int = Field(description="The maximum number of tokens to generate.")
+
+    base_url: Optional[str] = Field(default=None, description="The base URL to use.")
+    timeout: Optional[float] = Field(
+        default=None, description="The timeout to use in seconds."
+    )
+    max_retries: int = Field(
+        default=10, description="The maximum number of API retries."
+    )
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additonal kwargs for the anthropic API."
+    )
+
+    _client: Any = PrivateAttr()
+    _aclient: Any = PrivateAttr()
+
     def __init__(
         self,
         model: str = "claude-2",
@@ -37,7 +57,7 @@ class Anthropic(LLM):
         timeout: Optional[float] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
-        additional_kwargs: Dict[str, Any] = {},
+        additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         try:
@@ -48,11 +68,8 @@ class Anthropic(LLM):
                 "Please `pip install anthropic`"
             ) from e
 
-        self._model = model
-        self._temperature = temperature
-        self._max_tokens = max_tokens
-        self._additional_kwargs = additional_kwargs
-        self.callback_manager = callback_manager or CallbackManager([])
+        additional_kwargs = additional_kwargs or {}
+        callback_manager = callback_manager or CallbackManager([])
 
         self._client = anthropic.Anthropic(
             api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
@@ -61,25 +78,41 @@ class Anthropic(LLM):
             api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
         )
 
+        super().__init__(
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+            model=model,
+            callback_manager=callback_manager,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "Anthropic_LLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=anthropic_modelname_to_contextsize(self._model),
-            num_output=self._max_tokens,
+            context_window=anthropic_modelname_to_contextsize(self.model),
+            num_output=self.max_tokens,
             is_chat_model=True,
-            model_name=self._model,
+            model_name=self.model,
         )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
-            "model": self._model,
-            "temperature": self._temperature,
-            "max_tokens_to_sample": self._max_tokens,
+            "model": self.model,
+            "temperature": self.temperature,
+            "max_tokens_to_sample": self.max_tokens,
         }
         model_kwargs = {
             **base_kwargs,
-            **self._additional_kwargs,
+            **self.additional_kwargs,
         }
         return model_kwargs
 

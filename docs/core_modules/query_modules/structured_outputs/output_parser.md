@@ -15,7 +15,7 @@ Guardrails is an open-source Python package for specification/validation/correct
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import GuardrailsOutputParser
 from llama_index.llm_predictor import StructuredLLMPredictor
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT_TMPL, DEFAULT_REFINE_PROMPT_TMPL
 
 
@@ -62,8 +62,8 @@ output_parser = GuardrailsOutputParser.from_rail_string(rail_spec, llm=llm_predi
 fmt_qa_tmpl = output_parser.format(DEFAULT_TEXT_QA_PROMPT_TMPL)
 fmt_refine_tmpl = output_parser.format(DEFAULT_REFINE_PROMPT_TMPL)
 
-qa_prompt = QuestionAnswerPrompt(fmt_qa_tmpl, output_parser=output_parser)
-refine_prompt = RefinePrompt(fmt_refine_tmpl, output_parser=output_parser)
+qa_prompt = PromptTemplate(fmt_qa_tmpl, output_parser=output_parser)
+refine_prompt = PromptTemplate(fmt_refine_tmpl, output_parser=output_parser)
 
 # obtain a structured response
 query_engine = index.as_query_engine(
@@ -94,7 +94,7 @@ Langchain also offers output parsing modules that you can use within LlamaIndex.
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import LangchainOutputParser
 from llama_index.llm_predictor import StructuredLLMPredictor
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT_TMPL, DEFAULT_REFINE_PROMPT_TMPL
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
@@ -117,8 +117,8 @@ output_parser = LangchainOutputParser(lc_output_parser)
 # format each prompt with output parser instructions
 fmt_qa_tmpl = output_parser.format(DEFAULT_TEXT_QA_PROMPT_TMPL)
 fmt_refine_tmpl = output_parser.format(DEFAULT_REFINE_PROMPT_TMPL)
-qa_prompt = QuestionAnswerPrompt(fmt_qa_tmpl, output_parser=output_parser)
-refine_prompt = RefinePrompt(fmt_refine_tmpl, output_parser=output_parser)
+qa_prompt = PromptTemplate(fmt_qa_tmpl, output_parser=output_parser)
+refine_prompt = PromptTemplate(fmt_refine_tmpl, output_parser=output_parser)
 
 # query index
 query_engine = index.as_query_engine(

@@ -2,9 +2,12 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
+from llama_index.bridge.pydantic import BaseModel
+
 import llama_index
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
@@ -12,8 +15,10 @@ from llama_index.llms.base import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
-from llama_index.embeddings.utils import resolve_embed_model, EmbedType
+from llama_index.prompts.base import BasePromptTemplate
+from llama_index.text_splitter.types import TextSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +47,17 @@ def _get_default_prompt_helper(
     if num_output is not None:
         llm_metadata.num_output = num_output
     return PromptHelper.from_llm_metadata(llm_metadata=llm_metadata)
+
+
+class ServiceContextData(BaseModel):
+    llm: dict
+    llm_predictor: dict
+    prompt_helper: dict
+    embed_model: dict
+    node_parser: dict
+    text_splitter: Optional[dict]
+    metadata_extractor: Optional[dict]
+    extractors: Optional[list]
 
 
 @dataclass
@@ -76,6 +92,8 @@ class ServiceContext:
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        query_wrapper_prompt: Optional[BasePromptTemplate] = None,
         # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
@@ -101,6 +119,10 @@ class ServiceContext:
             llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
             chunk_size (Optional[int]): chunk_size
             callback_manager (Optional[CallbackManager]): CallbackManager
+            system_prompt (Optional[str]): System-wide prompt to be prepended
+                to all input prompts, used to guide system "decision making"
+            query_wrapper_prompt (Optional[BasePromptTemplate]): A format to wrap
+                passed-in input queries.
 
         Deprecated Args:
             chunk_size_limit (Optional[int]): renamed to chunk_size
@@ -133,6 +155,10 @@ class ServiceContext:
         llm_predictor = llm_predictor or LLMPredictor(llm=llm)
         if isinstance(llm_predictor, LLMPredictor):
             llm_predictor.llm.callback_manager = callback_manager
+            if system_prompt:
+                llm_predictor.system_prompt = system_prompt
+            if query_wrapper_prompt:
+                llm_predictor.query_wrapper_prompt = query_wrapper_prompt
 
         # NOTE: the embed_model isn't used in all indices
         embed_model = resolve_embed_model(embed_model)
@@ -172,6 +198,8 @@ class ServiceContext:
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        query_wrapper_prompt: Optional[BasePromptTemplate] = None,
         # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
@@ -199,9 +227,15 @@ class ServiceContext:
         llm_predictor = llm_predictor or service_context.llm_predictor
         if isinstance(llm_predictor, LLMPredictor):
             llm_predictor.llm.callback_manager = callback_manager
+            if system_prompt:
+                llm_predictor.system_prompt = system_prompt
+            if query_wrapper_prompt:
+                llm_predictor.query_wrapper_prompt = query_wrapper_prompt
 
         # NOTE: the embed_model isn't used in all indices
-        embed_model = embed_model or service_context.embed_model
+        # default to using the embed model passed from the service context
+        if embed_model == "default":
+            embed_model = service_context.embed_model
         embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
@@ -235,6 +269,91 @@ class ServiceContext:
         if not isinstance(self.llm_predictor, LLMPredictor):
             raise ValueError("llm_predictor must be an instance of LLMPredictor")
         return self.llm_predictor.llm
+
+    def to_dict(self) -> dict:
+        """Convert service context to dict."""
+        llm_dict = self.llm_predictor.llm.to_dict()
+        llm_predictor_dict = self.llm_predictor.to_dict()
+
+        embed_model_dict = self.embed_model.to_dict()
+
+        prompt_helper_dict = self.prompt_helper.to_dict()
+
+        node_parser_dict = self.node_parser.to_dict()
+
+        metadata_extractor_dict = None
+        extractor_dicts = None
+        text_splitter_dict = None
+        if isinstance(self.node_parser, SimpleNodeParser) and isinstance(
+            self.node_parser.text_splitter, TextSplitter
+        ):
+            text_splitter_dict = self.node_parser.text_splitter.to_dict()
+
+        if isinstance(self.node_parser, (SimpleNodeParser, SentenceWindowNodeParser)):
+            if self.node_parser.metadata_extractor:
+                metadata_extractor_dict = self.node_parser.metadata_extractor.to_dict()
+                extractor_dicts = []
+                for extractor in self.node_parser.metadata_extractor.extractors:
+                    extractor_dicts.append(extractor.to_dict())
+
+        return ServiceContextData(
+            llm=llm_dict,
+            llm_predictor=llm_predictor_dict,
+            prompt_helper=prompt_helper_dict,
+            embed_model=embed_model_dict,
+            node_parser=node_parser_dict,
+            text_splitter=text_splitter_dict,
+            metadata_extractor=metadata_extractor_dict,
+            extractors=extractor_dicts,
+        ).dict()
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ServiceContext":
+        from llama_index.embeddings.loading import load_embed_model
+        from llama_index.llm_predictor.loading import load_predictor
+        from llama_index.llms.loading import load_llm
+        from llama_index.node_parser.loading import load_parser
+        from llama_index.node_parser.extractors.loading import load_extractor
+        from llama_index.text_splitter.loading import load_text_splitter
+
+        service_context_data = ServiceContextData.parse_obj(data)
+
+        llm = load_llm(service_context_data.llm)
+        llm_predictor = load_predictor(service_context_data.llm_predictor, llm=llm)
+
+        embed_model = load_embed_model(service_context_data.embed_model)
+
+        prompt_helper = PromptHelper.from_dict(service_context_data.prompt_helper)
+
+        extractors = None
+        if service_context_data.extractors:
+            extractors = []
+            for extractor_dict in service_context_data.extractors:
+                extractors.append(load_extractor(extractor_dict, llm=llm))
+
+        metadata_extractor = None
+        if service_context_data.metadata_extractor:
+            metadata_extractor = load_extractor(
+                service_context_data.metadata_extractor,
+                extractors=extractors,
+            )
+
+        text_splitter = None
+        if service_context_data.text_splitter:
+            text_splitter = load_text_splitter(service_context_data.text_splitter)
+
+        node_parser = load_parser(
+            service_context_data.node_parser,
+            text_splitter=text_splitter,
+            metadata_extractor=metadata_extractor,
+        )
+
+        return cls.from_defaults(
+            llm_predictor=llm_predictor,
+            prompt_helper=prompt_helper,
+            embed_model=embed_model,
+            node_parser=node_parser,
+        )
 
 
 def set_global_service_context(service_context: Optional[ServiceContext]) -> None:

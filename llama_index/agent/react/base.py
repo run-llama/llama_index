@@ -14,7 +14,12 @@ from llama_index.agent.react.types import (
 )
 from llama_index.agent.types import BaseAgent
 from llama_index.bridge.langchain import print_text
-from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks import (
+    CallbackManager,
+    trace_method,
+    EventPayload,
+    CBEventType,
+)
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
@@ -76,6 +81,9 @@ class ReActAgent(BaseAgent):
         tools = tools or []
         chat_history = chat_history or []
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        if callback_manager is not None:
+            llm.callback_manager = callback_manager
+
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         return cls(
@@ -140,7 +148,16 @@ class ReActAgent(BaseAgent):
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
         tool = self._tools_dict[reasoning_step.action]
-        tool_output = tool.call(**reasoning_step.action_input)
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+                EventPayload.TOOL: tool.metadata,
+            },
+        ) as event:
+            tool_output = tool.call(**reasoning_step.action_input)
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -158,7 +175,15 @@ class ReActAgent(BaseAgent):
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
         tool = self._tools_dict[reasoning_step.action]
-        tool_output = await tool.acall(**reasoning_step.action_input)
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+                EventPayload.TOOL: tool.metadata,
+            },
+        ) as event:
+            tool_output = await tool.acall(**reasoning_step.action_input)
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -180,6 +205,7 @@ class ReActAgent(BaseAgent):
         # TODO: add sources from reasoning steps
         return AgentChatResponse(response=response_step.response, sources=[])
 
+    @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -210,6 +236,7 @@ class ReActAgent(BaseAgent):
         )
         return response
 
+    @trace_method("chat")
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -241,6 +268,7 @@ class ReActAgent(BaseAgent):
         )
         return response
 
+    @trace_method("chat")
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
@@ -284,6 +312,7 @@ class ReActAgent(BaseAgent):
         thread.start()
         return chat_stream_response
 
+    @trace_method("chat")
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:

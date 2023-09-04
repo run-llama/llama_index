@@ -1,9 +1,15 @@
 """Code splitter."""
 from typing import Any, List, Optional
 
+from llama_index.bridge.pydantic import Field
+
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.text_splitter.types import TextSplitter
+
+DEFAULT_CHUNK_LINES = 40
+DEFAULT_LINES_OVERLAP = 15
+DEFAULT_MAX_CHARS = 1500
 
 
 class CodeSplitter(TextSplitter):
@@ -13,6 +19,24 @@ class CodeSplitter(TextSplitter):
     https://docs.sweep.dev/blogs/chunking-2m-files
     """
 
+    language: str = Field(
+        description="The programming languge of the code being split."
+    )
+    chunk_lines: int = Field(
+        default=DEFAULT_CHUNK_LINES,
+        description="The number of lines to include in each chunk.",
+    )
+    chunk_lines_overlap: int = Field(
+        default=DEFAULT_LINES_OVERLAP,
+        description="How many lines of code each chunk overlaps with.",
+    )
+    max_chars: int = Field(
+        default=DEFAULT_MAX_CHARS, description="Maximum number of characters per chunk."
+    )
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, exclude=True
+    )
+
     def __init__(
         self,
         language: str,
@@ -21,11 +45,19 @@ class CodeSplitter(TextSplitter):
         max_chars: int = 1500,
         callback_manager: Optional[CallbackManager] = None,
     ):
-        self.language = language
-        self.chunk_lines = chunk_lines
-        self.chunk_lines_overlap = chunk_lines_overlap
-        self.max_chars = max_chars
-        self.callback_manager = callback_manager or CallbackManager([])
+        callback_manager = callback_manager or CallbackManager([])
+        super().__init__(
+            language=language,
+            chunk_lines=chunk_lines,
+            chunk_lines_overlap=chunk_lines_overlap,
+            max_chars=max_chars,
+            callback_manager=callback_manager,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "CodeSplitter"
 
     def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
         new_chunks = []

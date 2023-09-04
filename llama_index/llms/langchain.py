@@ -3,6 +3,8 @@ from typing import Any, Generator, Optional, Sequence
 
 from langchain.base_language import BaseLanguageModel
 
+from llama_index.bridge.pydantic import PrivateAttr
+
 from llama_index.callbacks import CallbackManager
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.llms.base import (
@@ -15,8 +17,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_completion_callback,
     llm_chat_callback,
+    llm_completion_callback,
 )
 from llama_index.llms.langchain_utils import (
     from_lc_messages,
@@ -28,11 +30,18 @@ from llama_index.llms.langchain_utils import (
 class LangChainLLM(LLM):
     """Adapter for a LangChain LLM."""
 
+    _llm: BaseLanguageModel = PrivateAttr()
+
     def __init__(
         self, llm: BaseLanguageModel, callback_manager: Optional[CallbackManager] = None
     ) -> None:
         self._llm = llm
-        self.callback_manager = callback_manager or CallbackManager([])
+        super().__init__(callback_manager=callback_manager)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "LangChainLLM"
 
     @property
     def llm(self) -> BaseLanguageModel:

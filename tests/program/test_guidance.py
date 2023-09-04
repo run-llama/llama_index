@@ -1,5 +1,6 @@
 import pytest
-from pydantic import BaseModel
+
+from llama_index.bridge.pydantic import BaseModel
 
 try:
     from guidance.llms import Mock as MockLLM

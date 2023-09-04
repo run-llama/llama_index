@@ -7,17 +7,13 @@ from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts import BasePromptTemplate
+from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,
     get_response_synthesizer,
 )
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SimpleInputPrompt,
-)
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
 
 
@@ -43,7 +39,12 @@ class RetrieverQueryEngine(BaseQueryEngine):
             service_context=retriever.get_service_context(),
             callback_manager=callback_manager,
         )
+
         self._node_postprocessors = node_postprocessors or []
+        callback_manager = callback_manager or CallbackManager([])
+        for node_postprocessor in self._node_postprocessors:
+            node_postprocessor.callback_manager = callback_manager
+
         super().__init__(callback_manager)
 
     @classmethod
@@ -55,9 +56,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
-        simple_template: Optional[SimpleInputPrompt] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
+        refine_template: Optional[BasePromptTemplate] = None,
+        simple_template: Optional[BasePromptTemplate] = None,
         use_async: bool = False,
         streaming: bool = False,
         # class-specific args
@@ -72,10 +73,10 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 node postprocessors.
             verbose (bool): Whether to print out debug info.
             response_mode (ResponseMode): A ResponseMode object.
-            text_qa_template (Optional[QuestionAnswerPrompt]): A QuestionAnswerPrompt
+            text_qa_template (Optional[BasePromptTemplate]): A BasePromptTemplate
                 object.
-            refine_template (Optional[RefinePrompt]): A RefinePrompt object.
-            simple_template (Optional[SimpleInputPrompt]): A SimpleInputPrompt object.
+            refine_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
+            simple_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
 
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.

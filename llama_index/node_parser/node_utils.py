@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from llama_index.schema import (
     BaseNode,
@@ -13,8 +13,7 @@ from llama_index.schema import (
     NodeRelationship,
     TextNode,
 )
-from llama_index.text_splitter import TextSplitter
-from llama_index.text_splitter.types import MetadataAwareTextSplitter
+from llama_index.text_splitter.types import MetadataAwareTextSplitter, SplitterType
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -25,7 +24,12 @@ def build_nodes_from_splits(
     document: BaseNode,
     include_metadata: bool = True,
     include_prev_next_rel: bool = False,
+    ref_doc: Optional[BaseNode] = None,
 ) -> List[TextNode]:
+    """Build nodes from splits."""
+
+    ref_doc = ref_doc or document
+
     nodes: List[TextNode] = []
     for i, text_chunk in enumerate(text_splits):
         logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
@@ -40,9 +44,7 @@ def build_nodes_from_splits(
                 embedding=document.embedding,
                 metadata=node_metadata,
                 image=document.image,
-                relationships={
-                    NodeRelationship.SOURCE: document.as_related_node_info()
-                },
+                relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
             )
             nodes.append(image_node)  # type: ignore
         elif isinstance(document, Document):
@@ -55,9 +57,20 @@ def build_nodes_from_splits(
                 metadata_seperator=document.metadata_seperator,
                 metadata_template=document.metadata_template,
                 text_template=document.text_template,
-                relationships={
-                    NodeRelationship.SOURCE: document.as_related_node_info()
-                },
+                relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
+            )
+            nodes.append(node)
+        elif isinstance(document, TextNode):
+            node = TextNode(
+                text=text_chunk,
+                embedding=document.embedding,
+                metadata=node_metadata,
+                excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
+                excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
+                metadata_seperator=document.metadata_seperator,
+                metadata_template=document.metadata_template,
+                text_template=document.text_template,
+                relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
             )
             nodes.append(node)
         else:
@@ -80,16 +93,38 @@ def build_nodes_from_splits(
 
 def get_nodes_from_document(
     document: BaseNode,
-    text_splitter: TextSplitter,
+    text_splitter: SplitterType,
     include_metadata: bool = True,
     include_prev_next_rel: bool = False,
+) -> List[TextNode]:
+    """Get nodes from document.
+
+    NOTE: this function has been deprecated, please use
+    get_nodes_from_node which supports both documents/nodes.
+
+    """
+    return get_nodes_from_node(
+        document,
+        text_splitter,
+        include_metadata=include_metadata,
+        include_prev_next_rel=include_prev_next_rel,
+        ref_doc=document,
+    )
+
+
+def get_nodes_from_node(
+    node: BaseNode,
+    text_splitter: SplitterType,
+    include_metadata: bool = True,
+    include_prev_next_rel: bool = False,
+    ref_doc: Optional[BaseNode] = None,
 ) -> List[TextNode]:
     """Get nodes from document."""
     if include_metadata:
         if isinstance(text_splitter, MetadataAwareTextSplitter):
             text_splits = text_splitter.split_text_metadata_aware(
-                text=document.get_content(metadata_mode=MetadataMode.NONE),
-                metadata_str=document.get_metadata_str(),
+                text=node.get_content(metadata_mode=MetadataMode.NONE),
+                metadata_str=node.get_metadata_str(),
             )
         else:
             logger.warning(
@@ -101,16 +136,17 @@ def get_nodes_from_document(
             )
 
             text_splits = text_splitter.split_text(
-                document.get_content(metadata_mode=MetadataMode.NONE),
+                node.get_content(metadata_mode=MetadataMode.NONE),
             )
     else:
         text_splits = text_splitter.split_text(
-            document.get_content(metadata_mode=MetadataMode.NONE),
+            node.get_content(metadata_mode=MetadataMode.NONE),
         )
 
     return build_nodes_from_splits(
         text_splits,
-        document,
+        node,
         include_metadata=include_metadata,
         include_prev_next_rel=include_prev_next_rel,
+        ref_doc=ref_doc,
     )

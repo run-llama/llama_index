@@ -1,7 +1,6 @@
 """Kùzu graph store index."""
 from typing import Any, Dict, List, Optional
 
-
 from llama_index.graph_stores.types import GraphStore
 
 
@@ -61,7 +60,7 @@ class KuzuGraphStore(GraphStore):
         return retval
 
     def get_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2
+        self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> Dict[str, List[List[str]]]:
         """Get depth-aware rel map."""
         rel_wildcard = "r:%s*1..%d" % (self.rel_table_name, depth)
@@ -70,7 +69,7 @@ class KuzuGraphStore(GraphStore):
             rel_wildcard,
             self.node_table_name,
         )
-        return_clause = "RETURN n1, r, n2"
+        return_clause = "RETURN n1, r, n2 LIMIT %d" % limit
         params = []
         if subjs is not None:
             for i, curr_subj in enumerate(subjs):
@@ -106,8 +105,6 @@ class KuzuGraphStore(GraphStore):
                 curr_path.append(predicate)
             # Add the last node
             curr_path.append(obj["ID"])
-            # Remove subject as it is the key of the map
-            curr_path = curr_path[1:]
             if subj["ID"] not in retval:
                 retval[subj["ID"]] = []
             retval[subj["ID"]].append(curr_path)

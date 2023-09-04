@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import List, Optional, Sequence, cast
 
-from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.bridge.langchain import get_color_mapping, print_text
@@ -28,8 +28,8 @@ class SubQuestionAnswerPair(BaseModel):
     """
 
     sub_q: SubQuestion
-    answer: Optional[str]
-    sources: Optional[List[NodeWithScore]]
+    answer: Optional[str] = None
+    sources: Optional[List[NodeWithScore]] = None
 
 
 class SubQuestionQueryEngine(BaseQueryEngine):

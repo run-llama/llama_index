@@ -8,7 +8,7 @@ class IndexStructType(str, Enum):
 
     Attributes:
         TREE ("tree"): Tree index. See :ref:`Ref-Indices-Tree` for tree indices.
-        LIST ("list"): List index. See :ref:`Ref-Indices-List` for list indices.
+        LIST ("list"): Summary index. See :ref:`Ref-Indices-List` for summary indices.
         KEYWORD_TABLE ("keyword_table"): Keyword table index. See
             :ref:`Ref-Indices-Table`
             for keyword table indices.
@@ -85,6 +85,7 @@ class IndexStructType(str, Enum):
     KG = "kg"
     SIMPLE_KG = "simple_kg"
     NEBULAGRAPH = "nebulagraph"
+    FALKORDB = "falkordb"
 
     # EMPTY
     EMPTY = "empty"
@@ -93,3 +94,6 @@ class IndexStructType(str, Enum):
     PANDAS = "pandas"
 
     DOCUMENT_SUMMARY = "document_summary"
+
+    # Managed
+    VECTARA = "vectara"
