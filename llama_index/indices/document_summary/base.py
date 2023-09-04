@@ -9,29 +9,33 @@ import logging
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union, cast
-from llama_index.utils import get_tqdm_iterable
 
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import Response
-from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
+from llama_index.response_synthesizers import (
+    BaseSynthesizer,
+    ResponseMode,
+    get_response_synthesizer,
+)
 from llama_index.schema import (
     BaseNode,
-    NodeWithScore,
     NodeRelationship,
+    NodeWithScore,
     RelatedNodeInfo,
     TextNode,
 )
 from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.utils import get_tqdm_iterable
 
 logger = logging.getLogger(__name__)
 
 
 DEFAULT_SUMMARY_QUERY = (
-    "Give a concise summary of this document. Also describe some of the questions "
-    "that this document can answer. "
+    "Describe what the provided text is about. "
+    "Also describe some of the questions that this text can answer. "
 )
 
 
@@ -47,7 +51,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     """Document Summary Index.
 
     Args:
-        summary_template (Optional[SummaryPrompt]): A Summary Prompt
+        summary_template (Optional[BasePromptTemplate]): A Summary Prompt
             (see :ref:`Prompt-Templates`).
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
 
@@ -67,7 +71,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     ) -> None:
         """Initialize params."""
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            service_context=service_context,
+            service_context=service_context, response_mode=ResponseMode.TREE_SUMMARIZE
         )
         self._summary_query = summary_query or "summarize:"
         super().__init__(

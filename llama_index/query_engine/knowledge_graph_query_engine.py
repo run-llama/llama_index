@@ -1,7 +1,7 @@
 """ Knowledge Graph Query Engine"""
 
 import logging
-from typing import Any, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 from llama_index.bridge.langchain import print_text
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -12,7 +12,7 @@ from llama_index.graph_stores.registery import (
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.base import Prompt, PromptType
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
@@ -49,13 +49,36 @@ Question: {query_str}
 
 NebulaGraph Cypher dialect query:
 """
-DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT = Prompt(
+DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT = PromptTemplate(
     DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT_TMPL,
+    prompt_type=PromptType.TEXT_TO_GRAPH_QUERY,
+)
+
+# Prompt
+DEFAULT_NEO4J_NL2CYPHER_PROMPT_TMPL = (
+    "Task:Generate Cypher statement to query a graph database.\n"
+    "Instructions:\n"
+    "Use only the provided relationship types and properties in the schema.\n"
+    "Do not use any other relationship types or properties that are not provided.\n"
+    "Schema:\n"
+    "{schema}\n"
+    "Note: Do not include any explanations or apologies in your responses.\n"
+    "Do not respond to any questions that might ask anything else than for you "
+    "to construct a Cypher statement. \n"
+    "Do not include any text except the generated Cypher statement.\n"
+    "\n"
+    "The question is:\n"
+    "{query_str}\n"
+)
+
+DEFAULT_NEO4J_NL2CYPHER_PROMPT = PromptTemplate(
+    DEFAULT_NEO4J_NL2CYPHER_PROMPT_TMPL,
     prompt_type=PromptType.TEXT_TO_GRAPH_QUERY,
 )
 
 DEFAULT_NL2GRAPH_PROMPT_MAP = {
     GraphStoreType.NEBULA: DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT,
+    GraphStoreType.NEO4J: DEFAULT_NEO4J_NL2CYPHER_PROMPT,
 }
 
 DEFAULT_KG_RESPONSE_ANSWER_PROMPT_TMPL = """
@@ -70,7 +93,7 @@ Graph response: {kg_response_str}
 Response: 
 """
 
-DEFAULT_KG_RESPONSE_ANSWER_PROMPT = Prompt(
+DEFAULT_KG_RESPONSE_ANSWER_PROMPT = PromptTemplate(
     DEFAULT_KG_RESPONSE_ANSWER_PROMPT_TMPL,
     prompt_type=PromptType.QUESTION_ANSWER,
 )
@@ -96,8 +119,8 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         self,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
-        graph_query_synthesis_prompt: Optional[Prompt] = None,
-        graph_response_answer_prompt: Optional[Prompt] = None,
+        graph_query_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        graph_response_answer_prompt: Optional[BasePromptTemplate] = None,
         refresh_schema: bool = False,
         verbose: bool = False,
         response_synthesizer: Optional[BaseSynthesizer] = None,
@@ -162,37 +185,29 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
 
         return graph_store_query
 
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Query the graph store."""
-        query_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
-
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Get nodes for response."""
         graph_store_query = self.generate_query(query_bundle.query_str)
         if self._verbose:
-            print_text(f"Graph Store Query: {graph_store_query}\n", color="yellow")
-        logger.info(f"Graph Store Query: {graph_store_query}")
-        retrieve_id = self.callback_manager.on_event_start(
-            CBEventType.RETRIEVE,
-            payload={
-                EventPayload.QUERY_STR: graph_store_query,
-            },
-        )
-        # Get the graph store response
-        graph_store_response = self.graph_store.query(query=graph_store_query)
-        if self._verbose:
-            print_text(
-                f"Graph Store Response: {graph_store_response}\n", color="yellow"
-            )
-        logger.info(f"Graph Store Response: {graph_store_response}")
+            print_text(f"Graph Store Query:\n{graph_store_query}\n", color="yellow")
+        logger.debug(f"Graph Store Query:\n{graph_store_query}")
 
-        self.callback_manager.on_event_end(
+        with self.callback_manager.event(
             CBEventType.RETRIEVE,
-            payload={EventPayload.RESPONSE: graph_store_response},
-            event_id=retrieve_id,
-        )
+            payload={EventPayload.QUERY_STR: graph_store_query},
+        ) as retrieve_event:
+            # Get the graph store response
+            graph_store_response = self.graph_store.query(query=graph_store_query)
+            if self._verbose:
+                print_text(
+                    f"Graph Store Response:\n{graph_store_response}\n",
+                    color="yellow",
+                )
+            logger.debug(f"Graph Store Response:\n{graph_store_response}")
 
-        prompt_string: Sequence = self._graph_response_answer_prompt.format(
+            retrieve_event.on_end(payload={EventPayload.RESPONSE: graph_store_response})
+
+        retrieved_graph_context: Sequence = self._graph_response_answer_prompt.format(
             query_str=query_bundle.query_str,
             kg_query_str=graph_store_query,
             kg_response_str=graph_store_response,
@@ -200,7 +215,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
 
         node = NodeWithScore(
             node=TextNode(
-                text=prompt_string,
+                text=retrieved_graph_context,
                 score=1.0,
                 metadata={
                     "query_str": query_bundle.query_str,
@@ -210,55 +225,50 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
                 },
             )
         )
+        return [node]
 
-        response = self._response_synthesizer.synthesize(
-            query=query_bundle,
-            nodes=[node],
-        )
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Query the graph store."""
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
+            nodes: List[NodeWithScore] = self._retrieve(query_bundle)
 
-        if self._verbose:
-            print_text(f"Final Response: {response}\n", color="green")
+            response = self._response_synthesizer.synthesize(
+                query=query_bundle,
+                nodes=nodes,
+            )
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=query_id,
-        )
+            if self._verbose:
+                print_text(f"Final Response: {response}\n", color="green")
+
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
 
         return response
 
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Query the graph store."""
-        query_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        )
-
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         graph_store_query = await self.agenerate_query(query_bundle.query_str)
         if self._verbose:
-            print_text(f"Graph Store Query: {graph_store_query}\n", color="yellow")
-        logger.info(f"Graph Store Query: {graph_store_query}")
-        retrieve_id = self.callback_manager.on_event_start(
-            CBEventType.RETRIEVE,
-            payload={
-                EventPayload.QUERY_STR: graph_store_query,
-            },
-        )
-        # Get the graph store response
-        # TBD: This is a blocking call. We need to make it async.
-        graph_store_response = self.graph_store.query(query=graph_store_query)
-        if self._verbose:
-            print_text(
-                f"Graph Store Response: {graph_store_response}\n", color="yellow"
-            )
-        logger.info(f"Graph Store Response: {graph_store_response}")
+            print_text(f"Graph Store Query:\n{graph_store_query}\n", color="yellow")
+        logger.debug(f"Graph Store Query:\n{graph_store_query}")
 
-        self.callback_manager.on_event_end(
+        with self.callback_manager.event(
             CBEventType.RETRIEVE,
-            payload={EventPayload.RESPONSE: graph_store_response},
-            event_id=retrieve_id,
-        )
+            payload={EventPayload.QUERY_STR: graph_store_query},
+        ) as retrieve_event:
+            # Get the graph store response
+            # TBD: This is a blocking call. We need to make it async.
+            graph_store_response = self.graph_store.query(query=graph_store_query)
+            if self._verbose:
+                print_text(
+                    f"Graph Store Response:\n{graph_store_response}\n",
+                    color="yellow",
+                )
+            logger.debug(f"Graph Store Response:\n{graph_store_response}")
 
-        prompt_string: Sequence = self._graph_response_answer_prompt.format(
+            retrieve_event.on_end(payload={EventPayload.RESPONSE: graph_store_response})
+
+        retrieved_graph_context: Sequence = self._graph_response_answer_prompt.format(
             query_str=query_bundle.query_str,
             kg_query_str=graph_store_query,
             kg_response_str=graph_store_response,
@@ -266,7 +276,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
 
         node = NodeWithScore(
             node=TextNode(
-                text=prompt_string,
+                text=retrieved_graph_context,
                 score=1.0,
                 metadata={
                     "query_str": query_bundle.query_str,
@@ -276,19 +286,22 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
                 },
             )
         )
+        return [node]
 
-        response = await self._response_synthesizer.asynthesize(
-            query=query_bundle,
-            nodes=[node],
-        )
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Query the graph store."""
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
+            nodes = await self._aretrieve(query_bundle)
+            response = await self._response_synthesizer.asynthesize(
+                query=query_bundle,
+                nodes=nodes,
+            )
 
-        if self._verbose:
-            print_text(f"Final Response: {response}\n", color="green")
+            if self._verbose:
+                print_text(f"Final Response: {response}\n", color="green")
 
-        self.callback_manager.on_event_end(
-            CBEventType.QUERY,
-            payload={EventPayload.RESPONSE: response},
-            event_id=query_id,
-        )
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
 
         return response

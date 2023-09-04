@@ -84,25 +84,25 @@ for year in years:
 
 Since we have access to documents of 4 years, we may not only want to ask questions regarding the 10-K document of a given year, but ask questions that require analysis over all 10-K filings. 
 
-To address this, we compose a "graph" which consists of a list index defined over the 4 vector indices. Querying this graph would first retrieve information from each vector index, and combine information together via the list index.
+To address this, we compose a "graph" which consists of a summary index defined over the 4 vector indices. Querying this graph would first retrieve information from each vector index, and combine information together via the summary index.
 
 ```python
-from llama_index import ListIndex, LLMPredictor, ServiceContext, load_graph_from_storage
-from langchain import OpenAI
+from llama_index import SummaryIndex, LLMPredictor, ServiceContext, load_graph_from_storage
+from llama_index.llms import OpenAI
 from llama_index.indices.composability import ComposableGraph
 
 # describe each index to help traversal of composed graph
 index_summaries = [f"UBER 10-k Filing for {year} fiscal year" for year in years]
 
 # define an LLMPredictor set number of output tokens
-llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, max_tokens=512))
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+llm = OpenAI(temperature=0, max_tokens=512, model="gpt-4")
+service_context = ServiceContext.from_defaults(llm=llm)
 storage_context = StorageContext.from_defaults()
 
-# define a list index over the vector indices
+# define a summary index over the vector indices
 # allows us to synthesize information across each index
 graph = ComposableGraph.from_indices(
-    ListIndex,
+    SummaryIndex,
     [index_set[y] for y in years], 
     index_summaries=index_summaries,
     service_context=service_context,
@@ -132,6 +132,7 @@ LlamaIndex provides some wrappers around indices and graphs so that they can be 
 from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.agents import initialize_agent
 
+from llama_index import LLMPredictor
 from llama_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig
 ```
 
@@ -144,7 +145,7 @@ Below, we define a `IndexToolConfig` for our graph. Note that we also import a `
 # define a decompose transform
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
-    llm_predictor, verbose=True
+    LLMPredictor(llm=llm), verbose=True
 )
 
 # define custom retrievers

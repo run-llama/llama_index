@@ -382,10 +382,10 @@ class MilvusVectorStore(VectorStore):
 
         # Adds ability for multiple doc delete in future.
         doc_ids: List[str]
-        if type(ref_doc_id) != list:
-            doc_ids = [ref_doc_id]
-        else:
+        if isinstance(ref_doc_id, list):
             doc_ids = ref_doc_id  # type: ignore
+        else:
+            doc_ids = [ref_doc_id]
 
         try:
             # Begin by querying for the primary keys to delete

@@ -7,15 +7,10 @@ from contextlib import contextmanager
 from typing import Optional, List, Any, Set, Tuple, Dict
 
 from llama_index.indices.service_context import ServiceContext
-from llama_index.response_synthesizers import (
-    ResponseMode,
-    get_response_synthesizer,
-)
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import QuestionAnswerPrompt
 
 
 from llama_index.program.predefined.evaporate.prompts import (
@@ -167,6 +162,12 @@ class EvaporateExtractor:
         self, nodes: List[BaseNode], field: str, expected_output: Optional[Any] = None
     ) -> str:
         """Extract function from nodes."""
+        # avoid circular import
+        from llama_index.response_synthesizers import (
+            ResponseMode,
+            get_response_synthesizer,
+        )
+
         function_field = get_function_field_from_attribute(field)
         # TODO: replace with new response synthesis module
 
@@ -177,12 +178,11 @@ class EvaporateExtractor:
         else:
             expected_output_str = ""
 
-        new_prompt = self._fn_generate_prompt.partial_format(
+        qa_prompt = self._fn_generate_prompt.partial_format(
             attribute=field,
             function_field=function_field,
             expected_output_str=expected_output_str,
         )
-        qa_prompt = QuestionAnswerPrompt.from_prompt(new_prompt)
 
         response_synthesizer = get_response_synthesizer(
             service_context=self._service_context,

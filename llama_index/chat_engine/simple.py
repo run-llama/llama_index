@@ -1,16 +1,17 @@
 import asyncio
 from threading import Thread
-from typing import Any, List, Type, Optional
+from typing import Any, List, Optional, Type
 
 from llama_index.chat_engine.types import (
-    BaseChatEngine,
     AgentChatResponse,
+    BaseChatEngine,
     StreamingAgentChatResponse,
 )
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.callbacks import CallbackManager, trace_method
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -25,10 +26,12 @@ class SimpleChatEngine(BaseChatEngine):
         llm: LLM,
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._llm = llm
         self._memory = memory
         self._prefix_messages = prefix_messages
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @classmethod
     def from_defaults(
@@ -48,7 +51,7 @@ class SimpleChatEngine(BaseChatEngine):
         llm = service_context.llm_predictor.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if system_prompt is not None:
             if prefix_messages is not None:
@@ -59,8 +62,14 @@ class SimpleChatEngine(BaseChatEngine):
 
         prefix_messages = prefix_messages or []
 
-        return cls(llm=llm, memory=memory, prefix_messages=prefix_messages)
+        return cls(
+            llm=llm,
+            memory=memory,
+            prefix_messages=prefix_messages,
+            callback_manager=service_context.callback_manager,
+        )
 
+    @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -75,6 +84,7 @@ class SimpleChatEngine(BaseChatEngine):
 
         return AgentChatResponse(response=str(chat_response.message.content))
 
+    @trace_method("chat")
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
@@ -93,6 +103,7 @@ class SimpleChatEngine(BaseChatEngine):
 
         return chat_response
 
+    @trace_method("chat")
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -107,6 +118,7 @@ class SimpleChatEngine(BaseChatEngine):
 
         return AgentChatResponse(response=str(chat_response.message.content))
 
+    @trace_method("chat")
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
@@ -116,7 +128,7 @@ class SimpleChatEngine(BaseChatEngine):
         all_messages = self._prefix_messages + self._memory.get()
 
         chat_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(all_messages)
+            achat_stream=await self._llm.astream_chat(all_messages)
         )
         thread = Thread(
             target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),

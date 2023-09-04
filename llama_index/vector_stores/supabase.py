@@ -12,9 +12,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 logger = logging.getLogger(__name__)
@@ -155,7 +155,7 @@ class SupabaseVectorStore(VectorStore):
             filters = self._to_vecs_filters(query.filters)
 
         results = self._collection.query(
-            query_vector=query.query_embedding,
+            data=query.query_embedding,
             limit=query.similarity_top_k,
             filters=filters,
             include_value=True,

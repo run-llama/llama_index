@@ -9,22 +9,23 @@ from llama_index.bridge.langchain import get_color_mapping, print_text
 
 from llama_index.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.indices.base import BaseIndex
-from llama_index.indices.list.base import ListIndex, ListRetrieverMode
+from llama_index.indices.list.base import SummaryIndex, ListRetrieverMode
 from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
 from llama_index.indices.vector_store import VectorStoreIndex
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.schema import Document
 
 DEFAULT_INDEX_CLASSES: List[Type[BaseIndex]] = [
     VectorStoreIndex,
     TreeIndex,
-    ListIndex,
+    SummaryIndex,
 ]
 
 INDEX_SPECIFIC_QUERY_MODES_TYPE = Dict[Type[BaseIndex], List[str]]
 
 DEFAULT_MODES: INDEX_SPECIFIC_QUERY_MODES_TYPE = {
     TreeIndex: [e.value for e in TreeRetrieverMode],
-    ListIndex: [e.value for e in ListRetrieverMode],
+    SummaryIndex: [e.value for e in ListRetrieverMode],
     VectorStoreIndex: ["default"],
 }
 
@@ -149,8 +150,11 @@ class Playground:
                 service_context = index.service_context
                 token_counter = TokenCountingHandler()
                 callback_manager = CallbackManager([token_counter])
-                service_context.llm_predictor.callback_manager = callback_manager
-                service_context.embed_model.callback_manager = callback_manager
+                if isinstance(service_context.llm_predictor, LLMPredictor):
+                    service_context.llm_predictor.llm.callback_manager = (
+                        callback_manager
+                    )
+                    service_context.embed_model.callback_manager = callback_manager
 
                 try:
                     query_engine = index.as_query_engine(

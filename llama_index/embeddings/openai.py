@@ -1,19 +1,23 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import openai
+
+from llama_index.bridge.pydantic import Field, PrivateAttr
+
 from tenacity import (
     retry,
-    stop_all,
-    stop_after_delay,
     stop_after_attempt,
+    stop_after_delay,
+    stop_all,
     wait_random_exponential,
 )
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.llms.openai_utils import validate_openai_api_key
 
 
 class OpenAIEmbeddingMode(str, Enum):
@@ -111,7 +115,13 @@ def get_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    text = text.replace("\n", " ")
+    if (
+        engine is not None
+        and engine.endswith("001")
+        and not engine.endswith("code-001")
+    ):
+        # replace newlines, which can negatively affect performance on text-001 models.
+        text = text.replace("\n", " ")
     return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
         "embedding"
     ]
@@ -133,8 +143,13 @@ async def aget_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    # replace newlines, which can negatively affect performance.
-    text = text.replace("\n", " ")
+    if (
+        engine is not None
+        and engine.endswith("001")
+        and not engine.endswith("code-001")
+    ):
+        # replace newlines, which can negatively affect performance on text-001 models.
+        text = text.replace("\n", " ")
 
     return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))[
         "data"
@@ -159,8 +174,13 @@ def get_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    # replace newlines, which can negatively affect performance.
-    list_of_text = [text.replace("\n", " ") for text in list_of_text]
+    if (
+        engine is not None
+        and engine.endswith("001")
+        and not engine.endswith("code-001")
+    ):
+        # replace newlines, which can negatively affect performance on text-001 models.
+        list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
@@ -184,8 +204,13 @@ async def aget_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    # replace newlines, which can negatively affect performance.
-    list_of_text = [text.replace("\n", " ") for text in list_of_text]
+    if (
+        engine is not None
+        and engine.endswith("001")
+        and not engine.endswith("code-001")
+    ):
+        # replace newlines, which can negatively affect performance on text-001 models.
+        list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = (
         await openai.Embedding.acreate(input=list_of_text, model=engine, **kwargs)
@@ -231,28 +256,59 @@ class OpenAIEmbedding(BaseEmbedding):
             Only available for using AzureOpenAI.
     """
 
+    deployment_name: Optional[str]
+    openai_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+    _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
+    _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
+
     def __init__(
         self,
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
         deployment_name: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-        tokenizer: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
+        # Validate that either the openai.api_key property
+        # or OPENAI_API_KEY env variable are set to a valid key
+        # Raises ValueError if missing or doesn't match valid format
+        validate_openai_api_key(
+            kwargs.get("api_key", None), kwargs.get("api_type", None)
+        )
+
+        self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
+        self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
+
         """Init params."""
-        super().__init__(embed_batch_size, tokenizer, callback_manager)
-        self.deployment_name = deployment_name
-        self.query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
-        self.text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
-        self.openai_kwargs = kwargs
+        super().__init__(
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+            model_name=model,
+            deployment_name=deployment_name,
+            openai_kwargs=kwargs,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "OpenAIEmbedding"
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return get_embedding(
             query,
-            engine=self.query_engine,
+            engine=self._query_engine,
+            deployment_id=self.deployment_name,
+            **self.openai_kwargs,
+        )
+
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        """The asynchronous version of _get_query_embedding."""
+        return await aget_embedding(
+            query,
+            engine=self._query_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -261,7 +317,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """Get text embedding."""
         return get_embedding(
             text,
-            engine=self.text_engine,
+            engine=self._text_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -270,7 +326,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """Asynchronously get text embedding."""
         return await aget_embedding(
             text,
-            engine=self.text_engine,
+            engine=self._text_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -284,7 +340,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """
         return get_embeddings(
             texts,
-            engine=self.text_engine,
+            engine=self._text_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )
@@ -293,7 +349,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """Asynchronously get text embeddings."""
         return await aget_embeddings(
             texts,
-            engine=self.text_engine,
+            engine=self._text_engine,
             deployment_id=self.deployment_name,
             **self.openai_kwargs,
         )

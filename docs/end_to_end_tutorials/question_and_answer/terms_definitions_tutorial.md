@@ -77,22 +77,20 @@ Now that we are able to define LLM settings and upload text, we can try using Ll
 We can add the following functions to both initialize our LLM, as well as use it to extract terms from the input text.
 
 ```python
-from llama_index import Document, ListIndex, LLMPredictor, ServiceContext, load_index_from_storage
+from llama_index import Document, SummaryIndex, LLMPredictor, ServiceContext, load_index_from_storage
+from llama_index.llms import OpenAI
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
     os.environ['OPENAI_API_KEY'] = api_key
-    if llm_name == "text-davinci-003":
-        return OpenAI(temperature=model_temperature, model_name=llm_name, max_tokens=max_tokens)
-    else:
-        return ChatOpenAI(temperature=model_temperature, model_name=llm_name, max_tokens=max_tokens)
+    return OpenAI(temperature=model_temperature, model=llm_name, max_tokens=max_tokens)
 
 def extract_terms(documents, term_extract_str, llm_name, model_temperature, api_key):
     llm = get_llm(llm_name, model_temperature, api_key, max_tokens=1024)
 
-    service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm),
+    service_context = ServiceContext.from_defaults(llm=llm,
                                                    chunk_size=1024)
 
-    temp_index = ListIndex.from_documents(documents, service_context=service_context)
+    temp_index = SummaryIndex.from_documents(documents, service_context=service_context)
     query_engine = temp_index.as_query_engine(response_mode="tree_summarize")
     terms_definitions = str(query_engine.query(term_extract_str))
     terms_definitions = [x for x in terms_definitions.split("\n") if x and 'Term:' in x and 'Definition:' in x]
@@ -122,7 +120,7 @@ There's a lot going on now, let's take a moment to go over what is happening.
 
 `extract_terms()` is where all the good stuff happens. First, we call `get_llm()` with `max_tokens=1024`, since we don't want to limit the model too much when it is extracting our terms and definitions (the default is 256 if not set). Then, we define our `ServiceContext` object, aligning `num_output` with our `max_tokens` value, as well as setting the chunk size to be no larger than the output. When documents are indexed by Llama Index, they are broken into chunks (also called nodes) if they are large, and `chunk_size` sets the size for these chunks.
 
-Next, we create a temporary list index and pass in our service context. A list index will read every single piece of text in our index, which is perfect for extracting terms. Finally, we use our pre-defined query text to extract terms, using `response_mode="tree_summarize`. This response mode will generate a tree of summaries from the bottom up, where each parent summarizes its children. Finally, the top of the tree is returned, which will contain all our extracted terms and definitions.
+Next, we create a temporary summary index and pass in our service context. A summary index will read every single piece of text in our index, which is perfect for extracting terms. Finally, we use our pre-defined query text to extract terms, using `response_mode="tree_summarize`. This response mode will generate a tree of summaries from the bottom up, where each parent summarizes its children. Finally, the top of the tree is returned, which will contain all our extracted terms and definitions.
 
 Lastly, we do some minor post processing. We assume the model followed instructions and put a term/definition pair on each line. If a line is missing the `Term:` or `Definition:` labels, we skip it. Then, we convert this to a dictionary for easy storage!
 
@@ -148,7 +146,7 @@ def initialize_index(llm_name, model_temperature, api_key):
     """Create the VectorStoreIndex object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
-    service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
+    service_context = ServiceContext.from_defaults(llm=llm)
 
     index = VectorStoreIndex([], service_context=service_context)
 
@@ -273,7 +271,7 @@ def initialize_index(llm_name, model_temperature, api_key):
     """Load the Index object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
-    service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
+    service_context = ServiceContext.from_defaults(llm=llm)
 
     index = load_index_from_storage(service_context=service_context)
 
@@ -300,14 +298,9 @@ This is due to the concept of "refining" answers in Llama Index. Since we are qu
 So, the refine process seems to be messing with our results! Rather than appending extra instructions to the `query_str`, remove that, and Llama Index will let us provide our own custom prompts! Let's create those now, using the [default prompts](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py) and [chat specific prompts](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py) as a guide. Using a new file `constants.py`, let's create some new query templates:
 
 ```python
-from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts.chat import (
-    AIMessagePromptTemplate,
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-)
-
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts import PromptTemplate, SelectorPromptTemplate, ChatPromptTemplate
+from llama_index.prompts.utils import is_chat_model
+from llama_index.llms.base import ChatMessage, MessageRole
 
 # Text QA templates
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
@@ -318,7 +311,7 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "Given the context information answer the following question "
     "(if you don't know the answer, use the best of your knowledge): {query_str}\n"
 )
-TEXT_QA_TEMPLATE = QuestionAnswerPrompt(DEFAULT_TEXT_QA_PROMPT_TMPL)
+TEXT_QA_TEMPLATE = PromptTemplate(DEFAULT_TEXT_QA_PROMPT_TMPL)
 
 # Refine templates
 DEFAULT_REFINE_PROMPT_TMPL = (
@@ -332,32 +325,29 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "Given the new context and using the best of your knowledge, improve the existing answer. "
     "If you can't improve the existing answer, just repeat it again."
 )
-DEFAULT_REFINE_PROMPT = RefinePrompt(DEFAULT_REFINE_PROMPT_TMPL)
+DEFAULT_REFINE_PROMPT = PromptTemplate(DEFAULT_REFINE_PROMPT_TMPL)
 
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
-    HumanMessagePromptTemplate.from_template("{query_str}"),
-    AIMessagePromptTemplate.from_template("{existing_answer}"),
-    HumanMessagePromptTemplate.from_template(
-        "We have the opportunity to refine the above answer "
+    ChatMessage(content="{query_str}", role=MessageRole.USER),
+    ChatMessage(content="{existing_answer}", role=MessageRole.ASSISTANT),
+    ChatMessage(
+        content="We have the opportunity to refine the above answer "
         "(only if needed) with some more context below.\n"
         "------------\n"
         "{context_msg}\n"
         "------------\n"
         "Given the new context and using the best of your knowledge, improve the existing answer. "
-    "If you can't improve the existing answer, just repeat it again."
+        "If you can't improve the existing answer, just repeat it again.",
+        role=MessageRole.USER,
     ),
 ]
 
-CHAT_REFINE_PROMPT_LC = ChatPromptTemplate.from_messages(CHAT_REFINE_PROMPT_TMPL_MSGS)
-CHAT_REFINE_PROMPT = RefinePrompt.from_langchain_prompt(CHAT_REFINE_PROMPT_LC)
+CHAT_REFINE_PROMPT = ChatPromptTemplate(CHAT_REFINE_PROMPT_TMPL_MSGS)
 
 # refine prompt selector
-DEFAULT_REFINE_PROMPT_SEL_LC = ConditionalPromptSelector(
-    default_prompt=DEFAULT_REFINE_PROMPT.get_langchain_prompt(),
-    conditionals=[(is_chat_model, CHAT_REFINE_PROMPT.get_langchain_prompt())],
-)
-REFINE_TEMPLATE = RefinePrompt(
-    langchain_prompt_selector=DEFAULT_REFINE_PROMPT_SEL_LC
+REFINE_TEMPLATE = SelectorPromptTemplate(
+    default_template=DEFAULT_REFINE_PROMPT,
+    conditionals=[(is_chat_model, CHAT_REFINE_PROMPT)],
 )
 ```
 

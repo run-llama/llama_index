@@ -328,7 +328,7 @@ class BaseIndex(Generic[IS], ABC):
 
     @abstractmethod
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        pass
+        ...
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
@@ -367,6 +367,14 @@ class BaseIndex(Generic[IS], ABC):
                 query_engine=query_engine,
                 **kwargs,
             )
+        elif chat_mode == ChatMode.CONTEXT:
+            from llama_index.chat_engine import ContextChatEngine
+
+            return ContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                **kwargs,
+            )
+
         elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
             # NOTE: lazy import
             from llama_index.agent import OpenAIAgent, ReActAgent

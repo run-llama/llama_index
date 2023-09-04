@@ -1,11 +1,12 @@
 """Langchain Embedding Wrapper Module."""
 
+from typing import List, Optional
 
-from typing import Any, List
+from llama_index.bridge.pydantic import PrivateAttr
 
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
-
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.callbacks import CallbackManager
+from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 
 class LangchainEmbedding(BaseEmbedding):
@@ -16,14 +17,47 @@ class LangchainEmbedding(BaseEmbedding):
             embeddings class.
     """
 
-    def __init__(self, langchain_embedding: LCEmbeddings, **kwargs: Any) -> None:
-        """Init params."""
-        super().__init__(**kwargs)
-        self._langchain_embedding = langchain_embedding
+    _langchain_embedding: LCEmbeddings = PrivateAttr()
+
+    def __init__(
+        self,
+        langchain_embeddings: LCEmbeddings,
+        model_name: Optional[str] = None,
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        callback_manager: Optional[CallbackManager] = None,
+    ):
+        # attempt to get a useful model name
+        if model_name is not None:
+            model_name = model_name
+        elif hasattr(langchain_embeddings, "model_name"):
+            model_name = langchain_embeddings.model_name
+        elif hasattr(langchain_embeddings, "model"):
+            model_name = langchain_embeddings.model
+        else:
+            model_name = type(langchain_embeddings).__name__
+
+        self._langchain_embedding = langchain_embeddings
+        super().__init__(
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+            model_name=model_name,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "LangchainEmbedding"
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return self._langchain_embedding.embed_query(query)
+
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        return await self._langchain_embedding.aembed_query(query)
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        embeds = await self._langchain_embedding.aembed_documents([text])
+        return embeds[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""

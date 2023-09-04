@@ -37,12 +37,12 @@ For instance, a summarization query could look like one of the following:
 - "What is a summary of this collection of text?"
 - "Give me a summary of person X's experience with the company."
 
-In general, a list index would be suited for this use case. A list index by default goes through all the data.
+In general, a summary index would be suited for this use case. A summary index by default goes through all the data.
 
 Empirically, setting `response_mode="tree_summarize"` also leads to better summarization results.
 
 ```python
-index = ListIndex.from_documents(documents)
+index = SummaryIndex.from_documents(documents)
 
 query_engine = index.as_query_engine(
     response_mode="tree_summarize"
@@ -68,17 +68,17 @@ Here are some relevant resources:
 ### Synthesis over Heterogeneous Data
 
 LlamaIndex supports synthesizing across heterogeneous data sources. This can be done by composing a graph over your existing data.
-Specifically, compose a list index over your subindices. A list index inherently combines information for each node; therefore
+Specifically, compose a summary index over your subindices. A summary index inherently combines information for each node; therefore
 it can synthesize information across your heterogeneous data sources.
 
 ```python
-from llama_index import VectorStoreIndex, ListIndex
+from llama_index import VectorStoreIndex, SummaryIndex
 from llama_index.indices.composability import ComposableGraph
 
 index1 = VectorStoreIndex.from_documents(notion_docs)
 index2 = VectorStoreIndex.from_documents(slack_docs)
 
-graph = ComposableGraph.from_indices(ListIndex, [index1, index2], index_summaries=["summary1", "summary2"])
+graph = ComposableGraph.from_indices(SummaryIndex, [index1, index2], index_summaries=["summary1", "summary2"])
 query_engine = graph.as_query_engine()
 response = query_engine.query("<query_str>")
 
@@ -146,7 +146,7 @@ You can explicitly perform compare/contrast queries with a **query transformatio
 ```python
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
-    llm_predictor_chatgpt, verbose=True
+    service_context.llm_predictor, verbose=True
 )
 ```
 

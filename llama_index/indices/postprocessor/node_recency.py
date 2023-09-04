@@ -1,15 +1,16 @@
 """Node recency post-processor."""
-from pydantic import Field
-from typing import Optional, List, Set
-import pandas as pd
-import numpy as np
 from datetime import datetime
+from typing import List, Optional, Set
 
-from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
+import numpy as np
+import pandas as pd
+
+from llama_index.bridge.pydantic import Field
+
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import NodeWithScore, MetadataMode
-
+from llama_index.schema import MetadataMode, NodeWithScore
 
 # NOTE: currently not being used
 # DEFAULT_INFER_RECENCY_TMPL = (
@@ -40,7 +41,7 @@ from llama_index.schema import NodeWithScore, MetadataMode
 #         raise ValueError(f"Invalid recency prediction: {pred}.")
 
 
-class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
+class FixedRecencyPostprocessor(BaseNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
@@ -57,6 +58,10 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
     # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "FixedRecencyPostprocessor"
+
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -66,17 +71,6 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
 
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
-
-        # query_bundle = cast(QueryBundle, metadata["query_bundle"])
-        # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-        # raw_pred = self.service_context.llm_predictor.predict(
-        #     prompt=infer_recency_prompt,
-        #     query_str=query_bundle.query_str,
-        # )
-        # pred = parse_recency_pred(raw_pred)
-        # # if no need to use recency post-processor, return nodes as is
-        # if not pred:
-        #     return nodes
 
         # sort nodes by date
         node_dates = pd.to_datetime(
@@ -100,7 +94,7 @@ DEFAULT_QUERY_EMBEDDING_TMPL = (
 )
 
 
-class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
+class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
@@ -120,6 +114,10 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
     similarity_cutoff: float = Field(default=0.7)
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "EmbeddingRecencyPostprocessor"
+
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -129,17 +127,6 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
 
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
-
-        # query_bundle = cast(QueryBundle, metadata["query_bundle"])
-        # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-        # raw_pred = self.service_context.llm_predictor.predict(
-        #     prompt=infer_recency_prompt,
-        #     query_str=query_bundle.query_str,
-        # )
-        # pred = parse_recency_pred(raw_pred)
-        # # if no need to use recency post-processor, return nodes as is
-        # if not pred:
-        #     return nodes
 
         # sort nodes by date
         node_dates = pd.to_datetime(
@@ -185,7 +172,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         ]
 
 
-class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
+class TimeWeightedPostprocessor(BaseNodePostprocessor):
     """Time-weighted post-processor.
 
     Reranks a set of nodes based on their recency.
@@ -198,6 +185,10 @@ class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
     # optionally set now (makes it easier to test)
     now: Optional[float] = None
     top_k: int = 1
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "TimeWeightedPostprocessor"
 
     def postprocess_nodes(
         self,

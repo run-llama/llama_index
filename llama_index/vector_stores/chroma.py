@@ -1,14 +1,15 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, List, cast
+from typing import Any, Dict, List, Optional, cast
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -29,7 +30,10 @@ def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
     return filters
 
 
-class ChromaVectorStore(VectorStore):
+import_err_msg = "`chromadb` package not found, please run `pip install chromadb`"
+
+
+class ChromaVectorStore(BasePydanticVectorStore):
     """Chroma vector store.
 
     In this vector store, embeddings are stored within a ChromaDB collection.
@@ -46,11 +50,25 @@ class ChromaVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
-    def __init__(self, chroma_collection: Any, **kwargs: Any) -> None:
+    host: Optional[str]
+    port: Optional[str]
+    ssl: bool
+    headers: Optional[Dict[str, str]]
+    collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+    _collection: Any = PrivateAttr()
+
+    def __init__(
+        self,
+        chroma_collection: Any,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        ssl: bool = False,
+        headers: Optional[Dict[str, str]] = None,
+        collection_kwargs: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> None:
         """Init params."""
-        import_err_msg = (
-            "`chromadb` package not found, please run `pip install chromadb`"
-        )
         try:
             import chromadb  # noqa: F401
         except ImportError:
@@ -58,6 +76,49 @@ class ChromaVectorStore(VectorStore):
         from chromadb.api.models.Collection import Collection
 
         self._collection = cast(Collection, chroma_collection)
+
+        super().__init__(
+            host=host,
+            port=port,
+            ssl=ssl,
+            headers=headers,
+            collection_kwargs=collection_kwargs or {},
+        )
+
+    @classmethod
+    def from_params(
+        cls,
+        collection_name: str,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        ssl: bool = False,
+        headers: Optional[Dict[str, str]] = None,
+        collection_kwargs: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> "ChromaVectorStore":
+        try:
+            import chromadb  # noqa: F401
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+        collection = client.get_or_create_collection(
+            name=collection_name, **collection_kwargs
+        )
+
+        return cls(
+            chroma_collection=collection,
+            host=host,
+            port=port,
+            ssl=ssl,
+            headers=headers,
+            collection_kwargs=collection_kwargs,
+            **kwargs,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ChromaVectorStore"
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add embedding results to index.

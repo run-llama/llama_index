@@ -54,6 +54,39 @@ def openi_message_dicts_with_function_calling() -> List[dict]:
     ]
 
 
+@pytest.fixture
+def azure_openi_message_dicts_with_function_calling() -> List[dict]:
+    """
+    Taken from:
+    - https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling
+    """
+    return [
+        {
+            "role": "assistant",
+            "function_call": {
+                "name": "search_hotels",
+                "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',  # noqa
+            },
+        }
+    ]
+
+
+@pytest.fixture
+def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
+    return [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content=None,
+            additional_kwargs={
+                "function_call": {
+                    "name": "search_hotels",
+                    "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',  # noqa
+                },
+            },
+        ),
+    ]
+
+
 def test_to_openai_message_dicts_basic_enum() -> None:
     chat_messages = [
         ChatMessage(role=MessageRole.USER, content="test question"),
@@ -92,3 +125,13 @@ def test_from_openai_message_dicts_function_calling(
 ) -> None:
     chat_messages = from_openai_message_dicts(openi_message_dicts_with_function_calling)
     assert chat_messages == chat_messages_with_function_calling
+
+
+def test_from_openai_message_dicts_function_calling_azure(
+    azure_openi_message_dicts_with_function_calling: List[dict],
+    azure_chat_messages_with_function_calling: List[ChatMessage],
+) -> None:
+    chat_messages = from_openai_message_dicts(
+        azure_openi_message_dicts_with_function_calling
+    )
+    assert chat_messages == azure_chat_messages_with_function_calling

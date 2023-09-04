@@ -14,11 +14,11 @@ Below we show a few examples of LLM customization. This includes
 ## Example: Changing the underlying LLM
 
 An example snippet of customizing the LLM being used is shown below.
-In this example, we use `text-davinci-002` instead of `text-davinci-003`. Available models include `text-davinci-003`,`text-curie-001`,`text-babbage-001`,`text-ada-001`, `code-davinci-002`,`code-cushman-001`. 
+In this example, we use `gpt-4` instead of `text-davinci-003`. Available models include `gpt-3.5-turbo`, `gpt-3.5-turbo-16k`, `gpt-4`, `gpt-4-32k`, `text-davinci-003`, and `text-davinci-002`. 
 
 Note that
 you may also plug in any LLM shown on Langchain's
-[LLM](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) page.
+[LLM](https://python.langchain.com/docs/integrations/llms/) page.
 
 ```python
 
@@ -35,7 +35,7 @@ from llama_index.llms import OpenAI
 documents = SimpleDirectoryReader('data').load_data()
 
 # define LLM
-llm = OpenAI(temperature=0, model="text-davinci-002")
+llm = OpenAI(temperature=0.1, model="gpt-4")
 service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
@@ -112,14 +112,14 @@ service_context = ServiceContext.from_defaults(
 
 ## Example: Using a HuggingFace LLM
 
-LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
+LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model as in [this example](embeddings.md#custom-embeddings).
 
-Many open-source models from HuggingFace require either some preamble before before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
+Many open-source models from HuggingFace require either some preamble before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
 
 Below, this example uses both the `system_prompt` and `query_wrapper_prompt`, using specific prompts from the model card found [here](https://huggingface.co/stabilityai/stablelm-tuned-alpha-3b).
 
 ```python
-from llama_index.prompts.prompts import SimpleInputPrompt
+from llama_index.prompts import PromptTemplate
 
 system_prompt = """<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
@@ -129,7 +129,7 @@ system_prompt = """<|SYSTEM|># StableLM Tuned (Alpha version)
 """
 
 # This will wrap the default prompts that are internal to llama-index
-query_wrapper_prompt = SimpleInputPrompt("<|USER|>{query_str}<|ASSISTANT|>")
+query_wrapper_prompt = PromptTemplate("<|USER|>{query_str}<|ASSISTANT|>")
 
 import torch
 from llama_index.llms import HuggingFaceLLM
@@ -162,7 +162,7 @@ HuggingFaceLLM(
 )
 ```
 
-A full API reference can be found [here](../../reference/llm_predictor.rst).
+A full API reference can be found [here](../../../api_reference/llms/huggingface.rst).
 
 Several example notebooks are also listed below:
 
@@ -187,9 +187,16 @@ from llama_index import (
     ServiceContext, 
     SimpleDirectoryReader, 
     LangchainEmbedding, 
-    ListIndex
+    SummaryIndex
 )
-from llama_index.llms import CustomLLM, CompletionResponse, LLMMetadata
+from llama_index.callbacks import CallbackManager
+from llama_index.llms import (
+    CustomLLM, 
+    CompletionResponse, 
+    CompletionResponseGen,
+    LLMMetadata,
+)
+from llama_index.llms.base import llm_completion_callback
 
 
 # set context window size
@@ -207,9 +214,12 @@ class OurLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=context_window, num_output=num_output
+            context_window=context_window,
+            num_output=num_output,
+            model_name=model_name
         )
 
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         prompt_length = len(prompt)
         response = pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
@@ -218,6 +228,7 @@ class OurLLM(CustomLLM):
         text = response[prompt_length:]
         return CompletionResponse(text=text)
     
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         raise NotImplementedError()
 
@@ -232,7 +243,7 @@ service_context = ServiceContext.from_defaults(
 
 # Load the your data
 documents = SimpleDirectoryReader('./data').load_data()
-index = ListIndex.from_documents(documents, service_context=service_context)
+index = SummaryIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
 query_engine = index.as_query_engine()
@@ -241,6 +252,8 @@ print(response)
 ```
 
 Using this method, you can use any LLM. Maybe you have one running locally, or running on your own server. As long as the class is implemented and the generated tokens are returned, it should work out. Note that we need to use the prompt helper to customize the prompt sizes, since every model has a slightly different context length.
+
+The decorator is optional, but provides observability via callbacks on the LLM calls.
 
 Note that you may have to adjust the internal prompts to get good performance. Even then, you should be using a sufficiently large LLM to ensure it's capable of handling the complex queries that LlamaIndex uses internally, so your mileage may vary.
 

@@ -1,18 +1,20 @@
 import logging
+from threading import Thread
 from typing import Any, List, Optional, Type
 
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
-from llama_index.chat_engine.utils import response_gen_with_chat_history
+from llama_index.chat_engine.utils import response_gen_from_query_engine
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.tools import ToolOutput
 
@@ -33,7 +35,7 @@ from the conversation.
 <Standalone question>
 """
 
-DEFAULT_PROMPT = Prompt(DEFAULT_TEMPLATE)
+DEFAULT_PROMPT = PromptTemplate(DEFAULT_TEMPLATE)
 
 
 class CondenseQuestionChatEngine(BaseChatEngine):
@@ -46,22 +48,24 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def __init__(
         self,
         query_engine: BaseQueryEngine,
-        condense_question_prompt: Prompt,
+        condense_question_prompt: BasePromptTemplate,
         memory: BaseMemory,
         service_context: ServiceContext,
         verbose: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._query_engine = query_engine
         self._condense_question_prompt = condense_question_prompt
         self._memory = memory
         self._service_context = service_context
         self._verbose = verbose
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @classmethod
     def from_defaults(
         cls,
         query_engine: BaseQueryEngine,
-        condense_question_prompt: Optional[Prompt] = None,
+        condense_question_prompt: Optional[BasePromptTemplate] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
@@ -92,6 +96,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             memory,
             service_context,
             verbose=verbose,
+            callback_manager=service_context.callback_manager,
         )
 
     def _condense_question(
@@ -131,13 +136,22 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def _get_tool_output_from_response(
         self, query: str, response: RESPONSE_TYPE
     ) -> ToolOutput:
-        return ToolOutput(
-            content=str(response),
-            tool_name="query_engine",
-            raw_input={"query": query},
-            raw_output=response,
-        )
+        if isinstance(response, StreamingResponse):
+            return ToolOutput(
+                content="",
+                tool_name="query_engine",
+                raw_input={"query": query},
+                raw_output=response,
+            )
+        else:
+            return ToolOutput(
+                content=str(response),
+                tool_name="query_engine",
+                raw_input={"query": query},
+                raw_output=response,
+            )
 
+    @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -179,6 +193,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
 
         return AgentChatResponse(response=str(query_response), sources=[tool_output])
 
+    @trace_method("chat")
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
@@ -218,16 +233,20 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             and query_response.response_gen is not None
         ):
             # override the generator to include writing to chat history
+            self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
             response = StreamingAgentChatResponse(
-                chat_stream=response_gen_with_chat_history(
-                    message, self._memory, query_response.response_gen
-                ),
+                chat_stream=response_gen_from_query_engine(query_response.response_gen),
                 sources=[tool_output],
             )
+            thread = Thread(
+                target=response.write_response_to_history, args=(self._memory,)
+            )
+            thread.start()
         else:
             raise ValueError("Streaming is not enabled. Please use chat() instead.")
         return response
 
+    @trace_method("chat")
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -269,6 +288,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
 
         return AgentChatResponse(response=str(query_response), sources=[tool_output])
 
+    @trace_method("chat")
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
@@ -309,12 +329,15 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         ):
             # override the generator to include writing to chat history
             # TODO: query engine does not support async generator yet
+            self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
             response = StreamingAgentChatResponse(
-                chat_stream=response_gen_with_chat_history(
-                    message, self._memory, query_response.response_gen
-                ),
+                chat_stream=response_gen_from_query_engine(query_response.response_gen),
                 sources=[tool_output],
             )
+            thread = Thread(
+                target=response.write_response_to_history, args=(self._memory,)
+            )
+            thread.start()
         else:
             raise ValueError("Streaming is not enabled. Please use achat() instead.")
         return response
