@@ -1,4 +1,3 @@
-import sys
 from unittest.mock import MagicMock
 from typing import Any, List, Optional
 
@@ -12,16 +11,11 @@ import pytest
 try:
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
-except ImportError:
-    search_client = None  # type: ignore
-
-
-try:
-    import azure.search.documents
 
     cogsearch_installed = True
 except ImportError:
     cogsearch_installed = False
+    search_client = None  # type: ignore
 
 
 def create_mock_vector_store(
@@ -106,20 +100,21 @@ def test_invalid_index_management_for_searchclient() -> None:
     search_client = MagicMock(spec=SearchClient)
 
     # No error
-    vector_store = create_mock_vector_store(
+    create_mock_vector_store(
         search_client, index_management=IndexManagement.VALIDATE_INDEX
     )
 
     # Cannot supply index name
+    # ruff: noqa: E501
     with pytest.raises(
         ValueError,
-        match=f"index_name cannot be supplied if search_or_index_client is of type azure.search.documents.SearchClient",
+        match="index_name cannot be supplied if search_or_index_client is of type azure.search.documents.SearchClient",
     ):
-        vector_store = create_mock_vector_store(search_client, index_name="test01")
+        create_mock_vector_store(search_client, index_name="test01")
 
     # SearchClient cannot create an index
     with pytest.raises(ValueError):
-        vector_store = create_mock_vector_store(
+        create_mock_vector_store(
             search_client,
             index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
         )
@@ -133,6 +128,6 @@ def test_invalid_index_management_for_searchindexclient() -> None:
 
     # Index name must be supplied
     with pytest.raises(ValueError):
-        vector_store = create_mock_vector_store(
+        create_mock_vector_store(
             search_client, index_management=IndexManagement.VALIDATE_INDEX
         )

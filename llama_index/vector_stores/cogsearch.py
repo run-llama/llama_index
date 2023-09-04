@@ -1,8 +1,6 @@
 """Azure Cognitive Search vector store."""
 import logging
-import math
 from typing import Any, List, cast, Dict, Callable, Optional, Union
-from collections import namedtuple
 import enum
 from enum import auto
 
@@ -29,7 +27,11 @@ logger = logging.getLogger(__name__)
 
 
 class MetadataIndexFieldType(int, enum.Enum):
-    """Enumeration representing the supported types for metadata fields in an Azure Cognitive Search Index, corresponds with types supported in a flat metadata dictionary"""
+    """
+    Enumeration representing the supported types for metadata fields in an
+    Azure Cognitive Search Index, corresponds with types supported in a flat
+    metadata dictionary
+    """
 
     STRING = auto()  # "Edm.String"
     BOOLEAN = auto()  # "Edm.Boolean"
@@ -46,40 +48,6 @@ class IndexManagement(int, enum.Enum):
     CREATE_IF_NOT_EXISTS = auto()
 
 
-def get_metadata_to_index_field_dict(
-    filterable_metadata_field_keys: Union[
-        List[str] | Dict[str, str], Dict[str, tuple[str, MetadataIndexFieldType]]
-    ] = None
-) -> Dict[str, tuple[str, MetadataIndexFieldType]]:
-    """
-    Normalises the supported forms for specifying metadata field names and their
-    corresponding field types and field names in the Azure Cognitive Search index
-    """
-    index_field_spec: Dict[str, tuple[str, MetadataIndexFieldType]] = {}
-
-    if isinstance(filterable_metadata_field_keys, List):
-        for metadata_field in filterable_metadata_field_keys:
-            # Index field name and the metadata field name are the same
-            # Use String as the default index field type
-            index_field_spec[metadata_field] = (
-                metadata_field,
-                MetadataIndexFieldType.STRING,
-            )
-
-    elif isinstance(filterable_metadata_field_keys, Dict):
-        for metadata_field, v in filterable_metadata_field_keys.items():
-            if isinstance(v, tuple):
-                # Index field name and metadata field name may differ
-                # The index field type used is as supplied
-                index_field_spec[metadata_field] = (v[0], v[1])
-
-            else:
-                # Index field name and metadata field name may differ
-                # Use String as the default index field type
-                index_field_spec[metadata_field] = (v, MetadataIndexFieldType.STRING)
-    return index_field_spec
-
-
 class CognitiveSearchVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
@@ -87,8 +55,10 @@ class CognitiveSearchVectorStore(VectorStore):
     def _normalise_metadata_to_index_fields(
         self,
         filterable_metadata_field_keys: Union[
-            List[str] | Dict[str, str], Dict[str, tuple[str, MetadataIndexFieldType]]
-        ] = None,
+            List[str] | Dict[str, str],
+            Dict[str, tuple[str, MetadataIndexFieldType]],
+            None,
+        ] = [],
     ) -> Dict[str, tuple[str, MetadataIndexFieldType]]:
         index_field_spec: Dict[str, tuple[str, MetadataIndexFieldType]] = {}
 
@@ -142,9 +112,10 @@ class CognitiveSearchVectorStore(VectorStore):
 
         return index_fields
 
-    def _create_index(self, index_name: str) -> None:
+    def _create_index(self, index_name: Optional[str]) -> None:
         """
-        Creates a default index based on the supplied index name, key field names and metadata filtering keys
+        Creates a default index based on the supplied index name, key field names and
+        metadata filtering keys
         """
 
         from azure.search.documents.indexes.models import (
@@ -154,6 +125,7 @@ class CognitiveSearchVectorStore(VectorStore):
             SearchableField,
             SearchFieldDataType,
             HnswVectorSearchAlgorithmConfiguration,
+            HnswParameters,
             VectorSearch,
             SemanticSettings,
             SemanticConfiguration,
@@ -194,17 +166,20 @@ class CognitiveSearchVectorStore(VectorStore):
         fields.extend(metadata_index_fields)
 
         logger.info(f"Configuring {index_name} vector search")
+
+        hnsw_param = HnswParameters(
+            m=4,
+            ef_construction=500,
+            ef_search=1000,
+            metric="cosine",
+        )
+
         vector_search = VectorSearch(
             algorithm_configurations=[
                 HnswVectorSearchAlgorithmConfiguration(
                     name="default",
                     kind="hnsw",
-                    parameters={
-                        "m": 4,
-                        "efConstruction": 400,
-                        "efSearch": 1000,
-                        "metric": "cosine",
-                    },
+                    parameters=hnsw_param,
                 )
             ]
         )
@@ -234,8 +209,8 @@ class CognitiveSearchVectorStore(VectorStore):
         logger.debug(f"Creating {index_name} search index")
         self._index_client.create_index(index)
 
-    def _validate_index(self, index_name: str):
-        if self._index_client:
+    def _validate_index(self, index_name: Optional[str]) -> None:
+        if self._index_client and index_name:
             if index_name not in self._index_client.list_index_names():
                 raise ValueError(
                     f"Validation failed, index {index_name} does not exist."
@@ -262,6 +237,7 @@ class CognitiveSearchVectorStore(VectorStore):
         index_management: IndexManagement = IndexManagement.NO_VALIDATION,
         **kwargs: Any,
     ) -> None:
+        # ruff: noqa: E501
         """
         Embeddings and documents are stored in an Azure Cognitive Search index, a merge or upload approach is used when adding embeddings.
         When adding multiple embeddings the index is updated by this vector store in batches of 10 documents,
@@ -309,7 +285,9 @@ class CognitiveSearchVectorStore(VectorStore):
             ValueError: If `create_index_if_not_exists` is true and `search_or_index_client` is of type azure.search.documents.SearchClient
         """
 
-        import_err_msg = "`azure-search-documents` package not found, please run `pip install azure-search-documents==11.4.0b8`"
+        import_err_msg = "`azure-search-documents` package not found, "
+        "please run `pip install azure-search-documents==11.4.0b8`"
+
         try:
             import azure.search.documents  # noqa: F401
             from azure.search.documents import SearchClient  # noqa: F401
@@ -317,20 +295,19 @@ class CognitiveSearchVectorStore(VectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self._index_client = None
-        self._search_client = None
+        self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
+        self._search_client: SearchClient = cast(SearchClient, None)
 
         # Validate search_or_index_client
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):
                 # If SearchIndexClient is supplied so must index_name
-                self._index_client: SearchIndexClient = cast(
-                    SearchIndexClient, search_or_index_client
-                )
+                self._index_client = cast(SearchIndexClient, search_or_index_client)
 
                 if not index_name:
                     raise ValueError(
-                        "index_name must be supplied if search_or_index_client is of type azure.search.documents.SearchIndexClient"
+                        "index_name must be supplied if search_or_index_client is of "
+                        "type azure.search.documents.SearchIndexClient"
                     )
 
                 self._search_client = self._index_client.get_search_client(
@@ -343,12 +320,15 @@ class CognitiveSearchVectorStore(VectorStore):
                 # Validate index_name
                 if index_name:
                     raise ValueError(
-                        "index_name cannot be supplied if search_or_index_client is of type azure.search.documents.SearchClient"
+                        "index_name cannot be supplied if search_or_index_client "
+                        "is of type azure.search.documents.SearchClient"
                     )
 
             if not self._index_client and not self._search_client:
                 raise ValueError(
-                    "search_or_index_client must be of type azure.search.documents.SearchClient or azure.search.documents.SearchIndexClient"
+                    "search_or_index_client must be of type "
+                    "azure.search.documents.SearchClient or "
+                    "azure.search.documents.SearchIndexClient"
                 )
         else:
             raise ValueError("search_or_index_client not specified")
@@ -358,7 +338,9 @@ class CognitiveSearchVectorStore(VectorStore):
             and not self._index_client
         ):
             raise ValueError(
-                "index_management has value of IndexManagement.CREATE_IF_NOT_EXISTS but search_or_index_client is not of type azure.search.documents.SearchIndexClient"
+                "index_management has value of IndexManagement.CREATE_IF_NOT_EXISTS "
+                "but search_or_index_client is not of type "
+                "azure.search.documents.SearchIndexClient"
             )
 
         self._index_management = index_management
@@ -383,12 +365,9 @@ class CognitiveSearchVectorStore(VectorStore):
             filterable_metadata_field_keys
         )
 
-        # self._index_field_spec = get_metadata_to_index_field_dict(
-        #    filterable_metadata_field_keys
-        # )
-
         if self._index_management == IndexManagement.CREATE_IF_NOT_EXISTS:
-            self._create_index_if_not_exists(index_name)
+            if index_name:
+                self._create_index_if_not_exists(index_name)
 
         if self._index_management == IndexManagement.VALIDATE_INDEX:
             self._validate_index(index_name)
@@ -443,7 +422,8 @@ class CognitiveSearchVectorStore(VectorStore):
 
             if len(documents) >= 10:
                 logger.info(
-                    f"Uploading batch of size {len(documents)}, current progress {len(ids)} of {len(embedding_results)}"
+                    f"Uploading batch of size {len(documents)}, current progress "
+                    "{len(ids)} of {len(embedding_results)}"
                 )
                 self._search_client.merge_or_upload_documents(documents)
                 documents = []
@@ -451,7 +431,8 @@ class CognitiveSearchVectorStore(VectorStore):
         # Upload remaining batch of less than 10 documents
         if len(documents) > 0:
             logger.info(
-                f"Uploading remaining batch of size {len(documents)}, current progress {len(ids)} of {len(embedding_results)}"
+                f"Uploading remaining batch of size {len(documents)}, current progress "
+                "{len(ids)} of {len(embedding_results)}"
             )
             self._search_client.merge_or_upload_documents(documents)
             documents = []
@@ -500,21 +481,24 @@ class CognitiveSearchVectorStore(VectorStore):
             logger.debug(f"Deleting {len(docs_to_delete)} documents")
             self._search_client.delete_documents(docs_to_delete)
 
-    def _create_odata_filter(self, metadata_filters: MetadataFilters):
+    def _create_odata_filter(self, metadata_filters: MetadataFilters) -> str:
         """Generate an OData filter string using supplied metadata filters"""
-        odata_filter = []
+        odata_filter: List[str] = []
         for f in metadata_filters.filters:
             if not isinstance(f, ExactMatchFilter):
                 raise NotImplementedError(
                     "Only `ExactMatchFilter` filters are supported"
                 )
 
-            # Raise error if filtering on a metadata field that lacks a mapping to an index field
+            # Raise error if filtering on a metadata field that lacks a mapping to
+            # an index field
             metadata_mapping = self._metadata_to_index_field_map.get(f.key)
 
             if not metadata_mapping:
                 raise ValueError(
-                    f"Metadata field '{f.key}' is missing a mapping to an index field, provide entry in 'filterable_metadata_field_keys' for this vector store"
+                    f"Metadata field '{f.key}' is missing a mapping to an index field, "
+                    "provide entry in 'filterable_metadata_field_keys' for this "
+                    "vector store"
                 )
 
             index_field = metadata_mapping[0]
@@ -536,11 +520,6 @@ class CognitiveSearchVectorStore(VectorStore):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
         from azure.search.documents.models import Vector
-
-        # if query.filters is not None:
-        #    raise ValueError(
-        #        "Metadata filters not implemented for CognitiveSearchVectorStore yet."
-        #    )
 
         select_fields = [
             self._field_mapping["id"],
@@ -570,7 +549,7 @@ class CognitiveSearchVectorStore(VectorStore):
                 fields=self._field_mapping["embedding"],
             )
             vectors = [vector]
-            logger.info(f"Vector search with supplied embedding")
+            logger.info("Vector search with supplied embedding")
 
         odata_filter = None
 
@@ -617,6 +596,10 @@ class CognitiveSearchVectorStore(VectorStore):
             id_result.append(node_id)
             node_result.append(node)
             score_result.append(score)
+
+        logger.debug(
+            f"Search query '{search_query}' returned {len(id_result)} results."
+        )
 
         return VectorStoreQueryResult(
             nodes=node_result, similarities=score_result, ids=id_result
