@@ -55,7 +55,8 @@ class CognitiveSearchVectorStore(VectorStore):
     def _normalise_metadata_to_index_fields(
         self,
         filterable_metadata_field_keys: Union[
-            List[str] | Dict[str, str],
+            List[str],
+            Dict[str, str],
             Dict[str, tuple[str, MetadataIndexFieldType]],
             None,
         ] = [],
@@ -226,7 +227,8 @@ class CognitiveSearchVectorStore(VectorStore):
         doc_id_field_key: str,
         filterable_metadata_field_keys: Optional[
             Union[
-                List[str] | Dict[str, str],
+                List[str],
+                Dict[str, str],
                 Dict[str, tuple[str, MetadataIndexFieldType]],
             ]
         ] = None,
