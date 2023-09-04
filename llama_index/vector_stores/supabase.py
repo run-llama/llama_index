@@ -119,7 +119,6 @@ class SupabaseVectorStore(VectorStore):
 
         result = self._collection.query(
             data=None,
-            limit=1,
             filters=filters,
             include_value=False,
             include_metadata=False,
