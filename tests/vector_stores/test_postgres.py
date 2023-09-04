@@ -282,6 +282,7 @@ async def test_save_load(
 
     await loaded_pg.close()
 
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
