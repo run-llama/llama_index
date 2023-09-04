@@ -9,7 +9,6 @@ pytest-asyncio==0.21.0
 rake_nltk==1.0.6
 ipython==8.10.0
 
-
 # linting stubs
 types-requests==2.28.11.8
 types-setuptools==67.1.0.0
