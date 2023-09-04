@@ -109,7 +109,7 @@ storage_context = StorageContext.from_defaults()
 storage_context.docstore.add_documents(nodes)
 
 index1 = VectorStoreIndex(nodes, storage_context=storage_context)
-index2 = ListIndex(nodes, storage_context=storage_context)
+index2 = SummaryIndex(nodes, storage_context=storage_context)
 ```
 
 **NOTE**: If the `storage_context` argument isn't specified, then it is implicitly
@@ -346,15 +346,15 @@ In the following, we discuss some commonly used configurations in detail.
 ### Configuring retriever
 
 An index can have a variety of index-specific retrieval modes.
-For instance, a list index supports the default `ListIndexRetriever` that retrieves all nodes, and
-`ListIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
+For instance, a summary index supports the default `SummaryIndexRetriever` that retrieves all nodes, and
+`SummaryIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
 
 For convienience, you can also use the following shorthand:
 
 ```python
-    # ListIndexRetriever
+    # SummaryIndexRetriever
     retriever = index.as_retriever(retriever_mode='default')
-    # ListIndexEmbeddingRetriever
+    # SummaryIndexEmbeddingRetriever
     retriever = index.as_retriever(retriever_mode='embedding')
 ```
 
@@ -397,7 +397,7 @@ Right now, we support the following options:
   chunk.
 
 ```python
-index = ListIndex.from_documents(documents)
+index = SummaryIndex.from_documents(documents)
 retriever = index.as_retriever()
 
 # default

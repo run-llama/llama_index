@@ -8,9 +8,9 @@ Some terminology:
     [specify different response modes](setting-response-mode) here. 
     See below for an illustration of how each response mode works.
 
-## List Index
+## Summary Index
 
-The list index simply stores Nodes as a sequential chain.
+The summary index simply stores Nodes as a sequential chain.
 
 ![](/_static/indices/list.png)
 
@@ -21,7 +21,7 @@ our Reponse Synthesis module.
 
 ![](/_static/indices/list_query.png)
 
-The list index does offer numerous ways of querying a list index, from an embedding-based query which 
+The summary index does offer numerous ways of querying a summary index, from an embedding-based query which 
 will fetch the top-k neighbors, or with the addition of a keyword filter, as seen below:
 
 ![](/_static/indices/list_filter_query.png)
