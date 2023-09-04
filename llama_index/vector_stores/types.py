@@ -1,4 +1,5 @@
 """Vector store index types."""
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable
@@ -203,28 +204,23 @@ class VectorStore(Protocol):
 
 
 # TODO: Temp copy of VectorStore for pydantic, can't mix with runtime_checkable
-class BasePydanticVectorStore(BaseComponent):
+class BasePydanticVectorStore(BaseComponent, ABC):
     """Abstract vector store protocol."""
 
     stores_text: bool
     is_embedding_query: bool = True
 
-    @classmethod
-    def from_params(cls, **kwargs: Any) -> "VectorStore":
-        """Create vector store from config."""
-        ...
-
     @property
+    @abstractmethod
     def client(self) -> Any:
         """Get client."""
-        ...
 
+    @abstractmethod
     def add(
         self,
         embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to vector store."""
-        ...
 
     async def async_add(
         self,
@@ -237,10 +233,10 @@ class BasePydanticVectorStore(BaseComponent):
         """
         return self.add(embedding_results)
 
+    @abstractmethod
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id."""
-        ...
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -250,9 +246,9 @@ class BasePydanticVectorStore(BaseComponent):
         """
         self.delete(ref_doc_id, **delete_kwargs)
 
+    @abstractmethod
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
-        ...
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any

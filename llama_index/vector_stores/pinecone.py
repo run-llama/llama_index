@@ -125,6 +125,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    api_key: Optional[str]
     index_name: Optional[str]
     environment: Optional[str]
     namespace: Optional[str]
@@ -250,7 +251,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 VECTOR_KEY: result.embedding,
                 METADATA_KEY: metadata,
             }
-            if self._add_sparse_vector:
+            if self.add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
                     [node.get_content(metadata_mode=MetadataMode.EMBED)],
                     self._tokenizer,
@@ -261,9 +262,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
             entries.append(entry)
         self._pinecone_index.upsert(
             entries,
-            namespace=self._namespace,
-            batch_size=self._batch_size,
-            **self._insert_kwargs,
+            namespace=self.namespace,
+            batch_size=self.batch_size,
+            **self.insert_kwargs,
         )
         return ids
 
@@ -278,7 +279,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         # delete by filtering on the doc_id metadata
         self._pinecone_index.delete(
             filter={"doc_id": {"$eq": ref_doc_id}},
-            namespace=self._namespace,
+            namespace=self.namespace,
             **delete_kwargs,
         )
 
@@ -333,7 +334,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             top_k=query.similarity_top_k,
             include_values=True,
             include_metadata=True,
-            namespace=self._namespace,
+            namespace=self.namespace,
             filter=filter,
             **kwargs,
         )
@@ -350,10 +351,10 @@ class PineconeVectorStore(BasePydanticVectorStore):
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    match.metadata, text_key=self._text_key
+                    match.metadata, text_key=self.text_key
                 )
 
-                text = match.metadata[self._text_key]
+                text = match.metadata[self.text_key]
                 id = match.id
                 node = TextNode(
                     text=text,

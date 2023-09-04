@@ -1,6 +1,7 @@
 from typing import List, Any, Type, Optional
 from collections import namedtuple
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
@@ -49,6 +50,10 @@ class PGVectorStore(BasePydanticVectorStore):
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
+    _engine: Any = PrivateAttr()
+    _session: Any = PrivateAttr()
+    _async_engine: Any = PrivateAttr()
+    _async_session: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -76,12 +81,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
         self._base = declarative_base()
         # sqlalchemy model
-        self._table_class = get_data_model(
-            self._base, self.table_name, embed_dim=embed_dim
-        )
-        self._connect()
-        self._create_extension()
-        self._create_tables_if_not_exists()
+        self._table_class = get_data_model(self._base, table_name, embed_dim=embed_dim)
 
         super().__init__(
             connection_string=connection_string,
@@ -90,11 +90,19 @@ class PGVectorStore(BasePydanticVectorStore):
             embed_dim=embed_dim,
         )
 
+        self._connect()
+        self._create_extension()
+        self._create_tables_if_not_exists()
+
     async def close(self) -> None:
         self._session.close_all()
         self._engine.dispose()
 
         await self._async_engine.dispose()
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PGVectorStore"
 
     @classmethod
     def from_params(
@@ -124,6 +132,10 @@ class PGVectorStore(BasePydanticVectorStore):
             embed_dim=embed_dim,
         )
 
+    @property
+    def client(self) -> Any:
+        return self._engine
+
     def _connect(self) -> Any:
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
@@ -151,7 +163,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 session.commit()
 
     def _node_to_table_row(self, node: NodeWithEmbedding) -> Any:
-        return self.table_class(
+        return self._table_class(
             node_id=node.id,
             embedding=node.embedding,
             text=node.node.get_content(metadata_mode=MetadataMode.NONE),
@@ -194,8 +206,8 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy import select
 
         stmt = select(  # type: ignore
-            self.table_class, self.table_class.embedding.cosine_distance(embedding)
-        ).order_by(self.table_class.embedding.cosine_distance(embedding))
+            self._table_class, self._table_class.embedding.cosine_distance(embedding)
+        ).order_by(self._table_class.embedding.cosine_distance(embedding))
         if metadata_filters:
             for filter_ in metadata_filters.filters:
                 bind_parameter = f"value_{filter_.key}"
@@ -216,7 +228,9 @@ class PGVectorStore(BasePydanticVectorStore):
         stmt = self._build_query(embedding, limit, metadata_filters)
         with self._session() as session:
             with session.begin():
-                res = session.execute(stmt)
+                res = session.execute(
+                    stmt,
+                )
                 return [
                     DBEmbeddingRow(
                         node_id=item.node_id,
@@ -237,7 +251,7 @@ class PGVectorStore(BasePydanticVectorStore):
         async with self._async_session() as async_session:
             async with async_session.begin():
                 res = await async_session.execute(stmt)
-                return [
+                results = [
                     DBEmbeddingRow(
                         node_id=item.node_id,
                         text=item.text,
@@ -246,6 +260,7 @@ class PGVectorStore(BasePydanticVectorStore):
                     )
                     for item, distance in res.all()
                 ]
+                return results
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]

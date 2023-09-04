@@ -70,14 +70,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     stores_text: bool = True
 
-    index_name: Optional[str] = Field(description="Index name for the Weaviate index.")
-    text_key: str = Field(default=DEFAULT_TEXT_KEY, description="Text key in Weaviate.")
-    auth_config: Dict[str, Any] = Field(
-        default_factory={}, description="Auth config for client connections."
-    )
-    client_kwargs: Dict[str, Any] = Field(
-        default_factory={}, description="Client kwargs for client connections."
-    )
+    index_name: str
+    url: Optional[str]
+    text_key: str
+    auth_config: Dict[str, Any] = Field(default_factory=dict)
+    client_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     _client = PrivateAttr()
 
@@ -89,6 +86,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         text_key: str = DEFAULT_TEXT_KEY,
         auth_config: Optional[Any] = None,
         client_kwargs: Optional[Dict[str, Any]] = None,
+        url: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -119,10 +117,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             create_default_schema(self._client, index_name)
 
         super().__init__(
+            url=url,
             index_name=index_name,
             text_key=text_key,
-            auth_config=auth_config,
-            client_kwargs=client_kwargs,
+            auth_config=auth_config or {},
+            client_kwargs=client_kwargs or {},
         )
 
     @classmethod
@@ -130,6 +129,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         cls,
         url: str,
         auth_config: Any,
+        index_name: Optional[str] = None,
+        text_key: str = DEFAULT_TEXT_KEY,
         client_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> "WeaviateVectorStore":
@@ -146,9 +147,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         )
         return cls(
             weaviate_client=weaviate_client,
+            url=url,
             auth_config=auth_config.__dict__,
             client_kwargs=client_kwargs,
-            kwargs=kwargs,
+            index_name=index_name,
+            text_key=text_key,
+            **kwargs,
         )
 
     @classmethod
@@ -184,9 +188,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 add_node(
                     self._client,
                     node,
-                    self._index_name,
+                    self.index_name,
                     batch=batch,
-                    text_key=self._text_key,
+                    text_key=self.text_key,
                 )
         return ids
 
@@ -205,26 +209,24 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             "valueString": ref_doc_id,
         }
         query = (
-            self._client.query.get(self._index_name)
+            self._client.query.get(self.index_name)
             .with_additional(["id"])
             .with_where(where_filter)
         )
 
         query_result = query.do()
         parsed_result = parse_get_response(query_result)
-        entries = parsed_result[self._index_name]
+        entries = parsed_result[self.index_name]
         for entry in entries:
-            self._client.data_object.delete(
-                entry["_additional"]["id"], self._index_name
-            )
+            self._client.data_object.delete(entry["_additional"]["id"], self.index_name)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
 
-        all_properties = get_all_properties(self._client, self._index_name)
+        all_properties = get_all_properties(self._client, self.index_name)
 
         # build query
-        query_builder = self._client.query.get(self._index_name, all_properties)
+        query_builder = self._client.query.get(self.index_name, all_properties)
 
         # list of documents to constrain search
         if query.doc_ids:
@@ -280,10 +282,10 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         # parse results
         parsed_result = parse_get_response(query_result)
-        entries = parsed_result[self._index_name]
+        entries = parsed_result[self.index_name]
 
         similarities = [get_node_similarity(entry) for entry in entries]
-        nodes = [to_node(entry, text_key=self._text_key) for entry in entries]
+        nodes = [to_node(entry, text_key=self.text_key) for entry in entries]
 
         nodes = nodes[: query.similarity_top_k]
         node_idxs = [str(i) for i in range(len(nodes))]

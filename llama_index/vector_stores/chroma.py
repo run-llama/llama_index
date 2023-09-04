@@ -82,7 +82,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             port=port,
             ssl=ssl,
             headers=headers,
-            collection_kwargs=collection_kwargs,
+            collection_kwargs=collection_kwargs or {},
         )
 
     @classmethod

@@ -80,7 +80,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             url=url,
             api_key=api_key,
             batch_size=batch_size,
-            client_kwargs=client_kwargs,
+            client_kwargs=client_kwargs or {},
         )
 
     @classmethod
@@ -127,12 +127,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         if len(embedding_results) > 0 and not self._collection_initialized:
             self._create_collection(
-                collection_name=self._collection_name,
+                collection_name=self.collection_name,
                 vector_size=len(embedding_results[0].embedding),
             )
 
         ids = []
-        for result_batch in iter_batch(embedding_results, self._batch_size):
+        for result_batch in iter_batch(embedding_results, self.batch_size):
             node_ids = []
             vectors = []
             payloads = []
@@ -150,7 +150,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 payloads.append(metadata)
 
             self._client.upsert(
-                collection_name=self._collection_name,
+                collection_name=self.collection_name,
                 points=rest.Batch.construct(
                     ids=node_ids,
                     vectors=vectors,
@@ -171,7 +171,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
 
         self._client.delete(
-            collection_name=self._collection_name,
+            collection_name=self.collection_name,
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
@@ -225,7 +225,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         query_embedding = cast(List[float], query.query_embedding)
 
         response = self._client.search(
-            collection_name=self._collection_name,
+            collection_name=self.collection_name,
             query_vector=query_embedding,
             limit=cast(int, query.similarity_top_k),
             query_filter=cast(Filter, self._build_query_filter(query)),
