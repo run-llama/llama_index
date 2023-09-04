@@ -405,7 +405,7 @@ class ElasticsearchStore(VectorStore):
             index=self.index_name,
             **es_query,
             size=query.similarity_top_k,
-            _source={"exclude": [self.vector_field]},
+            _source={"excludes": [self.vector_field]},
         )
 
         top_k_nodes = []

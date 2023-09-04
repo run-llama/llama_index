@@ -15,6 +15,7 @@ as the storage backend for `VectorStoreIndex`.
 - [Apache Cassandra®](https://cassandra.apache.org/) and compatible databases such as [Astra DB](https://www.datastax.com/press-release/datastax-adds-vector-search-to-astra-db-on-google-cloud-for-building-real-time-generative-ai-applications) (`CassandraVectorStore`)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
+- Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
@@ -76,6 +77,31 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+**Elasticsearch**
+
+First, start Elasticsearch
+
+```bash
+docker run -p 9200:9200 \
+  -e "discovery.type=single-node" \
+  -e "xpack.security.enabled=false" \
+  -e "xpack.security.http.ssl.enabled=false" \
+  -e "xpack.license.self_generated.type=trial" \
+  docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+```
+
+Then connect and use Elasticsearch as a vector database with LlamaIndex
+
+```python
+from llama_index.vector_stores import ElasticsearchStore
+vector_store = ElasticsearchStore(
+    index_name="llm-project",
+    es_url="http://localhost:9200",
+)
+```
+
+This can be used with the `VectorStoreIndex` to provide a query interface for retrieval, querying, deleting, persisting the index, and more.
 
 **Redis**
 
@@ -162,8 +188,8 @@ Zep stores texts, metadata, and embeddings. All are returned in search results.
 from llama_index.vector_stores import ZepVectorStore
 
 vector_store = ZepVectorStore(
-    api_url="<api_url>", 
-    api_key="<api_key>", 
+    api_url="<api_url>",
+    api_key="<api_key>",
     collection_name="<unique_collection_name>",  # Can either be an existing collection or a new one
     embedding_dimensions=1536 # Optional, required if creating a new collection
 )
@@ -177,7 +203,6 @@ filters = MetadataFilters(filters=[ExactMatchFilter(key="theme", value="Mafia")]
 retriever = index.as_retriever(filters=filters)
 result = retriever.retrieve("What is inception about?")
 ```
-
 
 **Pinecone**
 
@@ -346,7 +371,7 @@ vector_store = MyScaleVectorStore(
 
 ```python
 from llama_index.vector_stores import (
-    DocArrayHnswVectorStore, 
+    DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
 
@@ -358,6 +383,7 @@ vector_store = DocArrayInMemoryVectorStore()
 ```
 
 **MongoDBAtlas**
+
 ```python
 # Provide URI to constructor, or use environment variable
 import pymongo
@@ -483,12 +509,12 @@ documents = reader.load_data(
 
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/data_connectors).
 
-
 ```{toctree}
 ---
 caption: Examples
 maxdepth: 1
 ---
+../../examples/vector_stores/Elasticsearch_demo.ipynb
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
 ../../examples/vector_stores/SimpleIndexDemoMMR.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
