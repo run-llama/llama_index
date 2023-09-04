@@ -1,16 +1,16 @@
-from typing import List, Any, Dict, Union, Generator
+import asyncio
+from typing import Any, Dict, Generator, List, Union
 
 import pytest
-import asyncio
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import PGVectorStore
 from llama_index.vector_stores.types import (
+    ExactMatchFilter,
+    MetadataFilters,
     NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryMode,
-    MetadataFilters,
-    ExactMatchFilter,
 )
 
 # from testing find install here https://github.com/pgvector/pgvector#installation-notes
@@ -25,10 +25,10 @@ TEST_EMBED_DIM = 2
 
 
 try:
-    import sqlalchemy  # noqa: F401
+    import asyncpg  # noqa: F401
     import pgvector  # noqa: F401
     import psycopg2  # noqa: F401
-    import asyncpg  # noqa: F401
+    import sqlalchemy  # noqa: F401
     import sqlalchemy.ext.asyncio  # noqa: F401
 
     # connection check
@@ -389,6 +389,7 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
     assert res.nodes[1].node_id == "ddd"
 
 
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 def test_hybrid_query_fails_if_no_query_str_provided(
     pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
 ) -> None:
