@@ -1,10 +1,11 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.20] - 2023-09-04
+
 ### New Features
 - Added Portkey LLM integration (#7508)
 - Support postgres/pgvector hybrid search (#7501)
-
+- upgrade recursive retriever node reference notebook (#7537)
 
 ## [0.8.19] - 2023-09-03
 
