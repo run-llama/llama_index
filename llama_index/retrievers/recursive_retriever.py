@@ -95,7 +95,9 @@ class RecursiveRetriever(BaseRetriever):
                         color="pink",
                     )
                 cur_retrieved_nodes, cur_additional_nodes = self._retrieve_rec(
-                    query_bundle, query_id=node.index_id
+                    query_bundle,
+                    query_id=node.index_id,
+                    cur_similarity=node_with_score.score,
                 )
             else:
                 assert isinstance(node, TextNode)
@@ -129,7 +131,10 @@ class RecursiveRetriever(BaseRetriever):
         )
 
     def _retrieve_rec(
-        self, query_bundle: QueryBundle, query_id: Optional[str] = None
+        self,
+        query_bundle: QueryBundle,
+        query_id: Optional[str] = None,
+        cur_similarity: Optional[float] = None,
     ) -> Tuple[List[NodeWithScore], List[NodeWithScore]]:
         """Query recursively."""
         if self._verbose:
@@ -138,10 +143,11 @@ class RecursiveRetriever(BaseRetriever):
                 color="blue",
             )
         query_id = query_id or self._root_id
+        cur_similarity = cur_similarity or 1.0
 
         obj = self._get_object(query_id)
         if isinstance(obj, BaseNode):
-            nodes_to_add = [NodeWithScore(node=obj, score=1.0)]
+            nodes_to_add = [NodeWithScore(node=obj, score=cur_similarity)]
             additional_nodes: List[NodeWithScore] = []
         elif isinstance(obj, BaseRetriever):
             with self.callback_manager.event(
@@ -167,7 +173,7 @@ class RecursiveRetriever(BaseRetriever):
                 query_str=query_bundle.query_str, response=str(sub_resp)
             )
             node = TextNode(text=node_text)
-            nodes_to_add = [NodeWithScore(node=node, score=1.0)]
+            nodes_to_add = [NodeWithScore(node=node, score=cur_similarity)]
             additional_nodes = sub_resp.source_nodes
         else:
             raise ValueError("Must be a retriever or query engine.")
