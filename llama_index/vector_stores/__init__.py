@@ -29,6 +29,7 @@ from llama_index.vector_stores.docarray import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
+from llama_index.vector_stores.cogsearch import CognitiveSearchVectorStore
 from llama_index.vector_stores.awadb import AwaDBVectorStore
 
 __all__ = [
@@ -57,4 +58,5 @@ __all__ = [
     "ZepVectorStore",
     "AwaDBVectorStore",
     "BagelVectorStore",
+    "CognitiveSearchVectorStore",
 ]
