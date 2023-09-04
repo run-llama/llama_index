@@ -176,7 +176,7 @@ class PGVectorStore(BasePydanticVectorStore):
         database: Optional[str] = None,
         user: Optional[str] = None,
         password: Optional[str] = None,
-        table_name: Optional[str] = None,
+        table_name: str = "llamaindex",
         connection_string: Optional[str] = None,
         async_connection_string: Optional[str] = None,
         hybrid_search: bool = False,
