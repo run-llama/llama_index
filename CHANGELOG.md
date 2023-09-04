@@ -1,10 +1,14 @@
 # ChangeLog
 
+## Unreleased
+### New Features
+- Support postgres/pgvector hybrid search (#7501)
+
 ## [0.8.19] - 2023-09-03
 
 ### New Features
 - replace list index with summary index  (#7478)
--  rename list index to summary index part 2 (#7531)
+- rename list index to summary index part 2 (#7531)
 
 ## [0.8.18] - 2023-09-03
 

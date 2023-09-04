@@ -35,7 +35,6 @@ def get_data_model(
     from sqlalchemy import Column, Computed
     from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, JSON
     from sqlalchemy.schema import Index
-    from sqlalchemy.sql import func
 
     from sqlalchemy.dialects.postgresql import TSVECTOR
     from sqlalchemy.types import TypeDecorator
@@ -64,7 +63,11 @@ def get_data_model(
 
         model = type(class_name, (HybridAbstractData,), {"__tablename__": tablename})
 
-        Index("text_search_tsv_idx", model.text_search_tsv, postgresql_using="gin")
+        Index(
+            "text_search_tsv_idx",
+            model.text_search_tsv,  # type: ignore
+            postgresql_using="gin",
+        )
     else:
 
         class AbstractData(base):  # type: ignore
@@ -151,6 +154,7 @@ class PGVectorStore(VectorStore):
         password: str,
         table_name: str,
         hybrid_search: bool = False,
+        text_search_config: str = "english",
         embed_dim: int = 1536,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
@@ -163,6 +167,7 @@ class PGVectorStore(VectorStore):
             async_connection_string=async_conn_str,
             table_name=table_name,
             hybrid_search=hybrid_search,
+            text_search_config=text_search_config,
             embed_dim=embed_dim,
         )
 
@@ -311,26 +316,26 @@ class PGVectorStore(VectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
+        ts_query = func.plainto_tsquery(self._text_search_config, query_str)
         stmt = (
             select(  # type: ignore
                 self.table_class,
-                func.ts_rank(
-                    self.table_class.text_search_tsv, func.plainto_tsquery(query_str)
-                ).label("rank"),
+                func.ts_rank(self.table_class.text_search_tsv, ts_query).label("rank"),
             )
-            .where(self.table_class.text_search_tsv.match(query_str))
+            .where(self.table_class.text_search_tsv.op("@@")(ts_query))
             .order_by(text("rank desc"))
         )
 
-        return self._apply_filters_and_limit(stmt, limit, metadata_filters)  # type: ignore
+        # type: ignore
+        return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
     async def _async_sparse_query_with_rank(
         self,
-        query: VectorStoreQuery,
-        limit: int,
+        query_str: Optional[str] = None,
+        limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[DBEmbeddingRow]:
-        stmt = self._build_sparse_query(query.query_str, limit, metadata_filters)
+        stmt = self._build_sparse_query(query_str, limit, metadata_filters)
         async with self._async_session() as async_session:
             async with async_session.begin():
                 res = await async_session.execute(stmt)
@@ -346,11 +351,11 @@ class PGVectorStore(VectorStore):
 
     def _sparse_query_with_rank(
         self,
-        query: VectorStoreQuery,
-        limit: int,
+        query_str: Optional[str] = None,
+        limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[DBEmbeddingRow]:
-        stmt = self._build_sparse_query(query.query_str, limit, metadata_filters)
+        stmt = self._build_sparse_query(query_str, limit, metadata_filters)
         with self._session() as session:
             with session.begin():
                 res = session.execute(stmt)
@@ -366,7 +371,7 @@ class PGVectorStore(VectorStore):
 
     async def _async_hybrid_query(
         self, query: VectorStoreQuery
-    ) -> List[VectorStoreQueryResult]:
+    ) -> List[DBEmbeddingRow]:
         import asyncio
 
         if query.alpha is not None:
@@ -378,7 +383,9 @@ class PGVectorStore(VectorStore):
             self._aquery_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
             ),
-            self._async_sparse_query_with_rank(query, sparse_top_k, query.filters),
+            self._async_sparse_query_with_rank(
+                query.query_str, sparse_top_k, query.filters
+            ),
         )
 
         dense_results, sparse_results = results
@@ -396,7 +403,7 @@ class PGVectorStore(VectorStore):
         )
 
         sparse_results = self._sparse_query_with_rank(
-            query, sparse_top_k, query.filters
+            query.query_str, sparse_top_k, query.filters
         )
 
         all_results = dense_results + sparse_results
@@ -432,22 +439,42 @@ class PGVectorStore(VectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        if query.mode is VectorStoreQueryMode.HYBRID:
+        if query.mode == VectorStoreQueryMode.HYBRID:
             results = await self._async_hybrid_query(query)
-        else:
+        elif query.mode in [
+            VectorStoreQueryMode.SPARSE,
+            VectorStoreQueryMode.TEXT_SEARCH,
+        ]:
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+            results = await self._async_sparse_query_with_rank(
+                query.query_str, sparse_top_k, query.filters
+            )
+        elif query.mode == VectorStoreQueryMode.DEFAULT:
             results = await self._aquery_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
             )
+        else:
+            raise ValueError(f"Invalid query mode: {query.mode}")
 
         return self._db_rows_to_query_result(results)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        if query.mode is VectorStoreQueryMode.HYBRID:
+        if query.mode == VectorStoreQueryMode.HYBRID:
             results = self._hybrid_query(query)
-        else:
+        elif query.mode in [
+            VectorStoreQueryMode.SPARSE,
+            VectorStoreQueryMode.TEXT_SEARCH,
+        ]:
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+            results = self._sparse_query_with_rank(
+                query.query_str, sparse_top_k, query.filters
+            )
+        elif query.mode == VectorStoreQueryMode.DEFAULT:
             results = self._query_with_score(
                 query.query_embedding, query.similarity_top_k, query.filters
             )
+        else:
+            raise ValueError(f"Invalid query mode: {query.mode}")
 
         return self._db_rows_to_query_result(results)
 
