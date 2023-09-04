@@ -12,6 +12,7 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
+- Azure Cognitive Search (`CognitiveSearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - [Apache Cassandra®](https://cassandra.apache.org/) and compatible databases such as [Astra DB](https://www.datastax.com/press-release/datastax-adds-vector-search-to-astra-db-on-google-cloud-for-building-real-time-generative-ai-applications) (`CassandraVectorStore`)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
@@ -164,8 +165,8 @@ Zep stores texts, metadata, and embeddings. All are returned in search results.
 from llama_index.vector_stores import ZepVectorStore
 
 vector_store = ZepVectorStore(
-    api_url="<api_url>", 
-    api_key="<api_key>", 
+    api_url="<api_url>",
+    api_key="<api_key>",
     collection_name="<unique_collection_name>",  # Can either be an existing collection or a new one
     embedding_dimensions=1536 # Optional, required if creating a new collection
 )
@@ -179,7 +180,6 @@ filters = MetadataFilters(filters=[ExactMatchFilter(key="theme", value="Mafia")]
 retriever = index.as_retriever(filters=filters)
 result = retriever.retrieve("What is inception about?")
 ```
-
 
 **Pinecone**
 
@@ -348,7 +348,7 @@ vector_store = MyScaleVectorStore(
 
 ```python
 from llama_index.vector_stores import (
-    DocArrayHnswVectorStore, 
+    DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
 
@@ -360,6 +360,7 @@ vector_store = DocArrayInMemoryVectorStore()
 ```
 
 **MongoDBAtlas**
+
 ```python
 # Provide URI to constructor, or use environment variable
 import pymongo
@@ -395,6 +396,33 @@ neo4j_vector = Neo4jVectorStore(
     password="pleaseletmein", 
     url="bolt://localhost:7687", 
     embed_dim=1536
+)
+
+**Azure Cognitive Search**
+
+```python
+from azure.search.documents import SearchClient
+from llama_index.vector_stores import ChromaVectorStore
+from azure.core.credentials import AzureKeyCredential
+
+service_endpoint = f"https://{search_service_name}.search.windows.net"
+index_name = "quickstart"
+cognitive_search_credential = AzureKeyCredential("<API key>")
+
+search_client = SearchClient(
+    endpoint=service_endpoint,
+    index_name=index_name,
+    credential=cognitive_search_credential,
+)
+
+# construct vector store
+vector_store = CognitiveSearchVectorStore(
+    search_client,
+    id_field_key="id",
+    chunk_field_key="content",
+    embedding_field_key="embedding",
+    metadata_field_key="li_jsonMetadata",
+    doc_id_field_key="li_doc_id",)
 )
 ```
 
@@ -502,7 +530,6 @@ documents = reader.load_data(
 
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/data_connectors).
 
-
 ```{toctree}
 ---
 caption: Examples
@@ -534,4 +561,5 @@ maxdepth: 1
 ../../examples/vector_stores/postgres.ipynb
 ../../examples/vector_stores/AwadbDemo.ipynb
 ../../examples/vector_stores/Neo4jVectorDemo.ipynb
+../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ```
