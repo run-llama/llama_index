@@ -116,3 +116,11 @@ maxdepth: 1
 ---
 /examples/llm/rungpt.ipynb
 ```
+
+## Portkey
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/portkey.ipynb
+```

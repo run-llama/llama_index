@@ -7,7 +7,12 @@ from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Generator
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_EVENT
+from llama_index.callbacks.schema import (
+    CBEventType,
+    EventPayload,
+    LEAF_EVENTS,
+    BASE_TRACE_EVENT,
+)
 
 logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
@@ -142,18 +147,33 @@ class CallbackManager(BaseCallbackHandler, ABC):
         event = EventContext(self, event_type, event_id=event_id)
         event.on_start(payload=payload)
 
-        yield event
-
-        # ensure event is ended
-        if not event.finished:
-            event.on_end()
+        try:
+            yield event
+        except Exception as e:
+            self.on_event_start(
+                CBEventType.EXCEPTION, payload={EventPayload.EXCEPTION: e}
+            )
+            raise e
+        finally:
+            # ensure event is ended
+            if not event.finished:
+                event.on_end()
 
     @contextmanager
     def as_trace(self, trace_id: str) -> Generator[None, None, None]:
         """Context manager tracer for lanching and shutdown of traces."""
         self.start_trace(trace_id=trace_id)
-        yield
-        self.end_trace(trace_id=trace_id)
+
+        try:
+            yield
+        except Exception as e:
+            self.on_event_start(
+                CBEventType.EXCEPTION, payload={EventPayload.EXCEPTION: e}
+            )
+            raise e
+        finally:
+            # ensure trace is ended
+            self.end_trace(trace_id=trace_id)
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         """Run when an overall trace is launched."""

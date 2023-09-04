@@ -11,10 +11,7 @@ needed), or truncating them so that they fit in a single LLM call.
 import logging
 from typing import Callable, List, Optional, Sequence
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS

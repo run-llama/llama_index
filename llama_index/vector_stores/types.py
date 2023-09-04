@@ -5,11 +5,8 @@ from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_check
 
 import fsspec
 
-try:
-    from pydantic.v1 import BaseModel, StrictFloat, StrictInt, StrictStr
-except ImportError:
-    from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
 
+from llama_index.bridge.pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
 from llama_index.schema import BaseNode
 
 DEFAULT_PERSIST_DIR = "./storage"
@@ -141,6 +138,9 @@ class VectorStoreQuery:
 
     # only for mmr
     mmr_threshold: Optional[float] = None
+
+    # NOTE: currently only used by postgres hybrid search
+    sparse_top_k: Optional[int] = None
 
 
 @runtime_checkable

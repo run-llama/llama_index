@@ -97,7 +97,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
 
     Generates embeddings on the fly, attaches to each summary node.
 
-    NOTE: implementation is similar to ListIndexEmbeddingRetriever.
+    NOTE: implementation is similar to SummaryIndexEmbeddingRetriever.
 
     Args:
         index (DocumentSummaryIndex): The index to retrieve from.
