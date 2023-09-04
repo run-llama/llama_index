@@ -4,6 +4,7 @@
 
 ### New Features
 - Added support for Azure Cognitive Search vector store (#7469)
+- Support delete in supabase (#6951)
 
 ## [0.8.20] - 2023-09-04
 
