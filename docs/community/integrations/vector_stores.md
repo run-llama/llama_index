@@ -422,7 +422,7 @@ vector_store = CognitiveSearchVectorStore(
     chunk_field_key="content",
     embedding_field_key="embedding",
     metadata_field_key="li_jsonMetadata",
-    doc_id_field_key="li_doc_id",)
+    doc_id_field_key="li_doc_id",
 )
 ```
 
