@@ -28,6 +28,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Deeplake                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Neo4jVector              | self-hosted / cloud |                    |               | ✓      | ✓               |       |
 | Azure Cognitive Search   | cloud               |                    | ✓             | ✓      | ✓               |       |
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
@@ -71,5 +72,6 @@ maxdepth: 1
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 /examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 /examples/vector_stores/CassandraIndexDemo.ipynb
+/examples/vector_stores/Neo4jVectorDemo.ipynb
 /examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ```

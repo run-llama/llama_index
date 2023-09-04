@@ -28,6 +28,8 @@ as the storage backend for `VectorStoreIndex`.
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
+- Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
+
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -380,6 +382,22 @@ uber_docs = SimpleDirectoryReader(input_files=["../data/10k/uber_2021.pdf"]).loa
 index = VectorStoreIndex.from_documents(uber_docs, storage_context=storage_context)
 ```
 
+**Neo4j**
+
+- Neo4j stores texts, metadata, and embeddings and can be customized to return graph data in the form of metadata.
+
+
+```python
+from llama_index.vector_stores import Neo4jVectorStore
+
+# construct vector store
+neo4j_vector = Neo4jVectorStore(
+    username="neo4j",
+    password="pleaseletmein", 
+    url="bolt://localhost:7687", 
+    embed_dim=1536
+)
+
 **Azure Cognitive Search**
 
 ```python
@@ -542,5 +560,6 @@ maxdepth: 1
 ../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 ../../examples/vector_stores/postgres.ipynb
 ../../examples/vector_stores/AwadbDemo.ipynb
+../../examples/vector_stores/Neo4jVectorDemo.ipynb
 ../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ```
