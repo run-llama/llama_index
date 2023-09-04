@@ -107,7 +107,7 @@ class SupabaseVectorStore(VectorStore):
 
         return ids
 
-    def get_by_id(self, doc_id: str) -> list[str] | None:
+    def get_by_id(self, doc_id: str) -> list:
         """Get row ids by doc id.
 
         Args:
