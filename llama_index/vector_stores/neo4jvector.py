@@ -284,6 +284,6 @@ class Neo4jVectorStore(VectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self.database_query(
-            f"MATCH (n:`{self.node_label}`) " "WHERE n.id = $id DETACH DELETE n",
+            f"MATCH (n:`{self.node_label}`) WHERE n.id = $id DETACH DELETE n",
             {"id": ref_doc_id},
         )
