@@ -290,6 +290,7 @@ class PineconeVectorStore(VectorStore):
         for match in response.matches:
             try:
                 node = metadata_dict_to_node(match.metadata)
+                node.embedding = match.values
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 _logger.debug(
