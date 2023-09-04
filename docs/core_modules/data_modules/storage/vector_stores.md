@@ -21,7 +21,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Cassandra                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
-| Milvus / Zilliz          | self-hosted / cloud |                    |               | ✓      | ✓               |       |
+| Milvus / Zilliz          | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Typesense                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Supabase                 | self-hosted / cloud | ✓                  |               |        | ✓               |       |
 | MongoDB Atlas            | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
