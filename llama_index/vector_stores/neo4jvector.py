@@ -32,12 +32,12 @@ def clean_params(params: List[NodeWithEmbedding]) -> List[Dict[str, Any]]:
     for record in params:
         text = record.node.get_content(metadata_mode=MetadataMode.NONE)
         embedding = record.embedding
-        id = record.node.ref_doc_id
+        id = record.node.node_id
         metadata = node_to_metadata_dict(
             record.node, remove_text=True, flat_metadata=False
         )
         # Remove redundant metadata information
-        for k in ["document_id", "ref_doc_id", "doc_id"]:
+        for k in ["document_id", "doc_id"]:
             del metadata[k]
         clean_params.append(
             {"text": text, "embedding": embedding, "id": id, "metadata": metadata}
@@ -63,6 +63,7 @@ class Neo4jVectorStore(VectorStore):
         text_node_property: str = "text",
         distance_strategy: str = "cosine",
         retrieval_query: str = "",
+        **kwargs,
     ) -> None:
         try:
             import neo4j
@@ -284,6 +285,6 @@ class Neo4jVectorStore(VectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self.database_query(
-            f"MATCH (n:`{self.node_label}`) WHERE n.id = $id DETACH DELETE n",
+            f"MATCH (n:`{self.node_label}`) WHERE n.ref_doc_id = $id DETACH DELETE n",
             {"id": ref_doc_id},
         )

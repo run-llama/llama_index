@@ -37,6 +37,7 @@ We are actively adding more integrations and improving feature coverage for each
 | FAISS                    | in-memory           |                    |               |        |                 |       |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
+| Neo4jVector              | self-hosted / cloud |                    |               | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 
@@ -69,4 +70,5 @@ maxdepth: 1
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 /examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 /examples/vector_stores/CassandraIndexDemo.ipynb
+/examples/vector_stores/Neo4jVectorDemo.ipynb
 ```

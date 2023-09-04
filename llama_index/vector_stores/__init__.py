@@ -30,6 +30,7 @@ from llama_index.vector_stores.docarray import (
     DocArrayInMemoryVectorStore,
 )
 from llama_index.vector_stores.awadb import AwaDBVectorStore
+from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
 
 __all__ = [
     "SimpleVectorStore",
@@ -57,4 +58,5 @@ __all__ = [
     "ZepVectorStore",
     "AwaDBVectorStore",
     "BagelVectorStore",
+    "Neo4jVectorStore",
 ]
