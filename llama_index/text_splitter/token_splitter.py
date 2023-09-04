@@ -83,6 +83,21 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         """Split text into chunks, reserving space required for metadata str."""
         metadata_len = len(self.tokenizer(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN
         effective_chunk_size = self.chunk_size - metadata_len
+        if effective_chunk_size <= 0:
+            raise ValueError(
+                f"Metadata length ({metadata_len}) is longer than chunk size "
+                f"({self.chunk_size}). Consider increasing the chunk size or "
+                "decreasing the size of your metadata to avoid this."
+            )
+        elif effective_chunk_size < 50:
+            print(
+                f"Metadata length ({metadata_len}) is close to chunk size "
+                f"({self.chunk_size}). Resulting chunks are less than 50 tokens. "
+                "Consider increasing the chunk size or decreasing the size of "
+                "your metadata to avoid this.",
+                flush=True,
+            )
+
         return self._split_text(text, chunk_size=effective_chunk_size)
 
     def split_text(self, text: str) -> List[str]:

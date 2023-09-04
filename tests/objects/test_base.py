@@ -1,7 +1,7 @@
 """Test object index."""
 
 from llama_index.objects.base import ObjectIndex
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 
 from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
@@ -14,7 +14,7 @@ def test_object_index(mock_service_context: ServiceContext) -> None:
 
     object_mapping = SimpleObjectNodeMapping.from_objects(["a", "b", "c"])
     obj_index = ObjectIndex.from_objects(
-        ["a", "b", "c"], object_mapping, index_cls=ListIndex
+        ["a", "b", "c"], object_mapping, index_cls=SummaryIndex
     )
     # should just retrieve everything
     assert obj_index.as_retriever().retrieve("test") == ["a", "b", "c"]
@@ -33,6 +33,6 @@ def test_object_index_with_tools(mock_service_context: ServiceContext) -> None:
     object_mapping = SimpleToolNodeMapping.from_objects([tool1, tool2])
 
     obj_retriever = ObjectIndex.from_objects(
-        [tool1, tool2], object_mapping, index_cls=ListIndex
+        [tool1, tool2], object_mapping, index_cls=SummaryIndex
     )
     assert obj_retriever.as_retriever().retrieve("test") == [tool1, tool2]

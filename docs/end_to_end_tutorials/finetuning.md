@@ -54,7 +54,7 @@ Embedding Fine-tuning Blog <https://medium.com/llamaindex-blog/fine-tuning-embed
 
 ### Finetuning GPT-3.5 to distill GPT-4
 
-We released a guide showing how to use OpenAI's finetuning endpoints to fine-tune gpt-3.5-turbo to output GPT-4 responses for a full RAG pipeline.
+We have multiple guides showing how to use OpenAI's finetuning endpoints to fine-tune gpt-3.5-turbo to output GPT-4 responses for RAG/agents.
 
 We use GPT-4 to automatically generate questions from any unstructured context, and use a GPT-4 query engine pipeline to generate "ground-truth" answers. Our `OpenAIFineTuningHandler` callback automatically logs questions/answers to a dataset. 
 
@@ -65,7 +65,8 @@ We then launch a finetuning job, and get back a distilled model. We can evaluate
 maxdepth: 1
 ---
 GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing>
-GPT-3.5 Fine-tuning Notebook </examples/finetuning/openai_fine_tuning.ipynb>
+GPT-3.5 Fine-tuning Notebook (Notebook link) </examples/finetuning/openai_fine_tuning.ipynb>
+/examples/finetuning/react_agent/react_agent_finetune.ipynb
 ```
 
 **Old**

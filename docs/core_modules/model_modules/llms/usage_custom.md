@@ -187,7 +187,7 @@ from llama_index import (
     ServiceContext, 
     SimpleDirectoryReader, 
     LangchainEmbedding, 
-    ListIndex
+    SummaryIndex
 )
 from llama_index.callbacks import CallbackManager
 from llama_index.llms import (
@@ -243,7 +243,7 @@ service_context = ServiceContext.from_defaults(
 
 # Load the your data
 documents = SimpleDirectoryReader('./data').load_data()
-index = ListIndex.from_documents(documents, service_context=service_context)
+index = SummaryIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
 query_engine = index.as_query_engine()
