@@ -4,7 +4,10 @@
 
 ### New Features
 - Added support for Azure Cognitive Search vector store (#7469)
+
+### Breaking Changes
 - Update milvus vector store to support filters and dynamic schemas (#7286)
+  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
 
 ## [0.8.20] - 2023-09-04
 
