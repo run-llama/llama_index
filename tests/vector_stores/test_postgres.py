@@ -257,7 +257,7 @@ async def test_save_load(
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
 
-    q = VectorStoreQuery(query_embedding=[1.0] * 1536, similarity_top_k=1)
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.1), similarity_top_k=1)
 
     if use_async:
         res = await pg.aquery(q)
@@ -265,12 +265,15 @@ async def test_save_load(
         res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[0].node_id == "bbb"
 
     pg_dict = pg.to_dict()
     await pg.close()
 
     loaded_pg = cast(PGVectorStore, load_vector_store(pg_dict))
+    loaded_pg_dict = loaded_pg.to_dict()
+    for key, val in pg.to_dict().items():
+        assert loaded_pg_dict[key] == val
 
     if use_async:
         res = await loaded_pg.aquery(q)
@@ -278,7 +281,7 @@ async def test_save_load(
         res = loaded_pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[0].node_id == "bbb"
 
     await loaded_pg.close()
 

@@ -171,24 +171,24 @@ class PGVectorStore(BasePydanticVectorStore):
     @classmethod
     def from_params(
         cls,
-        host: str,
-        port: int,
-        database: str,
-        user: str,
-        password: str,
-        table_name: str,
-        conn_str: Optional[str] = None,
-        async_conn_str: Optional[str] = None,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        database: Optional[str] = None,
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+        table_name: Optional[str] = None,
+        connection_string: Optional[str] = None,
+        async_connection_string: Optional[str] = None,
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = (
-            conn_str
+            connection_string
             or f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
         )
-        async_conn_str = async_conn_str or (
+        async_conn_str = async_connection_string or (
             f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
         )
         return cls(
@@ -292,8 +292,8 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy import select
 
         stmt = select(  # type: ignore
-            self.table_class, self.table_class.embedding.cosine_distance(embedding)
-        ).order_by(self.table_class.embedding.cosine_distance(embedding))
+            self._table_class, self._table_class.embedding.cosine_distance(embedding)
+        ).order_by(self._table_class.embedding.cosine_distance(embedding))
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
@@ -352,13 +352,13 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(self._text_search_config, query_str)
+        ts_query = func.plainto_tsquery(self.text_search_config, query_str)
         stmt = (
             select(  # type: ignore
-                self.table_class,
-                func.ts_rank(self.table_class.text_search_tsv, ts_query).label("rank"),
+                self._table_class,
+                func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
             )
-            .where(self.table_class.text_search_tsv.op("@@")(ts_query))
+            .where(self._table_class.text_search_tsv.op("@@")(ts_query))
             .order_by(text("rank desc"))
         )
 
