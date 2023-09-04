@@ -179,7 +179,6 @@ class Refine(BaseSynthesizer):
                         response = structured_response.answer
                 except Exception as e:
                     logger.error(f'Error: {e}', exc_info=True)
-                    return response
             elif response is None and self._streaming:
                 response = self._service_context.llm_predictor.stream(
                     text_qa_template,
@@ -237,7 +236,6 @@ class Refine(BaseSynthesizer):
                         response = structured_response.answer
                 except Exception as e:
                     logger.error(f'Error: {e}', exc_info=True)
-                    return response
             else:
                 response = self._service_context.llm_predictor.stream(
                     refine_template,
@@ -318,7 +316,6 @@ class Refine(BaseSynthesizer):
                         response = structured_response.answer
                 except Exception as e:
                     logger.error(f'Error: {e}', exc_info=True)
-                    return response
             else:
                 raise ValueError("Streaming not supported for async")
 
@@ -356,7 +353,6 @@ class Refine(BaseSynthesizer):
                         response = structured_response.answer
                 except Exception as e:
                     logger.error(f'Error: {e}', exc_info=True)
-                    return response
             elif response is None and self._streaming:
                 raise ValueError("Streaming not supported for async")
             else:
