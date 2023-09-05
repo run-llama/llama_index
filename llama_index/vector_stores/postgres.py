@@ -2,9 +2,10 @@ import logging
 from typing import List, Any, Type, Optional
 from collections import namedtuple
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -83,11 +84,25 @@ def get_data_model(
     return model
 
 
-class PGVectorStore(VectorStore):
+class PGVectorStore(BasePydanticVectorStore):
     from sqlalchemy.sql.selectable import Select
 
     stores_text = True
     flat_metadata = False
+
+    connection_string: str
+    async_connection_string: str
+    table_name: str
+    embed_dim: int
+    hybrid_search: bool
+    text_search_config: str
+
+    _base: Any = PrivateAttr()
+    _table_class: Any = PrivateAttr()
+    _engine: Any = PrivateAttr()
+    _session: Any = PrivateAttr()
+    _async_engine: Any = PrivateAttr()
+    _async_session: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -110,30 +125,35 @@ class PGVectorStore(VectorStore):
                 "packages should be pre installed"
             )
 
-        self.connection_string = connection_string
-        self.async_connection_string = async_connection_string
-        self.table_name: str = table_name.lower()
-        self._hybrid_search = hybrid_search
-        self._text_search_config = text_search_config
+        table_name = table_name.lower()
 
-        if self._hybrid_search and text_search_config is None:
+        if hybrid_search and text_search_config is None:
             raise ValueError(
                 "Sparse vector index creation requires "
                 "a text search configuration specification."
             )
 
-        # def __enter__(self):
         from sqlalchemy.orm import declarative_base
 
-        self._base = declarative_base()
         # sqlalchemy model
-        self.table_class = get_data_model(
+        self._base = declarative_base()
+        self._table_class = get_data_model(
             self._base,
-            self.table_name,
-            self._hybrid_search,
-            self._text_search_config,
+            table_name,
+            hybrid_search,
+            text_search_config,
             embed_dim=embed_dim,
         )
+
+        super().__init__(
+            connection_string=connection_string,
+            async_connection_string=async_connection_string,
+            table_name=table_name,
+            hybrid_search=hybrid_search,
+            text_search_config=text_search_config,
+            embed_dim=embed_dim,
+        )
+
         self._connect()
         self._create_extension()
         self._create_tables_if_not_exists()
@@ -145,21 +165,30 @@ class PGVectorStore(VectorStore):
         await self._async_engine.dispose()
 
     @classmethod
+    def class_name(cls) -> str:
+        return "PGVectorStore"
+
+    @classmethod
     def from_params(
         cls,
-        host: str,
-        port: int,
-        database: str,
-        user: str,
-        password: str,
-        table_name: str,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        database: Optional[str] = None,
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+        table_name: str = "llamaindex",
+        connection_string: Optional[str] = None,
+        async_connection_string: Optional[str] = None,
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
-        conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-        async_conn_str = (
+        conn_str = (
+            connection_string
+            or f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+        )
+        async_conn_str = async_connection_string or (
             f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
         )
         return cls(
@@ -170,6 +199,10 @@ class PGVectorStore(VectorStore):
             text_search_config=text_search_config,
             embed_dim=embed_dim,
         )
+
+    @property
+    def client(self) -> Any:
+        return self._engine
 
     def _connect(self) -> Any:
         from sqlalchemy import create_engine
@@ -198,7 +231,7 @@ class PGVectorStore(VectorStore):
                 session.commit()
 
     def _node_to_table_row(self, node: NodeWithEmbedding) -> Any:
-        return self.table_class(
+        return self._table_class(
             node_id=node.id,
             embedding=node.embedding,
             text=node.node.get_content(metadata_mode=MetadataMode.NONE),
@@ -259,8 +292,8 @@ class PGVectorStore(VectorStore):
         from sqlalchemy import select
 
         stmt = select(  # type: ignore
-            self.table_class, self.table_class.embedding.cosine_distance(embedding)
-        ).order_by(self.table_class.embedding.cosine_distance(embedding))
+            self._table_class, self._table_class.embedding.cosine_distance(embedding)
+        ).order_by(self._table_class.embedding.cosine_distance(embedding))
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
@@ -273,7 +306,9 @@ class PGVectorStore(VectorStore):
         stmt = self._build_query(embedding, limit, metadata_filters)
         with self._session() as session:
             with session.begin():
-                res = session.execute(stmt)
+                res = session.execute(
+                    stmt,
+                )
                 return [
                     DBEmbeddingRow(
                         node_id=item.node_id,
@@ -294,7 +329,7 @@ class PGVectorStore(VectorStore):
         async with self._async_session() as async_session:
             async with async_session.begin():
                 res = await async_session.execute(stmt)
-                return [
+                results = [
                     DBEmbeddingRow(
                         node_id=item.node_id,
                         text=item.text,
@@ -303,6 +338,7 @@ class PGVectorStore(VectorStore):
                     )
                     for item, distance in res.all()
                 ]
+                return results
 
     def _build_sparse_query(
         self,
@@ -316,13 +352,13 @@ class PGVectorStore(VectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(self._text_search_config, query_str)
+        ts_query = func.plainto_tsquery(self.text_search_config, query_str)
         stmt = (
             select(  # type: ignore
-                self.table_class,
-                func.ts_rank(self.table_class.text_search_tsv, ts_query).label("rank"),
+                self._table_class,
+                func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
             )
-            .where(self.table_class.text_search_tsv.op("@@")(ts_query))
+            .where(self._table_class.text_search_tsv.op("@@")(ts_query))
             .order_by(text("rank desc"))
         )
 
