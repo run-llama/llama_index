@@ -73,8 +73,15 @@ class PromptTemplate(BasePromptTemplate):
 
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
         """Partially format the prompt."""
+        # NOTE: this is a hack to get around deepcopy failing on output parser
+        output_parser = self.output_parser
+        self.output_parser = None
+
         prompt = deepcopy(self)
         prompt.kwargs.update(kwargs)
+
+        # NOTE: put the output parser back
+        prompt.output_parser = output_parser
         return prompt
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
