@@ -1,7 +1,7 @@
 """Elasticsearch vector store."""
 import uuid
 from logging import getLogger
-from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
 
 from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
@@ -135,9 +135,11 @@ class ElasticsearchStore(VectorStore):
         es_user: Optional. Elasticsearch username.
         es_password: Optional. Elasticsearch password.
         text_field: Optional. Name of the Elasticsearch field that stores the text.
-        vector_field: Optional. Name of the Elasticsearch field that stores the embedding.
+        vector_field: Optional. Name of the Elasticsearch field that stores the
+                    embedding.
         batch_size: Optional. Batch size for bulk indexing. Defaults to 200.
-        distance_strategy: Optional. Distance strategy to use for similarity search. Defaults to "COSINE".
+        distance_strategy: Optional. Distance strategy to use for similarity search.
+                        Defaults to "COSINE".
 
     Raises:
         ConnectionError: If Elasticsearch client cannot connect to Elasticsearch.
@@ -241,7 +243,7 @@ class ElasticsearchStore(VectorStore):
             }
 
             logger.debug(
-                f"Creating index {index_name} with mappings {index_settings['mappings']}"
+                f"Creating index {index_name} with mappings {index_settings['mappings']}"  # noqa: E501
             )
             self.client.indices.create(index=index_name, **index_settings)
 
@@ -255,7 +257,10 @@ class ElasticsearchStore(VectorStore):
 
         Args:
             embedding_results: List of nodes with embeddings.
-            create_index_if_not_exists: Optional. Whether to create the Elasticsearch index if it doesn't already exist. Defaults to True.
+            create_index_if_not_exists: Optional. Whether to create
+                                        the Elasticsearch index if it
+                                        doesn't already exist.
+                                        Defaults to True.
 
         Returns:
             List of node IDs that were added to the index.
@@ -326,7 +331,8 @@ class ElasticsearchStore(VectorStore):
 
         Args:
             ref_doc_id: ID of the node to delete.
-            delete_kwargs: Optional. Additional arguments to pass to Elasticsearch delete_by_query.
+            delete_kwargs: Optional. Additional arguments to
+                        pass to Elasticsearch delete_by_query.
 
         Raises:
             Exception: If Elasticsearch delete_by_query fails.
@@ -360,11 +366,13 @@ class ElasticsearchStore(VectorStore):
 
         Args:
             query_embedding (List[float]): query embedding
-            custom_query: Optional. custom query function that takes in the es query body
-                            and returns a modified query body. This can be used to add
-                            additional query parameters to the Elasticsearch query.
-            es_filter: Optional. Elasticsearch filter to apply to the query. If filter is provided
-                    in the query, this filter will be ignored.
+            custom_query: Optional. custom query function that takes in the es query
+                        body and returns a modified query body.
+                        This can be used to add additional query
+                        parameters to the Elasticsearch query.
+            es_filter: Optional. Elasticsearch filter to apply to the
+                        query. If filter is provided in the query,
+                        this filter will be ignored.
 
         Returns:
             VectorStoreQueryResult: Result of the query.
