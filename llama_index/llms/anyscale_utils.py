@@ -1,4 +1,6 @@
+import os
 from typing import Any, Dict, Optional, Sequence
+
 from llama_index.llms.base import ChatMessage, MessageRole
 
 LLAMA_MODELS = {

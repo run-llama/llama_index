@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional, Sequence
+
 import requests
 
 try:
@@ -6,36 +7,25 @@ try:
 except ImportError:
     from pydantic import Field, PrivateAttr
 
-from llama_index.callbacks import CallbackManager
-
 import importlib
+
+from llama_index.callbacks import CallbackManager
 from llama_index.llms import anyscale_utils
+
 importlib.reload(anyscale_utils)
-from llama_index.llms.anyscale_utils import (
-    get_from_param_or_env,
-    anyscale_modelname_to_contextsize,
-    messages_to_anyscale_prompt
-)
-from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
-    llm_chat_callback,
-    llm_completion_callback,
-)
+from llama_index.llms.anyscale_utils import (anyscale_modelname_to_contextsize,
+                                             get_from_param_or_env,
+                                             messages_to_anyscale_prompt)
+from llama_index.llms.base import (LLM, ChatMessage, ChatResponse,
+                                   ChatResponseAsyncGen, ChatResponseGen,
+                                   CompletionResponse,
+                                   CompletionResponseAsyncGen,
+                                   CompletionResponseGen, LLMMetadata,
+                                   MessageRole, llm_chat_callback,
+                                   llm_completion_callback)
 from llama_index.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-    chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-)
+    achat_to_completion_decorator, astream_chat_to_completion_decorator,
+    chat_to_completion_decorator, stream_chat_to_completion_decorator)
 
 
 class Anyscale(LLM):
@@ -43,13 +33,6 @@ class Anyscale(LLM):
     api_base: Optional[str] = Field(default=None, description="The base URL to use.")
     api_key: Optional[str] = Field(default=None, description="The base URL to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
-    max_tokens: int = Field(description="The maximum number of tokens to generate.")
-    timeout: Optional[float] = Field(
-        default=None, description="The timeout to use in seconds."
-    )
-    max_retries: int = Field(
-        default=10, description="The maximum number of API retries."
-    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additonal kwargs for the anyscale API."
     )
@@ -58,11 +41,8 @@ class Anyscale(LLM):
         self,
         model_name: str = "meta-llama/Llama-2-70b-chat-hf",
         temperature: float = 0.1,
-        max_tokens: int,
         api_base: Optional[str] = "https://console.endpoints.anyscale.com/m/v1",
         api_key: Optional[str] = None,
-        timeout: Optional[float] = None,
-        max_retries: int = 10,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -81,14 +61,11 @@ class Anyscale(LLM):
         api_key  = get_from_param_or_env("api_key",  api_key,  "ANYSCALE_API_KEY")
 
         super().__init__(
+            model_name=model_name,
             temperature=temperature,
-            max_tokens=max_tokens,
-            additional_kwargs=additional_kwargs,
             api_base=api_base,
             api_key=api_key,
-            timeout=timeout,
-            max_retries=max_retries,
-            model_name=model_name,
+            additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
         )
 
