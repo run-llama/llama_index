@@ -128,8 +128,8 @@ class EpsillaVectorStore(VectorStore):
             dimension (int): The dimension of the embeddings.
         """
         fields: List[dict] = [
-            {"name": "id", "dataType": "STRING"},
-            {"name": DEFAULT_DOC_ID_KEY, "dataType": "STRING", "primaryKey": True},
+            {"name": "id", "dataType": "STRING", "primaryKey": True},
+            {"name": DEFAULT_DOC_ID_KEY, "dataType": "STRING"},
             {"name": DEFAULT_TEXT_KEY, "dataType": "STRING"},
             {
                 "name": DEFAULT_EMBEDDING_KEY,
