@@ -236,6 +236,9 @@ def test_add_to_es_query_with_filters(
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
 
 
+@pytest.mark.skipif(
+    elasticsearch_not_available, reason="elasticsearch is not available"
+)
 def test_add_to_es_query_with_es_filters(
     index_name: str,
     elasticsearch_connection: Dict,
