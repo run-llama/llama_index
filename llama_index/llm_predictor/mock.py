@@ -62,7 +62,7 @@ def _mock_refine(max_tokens: int, prompt: BasePromptTemplate, prompt_args: Dict)
     else:
         existing_answer = prompt_args["existing_answer"]
     num_ctx_tokens = len(globals_helper.tokenizer(prompt_args["context_msg"]))
-    num_exist_tokens = len(globals_helper.tokenizer(existing_answer))
+    num_exist_tokens = len(globals_helper.tokenizer(existing_answer))  # type: ignore
     token_limit = min(num_ctx_tokens + num_exist_tokens, max_tokens)
     return " ".join(["answer"] * token_limit)
 
@@ -132,7 +132,8 @@ class MockLLMPredictor(BaseLLMPredictor):
             output = _mock_query_keyword_extract(prompt_args)
         elif prompt_str == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
             output = _mock_knowledge_graph_triplet_extract(
-                prompt_args, int(prompt.kwargs.get("max_knowledge_triplets", 2))
+                prompt_args,
+                int(prompt.kwargs.get("max_knowledge_triplets", 2)),  # type: ignore
             )
         elif prompt_str == PromptType.CUSTOM:
             # we don't know specific prompt type, return generic response

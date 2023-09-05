@@ -3,7 +3,7 @@
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 from llama_index.bridge.pydantic import BaseModel
 
@@ -21,7 +21,7 @@ from llama_index.types import BaseOutputParser
 class BasePromptTemplate(BaseModel, ABC):
     metadata: Dict[str, Any]
     template_vars: List[str]
-    kwargs: Dict[str, str]
+    kwargs: Dict[str, Union[str, Generator]]
     output_parser: Optional[BaseOutputParser]
 
     class Config:
@@ -91,6 +91,12 @@ class PromptTemplate(BasePromptTemplate):
             **self.kwargs,
             **kwargs,
         }
+
+        # handle token generators
+        for kwarg in self.template_vars:
+            if isinstance(all_kwargs[kwarg], Generator):
+                all_kwargs[kwarg] = "".join(all_kwargs[kwarg])
+
         return self.template.format(**all_kwargs)
 
     def format_messages(
@@ -152,6 +158,11 @@ class ChatPromptTemplate(BasePromptTemplate):
             **self.kwargs,
             **kwargs,
         }
+
+        # handle token generators
+        for kwarg in self.template_vars:
+            if isinstance(all_kwargs[kwarg], Generator):
+                all_kwargs[kwarg] = "".join(all_kwargs[kwarg])
 
         messages = []
         for message_template in self.message_templates:
