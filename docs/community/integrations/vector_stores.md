@@ -15,6 +15,7 @@ as the storage backend for `VectorStoreIndex`.
 - Azure Cognitive Search (`CognitiveSearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - [Apache Cassandra®](https://cassandra.apache.org/) and compatible databases such as [Astra DB](https://www.datastax.com/press-release/datastax-adds-vector-search-to-astra-db-on-google-cloud-for-building-real-time-generative-ai-applications) (`CassandraVectorStore`)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
+- Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
@@ -273,6 +274,25 @@ vector_store = ChromaVectorStore(
     chroma_collection=chroma_collection,
 )
 ```
+
+**Epsilla**
+
+```python
+from pyepsilla import vectordb
+from llama_index.vector_stores import EpsillaVectorStore
+
+# Creating an Epsilla client
+epsilla_client = vectordb.Client()
+
+# Construct vector store
+vector_store = EpsillaVectorStore(client=epsilla_client)
+```
+
+**Note**: `EpsillaVectorStore` depends on the `pyepsilla` library and a running Epsilla vector database.
+Use `pip/pip3 install pyepsilla` if not installed yet.
+A running Epsilla vector database could be found through docker image.
+For complete instructions, see the following documentation:
+https://epsilla-inc.gitbook.io/epsilladb/quick-start
 
 **Milvus**
 
@@ -549,6 +569,7 @@ maxdepth: 1
 ../../examples/vector_stores/PineconeIndexDemo.ipynb
 ../../examples/vector_stores/CassandraIndexDemo.ipynb
 ../../examples/vector_stores/ChromaIndexDemo.ipynb
+../../examples/vector_stores/EpsillaIndexDemo.ipynb
 ../../examples/vector_stores/LanceDBIndexDemo.ipynb
 ../../examples/vector_stores/MilvusIndexDemo.ipynb
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
