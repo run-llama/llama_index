@@ -353,7 +353,7 @@ class ElasticsearchStore(VectorStore):
         custom_query: Optional[
             Callable[[Dict, Union[VectorStoreQuery, None]], Dict]
         ] = None,
-        es_filter: Optional[Dict] = None,
+        es_filter: Optional[List[Dict]] = None,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.

@@ -129,7 +129,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-def test_instance_creation(index_name, elasticsearch_connection) -> None:
+def test_instance_creation(index_name: str, elasticsearch_connection: Dict) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
         index_name=index_name,
@@ -141,7 +141,9 @@ def test_instance_creation(index_name, elasticsearch_connection) -> None:
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
 def test_add_to_es_and_query(
-    index_name, elasticsearch_connection, node_embeddings: List[NodeWithEmbedding]
+    index_name: str,
+    elasticsearch_connection: Dict,
+    node_embeddings: List[NodeWithEmbedding],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -160,7 +162,9 @@ def test_add_to_es_and_query(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
 def test_add_to_es_and_text_query(
-    index_name, elasticsearch_connection, node_embeddings: List[NodeWithEmbedding]
+    index_name: str,
+    elasticsearch_connection: Dict,
+    node_embeddings: List[NodeWithEmbedding],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -181,7 +185,9 @@ def test_add_to_es_and_text_query(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
 def test_add_to_es_and_hybrid_query(
-    index_name, elasticsearch_connection, node_embeddings: List[NodeWithEmbedding]
+    index_name: str,
+    elasticsearch_connection: Dict,
+    node_embeddings: List[NodeWithEmbedding],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -205,7 +211,9 @@ def test_add_to_es_and_hybrid_query(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
 def test_add_to_es_query_with_filters(
-    index_name, elasticsearch_connection, node_embeddings: List[NodeWithEmbedding]
+    index_name: str,
+    elasticsearch_connection: Dict,
+    node_embeddings: List[NodeWithEmbedding],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -229,7 +237,9 @@ def test_add_to_es_query_with_filters(
 
 
 def test_add_to_es_query_with_es_filters(
-    index_name, elasticsearch_connection, node_embeddings: List[NodeWithEmbedding]
+    index_name: str,
+    elasticsearch_connection: Dict,
+    node_embeddings: List[NodeWithEmbedding],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -241,7 +251,7 @@ def test_add_to_es_query_with_es_filters(
 
     q = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
 
-    res = es_store.query(q, es_filter={"wildcard": {"metadata.author": "stephe*"}})
+    res = es_store.query(q, es_filter=[{"wildcard": {"metadata.author": "stephe*"}}])
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
@@ -251,7 +261,9 @@ def test_add_to_es_query_with_es_filters(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
 def test_add_to_es_query_and_delete(
-    index_name, elasticsearch_connection, node_embeddings: List[NodeWithEmbedding]
+    index_name: str,
+    elasticsearch_connection: Dict,
+    node_embeddings: List[NodeWithEmbedding],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
