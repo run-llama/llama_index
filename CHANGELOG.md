@@ -5,6 +5,7 @@
 ### New Features
 - Added support for Azure Cognitive Search vector store (#7469)
 - Support delete in supabase (#6951)
+- Added support for Espilla vector store (#7539)
 
 ### Bug Fixes / Nits
 - Default to user-configurable top-k in `VectorIndexAutoRetriever` (#7556)
