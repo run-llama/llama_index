@@ -34,7 +34,7 @@ Used to replace the node content with a field from the node metadata. If the fie
 ```python
 from llama_index.indices.postprocessor import MetadataReplacementPostProcessor
 
-postprocessor = KeywordNodePostprocessor(
+postprocessor = MetadataReplacementPostProcessor(
   target_metadata_key="window",
 )
 

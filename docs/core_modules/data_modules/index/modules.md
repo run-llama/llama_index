@@ -5,7 +5,7 @@
 maxdepth: 1
 ---
 vector_store_guide.ipynb
-List Index <./index_guide.md>
+Summary Index <./index_guide.md>
 Tree Index <./index_guide.md>
 Keyword Table Index <./index_guide.md>
 /examples/index_structs/knowledge_graph/KnowledgeGraphDemo.ipynb
