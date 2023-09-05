@@ -13,9 +13,10 @@ RETRY_TIMES = 3
 WAIT_MIN_SECONDS = 0.5
 WAIT_MAX_SECONDS = 10
 
-logging.basicConfig(filename='loggy.log', filemode='w', level=logging.INFO)
+logging.basicConfig(filename='nebby.log', filemode='w', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-logger.info('nebulagraph HERE')
+logger.warning('nebulagraph HERE')
+
 
 rel_query_sample_edge = Template(
     """
@@ -211,7 +212,7 @@ class NebulaGraphStore(GraphStore):
                 f"Erorr: {e}"
             )
             self.init_session_pool()
-            logger.info(
+            logger.warning(
                 f"Session pool recreated. Query: {query}, Param: {param_map}"
                 f"This was due to error: {e}, and now retrying."
             )
@@ -246,7 +247,7 @@ class NebulaGraphStore(GraphStore):
 
     @property
     def client(self) -> Any:
-        logger.info('\n#### nebulagraph client(self) called')
+        logger.warning('\n#### nebulagraph client(self) called')
         """Return NebulaGraph session pool."""
         return self._session_pool
 
@@ -270,8 +271,8 @@ class NebulaGraphStore(GraphStore):
         Returns:
             Triplets.
         """
-        logger.info('\n#### nebulagraph get(self, subj: str) called')
-        logger.info('subj = '+subj)
+        logger.warning('\n#### nebulagraph get(self, subj: str) called')
+        logger.warning('subj = '+subj)
 
         if len(self._edge_types) == 1:
             # edge_types = ["follow"]
@@ -297,7 +298,7 @@ class NebulaGraphStore(GraphStore):
                 f"WHERE value IS NOT EMPTY][0] AS rel, "
                 f"dst(edge) AS obj"
             )
-        logger.info(f"Query: {query}")
+        logger.warning(f"Query: {query}")
         result = self.execute(query)
 
         # get raw data
@@ -307,8 +308,8 @@ class NebulaGraphStore(GraphStore):
         lol = [[str(rel.cast()), str(obj.cast())]
                for rel, obj in zip(rels, objs)]
 
-        logger.info('lol = '+str(lol))
-        logger.info('#### nebulagraph get(self, subj: str) end')
+        logger.warning('lol = '+str(lol))
+        logger.warning('#### nebulagraph get(self, subj: str) end')
 
         # convert to list of list
         return lol
@@ -317,6 +318,8 @@ class NebulaGraphStore(GraphStore):
         self, subjs: Optional[List[str]] = None, depth: int = 2
     ) -> Dict[str, List[List[str]]]:
         """Get flat rel map."""
+        logger.warning('#### nebulagraph get_flat_rel_map')
+        logger.warning('subs = '+str(subjs))
         # The flat means for multi-hop relation path, we could get
         # knowledge like: subj -rel-> obj -rel-> obj <-rel- obj.
         # This type of knowledge is useful for some tasks.
@@ -449,7 +452,7 @@ class NebulaGraphStore(GraphStore):
                 f"      flattened_rels"
             )
         subjs_param = prepare_subjs_param(subjs)
-        logger.debug(
+        logger.warning(
             f"get_flat_rel_map() subjs_param: {subjs}, query: {query}")
         result = self.execute(query, subjs_param)
         if result is None:
@@ -465,6 +468,10 @@ class NebulaGraphStore(GraphStore):
             if subj_ not in rel_map:
                 rel_map[subj_] = []
             rel_map[subj_].append(rel_)
+
+        logger.warning('rel_map =')
+        for rm in rel_map:
+            logger.warning('s =' + str(rm))
         return rel_map
 
     def get_rel_map(
@@ -474,13 +481,15 @@ class NebulaGraphStore(GraphStore):
         # We put rels in a long list for depth>= 1, this is different from
         # SimpleGraphStore.get_rel_map() though.
         # But this makes more sense for multi-hop relation path.
-        logger.info('\n#### nebulagraph get_rel_map called')
+        logger.warning('\n#### nebulagraph get_rel_map called')
+        for s in subjs:
+            logger.warning('s =' + str(s))
         if subjs is not None:
             subjs = [escape_str(subj) for subj in subjs]
             if len(subjs) == 0:
                 return {}
         rel_map = self.get_flat_rel_map(subjs, depth)
-        logger.info('rel_map = \n'+str(rel_map))
+        logger.warning('rel_map = \n'+str(rel_map))
         return rel_map
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
@@ -494,10 +503,10 @@ class NebulaGraphStore(GraphStore):
         # thus we have to assume subj to be the first entity.tag_name
 
         # lower case subj, rel, obj
-        logger.info('\n#### nebulagraph upsert_triplet called')
-        logger.info('subj = '+subj)
-        logger.info('rel = '+rel)
-        logger.info('obj = '+obj)
+        logger.warning('\n#### nebulagraph upsert_triplet called')
+       # logger.warning('subj = '+subj)
+       # logger.warning('rel = '+rel)
+       # logger.warning('obj = '+obj)
 
         subj = escape_str(subj)
         rel = escape_str(rel)
@@ -531,7 +540,7 @@ class NebulaGraphStore(GraphStore):
            obj are isolated vertices,
            if so, delete them, too.
         """
-        logger.info('\n#### nebulagraph delete called')
+        logger.warning('\n#### nebulagraph delete called')
         # lower case subj, rel, obj
         subj = escape_str(subj)
         rel = escape_str(rel)
@@ -619,21 +628,21 @@ class NebulaGraphStore(GraphStore):
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the NebulaGraph store."""
-        logger.info('\n#### nebulagraph get_schema called')
+        logger.warning('\n#### nebulagraph get_schema called')
         if self.schema and not refresh:
             return self.schema
         self.refresh_schema()
-        logger.info(f"get_schema() schema:\n{self.schema}")
+        logger.warning(f"get_schema() schema:\n{self.schema}")
         return self.schema
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        logger.info('\n#### nebulagraph query called')
-        logger.info('query = '+query)
+        logger.warning('\n#### nebulagraph query called')
+        logger.warning('query = '+query)
 
-        # logger.info('param_map = '+param_map)
-        logger.info('param_map = ')
+        # logger.warning('param_map = '+param_map)
+        logger.warning('param_map = ')
         for key, value in param_map.items():
-            logger.info(key + ' = '+value)
+            logger.warning(key + ' = '+value)
 
         result = self.execute(query, param_map)
         columns = result.keys()
