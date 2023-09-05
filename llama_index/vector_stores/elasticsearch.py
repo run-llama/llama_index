@@ -102,7 +102,7 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
         filter = standard_filters.filters[0]
         return {
             "term": {
-                f"metadata.{filter.key}": {
+                f"metadata.{filter.key}.keyword": {
                     "value": filter.value,
                 }
             }
@@ -113,7 +113,7 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
             operands.append(
                 {
                     "term": {
-                        f"metadata.{filter.key}": {
+                        f"metadata.{filter.key}.keyword": {
                             "value": filter.value,
                         }
                     }
@@ -228,6 +228,14 @@ class ElasticsearchStore(VectorStore):
                             "index": True,
                             "similarity": similarityAlgo,
                         },
+                        self.text_field: {"type": "text"},
+                        "metadata": {
+                            "properties": {
+                                "document_id": {"type": "keyword"},
+                                "doc_id": {"type": "keyword"},
+                                "ref_doc_id": {"type": "keyword"},
+                            }
+                        },
                     }
                 }
             }
@@ -325,13 +333,16 @@ class ElasticsearchStore(VectorStore):
         """
 
         try:
-            self.client.delete_by_query(
+            res = self.client.delete_by_query(
                 index=self.index_name,
-                query={"match": {"_id": ref_doc_id}},
+                query={"term": {"metadata.ref_doc_id": ref_doc_id}},
                 refresh=True,
                 **delete_kwargs,
             )
-            logger.debug(f"Deleted text {ref_doc_id} from index")
+            if res["deleted"] == 0:
+                logger.warning(f"Could not find text {ref_doc_id} to delete")
+            else:
+                logger.debug(f"Deleted text {ref_doc_id} from index")
         except Exception as e:
             logger.error(f"Error deleting text: {ref_doc_id}")
             raise e

@@ -45,7 +45,7 @@ def index_name() -> str:
     return f"test_{uuid.uuid4().hex}"
 
 
-@pytest.fixture(scope="class", autouse=True)
+@pytest.fixture(scope="session")
 def elasticsearch_connection() -> Union[dict, Generator[dict, None, None]]:
     # Running this integration test with Elastic Cloud
     # Required for in-stack inference testing (ELSER + model_id)
@@ -72,31 +72,55 @@ def elasticsearch_connection() -> Union[dict, Generator[dict, None, None]]:
         es = Elasticsearch(hosts=es_url)
 
     # Clear all indexes
-    # index_names = es.indices.get(index="_all").keys()
-    # for index_name in index_names:
-    #     if index_name.startswith("test_"):
-    #         es.indices.delete(index=index_name)
-    # es.indices.refresh(index="_all")
+    index_names = es.indices.get(index="_all").keys()
+    for index_name in index_names:
+        if index_name.startswith("test_"):
+            es.indices.delete(index=index_name)
+    es.indices.refresh(index="_all")
 
 
 @pytest.fixture(scope="session")
 def node_embeddings() -> List[NodeWithEmbedding]:
     return [
         NodeWithEmbedding(
-            embedding=[1.0] * 1536,
+            embedding=[1.0, 0.0, 0.0],
             node=TextNode(
                 text="lorem ipsum",
-                id_="aaa",
-                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+                id_="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
+                },
+                metadata={
+                    "author": "Stephen King",
+                    "theme": "Friendship",
+                },
             ),
         ),
         NodeWithEmbedding(
-            embedding=[0.5] * 1536,
+            embedding=[0.0, 1.0, 0.0],
             node=TextNode(
-                text="dolor sit amet",
-                id_="bbb",
-                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
-                metadata={"test_key": "test_value"},
+                text="lorem ipsum",
+                id_="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
+                },
+                metadata={
+                    "director": "Francis Ford Coppola",
+                    "theme": "Mafia",
+                },
+            ),
+        ),
+        NodeWithEmbedding(
+            embedding=[0.0, 0.0, 1.0],
+            node=TextNode(
+                text="lorem ipsum",
+                id_="c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")
+                },
+                metadata={
+                    "director": "Christopher Nolan",
+                },
             ),
         ),
     ]
@@ -126,7 +150,7 @@ def test_add_to_es_and_query(
     )
     es_store.add(node_embeddings)
     res = es_store.query(
-        VectorStoreQuery(query_embedding=[0.5] * 1536, similarity_top_k=1)
+        VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
     )
     assert res.nodes
     assert res.nodes[0].get_content() == "lorem ipsum"
@@ -168,7 +192,7 @@ def test_add_to_es_and_hybrid_query(
     res = es_store.query(
         VectorStoreQuery(
             query_str="lorem",
-            query_embedding=[0.5] * 1536,
+            query_embedding=[1.0, 0.0, 0.0],
             mode=VectorStoreQueryMode.HYBRID,
             similarity_top_k=1,
         )
@@ -189,21 +213,19 @@ def test_add_to_es_query_with_filters(
         distance_strategy="COSINE",
     )
 
-    print(index_name)
-
     es_store.add(node_embeddings)
 
     filters = MetadataFilters(
-        filters=[ExactMatchFilter(key="test_key", value="test_value")]
+        filters=[ExactMatchFilter(key="author", value="Stephen King")]
     )
     q = VectorStoreQuery(
-        query_embedding=[0.5] * 1536, similarity_top_k=10, filters=filters
+        query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10, filters=filters
     )
 
     res = es_store.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "bbb"
+    assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
 
 
 def test_add_to_es_query_with_es_filters(
@@ -215,16 +237,14 @@ def test_add_to_es_query_with_es_filters(
         distance_strategy="COSINE",
     )
 
-    print(index_name)
-
     es_store.add(node_embeddings)
 
-    q = VectorStoreQuery(query_embedding=[0.5] * 1536, similarity_top_k=10)
+    q = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
 
-    res = es_store.query(q, es_filter={"wildcard": {"metadata.test_key": "test_valu*"}})
+    res = es_store.query(q, es_filter={"wildcard": {"metadata.author": "stephe*"}})
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "bbb"
+    assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
 
 
 @pytest.mark.skipif(
@@ -239,16 +259,15 @@ def test_add_to_es_query_and_delete(
         distance_strategy="COSINE",
     )
 
-    q = VectorStoreQuery(query_embedding=[1.0] * 1536, similarity_top_k=1)
+    q = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
 
     es_store.add(node_embeddings)
     res = es_store.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "aaa"
-    es_store.delete("aaa")
-
+    assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
+    es_store.delete("test-0")
     res = es_store.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "bbb"
+    assert res.nodes[0].node_id == "c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d"
