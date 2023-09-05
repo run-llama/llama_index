@@ -198,14 +198,7 @@ class EpsillaVectorStore(VectorStore):
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
         """
-        if not self._collection_created:
-            return
-
-        status_code, response = self._client.delete_by_pk(
-            table_name=self._collection_name, ids=[ref_doc_id]
-        )
-        if status_code != 200:
-            self._handle_error(msg=response["message"])
+        raise NotImplementedError("Delete with filtering will be coming soon.")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
