@@ -6,7 +6,7 @@ import pytest
 try:
     from pyepsilla import vectordb
 except ImportError:
-    pyepsilla = None  # type: ignore
+    vectordb = None  # type: ignore
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import EpsillaVectorStore
