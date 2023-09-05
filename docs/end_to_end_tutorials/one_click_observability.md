@@ -10,7 +10,7 @@ your system - both as a whole and for each component.
 This feature allows you to seamlessly integrate the LlamaIndex library with powerful observability/evaluation tools offered by our partners.
 Configure a variable once, and you'll be able to do things like the following:
 - View LLM/prompt inputs/outputs
-- That that the outputs of any component (LLMs, embeddings) are performing as expected
+- Make sure that the outputs of any component (LLMs, embeddings) are performing as expected
 - View call traces for both indexing and querying
 
 Each provider has similarities and differences. Take a look below for the full set of guides for each one! 
@@ -153,3 +153,58 @@ Colab <https://colab.research.google.com/github/truera/trulens/blob/main/trulens
 ```
 
 
+### Portkey: LLM Observability & Analytics Suite
+
+Having insight into your app's behaviour is paramount — with **[Portkey Observability](https://portkey.ai/)**, you can:
+* 🖥️ **Monitor** every request and examine its logs in granular detail.
+* 🔍 **Trace** prompt chains and agent runs for in-depth analysis.
+* 🏷️ **Enrich** your requests with custom metadata for tailored insights.
+
+Harnessing this level of detail can help pinpoint bottlenecks, optimise costs, and elevate the overall user experience.
+
+#### Usage Pattern
+
+```py
+import os
+from llama_index.llms import Portkey, ChatMessage
+
+# Setting up API keys
+os.environ["PORTKEY_API_KEY"] = ""
+os.environ["OPENAI_API_KEY"] = ""
+
+# Defining custom metadata for the request
+metadata = {
+    "_environment": "production",
+    "_prompt": "test",
+    "_user": "user",
+    "_organisation": "acme",
+}
+
+# Initializing Portkey with given parameters
+pk_llm = Portkey(
+    mode="single",
+    trace_id="portkey_llamaindex_test",
+    metadata=metadata,
+)
+
+# Adding the OpenAI model
+openai_llm = LLMBase(provider="openai", model="gpt-4")
+pk_llm.add_llms(openai_llm)
+
+# Getting the response for the chat messages
+messages = [
+    ChatMessage(role="system", content="You are a helpful assistant"),
+    ChatMessage(role="user", content="What can you do?"),
+]
+response = pk_llm.chat(messages)
+```
+
+#### Guides
+```{toctree}
+---
+maxdepth: 1
+---
+Why observability <https://docs.portkey.ai/why-portkey/observability>
+Harnessing the Power of Custom Metadata <https://docs.portkey.ai/key-features/custom-metadata>
+Deep Dive: Tracing Prompt Chains & Agent Runs <https://docs.portkey.ai/key-features/request-tracing>
+```
