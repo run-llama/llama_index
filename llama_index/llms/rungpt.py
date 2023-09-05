@@ -285,8 +285,8 @@ class RunGptLLM(LLM):
                 "stop": kwargs.pop("stop", "."),
             }
         return None
-    
+
     def _space_handler(self, word: str) -> str:
         if word.isalnum():
-            return ' ' + word
+            return " " + word
         return word
