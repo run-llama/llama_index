@@ -8,6 +8,7 @@
 
 ### Bug Fixes / Nits
 - Default to user-configurable top-k in `VectorIndexAutoRetriever` (#7556)
+- Catch validation errors for structured responses (#7523)
 
 ## [0.8.20] - 2023-09-04
 
