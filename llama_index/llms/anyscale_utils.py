@@ -19,8 +19,8 @@ DISCONTINUED_MODELS: Dict[str, int] = {}
 
 def get_from_param_or_env(
     key: str,
-    param: Optional[str],
-    env_key: Optional[str],
+    param: Optional[str] = None,
+    env_key: Optional[str] = None,
     default: Optional[str] = None,
 ) -> str:
     """Get a value from a param or an environment variable."""
