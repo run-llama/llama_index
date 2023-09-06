@@ -32,6 +32,7 @@ from llama_index.vector_stores.docarray import (
 from llama_index.vector_stores.cogsearch import CognitiveSearchVectorStore
 from llama_index.vector_stores.awadb import AwaDBVectorStore
 from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
+from llama_index.vector_stores.epsilla import EpsillaVectorStore
 
 __all__ = [
     "SimpleVectorStore",
@@ -61,4 +62,5 @@ __all__ = [
     "BagelVectorStore",
     "Neo4jVectorStore",
     "CognitiveSearchVectorStore",
+    "EpsillaVectorStore",
 ]

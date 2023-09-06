@@ -45,6 +45,9 @@ class IndexStructType(str, Enum):
         MYSCALE ("myscale"): MyScale Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the MyScale vector store index.
+        EPSILLA ("epsilla"): Epsilla Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Epsilla vector store index.
         CHATGPT_RETRIEVAL_PLUGIN ("chatgpt_retrieval_plugin"): ChatGPT
             retrieval plugin index.
         SQL ("SQL"): SQL Structured Store Index.
@@ -79,6 +82,7 @@ class IndexStructType(str, Enum):
     OPENSEARCH = "opensearch"
     CHATGPT_RETRIEVAL_PLUGIN = "chatgpt_retrieval_plugin"
     DEEPLAKE = "deeplake"
+    EPSILLA = "epsilla"
     # for SQL index
     SQL = "sql"
     # for KG index
