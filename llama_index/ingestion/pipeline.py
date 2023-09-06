@@ -59,6 +59,7 @@ class IngestionPipeline(BaseModel):
             reader=reader,
             documents=documents,
             vector_store=vector_store,
+            index_cls=index_cls,
         )
 
     def _get_default_transformations(self) -> List[BaseComponent]:
