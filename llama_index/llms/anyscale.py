@@ -7,12 +7,8 @@ try:
 except ImportError:
     from pydantic import Field, PrivateAttr
 
-import importlib
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms import anyscale_utils
-
-importlib.reload(anyscale_utils)
 from llama_index.llms.anyscale_utils import (anyscale_modelname_to_contextsize,
                                              get_from_param_or_env,
                                              messages_to_anyscale_prompt)
@@ -29,7 +25,7 @@ from llama_index.llms.generic_utils import (
 
 
 class Anyscale(LLM):
-    model_name: str = Field(description="The anyscale model to use.")
+    model: str = Field(description="The anyscale model to use.")
     api_base: Optional[str] = Field(default=None, description="The base URL to use.")
     api_key: Optional[str] = Field(default=None, description="The base URL to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
@@ -39,7 +35,7 @@ class Anyscale(LLM):
 
     def __init__(
         self,
-        model_name: str = "meta-llama/Llama-2-70b-chat-hf",
+        model: str = "meta-llama/Llama-2-70b-chat-hf",
         temperature: float = 0.1,
         api_base: Optional[str] = "https://console.endpoints.anyscale.com/m/v1",
         api_key: Optional[str] = None,
@@ -61,7 +57,7 @@ class Anyscale(LLM):
         api_key  = get_from_param_or_env("api_key",  api_key,  "ANYSCALE_API_KEY")
 
         super().__init__(
-            model_name=model_name,
+            model=model,
             temperature=temperature,
             api_base=api_base,
             api_key=api_key,
@@ -77,16 +73,16 @@ class Anyscale(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=anyscale_modelname_to_contextsize(self.model_name),
+            context_window=anyscale_modelname_to_contextsize(self.model),
             num_output=self.max_tokens,
             is_chat_model=True,
-            model_name=self.model_name,
+            model_name=self.model,
         )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
-            "model": self.model_name,
+            "model": self.model,
             "temperature": self.temperature,
         }
         model_kwargs = {
