@@ -1,14 +1,13 @@
 from typing import Any, Sequence
 
 from llama_index.llms.anyscale import Anyscale
-from llama_index.llms.base import (ChatMessage, ChatResponse, LLMMetadata,
-                                   MessageRole)
+from llama_index.llms.base import ChatMessage, ChatResponse, LLMMetadata, MessageRole
 
 
 class MockAnyscale(Anyscale):
     def __init__(self) -> None:
         super().__init__(model="MOCK_MODEL", api_key="MOCK_KEY", callback_manager=None)
-    
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata()
@@ -20,6 +19,7 @@ class MockAnyscale(Anyscale):
             ),
             raw=None,
         )
+
 
 def test_basic() -> None:
     llm = MockAnyscale()
