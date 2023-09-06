@@ -14,20 +14,23 @@ LlamaIndex supports over 20 different vector store options.
 We are actively adding more integrations and improving feature coverage for each.
 
 | Vector Store             | Type                | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
-|--------------------------|---------------------|--------------------|---------------|--------|-----------------|-------|
+| ------------------------ | ------------------- | ------------------ | ------------- | ------ | --------------- | ----- |
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
-| Postgres                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
+| Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Cassandra                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
+| Epsilla                  | self-hosted         |                    |               | ✓      | ✓               |       |
 | Milvus / Zilliz          | self-hosted / cloud |                    |               | ✓      | ✓               |       |
 | Typesense                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
-| Supabase                 | self-hosted / cloud | ✓                  |               |        | ✓               |       |
+| Supabase                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | MongoDB Atlas            | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Deeplake                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Neo4jVector              | self-hosted / cloud |                    |               | ✓      | ✓               |       |
+| Azure Cognitive Search   | cloud               |                    | ✓             | ✓      | ✓               |       |
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
@@ -37,6 +40,7 @@ We are actively adding more integrations and improving feature coverage for each
 | FAISS                    | in-memory           |                    |               |        |                 |       |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
+| Azure Cognitive Search   | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 
@@ -69,4 +73,7 @@ maxdepth: 1
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 /examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 /examples/vector_stores/CassandraIndexDemo.ipynb
+/examples/vector_stores/Neo4jVectorDemo.ipynb
+/examples/vector_stores/CognitiveSearchIndexDemo.ipynb
+/examples/vector_stores/EpsillaIndexDemo.ipynb
 ```

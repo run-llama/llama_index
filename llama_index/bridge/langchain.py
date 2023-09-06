@@ -53,7 +53,7 @@ from langchain.sql_database import SQLDatabase
 from langchain.input import get_color_mapping, print_text
 
 # input & output
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.tools import BaseTool, StructuredTool, Tool
 
 __all__ = [
@@ -111,4 +111,5 @@ __all__ = [
     "BaseCache",
     "Document",
     "RecursiveCharacterTextSplitter",
+    "TextSplitter",
 ]

@@ -1,10 +1,7 @@
 """LLM reranker."""
 from typing import Callable, List, Optional
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle

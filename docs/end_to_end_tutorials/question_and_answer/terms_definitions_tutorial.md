@@ -77,7 +77,7 @@ Now that we are able to define LLM settings and upload text, we can try using Ll
 We can add the following functions to both initialize our LLM, as well as use it to extract terms from the input text.
 
 ```python
-from llama_index import Document, ListIndex, LLMPredictor, ServiceContext, load_index_from_storage
+from llama_index import Document, SummaryIndex, LLMPredictor, ServiceContext, load_index_from_storage
 from llama_index.llms import OpenAI
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
@@ -90,7 +90,7 @@ def extract_terms(documents, term_extract_str, llm_name, model_temperature, api_
     service_context = ServiceContext.from_defaults(llm=llm,
                                                    chunk_size=1024)
 
-    temp_index = ListIndex.from_documents(documents, service_context=service_context)
+    temp_index = SummaryIndex.from_documents(documents, service_context=service_context)
     query_engine = temp_index.as_query_engine(response_mode="tree_summarize")
     terms_definitions = str(query_engine.query(term_extract_str))
     terms_definitions = [x for x in terms_definitions.split("\n") if x and 'Term:' in x and 'Definition:' in x]
@@ -120,7 +120,7 @@ There's a lot going on now, let's take a moment to go over what is happening.
 
 `extract_terms()` is where all the good stuff happens. First, we call `get_llm()` with `max_tokens=1024`, since we don't want to limit the model too much when it is extracting our terms and definitions (the default is 256 if not set). Then, we define our `ServiceContext` object, aligning `num_output` with our `max_tokens` value, as well as setting the chunk size to be no larger than the output. When documents are indexed by Llama Index, they are broken into chunks (also called nodes) if they are large, and `chunk_size` sets the size for these chunks.
 
-Next, we create a temporary list index and pass in our service context. A list index will read every single piece of text in our index, which is perfect for extracting terms. Finally, we use our pre-defined query text to extract terms, using `response_mode="tree_summarize`. This response mode will generate a tree of summaries from the bottom up, where each parent summarizes its children. Finally, the top of the tree is returned, which will contain all our extracted terms and definitions.
+Next, we create a temporary summary index and pass in our service context. A summary index will read every single piece of text in our index, which is perfect for extracting terms. Finally, we use our pre-defined query text to extract terms, using `response_mode="tree_summarize`. This response mode will generate a tree of summaries from the bottom up, where each parent summarizes its children. Finally, the top of the tree is returned, which will contain all our extracted terms and definitions.
 
 Lastly, we do some minor post processing. We assume the model followed instructions and put a term/definition pair on each line. If a line is missing the `Term:` or `Definition:` labels, we skip it. Then, we convert this to a dictionary for easy storage!
 

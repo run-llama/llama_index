@@ -276,7 +276,9 @@ class KGTableRetriever(BaseRetriever):
             logger.info("> No relationships found, returning nodes found by keywords.")
             if len(sorted_nodes_with_scores) == 0:
                 logger.info("> No nodes found by keywords, returning empty response.")
-            return sorted_nodes_with_scores
+            return [
+                NodeWithScore(node=TextNode(text="No relationships found."), score=1.0)
+            ]
 
         # add relationships as Node
         # TODO: make initial text customizable

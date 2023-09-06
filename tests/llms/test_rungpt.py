@@ -228,7 +228,7 @@ def test_stream_chat(chat_history: List[ChatMessage]) -> None:
         dummy = RunGptLLM()
         response_gen = dummy.stream_chat(chat_history)
         responses = list(response_gen)
-        assert responses[-1].message.content == "This is test."
+        assert responses[-1].message.content == " This is test."
         assert responses[-1].message.role == "assistant"
 
 
@@ -249,5 +249,5 @@ def test_stream_complete() -> None:
         dummy = RunGptLLM()
         response_gen = dummy.stream_complete(mock_prompt)
         responses = list(response_gen)
-        assert responses[-1].text == "This is test."
+        assert responses[-1].text == " This is test."
         assert responses[-1].delta == " test."

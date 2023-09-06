@@ -23,6 +23,7 @@ from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
 from llama_index.llms.xinference import Xinference
 from llama_index.llms.anyscale import Anyscale
+from llama_index.llms.portkey import Portkey
 
 __all__ = [
     "OpenAI",
@@ -46,6 +47,7 @@ __all__ = [
     "CompletionResponseAsyncGen",
     "LLMMetadata",
     "Xinference",
+    "Portkey",
     "MonsterLLM",
     "Anyscale",
 ]
