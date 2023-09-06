@@ -124,3 +124,11 @@ maxdepth: 1
 ---
 /examples/llm/portkey.ipynb
 ```
+
+## AnyScale
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/anyscale.ipynb
+```

@@ -40,6 +40,7 @@ Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can t
 ---
 maxdepth: 1
 ---
+Fine-tuning a Linear Adapter </examples/finetuning/embeddings/finetune_embedding_adapter.ipynb>
 Embedding Fine-tuning Guide </examples/finetuning/embeddings/finetune_embedding.ipynb>
 ```
 

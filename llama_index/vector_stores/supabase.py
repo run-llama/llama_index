@@ -107,14 +107,35 @@ class SupabaseVectorStore(VectorStore):
 
         return ids
 
+    def get_by_id(self, doc_id: str) -> list:
+        """Get row ids by doc id.
+
+        Args:
+            doc_id (str): document id
+        """
+        filters = {"doc_id": {"$eq": doc_id}}
+
+        result = self._collection.query(
+            data=None,
+            filters=filters,
+            include_value=False,
+            include_metadata=False,
+        )
+
+        # NOTE: list of row ids
+        return result
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete doc.
 
         Args:
-            doc_id (str): document id
+            :param ref_doc_id (str): document id
 
         """
-        raise NotImplementedError("Delete not yet implemented for vecs.")
+        row_ids = self.get_by_id(ref_doc_id)
+
+        if len(row_ids) > 0:
+            self._collection.delete(row_ids)
 
     def query(
         self,

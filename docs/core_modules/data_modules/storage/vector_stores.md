@@ -23,7 +23,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
 | Milvus / Zilliz          | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Typesense                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
-| Supabase                 | self-hosted / cloud | ✓                  |               |        | ✓               |       |
+| Supabase                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | MongoDB Atlas            | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Deeplake                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
@@ -74,4 +74,5 @@ maxdepth: 1
 /examples/vector_stores/CassandraIndexDemo.ipynb
 /examples/vector_stores/Neo4jVectorDemo.ipynb
 /examples/vector_stores/CognitiveSearchIndexDemo.ipynb
+/examples/vector_stores/EpsillaIndexDemo.ipynb
 ```
