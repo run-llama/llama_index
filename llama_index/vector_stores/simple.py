@@ -14,10 +14,10 @@ from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
     get_top_k_mmr_embeddings,
 )
+from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -98,13 +98,13 @@ class SimpleVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
         """Add embedding_results to index."""
-        for result in embedding_results:
-            self._data.embedding_dict[result.id] = result.embedding
-            self._data.text_id_to_ref_doc_id[result.id] = result.ref_doc_id
-        return [result.id for result in embedding_results]
+        for node in nodes:
+            self._data.embedding_dict[node.node_id] = node.get_embedding()
+            self._data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id
+        return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

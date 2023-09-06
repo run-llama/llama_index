@@ -8,9 +8,8 @@ import uuid
 
 from typing import Any, List, Set, Optional
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -85,12 +84,12 @@ class AwaDBVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        embedding_results: List[BaseNode],
     ) -> List[str]:
         """Add embedding results to AwaDB.
 
         Args:
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            embedding_results: List[BaseNode]: list of nodes with embeddings
 
         Returns:
             Added node ids
@@ -103,7 +102,7 @@ class AwaDBVectorStore(VectorStore):
         ids = []
         texts = []
         for result in embedding_results:
-            embeddings.append(result.embedding)
+            embeddings.append(result.get_embedding())
             metadatas.append(
                 node_to_metadata_dict(
                     result.node, remove_text=True, flat_metadata=self.flat_metadata
