@@ -1,7 +1,8 @@
 import re
 import random
 import string
-from SPARQLWrapper import SPARQLWrapper, GET, POST, DIGEST
+from string import Template
+from SPARQLWrapper import SPARQLWrapper, GET, POST, JSON, DIGEST
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 import logging
 import fsspec
@@ -56,13 +57,23 @@ class SparqlGraphStore(GraphStore):
         self.sparql_update('CREATE GRAPH <'+uri+'>')
 
     def sparql_query(self, query_string):
+        print('sparql_query')
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
         sparql_client.setMethod(GET)
+        print(query_string)
         sparql_client.setQuery(query_string)
-        results = sparql_client.query()
-        message = results.response.read().decode('utf-8')
-        logger.info('Endpoint says : ' + message)
-        return message
+        sparql_client.setReturnFormat(JSON)
+       # results = sparql_client.query()
+     #   body = sparql_client.queryAndConvert()
+      #  message = results.response.read().decode('utf-8')
+      #  logger.info('Endpoint says : ' + message)
+        try:
+            returned = sparql_client.queryAndConvert()
+            for r in returned["results"]["bindings"]:
+                print(r)
+        except Exception as e:
+            print(e)
+        return "X"
 
     def sparql_update(self, query_string):
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
@@ -70,7 +81,7 @@ class SparqlGraphStore(GraphStore):
         sparql_client.setQuery(query_string)
         results = sparql_client.query()
         message = results.response.read().decode('utf-8')
-        print('Endpoint says : ' + message)
+        print('Endpoinxt says : ' + message)
         logger.info('Endpoint says : ' + message)
 
     def insert_data(self, data):  # data is 'floating' string, without prefixes
@@ -90,14 +101,20 @@ class SparqlGraphStore(GraphStore):
         # control characters
         str = str.encode("unicode_escape").decode("utf-8")
         # single and double quotes
-        str = re.sub(r'(["\'])', r'\\\1', input_str)
+        str = re.sub(r'(["\'])', r'\\\1', str)
         return str
+
+    def unescape_from_rdf(self, str):
+        return re.sub(r'\\(["\'])', r'\1', str)
 
     # TODO unescape from RDF?
 
-    def select_triplets(self, subj):
+    def select_triplets(self, subj, limit=-1):
+        print('select triplets')
         logger.info('#### sparql get_triplets called')
-        query_string = self.sparql_prefixes + """
+        subj = self.escape_for_rdf(subj)
+        template = Template("""
+            $prefixes
             SELECT DISTINCT ?rel ?obj WHERE {
                 GRAPH <http://purl.org/stuff/guardians> {
                     ?triplet a er:Triplet ;
@@ -105,13 +122,23 @@ class SparqlGraphStore(GraphStore):
                     er:property ?property ;
                 er:object ?object .
 
-                ?subject er:value {subj} .
+                ?subject er:value "$subject" .
                 ?property er:value ?rel .
                 ?object er:value ?obj .
                 }
             }
-        """
+            $limit_str
+        """)
+
+        limit_str = ''
+        if (limit > 0):
+            limit_str = '\nLIMIT ' + str(limit)
+
+        query_string = template.substitute(
+            {'prefixes': self.sparql_prefixes, 'subject': subj,  'limit_str': limit_str})
+
         triplets = self.sparql_query(query_string)
+        return triplets
         logger.info('triplets = \n'+str(triplets))
 
 # From interface types.py ----------------------------------
