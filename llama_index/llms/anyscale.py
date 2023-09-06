@@ -49,7 +49,7 @@ class Anyscale(LLM):
         self,
         model: str = "meta-llama/Llama-2-70b-chat-hf",
         temperature: float = 0.1,
-        max_tokens: int = 512,
+        max_tokens: int = 256,
         api_base: Optional[str] = "https://console.endpoints.anyscale.com/m/v1",
         api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
