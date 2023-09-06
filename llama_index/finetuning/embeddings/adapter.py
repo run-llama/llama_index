@@ -35,6 +35,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         device: Optional[str] = None,
         model_output_path: str = "model_output",
         verbose: bool = False,
+        bias: bool = False,
         **train_kwargs: Any,
     ) -> None:
         """Init params."""
@@ -57,7 +58,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
             device = "cuda" if torch.cuda.is_available() else "cpu"
             logger.info("Use pytorch device: {}".format(device))
         self._target_device = torch.device(device)
-        self.model = LinearLayer(self.dim, self.dim)
+        self.model = LinearLayer(self.dim, self.dim, bias=bias)
 
         self._model_output_path = model_output_path
         self._epochs = epochs

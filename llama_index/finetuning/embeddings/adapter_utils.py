@@ -36,9 +36,11 @@ class MyMultipleNegativesRankingLoss(nn.Module):
         """Forward pass."""
 
         # transform context embeds
-        context_embeds_2 = self.model.forward(context_embeds)
+        # context_embeds_2 = self.model.forward(context_embeds)
+        query_embeds_2 = self.model.forward(query_embeds)
 
-        scores = self.similarity_fct(query_embeds, context_embeds_2) * self.scale
+        # scores = self.similarity_fct(query_embeds, context_embeds_2) * self.scale
+        scores = self.similarity_fct(query_embeds_2, context_embeds) * self.scale
         labels = torch.tensor(
             range(len(scores)), dtype=torch.long, device=scores.device
         )
