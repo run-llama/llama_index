@@ -67,13 +67,15 @@ class SparqlGraphStore(GraphStore):
      #   body = sparql_client.queryAndConvert()
       #  message = results.response.read().decode('utf-8')
       #  logger.info('Endpoint says : ' + message)
+        results = []
         try:
             returned = sparql_client.queryAndConvert()
+            print(str(returned))
             for r in returned["results"]["bindings"]:
-                print(r)
+                results.append(r)
         except Exception as e:
             print(e)
-        return "X"
+        return results
 
     def sparql_update(self, query_string):
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
@@ -140,6 +142,71 @@ class SparqlGraphStore(GraphStore):
         triplets = self.sparql_query(query_string)
         return triplets
         logger.info('triplets = \n'+str(triplets))
+
+    def rels(self, subj, limit=-1):
+        print('select triplets')
+        logger.info('#### sparql get_triplets called')
+        subj = self.escape_for_rdf(subj)
+        template = Template("""
+    $prefixes
+    SELECT DISTINCT ?rel1 ?obj1 ?rel2 ?obj2 WHERE {
+
+    GRAPH <http://purl.org/stuff/guardians> {
+        ?triplet a er:Triplet ;
+            er:subject ?subject ;
+            er:property ?property ;
+            er:object ?object .
+
+        ?subject er:value "$subject"  .
+        ?property er:value ?rel1 .
+        ?object er:value ?obj1 .
+                            
+    OPTIONAL {
+        ?triplet2 a er:Triplet ;
+            er:subject ?subject2 ;
+            er:property ?property2 ;
+            er:object ?object2 .
+
+        ?subject2 er:value ?obj1 .
+        ?property2 er:value ?rel2 .
+        ?object2 er:value ?obj2 .
+    }}}
+    $limit_str
+        """)
+
+        limit_str = ''
+        if (limit > 0):
+            limit_str = '\nLIMIT ' + str(limit)
+
+        query_string = template.substitute(
+            {'prefixes': self.sparql_prefixes, 'subject': subj,  'limit_str': limit_str})
+
+        triplets_json = self.sparql_query(query_string)
+        """
+            print('-------------------')
+            for r in triplets_json:
+                print(r)
+            print('-------------------')
+        """
+     #   return triplets_json
+        return self.to_arrows(subj, triplets_json)
+        logger.info('triplets = \n'+str(triplets))
+
+# ----------------------------HERE---------------------------------------
+    def to_arrows(self, subj, rels):
+        """
+        Convert subject and relations to a string in the desired format.
+        """
+        arrows = '{'+subj+': ['
+        for r in rels:
+            rel1 = rels.get('rel1', {}).get('value', '')
+            obj1 = rels.get('obj1', {}).get('value', '')
+            arrows += f"""
+            '{subj}, -[{rel1}]->, {obj1}',\n
+            """
+
+        arrows += ']}'
+        return arrows
 
 # From interface types.py ----------------------------------
 # DOES IT ONE-BY-ONE!!!!!!!!!!!!!!!!!!!!!!
