@@ -2,13 +2,23 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+- Fixed small `_index` bug in `ElasticSearchReader` (#7570)
+- Fixed bug with prompt helper settings in global service contexts (#7576)
+
+## [0.8.21] - 2023-09-06
+
 ### New Features
+- add embedding adapter fine-tuning engine + guide (#7565)
 - Added support for Azure Cognitive Search vector store (#7469)
 - Support delete in supabase (#6951)
+- Added support for Espilla vector store (#7539)
+- Added support for AnyScale LLM (#7497)
 
 ### Bug Fixes / Nits
 - Default to user-configurable top-k in `VectorIndexAutoRetriever` (#7556)
 - Catch validation errors for structured responses (#7523)
+- Fix streaming refine template (#7561)
 
 ## [0.8.20] - 2023-09-04
 
