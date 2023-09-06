@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.llms.base import ChatMessage, MessageRole
 
@@ -14,11 +14,14 @@ ALL_AVAILABLE_MODELS = {
     **LLAMA_MODELS,
 }
 
-DISCONTINUED_MODELS = {}
+DISCONTINUED_MODELS: Dict[str, int] = {}
 
 
 def get_from_param_or_env(
-    key: str, param: str, env_key: str, default: Optional[str] = None
+    key: str,
+    param: Optional[str],
+    env_key: Optional[str],
+    default: Optional[str] = None,
 ) -> str:
     """Get a value from a param or an environment variable."""
     if param is not None:
@@ -69,7 +72,7 @@ def anyscale_modelname_to_contextsize(modelname: str) -> int:
     return context_size
 
 
-def _message_to_anyscale_prompt(message: ChatMessage) -> str:
+def _message_to_anyscale_prompt(message: ChatMessage) -> Dict[str, Any]:
     if message.role == MessageRole.USER:
         prompt = {"role": "user", "content": message.content}
     elif message.role == MessageRole.ASSISTANT:
@@ -84,7 +87,7 @@ def _message_to_anyscale_prompt(message: ChatMessage) -> str:
     return prompt
 
 
-def messages_to_anyscale_prompt(messages: Sequence[ChatMessage]) -> str:
+def messages_to_anyscale_prompt(messages: Sequence[ChatMessage]) -> List[Dict]:
     if len(messages) == 0:
         raise ValueError("Got empty list of messages.")
 
