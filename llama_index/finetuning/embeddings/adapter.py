@@ -2,22 +2,12 @@
 
 from llama_index.embeddings.base import BaseEmbedding
 
-from typing import Dict, Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.schema import TextNode, MetadataMode
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.base import LLM
-from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
-from llama_index.embeddings.base import BaseEmbedding
 from llama_index.finetuning.embeddings.adapter_utils import train_model
 from llama_index.embeddings.adapter import LinearLayer, LinearAdapterEmbeddingModel
-from tqdm import tqdm
-import uuid
-import re
-import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -52,7 +42,6 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         self.loader = self._get_data_loader(dataset)
 
         import torch
-        from sentence_transformers import SentenceTransformer
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -67,7 +56,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
         self._verbose = verbose
 
-    def smart_batching_collate(self, batch: List) -> None:
+    def smart_batching_collate(self, batch: List) -> Tuple[Any, Any]:
         """Smart batching collate."""
         from torch import Tensor
         import torch
@@ -78,13 +67,6 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         for query, text in batch:
             query_embedding = self.embed_model.get_query_embedding(query)
             text_embedding = self.embed_model.get_text_embedding(text)
-            # query_embeddings.append(query_embedding)
-            # text_embeddings.append(text_embedding)
-            # print(type(query_embedding))
-            # print(type(text_embedding))
-            # print(query_embedding)
-            # print(text_embedding)
-            # raise Exception
 
             query_embeddings.append(torch.tensor(query_embedding))
             text_embeddings.append(torch.tensor(text_embedding))
@@ -97,7 +79,6 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
     def _get_data_loader(self, dataset: EmbeddingQAFinetuneDataset) -> Any:
         """Get data loader."""
         from torch.utils.data import DataLoader
-        import torch
 
         examples: Any = []
 
@@ -106,17 +87,6 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
             text = dataset.corpus[node_id]
 
             examples.append((query, text))
-
-            # query_embedding = self.embed_model.get_query_embedding(query)
-            # text_embedding = self.embed_model.get_text_embedding(text)
-
-            # query_embedding_t = torch.tensor(query_embedding)
-            # text_embedding_t = torch.tensor(text_embedding)
-
-            # examples.append((query_embedding_t, text_embedding_t))
-
-            # # TMP
-            # break
 
         data_loader = DataLoader(examples, batch_size=self.batch_size)
         data_loader.collate_fn = self.smart_batching_collate
@@ -136,8 +106,6 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
             verbose=self._verbose,
             **self._train_kwargs,
         )
-
-        pass
 
     def get_finetuned_model(self, **model_kwargs: Any) -> BaseEmbedding:
         """Get finetuned model."""

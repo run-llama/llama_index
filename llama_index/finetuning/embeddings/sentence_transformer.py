@@ -2,22 +2,13 @@
 
 from llama_index.embeddings.base import BaseEmbedding
 
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.schema import TextNode, MetadataMode
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.base import LLM
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from llama_index.finetuning.embeddings.common import (
     EmbeddingQAFinetuneDataset,
-    generate_qa_embedding_pairs,
 )
-from tqdm import tqdm
-import uuid
-import re
-import json
 
 
 class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):

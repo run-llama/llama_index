@@ -3,6 +3,7 @@ from llama_index import ServiceContext, VectorStoreIndex
 import pandas as pd
 from tqdm import tqdm
 
+
 def evaluate(
     dataset,
     embed_model,
@@ -23,7 +24,7 @@ def evaluate(
         retrieved_nodes = retriever.retrieve(query)
         retrieved_ids = [node.node.node_id for node in retrieved_nodes]
         expected_id = relevant_docs[query_id][0]
-        
+
         rank = None
         for idx, id in enumerate(retrieved_ids):
             if id == expected_id:

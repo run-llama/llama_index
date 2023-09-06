@@ -1,13 +1,10 @@
-from llama_index.embeddings.base import BaseEmbedding
-
-from typing import Dict, Any, List, Optional
+"""Common utils for embeddings."""
+from typing import Dict, List, Optional
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.schema import TextNode, MetadataMode
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.base import LLM
-from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from tqdm import tqdm
 import uuid
 import re
