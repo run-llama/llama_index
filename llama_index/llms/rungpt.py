@@ -1,10 +1,7 @@
 from typing import Any, Optional, Sequence, Dict, List, Tuple, Union
 import json
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 
 from llama_index.llms.base import (
@@ -132,7 +129,7 @@ class RunGptLLM(LLM):
                 item_dict = json.loads(json.dumps(eval(item.data)))
                 delta = item_dict["choices"][0]["text"]
                 additional_kwargs = item_dict["usage"]
-                text = text + delta
+                text = text + self._space_handler(delta)
                 yield CompletionResponse(
                     text=text,
                     delta=delta,
@@ -193,7 +190,7 @@ class RunGptLLM(LLM):
             for item in chat_iter:
                 item_dict = json.loads(json.dumps(eval(item.data)))
                 chat_message, delta = self._message_unpacker(item_dict)
-                content = content + delta
+                content = content + self._space_handler(delta)
                 chat_message.content = content
                 yield ChatResponse(message=chat_message, raw=item_dict, delta=delta)
 
@@ -288,3 +285,8 @@ class RunGptLLM(LLM):
                 "stop": kwargs.pop("stop", "."),
             }
         return None
+
+    def _space_handler(self, word: str) -> str:
+        if word.isalnum():
+            return " " + word
+        return word

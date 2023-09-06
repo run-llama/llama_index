@@ -2,10 +2,7 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional, Union
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (

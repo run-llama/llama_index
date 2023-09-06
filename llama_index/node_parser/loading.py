@@ -5,12 +5,12 @@ from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.text_splitter.sentence_splitter import SentenceSplitter
-from llama_index.text_splitter.types import TextSplitter
+from llama_index.text_splitter.types import SplitterType
 
 
 def load_parser(
     data: dict,
-    text_splitter: Optional[TextSplitter] = None,
+    text_splitter: Optional[SplitterType] = None,
     metadata_extractor: Optional[MetadataExtractor] = None,
 ) -> NodeParser:
     parser_name = data.get("class_name", None)

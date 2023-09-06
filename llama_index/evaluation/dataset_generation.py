@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from llama_index import (
     Document,
-    ListIndex,
+    SummaryIndex,
     ServiceContext,
 )
 from llama_index.llms.openai import OpenAI
@@ -116,7 +116,7 @@ class DatasetGenerator:
         for node in nodes:
             if num is not None and len(questions) >= num:
                 break
-            index = ListIndex.from_documents(
+            index = SummaryIndex.from_documents(
                 [
                     Document(
                         text=node.get_content(metadata_mode=MetadataMode.NONE),

@@ -4,11 +4,7 @@ import logging
 import re
 from typing import Dict, List, Optional, cast
 
-try:
-    from pydantic.v1 import Field, validator
-except ImportError:
-    from pydantic import Field, validator
-
+from llama_index.bridge.pydantic import Field, validator
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
