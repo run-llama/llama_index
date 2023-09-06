@@ -12,13 +12,13 @@ from langchain.cache import BaseCache, GPTCache
 # callback
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatAnyscale, ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.document import Document
 
 # embeddings
 from langchain.embeddings.base import Embeddings
-from langchain.embeddings import HuggingFaceEmbeddings, HuggingFaceBgeEmbeddings
+from langchain.embeddings import HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings
 
 # LLMs
 from langchain.llms import AI21, BaseLLM, Cohere, FakeListLLM, OpenAI
@@ -64,6 +64,7 @@ __all__ = [
     "AI21",
     "Cohere",
     "BaseChatModel",
+    "ChatAnyscale",
     "ChatOpenAI",
     "BaseLanguageModel",
     "Embeddings",
