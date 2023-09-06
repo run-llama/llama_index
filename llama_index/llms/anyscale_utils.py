@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Optional, Sequence
+from typing import Optional, Sequence
 
 from llama_index.llms.base import ChatMessage, MessageRole
 
@@ -15,6 +15,7 @@ ALL_AVAILABLE_MODELS = {
 }
 
 DISCONTINUED_MODELS = {}
+
 
 def get_from_param_or_env(
     key: str, param: str, env_key: str, default: Optional[str] = None
@@ -33,6 +34,7 @@ def get_from_param_or_env(
             f"  `{key}` as a named parameter."
         )
 
+
 def anyscale_modelname_to_contextsize(modelname: str) -> int:
     """Calculate the maximum number of tokens possible to generate for a model.
 
@@ -45,7 +47,7 @@ def anyscale_modelname_to_contextsize(modelname: str) -> int:
     Example:
         .. code-block:: python
 
-            max_tokens = anyscale_modelname_to_contextsize("meta-llama/Llama-2-7b-chat-hf")
+            max_tokens = anyscale_modelname_to_contextsize(model_name)
     """
     # handling finetuned models
     # TO BE FILLED
@@ -60,7 +62,7 @@ def anyscale_modelname_to_contextsize(modelname: str) -> int:
 
     if context_size is None:
         raise ValueError(
-            f"Unknown model: {modelname}. Please provide a valid Anyscale hosted model name."
+            f"Unknown model: {modelname}. Please provide a valid Anyscale model name."
             "Known models are: " + ", ".join(ALL_AVAILABLE_MODELS.keys())
         )
 

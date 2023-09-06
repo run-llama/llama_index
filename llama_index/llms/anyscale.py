@@ -3,25 +3,36 @@ from typing import Any, Dict, Optional, Sequence
 import requests
 
 try:
-    from pydantic.v1 import Field, PrivateAttr
+    from pydantic.v1 import Field
 except ImportError:
-    from pydantic import Field, PrivateAttr
+    from pydantic import Field
 
 from llama_index.callbacks import CallbackManager
-from llama_index.llms import anyscale_utils
-from llama_index.llms.anyscale_utils import (anyscale_modelname_to_contextsize,
-                                             get_from_param_or_env,
-                                             messages_to_anyscale_prompt)
-from llama_index.llms.base import (LLM, ChatMessage, ChatResponse,
-                                   ChatResponseAsyncGen, ChatResponseGen,
-                                   CompletionResponse,
-                                   CompletionResponseAsyncGen,
-                                   CompletionResponseGen, LLMMetadata,
-                                   MessageRole, llm_chat_callback,
-                                   llm_completion_callback)
+from llama_index.llms.anyscale_utils import (
+    anyscale_modelname_to_contextsize,
+    get_from_param_or_env,
+    messages_to_anyscale_prompt,
+)
+from llama_index.llms.base import (
+    LLM,
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+    llm_chat_callback,
+    llm_completion_callback,
+)
 from llama_index.llms.generic_utils import (
-    achat_to_completion_decorator, astream_chat_to_completion_decorator,
-    chat_to_completion_decorator, stream_chat_to_completion_decorator)
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 
 
 class Anyscale(LLM):
@@ -42,19 +53,11 @@ class Anyscale(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        try:
-            import requests
-        except ImportError as e:
-            raise ImportError(
-                "You must install the `requests` package to use Anyscale Endpoint."
-                "Please `pip install requests`"
-            ) from e
-        
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-        
+
         api_base = get_from_param_or_env("api_base", api_base, "ANYSCALE_API_BASE")
-        api_key  = get_from_param_or_env("api_key",  api_key,  "ANYSCALE_API_KEY")
+        api_key = get_from_param_or_env("api_key", api_key, "ANYSCALE_API_KEY")
 
         super().__init__(
             model=model,
@@ -101,19 +104,16 @@ class Anyscale(LLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         url = f"{self.api_base}/chat/completions"
         headers = {"Authorization": f"Bearer {self.api_key}"}
-        
+
         all_kwargs = self._get_all_kwargs(**kwargs)
         prompt = messages_to_anyscale_prompt(messages)
-        body = {
-            "messages": prompt,
-            "stream": False,
-            **all_kwargs
-        }
+        body = {"messages": prompt, "stream": False, **all_kwargs}
 
         response = requests.post(url, headers=headers, json=body).json()
         return ChatResponse(
             message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=response["choices"][0]["message"]["content"]
+                role=MessageRole.ASSISTANT,
+                content=response["choices"][0]["message"]["content"],
             ),
             raw=dict(response["choices"][0]),
         )
@@ -140,7 +140,7 @@ class Anyscale(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-         raise NotImplementedError(
+        raise NotImplementedError(
             "Anyscale does not support Async completion in LlamaIndex currently."
         )
 
