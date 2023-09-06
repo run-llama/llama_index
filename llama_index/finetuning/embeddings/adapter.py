@@ -22,6 +22,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         embed_model: BaseEmbedding,
         batch_size: int = 10,
         epochs: int = 1,
+        dim: Optional[int] = None,
         device: Optional[str] = None,
         model_output_path: str = "model_output",
         verbose: bool = False,
@@ -33,8 +34,11 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         self.embed_model = embed_model
 
         # HACK: get dimension by passing text through it
-        test_embedding = self.embed_model.get_text_embedding("hello world")
-        self.dim = len(test_embedding)
+        if dim is None:
+            test_embedding = self.embed_model.get_text_embedding("hello world")
+            self.dim = len(test_embedding)
+        else:
+            self.dim = dim
 
         # load in data, run embedding model, define data loader
 
