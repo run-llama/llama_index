@@ -240,14 +240,17 @@ class Refine(BaseSynthesizer):
                         f"Validation error on structured response: {e}", exc_info=True
                     )
             else:
+                # TODO: structured response not supported for streaming
+                if isinstance(response, Generator):
+                    response = "".join(response)
+
+                refine_template = self._refine_template.partial_format(
+                    query_str=query_str, existing_answer=response
+                )
+
                 response = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
-                )
-                query_satisfied = True
-            if query_satisfied:
-                refine_template = self._refine_template.partial_format(
-                    query_str=query_str, existing_answer=response
                 )
 
         return response
