@@ -6,8 +6,7 @@ from typing import Any, List, Optional, Tuple
 
 from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
-from llama_index.finetuning.embeddings.adapter_utils import train_model
-from llama_index.embeddings.adapter import LinearLayer, LinearAdapterEmbeddingModel
+from llama_index.embeddings.adapter import LinearAdapterEmbeddingModel
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,6 +29,9 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         **train_kwargs: Any,
     ) -> None:
         """Init params."""
+        import torch
+        from llama_index.embeddings.adapter_utils import LinearLayer
+
         self.dataset = dataset
         self.embed_model = embed_model
 
@@ -44,8 +46,6 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
         self.batch_size = batch_size
         self.loader = self._get_data_loader(dataset)
-
-        import torch
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -99,6 +99,8 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
     def finetune(self, **train_kwargs: Any) -> None:
         """Finetune."""
+        from llama_index.finetuning.embeddings.adapter_utils import train_model
+
         # call model training
         train_model(
             self.model,

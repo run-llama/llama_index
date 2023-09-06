@@ -6,7 +6,7 @@ from typing import Optional, Dict, Type, Callable, Any, List
 from torch.optim import Optimizer
 import transformers
 from tqdm.autonotebook import trange
-from llama_index.embeddings.adapter import LinearLayer
+from llama_index.embeddings.adapter_utils import LinearLayer
 from llama_index.bridge.langchain import print_text
 
 from sentence_transformers.util import cos_sim
