@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fixed small `_index` bug in `ElasticSearchReader` (#7570)
+
 ## [0.8.21] - 2023-09-06
 
 ### New Features
