@@ -461,7 +461,7 @@ class NodeWithScore(BaseComponent):
     @property
     def metadata(self) -> Dict[str, Any]:
         return self.node.metadata
-    
+
     @property
     def embedding(self) -> Optional[List[float]]:
         return self.node.embedding
