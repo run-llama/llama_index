@@ -236,6 +236,7 @@ class LLMPredictor(BaseLLMPredictor):
                     query_str=prompt.kwargs["query_str"]
                 )
             elif isinstance(prompt, SelectorPromptTemplate):
+                default_template = prompt.default_template
                 if isinstance(default_template, PromptTemplate):
                     prompt.default_template.kwargs[
                         "query_str"
