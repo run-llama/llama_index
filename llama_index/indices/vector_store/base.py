@@ -83,7 +83,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             **kwargs,
         )
 
-    def _get_node_embedding_results(
+    def _get_node_with_embedding(
         self,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
@@ -190,7 +190,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             # NOTE: if the vector store keeps text,
             # we only need to add image and index nodes
             for result, new_id in zip(embedding_results, new_ids):
-                if isinstance(result.node, (ImageNode, IndexNode)):
+                if isinstance(node, (ImageNode, IndexNode)):
                     # NOTE: remove embedding from node to avoid duplication
                     node = result.copy()
                     node.embedding = None
@@ -208,30 +208,30 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not nodes:
             return
 
-        embedding_results = self._get_node_embedding_results(nodes, show_progress)
-        new_ids = self._vector_store.add(embedding_results)
+        nodes = self._get_node_with_embedding(nodes, show_progress)
+        new_ids = self._vector_store.add(nodes)
 
         if not self._vector_store.stores_text or self._store_nodes_override:
             # NOTE: if the vector store doesn't store text,
             # we need to add the nodes to the index struct and document store
-            for result, new_id in zip(embedding_results, new_ids):
+            for node, new_id in zip(nodes, new_ids):
                 # NOTE: remove embedding from node to avoid duplication
-                node = result.copy()
-                node.embedding = None
+                node_without_embedding = node.copy()
+                node_without_embedding.embedding = None
 
-                index_struct.add_node(node, text_id=new_id)
-                self._docstore.add_documents([node], allow_update=True)
+                index_struct.add_node(node_without_embedding, text_id=new_id)
+                self._docstore.add_documents([node_without_embedding], allow_update=True)
         else:
             # NOTE: if the vector store keeps text,
             # we only need to add image and index nodes
-            for result, new_id in zip(embedding_results, new_ids):
-                if isinstance(result.node, (ImageNode, IndexNode)):
+            for node, new_id in zip(nodes, new_ids):
+                if isinstance(node, (ImageNode, IndexNode)):
                     # NOTE: remove embedding from node to avoid duplication
-                    node = result.copy()
-                    node.embedding = None
+                    node_without_embedding = node.copy()
+                    node_without_embedding.embedding = None
 
-                    index_struct.add_node(node, text_id=new_id)
-                    self._docstore.add_documents([node], allow_update=True)
+                    index_struct.add_node(node_without_embedding, text_id=new_id)
+                    self._docstore.add_documents([node_without_embedding], allow_update=True)
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
         """Build index from nodes."""
