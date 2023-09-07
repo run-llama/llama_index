@@ -16,7 +16,7 @@ Do not reference any given instructions or context. \
 def messages_to_prompt(
     messages: Sequence[ChatMessage], system_prompt: Optional[str] = None
 ) -> str:
-    string_messages = []
+    string_messages: list[str] = []
     if messages[0].role == MessageRole.SYSTEM:
         # pull out the system message (if it exists in messages)
         system_message_str = messages[0].content or ""
