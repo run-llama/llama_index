@@ -18,7 +18,7 @@ from llama_index.node_parser.extractors import (
 )
 from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseComponent, BaseNode, Document, MetadataMode
-from llama_index.vector_stores.types import BasePydanticVectorStore
+from llama_index.vector_stores.types import BasePydanticVectorStore, NodeWithEmbedding
 
 
 class IngestionPipeline(BaseModel):
@@ -85,7 +85,9 @@ class IngestionPipeline(BaseModel):
     def run_remote(self) -> str:
         return "Find your remote results here: https://llamaindex.com/"
 
-    def run_local(self, run_embeddings: bool = True) -> Sequence[BaseNode]:
+    def run_local(
+        self, run_embeddings: bool = True, show_progress: bool = False
+    ) -> Sequence[BaseNode]:
         inputs: List[Document] = []
         if self.documents is not None:
             inputs += self.documents
@@ -93,7 +95,7 @@ class IngestionPipeline(BaseModel):
         if self.reader is not None:
             inputs += self.reader.read()
 
-        pipeline = self._build_pipeline()
+        pipeline = self._build_pipeline(show_progress=show_progress)
 
         nodes = pipeline(inputs)
 
@@ -104,16 +106,29 @@ class IngestionPipeline(BaseModel):
                     node.node_id,
                     node.get_content(metadata_mode=MetadataMode.EMBED),
                 )
-            ids, embeddings = self.embed_model.get_queued_text_embeddings()
+            ids, embeddings = self.embed_model.get_queued_text_embeddings(
+                show_progress=show_progress
+            )
 
             for node_id, embedding in zip(ids, embeddings):
                 node_id_to_node[node_id].embedding = embedding
 
+        if self.vector_store is not None:
+            self.vector_store.add(
+                [
+                    NodeWithEmbedding(node=n, embedding=n.embedding)
+                    for n in nodes
+                    if n.embedding is not None
+                ]
+            )
+
         return list(node_id_to_node.values())
 
-    def _build_pipeline(self) -> Callable[[Sequence[Document]], Sequence[BaseNode]]:
+    def _build_pipeline(
+        self, show_progress: bool = False
+    ) -> Callable[[Sequence[Document]], Sequence[BaseNode]]:
         metadata_extractor = None
-        extractors = []
+        extractors: List[MetadataFeatureExtractor] = []
         node_parser = SimpleNodeParser.from_defaults()
 
         for transformation in self.transformations:
@@ -123,13 +138,17 @@ class IngestionPipeline(BaseModel):
                 metadata_extractor = transformation
             elif isinstance(transformation, MetadataFeatureExtractor):
                 extractors.append(transformation)
+                extractors[-1].show_progress = show_progress
 
         if metadata_extractor is None:
             metadata_extractor = MetadataExtractor(extractors=extractors)
 
         node_parser.metadata_extractor = metadata_extractor
 
+        # right now, local ingestion pipelines are just node parsers
         def pipeline_fn(documents: Sequence[Document]) -> Sequence[BaseNode]:
-            return node_parser.get_nodes_from_documents(documents)
+            return node_parser.get_nodes_from_documents(
+                documents, show_progress=show_progress
+            )
 
         return pipeline_fn
