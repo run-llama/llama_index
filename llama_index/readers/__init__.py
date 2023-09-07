@@ -20,6 +20,7 @@ from llama_index.readers.faiss import FaissReader
 
 # readers
 from llama_index.readers.file.base import SimpleDirectoryReader
+from llama_index.readers.file.web_reader import BeautifulSoupTagReader
 from llama_index.readers.github_readers.github_repository_reader import (
     GithubRepositoryReader,
 )
@@ -86,4 +87,5 @@ __all__ = [
     "SteamshipFileReader",
     "ChatGPTRetrievalPluginReader",
     "BagelReader",
+    "BeautifulSoupTagReader",
 ]
