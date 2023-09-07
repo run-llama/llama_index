@@ -1,4 +1,14 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type, Dict, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    Dict,
+    cast,
+)
 
 if TYPE_CHECKING:
     from marvin import AIModel
@@ -9,6 +19,7 @@ from llama_index.schema import BaseNode, TextNode
 from llama_index.node_parser.extractors.metadata_extractors import (
     MetadataFeatureExtractor,
 )
+from llama_index.utils import get_tqdm_iterable
 
 
 class MarvinMetadataExtractor(MetadataFeatureExtractor):
@@ -76,7 +87,11 @@ class MarvinMetadataExtractor(MetadataFeatureExtractor):
 
         ai_model = cast(AIModel, self.marvin_model)
         metadata_list: List[Dict] = []
-        for node in nodes:
+
+        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
+            nodes, self.show_progress, "Extracting marvin metadata"
+        )
+        for node in nodes_queue:
             if self.is_text_node_only and not isinstance(node, TextNode):
                 metadata_list.append({})
                 continue

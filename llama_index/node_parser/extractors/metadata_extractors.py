@@ -22,7 +22,7 @@ disambiguate the document or subsection from other similar documents or subsecti
 from abc import abstractmethod
 from functools import reduce
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Sequence, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 
@@ -202,6 +202,7 @@ class TitleExtractor(MetadataFeatureExtractor):
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         nodes_to_extract_title: List[BaseNode] = []
+
         for node in nodes:
             if len(nodes_to_extract_title) >= self.nodes:
                 break
@@ -213,12 +214,15 @@ class TitleExtractor(MetadataFeatureExtractor):
             # Could not extract title
             return []
 
+        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
+            nodes_to_extract_title, self.show_progress, "Extracting titles"
+        )
         title_candidates = [
             self.llm_predictor.predict(
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
-            for node in nodes_to_extract_title
+            for node in nodes_queue
         ]
         if len(nodes_to_extract_title) > 1:
             titles = reduce(
@@ -277,7 +281,11 @@ class KeywordExtractor(MetadataFeatureExtractor):
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
-        for node in nodes:
+        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
+            nodes, self.show_progress, "Extracting keywords"
+        )
+
+        for node in nodes_queue:
             if self.is_text_node_only and not isinstance(node, TextNode):
                 metadata_list.append({})
                 continue
@@ -370,7 +378,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
-        nodes_queue = get_tqdm_iterable(
+        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
             nodes, self.show_progress, "Extracting questions"
         )
         for node in nodes_queue:
@@ -462,7 +470,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         if not all([isinstance(node, TextNode) for node in nodes]):
             raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
-        nodes_queue = get_tqdm_iterable(
+        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
             nodes, self.show_progress, "Extracting summaries"
         )
         node_summaries = []
@@ -615,7 +623,12 @@ class EntityExtractor(MetadataFeatureExtractor):
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         # Extract node-level entity metadata
         metadata_list: List[Dict] = [{} for _ in nodes]
-        for i, metadata in enumerate(metadata_list):
+        metadata_queue: Iterable[int] = get_tqdm_iterable(
+            range(len(nodes)), self.show_progress, "Extracting entities"
+        )
+
+        for i in metadata_queue:
+            metadata = metadata_list[i]
             node_text = nodes[i].get_content(metadata_mode=self.metadata_mode)
             words = self._tokenizer(node_text)
             spans = self._model.predict(words)
