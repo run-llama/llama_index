@@ -508,6 +508,15 @@ class Document(TextNode):
         """Get document ID."""
         return self.id_
 
+    def __str__(self) -> str:
+        source_text_truncated = truncate_text(
+            self.get_content().strip(), TRUNCATE_LENGTH
+        )
+        source_text_wrapped = textwrap.fill(
+            f"Text: {source_text_truncated}\n", width=WRAP_WIDTH
+        )
+        return f"Doc ID: {self.doc_id}\n{source_text_wrapped}"    
+
     def get_doc_id(self) -> str:
         """TODO: Deprecated: Get document ID."""
         return self.id_
