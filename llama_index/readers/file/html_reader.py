@@ -17,8 +17,11 @@ class HTMLTagReader(BaseReader):
     def __init__(
         self,
         tag: str = "section",
+        ignore_no_id: bool = False,
     ) -> None:
         self._tag = tag
+        self._ignore_no_id = ignore_no_id
+
         super().__init__()
 
     def load_data(
@@ -37,18 +40,22 @@ class HTMLTagReader(BaseReader):
         for tag in tags:
             tag_id = tag.get("id")
             tag_text = self._extract_text_from_tag(tag)
-            if tag_id:
-                metadata = {
-                    "tag_id": tag_id,
-                    "file_path": str(file),
-                }
-                metadata.update(extra_info or {})
 
-                doc = Document(
-                    text=tag_text,
-                    metadata=metadata,
-                )
-                docs.append(doc)
+            if self._ignore_no_id and not tag_id:
+                continue
+
+            metadata = {
+                "tag": self._tag,
+                "tag_id": tag_id,
+                "file_path": str(file),
+            }
+            metadata.update(extra_info or {})
+
+            doc = Document(
+                text=tag_text,
+                metadata=metadata,
+            )
+            docs.append(doc)
         return docs
 
     def _extract_text_from_tag(self, tag: "Tag") -> str:
@@ -62,7 +69,7 @@ class HTMLTagReader(BaseReader):
             if isinstance(elem, NavigableString):
                 if elem.strip():
                     texts.append(elem.strip())
-            elif elem.name == tag:
+            elif elem.name == self._tag:
                 continue
             else:
                 texts.append(elem.get_text().strip())
