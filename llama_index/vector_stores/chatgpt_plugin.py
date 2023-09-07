@@ -6,7 +6,13 @@ from typing import Any, Dict, List, Optional
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
-from llama_index.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,

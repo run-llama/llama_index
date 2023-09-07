@@ -116,8 +116,8 @@ def test_backwards_compatibility() -> None:
     )
     metadatas = [metadata.update({"doc_id": "2"}) for metadata in metadatas]
     node = TextNode(
-        text="test node text", 
-        metadata={"key": "value", "doc_id": "1"}, 
+        text="test node text",
+        metadata={"key": "value", "doc_id": "1"},
         id_="1",
         embedding=[1.0 for i in range(EMBEDDING_DIM)],
     )

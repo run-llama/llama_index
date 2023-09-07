@@ -13,7 +13,13 @@ from llama_index.readers.myscale import (
     escape_str,
     format_list_to_string,
 )
-from llama_index.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     VectorStore,
@@ -187,7 +193,7 @@ class MyScaleVectorStore(VectorStore):
             return []
 
         if not self._index_existed:
-            self._create_index(len(nodes[0].embedding))
+            self._create_index(len(nodes[0].get_embedding()))
 
         for result_batch in iter_batch(nodes, self.config.batch_size):
             insert_statement = self._build_insert_statement(values=result_batch)

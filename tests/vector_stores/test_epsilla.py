@@ -10,37 +10,29 @@ except ImportError:
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import EpsillaVectorStore
-from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
+from llama_index.vector_stores.types import VectorStoreQuery
 
 
 @pytest.fixture
-def node_embeddings() -> List[NodeWithEmbedding]:
+def node_embeddings() -> List[TextNode]:
     return [
-        NodeWithEmbedding(
+        TextNode(
+            text="epsilla test text 0.",
+            id_="1",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
+            metadata={
+                "date": "2023-08-02",
+            },
             embedding=[1.0, 0.0],
-            node=TextNode(
-                text="epsilla test text 0.",
-                id_="1",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
-                },
-                metadata={
-                    "date": "2023-08-02",
-                },
-            ),
         ),
-        NodeWithEmbedding(
+        TextNode(
+            text="epsilla test text 1.",
+            id_="2",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
+            metadata={
+                "date": "2023-08-11",
+            },
             embedding=[0.0, 1.0],
-            node=TextNode(
-                text="epsilla test text 1.",
-                id_="2",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
-                },
-                metadata={
-                    "date": "2023-08-11",
-                },
-            ),
         ),
     ]
 

@@ -83,7 +83,7 @@ class SupabaseVectorStore(VectorStore):
         """Add nodes to index.
 
         Args
-            nodes: List[BaseNode]: list of nodes with embeddings 
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
         if self._collection is None:

@@ -125,9 +125,7 @@ class CassandraVectorStore(VectorStore):
                 flat_metadata=self.flat_metadata,
             )
             node_ids.append(node.node_id)
-            node_contents.append(
-                node.get_content(metadata_mode=MetadataMode.NONE)
-            )
+            node_contents.append(node.get_content(metadata_mode=MetadataMode.NONE))
             node_metadatas.append(metadata)
             node_embeddings.append(node.get_embedding())
 

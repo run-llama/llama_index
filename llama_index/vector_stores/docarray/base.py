@@ -118,9 +118,7 @@ class DocArrayVectorStore(VectorStore, ABC):
         docs = DocList[self._schema](  # type: ignore[name-defined]
             self._schema(
                 id=node.node_id,
-                metadata=node_to_metadata_dict(
-                    node, flat_metadata=self.flat_metadata
-                ),
+                metadata=node_to_metadata_dict(node, flat_metadata=self.flat_metadata),
                 text=node.get_content(metadata_mode=MetadataMode.NONE),
                 embedding=node.get_embedding(),
             )

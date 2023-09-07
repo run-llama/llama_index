@@ -1,7 +1,13 @@
 """LanceDB vector store."""
 from typing import Any, List, Optional
 
-from llama_index.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,

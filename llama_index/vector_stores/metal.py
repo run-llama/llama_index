@@ -126,9 +126,7 @@ class MetalVectorStore(VectorStore):
             ids.append(node.node_id)
 
             metadata = {}
-            metadata["text"] = (
-                node.get_content(metadata_mode=MetadataMode.NONE) or ""
-            )
+            metadata["text"] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
 
             additional_metadata = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=self.flat_metadata

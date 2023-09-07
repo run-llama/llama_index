@@ -14,7 +14,13 @@ from llama_index.readers.redis.utils import (
     convert_bytes,
     get_redis_query,
 )
-from llama_index.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -125,7 +131,7 @@ class RedisVectorStore(VectorStore):
         """Add embedding results to the index.
 
         Args:
-            nodes (List[BaseNode]): List of nodes with embeddings 
+            nodes (List[BaseNode]): List of nodes with embeddings
 
         Returns:
             List[str]: List of ids of the documents added to the index.
@@ -138,7 +144,7 @@ class RedisVectorStore(VectorStore):
             return []
 
         # set vector dim for creation if index doesn't exist
-        self._index_args["dims"] = len(nodes[0].embedding)
+        self._index_args["dims"] = len(nodes[0].get_embedding())
 
         if self._index_exists():
             if self._overwrite:

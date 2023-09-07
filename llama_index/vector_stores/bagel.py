@@ -57,9 +57,7 @@ class BagelVectorStore(VectorStore):
 
         self._collection = collection
 
-    def add(
-        self, nodes: List[BaseNode], **kwargs: Any
-    ) -> List[str]:
+    def add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """
         Add a list of nodes with embeddings to the vector store.
 
@@ -88,10 +86,7 @@ class BagelVectorStore(VectorStore):
                     flat_metadata=self.flat_metadata,
                 )
             )
-            documents.append(
-                node.get_content(metadata_mode=MetadataMode.NONE)
-                or ""
-            )
+            documents.append(node.get_content(metadata_mode=MetadataMode.NONE) or "")
 
         self._collection.add(
             ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents

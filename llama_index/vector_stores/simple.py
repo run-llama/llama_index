@@ -103,7 +103,7 @@ class SimpleVectorStore(VectorStore):
         """Add embedding_results to index."""
         for node in nodes:
             self._data.embedding_dict[node.node_id] = node.get_embedding()
-            self._data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id
+            self._data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
         return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:

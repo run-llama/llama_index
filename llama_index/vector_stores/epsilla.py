@@ -160,7 +160,7 @@ class EpsillaVectorStore(VectorStore):
         """
         # If the collection doesnt exist yet, create the collection
         if not self._collection_created and len(nodes) > 0:
-            dimension = len(nodes[0].embedding)
+            dimension = len(nodes[0].get_embedding())
             self._create_collection(dimension)
 
         elif len(nodes) == 0:

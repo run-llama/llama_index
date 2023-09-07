@@ -141,9 +141,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 )
             )
             ids.append(node.node_id)
-            documents.append(
-                node.get_content(metadata_mode=MetadataMode.NONE)
-            )
+            documents.append(node.get_content(metadata_mode=MetadataMode.NONE))
 
         self._collection.add(
             embeddings=embeddings,

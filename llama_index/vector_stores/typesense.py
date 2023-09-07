@@ -102,9 +102,7 @@ class TypesenseVectorStore(VectorStore):
             {"name": self._collection_name, "fields": fields}
         )
 
-    def _create_upsert_docs(
-        self, nodes: List[BaseNode]
-    ) -> List[dict]:
+    def _create_upsert_docs(self, nodes: List[BaseNode]) -> List[dict]:
         upsert_docs = []
         for node in nodes:
             doc = {

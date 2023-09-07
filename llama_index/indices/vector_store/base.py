@@ -220,7 +220,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 node_without_embedding.embedding = None
 
                 index_struct.add_node(node_without_embedding, text_id=new_id)
-                self._docstore.add_documents([node_without_embedding], allow_update=True)
+                self._docstore.add_documents(
+                    [node_without_embedding], allow_update=True
+                )
         else:
             # NOTE: if the vector store keeps text,
             # we only need to add image and index nodes
@@ -231,7 +233,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                     node_without_embedding.embedding = None
 
                     index_struct.add_node(node_without_embedding, text_id=new_id)
-                    self._docstore.add_documents([node_without_embedding], allow_update=True)
+                    self._docstore.add_documents(
+                        [node_without_embedding], allow_update=True
+                    )
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
         """Build index from nodes."""

@@ -7,7 +7,13 @@ import logging
 from typing import Any, List, Optional
 from uuid import uuid4
 
-from llama_index.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
@@ -326,7 +332,7 @@ class MilvusVectorStore(VectorStore):
 
         # If the collection doesnt exist yet, create the collection, index, and load it
         if self.collection is None and len(nodes) != 0:
-            self.dim = len(nodes[0].embedding)
+            self.dim = len(nodes[0].get_embedding())
             self._create_collection()
             self._create_index()
             assert self.collection is not None
@@ -346,7 +352,7 @@ class MilvusVectorStore(VectorStore):
             ids.append(node.node_id)
             doc_ids.append(node.ref_doc_id)
             texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
-            embeddings.append(node.embedding)
+            embeddings.append(node.get_embedding())
 
             # Store node without text
             metadata = node_to_metadata_dict(node, remove_text=True)

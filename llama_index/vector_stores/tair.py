@@ -5,7 +5,13 @@ An index that is built on top of Alibaba Cloud's Tair database.
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from llama_index.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,

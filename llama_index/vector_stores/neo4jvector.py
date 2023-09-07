@@ -30,9 +30,7 @@ def clean_params(params: List[BaseNode]) -> List[Dict[str, Any]]:
         text = record.get_content(metadata_mode=MetadataMode.NONE)
         embedding = record.get_embedding()
         id = record.node_id
-        metadata = node_to_metadata_dict(
-            record, remove_text=True, flat_metadata=False
-        )
+        metadata = node_to_metadata_dict(record, remove_text=True, flat_metadata=False)
         # Remove redundant metadata information
         for k in ["document_id", "doc_id"]:
             del metadata[k]

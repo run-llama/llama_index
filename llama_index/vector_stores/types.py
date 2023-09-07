@@ -13,26 +13,8 @@ DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
-@dataclass
-class NodeWithEmbedding:
-    """Node with embedding.
-
-    Args:
-        node (Node): Node
-        embedding (List[float]): Embedding
-
-    """
-
-    node: BaseNode
-    embedding: List[float]
-
-    @property
-    def id(self) -> str:
-        return self.node.node_id
-
-    @property
-    def ref_doc_id(self) -> str:
-        return self.node.ref_doc_id or "None"
+# legacy: kept for backward compatibility
+NodeWithEmbedding = BaseNode
 
 
 @dataclass
