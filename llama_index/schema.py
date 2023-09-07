@@ -239,20 +239,15 @@ class BaseNode(BaseComponent):
     def extra_info(self) -> Dict[str, Any]:
         """TODO: DEPRECATED: Extra info."""
         return self.metadata
-    
+
     def __str__(self) -> str:
         source_text_truncated = truncate_text(
             self.get_content().strip(), TRUNCATE_LENGTH
         )
         source_text_wrapped = textwrap.fill(
-            f"Text: {source_text_truncated}\n", 
-            width=WRAP_WIDTH
+            f"Text: {source_text_truncated}\n", width=WRAP_WIDTH
         )
-        return (
-            f"Node ID: {self.node_id}\n"
-            f"{source_text_wrapped}\n"
-        )
-        
+        return f"Node ID: {self.node_id}\n{source_text_wrapped}"
 
     def get_embedding(self) -> List[float]:
         """Get embedding.
@@ -430,10 +425,7 @@ class NodeWithScore(BaseComponent):
     score: Optional[float] = None
 
     def __str__(self) -> str:
-        return (
-            f"{self.node}"
-            f"Score: {self.score: 0.3f}\n"
-        )
+        return f"{self.node}\nScore: {self.score: 0.3f}\n"
 
     def get_score(self, raise_error: bool = False) -> float:
         """Get score."""
@@ -449,23 +441,31 @@ class NodeWithScore(BaseComponent):
     def class_name(cls) -> str:
         """Get class name."""
         return "NodeWithScore"
-    
+
     ##### pass through methods to BaseNode #####
     @property
     def node_id(self) -> str:
         return self.node.node_id
-    
+
+    @property
+    def id_(self) -> str:
+        return self.node.id_
+
     @property
     def text(self) -> str:
         if isinstance(self.node, TextNode):
             return self.node.text
         else:
             raise ValueError("Node must be a TextNode to get text.")
-        
+
     @property
     def metadata(self) -> Dict[str, Any]:
         return self.node.metadata
     
+    @property
+    def embedding(self) -> Optional[List[float]]:
+        return self.node.embedding
+
     def get_text(self) -> str:
         if isinstance(self.node, TextNode):
             return self.node.get_text()
@@ -474,7 +474,7 @@ class NodeWithScore(BaseComponent):
 
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         return self.node.get_content(metadata_mode=metadata_mode)
-    
+
     def get_embedding(self) -> List[float]:
         return self.node.get_embedding()
 
