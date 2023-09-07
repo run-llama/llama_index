@@ -7,9 +7,8 @@ import logging
 from typing import Any, List, Optional
 from uuid import uuid4
 
-from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -310,11 +309,11 @@ class MilvusVectorStore(VectorStore):
         """Get client."""
         return self.collection
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+    def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): The embeddings and their data
+            nodes (List[BaseNode]): List of nodes with embeddings
                 to insert.
 
         Raises:
@@ -326,14 +325,14 @@ class MilvusVectorStore(VectorStore):
         from pymilvus import MilvusException
 
         # If the collection doesnt exist yet, create the collection, index, and load it
-        if self.collection is None and len(embedding_results) != 0:
-            self.dim = len(embedding_results[0].embedding)
+        if self.collection is None and len(nodes) != 0:
+            self.dim = len(nodes[0].embedding)
             self._create_collection()
             self._create_index()
             assert self.collection is not None
             self.collection.load()
 
-        elif len(embedding_results) == 0:
+        elif len(nodes) == 0:
             return []
 
         ids = []
@@ -343,14 +342,14 @@ class MilvusVectorStore(VectorStore):
         nodes = []
 
         # Process that data we are going to insert
-        for result in embedding_results:
-            ids.append(result.id)
-            doc_ids.append(result.ref_doc_id)
-            texts.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
-            embeddings.append(result.embedding)
+        for node in nodes:
+            ids.append(node.node_id)
+            doc_ids.append(node.ref_doc_id)
+            texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
+            embeddings.append(node.embedding)
 
             # Store node without text
-            metadata = node_to_metadata_dict(result.node, remove_text=True)
+            metadata = node_to_metadata_dict(node, remove_text=True)
             nodes.append(metadata["_node_content"])
 
         try:

@@ -3,10 +3,9 @@ import uuid
 from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -249,14 +248,14 @@ class ElasticsearchStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
     ) -> List[str]:
         """Add nodes to Elasticsearch index.
 
         Args:
-            embedding_results: List of nodes with embeddings.
+            nodes: List of nodes with embeddings.
             create_index_if_not_exists: Optional. Whether to create
                                         the Elasticsearch index if it
                                         doesn't already exist.
@@ -277,11 +276,11 @@ class ElasticsearchStore(VectorStore):
                 "Please install it with `pip install elasticsearch`."
             )
 
-        if len(embedding_results) == 0:
+        if len(nodes) == 0:
             return []
 
         if create_index_if_not_exists:
-            dims_length = len(embedding_results[0].embedding)
+            dims_length = len(nodes[0].get_embedding())
             self._create_index_if_not_exists(
                 index_name=self.index_name, dims_length=dims_length
             )
@@ -290,11 +289,11 @@ class ElasticsearchStore(VectorStore):
         texts: List[str] = []
         metadatas: List[dict] = []
         ids: List[str] = []
-        for node in embedding_results:
+        for node in nodes:
             ids.append(node.id)
-            embeddings.append(node.embedding)
-            texts.append(node.node.get_content(metadata_mode=MetadataMode.NONE))
-            metadatas.append(node_to_metadata_dict(node.node, remove_text=True))
+            embeddings.append(node.get_embedding())
+            texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
+            metadatas.append(node_to_metadata_dict(node, remove_text=True))
 
         requests = []
         return_ids = []
