@@ -18,12 +18,16 @@ def messages_to_prompt(
 ) -> str:
     string_messages = []
     if messages[0].role == MessageRole.SYSTEM:
+        # pull out the system message (if it exists in messages)
         system_message_str = messages[0].content or ""
         messages = messages[1:]
     else:
         system_message_str = system_prompt or DEFAULT_SYSTEM_PROMPT
 
-    system_message_str = B_SYS + system_message_str + E_SYS
+    system_message_str = f"{B_SYS} {system_message_str} {E_SYS}"
+
+    # ensure the system message is always included in the prompt
+    string_messages.append(f"{BOS} {B_INST} {system_message_str} ")
 
     for i, (user_message, assistant_message) in enumerate(
         zip(messages[::2], messages[1::2])
@@ -32,19 +36,23 @@ def messages_to_prompt(
         assert assistant_message.role == MessageRole.ASSISTANT
 
         if i == 0:
-            string_messages.append(
-                f"{BOS}{B_INST} {system_message_str}{user_message.content} "
-                f"{E_INST} {assistant_message} "
-            )
+            # first message already has the system message
+            # add on the user message and assistant message
+            string_messages[
+                0
+            ] += f"{user_message.content} {E_INST} {assistant_message} "
         else:
+            # end the previous message and add a new one
             string_messages[-1] += f" {EOS}"
             string_messages.append(
-                f"{BOS}{B_INST} {user_message.content} {E_INST} {assistant_message}"
+                f"{BOS} {B_INST} {user_message.content} {E_INST} {assistant_message}"
             )
 
+    # add the last user message
     last_message = messages[-1]
     assert last_message.role == MessageRole.USER
     string_messages.append(f"{B_INST} {last_message.content} {E_INST}")
+
     return "".join(string_messages)
 
 
