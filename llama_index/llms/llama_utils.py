@@ -25,24 +25,24 @@ def messages_to_prompt(
         system_message_str = system_prompt or DEFAULT_SYSTEM_PROMPT
 
     system_message_str = f"{B_SYS} {system_message_str} {E_SYS}"
-    
+
     for i in range(0, len(messages), 2):
         user_message = messages[i]
         assert user_message.role == MessageRole.USER
-        
-        if i==0:
+
+        if i == 0:
             str_message = f"{BOS} {B_INST} {system_message_str} "
         else:
             string_messages[-1] += f" {EOS}"
             str_message = f"{BOS} {B_INST} "
-        
+
         str_message += f"{user_message.content} {E_INST}"
-        
-        if len(messages) != i+1:
-            assert messages[i+1].role == MessageRole.ASSISTANT
-            assistant_message = messages[i+1].content
+
+        if len(messages) != i + 1:
+            assert messages[i + 1].role == MessageRole.ASSISTANT
+            assistant_message = messages[i + 1].content
             str_message += f"{user_message.content} {E_INST} {assistant_message}"
-            
+
         string_messages.append(str_message)
 
     return "".join(string_messages)
