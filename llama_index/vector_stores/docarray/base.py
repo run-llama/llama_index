@@ -6,9 +6,8 @@ import numpy as np
 
 from llama_index.bridge.pydantic import Field
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -100,13 +99,12 @@ class DocArrayVectorStore(VectorStore, ABC):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Adds embedding results to the vector store.
+        """Adds nodes to the vector store.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): List of nodes
-            with corresponding embeddings.
+            nodes (List[BaseNode]): List of nodes with embeddings.
 
         Returns:
             List[str]: List of document IDs added to the vector store.
@@ -114,19 +112,19 @@ class DocArrayVectorStore(VectorStore, ABC):
         from docarray import DocList
 
         # check to see if empty document list was passed
-        if len(embedding_results) == 0:
+        if len(nodes) == 0:
             return []
 
         docs = DocList[self._schema](  # type: ignore[name-defined]
             self._schema(
-                id=result.id,
+                id=node.node_id,
                 metadata=node_to_metadata_dict(
-                    result.node, flat_metadata=self.flat_metadata
+                    node, flat_metadata=self.flat_metadata
                 ),
-                text=result.node.get_content(metadata_mode=MetadataMode.NONE),
-                embedding=result.embedding,
+                text=node.get_content(metadata_mode=MetadataMode.NONE),
+                embedding=node.get_embedding(),
             )
-            for result in embedding_results
+            for node in nodes
         )
         self._index.index(docs)
         logger.info(f"Successfully added {len(docs)} documents to the index")
