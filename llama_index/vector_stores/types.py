@@ -141,7 +141,7 @@ class VectorStore(Protocol):
         self,
         nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to vector store."""
+        """Add nodes with embedding to vector store."""
         ...
 
     async def async_add(
@@ -149,7 +149,7 @@ class VectorStore(Protocol):
         nodes: List[BaseNode],
     ) -> List[str]:
         """
-        Asynchronously add embedding results to vector store.
+        Asynchronously add nodes with embedding to vector store.
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
