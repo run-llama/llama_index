@@ -62,7 +62,7 @@ class BagelVectorStore(VectorStore):
         Add a list of nodes with embeddings to the vector store.
 
         Args:
-            embedding_results: List of nodes with embeddings.
+            nodes: List of nodes with embeddings.
             kwargs: Additional arguments.
 
         Returns:

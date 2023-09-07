@@ -120,7 +120,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             results.append(result)
         return results
 
-    async def _aget_node_embedding_results(
+    async def _aget_node_with_embedding(
         self,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
@@ -171,32 +171,34 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not nodes:
             return
 
-        embedding_results = await self._aget_node_embedding_results(
-            nodes, show_progress
-        )
-        new_ids = self._vector_store.add(embedding_results)
+        nodes = await self._aget_node_with_embedding(nodes, show_progress)
+        new_ids = self._vector_store.add(nodes)
 
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
         if not self._vector_store.stores_text or self._store_nodes_override:
-            for result, new_id in zip(embedding_results, new_ids):
+            for node, new_id in zip(nodes, new_ids):
                 # NOTE: remove embedding from node to avoid duplication
-                node = result.copy()
-                node.embedding = None
+                node_without_embedding = node.copy()
+                node_without_embedding.embedding = None
 
-                index_struct.add_node(node, text_id=new_id)
-                self._docstore.add_documents([node], allow_update=True)
+                index_struct.add_node(node_without_embedding, text_id=new_id)
+                self._docstore.add_documents(
+                    [node_without_embedding], allow_update=True
+                )
         else:
             # NOTE: if the vector store keeps text,
             # we only need to add image and index nodes
-            for result, new_id in zip(embedding_results, new_ids):
+            for node, new_id in zip(nodes, new_ids):
                 if isinstance(node, (ImageNode, IndexNode)):
                     # NOTE: remove embedding from node to avoid duplication
-                    node = result.copy()
-                    node.embedding = None
+                    node_without_embedding = node.copy()
+                    node_without_embedding.embedding = None
 
-                    index_struct.add_node(node, text_id=new_id)
-                    self._docstore.add_documents([node], allow_update=True)
+                    index_struct.add_node(node_without_embedding, text_id=new_id)
+                    self._docstore.add_documents(
+                        [node_without_embedding], allow_update=True
+                    )
 
     def _add_nodes_to_index(
         self,

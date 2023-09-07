@@ -56,8 +56,8 @@ def test_add_data_and_query() -> None:
     assert vector_store._collection_name == "test_collection"
     assert vector_store._collection_created is not True
 
-    embedding_results = node_embeddings()
-    ids = vector_store.add(embedding_results)
+    nodes = node_embeddings()
+    ids = vector_store.add(nodes)
 
     assert vector_store._collection_created is True
     assert ids is ["1", "2"]

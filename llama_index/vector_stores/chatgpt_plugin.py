@@ -95,7 +95,7 @@ class ChatGPTRetrievalPluginClient(VectorStore):
         self,
         nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding_results to index."""
+        """Add nodes to index."""
         headers = {"Authorization": f"Bearer {self._bearer_token}"}
 
         docs_to_upload = convert_docs_to_json(nodes)

@@ -100,7 +100,7 @@ class SimpleVectorStore(VectorStore):
         self,
         nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding_results to index."""
+        """Add nodes to index."""
         for node in nodes:
             self._data.embedding_dict[node.node_id] = node.get_embedding()
             self._data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
