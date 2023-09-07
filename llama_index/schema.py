@@ -515,7 +515,7 @@ class Document(TextNode):
         source_text_wrapped = textwrap.fill(
             f"Text: {source_text_truncated}\n", width=WRAP_WIDTH
         )
-        return f"Doc ID: {self.doc_id}\n{source_text_wrapped}"    
+        return f"Doc ID: {self.doc_id}\n{source_text_wrapped}"
 
     def get_doc_id(self) -> str:
         """TODO: Deprecated: Get document ID."""
