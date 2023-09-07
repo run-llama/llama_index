@@ -449,6 +449,34 @@ class NodeWithScore(BaseComponent):
     def class_name(cls) -> str:
         """Get class name."""
         return "NodeWithScore"
+    
+    ##### pass through methods to BaseNode #####
+    @property
+    def node_id(self) -> str:
+        return self.node.node_id
+    
+    @property
+    def text(self) -> str:
+        if isinstance(self.node, TextNode):
+            return self.node.text
+        else:
+            raise ValueError("Node must be a TextNode to get text.")
+        
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        return self.node.metadata
+    
+    def get_text(self) -> str:
+        if isinstance(self.node, TextNode):
+            return self.node.get_text()
+        else:
+            raise ValueError("Node must be a TextNode to get text.")
+
+    def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
+        return self.node.get_content(metadata_mode=metadata_mode)
+    
+    def get_embedding(self) -> List[float]:
+        return self.node.get_embedding()
 
 
 # Document Classes for Readers
