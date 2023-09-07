@@ -8,6 +8,8 @@
 ### Bug Fixes / Nits
 - Fixed small `_index` bug in `ElasticSearchReader` (#7570)
 - Fixed bug with prompt helper settings in global service contexts (#7576)
+- Remove newlines from openai embeddings again (#7588)
+- Fixed small bug with setting `query_wrapper_prompt` in the service context (#7585)
 
 ## [0.8.21] - 2023-09-06
 
