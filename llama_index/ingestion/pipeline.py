@@ -2,14 +2,13 @@ from typing import List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel, Field
 
-from llama_index.indices.base import BaseIndex
 from llama_index.ingestion.transformation import (
     ConfiguredTransformation,
     get_configured_transform,
 )
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.readers.base import BasePydanticReader, BaseReader
-from llama_index.schema import BaseComponent, Document
+from llama_index.schema import BaseComponent, BaseNode, Document
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 
@@ -28,9 +27,6 @@ class IngestionPipeline(BaseModel):
     vector_store: Optional[BasePydanticVectorStore] = Field(
         description="Vector store to use to store the data"
     )
-    index_cls: Optional[BaseIndex] = Field(
-        description="Index class to use to index the data"
-    )
 
     def __init__(
         self,
@@ -39,7 +35,6 @@ class IngestionPipeline(BaseModel):
         reader: Optional[Union[BaseReader, BasePydanticReader]] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
-        index_cls: Optional[BaseIndex] = None,
     ) -> None:
         if documents is None and reader is None:
             raise ValueError("Must provide either documents or a reader")
@@ -59,7 +54,6 @@ class IngestionPipeline(BaseModel):
             reader=reader,
             documents=documents,
             vector_store=vector_store,
-            index_cls=index_cls,
         )
 
     def _get_default_transformations(self) -> List[BaseComponent]:
@@ -70,5 +64,5 @@ class IngestionPipeline(BaseModel):
     def run_remote(self) -> str:
         return "Find your remote results here: https://llamaindex.com/"
 
-    def run_local(self) -> BaseIndex:
+    def run_local(self) -> Sequence[BaseNode]:
         pass  # TODO: How to do this?
