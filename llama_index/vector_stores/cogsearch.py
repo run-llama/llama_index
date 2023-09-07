@@ -400,7 +400,7 @@ class CognitiveSearchVectorStore(VectorStore):
         self,
         nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to index associated with the configured search client.
+        """Add nodes to index associated with the configured search client.
 
         Args
             nodes: List[BaseNode]: nodes with embeddings

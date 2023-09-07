@@ -108,7 +108,7 @@ class CassandraVectorStore(VectorStore):
         self,
         nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to index.
+        """Add nodes to index.
 
         Args
             nodes: List[BaseNode]: list of node with embeddings

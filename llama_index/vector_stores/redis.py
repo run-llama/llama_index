@@ -128,7 +128,7 @@ class RedisVectorStore(VectorStore):
         return self._redis_client
 
     def add(self, nodes: List[BaseNode]) -> List[str]:
-        """Add embedding results to the index.
+        """Add nodes to the index.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings

@@ -26,7 +26,7 @@ class MockVectorStore(VectorStore):
         self,
         nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to vector store."""
+        """Add nodes to vector store."""
         raise NotImplementedError()
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:

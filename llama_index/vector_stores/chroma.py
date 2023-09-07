@@ -120,7 +120,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         return "ChromaVectorStore"
 
     def add(self, nodes: List[BaseNode]) -> List[str]:
-        """Add embedding results to index.
+        """Add nodes to index.
 
         Args
             nodes: List[BaseNode]: list of nodes with embeddings
