@@ -9,6 +9,11 @@
 - Fixed small `_index` bug in `ElasticSearchReader` (#7570)
 - Fixed bug with prompt helper settings in global service contexts (#7576)
 
+### Breaking/Deprecated API Changes
+- Clean up vector store interface to use `BaseNode` instead of `NodeWithEmbedding`
+  - For majority of users, this is a no-op change
+  - For users directly operating with the `VectorStore` abstraction and manually constructing `NodeWithEmbedding` objects, this is a minor breaking change. Use `TextNode` with `embedding` set directly, instead of `NodeWithEmbedding`.
+
 ## [0.8.21] - 2023-09-06
 
 ### New Features

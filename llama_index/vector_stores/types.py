@@ -7,14 +7,14 @@ from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_check
 import fsspec
 
 from llama_index.bridge.pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
-from llama_index.schema import BaseNode, BaseComponent
+from llama_index.schema import BaseNode, BaseComponent, TextNode
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
 # legacy: kept for backward compatibility
-NodeWithEmbedding = BaseNode
+NodeWithEmbedding = TextNode
 
 
 @dataclass
