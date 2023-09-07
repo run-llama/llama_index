@@ -1,5 +1,6 @@
 """Base schema for data structures."""
 import json
+import textwrap
 import uuid
 from abc import abstractmethod
 from enum import Enum, auto
@@ -9,10 +10,13 @@ from typing_extensions import Self
 
 from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.bridge.langchain import Document as LCDocument
-from llama_index.utils import SAMPLE_TEXT
+from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
+# NOTE: for pretty printing
+TRUNCATE_LENGTH = 350
+WRAP_WIDTH = 70
 
 
 class BaseComponent(BaseModel):
@@ -235,6 +239,20 @@ class BaseNode(BaseComponent):
     def extra_info(self) -> Dict[str, Any]:
         """TODO: DEPRECATED: Extra info."""
         return self.metadata
+    
+    def __str__(self) -> str:
+        source_text_truncated = truncate_text(
+            self.get_content().strip(), TRUNCATE_LENGTH
+        )
+        source_text_wrapped = textwrap.fill(
+            f"Text: {source_text_truncated}\n", 
+            width=WRAP_WIDTH
+        )
+        return (
+            f"Node ID: {self.node_id}\n"
+            f"{source_text_wrapped}\n"
+        )
+        
 
     def get_embedding(self) -> List[float]:
         """Get embedding.
@@ -410,6 +428,12 @@ class IndexNode(TextNode):
 class NodeWithScore(BaseComponent):
     node: BaseNode
     score: Optional[float] = None
+
+    def __str__(self) -> str:
+        return (
+            f"{self.node}"
+            f"Score: {self.score: 0.3f}\n"
+        )
 
     def get_score(self, raise_error: bool = False) -> float:
         """Get score."""
