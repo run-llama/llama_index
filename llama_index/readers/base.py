@@ -48,3 +48,7 @@ class ReaderConfig(BaseComponent):
     def class_name(cls) -> str:
         """Get the name identifier of the class."""
         return "LoaderConfig"
+
+    def read(self) -> List[Document]:
+        """Call the loader with the given arguments."""
+        return self.loader.load_data(*self.loader_args, **self.loader_kwargs)

@@ -1,14 +1,23 @@
-from typing import List, Optional, Sequence, Union
+from typing import Callable, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
 
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.ingestion.transformation import (
     ConfiguredTransformation,
     get_configured_transform,
 )
+from llama_index.llms.base import LLM
+from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.node_parser import SimpleNodeParser
-from llama_index.readers.base import BasePydanticReader, BaseReader
-from llama_index.schema import BaseComponent, BaseNode, Document
+from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.extractors import (
+    MetadataExtractor,
+    MetadataFeatureExtractor,
+)
+from llama_index.readers.base import ReaderConfig
+from llama_index.schema import BaseComponent, BaseNode, Document, MetadataMode
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 
@@ -16,14 +25,21 @@ class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
     name: str = Field(description="Unique name of the ingestion pipeline")
-    transformations: list[ConfiguredTransformation] = Field(
+    configured_transformations: list[ConfiguredTransformation] = Field(
+        description="Serialized schemas of transformations to apply to the data"
+    )
+
+    llm: LLM = Field(description="LLM to use to process the data")
+    embed_model: BaseEmbedding = Field(
+        description="Embedding model to use to embed the data"
+    )
+
+    transformations: list[BaseComponent] = Field(
         description="Transformations to apply to the data"
     )
 
     documents: Optional[Sequence[Document]] = Field(description="Documents to ingest")
-    reader: Optional[BasePydanticReader] = Field(
-        description="Reader to use to read the data"
-    )
+    reader: Optional[ReaderConfig] = Field(description="Reader to use to read the data")
     vector_store: Optional[BasePydanticVectorStore] = Field(
         description="Vector store to use to store the data"
     )
@@ -32,9 +48,11 @@ class IngestionPipeline(BaseModel):
         self,
         name: Optional[str] = "llamaindex_pipeline",
         transformations: Optional[list[BaseComponent]] = None,
-        reader: Optional[Union[BaseReader, BasePydanticReader]] = None,
+        reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
+        llm: Optional[LLMType] = "default",
+        embed_model: Optional[EmbedType] = "default",
     ) -> None:
         if documents is None and reader is None:
             raise ValueError("Must provide either documents or a reader")
@@ -50,10 +68,13 @@ class IngestionPipeline(BaseModel):
 
         super().__init__(
             name=name,
-            transformations=configured_transformations,
+            configured_transformations=configured_transformations,
+            transformations=transformations,
             reader=reader,
             documents=documents,
             vector_store=vector_store,
+            llm=resolve_llm(llm),
+            embed_model=resolve_embed_model(embed_model),
         )
 
     def _get_default_transformations(self) -> List[BaseComponent]:
@@ -64,5 +85,51 @@ class IngestionPipeline(BaseModel):
     def run_remote(self) -> str:
         return "Find your remote results here: https://llamaindex.com/"
 
-    def run_local(self) -> Sequence[BaseNode]:
-        pass  # TODO: How to do this?
+    def run_local(self, run_embeddings: bool = True) -> Sequence[BaseNode]:
+        inputs: List[Document] = []
+        if self.documents is not None:
+            inputs += self.documents
+
+        if self.reader is not None:
+            inputs += self.reader.read()
+
+        pipeline = self._build_pipeline()
+
+        nodes = pipeline(inputs)
+
+        if run_embeddings:
+            node_id_to_node = {node.node_id: node for node in nodes}
+            for node in nodes:
+                self.embed_model.queue_text_for_embedding(
+                    node.node_id,
+                    node.get_content(metadata_mode=MetadataMode.EMBED),
+                )
+            ids, embeddings = self.embed_model.get_queued_text_embeddings()
+
+            for node_id, embedding in zip(ids, embeddings):
+                node_id_to_node[node_id].embedding = embedding
+
+        return list(node_id_to_node.values())
+
+    def _build_pipeline(self) -> Callable[[Sequence[Document]], Sequence[BaseNode]]:
+        metadata_extractor = None
+        extractors = []
+        node_parser = SimpleNodeParser.from_defaults()
+
+        for transformation in self.transformations:
+            if isinstance(transformation, NodeParser):
+                node_parser = transformation
+            elif isinstance(transformation, MetadataExtractor):
+                metadata_extractor = transformation
+            elif isinstance(transformation, MetadataFeatureExtractor):
+                extractors.append(transformation)
+
+        if metadata_extractor is None:
+            metadata_extractor = MetadataExtractor(extractors=extractors)
+
+        node_parser.metadata_extractor = metadata_extractor
+
+        def pipeline_fn(documents: Sequence[Document]) -> Sequence[BaseNode]:
+            return node_parser.get_nodes_from_documents(documents)
+
+        return pipeline_fn
