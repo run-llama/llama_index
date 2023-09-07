@@ -4,11 +4,10 @@ import math
 from typing import Any, Dict, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -120,11 +119,11 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "ChromaVectorStore"
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+    def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add embedding results to index.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
         if not self._collection:
@@ -134,16 +133,16 @@ class ChromaVectorStore(BasePydanticVectorStore):
         metadatas = []
         ids = []
         documents = []
-        for result in embedding_results:
-            embeddings.append(result.embedding)
+        for node in nodes:
+            embeddings.append(node.get_embedding())
             metadatas.append(
                 node_to_metadata_dict(
-                    result.node, remove_text=True, flat_metadata=self.flat_metadata
+                    node, remove_text=True, flat_metadata=self.flat_metadata
                 )
             )
-            ids.append(result.id)
+            ids.append(node.node_id)
             documents.append(
-                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+                node.get_content(metadata_mode=MetadataMode.NONE)
             )
 
         self._collection.add(

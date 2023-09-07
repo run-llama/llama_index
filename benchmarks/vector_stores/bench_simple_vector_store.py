@@ -4,7 +4,6 @@ from typing import List
 from llama_index.schema import TextNode
 
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
@@ -13,11 +12,10 @@ from llama_index.vector_stores.simple import SimpleVectorStore
 
 def generate_vectors(
     num_vectors: int = 100, embedding_length: int = 1536
-) -> List[NodeWithEmbedding]:
+) -> List[TextNode]:
     random.seed(42)  # Make this reproducible
     return [
-        NodeWithEmbedding(
-            node=TextNode(),
+        TextNode(
             embedding=[random.uniform(0, 1) for _ in range(embedding_length)],
         )
         for _ in range(num_vectors)
