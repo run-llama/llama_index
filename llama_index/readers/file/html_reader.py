@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 class HTMLTagReader(BaseReader):
     """
     Read HTML files and extract text from a specific tag with BeautifulSoup.
+
+    By default, reads the text from the ``<section>`` tag.
     """
 
     def __init__(
