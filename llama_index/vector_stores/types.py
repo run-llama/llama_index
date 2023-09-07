@@ -221,20 +221,20 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     @abstractmethod
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
         """Add embedding results to vector store."""
 
     async def async_add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
         """
         Asynchronously add embedding results to vector store.
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(embedding_results)
+        return self.add(nodes)
 
     @abstractmethod
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
