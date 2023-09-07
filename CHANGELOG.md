@@ -2,8 +2,12 @@
 
 ## Unreleased
 
+### New Features
+- Added support for ElasticSearch Vector Store (#7543)
+
 ### Bug Fixes / Nits
 - Fixed small `_index` bug in `ElasticSearchReader` (#7570)
+- Fixed bug with prompt helper settings in global service contexts (#7576)
 
 ## [0.8.21] - 2023-09-06
 

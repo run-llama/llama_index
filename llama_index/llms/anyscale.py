@@ -37,9 +37,10 @@ from llama_index.llms.generic_utils import (
 
 class Anyscale(LLM):
     model: str = Field(description="The anyscale model to use.")
-    api_base: Optional[str] = Field(default=None, description="The base URL to use.")
-    api_key: Optional[str] = Field(default=None, description="The base URL to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
+    max_tokens: int = Field(description="The maximum number of tokens to generate.")
+    api_base: Optional[str] = Field(default=None, description="The API base.")
+    api_key: Optional[str] = Field(default=None, description="The API key.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additonal kwargs for the anyscale API."
     )
@@ -48,6 +49,7 @@ class Anyscale(LLM):
         self,
         model: str = "meta-llama/Llama-2-70b-chat-hf",
         temperature: float = 0.1,
+        max_tokens: int = 256,
         api_base: Optional[str] = "https://console.endpoints.anyscale.com/m/v1",
         api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -62,6 +64,7 @@ class Anyscale(LLM):
         super().__init__(
             model=model,
             temperature=temperature,
+            max_tokens=max_tokens,
             api_base=api_base,
             api_key=api_key,
             additional_kwargs=additional_kwargs,
