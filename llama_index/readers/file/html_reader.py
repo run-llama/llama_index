@@ -7,7 +7,11 @@ if TYPE_CHECKING:
     from bs4 import Tag
 
 
-class BeautifulSoupTagReader(BaseReader):
+class HTMLTagReader(BaseReader):
+    """
+    Read HTML files and extract text from a specific tag with BeautifulSoup.
+    """
+
     def __init__(
         self,
         tag: str = "section",
