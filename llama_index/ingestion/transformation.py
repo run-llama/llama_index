@@ -30,27 +30,19 @@ class TransformationIOType(BaseModel):
 
 
 # TODO: Figure out how to do this with an Enum class
-TransformationIOTypes = Enum(
-    value="TransformationIOTypes",
-    names=[
-        (
-            "DOCUMENTS",
-            TransformationIOType(
-                name="Documents",
-                description="Documents",
-                python_type="Sequence[Document]",
-            ),
-        ),
-        (
-            "NODES",
-            TransformationIOType(
-                name="Nodes",
-                description="Nodes",
-                python_type="Sequence[BaseNode]",
-            ),
-        ),
-    ],
-)
+class TransformationIOTypes(Enum):
+    """Input/Output types for transformations."""
+
+    DOCUMENTS = TransformationIOType(
+        name="Documents",
+        description="Documents",
+        python_type="Sequence[Document]",
+    )
+    NODES = TransformationIOType(
+        name="Nodes",
+        description="Nodes",
+        python_type="Sequence[BaseNode]",
+    )
 
 
 # Configured transformation schemas
@@ -72,29 +64,21 @@ class ConfiguredTransformation(BaseModel):
 
 
 # TODO: Figure out how to do this with an Enum class
-SupportedTransformations = Enum(
-    value="ConfiguredTransformation",
-    names=[
-        (
-            "METADATA_EXTRACTOR",
-            ConfiguredTransformation(
-                name="MetadataExtractor",
-                description="Applies a function to extract metadata from nodes",
-                input_type=TransformationIOTypes.NODES.value,
-                output_type=TransformationIOTypes.NODES.value,
-            ),
-        ),
-        (
-            "NODE_PARSER",
-            ConfiguredTransformation(
-                name="NodeParser",
-                description="Applies a function to parse nodes from documents",
-                input_type=TransformationIOTypes.DOCUMENTS.value,
-                output_type=TransformationIOTypes.NODES.value,
-            ),
-        ),
-    ],
-)
+class SupportedTransformations(Enum):
+    """Supported transformations."""
+
+    METADATA_EXTRACTOR = ConfiguredTransformation(
+        name="MetadataExtractor",
+        description="Applies a function to extract metadata from nodes",
+        input_type=TransformationIOTypes.NODES.value,
+        output_type=TransformationIOTypes.NODES.value,
+    )
+    NODE_PARSER = ConfiguredTransformation(
+        name="NodeParser",
+        description="Applies a function to parse nodes from documents",
+        input_type=TransformationIOTypes.DOCUMENTS.value,
+        output_type=TransformationIOTypes.NODES.value,
+    )
 
 
 # Class name to transformation utilities
