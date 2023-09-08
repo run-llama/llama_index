@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.22] - 2023-09-07
 
 ### New Features
 - Added support for ElasticSearch Vector Store (#7543)
