@@ -115,13 +115,8 @@ def get_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    if (
-        engine is not None
-        and engine.endswith("001")
-        and not engine.endswith("code-001")
-    ):
-        # replace newlines, which can negatively affect performance on text-001 models.
-        text = text.replace("\n", " ")
+    text = text.replace("\n", " ")
+
     return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
         "embedding"
     ]
@@ -143,13 +138,7 @@ async def aget_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    if (
-        engine is not None
-        and engine.endswith("001")
-        and not engine.endswith("code-001")
-    ):
-        # replace newlines, which can negatively affect performance on text-001 models.
-        text = text.replace("\n", " ")
+    text = text.replace("\n", " ")
 
     return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))[
         "data"
@@ -174,13 +163,7 @@ def get_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    if (
-        engine is not None
-        and engine.endswith("001")
-        and not engine.endswith("code-001")
-    ):
-        # replace newlines, which can negatively affect performance on text-001 models.
-        list_of_text = [text.replace("\n", " ") for text in list_of_text]
+    list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
@@ -204,13 +187,7 @@ async def aget_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    if (
-        engine is not None
-        and engine.endswith("001")
-        and not engine.endswith("code-001")
-    ):
-        # replace newlines, which can negatively affect performance on text-001 models.
-        list_of_text = [text.replace("\n", " ") for text in list_of_text]
+    list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = (
         await openai.Embedding.acreate(input=list_of_text, model=engine, **kwargs)

@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 from typing import Any, List, Optional
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.vector_stores.types import NodeWithEmbedding
 
 from llama_index.vector_stores import CognitiveSearchVectorStore
 from llama_index.vector_stores.cogsearch import IndexManagement
@@ -36,20 +35,16 @@ def create_mock_vector_store(
     return vector_store
 
 
-def create_sample_documents(n: int) -> List[NodeWithEmbedding]:
-    nodes: List[NodeWithEmbedding] = []
+def create_sample_documents(n: int) -> List[TextNode]:
+    nodes: List[TextNode] = []
 
     for i in range(n):
         nodes.append(
-            NodeWithEmbedding(
-                node=TextNode(
-                    text=f"test node text {i}",
-                    relationships={
-                        NodeRelationship.SOURCE: RelatedNodeInfo(
-                            node_id=f"test doc id {i}"
-                        )
-                    },
-                ),
+            TextNode(
+                text=f"test node text {i}",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=f"test doc id {i}")
+                },
                 embedding=[0.5, 0.5],
             )
         )

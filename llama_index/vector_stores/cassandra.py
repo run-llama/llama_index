@@ -9,7 +9,7 @@ import logging
 from typing import Any, cast, Dict, Iterable, List, Optional, TypeVar
 
 
-from llama_index.schema import MetadataMode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
@@ -21,7 +21,6 @@ from llama_index.indices.query.embedding_utils import (
 from llama_index.vector_stores.types import (
     MetadataFilters,
     ExactMatchFilter,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -107,30 +106,28 @@ class CassandraVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to index.
+        """Add nodes to index.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: list of node with embeddings
 
         """
         node_ids = []
         node_contents = []
         node_metadatas = []
         node_embeddings = []
-        for result in embedding_results:
+        for node in nodes:
             metadata = node_to_metadata_dict(
-                result.node,
+                node,
                 remove_text=True,
                 flat_metadata=self.flat_metadata,
             )
-            node_ids.append(result.id)
-            node_contents.append(
-                result.node.get_content(metadata_mode=MetadataMode.NONE)
-            )
+            node_ids.append(node.node_id)
+            node_contents.append(node.get_content(metadata_mode=MetadataMode.NONE))
             node_metadatas.append(metadata)
-            node_embeddings.append(result.embedding)
+            node_embeddings.append(node.get_embedding())
 
         _logger.debug(f"Adding {len(node_ids)} rows to table")
         # Concurrent batching of inserts:

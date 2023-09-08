@@ -6,9 +6,11 @@ An index that is built within Milvus.
 import logging
 from typing import Any, List, Optional
 
+from llama_index.schema import (
+    BaseNode,
+)
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -147,11 +149,11 @@ class MilvusVectorStore(VectorStore):
         """Get client."""
         return self.milvusclient
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+    def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): The embeddings and their data
+            nodes (List[BaseNode]): List of nodes with embeddings
                 to insert.
 
         Raises:
@@ -164,11 +166,12 @@ class MilvusVectorStore(VectorStore):
         insert_ids = []
 
         # Process that data we are going to insert
-        for result in embedding_results:
-            entry = node_to_metadata_dict(result.node)
-            entry[MILVUS_ID_FIELD] = result.id
-            entry[self.embedding_field] = result.embedding
-            insert_ids.append(result.id)
+        for node in nodes:
+            entry = node_to_metadata_dict(node)
+            entry[MILVUS_ID_FIELD] = node.node_id
+            entry[self.embedding_field] = node.embedding
+
+            insert_ids.append(node.node_id)
             insert_list.append(entry)
 
         # Insert the data into milvus

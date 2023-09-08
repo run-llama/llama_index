@@ -16,7 +16,6 @@ from llama_index.vector_stores import MilvusVectorStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStoreQuery,
 )
 
@@ -33,43 +32,33 @@ def embedded_milvus() -> Generator:
 
 
 @pytest.fixture
-def node_embeddings() -> List[NodeWithEmbedding]:
+def node_embeddings() -> List[TextNode]:
     return [
-        NodeWithEmbedding(
+        TextNode(
+            text="lorem ipsum",
+            id_="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
+            metadata={
+                "author": "Stephen King",
+                "theme": "Friendship",
+            },
             embedding=[1.0, 1.0],
-            node=TextNode(
-                text="lorem ipsum",
-                id_="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
-                },
-                metadata={
-                    "author": "Stephen King",
-                    "theme": "Friendship",
-                },
-            ),
         ),
-        NodeWithEmbedding(
+        TextNode(
+            text="lorem ipsum",
+            id_="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
+            metadata={
+                "director": "Francis Ford Coppola",
+                "theme": "Mafia",
+            },
             embedding=[2.0, 2.0],
-            node=TextNode(
-                text="lorem ipsum",
-                id_="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
-                },
-                metadata={
-                    "director": "Francis Ford Coppola",
-                    "theme": "Mafia",
-                },
-            ),
         ),
     ]
 
 
 @pytest.mark.skipif(milvus_libs is None, reason="Missing milvus packages")
-def test_add_stores_data(
-    node_embeddings: List[NodeWithEmbedding], embedded_milvus: str
-) -> None:
+def test_add_stores_data(node_embeddings: List[TextNode], embedded_milvus: str) -> None:
     milvus_store = MilvusVectorStore(dim=2, uri=embedded_milvus, collection_name="test")
 
     milvus_store.add(node_embeddings)
@@ -78,9 +67,7 @@ def test_add_stores_data(
 
 
 @pytest.mark.skipif(milvus_libs is None, reason="Missing milvus packages")
-def test_search_data(
-    node_embeddings: List[NodeWithEmbedding], embedded_milvus: str
-) -> None:
+def test_search_data(node_embeddings: List[TextNode], embedded_milvus: str) -> None:
     milvus_store = MilvusVectorStore(dim=2, uri=embedded_milvus, collection_name="test")
     milvus_store.add(node_embeddings)
 
@@ -93,7 +80,7 @@ def test_search_data(
 
 @pytest.mark.skipif(milvus_libs is None, reason="Missing milvus packages")
 def test_search_data_filter(
-    node_embeddings: List[NodeWithEmbedding], embedded_milvus: str
+    node_embeddings: List[TextNode], embedded_milvus: str
 ) -> None:
     milvus_store = MilvusVectorStore(dim=2, uri=embedded_milvus, collection_name="test")
     milvus_store.add(node_embeddings)
@@ -111,7 +98,7 @@ def test_search_data_filter(
     assert res.ids is not None and res.ids[0] == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
     assert res.nodes is not None and res.nodes[0].metadata["theme"] == "Friendship"
 
-    print(node_embeddings[0].node.node_id)
+    print(node_embeddings[0].node_id)
     res = milvus_store.query(
         VectorStoreQuery(
             query_embedding=[3, 3],

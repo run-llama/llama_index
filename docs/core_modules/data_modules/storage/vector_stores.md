@@ -15,6 +15,7 @@ We are actively adding more integrations and improving feature coverage for each
 
 | Vector Store             | Type                | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
 | ------------------------ | ------------------- | ------------------ | ------------- | ------ | --------------- | ----- |
+| Elasticsearch            | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
@@ -48,6 +49,7 @@ For more details, see [Vector Store Integrations](/community/integrations/vector
 caption: Examples
 maxdepth: 1
 ---
+/examples/vector_stores/ElasticsearchIndexDemo.ipynb
 /examples/vector_stores/SimpleIndexDemo.ipynb
 /examples/vector_stores/RocksetIndexDemo.ipynb
 /examples/vector_stores/QdrantIndexDemo.ipynb
