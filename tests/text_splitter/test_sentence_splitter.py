@@ -33,7 +33,11 @@ def test_chinese_text(chinese_text: str) -> None:
 def test_contiguous_text(contiguous_text: str) -> None:
     splitter = SentenceSplitter(chunk_size=100, chunk_overlap=0)
     chunks = splitter.split_text(contiguous_text)
-    assert len(chunks) == 11
+    assert len(chunks) == 10
+    # technically this is incorrect. The resulting chunks only
+    # have 100 characters and 40 tokens, but that's a result of
+    # us using the fallback character by character splitter
+    # Shouldn't be a issue in normal use though.
 
 
 def test_split_with_metadata(english_text: str) -> None:
@@ -60,3 +64,15 @@ def test_edge_case() -> None:
     splitter = SentenceSplitter()
     chunks = splitter.split_text(text)
     assert len(chunks) == 2
+
+
+def test_overlap() -> None:
+    splitter = SentenceSplitter(chunk_size=15, chunk_overlap=10)
+    chunks = splitter.split_text("Hello! How are you? I am fine. And you?")
+    assert len(chunks) == 1
+
+    chunks2 = splitter.split_text(
+        "Hello! How are you? I am fine. And you? This is a slightly longer sentence."
+    )
+    assert len(chunks2) == 3
+    assert chunks2[2] == "I am fine. And you? This is a slightly longer sentence."

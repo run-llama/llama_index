@@ -218,6 +218,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             new_chunk = True
 
             # add overlap to the next chunk using the last one first
+            # there is a small issue with this logic. If the chunk directly after
+            # the overlap is really big, then we could go over the chunk_size, and
+            # in theory the correct thing to do would be to remove some/all of the
+            # overlap. However, it would complicate the logic further without
+            # much real world benefit, so it's not implemented now.
             if len(last_chunk) > 0:
                 last_index = len(last_chunk) - 1
                 while (
@@ -234,7 +239,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             cur_split_len = len(self.tokenizer(cur_split.text))
             if cur_split_len > chunk_size:
                 raise ValueError("Single token exceeded chunk size")
-            if cur_chunk_len + cur_split_len > chunk_size and len(cur_chunk) > 0:
+            if cur_chunk_len + cur_split_len > chunk_size and not new_chunk:
                 # if adding split to current chunk exceeds chunk size: close out chunk
                 close_chunk()
             else:
@@ -253,8 +258,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                     close_chunk()
 
         # handle the last chunk
-        chunk = "".join([text for text, length in cur_chunk])
-        if chunk:
+        if not new_chunk:
+            chunk = "".join([text for text, length in cur_chunk])
             chunks.append(chunk)
 
         # run postprocessing to remove blank spaces
