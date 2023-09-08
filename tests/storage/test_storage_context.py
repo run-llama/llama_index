@@ -1,18 +1,15 @@
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.schema import TextNode
 from llama_index.storage.storage_context import StorageContext
-from llama_index.vector_stores.types import NodeWithEmbedding
 
 
 def test_storage_context_dict() -> None:
     storage_context = StorageContext.from_defaults()
 
     # add
-    node = TextNode(text="test")
+    node = TextNode(text="test", embedding=[0.0, 0.0, 0.0])
     index_struct = IndexDict()
-    storage_context.vector_store.add(
-        [NodeWithEmbedding(node=node, embedding=[0.0, 0.0, 0.0])]
-    )
+    storage_context.vector_store.add([node])
     storage_context.docstore.add_documents([node])
     storage_context.index_store.add_index_struct(index_struct)
 
