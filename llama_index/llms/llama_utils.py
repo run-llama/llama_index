@@ -43,7 +43,7 @@ def messages_to_prompt(
         # include user message content
         str_message += f"{user_message.content} {E_INST}"
 
-        if len(messages) != (i + 1):
+        if len(messages) > (i + 1):
             # if assistant message exists, add to str_message
             assistant_message = messages[i + 1]
             assert assistant_message.role == MessageRole.ASSISTANT
