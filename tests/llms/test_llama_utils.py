@@ -3,10 +3,17 @@ from typing import Sequence
 import pytest
 
 from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.llms.llama_utils import (B_INST, B_SYS, BOS,
-                                          DEFAULT_SYSTEM_PROMPT, E_INST, E_SYS,
-                                          EOS, completion_to_prompt,
-                                          messages_to_prompt)
+from llama_index.llms.llama_utils import (
+    B_INST,
+    B_SYS,
+    BOS,
+    DEFAULT_SYSTEM_PROMPT,
+    E_INST,
+    E_SYS,
+    EOS,
+    completion_to_prompt,
+    messages_to_prompt,
+)
 
 
 @pytest.fixture
