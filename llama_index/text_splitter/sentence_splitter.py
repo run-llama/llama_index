@@ -203,36 +203,57 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
         chunks: List[str] = []
-        cur_chunk: List[str] = []
+        cur_chunk: List[tuple[str, int]] = []  # list of (text, length)
+        last_chunk: List[tuple[str, int]] = []
         cur_chunk_len = 0
+        new_chunk = True
+
+        def close_chunk():
+            nonlocal chunks, cur_chunk, last_chunk, cur_chunk_len, new_chunk
+
+            chunks.append("".join([text for text, length in cur_chunk]))
+            last_chunk = cur_chunk
+            cur_chunk = []
+            cur_chunk_len = 0
+            new_chunk = True
+
+            # add overlap to the next chunk using the last one first
+            if len(last_chunk) > 0:
+                last_index = len(last_chunk) - 1
+                while (
+                    last_index >= 0
+                    and cur_chunk_len + last_chunk[last_index][1] <= self.chunk_overlap
+                ):
+                    text, length = last_chunk[last_index]
+                    cur_chunk_len += length
+                    cur_chunk.insert(0, (text, length))
+                    last_index -= 1
+
         while len(splits) > 0:
             cur_split = splits[0]
             cur_split_len = len(self.tokenizer(cur_split.text))
             if cur_split_len > chunk_size:
-                raise ValueError("Single token exceed chunk size")
+                raise ValueError("Single token exceeded chunk size")
             if cur_chunk_len + cur_split_len > chunk_size and len(cur_chunk) > 0:
-                # if adding split to current chunk exceed chunk size: close out chunk
-                chunks.append("".join(cur_chunk))
-                cur_chunk = []
-                cur_chunk_len = 0
+                # if adding split to current chunk exceeds chunk size: close out chunk
+                close_chunk()
             else:
                 if (
                     cur_split.is_sentence
-                    or cur_chunk_len + cur_split_len < chunk_size - self.chunk_overlap
-                    or len(cur_chunk) == 0
+                    or cur_chunk_len + cur_split_len <= chunk_size
+                    or new_chunk  # new chunk, always add at least one split
                 ):
                     # add split to chunk
                     cur_chunk_len += cur_split_len
-                    cur_chunk.append(cur_split.text)
+                    cur_chunk.append((cur_split.text, cur_split_len))
                     splits.pop(0)
+                    new_chunk = False
                 else:
                     # close out chunk
-                    chunks.append("".join(cur_chunk))
-                    cur_chunk = []
-                    cur_chunk_len = 0
+                    close_chunk()
 
         # handle the last chunk
-        chunk = "".join(cur_chunk)
+        chunk = "".join([text for text, length in cur_chunk])
         if chunk:
             chunks.append(chunk)
 
