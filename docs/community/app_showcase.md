@@ -2,6 +2,15 @@
 
 Here is a sample of some of the incredible applications and tools built on top of LlamaIndex! 
 
+###### SEC Insights - Answer questions about SEC 10-K & 10-Q documents (built by LlamaIndex!)
+SEC Insights uses the Retrieval Augmented Generation (RAG) capabilities of LlamaIndex to answer questions about SEC 10-K & 10-Q documents.
+
+We built and open-sourced SEC Insights so that we could provide our developer community with an example of a production-ready full-stack application that uses LlamaIndex. It comes with many product features that we think users will love as well as development features that we think developers will love. You can use the Github repo as a reference when building out your own LlamaIndex application or you can fork it to start your project off with a solid Next.js + FastAPI codebase.
+
+[[Website]](https://www.secinsights.ai/)
+[[Github]](https://github.com/run-llama/sec-insights/)
+[[Tweet thread]](https://twitter.com/jerryjliu0/status/1699119197190775084?s=20)
+
 ###### Meru - Dense Data Retrieval API
 
 Hosted API service. Includes a "Dense Data Retrieval" API built on top of LlamaIndex where users can upload their documents and query them.
