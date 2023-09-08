@@ -3,17 +3,10 @@ from typing import Sequence
 import pytest
 
 from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.llms.llama_utils import (
-    B_INST,
-    B_SYS,
-    BOS,
-    DEFAULT_SYSTEM_PROMPT,
-    E_INST,
-    E_SYS,
-    EOS,
-    completion_to_prompt,
-    messages_to_prompt,
-)
+from llama_index.llms.llama_utils import (B_INST, B_SYS, BOS,
+                                          DEFAULT_SYSTEM_PROMPT, E_INST, E_SYS,
+                                          EOS, completion_to_prompt,
+                                          messages_to_prompt)
 
 
 @pytest.fixture
@@ -76,6 +69,8 @@ def chat_messages_third_chat_no_system(
 @pytest.fixture
 def chat_messages_assistant_first() -> Sequence[ChatMessage]:
     # assistant message first in chat (after system)
+    # should raise error as we expect the first message after any system
+    # message to be a user message
     return [
         ChatMessage(role=MessageRole.SYSTEM, content="some system message"),
         ChatMessage(role=MessageRole.ASSISTANT, content="some assistant reply"),
@@ -86,6 +81,8 @@ def chat_messages_assistant_first() -> Sequence[ChatMessage]:
 @pytest.fixture
 def chat_messages_user_twice() -> Sequence[ChatMessage]:
     # user message twice in a row (after system)
+    # should raise error as we expect an assistant message
+    # to follow a user message
     return [
         ChatMessage(role=MessageRole.SYSTEM, content="some system message"),
         ChatMessage(role=MessageRole.USER, content="test question 1"),
@@ -97,7 +94,7 @@ def test_first_chat(chat_messages_first_chat: Sequence[ChatMessage]) -> None:
     # test first chat prompt creation with system prompt
     prompt = messages_to_prompt(chat_messages_first_chat)
     assert prompt == (
-        f"{BOS} {B_INST} {B_SYS} some system message {E_SYS} " f"test question {E_INST}"
+        f"{BOS} {B_INST} {B_SYS} some system message {E_SYS} test question {E_INST}"
     )
 
 
@@ -179,7 +176,7 @@ def test_completion_to_prompt() -> None:
     system_prompt = "test system prompt"
     prompt = completion_to_prompt(completion, system_prompt=system_prompt)
     assert prompt == (
-        f"{BOS} {B_INST} {B_SYS} {system_prompt} {E_SYS} " f"{completion} {E_INST}"
+        f"{BOS} {B_INST} {B_SYS} {system_prompt} {E_SYS} {completion} {E_INST}"
     )
 
 
