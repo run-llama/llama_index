@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_SIZE
@@ -18,7 +17,7 @@ from llama_index.utils import globals_helper
 
 SENTENCE_CHUNK_OVERLAP = 200
 CHUNKING_REGEX = "[^,.;。]+[,.;。]?"
-DEFUALT_PARAGRAPH_SEP = "\n\n\n"
+DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 
 
 @dataclass
@@ -46,7 +45,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         default=" ", description="Default separator for splitting into words"
     )
     paragraph_separator: str = Field(
-        default=DEFUALT_PARAGRAPH_SEP, description="Separator between paragraphs."
+        default=DEFAULT_PARAGRAPH_SEP, description="Separator between paragraphs."
     )
     secondary_chunking_regex: str = Field(
         default=CHUNKING_REGEX, description="Backup regex for splitting into sentences."
@@ -76,7 +75,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = SENTENCE_CHUNK_OVERLAP,
         tokenizer: Optional[Callable] = None,
-        paragraph_separator: str = DEFUALT_PARAGRAPH_SEP,
+        paragraph_separator: str = DEFAULT_PARAGRAPH_SEP,
         chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
         secondary_chunking_regex: str = CHUNKING_REGEX,
         callback_manager: Optional[CallbackManager] = None,
@@ -213,7 +212,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 raise ValueError("Single token exceed chunk size")
             if cur_chunk_len + cur_split_len > chunk_size and len(cur_chunk) > 0:
                 # if adding split to current chunk exceed chunk size: close out chunk
-                chunks.append("".join(cur_chunk).strip())
+                chunks.append("".join(cur_chunk))
                 cur_chunk = []
                 cur_chunk_len = 0
             else:
@@ -228,12 +227,12 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                     splits.pop(0)
                 else:
                     # close out chunk
-                    chunks.append("".join(cur_chunk).strip())
+                    chunks.append("".join(cur_chunk))
                     cur_chunk = []
                     cur_chunk_len = 0
 
         # handle the last chunk
-        chunk = "".join(cur_chunk).strip()
+        chunk = "".join(cur_chunk)
         if chunk:
             chunks.append(chunk)
 
@@ -243,10 +242,13 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return chunks
 
     def _postprocess_chunks(self, chunks: List[str]) -> List[str]:
-        """Post-process chunks."""
+        """Post-process chunks.
+        Remove whitespace only chunks and remove leading and trailing whitespace.
+        """
         new_chunks = []
-        for doc in chunks:
-            if doc.replace(" ", "") == "":
+        for chunk in chunks:
+            stripped_chunk = chunk.strip()
+            if stripped_chunk == "":
                 continue
-            new_chunks.append(doc)
+            new_chunks.append(stripped_chunk)
         return new_chunks
