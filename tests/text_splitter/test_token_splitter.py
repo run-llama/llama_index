@@ -7,7 +7,6 @@ from llama_index.text_splitter.utils import truncate_text
 
 def test_split_token() -> None:
     """Test split normal token."""
-    # tiktoken will say length is ~5k
     token = "foo bar"
     text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
     chunks = text_splitter.split_text(token)
@@ -21,7 +20,6 @@ def test_split_token() -> None:
 
 def test_truncate_token() -> None:
     """Test truncate normal token."""
-    # tiktoken will say length is ~5k
     token = "foo bar"
     text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
     text = truncate_text(token, text_splitter)
@@ -30,15 +28,19 @@ def test_truncate_token() -> None:
 
 def test_split_long_token() -> None:
     """Test split a really long token."""
-    # tiktoken will say length is ~5k
     token = "a" * 100
-    text_splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=0)
+    tokenizer = tiktoken.get_encoding("gpt2")
+    text_splitter = TokenTextSplitter(
+        chunk_size=20, chunk_overlap=0, tokenizer=tokenizer.encode
+    )
     chunks = text_splitter.split_text(token)
     # each text chunk may have spaces, since we join splits by separator
     assert "".join(chunks).replace(" ", "") == token
 
     token = ("a" * 49) + "\n" + ("a" * 50)
-    text_splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=0)
+    text_splitter = TokenTextSplitter(
+        chunk_size=20, chunk_overlap=0, tokenizer=tokenizer.encode
+    )
     chunks = text_splitter.split_text(token)
     assert len(chunks[0]) == 49
     assert len(chunks[1]) == 50
@@ -47,7 +49,7 @@ def test_split_long_token() -> None:
 def test_split_chinese(chinese_text: str) -> None:
     text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=0)
     chunks = text_splitter.split_text(chinese_text)
-    assert len(chunks) == 3
+    assert len(chunks) == 2
 
 
 def test_contiguous_text(contiguous_text: str) -> None:

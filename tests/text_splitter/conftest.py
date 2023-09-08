@@ -20,6 +20,8 @@ rustling with ancient tales.
 """
 
 
+# There's a pretty big difference between GPT2 and cl100k_base for non-English
+# The same text goes from 1178 tokens to 665 tokens.
 @pytest.fixture
 def chinese_text() -> str:
     return """\

@@ -27,7 +27,7 @@ def test_sentences() -> None:
 def test_chinese_text(chinese_text: str) -> None:
     splitter = SentenceSplitter(chunk_size=512, chunk_overlap=0)
     chunks = splitter.split_text(chinese_text)
-    assert len(chunks) == 3
+    assert len(chunks) == 2
 
 
 def test_contiguous_text(contiguous_text: str) -> None:
@@ -43,7 +43,7 @@ def test_contiguous_text(contiguous_text: str) -> None:
 def test_split_with_metadata(english_text: str) -> None:
     chunk_size = 100
     metadata_str = "word " * 50
-    tokenizer = tiktoken.get_encoding("gpt2")
+    tokenizer = tiktoken.get_encoding("cl100k_base")
     splitter = SentenceSplitter(
         chunk_size=chunk_size, chunk_overlap=0, tokenizer=tokenizer.encode
     )
@@ -61,9 +61,14 @@ def test_split_with_metadata(english_text: str) -> None:
 def test_edge_case() -> None:
     """Test case from: https://github.com/jerryjliu/llama_index/issues/7287"""
     text = "\n\nMarch 2020\n\nL&D Metric (Org) - 2.92%\n\n| Training Name                                                                                                          | Catergory       | Duration (hrs) | Invitees | Attendance | Target Training Hours | Actual Training Hours | Adoption % |\n| ---------------------------------------------------------------------------------------------------------------------- | --------------- | -------------- | -------- | ---------- | --------------------- | --------------------- | ---------- |\n| Overview of Data Analytics                                      | Technical       | 1              | 23       | 10         | 23                    | 10                    | 43.5       |\n| Sales & Learning Best Practices - Introduction to OTT Platforms | Technical       | 0.5            | 16       | 12         | 8                     | 6                     | 75         |\n| Leading Through OKRs                                                                                                   | Lifeskill       | 1              | 1        | 1          | 1                     | 1                     | 100        |\n| COVID: Lockdown Awareness Session                                                                                      | Lifeskill       | 2              | 1        | 1          | 2                     | 2                     | 100        |\n| Navgati Interview                                                                                                      | Lifeskill       | 2              | 6        | 6          | 12                    | 12                    | 100        |\n| leadership Summit                                               | Leadership      | 18             | 42       | 42         | 756                   | 756                   | 100        |\n| AWS - AI/ML - Online Conference                                                                                        | Project Related | 15             | 2        | 2          | 30                    | 30                    | 100        |\n"  # noqa
-    splitter = SentenceSplitter()
+    splitter = SentenceSplitter(tokenizer=tiktoken.get_encoding("gpt2").encode)
     chunks = splitter.split_text(text)
     assert len(chunks) == 2
+
+    splitter = SentenceSplitter(tokenizer=tiktoken.get_encoding("cl100k_base").encode)
+    chunks = splitter.split_text(text)
+    # Like the Chinese there's a big difference in the # of tokens
+    assert len(chunks) == 1
 
 
 def test_overlap() -> None:

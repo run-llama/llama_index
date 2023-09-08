@@ -16,7 +16,7 @@ from llama_index.text_splitter.utils import (
 from llama_index.utils import globals_helper
 
 SENTENCE_CHUNK_OVERLAP = 200
-CHUNKING_REGEX = "[^,.;。]+[,.;。]?"
+CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?"
 DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 
 
