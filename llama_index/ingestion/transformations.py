@@ -2,11 +2,13 @@
 This module maintains the list of transformations that are supported by the system.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Sequence, Set, Type, TypeVar, Generic
 from enum import Enum
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.schema import Document, BaseNode, BaseComponent
 from llama_index.node_parser.extractors import (
+    BaseExtractor,
     MetadataExtractor,
     KeywordExtractor,
     TitleExtractor,
@@ -16,6 +18,7 @@ from llama_index.node_parser.extractors import (
     QuestionsAnsweredExtractor,
 )
 from llama_index.node_parser import (
+    NodeParser,
     SimpleNodeParser,
     SentenceWindowNodeParser,
     HierarchicalNodeParser,
@@ -29,106 +32,137 @@ class TransformationIOType(BaseModel):
     python_type: str = Field(description="Python type of the input/output type")
 
 
-# TODO: Figure out how to do this with an Enum class
-TransformationIOTypes = Enum(
-    value="TransformationIOTypes",
-    names=[
-        (
-            "DOCUMENTS",
-            TransformationIOType(
-                name="Documents",
-                description="Documents",
-                python_type="Sequence[Document]",
-            ),
-        ),
-        (
-            "NODES",
-            TransformationIOType(
-                name="Nodes",
-                description="Nodes",
-                python_type="Sequence[BaseNode]",
-            ),
-        ),
-    ],
-)
+class TransformationIOTypes(Enum):
+    DOCUMENTS = TransformationIOType(
+        name="Documents",
+        description="Documents",
+        python_type=str(Sequence[Document]),
+    )
+    NODES = TransformationIOType(
+        name="Nodes",
+        description="Nodes",
+        python_type=str(Sequence[BaseNode]),
+    )
 
 
-# Configured transformation schemas
-class ConfiguredTransformation(BaseModel):
-    """A transformation that can be applied to data."""
+class TransformationType(BaseModel):
+    """A description for a type of transformation within a pipeline."""
 
-    name: str = Field(description="Unique name of the transformation")
-    description: str = Field(description="Description for the transformation")
+    name: str = Field(description="Unique name of the type of transformation")
+    description: str = Field(description="Description for the type of transformation")
     input_type: TransformationIOType = Field(
-        description="Input type for the transformation"
+        description="Input type for the transformation type"
     )
     output_type: TransformationIOType = Field(
-        description="Output type for the transformation"
-    )
-    configuration_schema: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="The configurable fields for the transformation",
+        description="Output type for the transformation type"
     )
 
 
-# TODO: Figure out how to do this with an Enum class
-SupportedTransformations = Enum(
-    value="ConfiguredTransformation",
-    names=[
-        (
-            "METADATA_EXTRACTOR",
-            ConfiguredTransformation(
-                name="MetadataExtractor",
-                description="Applies a function to extract metadata from nodes",
-                input_type=TransformationIOTypes.NODES.value,
-                output_type=TransformationIOTypes.NODES.value,
-            ),
-        ),
-        (
-            "NODE_PARSER",
-            ConfiguredTransformation(
-                name="NodeParser",
-                description="Applies a function to parse nodes from documents",
-                input_type=TransformationIOTypes.DOCUMENTS.value,
-                output_type=TransformationIOTypes.NODES.value,
-            ),
-        ),
-    ],
-)
+class TransformationTypes(Enum):
+    """Supported transformations."""
+
+    METADATA_EXTRACTOR = TransformationType(
+        name="MetadataExtractor",
+        description="Applies a function to extract metadata from nodes",
+        input_type=TransformationIOTypes.NODES.value,
+        output_type=TransformationIOTypes.NODES.value,
+    )
+    NODE_PARSER = TransformationType(
+        name="NodeParser",
+        description="Applies a function to parse nodes from documents",
+        input_type=TransformationIOTypes.DOCUMENTS.value,
+        output_type=TransformationIOTypes.NODES.value,
+    )
 
 
-# Class name to transformation utilities
-CLASS_NAME_TO_TRANSFORM: Dict[str, ConfiguredTransformation] = {
-    # Metadata Extractors
-    MetadataExtractor.class_name(): SupportedTransformations.METADATA_EXTRACTOR.value,
-    KeywordExtractor.class_name(): SupportedTransformations.METADATA_EXTRACTOR.value,
-    TitleExtractor.class_name(): SupportedTransformations.METADATA_EXTRACTOR.value,
-    EntityExtractor.class_name(): SupportedTransformations.METADATA_EXTRACTOR.value,
-    MarvinMetadataExtractor.class_name(): SupportedTransformations.METADATA_EXTRACTOR.value,  # noqa: E501
-    SummaryExtractor.class_name(): SupportedTransformations.METADATA_EXTRACTOR.value,
-    QuestionsAnsweredExtractor.class_name(): SupportedTransformations.METADATA_EXTRACTOR.value,  # noqa: E501
-    # Node Parsers
-    SimpleNodeParser.class_name(): SupportedTransformations.NODE_PARSER.value,
-    SentenceWindowNodeParser.class_name(): SupportedTransformations.NODE_PARSER.value,
-    HierarchicalNodeParser.class_name(): SupportedTransformations.NODE_PARSER.value,
+METADATA_EXTRACTOR_COMPONENTS: Set[Type[BaseExtractor]] = {
+    MetadataExtractor,
+    KeywordExtractor,
+    TitleExtractor,
+    EntityExtractor,
+    MarvinMetadataExtractor,
+    SummaryExtractor,
+    QuestionsAnsweredExtractor,
 }
 
+NODE_PARSER_COMPONENTS: Set[Type[NodeParser]] = {
+    SimpleNodeParser,
+    SentenceWindowNodeParser,
+    HierarchicalNodeParser,
+}
 
-def get_configured_transform(
-    transform_schema: Dict[str, Any]
-) -> ConfiguredTransformation:
-    class_name = transform_schema.pop("class_name", None)
+_component_type_to_transformation_type: Dict[
+    Type[BaseComponent], TransformationTypes
+] = {
+    **{
+        component_type: TransformationTypes.METADATA_EXTRACTOR
+        for component_type in METADATA_EXTRACTOR_COMPONENTS
+    },
+    **{
+        component_type: TransformationTypes.NODE_PARSER
+        for component_type in NODE_PARSER_COMPONENTS
+    },
+}
+
+ALL_COMPONENTS: Set[Type[BaseComponent]] = {
+    *METADATA_EXTRACTOR_COMPONENTS,
+    *NODE_PARSER_COMPONENTS,
+}
+
+_class_name_to_component_type: Dict[str, Type[BaseComponent]] = {
+    component.class_name(): component for component in ALL_COMPONENTS
+}
+
+T = TypeVar("T", bound=BaseComponent)
+
+
+class PipelineTransformation(GenericModel, Generic[T]):
+    """
+    A class containing the metdata + implementation for a transformation within a pipeline.
+    """
+
+    transformation_type: TransformationType = Field(
+        description="Type of transformation"
+    )
+    component: T = Field(description="Component that implements the transformation")
+
+    @classmethod
+    def from_serialized_component(
+        cls, serialized_component: Dict[str, Any]
+    ) -> "PipelineTransformation[T]":
+        class_name = serialized_component.pop("class_name", None)
+        if class_name is None:
+            raise ValueError(
+                "transform_schema must have a class_name field. Current input is invalid."
+            )
+
+        serialized_component_class = _class_name_to_component_type[class_name]
+        component_class = cls.__fields__["component"].type_
+        if serialized_component_class != component_class:
+            raise ValueError(
+                "Serialized Component is of a different type than the requested "
+                "PipelineTransformation[T]'s component type."
+            )
+
+        transformation_type: TransformationTypes = (
+            _component_type_to_transformation_type[component_class]
+        )
+
+        return cls(
+            transformation_type=transformation_type,
+            component=component_class.from_dict(serialized_component),
+        )
+
+
+def get_pipeline_transformation_from_serialized_component(
+    serialized_component: Dict[str, Any]
+) -> PipelineTransformation:
+    class_name = serialized_component.get("class_name")
     if class_name is None:
         raise ValueError(
             "transform_schema must have a class_name field. Current input is invalid."
         )
-
-    if class_name not in CLASS_NAME_TO_TRANSFORM:
-        raise ValueError(
-            f"transform_schema has an invalid class_name field: {class_name}. "
-            f"Current transform is not supported."
-        )
-
-    configured_transform = CLASS_NAME_TO_TRANSFORM[class_name]
-    configured_transform.configuration_schema = transform_schema
-    return configured_transform
+    component_type = _class_name_to_component_type[class_name]
+    return PipelineTransformation[component_type].from_serialized_component(
+        serialized_component
+    )
