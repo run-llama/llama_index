@@ -18,6 +18,7 @@ from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.litellm import LiteLLM
 from llama_index.llms.palm import PaLM
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
@@ -50,4 +51,5 @@ __all__ = [
     "Portkey",
     "MonsterLLM",
     "Anyscale",
+    "LiteLLM"
 ]
