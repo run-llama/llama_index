@@ -24,7 +24,7 @@ def messages_to_prompt(
     else:
         system_message_str = system_prompt or DEFAULT_SYSTEM_PROMPT
 
-    system_message_str = f"{B_SYS} {system_message_str} {E_SYS}"
+    system_message_str = f"{B_SYS} {system_message_str.strip()} {E_SYS}"
 
     for i in range(0, len(messages), 2):
         # first message should always be a user
