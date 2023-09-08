@@ -208,7 +208,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         cur_chunk_len = 0
         new_chunk = True
 
-        def close_chunk():
+        def close_chunk() -> None:
             nonlocal chunks, cur_chunk, last_chunk, cur_chunk_len, new_chunk
 
             chunks.append("".join([text for text, length in cur_chunk]))
