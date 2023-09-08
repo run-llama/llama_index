@@ -16,35 +16,41 @@ Do not reference any given instructions or context. \
 def messages_to_prompt(
     messages: Sequence[ChatMessage], system_prompt: Optional[str] = None
 ) -> str:
-    string_messages = []
+    string_messages: list[str] = []
     if messages[0].role == MessageRole.SYSTEM:
+        # pull out the system message (if it exists in messages)
         system_message_str = messages[0].content or ""
         messages = messages[1:]
     else:
         system_message_str = system_prompt or DEFAULT_SYSTEM_PROMPT
 
-    system_message_str = B_SYS + system_message_str + E_SYS
+    system_message_str = f"{B_SYS} {system_message_str.strip()} {E_SYS}"
 
-    for i, (user_message, assistant_message) in enumerate(
-        zip(messages[::2], messages[1::2])
-    ):
+    for i in range(0, len(messages), 2):
+        # first message should always be a user
+        user_message = messages[i]
         assert user_message.role == MessageRole.USER
-        assert assistant_message.role == MessageRole.ASSISTANT
 
         if i == 0:
-            string_messages.append(
-                f"{BOS}{B_INST} {system_message_str}{user_message.content} "
-                f"{E_INST} {assistant_message} "
-            )
+            # make sure system prompt is included at the start
+            str_message = f"{BOS} {B_INST} {system_message_str} "
         else:
+            # end previous user-assistant interaction
             string_messages[-1] += f" {EOS}"
-            string_messages.append(
-                f"{BOS}{B_INST} {user_message.content} {E_INST} {assistant_message}"
-            )
+            # no need to include system prompt
+            str_message = f"{BOS} {B_INST} "
 
-    last_message = messages[-1]
-    assert last_message.role == MessageRole.USER
-    string_messages.append(f"{B_INST} {last_message.content} {E_INST}")
+        # include user message content
+        str_message += f"{user_message.content} {E_INST}"
+
+        if len(messages) > (i + 1):
+            # if assistant message exists, add to str_message
+            assistant_message = messages[i + 1]
+            assert assistant_message.role == MessageRole.ASSISTANT
+            str_message += f" {assistant_message.content}"
+
+        string_messages.append(str_message)
+
     return "".join(string_messages)
 
 
@@ -52,6 +58,6 @@ def completion_to_prompt(completion: str, system_prompt: Optional[str] = None) -
     system_prompt_str = system_prompt or DEFAULT_SYSTEM_PROMPT
 
     return (
-        f"{BOS}{B_INST} {B_SYS}{system_prompt_str.strip()}{E_SYS}"
+        f"{BOS} {B_INST} {B_SYS} {system_prompt_str.strip()} {E_SYS} "
         f"{completion.strip()} {E_INST}"
     )

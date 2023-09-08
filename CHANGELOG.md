@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes
+- Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
+
 ## [0.8.22] - 2023-09-07
 
 ### New Features
