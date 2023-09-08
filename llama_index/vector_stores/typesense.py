@@ -106,14 +106,12 @@ class TypesenseVectorStore(VectorStore):
         upsert_docs = []
         for node in nodes:
             doc = {
-                "id": node.id,
-                "vec": node.embedding,
-                f"{self._text_key}": node.node.get_content(
-                    metadata_mode=MetadataMode.NONE
-                ),
+                "id": node.node_id,
+                "vec": node.get_embedding(),
+                f"{self._text_key}": node.get_content(metadata_mode=MetadataMode.NONE),
                 "ref_doc_id": node.ref_doc_id,
                 f"{self._metadata_key}": node_to_metadata_dict(
-                    node.node, remove_text=True, flat_metadata=self.flat_metadata
+                    node, remove_text=True, flat_metadata=self.flat_metadata
                 ),
             }
             upsert_docs.append(doc)

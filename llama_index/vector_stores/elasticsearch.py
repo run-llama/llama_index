@@ -290,7 +290,7 @@ class ElasticsearchStore(VectorStore):
         metadatas: List[dict] = []
         ids: List[str] = []
         for node in nodes:
-            ids.append(node.id)
+            ids.append(node.node_id)
             embeddings.append(node.get_embedding())
             texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
             metadatas.append(node_to_metadata_dict(node, remove_text=True))

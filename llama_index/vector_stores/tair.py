@@ -166,7 +166,7 @@ class TairVectorStore(VectorStore):
             self._tair_client.tvs_hset(
                 self._index_name,
                 "%s#%s" % (node.ref_doc_id, node.node_id),
-                vector=node.embedding,
+                vector=node.get_embedding(),
                 is_binary=False,
                 **attributes,
             )
