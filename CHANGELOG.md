@@ -11,6 +11,11 @@
 - Remove newlines from openai embeddings again (#7588)
 - Fixed small bug with setting `query_wrapper_prompt` in the service context (#7585)
 
+### Breaking/Deprecated API Changes
+- Clean up vector store interface to use `BaseNode` instead of `NodeWithEmbedding`
+  - For majority of users, this is a no-op change
+  - For users directly operating with the `VectorStore` abstraction and manually constructing `NodeWithEmbedding` objects, this is a minor breaking change. Use `TextNode` with `embedding` set directly, instead of `NodeWithEmbedding`.
+
 ## [0.8.21] - 2023-09-06
 
 ### New Features

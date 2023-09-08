@@ -1,9 +1,8 @@
 import logging
 from typing import Any, List, Optional, TYPE_CHECKING, Tuple
 
-from llama_index.schema import TextNode, MetadataMode
+from llama_index.schema import BaseNode, TextNode, MetadataMode
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -91,38 +90,38 @@ class ZepVectorStore(VectorStore):
             )
 
     def _prepare_documents(
-        self, embedding_results: List[NodeWithEmbedding]
+        self, nodes: List[BaseNode]
     ) -> Tuple[List["ZepDocument"], List[str]]:
         from zep_python.document import Document as ZepDocument
 
         docs: List["ZepDocument"] = []
         ids: List[str] = []
 
-        for result in embedding_results:
+        for node in nodes:
             metadata_dict = node_to_metadata_dict(
-                result.node, remove_text=True, flat_metadata=self.flat_metadata
+                node, remove_text=True, flat_metadata=self.flat_metadata
             )
 
-            if len(result.node.get_content()) == 0:
+            if len(node.get_content()) == 0:
                 raise ValueError("No content to add to Zep")
 
             docs.append(
                 ZepDocument(
-                    document_id=result.id,
-                    content=result.node.get_content(metadata_mode=MetadataMode.NONE),
-                    embedding=result.embedding,
+                    document_id=node.node_id,
+                    content=node.get_content(metadata_mode=MetadataMode.NONE),
+                    embedding=node.get_embedding(),
                     metadata=metadata_dict,
                 )
             )
-            ids.append(result.id)
+            ids.append(node.node_id)
 
         return docs, ids
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        """Add a list of embedding results to the collection.
+    def add(self, nodes: List[BaseNode]) -> List[str]:
+        """Add nodes to the collection.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): Embedding results to add.
+            nodes (List[BaseNode]): List of nodes with embeddings.
 
         Returns:
             List[str]: List of IDs of the added documents.
@@ -135,7 +134,7 @@ class ZepVectorStore(VectorStore):
         if self._collection.is_auto_embedded:
             raise ValueError("Collection is auto embedded, cannot add embeddings")
 
-        docs, ids = self._prepare_documents(embedding_results)
+        docs, ids = self._prepare_documents(nodes)
 
         self._collection.add_documents(docs)
 
@@ -143,12 +142,12 @@ class ZepVectorStore(VectorStore):
 
     async def async_add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Asynchronously add a list of embedding results to the collection.
+        """Asynchronously add nodes to the collection.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): Embedding results to add.
+            nodes (List[BaseNode]): List of nodes with embeddings.
 
         Returns:
             List[str]: List of IDs of the added documents.
@@ -161,7 +160,7 @@ class ZepVectorStore(VectorStore):
         if self._collection.is_auto_embedded:
             raise ValueError("Collection is auto embedded, cannot add embeddings")
 
-        docs, ids = self._prepare_documents(embedding_results)
+        docs, ids = self._prepare_documents(nodes)
 
         await self._collection.aadd_documents(docs)
 

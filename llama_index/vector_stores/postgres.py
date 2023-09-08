@@ -3,10 +3,9 @@ from typing import List, Any, Type, Optional
 from collections import namedtuple
 
 from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
-    NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -230,36 +229,36 @@ class PGVectorStore(BasePydanticVectorStore):
                 session.execute(statement)
                 session.commit()
 
-    def _node_to_table_row(self, node: NodeWithEmbedding) -> Any:
+    def _node_to_table_row(self, node: BaseNode) -> Any:
         return self._table_class(
-            node_id=node.id,
-            embedding=node.embedding,
-            text=node.node.get_content(metadata_mode=MetadataMode.NONE),
+            node_id=node.node_id,
+            embedding=node.get_embedding(),
+            text=node.get_content(metadata_mode=MetadataMode.NONE),
             metadata_=node_to_metadata_dict(
-                node.node,
+                node,
                 remove_text=True,
                 flat_metadata=self.flat_metadata,
             ),
         )
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+    def add(self, nodes: List[BaseNode]) -> List[str]:
         ids = []
         with self._session() as session:
             with session.begin():
-                for result in embedding_results:
-                    ids.append(result.id)
-                    item = self._node_to_table_row(result)
+                for node in nodes:
+                    ids.append(node.node_id)
+                    item = self._node_to_table_row(node)
                     session.add(item)
                 session.commit()
         return ids
 
-    async def async_add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+    async def async_add(self, nodes: List[BaseNode]) -> List[str]:
         ids = []
         async with self._async_session() as session:
             async with session.begin():
-                for result in embedding_results:
-                    ids.append(result.id)
-                    item = self._node_to_table_row(result)
+                for node in nodes:
+                    ids.append(node.node_id)
+                    item = self._node_to_table_row(node)
                     session.add(item)
                 await session.commit()
         return ids
