@@ -47,7 +47,7 @@ def messages_to_prompt(
             # if assistant message exists, add to str_message
             assistant_message = messages[i + 1]
             assert assistant_message.role == MessageRole.ASSISTANT
-            str_message += assistant_message
+            str_message += assistant_message.content
 
         string_messages.append(str_message)
 
