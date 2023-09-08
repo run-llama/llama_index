@@ -5,6 +5,10 @@
 ### Bug Fixes
 - Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
 
+### Breaking Changes
+- Update milvus vector store to support filters and dynamic schemas (#7286)
+  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
+
 ## [0.8.22] - 2023-09-07
 
 ### New Features
@@ -34,10 +38,6 @@
 - Default to user-configurable top-k in `VectorIndexAutoRetriever` (#7556)
 - Catch validation errors for structured responses (#7523)
 - Fix streaming refine template (#7561)
-
-### Breaking Changes
-- Update milvus vector store to support filters and dynamic schemas (#7286)
-  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
 
 ## [0.8.20] - 2023-09-04
 
