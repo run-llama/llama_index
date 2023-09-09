@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 - Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
+- Avoid negative chunk size error in refine process (#7607)
 
 ### Breaking Changes
 - Update milvus vector store to support filters and dynamic schemas (#7286)
