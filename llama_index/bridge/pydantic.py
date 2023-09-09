@@ -12,6 +12,7 @@ try:
     )
     from pydantic.v1.fields import FieldInfo
     from pydantic.v1.error_wrappers import ValidationError
+    from pydantic.v1.generics import GenericModel
 except ImportError:
     from pydantic import (
         BaseModel,
@@ -26,6 +27,7 @@ except ImportError:
     )
     from pydantic.fields import FieldInfo
     from pydantic.error_wrappers import ValidationError
+    from pydantic.generics import GenericModel
 
 __all__ = [
     "BaseModel",
@@ -39,4 +41,5 @@ __all__ = [
     "StrictStr",
     "FieldInfo",
     "ValidationError",
+    "GenericModel",
 ]
