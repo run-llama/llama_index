@@ -26,7 +26,7 @@ from llama_index.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.openai_utils import (
+from llama_index.llms.litellm_utils import (
     acompletion_with_retry,
     completion_with_retry,
     from_openai_message_dict,
@@ -34,7 +34,7 @@ from llama_index.llms.openai_utils import (
     is_function_calling_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
-    validate_openai_api_key,
+    validate_litellm_api_key,
 )
 
 
@@ -47,7 +47,7 @@ class LiteLLM(LLM):
         description="The maximum number of tokens to generate."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the OpenAI API."
+        default_factory=dict, description="Additonal kwargs for the LLM API." # for all inputs https://docs.litellm.ai/docs/completion/input
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
@@ -63,7 +63,12 @@ class LiteLLM(LLM):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        validate_openai_api_key(api_key, api_type)
+        if "custom_llm_provider" in kwargs:
+            if "ollama" != kwargs["custom_llm_provider"] and "vllm" != kwargs["custom_llm_provider"]: # don't check keys for local models
+                validate_litellm_api_key(api_key, api_type)
+        else: # by default assume it's a hosted endpoint
+            validate_litellm_api_key(api_key, api_type)
+
 
         additional_kwargs = additional_kwargs or {}
         if api_key is not None:
@@ -93,7 +98,7 @@ class LiteLLM(LLM):
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
-        return "openai_llm"
+        return "litellm_llm"
 
     @property
     def metadata(self) -> LLMMetadata:

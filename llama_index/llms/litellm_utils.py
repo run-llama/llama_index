@@ -3,8 +3,8 @@ import os
 import re
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
-import openai
-from litellm import completion
+import litellm
+from litellm import completion, acompletion
 
 from llama_index.bridge.pydantic import BaseModel
 
@@ -91,21 +91,18 @@ DISCONTINUED_MODELS = {
 }
 
 # "sk-" followed by 48 alphanumberic characters
-OPENAI_API_KEY_FORMAT = re.compile("^sk-[a-zA-Z0-9]{48}$")
-MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
-Please set either the OPENAI_API_KEY environment variable or \
+LLM_API_KEY_FORMAT = re.compile("^sk-[a-zA-Z0-9]{48}$")
+MISSING_API_KEY_ERROR_MESSAGE = """No API key found for LLM.
+E.g. to use openai Please set the OPENAI_API_KEY environment variable or \
 openai.api_key prior to initialization.
 API keys can be found or created at \
 https://platform.openai.com/account/api-keys
 """
-INVALID_API_KEY_ERROR_MESSAGE = """Invalid OpenAI API key.
-API key should be of the format: "sk-" followed by \
-48 alphanumeric characters.
-"""
+INVALID_API_KEY_ERROR_MESSAGE = """Invalid LLM API key."""
 
 logger = logging.getLogger(__name__)
 
-CompletionClientType = Union[Type[Completion], Type[completion]]
+CompletionClientType = Type[completion]
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -118,11 +115,11 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(litellm.exceptions.Timeout)
+            | retry_if_exception_type(litellm.exceptions.APIError)
+            | retry_if_exception_type(litellm.exceptions.APIConnectionError)
+            | retry_if_exception_type(litellm.exceptions.RateLimitError)
+            | retry_if_exception_type(litellm.exceptions.ServiceUnavailableError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -134,8 +131,7 @@ def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) 
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
-        client = get_completion_endpoint(is_chat_model)
-        return client.create(**kwargs)
+        return completion(**kwargs)
 
     return _completion_with_retry(**kwargs)
 
@@ -149,8 +145,7 @@ async def acompletion_with_retry(
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
         # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-        client = get_completion_endpoint(is_chat_model)
-        return await client.acreate(**kwargs)
+        return await acompletion(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 
@@ -184,7 +179,7 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
             "Please choose another model."
         )
 
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
+    context_size = litellm.get_max_tokens(modelname)
 
     if context_size is None:
         raise ValueError(
@@ -196,7 +191,7 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
 
 
 def is_chat_model(model: str) -> bool:
-    return model in CHAT_MODELS
+    return model in litellm.model_list
 
 
 def is_function_calling_model(model: str) -> bool:
@@ -257,19 +252,9 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
     }
 
 
-def validate_openai_api_key(
+def validate_litellm_api_key(
     api_key: Optional[str] = None, api_type: Optional[str] = None
 ) -> None:
-    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
-    openai_api_type = (
-        api_type or os.environ.get("OPENAI_API_TYPE", "") or openai.api_type
-    )
-
-    if not openai_api_key:
+    api_key = litellm.validate_environment()
+    if api_key is None:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-    elif (
-        openai_api_type == "open_ai"
-        and openai_api_key != "EMPTY"  # Exempt EMPTY key for fastchat/local models
-        and not OPENAI_API_KEY_FORMAT.search(openai_api_key)
-    ):
-        raise ValueError(INVALID_API_KEY_ERROR_MESSAGE)
