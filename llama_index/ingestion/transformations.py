@@ -17,7 +17,6 @@ from llama_index.node_parser.extractors import (
     QuestionsAnsweredExtractor,
 )
 from llama_index.node_parser import (
-    NodeParser,
     SimpleNodeParser,
     SentenceWindowNodeParser,
     HierarchicalNodeParser,
