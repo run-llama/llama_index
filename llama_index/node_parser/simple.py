@@ -17,6 +17,14 @@ from llama_index.utils import get_tqdm_iterable
 
 
 class _BaseSimpleNodeParser(NodeParser):
+    """
+    Base class for Simple node parser.
+
+    Separated out the base class so that we can override the schema method
+    on SimpleNodeParser to return a schema that has the text_splitter field
+    as having the schema of TextSpliter instead of Union[TextSpliter, LC_TextSplitter].
+    """
+
     text_splitter: TextSplitter = Field(
         description="The text splitter to use when splitting documents."
     )

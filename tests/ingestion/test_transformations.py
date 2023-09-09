@@ -1,31 +1,53 @@
-from typing import Type
 import pytest
-from llama_index.schema import BaseComponent
 from llama_index.ingestion.transformations import (
-    ALL_COMPONENTS,
-    PipelineTransformation,
-    TransformationTypes,
+    ConfigurableTransformations,
+    ConfiguredTransformation,
 )
 
 from llama_index.node_parser import SimpleNodeParser, SentenceWindowNodeParser
 
 
-@pytest.mark.parametrize("component_type", ALL_COMPONENTS)
-def test_can_generate_schema_for_pipeline_transforms_parametrized(
-    component_type: Type[BaseComponent],
+@pytest.mark.parametrize(
+    "configurable_transformation_type", ConfigurableTransformations
+)
+def test_can_generate_schema_for_transformation_component_type(
+    configurable_transformation_type: ConfigurableTransformations,
 ) -> None:
-    class_schema = PipelineTransformation[component_type].schema()  # type: ignore
-    assert class_schema is not None
-    assert len(class_schema) > 0
+    schema = configurable_transformation_type.value.schema()  # type: ignore
+    assert schema is not None
+    assert len(schema) > 0
+
+    # also check that we can generate schemas for
+    # ConfiguredTransformation[component_type]
+    component_type = configurable_transformation_type.value.component_type
+    configured_schema = ConfiguredTransformation[component_type].schema()
+    assert configured_schema is not None
+    assert len(configured_schema) > 0
 
 
-def test_can_build_pipeline_transform_from_serialized_component() -> None:
+def test_can_build_configured_transform_from_component() -> None:
     parser = SimpleNodeParser.from_defaults()
-    pipeline_transformation = PipelineTransformation[SimpleNodeParser].from_component(
-        parser
+    configured_transformation = ConfiguredTransformation[SimpleNodeParser](
+        component=parser
     )
-    assert isinstance(pipeline_transformation, PipelineTransformation[SimpleNodeParser])  # type: ignore
-    assert not isinstance(pipeline_transformation, PipelineTransformation[SentenceWindowNodeParser])  # type: ignore
+    assert isinstance(configured_transformation, ConfiguredTransformation[SimpleNodeParser])  # type: ignore
+    assert not isinstance(configured_transformation, ConfiguredTransformation[SentenceWindowNodeParser])  # type: ignore
     assert (
-        pipeline_transformation.transformation_type == TransformationTypes.NODE_PARSER
+        configured_transformation.configurable_transformation_type.value.component_type
+        == SimpleNodeParser
     )
+
+
+def test_build_configured_transformation() -> None:
+    parser = SimpleNodeParser.from_defaults()
+    configured_transformation = (
+        ConfigurableTransformations.SIMPLE_NODE_PARSER.build_configured_transformation(
+            parser
+        )
+    )
+    assert isinstance(configured_transformation, ConfiguredTransformation[SimpleNodeParser])  # type: ignore
+
+    with pytest.raises(ValueError):
+        ConfigurableTransformations.SENTENCE_WINDOW_NODE_PARSER.build_configured_transformation(
+            parser
+        )
