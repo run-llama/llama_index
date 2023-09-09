@@ -74,19 +74,19 @@ class AzureOpenAI(OpenAI):
     @root_validator
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
-        if values['api_base'] == "https://api.openai.com/v1":
+        if values["api_base"] == "https://api.openai.com/v1":
             raise ValueError(
                 "You must set OPENAI_API_BASE to your Azure endpoint. "
                 "It should look like https://YOUR_RESOURCE_NAME.openai.azure.com/"
             )
-        if values['api_type'] not in ("azure", "azure_ad", "azuread"):
+        if values["api_type"] not in ("azure", "azure_ad", "azuread"):
             raise ValueError(
                 "You must set OPENAI_API_TYPE to one of "
                 "(`azure`, `azuread`, `azure_ad`) for Azure OpenAI."
             )
-        if values['api_version'] is None:
+        if values["api_version"] is None:
             raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
-        
+
         return values
 
     @property

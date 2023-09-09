@@ -14,8 +14,8 @@ from llama_index.llms.base import (
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-70b-chat-hf"
 
-class Anyscale(OpenAI):
 
+class Anyscale(OpenAI):
     def __init__(
         self,
         model: str = DEFAULT_MODEL,
@@ -57,8 +57,7 @@ class Anyscale(OpenAI):
             is_chat_model=True,
             model_name=self.model,
         )
-    
+
     @property
     def _is_chat_model(self) -> bool:
         return True
-

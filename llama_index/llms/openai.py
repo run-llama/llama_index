@@ -42,6 +42,7 @@ DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
 
+
 class OpenAI(LLM):
     class_type = "openai"
 
@@ -77,9 +78,7 @@ class OpenAI(LLM):
         # validate_openai_api_key(api_key, api_type)
         additional_kwargs = additional_kwargs or {}
 
-        api_key = get_from_param_or_env(
-            "api_key", api_key, "OPENAI_API_KEY"
-        )
+        api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY")
         api_type = get_from_param_or_env(
             "api_type", api_type, "OPENAI_API_TYPE", default=DEFAULT_OPENAI_API_TYPE
         )
@@ -87,7 +86,10 @@ class OpenAI(LLM):
             "api_base", api_base, "OPENAI_API_BASE", default=DEFAULT_OPENAI_API_BASE
         )
         api_version = get_from_param_or_env(
-            "api_version", api_version, "OPENAI_API_VERSION", default=DEFAULT_OPENAI_API_VERSION
+            "api_version",
+            api_version,
+            "OPENAI_API_VERSION",
+            default=DEFAULT_OPENAI_API_VERSION,
         )
 
         super().__init__(
@@ -97,8 +99,8 @@ class OpenAI(LLM):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             callback_manager=callback_manager,
-            api_key = api_key,
-            api_type = api_type,
+            api_key=api_key,
+            api_type=api_type,
             api_version=api_version,
             api_base=api_base,
             **kwargs,
@@ -165,7 +167,7 @@ class OpenAI(LLM):
     @property
     def _is_chat_model(self) -> bool:
         return is_chat_model(self._get_model_name())
-    
+
     @property
     def _credential_kwargs(self) -> Dict[str, Any]:
         credential_kwargs = {
