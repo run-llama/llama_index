@@ -11,9 +11,7 @@ from llama_index.program.llm_program import LLMTextCompletionProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_REFINE_PROMPT_SEL,
-    DEFAULT_TEXT_QA_PROMPT_SEL,
-)
+    DEFAULT_REFINE_PROMPT_SEL, DEFAULT_TEXT_QA_PROMPT_SEL)
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -223,6 +221,9 @@ class Refine(BaseSynthesizer):
             query_str=query_str, existing_answer=response
         )
 
+        # compute available chunk size to see if there is any available space
+        # determine if the refine template is too big (which can happen if
+        # prompt template + query + existing answer is too large)
         avail_chunk_size = (
             self._service_context.prompt_helper._get_available_chunk_size(
                 refine_template
@@ -230,8 +231,8 @@ class Refine(BaseSynthesizer):
         )
 
         if avail_chunk_size < 0:
-            # determine if the refine template is too big
-            # if so, then return the response and do not refine
+            # if the available chunk size is negative, then the refine template
+            # is too big and we just return the original response
             return response
 
         text_chunks = self._service_context.prompt_helper.repack(
