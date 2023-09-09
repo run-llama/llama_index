@@ -4,9 +4,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-
-from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -15,6 +12,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import validate_openai_api_key
