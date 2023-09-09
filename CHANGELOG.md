@@ -6,6 +6,8 @@
 - Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
 - Avoid negative chunk size error in refine process (#7607)
 - Fix relationships for small documents in hierarchical node parser (#7611)
+- Update Anyscale Endpoints integration with full streaming and async support (#7602)
+- Better support of passing credentials as LLM constructor args in `OpenAI`, `AzureOpenAI`, and `Anyscale` (#7602)
 
 ### Breaking Changes
 - Update milvus vector store to support filters and dynamic schemas (#7286)
