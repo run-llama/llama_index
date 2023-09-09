@@ -20,7 +20,7 @@ def test_can_generate_schema_for_transformation_component_type(
     # also check that we can generate schemas for
     # ConfiguredTransformation[component_type]
     component_type = configurable_transformation_type.value.component_type
-    configured_schema = ConfiguredTransformation[component_type].schema()
+    configured_schema = ConfiguredTransformation[component_type].schema()  # type: ignore
     assert configured_schema is not None
     assert len(configured_schema) > 0
 

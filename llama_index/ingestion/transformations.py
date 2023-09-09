@@ -170,7 +170,9 @@ class ConfigurableTransformations(Enum):
                 f"The enum value {self} is not compatible with component of "
                 "type {type(component)}"
             )
-        return ConfiguredTransformation[component_type](component=component)
+        return ConfiguredTransformation[component_type](  # type: ignore
+            component=component
+        )
 
 
 T = TypeVar("T", bound=BaseComponent)
