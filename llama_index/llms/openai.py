@@ -38,7 +38,6 @@ from llama_index.llms.openai_utils import (
 )
 
 
-
 class OpenAI(LLM):
     class_type = "openai"
 
