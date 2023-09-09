@@ -6,7 +6,6 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.ingestion.transformation import (
     ConfiguredTransformation,
-    get_configured_transform,
 )
 from llama_index.llms.base import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
@@ -63,7 +62,7 @@ class IngestionPipeline(BaseModel):
         configured_transformations: List[ConfiguredTransformation] = []
         for transformation in transformations:
             configured_transformations.append(
-                get_configured_transform(transformation.to_dict())
+                ConfiguredTransformation.from_component(transformation)
             )
 
         super().__init__(
@@ -83,6 +82,9 @@ class IngestionPipeline(BaseModel):
         ]
 
     def run_remote(self) -> str:
+        print("Running ingestion pipeline remotely...")
+        print("DEBUG: Current transformations:")
+        print("\n----\n".join([t.to_json() for t in self.transformations]))
         return "Find your remote results here: https://llamaindex.com/"
 
     def run_local(
