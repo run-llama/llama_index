@@ -71,7 +71,7 @@ class AzureOpenAI(OpenAI):
             **kwargs,
         )
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
         if values["api_base"] == "https://api.openai.com/v1":
