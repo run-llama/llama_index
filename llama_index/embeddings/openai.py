@@ -250,10 +250,8 @@ class OpenAIEmbedding(BaseEmbedding):
     ) -> None:
         # Validate that either the openai.api_key property
         # or OPENAI_API_KEY env variable are set to a valid key
-        # Raises ValueError if missing or doesn't match valid format
-        validate_openai_api_key(
-            kwargs.get("api_key", None), kwargs.get("api_type", None)
-        )
+        # Raises ValueError if missing
+        validate_openai_api_key(kwargs.get("api_key", None))
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
