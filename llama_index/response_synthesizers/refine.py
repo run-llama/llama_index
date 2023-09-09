@@ -237,6 +237,7 @@ class Refine(BaseSynthesizer):
             # is too big and we just return the original response
             return response
 
+        # obtain text chunks to add to the refine template
         text_chunks = self._service_context.prompt_helper.repack(
             refine_template, text_chunks=[text_chunk]
         )
@@ -317,10 +318,27 @@ class Refine(BaseSynthesizer):
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
         logger.debug(f"> Refine context: {fmt_text_chunk}")
+
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self._refine_template.partial_format(
             query_str=query_str, existing_answer=response
         )
+
+        # compute available chunk size to see if there is any available space
+        # determine if the refine template is too big (which can happen if
+        # prompt template + query + existing answer is too large)
+        avail_chunk_size = (
+            self._service_context.prompt_helper._get_available_chunk_size(
+                refine_template
+            )
+        )
+
+        if avail_chunk_size < 0:
+            # if the available chunk size is negative, then the refine template
+            # is too big and we just return the original response
+            return response
+
+        # obtain text chunks to add to the refine template
         text_chunks = self._service_context.prompt_helper.repack(
             refine_template, text_chunks=[text_chunk]
         )
