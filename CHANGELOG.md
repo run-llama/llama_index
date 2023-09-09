@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 - Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
+- Fix relationships for small documents in hierarchical node parser (#7611)
 
 ### Breaking Changes
 - Update milvus vector store to support filters and dynamic schemas (#7286)
