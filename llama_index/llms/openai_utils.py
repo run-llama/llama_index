@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import openai
@@ -267,7 +266,7 @@ def resolve_openai_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[str, str, str, str]:
-    """"Resolve OpenAI credentials.
+    """ "Resolve OpenAI credentials.
 
     The order of precedence is:
     1. param
