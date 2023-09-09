@@ -3,7 +3,6 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field
 
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -34,13 +33,10 @@ from llama_index.llms.openai_utils import (
     is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
+    resolve_openai_credentials,
     to_openai_message_dicts,
 )
 
-
-DEFAULT_OPENAI_API_TYPE = "open_ai"
-DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
-DEFAULT_OPENAI_API_VERSION = ""
 
 
 class OpenAI(LLM):
@@ -75,21 +71,13 @@ class OpenAI(LLM):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        # validate_openai_api_key(api_key, api_type)
         additional_kwargs = additional_kwargs or {}
 
-        api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY")
-        api_type = get_from_param_or_env(
-            "api_type", api_type, "OPENAI_API_TYPE", default=DEFAULT_OPENAI_API_TYPE
-        )
-        api_base = get_from_param_or_env(
-            "api_base", api_base, "OPENAI_API_BASE", default=DEFAULT_OPENAI_API_BASE
-        )
-        api_version = get_from_param_or_env(
-            "api_version",
-            api_version,
-            "OPENAI_API_VERSION",
-            default=DEFAULT_OPENAI_API_VERSION,
+        api_key, api_type, api_base, api_version = resolve_openai_credentials(
+            api_key=api_key,
+            api_type=api_type,
+            api_base=api_base,
+            api_version=api_version,
         )
 
         super().__init__(

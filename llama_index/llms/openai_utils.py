@@ -1,7 +1,7 @@
 import logging
 import os
 import re
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import openai
 from openai import ChatCompletion, Completion
@@ -17,6 +17,13 @@ from tenacity import (
 )
 
 from llama_index.llms.base import ChatMessage
+from llama_index.llms.generic_utils import get_from_param_or_env
+
+
+DEFAULT_OPENAI_API_TYPE = "open_ai"
+DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
+DEFAULT_OPENAI_API_VERSION = ""
+
 
 GPT4_MODELS = {
     # stable model names:
@@ -260,6 +267,36 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
     }
 
 
+def resolve_openai_credentials(
+    api_key: Optional[str] = None,
+    api_type: Optional[str] = None,
+    api_base: Optional[str] = None,
+    api_version: Optional[str] = None,
+) -> Tuple[str, str, str, str]:
+
+    # resolve from param or env
+    api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY", "")
+    api_type = get_from_param_or_env("api_type", api_type, "OPENAI_API_TYPE", "")
+    api_base = get_from_param_or_env("api_base", api_base, "OPENAI_API_BASE", "")
+    api_version = get_from_param_or_env(
+        "api_version",
+        api_version,
+        "OPENAI_API_VERSION",
+        ""
+    )
+
+    # resolve from openai module or default
+    api_key = api_key or openai.api_key
+    api_type = api_type or openai.api_type or DEFAULT_OPENAI_API_TYPE
+    api_base = api_base or openai.api_base or DEFAULT_OPENAI_API_BASE
+    api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
+
+    if not api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+
+    return api_key, api_type, api_base, api_version
+
+
 def validate_openai_api_key(
     api_key: Optional[str] = None, api_type: Optional[str] = None
 ) -> None:
@@ -270,7 +307,8 @@ def validate_openai_api_key(
 
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-    elif (
+    
+    if (
         openai_api_type == "open_ai"
         and openai_api_key != "EMPTY"  # Exempt EMPTY key for fastchat/local models
         and not OPENAI_API_KEY_FORMAT.search(openai_api_key)
