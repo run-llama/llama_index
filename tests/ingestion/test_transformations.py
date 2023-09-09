@@ -62,3 +62,12 @@ def test_build_configured_transformation() -> None:
         ConfigurableTransformations.SENTENCE_WINDOW_NODE_PARSER.build_configured_transformation(
             parser
         )
+
+
+def test_unique_configurable_transformations_names() -> None:
+    names = set()
+    for configurable_transformation_type in ConfigurableTransformations:
+        assert configurable_transformation_type.value.name not in names
+        names.add(configurable_transformation_type.value.name)
+    assert len(names) > 0
+    assert len(names) == len(ConfigurableTransformations)
