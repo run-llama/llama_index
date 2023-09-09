@@ -1,5 +1,5 @@
 """Simple node parser."""
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Dict, Any
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
@@ -8,23 +8,16 @@ from llama_index.node_parser.extractors.metadata_extractors import MetadataExtra
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.schema import BaseNode, Document
-from llama_index.text_splitter import get_default_text_splitter, SplitterType
+from llama_index.text_splitter import (
+    get_default_text_splitter,
+    SplitterType,
+    TextSplitter,
+)
 from llama_index.utils import get_tqdm_iterable
 
 
-class SimpleNodeParser(NodeParser):
-    """Simple node parser.
-
-    Splits a document into Nodes using a TextSplitter.
-
-    Args:
-        text_splitter (Optional[TextSplitter]): text splitter
-        include_metadata (bool): whether to include metadata in nodes
-        include_prev_next_rel (bool): whether to include prev/next relationships
-
-    """
-
-    text_splitter: SplitterType = Field(
+class _BaseSimpleNodeParser(NodeParser):
+    text_splitter: TextSplitter = Field(
         description="The text splitter to use when splitting documents."
     )
     include_metadata: bool = Field(
@@ -38,6 +31,23 @@ class SimpleNodeParser(NodeParser):
     )
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
+    )
+
+
+class SimpleNodeParser(_BaseSimpleNodeParser):
+    """Simple node parser.
+
+    Splits a document into Nodes using a TextSplitter.
+
+    Args:
+        text_splitter (Optional[TextSplitter]): text splitter
+        include_metadata (bool): whether to include metadata in nodes
+        include_prev_next_rel (bool): whether to include prev/next relationships
+
+    """
+
+    text_splitter: SplitterType = Field(
+        description="The text splitter to use when splitting documents."
     )
 
     @classmethod
@@ -70,6 +80,22 @@ class SimpleNodeParser(NodeParser):
     def class_name(cls) -> str:
         """Get class name."""
         return "SimpleNodeParser"
+
+    @classmethod
+    def schema(cls, **kwargs):
+        """
+        Because text_splitter is of type Union[TextSpliter, LC_TextSplitter], we need to
+        override the schema method to return a schema that has the text_splitter field
+        as having the schema of TextSpliter instead of Union[TextSpliter, LC_TextSplitter].
+        """
+        super_schema = _BaseSimpleNodeParser.schema(**kwargs)
+        super_schema["title"] = cls.class_name()
+        super_schema["description"] = cls.__doc__.strip()
+        return super_schema
+
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]):
+        schema.update(properties=cls.schema()["properties"])
 
     def get_nodes_from_documents(
         self,

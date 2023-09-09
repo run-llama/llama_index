@@ -4,13 +4,12 @@ from llama_index.schema import BaseComponent
 from llama_index.ingestion.transformations import (
     ALL_COMPONENTS,
     PipelineTransformation,
-    get_pipeline_transformation_from_serialized_component,
+    TransformationTypes,
 )
 
 from llama_index.node_parser import SimpleNodeParser
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("component_type", ALL_COMPONENTS)
 def test_can_generate_schema_for_pipeline_transforms_parametrized(
     component_type: Type[BaseComponent],
@@ -21,8 +20,11 @@ def test_can_generate_schema_for_pipeline_transforms_parametrized(
 
 
 def test_can_build_pipeline_transform_from_serialized_component() -> None:
-    serialized_parser = SimpleNodeParser.from_defaults().to_dict()
-    pipeline_transformation = get_pipeline_transformation_from_serialized_component(
-        serialized_parser
+    parser = SimpleNodeParser.from_defaults()
+    pipeline_transformation = PipelineTransformation[SimpleNodeParser].from_component(
+        parser
     )
     assert isinstance(pipeline_transformation, PipelineTransformation[SimpleNodeParser])
+    assert (
+        pipeline_transformation.transformation_type == TransformationTypes.NODE_PARSER
+    )

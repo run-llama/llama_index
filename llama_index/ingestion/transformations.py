@@ -2,7 +2,7 @@
 This module maintains the list of transformations that are supported by the system.
 """
 
-from typing import Any, Dict, Sequence, Set, Type, TypeVar, Generic
+from typing import Dict, Sequence, Set, Type, TypeVar, Generic
 from enum import Enum
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
@@ -75,6 +75,7 @@ class TransformationTypes(Enum):
     )
 
 
+# Keep this up-to-date with the set of supported MetadataExtractors
 METADATA_EXTRACTOR_COMPONENTS: Set[Type[BaseExtractor]] = {
     MetadataExtractor,
     KeywordExtractor,
@@ -85,6 +86,7 @@ METADATA_EXTRACTOR_COMPONENTS: Set[Type[BaseExtractor]] = {
     QuestionsAnsweredExtractor,
 }
 
+# Keep this up-to-date with the set of supported NodeParsers
 NODE_PARSER_COMPONENTS: Set[Type[NodeParser]] = {
     SimpleNodeParser,
     SentenceWindowNodeParser,
@@ -109,10 +111,6 @@ ALL_COMPONENTS: Set[Type[BaseComponent]] = {
     *NODE_PARSER_COMPONENTS,
 }
 
-_class_name_to_component_type: Dict[str, Type[BaseComponent]] = {
-    component.class_name(): component for component in ALL_COMPONENTS
-}
-
 T = TypeVar("T", bound=BaseComponent)
 
 
@@ -121,26 +119,17 @@ class PipelineTransformation(GenericModel, Generic[T]):
     A class containing the metdata + implementation for a transformation within a pipeline.
     """
 
-    transformation_type: TransformationType = Field(
+    transformation_type: TransformationTypes = Field(
         description="Type of transformation"
     )
     component: T = Field(description="Component that implements the transformation")
 
     @classmethod
-    def from_serialized_component(
-        cls, serialized_component: Dict[str, Any]
-    ) -> "PipelineTransformation[T]":
-        class_name = serialized_component.pop("class_name", None)
-        if class_name is None:
-            raise ValueError(
-                "transform_schema must have a class_name field. Current input is invalid."
-            )
-
-        serialized_component_class = _class_name_to_component_type[class_name]
+    def from_component(cls, component: T) -> "PipelineTransformation[T]":
         component_class = cls.__fields__["component"].type_
-        if serialized_component_class != component_class:
+        if not isinstance(component, component_class):
             raise ValueError(
-                "Serialized Component is of a different type than the requested "
+                "Given component is of a different type than the requested "
                 "PipelineTransformation[T]'s component type."
             )
 
@@ -150,19 +139,5 @@ class PipelineTransformation(GenericModel, Generic[T]):
 
         return cls(
             transformation_type=transformation_type,
-            component=component_class.from_dict(serialized_component),
+            component=component,
         )
-
-
-def get_pipeline_transformation_from_serialized_component(
-    serialized_component: Dict[str, Any]
-) -> PipelineTransformation:
-    class_name = serialized_component.get("class_name")
-    if class_name is None:
-        raise ValueError(
-            "transform_schema must have a class_name field. Current input is invalid."
-        )
-    component_type = _class_name_to_component_type[class_name]
-    return PipelineTransformation[component_type].from_serialized_component(
-        serialized_component
-    )
