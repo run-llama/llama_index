@@ -1,8 +1,6 @@
 from typing import Any, Dict, Optional
 
-from pydantic import root_validator
-
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import Field, root_validator
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
@@ -71,7 +69,7 @@ class AzureOpenAI(OpenAI):
             **kwargs,
         )
 
-    @root_validator(skip_on_failure=True)
+    @root_validator
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
         if values["api_base"] == "https://api.openai.com/v1":
