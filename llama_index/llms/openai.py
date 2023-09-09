@@ -3,6 +3,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field
 
 from llama_index.callbacks import CallbackManager
+from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -34,9 +35,12 @@ from llama_index.llms.openai_utils import (
     is_function_calling_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
-    validate_openai_api_key,
 )
 
+
+DEFAULT_OPENAI_API_TYPE = "open_ai"
+DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
+DEFAULT_OPENAI_API_VERSION = ""
 
 class OpenAI(LLM):
     class_type = "openai"
@@ -51,6 +55,11 @@ class OpenAI(LLM):
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
+    api_key: str = Field(default=None, description="The OpenAI API key.")
+    api_type: str = Field(default=None, description="The OpenAI API type.")
+    api_base: str = Field(description="The base URL for OpenAI API.")
+    api_version: str = Field(description="The API version for OpenAI API.")
+
     def __init__(
         self,
         model: str = "gpt-3.5-turbo",
@@ -60,16 +69,26 @@ class OpenAI(LLM):
         max_retries: int = 10,
         api_key: Optional[str] = None,
         api_type: Optional[str] = None,
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        validate_openai_api_key(api_key, api_type)
-
+        # validate_openai_api_key(api_key, api_type)
         additional_kwargs = additional_kwargs or {}
-        if api_key is not None:
-            additional_kwargs["api_key"] = api_key
-        if api_type is not None:
-            additional_kwargs["api_type"] = api_type
+
+        api_key = get_from_param_or_env(
+            "api_key", api_key, "OPENAI_API_KEY"
+        )
+        api_type = get_from_param_or_env(
+            "api_type", api_type, "OPENAI_API_TYPE", default=DEFAULT_OPENAI_API_TYPE
+        )
+        api_base = get_from_param_or_env(
+            "api_base", api_base, "OPENAI_API_BASE", default=DEFAULT_OPENAI_API_BASE
+        )
+        api_version = get_from_param_or_env(
+            "api_version", api_version, "OPENAI_API_VERSION", default=DEFAULT_OPENAI_API_VERSION
+        )
 
         super().__init__(
             model=model,
@@ -78,6 +97,10 @@ class OpenAI(LLM):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             callback_manager=callback_manager,
+            api_key = api_key,
+            api_type = api_type,
+            api_version=api_version,
+            api_base=api_base,
             **kwargs,
         )
 
@@ -142,6 +165,16 @@ class OpenAI(LLM):
     @property
     def _is_chat_model(self) -> bool:
         return is_chat_model(self._get_model_name())
+    
+    @property
+    def _credential_kwargs(self) -> Dict[str, Any]:
+        credential_kwargs = {
+            "api_key": self.api_key,
+            "api_type": self.api_type,
+            "api_base": self.api_base,
+            "api_version": self.api_version,
+        }
+        return credential_kwargs
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -158,6 +191,7 @@ class OpenAI(LLM):
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
+            **self._credential_kwargs,
             **self._model_kwargs,
             **kwargs,
         }
@@ -314,6 +348,10 @@ class OpenAI(LLM):
             return {}
 
         usage = raw_response.get("usage", {})
+        # NOTE: other model providers that use the OpenAI client may not report usage
+        if usage is None:
+            return {}
+
         return {
             "prompt_tokens": usage.get("prompt_tokens", 0),
             "completion_tokens": usage.get("completion_tokens", 0),
