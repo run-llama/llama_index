@@ -11,7 +11,9 @@ from llama_index.program.llm_program import LLMTextCompletionProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_REFINE_PROMPT_SEL, DEFAULT_TEXT_QA_PROMPT_SEL)
+    DEFAULT_REFINE_PROMPT_SEL,
+    DEFAULT_TEXT_QA_PROMPT_SEL,
+)
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
