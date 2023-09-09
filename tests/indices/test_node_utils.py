@@ -41,7 +41,7 @@ def test_get_nodes_from_document(
         text_splitter,
         include_metadata=False,
     )
-    assert len(nodes) == 1
+    assert len(nodes) == 2
     actual_chunk_sizes = [
         len(text_splitter.tokenizer(node.get_content())) for node in nodes
     ]
@@ -59,7 +59,7 @@ def test_get_nodes_from_document_with_metadata(
         text_splitter,
         include_metadata=True,
     )
-    assert len(nodes) == 2
+    assert len(nodes) == 3
     actual_chunk_sizes = [
         len(text_splitter.tokenizer(node.get_content(metadata_mode=MetadataMode.ALL)))
         for node in nodes
