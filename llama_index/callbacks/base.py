@@ -127,7 +127,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         self.handlers = handlers
 
     @classmethod
-    def __modify_schema__(cls, schema: Any):
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
         schema.update(type="object", default={})
 
     @contextmanager

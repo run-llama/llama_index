@@ -46,7 +46,7 @@ class SimpleNodeParser(_BaseSimpleNodeParser):
 
     """
 
-    text_splitter: SplitterType = Field(
+    text_splitter: SplitterType = Field(  # type: ignore
         description="The text splitter to use when splitting documents."
     )
 
@@ -82,7 +82,7 @@ class SimpleNodeParser(_BaseSimpleNodeParser):
         return "SimpleNodeParser"
 
     @classmethod
-    def schema(cls, **kwargs):
+    def schema(cls, **kwargs) -> Dict[str, Any]:
         """
         Because text_splitter is of type Union[TextSpliter, LC_TextSplitter], we need to
         override the schema method to return a schema that has the text_splitter field
@@ -94,7 +94,7 @@ class SimpleNodeParser(_BaseSimpleNodeParser):
         return super_schema
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]):
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
         schema.update(properties=cls.schema()["properties"])
 
     def get_nodes_from_documents(
