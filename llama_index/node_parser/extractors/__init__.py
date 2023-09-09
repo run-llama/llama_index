@@ -1,5 +1,4 @@
 from llama_index.node_parser.extractors.metadata_extractors import (
-    BaseExtractor,
     MetadataExtractor,
     SummaryExtractor,
     QuestionsAnsweredExtractor,

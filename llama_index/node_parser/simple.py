@@ -92,9 +92,10 @@ class SimpleNodeParser(_BaseSimpleNodeParser):
     @classmethod
     def schema(cls, **kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Because text_splitter is of type Union[TextSpliter, LC_TextSplitter], we need to
-        override the schema method to return a schema that has the text_splitter field
-        as having the schema of TextSpliter instead of Union[TextSpliter, LC_TextSplitter].
+        Because text_splitter is of type Union[TextSpliter, LC_TextSplitter],
+        we need to override the schema method to return a schema that has the
+        text_splitter field as having the schema of TextSpliter instead
+        of Union[TextSpliter, LC_TextSplitter].
         """
         super_schema = _BaseSimpleNodeParser.schema(**kwargs)
         super_schema["title"] = cls.class_name()
