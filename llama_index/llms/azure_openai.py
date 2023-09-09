@@ -8,7 +8,7 @@ from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
 
 AZURE_OPENAI_API_TYPE = "azure"
-AZURE_OPENAI_VERSION = "2023-05-15"
+AZURE_OPENAI_VERSION = "2023-08-01-preview"
 
 
 class AzureOpenAI(OpenAI):
