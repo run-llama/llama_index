@@ -130,11 +130,6 @@ class ConfigurableTransformations(Enum):
         transformation_category=TransformationCategories.METADATA_EXTRACTOR,
         component_type=QuestionsAnsweredExtractor,
     )
-    NODE_PARSER = ConfigurableTransformation(
-        name="Node Parser",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=NodeParser,
-    )
     SIMPLE_NODE_PARSER = ConfigurableTransformation(
         name="Simple Node Parser",
         transformation_category=TransformationCategories.NODE_PARSER,
