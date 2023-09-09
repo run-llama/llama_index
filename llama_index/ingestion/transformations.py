@@ -193,6 +193,12 @@ class ConfiguredTransformation(GenericModel, Generic[T]):
         This should be the preferred way to build a ConfiguredTransformation
         as it will ensure that the component is supported as indicated by having a
         corresponding enum value in ConfigurableTransformations.
+
+        This has the added bonus that you don't need to specify the generic type
+        like ConfiguredTransformation[SimpleNodeParser]. The return value of
+        this ConfiguredTransformation.from_component(simple_node_parser) will be
+        ConfiguredTransformation[SimpleNodeParser] if simple_node_parser is
+        a SimpleNodeParser.
         """
         return ConfigurableTransformations.from_component(
             component
