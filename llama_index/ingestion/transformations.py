@@ -185,6 +185,19 @@ class ConfiguredTransformation(GenericModel, Generic[T]):
 
     component: T = Field(description="Component that implements the transformation")
 
+    @classmethod
+    def from_component(cls, component: BaseComponent) -> "ConfiguredTransformation":
+        """
+        Build a ConfiguredTransformation from a component.
+
+        This should be the preferred way to build a ConfiguredTransformation
+        as it will ensure that the component is supported as indicated by having a
+        corresponding enum value in ConfigurableTransformations.
+        """
+        return ConfigurableTransformations.from_component(
+            component
+        ).build_configured_transformation(component)
+
     @property
     def configurable_transformation_type(self) -> ConfigurableTransformations:
         return ConfigurableTransformations.from_component(self.component)

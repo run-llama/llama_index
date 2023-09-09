@@ -29,9 +29,9 @@ def test_can_generate_schema_for_transformation_component_type(
 
 def test_can_build_configured_transform_from_component() -> None:
     parser = SimpleNodeParser.from_defaults()
-    configured_transformation = ConfiguredTransformation[SimpleNodeParser](
-        component=parser
-    )
+    configured_transformation = ConfiguredTransformation[
+        SimpleNodeParser  # type: ignore
+    ].from_component(parser)
     assert isinstance(
         configured_transformation,
         ConfiguredTransformation[SimpleNodeParser],  # type: ignore
