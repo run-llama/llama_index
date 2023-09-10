@@ -197,25 +197,40 @@ async def test_add_to_es_and_text_query(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-def test_add_to_es_and_hybrid_query(
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_es_and_hybrid_query(
     index_name: str,
     elasticsearch_connection: Dict,
     node_embeddings: List[TextNode],
+    use_async: bool,
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
         index_name=index_name,
         distance_strategy="COSINE",
     )
-    es_store.add(node_embeddings)
-    res = es_store.query(
-        VectorStoreQuery(
-            query_str="lorem",
-            query_embedding=[1.0, 0.0, 0.0],
-            mode=VectorStoreQueryMode.HYBRID,
-            similarity_top_k=1,
+    if use_async:
+        await es_store.async_add(node_embeddings)
+        res = await es_store.aquery(
+            VectorStoreQuery(
+                query_str="lorem",
+                query_embedding=[1.0, 0.0, 0.0],
+                mode=VectorStoreQueryMode.HYBRID,
+                similarity_top_k=1,
+            )
         )
-    )
+        await es_store.async_client.close()
+    else:
+        es_store.add(node_embeddings)
+        res = es_store.query(
+            VectorStoreQuery(
+                query_str="lorem",
+                query_embedding=[1.0, 0.0, 0.0],
+                mode=VectorStoreQueryMode.HYBRID,
+                similarity_top_k=1,
+            )
+        )
     assert res.nodes
     assert res.nodes[0].get_content() == "lorem ipsum"
 
