@@ -433,7 +433,7 @@ index = VectorStoreIndex.from_documents(uber_docs, storage_context=storage_conte
 
 - Neo4j stores texts, metadata, and embeddings and can be customized to return graph data in the form of metadata.
 
-````python
+```python
 from llama_index.vector_stores import Neo4jVectorStore
 
 # construct vector store
@@ -443,6 +443,8 @@ neo4j_vector = Neo4jVectorStore(
     url="bolt://localhost:7687",
     embed_dim=1536
 )
+
+```
 
 **Azure Cognitive Search**
 
@@ -470,7 +472,7 @@ vector_store = CognitiveSearchVectorStore(
     metadata_field_key="li_jsonMetadata",
     doc_id_field_key="li_doc_id",
 )
-````
+```
 
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
