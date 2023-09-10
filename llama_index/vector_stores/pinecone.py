@@ -10,10 +10,9 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -228,19 +227,18 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to index.
+        """Add nodes to index.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
         ids = []
         entries = []
-        for result in embedding_results:
-            node_id = result.id
-            node = result.node
+        for node in nodes:
+            node_id = node.node_id
 
             metadata = node_to_metadata_dict(
                 node, remove_text=False, flat_metadata=self.flat_metadata
@@ -248,7 +246,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
             entry = {
                 ID_KEY: node_id,
-                VECTOR_KEY: result.embedding,
+                VECTOR_KEY: node.get_embedding(),
                 METADATA_KEY: metadata,
             }
             if self.add_sparse_vector:

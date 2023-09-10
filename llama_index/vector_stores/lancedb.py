@@ -1,10 +1,15 @@
 """LanceDB vector store."""
 from typing import Any, List, Optional
 
-from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -79,23 +84,23 @@ class LanceDBVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
         data = []
         ids = []
-        for result in embedding_results:
+        for node in nodes:
             metadata = node_to_metadata_dict(
-                result.node, remove_text=True, flat_metadata=self.flat_metadata
+                node, remove_text=True, flat_metadata=self.flat_metadata
             )
             append_data = {
-                "id": result.id,
-                "doc_id": result.ref_doc_id,
-                "vector": result.embedding,
-                "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
+                "id": node.node_id,
+                "doc_id": node.ref_doc_id,
+                "vector": node.get_embedding(),
+                "text": node.get_content(metadata_mode=MetadataMode.NONE),
             }
             append_data.update(metadata)
             data.append(append_data)
-            ids.append(result.id)
+            ids.append(node.node_id)
 
         if self.table_name in self.connection.table_names():
             tbl = self.connection.open_table(self.table_name)

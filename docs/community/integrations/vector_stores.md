@@ -322,7 +322,7 @@ https://epsilla-inc.gitbook.io/epsilladb/quick-start
 
 **Milvus**
 
-- Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include metadata.
+- Milvus Index offers the ability to store both Documents and their embeddings.
 
 ```python
 import pymilvus
@@ -330,8 +330,7 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    host='localhost',
-    port=19530,
+    uri='https://localhost:19530',
     overwrite='True'
 )
 
@@ -354,11 +353,8 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    host='foo.vectordb.zillizcloud.com',
-    port=403,
-    user="db_admin",
-    password="foo",
-    use_secure=True,
+    uri='foo.vectordb.zillizcloud.com',
+    token="your_token_here"
     overwrite='True'
 )
 ```
