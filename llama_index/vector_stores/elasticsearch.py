@@ -574,7 +574,7 @@ class AsyncElasticsearchStore(VectorStore):
         vector_field: str = "embedding",
         batch_size: int = 200,
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
-    ) -> None:
+    ) -> "AsyncElasticsearchStore":
         """Factory method for AsyncElasticsearchStore
 
         NOTE: self._client has to be awaited on and can't work within __init__
