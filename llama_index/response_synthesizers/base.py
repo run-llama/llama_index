@@ -15,7 +15,7 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
-from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)

@@ -17,6 +17,7 @@ as the storage backend for `VectorStoreIndex`.
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
+- Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
@@ -80,6 +81,31 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+**Elasticsearch**
+
+First, start Elasticsearch
+
+```bash
+docker run -p 9200:9200 \
+  -e "discovery.type=single-node" \
+  -e "xpack.security.enabled=false" \
+  -e "xpack.security.http.ssl.enabled=false" \
+  -e "xpack.license.self_generated.type=trial" \
+  docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+```
+
+Then connect and use Elasticsearch as a vector database with LlamaIndex
+
+```python
+from llama_index.vector_stores import ElasticsearchStore
+vector_store = ElasticsearchStore(
+    index_name="llm-project",
+    es_url="http://localhost:9200",
+)
+```
+
+This can be used with the `VectorStoreIndex` to provide a query interface for retrieval, querying, deleting, persisting the index, and more.
 
 **Redis**
 
@@ -296,7 +322,7 @@ https://epsilla-inc.gitbook.io/epsilladb/quick-start
 
 **Milvus**
 
-- Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include metadata.
+- Milvus Index offers the ability to store both Documents and their embeddings.
 
 ```python
 import pymilvus
@@ -304,8 +330,7 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    host='localhost',
-    port=19530,
+    uri='https://localhost:19530',
     overwrite='True'
 )
 
@@ -328,11 +353,8 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    host='foo.vectordb.zillizcloud.com',
-    port=403,
-    user="db_admin",
-    password="foo",
-    use_secure=True,
+    uri='foo.vectordb.zillizcloud.com',
+    token="your_token_here"
     overwrite='True'
 )
 ```
@@ -555,6 +577,7 @@ documents = reader.load_data(
 caption: Examples
 maxdepth: 1
 ---
+../../examples/vector_stores/Elasticsearch_demo.ipynb
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
 ../../examples/vector_stores/SimpleIndexDemoMMR.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
