@@ -238,27 +238,32 @@ async def test_add_to_es_and_hybrid_query(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-def test_add_to_es_query_with_filters(
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_es_query_with_filters(
     index_name: str,
     elasticsearch_connection: Dict,
     node_embeddings: List[TextNode],
+    use_async: bool,
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
         index_name=index_name,
         distance_strategy="COSINE",
     )
-
-    es_store.add(node_embeddings)
-
     filters = MetadataFilters(
         filters=[ExactMatchFilter(key="author", value="Stephen King")]
     )
     q = VectorStoreQuery(
         query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10, filters=filters
     )
-
-    res = es_store.query(q)
+    if use_async:
+        await es_store.async_add(node_embeddings)
+        res = await es_store.aquery(q)
+        await es_store.async_client.close()
+    else:
+        es_store.add(node_embeddings)
+        res = es_store.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
@@ -267,22 +272,31 @@ def test_add_to_es_query_with_filters(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-def test_add_to_es_query_with_es_filters(
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_es_query_with_es_filters(
     index_name: str,
     elasticsearch_connection: Dict,
     node_embeddings: List[TextNode],
+    use_async: bool,
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
         index_name=index_name,
         distance_strategy="COSINE",
     )
-
-    es_store.add(node_embeddings)
-
     q = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
-
-    res = es_store.query(q, es_filter=[{"wildcard": {"metadata.author": "stephe*"}}])
+    if use_async:
+        await es_store.async_add(node_embeddings)
+        res = await es_store.aquery(
+            q, es_filter=[{"wildcard": {"metadata.author": "stephe*"}}]
+        )
+        await es_store.async_client.close()
+    else:
+        es_store.add(node_embeddings)
+        res = es_store.query(
+            q, es_filter=[{"wildcard": {"metadata.author": "stephe*"}}]
+        )
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
