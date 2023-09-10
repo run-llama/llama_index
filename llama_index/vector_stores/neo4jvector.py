@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from llama_index.schema import MetadataMode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -24,16 +23,14 @@ def sort_by_index_name(
     return sorted(lst, key=lambda x: x.get("index_name") != index_name)
 
 
-def clean_params(params: List[NodeWithEmbedding]) -> List[Dict[str, Any]]:
-    """Convert NodeWithEmbedding object to a dictionary to be imported into Neo4j"""
+def clean_params(params: List[BaseNode]) -> List[Dict[str, Any]]:
+    """Convert BaseNode object to a dictionary to be imported into Neo4j"""
     clean_params = []
     for record in params:
-        text = record.node.get_content(metadata_mode=MetadataMode.NONE)
-        embedding = record.embedding
-        id = record.node.node_id
-        metadata = node_to_metadata_dict(
-            record.node, remove_text=True, flat_metadata=False
-        )
+        text = record.get_content(metadata_mode=MetadataMode.NONE)
+        embedding = record.get_embedding()
+        id = record.node_id
+        metadata = node_to_metadata_dict(record, remove_text=True, flat_metadata=False)
         # Remove redundant metadata information
         for k in ["document_id", "doc_id"]:
             del metadata[k]
@@ -224,8 +221,8 @@ class Neo4jVectorStore(VectorStore):
             except CypherSyntaxError as e:
                 raise ValueError(f"Cypher Statement is not valid\n{e}")
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        ids = [r.id for r in embedding_results]
+    def add(self, nodes: List[BaseNode]) -> List[str]:
+        ids = [r.node_id for r in nodes]
         import_query = (
             "UNWIND $data AS row "
             "CALL { WITH row "
@@ -240,7 +237,7 @@ class Neo4jVectorStore(VectorStore):
 
         self.database_query(
             import_query,
-            params={"data": clean_params(embedding_results)},
+            params={"data": clean_params(nodes)},
         )
 
         return ids

@@ -7,32 +7,14 @@ from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_check
 import fsspec
 
 from llama_index.bridge.pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
-from llama_index.schema import BaseNode, BaseComponent
+from llama_index.schema import BaseNode, BaseComponent, TextNode
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
-@dataclass
-class NodeWithEmbedding:
-    """Node with embedding.
-
-    Args:
-        node (Node): Node
-        embedding (List[float]): Embedding
-
-    """
-
-    node: BaseNode
-    embedding: List[float]
-
-    @property
-    def id(self) -> str:
-        return self.node.node_id
-
-    @property
-    def ref_doc_id(self) -> str:
-        return self.node.ref_doc_id or "None"
+# legacy: kept for backward compatibility
+NodeWithEmbedding = TextNode
 
 
 @dataclass
@@ -157,21 +139,21 @@ class VectorStore(Protocol):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to vector store."""
+        """Add nodes with embedding to vector store."""
         ...
 
     async def async_add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
         """
-        Asynchronously add embedding results to vector store.
+        Asynchronously add nodes with embedding to vector store.
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(embedding_results)
+        return self.add(nodes)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -221,20 +203,20 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     @abstractmethod
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to vector store."""
+        """Add nodes to vector store."""
 
     async def async_add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
         """
-        Asynchronously add embedding results to vector store.
+        Asynchronously add nodes to vector store.
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(embedding_results)
+        return self.add(nodes)
 
     @abstractmethod
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:

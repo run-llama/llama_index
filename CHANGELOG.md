@@ -1,6 +1,20 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.23] - 2023-09-09
+
+### Bug Fixes
+- Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
+- Avoid negative chunk size error in refine process (#7607)
+- Fix relationships for small documents in hierarchical node parser (#7611)
+- Update Anyscale Endpoints integration with full streaming and async support (#7602)
+- Better support of passing credentials as LLM constructor args in `OpenAI`, `AzureOpenAI`, and `Anyscale` (#7602)
+
+### Breaking Changes
+- Update milvus vector store to support filters and dynamic schemas (#7286)
+  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
+- Added NLTK to core dependencies to support the default sentence splitter (#7606)
+
+## [0.8.22] - 2023-09-07
 
 ### New Features
 - Added support for ElasticSearch Vector Store (#7543)
@@ -8,6 +22,13 @@
 ### Bug Fixes / Nits
 - Fixed small `_index` bug in `ElasticSearchReader` (#7570)
 - Fixed bug with prompt helper settings in global service contexts (#7576)
+- Remove newlines from openai embeddings again (#7588)
+- Fixed small bug with setting `query_wrapper_prompt` in the service context (#7585)
+
+### Breaking/Deprecated API Changes
+- Clean up vector store interface to use `BaseNode` instead of `NodeWithEmbedding`
+  - For majority of users, this is a no-op change
+  - For users directly operating with the `VectorStore` abstraction and manually constructing `NodeWithEmbedding` objects, this is a minor breaking change. Use `TextNode` with `embedding` set directly, instead of `NodeWithEmbedding`.
 
 ## [0.8.21] - 2023-09-06
 

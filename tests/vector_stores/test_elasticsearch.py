@@ -10,7 +10,6 @@ from llama_index.vector_stores import ElasticsearchStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
@@ -80,48 +79,36 @@ def elasticsearch_connection() -> Union[dict, Generator[dict, None, None]]:
 
 
 @pytest.fixture(scope="session")
-def node_embeddings() -> List[NodeWithEmbedding]:
+def node_embeddings() -> List[TextNode]:
     return [
-        NodeWithEmbedding(
+        TextNode(
+            text="lorem ipsum",
+            id_="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
+            metadata={
+                "author": "Stephen King",
+                "theme": "Friendship",
+            },
             embedding=[1.0, 0.0, 0.0],
-            node=TextNode(
-                text="lorem ipsum",
-                id_="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
-                },
-                metadata={
-                    "author": "Stephen King",
-                    "theme": "Friendship",
-                },
-            ),
         ),
-        NodeWithEmbedding(
+        TextNode(
+            text="lorem ipsum",
+            id_="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
+            metadata={
+                "director": "Francis Ford Coppola",
+                "theme": "Mafia",
+            },
             embedding=[0.0, 1.0, 0.0],
-            node=TextNode(
-                text="lorem ipsum",
-                id_="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
-                },
-                metadata={
-                    "director": "Francis Ford Coppola",
-                    "theme": "Mafia",
-                },
-            ),
         ),
-        NodeWithEmbedding(
+        TextNode(
+            text="lorem ipsum",
+            id_="c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")},
+            metadata={
+                "director": "Christopher Nolan",
+            },
             embedding=[0.0, 0.0, 1.0],
-            node=TextNode(
-                text="lorem ipsum",
-                id_="c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")
-                },
-                metadata={
-                    "director": "Christopher Nolan",
-                },
-            ),
         ),
     ]
 
@@ -143,7 +130,7 @@ def test_instance_creation(index_name: str, elasticsearch_connection: Dict) -> N
 def test_add_to_es_and_query(
     index_name: str,
     elasticsearch_connection: Dict,
-    node_embeddings: List[NodeWithEmbedding],
+    node_embeddings: List[TextNode],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -164,7 +151,7 @@ def test_add_to_es_and_query(
 def test_add_to_es_and_text_query(
     index_name: str,
     elasticsearch_connection: Dict,
-    node_embeddings: List[NodeWithEmbedding],
+    node_embeddings: List[TextNode],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -187,7 +174,7 @@ def test_add_to_es_and_text_query(
 def test_add_to_es_and_hybrid_query(
     index_name: str,
     elasticsearch_connection: Dict,
-    node_embeddings: List[NodeWithEmbedding],
+    node_embeddings: List[TextNode],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -213,7 +200,7 @@ def test_add_to_es_and_hybrid_query(
 def test_add_to_es_query_with_filters(
     index_name: str,
     elasticsearch_connection: Dict,
-    node_embeddings: List[NodeWithEmbedding],
+    node_embeddings: List[TextNode],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -242,7 +229,7 @@ def test_add_to_es_query_with_filters(
 def test_add_to_es_query_with_es_filters(
     index_name: str,
     elasticsearch_connection: Dict,
-    node_embeddings: List[NodeWithEmbedding],
+    node_embeddings: List[TextNode],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,
@@ -266,7 +253,7 @@ def test_add_to_es_query_with_es_filters(
 def test_add_to_es_query_and_delete(
     index_name: str,
     elasticsearch_connection: Dict,
-    node_embeddings: List[NodeWithEmbedding],
+    node_embeddings: List[TextNode],
 ) -> None:
     es_store = ElasticsearchStore(
         **elasticsearch_connection,

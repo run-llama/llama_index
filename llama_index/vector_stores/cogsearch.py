@@ -4,11 +4,10 @@ from typing import Any, List, cast, Dict, Callable, Optional, Tuple, Union
 import enum
 from enum import auto
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     ExactMatchFilter,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -399,12 +398,12 @@ class CognitiveSearchVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to index associated with the configured search client.
+        """Add nodes to index associated with the configured search client.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: nodes with embeddings
 
         """
 
@@ -414,18 +413,18 @@ class CognitiveSearchVectorStore(VectorStore):
         documents = []
         ids = []
 
-        for embedding in embedding_results:
-            logger.debug(f"Processing embedding: {embedding.id}")
-            ids.append(embedding.id)
+        for node in nodes:
+            logger.debug(f"Processing embedding: {node.node_id}")
+            ids.append(node.node_id)
 
-            index_document = self._create_index_document(embedding)
+            index_document = self._create_index_document(node)
 
             documents.append(index_document)
 
             if len(documents) >= 10:
                 logger.info(
                     f"Uploading batch of size {len(documents)}, "
-                    f"current progress {len(ids)} of {len(embedding_results)}"
+                    f"current progress {len(ids)} of {len(nodes)}"
                 )
                 self._search_client.merge_or_upload_documents(documents)
                 documents = []
@@ -434,23 +433,23 @@ class CognitiveSearchVectorStore(VectorStore):
         if len(documents) > 0:
             logger.info(
                 f"Uploading remaining batch of size {len(documents)}, "
-                f"current progress {len(ids)} of {len(embedding_results)}"
+                f"current progress {len(ids)} of {len(nodes)}"
             )
             self._search_client.merge_or_upload_documents(documents)
             documents = []
 
         return ids
 
-    def _create_index_document(self, embedding: NodeWithEmbedding) -> Dict[str, Any]:
+    def _create_index_document(self, node: BaseNode) -> Dict[str, Any]:
         """Create Cognitive Search index document from embedding result"""
         doc: Dict[str, Any] = {}
-        doc["id"] = embedding.id
-        doc["chunk"] = embedding.node.get_content(metadata_mode=MetadataMode.NONE) or ""
-        doc["embedding"] = embedding.embedding
-        doc["doc_id"] = embedding.ref_doc_id
+        doc["id"] = node.node_id
+        doc["chunk"] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
+        doc["embedding"] = node.get_embedding()
+        doc["doc_id"] = node.ref_doc_id
 
         node_metadata = node_to_metadata_dict(
-            embedding.node,
+            node,
             remove_text=True,
             flat_metadata=self.flat_metadata,
         )
