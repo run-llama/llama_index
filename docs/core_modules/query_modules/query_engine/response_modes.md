@@ -24,13 +24,13 @@ Right now, we support the following options:
     Each text part is considered a "chunk" and is sent to the `refine` synthesizer. 
     
     In short, it is like `refine`, but with less LLM calls.
-- `tree_summarize`: Query the LLM using the `text_qa_template` prompt as many times as needed so that all concatenated chunks
+- `tree_summarize`: Query the LLM using the `summary_template` prompt as many times as needed so that all concatenated chunks
    have been queried, resulting in as many answers that are themselves recursively used as chunks in a `tree_summarize` LLM call 
    and so on, until there's only one chunk left, and thus only one final answer.
 
-   **Details:** concatenate the chunks as much as possible to fit within the context window using the `text_qa_template` prompt, 
+   **Details:** concatenate the chunks as much as possible to fit within the context window using the `summary_template` prompt, 
    and split them if needed (again with a `TokenTextSplitter` and some text overlap). Then, query each resulting chunk/split against 
-   `text_qa_template` (there is no ***refine*** query !) and get as many answers. 
+   `summary_template` (there is no ***refine*** query !) and get as many answers. 
    
    If there is only one answer (because there was only one chunk), then it's the final answer. 
    
