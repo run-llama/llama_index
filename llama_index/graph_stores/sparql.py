@@ -11,7 +11,7 @@ from llama_index.graph_stores.types import GraphStore
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "graph_store.json"
 
-logging.basicConfig(filename='loggy.log', filemode='w', level=logging.INFO)
+logging.basicConfig(filename='sparqy.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.info('sparql HERE')
 
@@ -45,10 +45,10 @@ class SparqlGraphStore(GraphStore):
         self.sparql_endpoint = sparql_endpoint
         self.sparql_graph = sparql_graph
         self.create_graph(sparql_graph)
-
+        self.prior_subjs = []
         self.sparql_prefixes = f"""
-            PREFIX er:  <http://purl.org/stuff/er#>
-            BASE <{sparql_base_uri}>
+PREFIX er:  <http://purl.org/stuff/er#>
+BASE <{sparql_base_uri}>
         """
 
 # SPARQL comms --------------------------------------------
@@ -57,33 +57,26 @@ class SparqlGraphStore(GraphStore):
         self.sparql_update('CREATE GRAPH <'+uri+'>')
 
     def sparql_query(self, query_string):
-        print('sparql_query')
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
         sparql_client.setMethod(GET)
-        print(query_string)
         sparql_client.setQuery(query_string)
         sparql_client.setReturnFormat(JSON)
-       # results = sparql_client.query()
-     #   body = sparql_client.queryAndConvert()
-      #  message = results.response.read().decode('utf-8')
-      #  logger.info('Endpoint says : ' + message)
         results = []
         try:
             returned = sparql_client.queryAndConvert()
-            print(str(returned))
             for r in returned["results"]["bindings"]:
                 results.append(r)
         except Exception as e:
-            print(e)
+            logger.info(e)
         return results
 
     def sparql_update(self, query_string):
+        print(query_string)
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
         sparql_client.setMethod(POST)
         sparql_client.setQuery(query_string)
         results = sparql_client.query()
         message = results.response.read().decode('utf-8')
-        print('Endpoinxt says : ' + message)
         logger.info('Endpoint says : ' + message)
 
     def insert_data(self, data):  # data is 'floating' string, without prefixes
@@ -101,19 +94,22 @@ class SparqlGraphStore(GraphStore):
 
     def escape_for_rdf(self, str):
         # control characters
-        str = str.encode("unicode_escape").decode("utf-8")
+        str = str.encode("unicode_escape").decode(
+            "utf-8").replace('\\x', '\\u00')
         # single and double quotes
         str = re.sub(r'(["\'])', r'\\\1', str)
         return str
 
     def unescape_from_rdf(self, str):
-        return re.sub(r'\\(["\'])', r'\1', str)
-
-    # TODO unescape from RDF?
+        # Unescape single and double quotes
+        str = re.sub(r'\\(["\'])', r'\1', str)
+        # Replace SPARQL's unicode escape sequences with the actual characters
+        str = bytes(str, "utf-8").decode("unicode_escape")
+        return str
 
     def select_triplets(self, subj, limit=-1):
         print('select triplets')
-        logger.info('#### sparql get_triplets called')
+        logger.info('sparql get_triplets called')
         subj = self.escape_for_rdf(subj)
         template = Template("""
             $prefixes
@@ -141,10 +137,8 @@ class SparqlGraphStore(GraphStore):
 
         triplets = self.sparql_query(query_string)
         return triplets
-        logger.info('triplets = \n'+str(triplets))
 
     def rels(self, subj, limit=-1):
-        print('select triplets')
         logger.info('#### sparql get_triplets called')
         subj = self.escape_for_rdf(subj)
         template = Template("""
@@ -163,11 +157,10 @@ class SparqlGraphStore(GraphStore):
                             
     OPTIONAL {
         ?triplet2 a er:Triplet ;
-            er:subject ?subject2 ;
+            er:subject ?object ;
             er:property ?property2 ;
             er:object ?object2 .
 
-        ?subject2 er:value ?obj1 .
         ?property2 er:value ?rel2 .
         ?object2 er:value ?obj2 .
     }}}
@@ -182,38 +175,42 @@ class SparqlGraphStore(GraphStore):
             {'prefixes': self.sparql_prefixes, 'subject': subj,  'limit_str': limit_str})
 
         triplets_json = self.sparql_query(query_string)
-        """
-            print('-------------------')
-            for r in triplets_json:
-                print(r)
-            print('-------------------')
-        """
-     #   return triplets_json
-        return self.to_arrows(subj, triplets_json)
-        logger.info('triplets = \n'+str(triplets))
 
-# ----------------------------HERE---------------------------------------
+        return self.to_arrows(subj, triplets_json)
+
     def to_arrows(self, subj, rels):
         """
         Convert subject and relations to a string in the desired format.
         """
-        arrows = '{'+subj+': ['
+        arrows = []
         for r in rels:
-            rel1 = rels.get('rel1', {}).get('value', '')
-            obj1 = rels.get('obj1', {}).get('value', '')
-            arrows += f"""
-            '{subj}, -[{rel1}]->, {obj1}',\n
-            """
+            rel1 = r['rel1']['value']
+            obj1 = r['obj1']['value']
+            rel1 = self.unescape_from_rdf(rel1)  # probably unnecessary
+            obj1 = self.unescape_from_rdf(obj1)
 
-        arrows += ']}'
-        return arrows
+            try:
+                rel2 = r['rel2']['value']
+                obj2 = r['obj2']['value']
+                rel2 = self.unescape_from_rdf(rel2)
+                obj2 = self.unescape_from_rdf(obj2)
+                arrows.append(
+                    f"""{subj}, -[{rel1}]->, {obj1}',<-[{rel2}]-, {obj2}""")
+            except:
+                arrows.append(f"""{subj}, -[{rel1}]->, {obj1}""")
+        return {subj: arrows}
 
 # From interface types.py ----------------------------------
-# DOES IT ONE-BY-ONE!!!!!!!!!!!!!!!!!!!!!!
 
+# DOES IT ONE-BY-ONE!!!!!!!!!!!!!!!!!!!!!!
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
-        logger.info('#### sparql upsert_triplet called')
+        logger.info('sparql upsert_triplet called')
+
+        # crude loop prevention
+        # if obj in self.prior_subjs:
+        #    return
+        # self.prior_subjs.append(subj)
 
         subj = self.escape_for_rdf(subj)
         rel = self.escape_for_rdf(rel)
@@ -243,13 +240,13 @@ class SparqlGraphStore(GraphStore):
 
     def client(self) -> Any:
         """Get client."""
-        # logger.info('#### sparql client(self) called')
+        logger.info('sparql client(self) called')
         ...
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
         logger.info('#### sparql get called')
-        triplets = get_triplets(str)
+        triplets = self.get_triplets(str)
         logger.info('triplets = ' + triplets)
         return triplets
 
@@ -257,27 +254,28 @@ class SparqlGraphStore(GraphStore):
         self, subjs: Optional[List[str]] = None, depth: int = 2
     ) -> Dict[str, List[List[str]]]:
         """Get depth-aware rel map."""
-        logger.info('#### sparql get_rel_map called')
+        logger.info('get_rel_map called')
+        return self.rels(subjs[0])  # only the first for now
         ...
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
-        logger.info('#### sparql delete called')
+        logger.info('delete called')
         ...
 
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
         """Persist the graph store to a file."""
-        logger.info('#### sparql persist called')
+        logger.info('persist called')
         return None
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
-        logger.info('#### get_schema called')
+        logger.info('get_schema called')
         ...
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         """Query the graph store with statement and parameters."""
-        logger.info('#### sparql query called')
+        logger.info('query called')
         ...
