@@ -36,7 +36,7 @@ class ReaderConfig(BaseComponent):
     """Represents a loader and it's input arguments."""
 
     loader: BaseReader = Field(..., description="Loader to use.")
-    loader_args: List[Any] = Field(default_factor=list, description="Loader args.")
+    loader_args: List[Any] = Field(default_factory=list, description="Loader args.")
     loader_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Loader kwargs."
     )
