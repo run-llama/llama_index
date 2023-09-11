@@ -8,7 +8,7 @@ class IndexStructType(str, Enum):
 
     Attributes:
         TREE ("tree"): Tree index. See :ref:`Ref-Indices-Tree` for tree indices.
-        LIST ("list"): List index. See :ref:`Ref-Indices-List` for list indices.
+        LIST ("list"): Summary index. See :ref:`Ref-Indices-List` for summary indices.
         KEYWORD_TABLE ("keyword_table"): Keyword table index. See
             :ref:`Ref-Indices-Table`
             for keyword table indices.
@@ -48,6 +48,9 @@ class IndexStructType(str, Enum):
         MYSCALE ("myscale"): MyScale Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the MyScale vector store index.
+        EPSILLA ("epsilla"): Epsilla Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Epsilla vector store index.
         CHATGPT_RETRIEVAL_PLUGIN ("chatgpt_retrieval_plugin"): ChatGPT
             retrieval plugin index.
         SQL ("SQL"): SQL Structured Store Index.
@@ -83,12 +86,14 @@ class IndexStructType(str, Enum):
     OPENSEARCH = "opensearch"
     CHATGPT_RETRIEVAL_PLUGIN = "chatgpt_retrieval_plugin"
     DEEPLAKE = "deeplake"
+    EPSILLA = "epsilla"
     # for SQL index
     SQL = "sql"
     # for KG index
     KG = "kg"
     SIMPLE_KG = "simple_kg"
     NEBULAGRAPH = "nebulagraph"
+    FALKORDB = "falkordb"
 
     # EMPTY
     EMPTY = "empty"
@@ -97,3 +102,6 @@ class IndexStructType(str, Enum):
     PANDAS = "pandas"
 
     DOCUMENT_SUMMARY = "document_summary"
+
+    # Managed
+    VECTARA = "vectara"

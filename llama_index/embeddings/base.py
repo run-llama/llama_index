@@ -7,9 +7,11 @@ from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
+from llama_index.bridge.pydantic import Field, validator, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utils import get_tqdm_iterable, globals_helper
+from llama_index.schema import BaseComponent
+from llama_index.utils import get_tqdm_iterable
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -48,25 +50,31 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding:
+class BaseEmbedding(BaseComponent):
     """Base class for embeddings."""
 
-    def __init__(
-        self,
-        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-        tokenizer: Optional[Callable] = None,
-        callback_manager: Optional[CallbackManager] = None,
-    ) -> None:
-        """Init params."""
-        self._total_tokens_used = 0
-        self._last_token_usage: Optional[int] = None
-        self._tokenizer = tokenizer or globals_helper.tokenizer
-        self.callback_manager = callback_manager or CallbackManager([])
-        # list of tuples of id, text
-        self._text_queue: List[Tuple[str, str]] = []
-        if embed_batch_size <= 0:
-            raise ValueError("embed_batch_size must be > 0")
-        self._embed_batch_size = embed_batch_size
+    model_name: str = Field(
+        default="unknown", description="The name of the embedding model."
+    )
+    embed_batch_size: int = Field(
+        default=DEFAULT_EMBED_BATCH_SIZE,
+        description="The batch size for embedding calls.",
+    )
+    callback_manager: CallbackManager = Field(
+        default_factory=lambda: CallbackManager([]), exclude=True
+    )
+    _text_queue: List[Tuple[str, str]] = PrivateAttr(default_factory=list)
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @validator("callback_manager", pre=True)
+    def _validate_callback_manager(
+        cls, v: Optional[CallbackManager]
+    ) -> CallbackManager:
+        if v is None:
+            return CallbackManager([])
+        return v
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> List[float]:
@@ -78,10 +86,10 @@ class BaseEmbedding:
 
     def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             query_embedding = self._get_query_embedding(query)
-            query_tokens_count = len(self._tokenizer(query))
-            self._total_tokens_used += query_tokens_count
 
             event.on_end(
                 payload={
@@ -93,10 +101,10 @@ class BaseEmbedding:
 
     async def aget_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             query_embedding = await self._aget_query_embedding(query)
-            query_tokens_count = len(self._tokenizer(query))
-            self._total_tokens_used += query_tokens_count
 
             event.on_end(
                 payload={
@@ -163,10 +171,10 @@ class BaseEmbedding:
 
     def get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             text_embedding = self._get_text_embedding(text)
-            text_tokens_count = len(self._tokenizer(text))
-            self._total_tokens_used += text_tokens_count
 
             event.on_end(
                 payload={
@@ -204,11 +212,12 @@ class BaseEmbedding:
 
         for idx, (text_id, text) in queue_with_progress:
             cur_batch.append((text_id, text))
-            text_tokens_count = len(self._tokenizer(text))
-            self._total_tokens_used += text_tokens_count
-            if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
+            if idx == len(text_queue) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+                with self.callback_manager.event(
+                    CBEventType.EMBEDDING,
+                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                ) as event:
                     cur_batch_ids = [text_id for text_id, _ in cur_batch]
                     cur_batch_texts = [text for _, text in cur_batch]
                     embeddings = self._get_text_embeddings(cur_batch_texts)
@@ -242,11 +251,12 @@ class BaseEmbedding:
         embeddings_coroutines: List[Coroutine] = []
         for idx, (text_id, text) in enumerate(text_queue):
             cur_batch.append((text_id, text))
-            text_tokens_count = len(self._tokenizer(text))
-            self._total_tokens_used += text_tokens_count
-            if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
+            if idx == len(text_queue) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
+                event_id = self.callback_manager.on_event_start(
+                    CBEventType.EMBEDDING,
+                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                )
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
                 callback_payloads.append((event_id, cur_batch_texts))
@@ -301,20 +311,3 @@ class BaseEmbedding:
     ) -> float:
         """Get embedding similarity."""
         return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
-
-    @property
-    def total_tokens_used(self) -> int:
-        """Get the total tokens used so far."""
-        return self._total_tokens_used
-
-    @property
-    def last_token_usage(self) -> int:
-        """Get the last token usage."""
-        if self._last_token_usage is None:
-            return 0
-        return self._last_token_usage
-
-    @last_token_usage.setter
-    def last_token_usage(self, value: int) -> None:
-        """Set the last token usage."""
-        self._last_token_usage = value

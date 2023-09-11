@@ -1,14 +1,14 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, List, cast
+from typing import Any, Dict, List, Optional, cast
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -29,7 +29,10 @@ def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
     return filters
 
 
-class ChromaVectorStore(VectorStore):
+import_err_msg = "`chromadb` package not found, please run `pip install chromadb`"
+
+
+class ChromaVectorStore(BasePydanticVectorStore):
     """Chroma vector store.
 
     In this vector store, embeddings are stored within a ChromaDB collection.
@@ -46,11 +49,25 @@ class ChromaVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
-    def __init__(self, chroma_collection: Any, **kwargs: Any) -> None:
+    host: Optional[str]
+    port: Optional[str]
+    ssl: bool
+    headers: Optional[Dict[str, str]]
+    collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+    _collection: Any = PrivateAttr()
+
+    def __init__(
+        self,
+        chroma_collection: Any,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        ssl: bool = False,
+        headers: Optional[Dict[str, str]] = None,
+        collection_kwargs: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> None:
         """Init params."""
-        import_err_msg = (
-            "`chromadb` package not found, please run `pip install chromadb`"
-        )
         try:
             import chromadb  # noqa: F401
         except ImportError:
@@ -59,11 +76,54 @@ class ChromaVectorStore(VectorStore):
 
         self._collection = cast(Collection, chroma_collection)
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        """Add embedding results to index.
+        super().__init__(
+            host=host,
+            port=port,
+            ssl=ssl,
+            headers=headers,
+            collection_kwargs=collection_kwargs or {},
+        )
+
+    @classmethod
+    def from_params(
+        cls,
+        collection_name: str,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        ssl: bool = False,
+        headers: Optional[Dict[str, str]] = None,
+        collection_kwargs: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> "ChromaVectorStore":
+        try:
+            import chromadb  # noqa: F401
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+        collection = client.get_or_create_collection(
+            name=collection_name, **collection_kwargs
+        )
+
+        return cls(
+            chroma_collection=collection,
+            host=host,
+            port=port,
+            ssl=ssl,
+            headers=headers,
+            collection_kwargs=collection_kwargs,
+            **kwargs,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ChromaVectorStore"
+
+    def add(self, nodes: List[BaseNode]) -> List[str]:
+        """Add nodes to index.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
         if not self._collection:
@@ -73,17 +133,15 @@ class ChromaVectorStore(VectorStore):
         metadatas = []
         ids = []
         documents = []
-        for result in embedding_results:
-            embeddings.append(result.embedding)
+        for node in nodes:
+            embeddings.append(node.get_embedding())
             metadatas.append(
                 node_to_metadata_dict(
-                    result.node, remove_text=True, flat_metadata=self.flat_metadata
+                    node, remove_text=True, flat_metadata=self.flat_metadata
                 )
             )
-            ids.append(result.id)
-            documents.append(
-                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
-            )
+            ids.append(node.node_id)
+            documents.append(node.get_content(metadata_mode=MetadataMode.NONE))
 
         self._collection.add(
             embeddings=embeddings,

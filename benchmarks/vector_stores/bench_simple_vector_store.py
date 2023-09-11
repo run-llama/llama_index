@@ -4,20 +4,18 @@ from typing import List
 from llama_index.schema import TextNode
 
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
 from llama_index.vector_stores.simple import SimpleVectorStore
 
 
-def generate_vectors(
+def generate_nodes(
     num_vectors: int = 100, embedding_length: int = 1536
-) -> List[NodeWithEmbedding]:
+) -> List[TextNode]:
     random.seed(42)  # Make this reproducible
     return [
-        NodeWithEmbedding(
-            node=TextNode(),
+        TextNode(
             embedding=[random.uniform(0, 1) for _ in range(embedding_length)],
         )
         for _ in range(num_vectors)
@@ -30,12 +28,12 @@ def bench_simple_vector_store(
     """Benchmark simple vector store."""
     print("Benchmarking SimpleVectorStore\n---------------------------")
     for num_vector in num_vectors:
-        vectors = generate_vectors(num_vectors=num_vector)
+        nodes = generate_nodes(num_vectors=num_vector)
 
-        vector_store = SimpleVectorStore(vectors=vectors)
+        vector_store = SimpleVectorStore()
 
         time1 = time.time()
-        vector_store.add(embedding_results=vectors)
+        vector_store.add(nodes=nodes)
         time2 = time.time()
         print(f"Adding {num_vector} vectors took {time2 - time1} seconds")
 
@@ -46,7 +44,7 @@ def bench_simple_vector_store(
         ]:
             time1 = time.time()
             query = VectorStoreQuery(
-                query_embedding=vectors[0].embedding, similarity_top_k=10, mode=mode
+                query_embedding=nodes[0].get_embedding(), similarity_top_k=10, mode=mode
             )
             vector_store.query(query=query)
             time2 = time.time()

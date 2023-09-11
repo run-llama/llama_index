@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from llama_index.graph_stores import SimpleGraphStore
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
-from llama_index.indices.knowledge_graph.retriever import KGTableRetriever
+from llama_index.indices.knowledge_graph.retrievers import KGTableRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import Document
@@ -33,10 +33,12 @@ def test_as_retriever(
     rel_initial_text = (
         f"The following are knowledge sequence in max depth"
         f" {retriever.graph_store_query_depth} "
-        f"in the form of "
-        f"`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
+        f"in the form of directed graph like:\n"
+        f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+        f" object_next_hop ...`"
     )
-    raw_text = "foo ['is', 'bar']"
+
+    raw_text = "['foo', 'is', 'bar']"
     query = rel_initial_text + "\n" + raw_text
     assert len(nodes) == 2
     assert nodes[1].node.get_content() == query
@@ -67,9 +69,10 @@ def test_retrievers(
     assert (
         nodes[1].node.get_content()
         == "The following are knowledge sequence in max depth 2"
-        " in the form of "
-        "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
-        "\nfoo ['is', 'bar']"
+        " in the form of directed graph like:\n"
+        "`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+        " object_next_hop ...`"
+        "\n['foo', 'is', 'bar']"
     )
 
 
@@ -99,9 +102,10 @@ def test_retriever_no_text(
     assert (
         nodes[0].node.get_content()
         == "The following are knowledge sequence in max depth 2"
-        " in the form of "
-        "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
-        "\nfoo ['is', 'bar']"
+        " in the form of directed graph like:\n"
+        "`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+        " object_next_hop ...`"
+        "\n['foo', 'is', 'bar']"
     )
 
 
@@ -132,7 +136,8 @@ def test_retrieve_similarity(
     assert (
         nodes[1].node.get_content()
         == "The following are knowledge sequence in max depth 2"
-        " in the form of "
-        "`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
-        "\nfoo ['is', 'bar']"
+        " in the form of directed graph like:\n"
+        "`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+        " object_next_hop ...`"
+        "\n['foo', 'is', 'bar']"
     )

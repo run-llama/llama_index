@@ -1,6 +1,347 @@
 # ChangeLog
 
-## [0.7.22]
+## Unreleased
+
+### Bug Fixes
+- Properly detect `llama-cpp-python` version for loading the default GGML or GGUF `llama2-chat-13b` model (#7616)
+- Pass in `summary_template` properly with `RetrieverQueryEngine.from_args()` (#7621)
+
+## [0.8.23] - 2023-09-09
+
+### Bug Fixes
+- Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
+- Avoid negative chunk size error in refine process (#7607)
+- Fix relationships for small documents in hierarchical node parser (#7611)
+- Update Anyscale Endpoints integration with full streaming and async support (#7602)
+- Better support of passing credentials as LLM constructor args in `OpenAI`, `AzureOpenAI`, and `Anyscale` (#7602)
+
+### Breaking Changes
+- Update milvus vector store to support filters and dynamic schemas (#7286)
+  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
+- Added NLTK to core dependencies to support the default sentence splitter (#7606)
+
+## [0.8.22] - 2023-09-07
+
+### New Features
+- Added support for ElasticSearch Vector Store (#7543)
+
+### Bug Fixes / Nits
+- Fixed small `_index` bug in `ElasticSearchReader` (#7570)
+- Fixed bug with prompt helper settings in global service contexts (#7576)
+- Remove newlines from openai embeddings again (#7588)
+- Fixed small bug with setting `query_wrapper_prompt` in the service context (#7585)
+
+### Breaking/Deprecated API Changes
+- Clean up vector store interface to use `BaseNode` instead of `NodeWithEmbedding`
+  - For majority of users, this is a no-op change
+  - For users directly operating with the `VectorStore` abstraction and manually constructing `NodeWithEmbedding` objects, this is a minor breaking change. Use `TextNode` with `embedding` set directly, instead of `NodeWithEmbedding`.
+
+## [0.8.21] - 2023-09-06
+
+### New Features
+- add embedding adapter fine-tuning engine + guide (#7565)
+- Added support for Azure Cognitive Search vector store (#7469)
+- Support delete in supabase (#6951)
+- Added support for Espilla vector store (#7539)
+- Added support for AnyScale LLM (#7497)
+
+### Bug Fixes / Nits
+- Default to user-configurable top-k in `VectorIndexAutoRetriever` (#7556)
+- Catch validation errors for structured responses (#7523)
+- Fix streaming refine template (#7561)
+
+## [0.8.20] - 2023-09-04
+
+### New Features
+- Added Portkey LLM integration (#7508)
+- Support postgres/pgvector hybrid search (#7501)
+- upgrade recursive retriever node reference notebook (#7537)
+
+## [0.8.19] - 2023-09-03
+
+### New Features
+- replace list index with summary index  (#7478)
+- rename list index to summary index part 2 (#7531)
+
+## [0.8.18] - 2023-09-03
+
+### New Features
+- add agent finetuning guide (#7526)
+
+## [0.8.17] - 2023-09-02
+
+### New Features
+- Make (some) loaders serializable (#7498)
+- add node references to recursive retrieval (#7522)
+
+### Bug Fixes / Nits
+- Raise informative error when metadata is too large during splitting (#7513)
+- Allow langchain splitter in simple node parser (#7517)
+
+## [0.8.16] - 2023-09-01
+
+### Bug Fixes / Nits
+- fix link to Marvin notebook in docs (#7504)
+- Ensure metadata is not `None` in `SimpleWebPageReader` (#7499)
+- Fixed KGIndex visualization (#7493)
+- Improved empty response in KG Index (#7493)
+
+## [0.8.15] - 2023-08-31
+
+### New Features
+- Added support for `MarvinEntityExtractor` metadata extractor (#7438)
+- Added a url_metadata callback to SimpleWebPageReader (#7445)
+- Expanded callback logging events (#7472)
+
+### Bug Fixes / Nits
+- Only convert newlines to spaces for text 001 embedding models in OpenAI (#7484)
+- Fix `KnowledgeGraphRagRetriever` for non-nebula indexes (#7488)
+- Support defined embedding dimension in `PGVectorStore` (#7491)
+- Greatly improved similarity calculation speed for the base vector store (#7494)
+
+## [0.8.14] - 2023-08-30
+
+### New Features
+- feat: non-kg heterogeneous graph support in Graph RAG (#7459)
+- rag guide (#7480)
+
+### Bug Fixes / Nits
+- Improve openai fine-tuned model parsing (#7474)
+- doing some code de-duplication (#7468)
+- support both str and templates for query_wrapper_prompt in HF LLMs (#7473)
+
+## [0.8.13] - 2023-08-29
+
+### New Features
+- Add embedding finetuning (#7452)
+- Added support for RunGPT LLM (#7401)
+- Integration guide and notebook with DeepEval (#7425)
+- Added `VectorIndex` and `VectaraRetriever` as a managed index (#7440)
+- Added support for `to_tool_list` to detect and use async functions (#7282)
+
+## [0.8.12] - 2023-08-28
+
+### New Features
+
+- add openai finetuning class (#7442)
+- Service Context to/from dict (#7395)
+- add finetuning guide (#7429)
+
+### Smaller Features / Nits / Bug Fixes
+- Add example how to run FalkorDB docker (#7441)
+- Update root.md to use get_response_synthesizer expected type. (#7437) 
+- Bugfix MonsterAPI Pydantic version v2/v1 support. Doc Update (#7432)
+
+## [0.8.11.post3] - 2023-08-27
+
+### New Features
+- AutoMergingRetriever (#7420)
+
+## [0.8.10.post1] - 2023-08-25
+
+### New Features
+- Added support for `MonsterLLM` using MonsterAPI (#7343) 
+- Support comments fields in NebulaGraphStore and int type VID (#7402)
+- Added configurable endpoint for DynamoDB (#6777)
+- Add structured answer filtering for Refine response synthesizer (#7317)
+
+### Bug Fixes / Nits
+- Use `utf-8` for json file reader (#7390)
+- Fix entity extractor initialization (#7407)
+
+## [0.8.9] - 2023-08-24
+
+### New Features
+- Added support for FalkorDB/RedisGraph graph store (#7346)
+- Added directed sub-graph RAG (#7378)
+- Added support for `BM25Retriever` (#7342)
+
+### Bug Fixes / Nits
+- Added `max_tokens` to `Xinference` LLM (#7372)
+- Support cache dir creation in multithreaded apps (#7365)
+- Ensure temperature is a float for openai (#7382)
+- Remove duplicate subjects in knowledge graph retriever (#7378)
+- Added support for both pydantic v1 and v2 to allow other apps to move forward (#7394)
+
+### Breaking/Deprecated API Changes
+- Refactor prompt template (#7319)
+  - Use `BasePromptTemplate` for generic typing
+  - Use `PromptTemplate`, `ChatPromptTemplate`, `SelectorPromptTemplate` as core implementations
+  - Use `LangchainPromptTemplate` for compatibility with Langchain prompt templates
+  - Fully replace specific prompt classes (e.g. `SummaryPrompt`) with generic `BasePromptTemplate` for typing in codebase.
+  - Keep `Prompt` as an alias for `PromptTemplate` for backwards compatibility.
+  - BREAKING CHANGE: remove support for `Prompt.from_langchain_prompt`, please use `template=LangchainPromptTemplate(lc_template)` instead.
+
+
+## [0.8.8] - 2023-08-23
+
+### New Features
+- `OpenAIFineTuningHandler` for collecting LLM inputs/outputs for OpenAI fine tuning (#7367)
+
+### Bug Fixes / Nits
+- Add support for `claude-instant-1.2` (#7369)
+
+## [0.8.7] - 2023-08-22
+
+### New Features
+- Support fine-tuned OpenAI models (#7364)
+- Added support for Cassandra vector store (#6784)
+- Support pydantic fields in tool functions (#7348)
+
+### Bug Fixes / Nits
+- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+
+## [0.8.6] - 2023-08-22
+
+### New Features
+- auto vs. recursive retriever notebook (#7353)
+- Reader and Vector Store for BagelDB with example notebooks (#7311)
+
+### Bug Fixes / Nits
+- Use service context for intermediate index in retry source query engine (#7341)
+- temp fix for prompt helper + chat models (#7350)
+- Properly skip unit-tests when packages not installed (#7351)
+
+## [0.8.5.post2] - 2023-08-20
+
+### New Features
+- Added FireStore docstore/index store support (#7305)
+- add recursive agent notebook (#7330)
+
+### Bug Fixes / Nits
+- Fix Azure pydantic error (#7329)
+- fix callback trace ids (make them a context var)  (#7331)
+
+## [0.8.5.post1] - 2023-08-18
+
+### New Features
+- Awadb Vector Store (#7291)
+
+### Bug Fixes / Nits
+- Fix bug in OpenAI llm temperature type 
+
+## [0.8.5] - 2023-08-18
+
+### New Features
+- Expose a system prompt/query wrapper prompt in the service context for open-source LLMs (#6647)
+- Changed default MyScale index format to `MSTG` (#7288)
+- Added tracing to chat engines/agents (#7304)
+- move LLM and embeddings to pydantic (#7289)
+
+### Bug Fixes / Nits
+- Fix sentence splitter bug (#7303)
+- Fix sentence splitter infinite loop (#7295)
+
+## [0.8.4] - 2023-08-17
+
+### Bug Fixes / Nits
+- Improve SQL Query parsing (#7283)
+- Fix loading embed_model from global service context (#7284)
+- Limit langchain version until we migrate to pydantic v2 (#7297)
+
+## [0.8.3] - 2023-08-16
+
+### New Features
+- Added Knowledge Graph RAG Retriever (#7204)
+
+### Bug Fixes / Nits
+- accept `api_key` kwarg in OpenAI LLM class constructor (#7263)
+- Fix to create separate queue instances for separate instances of `StreamingAgentChatResponse` (#7264)
+
+## [0.8.2.post1] - 2023-08-14
+
+### New Features
+- Added support for Rockset as a vector store (#7111)
+
+### Bug Fixes
+- Fixed bug in service context definition that could disable LLM (#7261)
+
+## [0.8.2] - 2023-08-14
+
+### New Features
+- Enable the LLM or embedding model to be disabled by setting to `None` in the service context (#7255)
+- Resolve nearly any huggingface embedding model using the `embed_model="local:<model_name>"` syntax (#7255)
+- Async tool-calling support (#7239)
+
+### Bug Fixes / Nits
+- Updated supabase kwargs for add and query (#7103)
+- Small tweak to default prompts to allow for more general purpose queries (#7254)
+- Make callback manager optional for `CustomLLM` + docs update (#7257)
+
+## [0.8.1] - 2023-08-13
+
+### New Features
+- feat: add node_postprocessors to ContextChatEngine (#7232)
+- add ensemble query engine tutorial (#7247)
+
+### Smaller Features
+- Allow EMPTY keys for Fastchat/local OpenAI API endpoints (#7224) 
+
+## [0.8.0] - 2023-08-11
+
+### New Features
+- Added "LLAMA_INDEX_CACHE_DIR" to control cached files (#7233)
+- Default to pydantic selectors when possible (#7154, #7223)
+- Remove the need for langchain wrappers on `embed_model` in the service context (#7157)
+- Metadata extractors take an `LLM` object now, in addition to `LLMPredictor` (#7202)
+- Added local mode + fallback to llama.cpp + llama2 (#7200)
+- Added local fallback for embeddings to `BAAI/bge-small-en` (#7200)
+- Added `SentenceWindowNodeParser` + `MetadataReplacementPostProcessor` (#7211)
+
+### Breaking Changes
+- Change default LLM to gpt-3.5-turbo from text-davinci-003 (#7223)
+- Change prompts for compact/refine/tree_summarize to work better with gpt-3.5-turbo (#7150, #7179, #7223)
+- Increase default LLM temperature to 0.1 (#7180)
+
+## [0.7.24.post1] - 2023-08-11
+
+### Other Changes
+- Reverted #7223 changes to defaults (#7235)
+
+## [0.7.24] - 2023-08-10
+
+### New Features
+- Default to pydantic selectors when possible (#7154, #7223)
+- Remove the need for langchain wrappers on `embed_model` in the service context (#7157)
+- Metadata extractors take an `LLM` object now, in addition to `LLMPredictor` (#7202)
+- Added local mode + fallback to llama.cpp + llama2 (#7200)
+- Added local fallback for embeddings to `BAAI/bge-small-en` (#7200)
+- Added `SentenceWindowNodeParser` + `MetadataReplacementPostProcessor` (#7211)
+
+### Breaking Changes
+- Change default LLM to gpt-3.5-turbo from text-davinci-003 (#7223)
+- Change prompts for compact/refine/tree_summarize to work better with gpt-3.5-turbo (#7150, #7179, #7223)
+- Increase default LLM temperature to 0.1 (#7180)
+
+### Other Changes
+- docs: Improvements to Mendable Search (#7220)
+- Refactor openai agent (#7077)
+
+### Bug Fixes / Nits
+- Use `1 - cosine_distance` for pgvector/postgres vector db (#7217)
+- fix metadata formatting and extraction (#7216)
+- fix(readers): Fix non-ASCII JSON Reader bug (#7086)
+- Chore: change PgVectorStore variable name from `sim` to `distance` for clarity (#7226)
+
+## [0.7.23] - 2023-08-10
+
+### Bug Fixes / Nits
+- Fixed metadata formatting with custom tempalates and inheritance (#7216)
+
+## [0.7.23] - 2023-08-10
+
+### New Features
+- Add "one click observability" page to docs (#7183)
+- Added Xorbits inference for local deployments (#7151)
+- Added Zep vector store integration (#7203)
+- feat/zep vectorstore (#7203)
+
+### Bug Fixes / Nits
+- Update the default `EntityExtractor` model (#7209)
+- Make `ChatMemoryBuffer` pickleable (#7205)
+- Refactored `BaseOpenAIAgent` (#7077)
+
+## [0.7.22] - 2023-08-08
 
 ### New Features
 - add ensemble retriever notebook (#7190)
@@ -13,7 +354,7 @@
 ## [0.7.21] - 2023-08-07
 
 ### New Features
-- Add entity metadata extractor (#7163)
+- Added an `EntityExtractor` for metadata extraction (#7163)
 
 ## [0.7.20] - 2023-08-06
 
@@ -22,7 +363,6 @@
 - add retriever router (#7166)
 
 ### New Features
-- Added an `EntityExtractor` for metadata extraction (#7163)
 - Added a `RouterRetriever` for routing queries to specific retrievers (#7166)
 
 ### Bug Fixes / Nits
@@ -74,6 +414,7 @@
 ## [0.7.14] - 2023-07-28
 
 ### New Features
+
 - Added HotpotQADistractor benchmark evaluator (#7034)
 - Add metadata filter and delete support for LanceDB (#7048)
 - Use MetadataFilters in opensearch (#7005)
@@ -81,6 +422,7 @@
 - Added `kg_triplet_extract_fn` to customize how KGs are built (#7068)
 
 ### Bug Fixes / Nits
+
 - Fix string formatting in context chat engine (#7050)
 - Fixed tracing for async events (#7052)
 - Less strict triplet extraction for KGs (#7059)
@@ -91,15 +433,18 @@
 ## [0.7.13] - 2023-07-26
 
 ### New Features
+
 - Support function calling api for AzureOpenAI (#7041)
 
 ### Bug Fixes / Nits
+
 - tune prompt to get rid of KeyError in SubQ engine (#7039)
 - Fix validation of Azure OpenAI keys (#7042)
 
 ## [0.7.12] - 2023-07-25
 
 ### New Features
+
 - Added `kwargs` to `ComposableGraph` for the underlying query engines (#6990)
 - Validate openai key on init (#6940)
 - Added async embeddings and async RetrieverQueryEngine (#6587)
@@ -108,26 +453,36 @@
 - Added `OpenInferenceCallback` for storing generation data in OpenInference format (#6998)
 
 ### Bug Fixes / Nits
+
+- Fix achat memory initialization for data agents (#7000)
+- Add `print_response_stream()` to agengt/chat engine response class (#7018)
+
+### Bug Fixes / Nits
+
 - Fix achat memory initialization for data agents (#7000)
 - Add `print_response_stream()` to agengt/chat engine response class (#7018)
 
 ## [v0.7.11.post1] - 2023-07-20
 
 ### New Features
+
 - Default to pydantic question generation when possible for sub-question query engine (#6979)
 
 ### Bug Fixes / Nits
-- Fix returned order of messages in large chat memory (#6979) 
+
+- Fix returned order of messages in large chat memory (#6979)
 
 ## [v0.7.11] - 2023-07-19
 
 ### New Features
+
 - Added a `SentenceTransformerRerank` node post-processor for fast local re-ranking (#6934)
 - Add numpy support for evaluating queries in pandas query engine (#6935)
 - Add metadata filtering support for Postgres Vector Storage integration (#6968)
 - Proper llama2 support for agents and query engines (#6969)
 
 ### Bug Fixes / Nits
+
 - Added `model_name` to LLMMetadata (#6911)
 - Fallback to retriever service context in query engines (#6911)
 - Fixed `as_chat_engine()` ValueError with extra kwargs (#6971
@@ -135,28 +490,34 @@
 ## [v0.7.10.post1] - 2023-07-18
 
 ### New Features
+
 - Add support for Replicate LLM (vicuna & llama 2!)
 
 ### Bug Fixes / Nits
+
 - fix streaming for condense chat engine (#6958)
 
 ## [v0.7.10] - 2023-07-17
 
 ### New Features
+
 - Add support for chroma v0.4.0 (#6937)
 - Log embedding vectors to callback manager (#6962)
 
 ### Bug Fixes / Nits
+
 - add more robust embedding timeouts (#6779)
 - improved connection session management on postgres vector store (#6843)
 
 ## [v0.7.9] - 2023-07-15
 
 ### New Features
+
 - specify `embed_model="local"` to use default local embbeddings in the service context (#6806)
 - Add async `acall` endpoint to `BasePydanticProgram` (defaults to sync version). Implement for `OpenAIPydanticProgram`
 
 ### Bug Fixes / Nits
+
 - fix null metadata for searching existing vector dbs (#6912)
 - add module guide docs for `SimpleDirectoryReader` (#6916)
 - make sure `CondenseQuestionChatEngine` streaming chat endpoints work even if not explicitly setting `streaming=True` in the underlying query engine.
@@ -164,10 +525,12 @@
 ## [v0.7.8] - 2023-07-13
 
 ### New Features
+
 - Added embedding speed benchmark (#6876)
 - Added BEIR retrieval benchmark (#6825)
 
 ### Bug Fixes / Nits
+
 - remove toctrees from deprecated_terms (#6895)
 - Relax typing dependencies (#6879)
 - docs: modification to evaluation notebook (#6840)
@@ -177,32 +540,38 @@
 ## [v0.7.7] - 2023-07-13
 
 ### New Features
+
 - Improved milvus consistency support and output fields support (#6452)
 - Added support for knowledge graph querying w/ cypyer+nebula (#6642)
 - Added `Document.example()` to create documents for fast prototyping (#6739)
 - Replace react chat engine to use native reactive agent (#6870)
 
 ### Bug Fixes / Nits
+
 - chore: added a help message to makefile (#6861)
 
 ### Bug Fixes / Nits
+
 - Fixed support for using SQLTableSchema context_str attribute (#6891)
 
 ## [v0.7.6] - 2023-07-12
 
 ### New Features
+
 - Added sources to agent/chat engine responses (#6854)
 - Added basic chat buffer memory to agents / chat engines (#6857)
 - Adding load and search tool (#6871)
 - Add simple agent benchmark (#6869)
-- add agent docs  (#6866)
+- add agent docs (#6866)
 - add react agent (#6865)
 
 ### Breaking/Deprecated API Changes
+
 - Replace react chat engine with native react agent (#6870)
 - Set default chat mode to "best": use openai agent when possible, otherwise use react agent (#6870)
 
 ### Bug Fixes / Nits
+
 - Fixed support for legacy vector store metadata (#6867)
 - fix chroma notebook in docs (#6872)
 - update LC embeddings docs (#6868)
@@ -210,14 +579,16 @@
 ## [v0.7.5] - 2023-07-11
 
 ### New Features
+
 - Add `Anthropic` LLM implementation (#6855)
 
 ### Bug Fixes / Nits
+
 - Fix indexing error in `SentenceEmbeddingOptimizer` (#6850)
 - fix doc for custom embedding model (#6851)
 - fix(silent error): Add validation to `SimpleDirectoryReader` (#6819)
 - Fix link in docs (#6833)
-- Fixes Azure gpt-35-turbo model not recognized  (#6828)
+- Fixes Azure gpt-35-turbo model not recognized (#6828)
 - Update Chatbot_SEC.ipynb (#6808)
 - Rename leftover original name to LlamaIndex (#6792)
 - patch nested traces of the same type (#6791)
@@ -225,20 +596,24 @@
 ## [v0.7.4] - 2023-07-08
 
 ### New Features
+
 - `MetadataExtractor` - Documnent Metadata Augmentation via LLM-based feature extractors (#6764)
 
 ### Bug Fixes / Nits
+
 - fixed passing in query bundle to node postprocessors (#6780)
 - fixed error in callback manager with nested traces (#6791)
 
 ## [v0.7.3] - 2023-07-07
 
 ### New Features
+
 - Sub question query engine returns source nodes of sub questions in the callback manager (#6745)
 - trulens integration (#6741)
 - Add sources to subquestion engine (#6745)
 
 ### Bug Fixes / Nits
+
 - Added/Fixed streaming support to simple and condense chat engines (#6717)
 - fixed `response_mode="no_text"` response synthesizer (#6755)
 - fixed error setting `num_output` and `context_window` in service context (#6766)
@@ -250,11 +625,13 @@
 ## [v0.7.2] - 2023-07-06
 
 ### New Features
+
 - Support Azure OpenAI (#6718)
 - Support prefix messages (e.g. system prompt) in chat engine and OpenAI agent (#6723)
 - Added `CBEventType.SUB_QUESTIONS` event type for tracking sub question queries/responses (#6716)
 
 ### Bug Fixes / Nits
+
 - Fix HF LLM output error (#6737)
 - Add system message support for langchain message templates (#6743)
 - Fixed applying node-postprocessors (#6749)
@@ -266,16 +643,18 @@
 ## [v0.7.1] - 2023-07-05
 
 ### New Features
+
 - Streaming support for OpenAI agents (#6694)
 - add recursive retriever + notebook example (#6682)
-
 
 ## [v0.7.0] - 2023-07-04
 
 ### New Features
+
 - Index creation progress bars (#6583)
 
 ### Bug Fixes/ Nits
+
 - Improved chat refine template (#6645)
 
 ### Breaking/Deprecated API Changes

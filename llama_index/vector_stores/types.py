@@ -1,37 +1,20 @@
 """Vector store index types."""
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable
 
 import fsspec
-from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
 
-from llama_index.schema import BaseNode
+from llama_index.bridge.pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
+from llama_index.schema import BaseNode, BaseComponent, TextNode
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
-@dataclass
-class NodeWithEmbedding:
-    """Node with embedding.
-
-    Args:
-        node (Node): Node
-        embedding (List[float]): Embedding
-
-    """
-
-    node: BaseNode
-    embedding: List[float]
-
-    @property
-    def id(self) -> str:
-        return self.node.node_id
-
-    @property
-    def ref_doc_id(self) -> str:
-        return self.node.ref_doc_id or "None"
+# legacy: kept for backward compatibility
+NodeWithEmbedding = TextNode
 
 
 @dataclass
@@ -138,6 +121,9 @@ class VectorStoreQuery:
     # only for mmr
     mmr_threshold: Optional[float] = None
 
+    # NOTE: currently only used by postgres hybrid search
+    sparse_top_k: Optional[int] = None
+
 
 @runtime_checkable
 class VectorStore(Protocol):
@@ -153,21 +139,21 @@ class VectorStore(Protocol):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to vector store."""
+        """Add nodes with embedding to vector store."""
         ...
 
     async def async_add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
         """
-        Asynchronously add embedding results to vector store.
+        Asynchronously add nodes with embedding to vector store.
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(embedding_results)
+        return self.add(nodes)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -185,6 +171,69 @@ class VectorStore(Protocol):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """
+        Asynchronously query vector store.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call query synchronously.
+        """
+        return self.query(query, **kwargs)
+
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> None:
+        return None
+
+
+# TODO: Temp copy of VectorStore for pydantic, can't mix with runtime_checkable
+class BasePydanticVectorStore(BaseComponent, ABC):
+    """Abstract vector store protocol."""
+
+    stores_text: bool
+    is_embedding_query: bool = True
+
+    @property
+    @abstractmethod
+    def client(self) -> Any:
+        """Get client."""
+
+    @abstractmethod
+    def add(
+        self,
+        nodes: List[BaseNode],
+    ) -> List[str]:
+        """Add nodes to vector store."""
+
+    async def async_add(
+        self,
+        nodes: List[BaseNode],
+    ) -> List[str]:
+        """
+        Asynchronously add nodes to vector store.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call add synchronously.
+        """
+        return self.add(nodes)
+
+    @abstractmethod
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id."""
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+        NOTE: this is not implemented for all vector stores. If not implemented,
+        it will just call delete synchronously.
+        """
+        self.delete(ref_doc_id, **delete_kwargs)
+
+    @abstractmethod
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """Query vector store."""
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any

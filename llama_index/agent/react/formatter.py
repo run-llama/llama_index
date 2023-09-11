@@ -3,11 +3,9 @@
 from abc import abstractmethod
 from typing import List, Optional, Sequence
 
-from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
-from llama_index.agent.react.prompts import (
-    REACT_CHAT_SYSTEM_HEADER,
-)
+from llama_index.agent.react.prompts import REACT_CHAT_SYSTEM_HEADER
 from llama_index.agent.react.types import BaseReasoningStep, ObservationReasoningStep
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.tools import BaseTool

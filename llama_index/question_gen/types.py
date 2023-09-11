@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Sequence
 
-from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.tools.types import ToolMetadata

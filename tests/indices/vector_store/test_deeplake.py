@@ -1,17 +1,19 @@
 """Test deeplake indexes."""
 
-import os
 from typing import List
 
 import pytest
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.vector_stores.types import NodeWithEmbedding
-from llama_index.vector_stores import DeepLakeVectorStore
-from llama_index.schema import Document
-from llama_index.schema import TextNode
+from llama_index.schema import Document, TextNode
 from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores import DeepLakeVectorStore
+
+try:
+    import deeplake
+except ImportError:
+    deeplake = None  # type: ignore
 
 
 EMBEDDING_DIM = 100
@@ -34,7 +36,7 @@ def documents() -> List[Document]:
     ]
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no DeepLake in CI")
+@pytest.mark.skipif(deeplake is None, reason="deeplake not installed")
 def test_build_deeplake(
     documents: List[Document],
     mock_service_context: ServiceContext,
@@ -62,12 +64,10 @@ def test_build_deeplake(
 
     node = nodes[0].node
 
-    result = NodeWithEmbedding(
-        node=node,
-        embedding=[1.0 for i in range(EMBEDDING_DIM)],
-    )
-    results = [result for i in range(NUMBER_OF_DATA)]
-    vector_store.add(results)
+    node_with_embedding = node.copy()
+    node_with_embedding.embedding = [1.0 for i in range(EMBEDDING_DIM)]
+    new_nodes = [node_with_embedding for i in range(NUMBER_OF_DATA)]
+    vector_store.add(new_nodes)
     assert len(vector_store.vectorstore) == 14
 
     ref_doc_id = str(node.ref_doc_id)
@@ -76,7 +76,7 @@ def test_build_deeplake(
     deeplake.delete(dataset_path)
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no DeepLake in CI")
+@pytest.mark.skipif(deeplake is None, reason="deeplake not installed")
 def test_node_with_metadata(
     mock_service_context: ServiceContext,
 ) -> None:
@@ -105,7 +105,7 @@ def test_node_with_metadata(
     deeplake.delete(dataset_path)
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no DeepLake in CI")
+@pytest.mark.skipif(deeplake is None, reason="deeplake not installed")
 def test_backwards_compatibility() -> None:
     import deeplake
     from deeplake.core.vectorstore import utils
@@ -116,14 +116,13 @@ def test_backwards_compatibility() -> None:
     )
     metadatas = [metadata.update({"doc_id": "2"}) for metadata in metadatas]
     node = TextNode(
-        text="test node text", metadata={"key": "value", "doc_id": "1"}, id_="1"
-    )
-    result = NodeWithEmbedding(
-        node=node,
+        text="test node text",
+        metadata={"key": "value", "doc_id": "1"},
+        id_="1",
         embedding=[1.0 for i in range(EMBEDDING_DIM)],
     )
 
-    results = [result for i in range(10)]
+    nodes = [node for i in range(10)]
 
     dataset_path = "local_ds1"
     ds = deeplake.empty(dataset_path)
@@ -147,6 +146,6 @@ def test_backwards_compatibility() -> None:
         verbose=False,
     )
 
-    vectorstore.add(results)
+    vectorstore.add(nodes)
     assert len(vectorstore.vectorstore) == 20
     deeplake.delete(dataset_path)

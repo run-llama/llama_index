@@ -44,6 +44,7 @@ class VectorIndexRetriever(BaseRetriever):
         alpha: Optional[float] = None,
         node_ids: Optional[List[str]] = None,
         doc_ids: Optional[List[str]] = None,
+        sparse_top_k: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -58,8 +59,19 @@ class VectorIndexRetriever(BaseRetriever):
         self._node_ids = node_ids
         self._doc_ids = doc_ids
         self._filters = filters
+        self._sparse_top_k = sparse_top_k
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
+
+    @property
+    def similarity_top_k(self) -> int:
+        """Return similarity top k."""
+        return self._similarity_top_k
+
+    @similarity_top_k.setter
+    def similarity_top_k(self, similarity_top_k: int) -> None:
+        """Set similarity top k."""
+        self._similarity_top_k = similarity_top_k
 
     def _retrieve(
         self,
@@ -98,6 +110,7 @@ class VectorIndexRetriever(BaseRetriever):
             mode=self._vector_store_query_mode,
             alpha=self._alpha,
             filters=self._filters,
+            sparse_top_k=self._sparse_top_k,
         )
 
     def _build_node_list_from_query_result(

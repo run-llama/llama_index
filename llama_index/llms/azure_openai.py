@@ -1,7 +1,12 @@
 from typing import Any, Dict, Optional
 
+from llama_index.bridge.pydantic import Field, root_validator
+
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
+
+AZURE_OPENAI_API_TYPE = "azure"
+AZURE_OPENAI_VERSION = "2023-08-01-preview"
 
 
 class AzureOpenAI(OpenAI):
@@ -29,54 +34,58 @@ class AzureOpenAI(OpenAI):
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
     """
 
+    engine: str = Field(description="The name of the deployed azure engine.")
+
     def __init__(
         self,
         model: str = "gpt-35-turbo",
         engine: Optional[str] = None,
-        temperature: float = 0.0,
+        temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
+        api_key: Optional[str] = None,
+        api_type: Optional[str] = AZURE_OPENAI_API_TYPE,
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = AZURE_OPENAI_VERSION,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        self.engine = engine
+        if engine is None:
+            raise ValueError("You must specify an `engine` parameter.")
+
         super().__init__(
+            engine=engine,
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
+            api_key=api_key,
+            api_base=api_base,
+            api_type=api_type,
+            api_version=api_version,
             callback_manager=callback_manager,
             **kwargs,
         )
 
-        if self.engine is None:
-            raise ValueError("You must specify an `engine` parameter.")
-
-        self.validate_env()
-
-    def validate_env(self) -> None:
-        """Validate necessary environment variables are set."""
-        try:
-            import openai
-
-            if openai.api_base == "https://api.openai.com/v1":
-                raise ValueError(
-                    "You must set OPENAI_API_BASE to your Azure endpoint. "
-                    "It should look like https://YOUR_RESOURCE_NAME.openai.azure.com/"
-                )
-            if openai.api_type not in ("azure", "azure_ad", "azuread"):
-                raise ValueError(
-                    "You must set OPENAI_API_TYPE to one of "
-                    "(`azure`, `azuread`, `azure_ad`) for Azure OpenAI."
-                )
-            if openai.api_version is None:
-                raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
-        except ImportError:
-            raise ImportError(
-                "You must install the `openai` package to use Azure OpenAI."
+    @root_validator
+    def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate necessary credentials are set."""
+        if values["api_base"] == "https://api.openai.com/v1":
+            raise ValueError(
+                "You must set OPENAI_API_BASE to your Azure endpoint. "
+                "It should look like https://YOUR_RESOURCE_NAME.openai.azure.com/"
             )
+        if values["api_type"] not in ("azure", "azure_ad", "azuread"):
+            raise ValueError(
+                "You must set OPENAI_API_TYPE to one of "
+                "(`azure`, `azuread`, `azure_ad`) for Azure OpenAI."
+            )
+        if values["api_version"] is None:
+            raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
+
+        return values
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -84,3 +93,8 @@ class AzureOpenAI(OpenAI):
         model_kwargs.pop("model")
         model_kwargs["engine"] = self.engine
         return model_kwargs
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "azure_openai_llm"

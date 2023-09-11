@@ -1,7 +1,7 @@
-from pydantic import Field, root_validator
-from typing import Any, Callable, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.llms.base import ChatMessage, LLM
+from llama_index.bridge.pydantic import Field, root_validator
+from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory.types import BaseMemory
 from llama_index.utils import GlobalsHelper
 
@@ -19,6 +19,17 @@ class ChatMemoryBuffer(BaseMemory):
         exclude=True,
     )
     chat_history: List[ChatMessage] = Field(default_factory=list)
+
+    def __getstate__(self) -> Dict[str, Any]:
+        state = self.dict()
+        # Remove the unpicklable entry
+        state.pop("tokenizer_fn", None)
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        super().__init__(
+            token_limit=state["token_limit"], chat_history=state["chat_history"]
+        )
 
     @root_validator(pre=True)
     def validate_memory(cls, values: dict) -> dict:

@@ -2,6 +2,7 @@ import asyncio
 from threading import Thread
 from typing import Any, List, Optional, Tuple, Type
 
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
@@ -9,6 +10,8 @@ from llama_index.chat_engine.types import (
     ToolOutput,
 )
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
@@ -36,13 +39,20 @@ class ContextChatEngine(BaseChatEngine):
         llm: LLM,
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         context_template: Optional[str] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._retriever = retriever
         self._llm = llm
         self._memory = memory
         self._prefix_messages = prefix_messages
+        self._node_postprocessors = node_postprocessors or []
         self._context_template = context_template or DEFAULT_CONTEXT_TEMPALTE
+
+        self.callback_manager = callback_manager or CallbackManager([])
+        for node_postprocessor in self._node_postprocessors:
+            node_postprocessor.callback_manager = self.callback_manager
 
     @classmethod
     def from_defaults(
@@ -54,6 +64,8 @@ class ContextChatEngine(BaseChatEngine):
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        context_template: Optional[str] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
@@ -75,12 +87,26 @@ class ContextChatEngine(BaseChatEngine):
             ]
 
         prefix_messages = prefix_messages or []
+        node_postprocessors = node_postprocessors or []
 
-        return cls(retriever, llm=llm, memory=memory, prefix_messages=prefix_messages)
+        return cls(
+            retriever,
+            llm=llm,
+            memory=memory,
+            prefix_messages=prefix_messages,
+            node_postprocessors=node_postprocessors,
+            callback_manager=service_context.callback_manager,
+            context_template=context_template,
+        )
 
     def _generate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(
+                nodes, query_bundle=QueryBundle(message)
+            )
+
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
         )
@@ -114,6 +140,7 @@ class ContextChatEngine(BaseChatEngine):
             ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM)
         ] + prefix_messages
 
+    @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -142,6 +169,7 @@ class ContextChatEngine(BaseChatEngine):
             source_nodes=nodes,
         )
 
+    @trace_method("chat")
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
@@ -172,6 +200,7 @@ class ContextChatEngine(BaseChatEngine):
 
         return chat_response
 
+    @trace_method("chat")
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
@@ -200,6 +229,7 @@ class ContextChatEngine(BaseChatEngine):
             source_nodes=nodes,
         )
 
+    @trace_method("chat")
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:

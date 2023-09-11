@@ -54,13 +54,13 @@ Several response synthesizers are implemented already in LlamaIndex:
     Each text part is considered a "chunk" and is sent to the `refine` synthesizer. 
     
     In short, it is like `refine`, but with less LLM calls.
-- `tree_summarize`: Query the LLM using the `text_qa_template` prompt as many times as needed so that all concatenated chunks
+- `tree_summarize`: Query the LLM using the `summary_template` prompt as many times as needed so that all concatenated chunks
    have been queried, resulting in as many answers that are themselves recursively used as chunks in a `tree_summarize` LLM call 
    and so on, until there's only one chunk left, and thus only one final answer.
 
-   **Details:** concatenate the chunks as much as possible to fit within the context window using the `text_qa_template` prompt, 
+   **Details:** concatenate the chunks as much as possible to fit within the context window using the `summary_template` prompt, 
    and split them if needed (again with a `TokenTextSplitter` and some text overlap). Then, query each resulting chunk/split against 
-   `text_qa_template` (there is no ***refine*** query !) and get as many answers. 
+   `summary_template` (there is no ***refine*** query !) and get as many answers. 
    
    If there is only one answer (because there was only one chunk), then it's the final answer. 
    
@@ -121,3 +121,16 @@ class BaseSynthesizer(ABC):
         """Get response."""
         ...
 ```
+
+## Using Structured Answer Filtering
+When using either the `"refine"` or `"compact"` response synthesis modules, you may find it beneficial to experiment with the `structured_answer_filtering` option.
+
+```
+from llama_index.response_synthesizers import get_response_synthesizer
+
+response_synthesizer = get_response_synthesizer(structured_answer_filtering=True)
+```
+
+With `structured_answer_filtering` set to `True`, our refine module is able to filter out any input nodes that are not relevant to the question being asked. This is particularly useful for RAG-based Q&A systems that involve retrieving chunks of text from external vector store for a given user query.
+
+This option is particularly useful if you're using an [OpenAI model that supports function calling](https://openai.com/blog/function-calling-and-other-api-updates). Other LLM providers or models that don't have native function calling support may be less reliable in producing the structured response this feature relies on.

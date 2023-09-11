@@ -1,10 +1,9 @@
-import os
 from pathlib import Path
 from typing import List
 
 import pytest
 
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.loading import (
     load_index_from_storage,
     load_indices_from_storage,
@@ -12,12 +11,16 @@ from llama_index.indices.loading import (
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.index_store.simple_index_store import SimpleIndexStore
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.faiss import FaissVectorStore
+
+try:
+    import faiss
+except ImportError:
+    faiss = None  # type: ignore
 
 
 def test_load_index_from_storage_simple(
@@ -66,13 +69,13 @@ def test_load_index_from_storage_multiple(
     )
     vector_id = vector_index.index_id
 
-    list_index = ListIndex(
+    summary_index = SummaryIndex(
         nodes=nodes,
         storage_context=storage_context,
         service_context=mock_service_context,
     )
 
-    list_id = list_index.index_id
+    list_id = summary_index.index_id
 
     # persist storage to disk
     storage_context.persist(str(tmp_path))
@@ -134,7 +137,7 @@ def test_load_index_from_storage_retrieval_result_identical(
     assert nodes == new_nodes
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
+@pytest.mark.skipif(faiss is None, reason="faiss not installed")
 def test_load_index_from_storage_faiss_vector_store(
     documents: List[Document],
     tmp_path: Path,

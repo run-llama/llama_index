@@ -14,10 +14,15 @@ from llama_index.readers.redis.utils import (
     convert_bytes,
     get_redis_query,
 )
-from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -122,12 +127,11 @@ class RedisVectorStore(VectorStore):
         """Return the redis client instance"""
         return self._redis_client
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        """Add embedding results to the index.
+    def add(self, nodes: List[BaseNode]) -> List[str]:
+        """Add nodes to the index.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): List of embedding results to
-                add to the index.
+            nodes (List[BaseNode]): List of nodes with embeddings
 
         Returns:
             List[str]: List of ids of the documents added to the index.
@@ -136,11 +140,11 @@ class RedisVectorStore(VectorStore):
             ValueError: If the index already exists and overwrite is False.
         """
         # check to see if empty document list was passed
-        if len(embedding_results) == 0:
+        if len(nodes) == 0:
             return []
 
         # set vector dim for creation if index doesn't exist
-        self._index_args["dims"] = len(embedding_results[0].embedding)
+        self._index_args["dims"] = len(nodes[0].get_embedding())
 
         if self._index_exists():
             if self._overwrite:
@@ -152,20 +156,20 @@ class RedisVectorStore(VectorStore):
             self._create_index()
 
         ids = []
-        for result in embedding_results:
+        for node in nodes:
             mapping = {
-                "id": result.id,
-                "doc_id": result.ref_doc_id,
-                "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
-                self._vector_key: array_to_buffer(result.embedding),
+                "id": node.node_id,
+                "doc_id": node.ref_doc_id,
+                "text": node.get_content(metadata_mode=MetadataMode.NONE),
+                self._vector_key: array_to_buffer(node.get_embedding()),
             }
             additional_metadata = node_to_metadata_dict(
-                result.node, remove_text=True, flat_metadata=self.flat_metadata
+                node, remove_text=True, flat_metadata=self.flat_metadata
             )
             mapping.update(additional_metadata)
 
-            ids.append(result.id)
-            key = "_".join([self._prefix, str(result.id)])
+            ids.append(node.node_id)
+            key = "_".join([self._prefix, str(node.node_id)])
             self._redis_client.hset(key, mapping=mapping)  # type: ignore
 
         _logger.info(f"Added {len(ids)} documents to index {self._index_name}")

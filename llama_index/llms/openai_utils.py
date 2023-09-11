@@ -1,11 +1,12 @@
 import logging
 import os
-import re
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import openai
 from openai import ChatCompletion, Completion
-from pydantic import BaseModel
+
+from llama_index.bridge.pydantic import BaseModel
+
 from tenacity import (
     before_sleep_log,
     retry,
@@ -15,6 +16,13 @@ from tenacity import (
 )
 
 from llama_index.llms.base import ChatMessage
+from llama_index.llms.generic_utils import get_from_param_or_env
+
+
+DEFAULT_OPENAI_API_TYPE = "open_ai"
+DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
+DEFAULT_OPENAI_API_VERSION = ""
+
 
 GPT4_MODELS = {
     # stable model names:
@@ -88,17 +96,11 @@ DISCONTINUED_MODELS = {
     "code-cushman-001": 2048,
 }
 
-# "sk-" followed by 48 alphanumberic characters
-OPENAI_API_KEY_FORMAT = re.compile("^sk-[a-zA-Z0-9]{48}$")
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
 Please set either the OPENAI_API_KEY environment variable or \
 openai.api_key prior to initialization.
 API keys can be found or created at \
 https://platform.openai.com/account/api-keys
-"""
-INVALID_API_KEY_ERROR_MESSAGE = """Invalid OpenAI API key.
-API key should be of the format: "sk-" followed by \
-48 alphanumeric characters.
 """
 
 logger = logging.getLogger(__name__)
@@ -171,7 +173,9 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         https://github.com/hwchase17/langchain/blob/master/langchain/llms/openai.py
     """
     # handling finetuned models
-    if "ft-" in modelname:
+    if modelname.startswith("ft:"):
+        modelname = modelname.split(":")[1]
+    elif ":ft-" in modelname:  # legacy fine-tuning
         modelname = modelname.split(":")[0]
 
     if modelname in DISCONTINUED_MODELS:
@@ -256,17 +260,43 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
     }
 
 
-def validate_openai_api_key(
-    api_key: Optional[str] = None, api_type: Optional[str] = None
-) -> None:
-    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
-    openai_api_type = (
-        api_type or os.environ.get("OPENAI_API_TYPE", "") or openai.api_type
+def resolve_openai_credentials(
+    api_key: Optional[str] = None,
+    api_type: Optional[str] = None,
+    api_base: Optional[str] = None,
+    api_version: Optional[str] = None,
+) -> Tuple[str, str, str, str]:
+    """ "Resolve OpenAI credentials.
+
+    The order of precedence is:
+    1. param
+    2. env
+    3. openai module
+    4. default
+    """
+
+    # resolve from param or env
+    api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY", "")
+    api_type = get_from_param_or_env("api_type", api_type, "OPENAI_API_TYPE", "")
+    api_base = get_from_param_or_env("api_base", api_base, "OPENAI_API_BASE", "")
+    api_version = get_from_param_or_env(
+        "api_version", api_version, "OPENAI_API_VERSION", ""
     )
+
+    # resolve from openai module or default
+    api_key = api_key or openai.api_key
+    api_type = api_type or openai.api_type or DEFAULT_OPENAI_API_TYPE
+    api_base = api_base or openai.api_base or DEFAULT_OPENAI_API_BASE
+    api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
+
+    if not api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+
+    return api_key, api_type, api_base, api_version
+
+
+def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
 
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-    elif openai_api_type == "open_ai" and not OPENAI_API_KEY_FORMAT.search(
-        openai_api_key
-    ):
-        raise ValueError(INVALID_API_KEY_ERROR_MESSAGE)

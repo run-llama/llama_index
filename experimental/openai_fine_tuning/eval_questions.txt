@@ -1,0 +1,40 @@
+What is the projected increase in global mean sea surface temperature (SST) by the end of the 21st century according to CMIP6 models under the SSP5-8.5 scenario?
+What is driving the global increase in the frequency of extreme sea levels according to the provided context?
+What is the potential ecological consequence of wetland salinization?
+Question: According to the context information, which study explores the impacts of fishing and the environment on the Celtic Sea ecosystem since 1950?
+Question: According to the provided context, what is the title of the report that discusses the impacts, adaptation, and vulnerability of the world's coral reefs to climate change?
+What are some factors that can amplify vulnerability to climate-induced drivers in oceans and coastal ecosystems?
+What are the potential effects of ocean acidification on coccolithophores and macroalgae, and how do they interact with warming?
+What is one factor that can amplify the detrimental impacts of ocean acidification on the coccolithophore Emiliania huxleyi?
+What is the title of the article mentioned in the context that discusses the Arctic Marine Pulses Model?
+What is the title of the article that discusses the importance of diverse defense solutions for climate-resilient coasts?
+What is the title of the scientific paper that discusses the ecological effects of elevated CO2 on marine and freshwater fishes?
+What are the different types of adaptation solutions for ocean and coastal ecosystems that address climate-change risk?
+What is a key barrier globally for ocean health, governance, and adaptation to climate change according to the report?
+What are some mechanisms that can confer resilience to marine-dependent communities in the face of trigger events like marine heatwaves?
+What is the estimated mean rate of change in seasonal timing for phytoplankton based on field observations?
+What is the focus of all studies on phenological changes for marine mammals mentioned in the context?
+What is the projected increase in the frequency of the current 1-in-100-year extreme sea level by 2050 across tide-gauge sites, regardless of emission scenario?
+What is the projected future decline of the Atlantic meridional overturning circulation (AMOC) over the 21st century according to the IPCC AR6 report?
+What are the projected changes in total seafloor biomass under climate change according to the updated simulations with the benthic biomass model?
+What are some of the challenges faced by Earth System Models (ESMs) in accurately simulating primary production and biogeochemical tracers?
+What percentage of the currently protected area is projected to provide refuges from both sea surface temperature (SST) and deoxygenation by 2050 under both RCP4.5 and RCP8.5 scenarios?
+What is the proposed global conservation target for protecting the ocean by 2030 according to the UN CBD?
+What are some technology-based approaches that can aid in enhancing resilience and reviving biodiversity in marine ecosystems?
+What are the potential consequences of rapid sea level rise after the last glacial-interglacial transition?
+What are the near-term adaptation options for existing coastal developments in response to sea level rise?
+What is the likely range of global mean sea level rise between 1995-2014 and 2050 under the SSP5-8.5 emissions scenario?
+What are the projected surface warming thresholds that exceed 2°C in the CMIP6 models for the end of the century in different Shared Socioeconomic Pathways (SSPs)?
+What is the title of the publication that discusses the metabolic impacts of climate change on marine ecosystems and their implications for fish communities and fisheries?
+What is the title of the report on climate change and the oceans?
+What is the potential impact of global warming on marine species richness around the equator?
+What are the impacts of mass coral bleaching events and disease outbreaks on coral reefs and coastal ecosystems?
+What does experimental evidence suggest about coral responses to ocean acidification?
+What are the projected declines in the oxygen content of the subsurface ocean over the 21st century according to the CMIP6 models?
+What are some projected changes in the 21st century for ocean and coastal ecosystems in relation to climate change?
+What percentage of the ocean was in fully or highly protected Marine Protected Areas (MPAs) in 2021?
+What is the economic impact of ocean acidification on an Alaska crab fishery?
+Question: According to the provided context on climate change and the oceans, which study highlights the transformative potential of managed retreat as a climate adaptation strategy?
+What is the potential impact of marine heatwaves on global biodiversity and ecosystem services?
+What are some consequences of abrupt ecosystem shifts in oceans and coastal ecosystems due to climate change?
+What is the main cause of the increase in marine heatwaves (MHWs) between 1981 and 2017 according to the report?

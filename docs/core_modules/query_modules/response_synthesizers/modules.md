@@ -11,6 +11,7 @@ The following shows the setup for utilizing all kwargs.
 - `text_qa_template` and `refine_template` are the prompts used at various stages
 - `use_async` is used for only the `tree_summarize` response mode right now, to asynchronously build the summary tree
 - `streaming` configures whether to return a streaming response object or not
+- `structured_answer_filtering` enables the active filtering of text chunks that are not relevant to a given question
 
 In the `synthesize`/`asyntheszie` functions, you can optionally provide additional source nodes, which will be added to the `response.source_nodes` list.
 
@@ -58,5 +59,6 @@ response_str = response_synthesizer.get_response(
 maxdepth: 1
 ---
 /examples/response_synthesizers/refine.ipynb
+/examples/response_synthesizers/structured_refine.ipynb
 /examples/response_synthesizers/tree_summarize.ipynb
 ```

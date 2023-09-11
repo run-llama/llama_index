@@ -2,18 +2,30 @@
 import logging
 from typing import Callable, List, Optional
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
+
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import NodeWithScore, MetadataMode
+from llama_index.schema import MetadataMode, NodeWithScore
 
 logger = logging.getLogger(__name__)
 
 
 class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
     """Optimization of a text chunk given the query by shortening the input text."""
+
+    percentile_cutoff: Optional[float] = Field(
+        description="Percentile cutoff for the top k sentences to use."
+    )
+    threshold_cutoff: Optional[float] = Field(
+        description="Threshold cutoff for similiarity for each sentence to use."
+    )
+
+    _embed_model: BaseEmbedding = PrivateAttr()
+    _tokenizer_fn: Callable[[str], List[str]] = PrivateAttr()
 
     def __init__(
         self,
@@ -43,20 +55,37 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         )
         response = query_engine.query("<query_str>")
         """
-        self.embed_model = embed_model or OpenAIEmbedding()
-        self._percentile_cutoff = percentile_cutoff
-        self._threshold_cutoff = threshold_cutoff
+        self._embed_model = embed_model or OpenAIEmbedding()
 
         if tokenizer_fn is None:
             import nltk.data
+            import os
+            from llama_index.utils import get_cache_dir
+
+            cache_dir = get_cache_dir()
+            nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+
+            # update nltk path for nltk so that it finds the data
+            if nltk_data_dir not in nltk.data.path:
+                nltk.data.path.append(nltk_data_dir)
 
             try:
                 nltk.data.find("tokenizers/punkt")
             except LookupError:
-                nltk.download("punkt")
+                nltk.download("punkt", download_dir=nltk_data_dir)
+
             tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn
+
+        super().__init__(
+            percentile_cutoff=percentile_cutoff,
+            threshold_cutoff=threshold_cutoff,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "SentenceEmbeddingOptimizer"
 
     def postprocess_nodes(
         self,
@@ -72,36 +101,29 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
 
             split_text = self._tokenizer_fn(text)
 
-            start_embed_token_ct = self.embed_model.total_tokens_used
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
-                    self.embed_model.get_agg_embedding_from_queries(
+                    self._embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
                 )
 
-            text_embeddings = self.embed_model._get_text_embeddings(split_text)
+            text_embeddings = self._embed_model._get_text_embeddings(split_text)
 
             num_top_k = None
             threshold = None
-            if self._percentile_cutoff is not None:
-                num_top_k = int(len(split_text) * self._percentile_cutoff)
-            if self._threshold_cutoff is not None:
-                threshold = self._threshold_cutoff
+            if self.percentile_cutoff is not None:
+                num_top_k = int(len(split_text) * self.percentile_cutoff)
+            if self.threshold_cutoff is not None:
+                threshold = self.threshold_cutoff
 
             top_similarities, top_idxs = get_top_k_embeddings(
                 query_embedding=query_bundle.embedding,
                 embeddings=text_embeddings,
-                similarity_fn=self.embed_model.similarity,
+                similarity_fn=self._embed_model.similarity,
                 similarity_top_k=num_top_k,
                 embedding_ids=list(range(len(text_embeddings))),
                 similarity_cutoff=threshold,
-            )
-
-            net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct
-            logger.info(
-                f"> [optimize] Total embedding token usage: "
-                f"{net_embed_tokens} tokens"
             )
 
             if len(top_idxs) == 0:

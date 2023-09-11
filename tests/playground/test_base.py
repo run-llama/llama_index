@@ -5,7 +5,7 @@ from typing import List
 import pytest
 
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.vector_store.base import VectorStoreIndex
@@ -14,6 +14,11 @@ from llama_index.schema import Document
 
 
 class MockEmbedding(BaseEmbedding):
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MockEmbedding"
+
     async def _aget_query_embedding(self, query: str) -> List[float]:
         del query
         return [0, 0, 1, 0, 0]
@@ -58,7 +63,7 @@ def test_get_set_compare(
         VectorStoreIndex.from_documents(
             documents=documents, service_context=mock_service_context
         ),
-        ListIndex.from_documents(documents, service_context=mock_service_context),
+        SummaryIndex.from_documents(documents, service_context=mock_service_context),
         TreeIndex.from_documents(
             documents=documents, service_context=mock_service_context
         ),
@@ -112,7 +117,9 @@ def test_validation() -> None:
         _ = Playground(indices=["VectorStoreIndex"])  # type: ignore
 
     with pytest.raises(ValueError):
-        _ = Playground(indices=[VectorStoreIndex, ListIndex, TreeIndex])  # type: ignore
+        _ = Playground(
+            indices=[VectorStoreIndex, SummaryIndex, TreeIndex]  # type: ignore
+        )
 
     with pytest.raises(ValueError):
         _ = Playground(indices=[])  # type: ignore

@@ -2,15 +2,13 @@
 
 import logging
 import re
-from abc import abstractmethod
 from typing import Dict, List, Optional, cast
 
-from pydantic import BaseModel, Field, validator
-
+from llama_index.bridge.pydantic import Field, validator
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.response_synthesizers import ResponseMode, get_response_synthesizer
 from llama_index.schema import NodeRelationship, NodeWithScore
 from llama_index.storage.docstore import BaseDocumentStore
@@ -18,26 +16,15 @@ from llama_index.storage.docstore import BaseDocumentStore
 logger = logging.getLogger(__name__)
 
 
-class BasePydanticNodePostprocessor(BaseModel, BaseNodePostprocessor):
-    """Node postprocessor."""
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @abstractmethod
-    def postprocess_nodes(
-        self,
-        nodes: List[NodeWithScore],
-        query_bundle: Optional[QueryBundle] = None,
-    ) -> List[NodeWithScore]:
-        """Postprocess nodes."""
-
-
-class KeywordNodePostprocessor(BasePydanticNodePostprocessor):
+class KeywordNodePostprocessor(BaseNodePostprocessor):
     """Keyword-based Node processor."""
 
     required_keywords: List[str] = Field(default_factory=list)
     exclude_keywords: List[str] = Field(default_factory=list)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "KeywordNodePostprocessor"
 
     def postprocess_nodes(
         self,
@@ -69,10 +56,14 @@ class KeywordNodePostprocessor(BasePydanticNodePostprocessor):
         return new_nodes
 
 
-class SimilarityPostprocessor(BasePydanticNodePostprocessor):
+class SimilarityPostprocessor(BaseNodePostprocessor):
     """Similarity-based Node processor."""
 
     similarity_cutoff: float = Field(default=None)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "SimilarityPostprocessor"
 
     def postprocess_nodes(
         self,
@@ -144,7 +135,7 @@ def get_backward_nodes(
     return nodes
 
 
-class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
+class PrevNextNodePostprocessor(BaseNodePostprocessor):
     """Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
@@ -170,6 +161,10 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
         if v not in ["next", "previous", "both"]:
             raise ValueError(f"Invalid mode: {v}")
         return v
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PrevNextNodePostprocessor"
 
     def postprocess_nodes(
         self,
@@ -258,7 +253,7 @@ DEFAULT_REFINE_INFER_PREV_NEXT_TMPL = (
 )
 
 
-class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
+class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
     """Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
@@ -290,6 +285,10 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
 
         arbitrary_types_allowed = True
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "AutoPrevNextNodePostprocessor"
+
     def _parse_prediction(self, raw_pred: str) -> str:
         """Parse prediction."""
         pred = raw_pred.strip().lower()
@@ -310,10 +309,10 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Missing query bundle.")
 
-        infer_prev_next_prompt = QuestionAnswerPrompt(
+        infer_prev_next_prompt = PromptTemplate(
             self.infer_prev_next_tmpl,
         )
-        refine_infer_prev_next_prompt = RefinePrompt(self.refine_prev_next_tmpl)
+        refine_infer_prev_next_prompt = PromptTemplate(self.refine_prev_next_tmpl)
 
         all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:

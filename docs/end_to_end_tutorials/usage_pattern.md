@@ -7,6 +7,7 @@ The general usage pattern of LlamaIndex is as follows:
 3. Construct Index (from Nodes or Documents)
 4. [Optional, Advanced] Building indices on top of other indices
 5. Query the index
+6. Parsing the response
 
 ## 1. Load in Documents
 
@@ -48,7 +49,7 @@ For instance, you can do
 ```python
 from llama_index.node_parser import SimpleNodeParser
 
-parser = SimpleNodeParser()
+parser = SimpleNodeParser.from_defaults()
 
 nodes = parser.get_nodes_from_documents(documents)
 ```
@@ -109,7 +110,7 @@ storage_context = StorageContext.from_defaults()
 storage_context.docstore.add_documents(nodes)
 
 index1 = VectorStoreIndex(nodes, storage_context=storage_context)
-index2 = ListIndex(nodes, storage_context=storage_context)
+index2 = SummaryIndex(nodes, storage_context=storage_context)
 ```
 
 **NOTE**: If the `storage_context` argument isn't specified, then it is implicitly
@@ -181,6 +182,15 @@ index = VectorStoreIndex.from_documents(
     documents
 )
 ```
+
+To save costs, you may want to use a local model.
+
+```python
+from llama_index import ServiceContext
+service_context = ServiceContext.from_defaults(llm="local")
+```
+
+This will use llama2-chat-13B from with LlamaCPP, and assumes you have `llama-cpp-python` installed. Full LlamaCPP usage guide is available in a [notebook here](/examples/llm/llama_2_llama_cpp.ipynb).
 
 See the [Custom LLM's How-To](/core_modules/model_modules/llms/usage_custom.md) for more details.
 
@@ -337,15 +347,15 @@ In the following, we discuss some commonly used configurations in detail.
 ### Configuring retriever
 
 An index can have a variety of index-specific retrieval modes.
-For instance, a list index supports the default `ListIndexRetriever` that retrieves all nodes, and
-`ListIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
+For instance, a summary index supports the default `SummaryIndexRetriever` that retrieves all nodes, and
+`SummaryIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
 
 For convienience, you can also use the following shorthand:
 
 ```python
-    # ListIndexRetriever
+    # SummaryIndexRetriever
     retriever = index.as_retriever(retriever_mode='default')
-    # ListIndexEmbeddingRetriever
+    # SummaryIndexEmbeddingRetriever
     retriever = index.as_retriever(retriever_mode='embedding')
 ```
 
@@ -388,7 +398,7 @@ Right now, we support the following options:
   chunk.
 
 ```python
-index = ListIndex.from_documents(documents)
+index = SummaryIndex.from_documents(documents)
 retriever = index.as_retriever()
 
 # default
@@ -436,7 +446,7 @@ query_engine = RetrieverQueryEngine.from_args(
 response = query_engine.query("What did the author do growing up?")
 ```
 
-## 5. Parsing the response
+## 6. Parsing the response
 
 The object returned is a [`Response` object](/api_reference/response.rst).
 The object contains both the response text as well as the "sources" of the response:
