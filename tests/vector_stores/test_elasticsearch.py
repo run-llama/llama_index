@@ -145,7 +145,6 @@ async def test_add_to_es_and_query(
         res = await es_store.aquery(
             VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
         )
-        await es_store.async_client.close()
     else:
         es_store.add(node_embeddings)
         res = es_store.query(
@@ -180,7 +179,6 @@ async def test_add_to_es_and_text_query(
                 similarity_top_k=1,
             )
         )
-        await es_store.async_client.close()
     else:
         es_store.add(node_embeddings)
         res = es_store.query(
@@ -220,7 +218,6 @@ async def test_add_to_es_and_hybrid_query(
                 similarity_top_k=1,
             )
         )
-        await es_store.async_client.close()
     else:
         es_store.add(node_embeddings)
         res = es_store.query(
@@ -260,7 +257,6 @@ async def test_add_to_es_query_with_filters(
     if use_async:
         await es_store.async_add(node_embeddings)
         res = await es_store.aquery(q)
-        await es_store.async_client.close()
     else:
         es_store.add(node_embeddings)
         res = es_store.query(q)
@@ -291,7 +287,6 @@ async def test_add_to_es_query_with_es_filters(
         res = await es_store.aquery(
             q, es_filter=[{"wildcard": {"metadata.author": "stephe*"}}]
         )
-        await es_store.async_client.close()
     else:
         es_store.add(node_embeddings)
         res = es_store.query(
@@ -333,7 +328,6 @@ async def test_add_to_es_query_and_delete(
     if use_async:
         await es_store.adelete("test-0")
         res = await es_store.aquery(q)
-        await es_store.async_client.close()
     else:
         es_store.delete("test-0")
         res = es_store.query(q)
