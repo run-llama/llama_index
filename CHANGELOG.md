@@ -1,6 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.24] - 2023-09-11
+
+## New Features
+- guide: fine-tuning to memorize knowledge (#7626)
+- added ability to customize prompt template for eval modules (#7626)
 
 ### Bug Fixes
 - Properly detect `llama-cpp-python` version for loading the default GGML or GGUF `llama2-chat-13b` model (#7616)
