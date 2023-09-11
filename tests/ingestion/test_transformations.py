@@ -1,5 +1,5 @@
 import pytest
-from llama_index.ingestion.transformation import (
+from llama_index.ingestion.transformations import (
     ConfigurableTransformations,
     ConfiguredTransformation,
 )

@@ -4,7 +4,7 @@ from llama_index.bridge.pydantic import BaseModel, Field
 
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
-from llama_index.ingestion.transformation import (
+from llama_index.ingestion.transformations import (
     ConfiguredTransformation,
 )
 from llama_index.llms.base import LLM
