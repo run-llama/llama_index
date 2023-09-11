@@ -33,7 +33,7 @@ class IngestionPipeline(BaseModel):
         description="Embedding model to use to embed the data"
     )
 
-    transformations: list[BaseComponent] = Field(
+    transformations: List[BaseComponent] = Field(
         description="Transformations to apply to the data"
     )
 
