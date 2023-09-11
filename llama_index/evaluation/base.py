@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from llama_index.indices.base import ServiceContext
 from llama_index.indices.list.base import SummaryIndex
-from llama_index.prompts import PromptTemplate
+from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import Document
 from llama_index.response.schema import Response
 
@@ -114,10 +114,17 @@ class ResponseEvaluator:
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
+        eval_prompt_tmpl: Optional[PromptTemplate] = None,
+        refine_prompt_tmpl: Optional[PromptTemplate] = None,
         raise_error: bool = False,
     ) -> None:
         """Init params."""
         self.service_context = service_context or ServiceContext.from_defaults()
+        self.eval_prompt_tmpl = eval_prompt_tmpl or PromptTemplate(DEFAULT_EVAL_PROMPT)
+        self.refine_prompt_tmpl = refine_prompt_tmpl or PromptTemplate(
+            DEFAULT_REFINE_PROMPT
+        )
+
         self.raise_error = raise_error
 
     def get_context(self, response: Response) -> List[Document]:
@@ -157,12 +164,9 @@ class ResponseEvaluator:
         )
         response_txt = ""
 
-        EVAL_PROMPT_TMPL = PromptTemplate(DEFAULT_EVAL_PROMPT)
-        REFINE_PROMPT_TMPL = PromptTemplate(DEFAULT_REFINE_PROMPT)
-
         query_engine = index.as_query_engine(
-            text_qa_template=EVAL_PROMPT_TMPL,
-            refine_template=REFINE_PROMPT_TMPL,
+            text_qa_template=self.eval_prompt_tmpl,
+            refine_template=self.refine_prompt_tmpl,
         )
         response_obj = query_engine.query(answer)
 
@@ -201,12 +205,9 @@ class ResponseEvaluator:
             )
             response_txt = ""
 
-            EVAL_PROMPT_TMPL = PromptTemplate(DEFAULT_EVAL_PROMPT)
-            REFINE_PROMPT_TMPL = PromptTemplate(DEFAULT_REFINE_PROMPT)
-
             query_engine = index.as_query_engine(
-                text_qa_template=EVAL_PROMPT_TMPL,
-                refine_template=REFINE_PROMPT_TMPL,
+                text_qa_template=self.eval_prompt_tmpl,
+                refine_template=self.refine_prompt_tmpl,
             )
             response_obj = query_engine.query(answer)
             raw_response_txt = str(response_obj)
@@ -236,11 +237,19 @@ class QueryResponseEvaluator(BaseEvaluator):
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
+        query_eval_prompt_tmpl: Optional[PromptTemplate] = None,
+        query_refine_prompt_tmpl: Optional[PromptTemplate] = None,
         raise_error: bool = False,
     ) -> None:
         """Init params."""
         super().__init__(service_context)
         self.raise_error = raise_error
+        self.query_eval_prompt_tmpl = query_eval_prompt_tmpl or PromptTemplate(
+            QUERY_RESPONSE_EVAL_PROMPT
+        )
+        self.query_refine_prompt_tmpl = query_refine_prompt_tmpl or PromptTemplate(
+            QUERY_RESPONSE_REFINE_PROMPT
+        )
 
     def get_context(self, response: Response) -> List[Document]:
         """Get context information from given Response object using source nodes.
@@ -289,14 +298,11 @@ class QueryResponseEvaluator(BaseEvaluator):
             context, service_context=self.service_context
         )
 
-        QUERY_RESPONSE_EVAL_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_EVAL_PROMPT)
-        QUERY_RESPONSE_REFINE_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_REFINE_PROMPT)
-
         query_response = f"Question: {query}\nResponse: {answer}"
 
         query_engine = index.as_query_engine(
-            text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
-            refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
+            text_qa_template=self.query_eval_prompt_tmpl,
+            refine_template=self.query_refine_prompt_tmpl,
         )
         response_obj = query_engine.query(query_response)
 
@@ -339,16 +345,11 @@ class QueryResponseEvaluator(BaseEvaluator):
             )
             response_txt = ""
 
-            QUERY_RESPONSE_EVAL_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_EVAL_PROMPT)
-            QUERY_RESPONSE_REFINE_PROMPT_TMPL = PromptTemplate(
-                QUERY_RESPONSE_REFINE_PROMPT
-            )
-
             query_response = f"Question: {query}\nResponse: {answer}"
 
             query_engine = index.as_query_engine(
-                text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
-                refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
+                text_qa_template=self.query_eval_prompt_tmpl,
+                refine_template=self.query_refine_prompt_tmpl,
             )
             response_obj = query_engine.query(query_response)
             raw_response_txt = str(response_obj)
