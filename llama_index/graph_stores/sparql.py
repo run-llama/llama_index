@@ -71,7 +71,7 @@ BASE <{sparql_base_uri}>
         return results
 
     def sparql_update(self, query_string):
-        print(query_string)
+        # print(query_string)
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
         sparql_client.setMethod(POST)
         sparql_client.setQuery(query_string)
@@ -108,7 +108,7 @@ BASE <{sparql_base_uri}>
         return str
 
     def select_triplets(self, subj, limit=-1):
-        print('select triplets')
+        # print('select triplets')
         logger.info('sparql get_triplets called')
         subj = self.escape_for_rdf(subj)
         template = Template("""
