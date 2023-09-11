@@ -24,7 +24,7 @@ class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
     name: str = Field(description="Unique name of the ingestion pipeline")
-    configured_transformations: list[ConfiguredTransformation] = Field(
+    configured_transformations: List[ConfiguredTransformation] = Field(
         description="Serialized schemas of transformations to apply to the data"
     )
 
