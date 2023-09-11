@@ -5,6 +5,7 @@
 ### Bug Fixes
 - Properly detect `llama-cpp-python` version for loading the default GGML or GGUF `llama2-chat-13b` model (#7616)
 - Pass in `summary_template` properly with `RetrieverQueryEngine.from_args()` (#7621)
+- Fix span types in wandb callback (#7631)
 
 ## [0.8.23] - 2023-09-09
 
