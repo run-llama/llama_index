@@ -121,8 +121,8 @@ class ResponseEvaluator:
         """Init params."""
         self.service_context = service_context or ServiceContext.from_defaults()
         self.eval_prompt_tmpl = eval_prompt_tmpl or PromptTemplate(DEFAULT_EVAL_PROMPT)
-        self.refine_prompt_tmpl = (
-            refine_prompt_tmpl or PromptTemplate(DEFAULT_REFINE_PROMPT)
+        self.refine_prompt_tmpl = refine_prompt_tmpl or PromptTemplate(
+            DEFAULT_REFINE_PROMPT
         )
 
         self.raise_error = raise_error
@@ -244,11 +244,11 @@ class QueryResponseEvaluator(BaseEvaluator):
         """Init params."""
         super().__init__(service_context)
         self.raise_error = raise_error
-        self.query_eval_prompt_tmpl = (
-            query_eval_prompt_tmpl or PromptTemplate(QUERY_RESPONSE_EVAL_PROMPT)
+        self.query_eval_prompt_tmpl = query_eval_prompt_tmpl or PromptTemplate(
+            QUERY_RESPONSE_EVAL_PROMPT
         )
-        self.query_refine_prompt_tmpl = (
-            query_refine_prompt_tmpl or PromptTemplate(QUERY_RESPONSE_REFINE_PROMPT)
+        self.query_refine_prompt_tmpl = query_refine_prompt_tmpl or PromptTemplate(
+            QUERY_RESPONSE_REFINE_PROMPT
         )
 
     def get_context(self, response: Response) -> List[Document]:
