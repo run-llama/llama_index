@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Sequence, List, Iterator
-
+import json
 from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
@@ -21,32 +21,6 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 
-
-
-class _OllamaCommon:
-
-
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Ollama."""
-        return {
-            "model": self.model,
-            "options": {
-                "mirostat": self.mirostat,
-                "mirostat_eta": self.mirostat_eta,
-                "mirostat_tau": self.mirostat_tau,
-                "num_ctx": self.num_ctx,
-                "num_gpu": self.num_gpu,
-                "num_thread": self.num_thread,
-                "repeat_last_n": self.repeat_last_n,
-                "repeat_penalty": self.repeat_penalty,
-                "temperature": self.temperature,
-                "stop": self.stop,
-                "tfs_z": self.tfs_z,
-                "top_k": self.top_k,
-                "top_p": self.top_p,
-            },
-        }
 
 
 class Ollama(CustomLLM):
@@ -153,7 +127,7 @@ class Ollama(CustomLLM):
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
-            json={"prompt": prompt, "model": self.model},
+            json={"prompt": prompt, "model": self.model, **kwargs},
             stream=True,
         )
         response.encoding = "utf-8"
@@ -164,13 +138,13 @@ class Ollama(CustomLLM):
                 f" Details: {optional_detail}"
             )
 
-        def gen(response_iter: Iterator[str]) -> CompletionResponseGen:
+        def gen(response_iter: Iterator[Any]) -> CompletionResponseGen:
             text = ""
-            for delta in response_iter:
+            for stream_response in response_iter:
+                delta = json.loads(stream_response).get("response", "")
                 text += delta
                 yield CompletionResponse(
                     delta=delta,
                     text=text,
                 )
-
         return gen(response.iter_lines(decode_unicode=True))
