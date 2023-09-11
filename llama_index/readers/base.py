@@ -36,7 +36,7 @@ class ReaderConfig(BaseComponent):
     """Represents a loader and it's input arguments."""
 
     loader: BaseReader = Field(..., description="Loader to use.")
-    loader_args: List[Any] = Field(default_factor=list, description="Loader args.")
+    loader_args: List[Any] = Field(default_factory=list, description="Loader args.")
     loader_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Loader kwargs."
     )
@@ -48,3 +48,7 @@ class ReaderConfig(BaseComponent):
     def class_name(cls) -> str:
         """Get the name identifier of the class."""
         return "LoaderConfig"
+
+    def read(self) -> List[Document]:
+        """Call the loader with the given arguments."""
+        return self.loader.load_data(*self.loader_args, **self.loader_kwargs)
