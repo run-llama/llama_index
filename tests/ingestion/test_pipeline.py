@@ -51,4 +51,4 @@ def test_run_local_pipeline() -> None:
     nodes = pipeline.run_local()
 
     assert len(nodes) == 2
-    assert len(nodes[0].embedding) == 10
+    assert nodes[0].embedding is not None and len(nodes[0].embedding) == 10
