@@ -9,7 +9,7 @@ from llama_index.readers import SimpleDirectoryReader, ReaderConfig
 from llama_index.schema import Document
 
 
-def test_build_pipeline():
+def test_build_pipeline() -> None:
     temp_dir = TemporaryDirectory()
     with open(f"{temp_dir.name}/test.txt", "w") as f:
         f.write("This is a test.")
@@ -31,7 +31,7 @@ def test_build_pipeline():
     assert pipeline.name == "Test"
 
 
-def test_run_local_pipeline():
+def test_run_local_pipeline() -> None:
     temp_dir = TemporaryDirectory()
     with open(f"{temp_dir.name}/test.txt", "w") as f:
         f.write("This is a test.")
