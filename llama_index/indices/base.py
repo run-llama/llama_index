@@ -401,6 +401,14 @@ class BaseIndex(Generic[IS], ABC):
                 )
             else:
                 raise ValueError(f"Unknown chat mode: {chat_mode}")
+        elif chat_mode == ChatMode.SIMPLE:
+            from llama_index.chat_engine import SimpleChatEngine
+
+            service_context = cast(ServiceContext, kwargs["service_context"])
+            return SimpleChatEngine.from_defaults(
+                service_context=service_context,
+                **kwargs,
+            )
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")
 
