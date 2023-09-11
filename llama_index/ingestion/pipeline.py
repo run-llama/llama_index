@@ -46,7 +46,7 @@ class IngestionPipeline(BaseModel):
     def __init__(
         self,
         name: Optional[str] = "llamaindex_pipeline",
-        transformations: Optional[list[BaseComponent]] = None,
+        transformations: Optional[List[BaseComponent]] = None,
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
