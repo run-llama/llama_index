@@ -102,9 +102,6 @@ class LlamaCPP(CustomLLM):
                 self._model = Llama(model_path=model_path, **model_kwargs)
         else:
             cache_dir = get_cache_dir()
-            import pdb
-
-            pdb.set_trace()
             model_url = model_url or self._get_model_path_for_version()
             model_name = os.path.basename(model_url)
             model_path = os.path.join(cache_dir, "models", model_name)
