@@ -61,7 +61,7 @@ postprocessor = SentenceEmbeddingOptimizer(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide can be found [here](/examples/node_postprocessor/OptimizerDemo.ipynb)
+A full notebook guide can be found [here](/docs/examples/node_postprocessor/OptimizerDemo.ipynb)
 
 ## CohereRerank
 
@@ -79,7 +79,7 @@ postprocessor = CohereRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](/examples/node_postprocessor/CohereRerank.ipynb).
+Full notebook guide is available [here](/docs/examples/node_postprocessor/CohereRerank.ipynb).
 
 ## SentenceTransformerRerank
 
@@ -97,7 +97,7 @@ postprocessor = SentenceTransformerRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
+Full notebook guide is available [here](/docs/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
 
 Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy). The default model is `cross-encoder/ms-marco-TinyBERT-L-2-v2`, which provides the most speed.
 
@@ -116,7 +116,7 @@ postprocessor = LLMRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
+Full notebook guide is available [her for Gatsby](/docs/examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](/docs/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
 
 ## FixedRecencyPostprocessor
 
@@ -133,9 +133,9 @@ postprocessor = FixedRecencyPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-![](/_static/node_postprocessors/recency.png)
+![](/docs/_static/node_postprocessors/recency.png)
 
-A full notebook guide is available [here](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
+A full notebook guide is available [here](/docs/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
 
 ## EmbeddingRecencyPostprocessor
 
@@ -153,7 +153,7 @@ postprocessor = EmbeddingRecencyPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide is available [here](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
+A full notebook guide is available [here](/docs/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
 
 ## TimeWeightedPostprocessor
 
@@ -170,7 +170,7 @@ postprocessor = TimeWeightedPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide is available [here](/examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb).
+A full notebook guide is available [here](/docs/examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb).
 
 ## (Beta) PIINodePostprocessor
 
@@ -200,7 +200,7 @@ postprocessor = NERPIINodePostprocessor()
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide for both can be found [here](/examples/node_postprocessor/PII.ipynb).
+A full notebook guide for both can be found [here](/docs/examples/node_postprocessor/PII.ipynb).
 
 ## (Beta) PrevNextNodePostprocessor
 
@@ -220,7 +220,7 @@ postprocessor = PrevNextNodePostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-![](/_static/node_postprocessors/prev_next.png)
+![](/docs/_static/node_postprocessors/prev_next.png)
 
 ## (Beta) AutoPrevNextNodePostprocessor
 
@@ -237,7 +237,7 @@ postprocessor = AutoPrevNextNodePostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full example notebook is available [here](/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb).
+A full example notebook is available [here](/docs/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb).
 
 ## All Notebooks
 

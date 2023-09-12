@@ -10,12 +10,12 @@ The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
 The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
 ## LLMs
-The full set of supported LLMs are found [here](/core_modules/model_modules/llms/modules.md).
+The full set of supported LLMs are found [here](/docs/core_modules/model_modules/llms/modules.md).
 
 
 ## Observability/Tracing/Evaluation
 
-Check out our [one-click observability](/end_to_end_tutorials/one_click_observability.md) page
+Check out our [one-click observability](/docs/end_to_end_tutorials/one_click_observability.md) page
 for full tracing integrations.
 
 ```{toctree}

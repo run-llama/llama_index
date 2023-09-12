@@ -55,7 +55,7 @@ We have our pydantic object:
 Album(name='The Shining', artist='Jack Torrance', songs=[Song(title='All Work and No Play', length_seconds=180), Song(title='The Overlook Hotel', length_seconds=240), Song(title='The Shining', length_seconds=210)])
 ```
 
-You can play with [this notebook](/examples/output_parsing/guidance_pydantic_program.ipynb) for more details.
+You can play with [this notebook](/docs/examples/output_parsing/guidance_pydantic_program.ipynb) for more details.
 
 ### Using guidance to improve the robustness of our sub-question query engine.
 LlamaIndex provides a toolkit of advanced query engines for tackling different use-cases.
@@ -81,7 +81,7 @@ s_engine = SubQuestionQueryEngine.from_defaults(
 )
 ```
 
-See [this notebook](/examples/output_parsing/guidance_sub_question.ipynb) for more details.
+See [this notebook](/docs/examples/output_parsing/guidance_sub_question.ipynb) for more details.
 
 
 

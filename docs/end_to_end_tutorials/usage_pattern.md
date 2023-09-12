@@ -12,7 +12,7 @@ The general usage pattern of LlamaIndex is as follows:
 ## 1. Load in Documents
 
 The first step is to load in data. This data is represented in the form of `Document` objects.
-We provide a variety of [data loaders](/core_modules/data_modules/connector/root.md) which will load in Documents
+We provide a variety of [data loaders](/docs/core_modules/data_modules/connector/root.md) which will load in Documents
 through the `load_data` function, e.g.:
 
 ```python
@@ -141,7 +141,7 @@ index = VectorStoreIndex([])
 index.insert_nodes(nodes)
 ```
 
-See the [Document Management How-To](/core_modules/data_modules/index/document_management.md) for more details on managing documents and an example notebook.
+See the [Document Management How-To](/docs/core_modules/data_modules/index/document_management.md) for more details on managing documents and an example notebook.
 
 ### Customizing Documents
 
@@ -157,7 +157,7 @@ document = Document(
 )
 ```
 
-More information and approaches to this are discussed in the section [Customizing Documents](/core_modules/data_modules/documents_and_nodes/usage_documents.md).
+More information and approaches to this are discussed in the section [Customizing Documents](/docs/core_modules/data_modules/documents_and_nodes/usage_documents.md).
 
 ### Customizing LLM's
 
@@ -190,9 +190,9 @@ from llama_index import ServiceContext
 service_context = ServiceContext.from_defaults(llm="local")
 ```
 
-This will use llama2-chat-13B from with LlamaCPP, and assumes you have `llama-cpp-python` installed. Full LlamaCPP usage guide is available in a [notebook here](/examples/llm/llama_2_llama_cpp.ipynb).
+This will use llama2-chat-13B from with LlamaCPP, and assumes you have `llama-cpp-python` installed. Full LlamaCPP usage guide is available in a [notebook here](/docs/examples/llm/llama_2_llama_cpp.ipynb).
 
-See the [Custom LLM's How-To](/core_modules/model_modules/llms/usage_custom.md) for more details.
+See the [Custom LLM's How-To](/docs/core_modules/model_modules/llms/usage_custom.md) for more details.
 
 ### Global ServiceContext
 
@@ -205,17 +205,17 @@ set_global_service_context(service_context)
 
 This service context will always be used as the default if not specified as a keyword argument in LlamaIndex functions.
 
-For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/core_modules/supporting_modules/service_context.md).
+For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/docs/core_modules/supporting_modules/service_context.md).
 
 ### Customizing Prompts
 
 Depending on the index used, we used default prompt templates for constructing the index (and also insertion/querying).
-See [Custom Prompts How-To](/core_modules/model_modules/prompts.md) for more details on how to customize your prompt.
+See [Custom Prompts How-To](/docs/core_modules/model_modules/prompts.md) for more details on how to customize your prompt.
 
 ### Customizing embeddings
 
 For embedding-based indices, you can choose to pass in a custom embedding model. See
-[Custom Embeddings How-To](/core_modules/model_modules/embeddings/usage_pattern.md) for more details.
+[Custom Embeddings How-To](/docs/core_modules/model_modules/embeddings/usage_pattern.md) for more details.
 
 ### Cost Analysis 
 
@@ -224,7 +224,7 @@ token usage through the outputs of these operations. When running operations,
 the token usage will be printed.
 
 You can also fetch the token usage through `TokenCountingCallback` handler.
-See [Cost Analysis How-To](/core_modules/supporting_modules/cost_analysis/usage_pattern.md) for more details.
+See [Cost Analysis How-To](/docs/core_modules/supporting_modules/cost_analysis/usage_pattern.md) for more details.
 
 ### [Optional] Save the index for future use
 
@@ -277,7 +277,7 @@ index = load_index_from_storage(
 
 You can build indices on top of other indices!
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
-see our [Query Use Cases](/end_to_end_tutorials/question_and_answer.md). For technical details and examples, see our [Composability How-To](/core_modules/data_modules/index/composability.md).
+see our [Query Use Cases](/docs/end_to_end_tutorials/question_and_answer.md). For technical details and examples, see our [Composability How-To](/docs/core_modules/data_modules/index/composability.md).
 
 ## 5. Query the index.
 
@@ -340,7 +340,7 @@ print(response)
 
 You may also add your own retrieval, response synthesis, and overall query logic, by implementing the corresponding interfaces.
 
-For a full list of implemented components and the supported configurations, please see the detailed [reference docs](/api_reference/query.rst).
+For a full list of implemented components and the supported configurations, please see the detailed [reference docs](/docs/api_reference/query.rst).
 
 In the following, we discuss some commonly used configurations in detail.
 
@@ -366,7 +366,7 @@ query_engine = RetrieverQueryEngine(retriever)
 response = query_engine.query("What did the author do growing up?")
 ```
 
-The full list of retrievers for each index (and their shorthand) is documented in the [Query Reference](/api_reference/query.rst).
+The full list of retrievers for each index (and their shorthand) is documented in the [Query Reference](/docs/api_reference/query.rst).
 
 (setting-response-mode)=
 
@@ -429,7 +429,7 @@ For example:
 - `SimilarityPostprocessor`: filters nodes by setting a threshold on the similarity score (thus only supported by embedding-based retrievers)
 - `PrevNextNodePostprocessor`: augments retrieved `Node` objects with additional relevant context based on `Node` relationships.
 
-The full list of node postprocessors is documented in the [Node Postprocessor Reference](/api_reference/node_postprocessor.rst).
+The full list of node postprocessors is documented in the [Node Postprocessor Reference](/docs/api_reference/node_postprocessor.rst).
 
 To configure the desired node postprocessors:
 
@@ -448,7 +448,7 @@ response = query_engine.query("What did the author do growing up?")
 
 ## 6. Parsing the response
 
-The object returned is a [`Response` object](/api_reference/response.rst).
+The object returned is a [`Response` object](/docs/api_reference/response.rst).
 The object contains both the response text as well as the "sources" of the response:
 
 ```python
@@ -465,4 +465,4 @@ response.get_formatted_sources()
 ```
 
 An example is shown below.
-![](/_static/response/response_1.jpeg)
+![](/docs/_static/response/response_1.jpeg)

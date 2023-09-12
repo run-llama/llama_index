@@ -42,7 +42,7 @@ We are actively adding more integrations and improving feature coverage for each
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
 | Azure Cognitive Search   | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 
-For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
+For more details, see [Vector Store Integrations](/docs/community/integrations/vector_stores.md).
 
 ```{toctree}
 ---

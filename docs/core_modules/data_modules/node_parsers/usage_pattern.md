@@ -34,7 +34,7 @@ There are several options available to customize:
 - `text_splitter` (defaults to `TokenTextSplitter`) - the text splitter used to split text into chunks.
 - `include_metadata` (defaults to `True`) - whether or not `Node`s should inherit the document metadata.
 - `include_prev_next_rel` (defaults to `True`) - whether or not to include previous/next relationships between chunked `Node`s
-- `metadata_extractor` (defaults to `None`) - extra processing to extract helpful metadata. See [here for details](/core_modules/data_modules/documents_and_nodes/usage_metadata_extractor.md).
+- `metadata_extractor` (defaults to `None`) - extra processing to extract helpful metadata. See [here for details](/docs/core_modules/data_modules/documents_and_nodes/usage_metadata_extractor.md).
 
 If you don't want to change the `text_splitter`, you can use `SimpleNodeParser.from_defaults()` to easily change the chunk size and chunk overlap. The defaults are 1024 and 20 respectively.
 
@@ -120,4 +120,4 @@ node_parser = SentenceWindowNodeParser.from_defaults(
 )
 ```
 
-A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](/examples/node_postprocessor/MetadataReplacementDemo.ipynb).
+A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](/docs/examples/node_postprocessor/MetadataReplacementDemo.ipynb).

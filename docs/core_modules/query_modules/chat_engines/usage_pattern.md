@@ -8,7 +8,7 @@ chat_engine = index.as_chat_engine()
 ```
 
 ```{tip}
-To learn how to build an index, see [Index](/core_modules/data_modules/index/root.md)
+To learn how to build an index, see [Index](/docs/core_modules/data_modules/index/root.md)
 ```
 
 Have a conversation with your data:
@@ -115,7 +115,7 @@ for token in streaming_response.response_gen:
     print(token, end="")
 ```
 
-See an [end-to-end tutorial](/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb)
+See an [end-to-end tutorial](/docs/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb)
 
 
 

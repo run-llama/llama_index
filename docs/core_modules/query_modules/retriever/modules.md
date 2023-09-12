@@ -1,12 +1,12 @@
 # Module Guides
 We are actively adding more tailored retrieval guides.
-In the meanwhile, please take a look at the [API References](/api_reference/query/retrievers.rst).
+In the meanwhile, please take a look at the [API References](/docs/api_reference/query/retrievers.rst).
 
 ## Index Retrievers
 
-Please see [the retriever modes](/core_modules/query_modules/retriever/retriever_modes.md) for more details on how to get a retriever from any given index.
+Please see [the retriever modes](/docs/core_modules/query_modules/retriever/retriever_modes.md) for more details on how to get a retriever from any given index.
 
-If you want to import the corresponding retrievers directly, please check out our [API reference](/api_reference/query/retrievers.rst).
+If you want to import the corresponding retrievers directly, please check out our [API reference](/docs/api_reference/query/retrievers.rst).
 
 ## Advanced Retriever Guides
 

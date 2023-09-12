@@ -10,7 +10,7 @@ of simplest (top-k semantic search), to more advanced capabilities.
 
 The most basic example usage of LlamaIndex is through semantic search. We provide
 a simple in-memory vector store for you to get started, but you can also choose
-to use any one of our [vector store integrations](/community/integrations/vector_stores.md):
+to use any one of our [vector store integrations](/docs/community/integrations/vector_stores.md):
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
@@ -23,8 +23,8 @@ print(response)
 ```
 
 **Tutorials**
-- [Starter Tutorial](/getting_started/starter_example.md)
-- [Basic Usage Pattern](/end_to_end_tutorials/usage_pattern.md)
+- [Starter Tutorial](/docs/getting_started/starter_example.md)
+- [Basic Usage Pattern](/docs/end_to_end_tutorials/usage_pattern.md)
 
 **Guides**
 - [Example](../examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores/SimpleIndexDemo.ipynb))
@@ -85,8 +85,8 @@ response = query_engine.query("<query_str>")
 ```
 
 **Guides**
-- [Composability](/core_modules/data_modules/index/composability.md)
-- [City Analysis](/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
+- [Composability](/docs/core_modules/data_modules/index/composability.md)
+- [City Analysis](/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 
 
@@ -153,8 +153,8 @@ decompose_transform = DecomposeQueryTransform(
 This module will help break down a complex query into a simpler one over your existing index structure.
 
 **Guides**
-- [Query Transformations](/core_modules/query_modules/query_engine/advanced/query_transformations.md)
-- [City Analysis Compare/Contrast Example](/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
+- [Query Transformations](/docs/core_modules/query_modules/query_engine/advanced/query_transformations.md)
+- [City Analysis Compare/Contrast Example](/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
 You can also rely on the LLM to *infer* whether to perform compare/contrast queries (see Multi-Document Queries below).
 
@@ -213,7 +213,7 @@ the module will first decompose the query into a simpler initial question "What 
 query the index, and then ask followup questions.
 
 **Guides**
-- [Query Transformations](/core_modules/query_modules/query_engine/advanced/query_transformations.md)
+- [Query Transformations](/docs/core_modules/query_modules/query_engine/advanced/query_transformations.md)
 - [Multi-Step Query Decomposition](../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 
@@ -224,11 +224,11 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 - Sort by recency and filter outdated context.
 
 **Guides**
-- [Second-Stage Postprocessing Guide](/core_modules/query_modules/node_postprocessors/root.md)
-- [Prev/Next Postprocessing](/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
-- [Recency Postprocessing](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
+- [Second-Stage Postprocessing Guide](/docs/core_modules/query_modules/node_postprocessors/root.md)
+- [Prev/Next Postprocessing](/docs/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
+- [Recency Postprocessing](/docs/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
 
 ### Additional Resources
-- [A Guide to Creating a Unified Query Framework over your ndexes](/end_to_end_tutorials/question_and_answer/unified_query.md)
-- [A Guide to Extracting Terms and Definitions](/end_to_end_tutorials/question_and_answer/terms_definitions_tutorial.md)
+- [A Guide to Creating a Unified Query Framework over your ndexes](/docs/end_to_end_tutorials/question_and_answer/unified_query.md)
+- [A Guide to Extracting Terms and Definitions](/docs/end_to_end_tutorials/question_and_answer/terms_definitions_tutorial.md)
 - [SEC 10k Analysis](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d)

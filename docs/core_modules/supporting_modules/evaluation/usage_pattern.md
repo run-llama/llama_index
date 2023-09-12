@@ -31,7 +31,7 @@ print(str(eval_result))
 
 You'll get back either a `YES` or `NO` response.
 
-![](/_static/evaluation/eval_response_context.png)
+![](/docs/_static/evaluation/eval_response_context.png)
 
 ### Sources Evaluation
 
@@ -92,7 +92,7 @@ print(str(eval_result))
 
 ```
 
-![](/_static/evaluation/eval_query_response_context.png)
+![](/docs/_static/evaluation/eval_query_response_context.png)
 
 ### Sources Evaluation
 
@@ -121,7 +121,7 @@ eval_result = evaluator.evaluate_source_nodes(query, response)
 print(str(eval_result))
 ```
 
-![](/_static/evaluation/eval_query_sources.png)
+![](/docs/_static/evaluation/eval_query_sources.png)
 
 ## Question Generation
 
