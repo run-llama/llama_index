@@ -1,5 +1,6 @@
 """Evaluating the responses from an index."""
 from __future__ import annotations
+import asyncio
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -364,3 +365,87 @@ class QueryResponseEvaluator(BaseEvaluator):
             response_texts.append(response_txt)
 
         return response_texts
+
+    async def aevaluate_source_nodes(
+        self, query: str, response: Response, pool_size: int = 4
+    ) -> List[str]:
+        """Function to evaluate if each source node contains the answer \
+            to a given query by comparing the query, response, \
+                and context information concurrently.
+        Args:
+            query: Query for which response is generated from index.
+            response: Response object from an index based on the query.
+            pool_size: Max no. of call to do in parallel
+        Returns:
+            List of Yes/ No which can be used to know which source node contains \
+                answer.
+            Yes -> If answer, context information are matching \
+                    or If Query, answer and context information are matching \
+                        for a source node.
+            No -> If answer, context information are not matching \
+                    or If Query, answer and context information are not matching \
+                        for a source node.
+        """
+        answer = str(response)
+
+        context_list = self.get_context(response)
+
+        response_texts = []
+
+        semaphore = asyncio.Semaphore(pool_size)
+
+        async def worker(query_engine, query_response):
+            async with semaphore:
+                return await query_engine.aquery(query_response)
+
+        tasks = []
+        for context in context_list:
+            index = SummaryIndex.from_documents(
+                [context], service_context=self.service_context
+            )
+            response_txt = ""
+
+            query_response = f"Question: {query}\nResponse: {answer}"
+
+            query_engine = index.as_query_engine(
+                text_qa_template=self.query_eval_prompt_tmpl,
+                refine_template=self.query_refine_prompt_tmpl,
+            )
+            tasks.append(worker(query_engine, query_response))
+
+        responses = await asyncio.gather(*tasks)
+
+        for response_obj in responses:
+            raw_response_txt = str(response_obj)
+
+            if "yes" in raw_response_txt.lower():
+                response_txt = "YES"
+            else:
+                response_txt = "NO"
+                if self.raise_error:
+                    raise ValueError("The response is invalid")
+
+            response_texts.append(response_txt)
+        return response_texts
+
+    def async_evaluate_source_nodes(
+        self, query: str, response: Response, pool_size: int = 4
+    ) -> List[str]:
+        """Calls asynchronous aevaluate_source_nodes to evaluate if each source node contains the answer \
+            to a given query by comparing the query, response, \
+                and context information.
+        Args:
+            query: Query for which response is generated from index.
+            response: Response object from an index based on the query.
+            pool_size: Max no. of call to do in parallel
+        Returns:
+            List of Yes/ No which can be used to know which source node contains \
+                answer.
+            Yes -> If answer, context information are matching \
+                    or If Query, answer and context information are matching \
+                        for a source node.
+            No -> If answer, context information are not matching \
+                    or If Query, answer and context information are not matching \
+                        for a source node.
+        """
+        return asyncio.run(self.aevaluate_source_nodes(query, response, pool_size))
