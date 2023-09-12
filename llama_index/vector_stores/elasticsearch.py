@@ -1,10 +1,9 @@
 """Elasticsearch vector store."""
 import asyncio
 import nest_asyncio
-from functools import partial
 import uuid
 from logging import getLogger
-from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
 from functools import wraps
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
