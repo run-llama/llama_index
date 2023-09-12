@@ -226,7 +226,10 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["delta"]
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["delta"]
+                else:
+                    delta = ""
                 role = delta.get("role", "assistant")
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
@@ -302,7 +305,10 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["text"]
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["text"]
+                else:
+                    delta = ""
                 text += delta
                 yield CompletionResponse(
                     delta=delta,
@@ -439,7 +445,10 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["delta"]
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["delta"]
+                else:
+                    delta = ""
                 role = delta.get("role", "assistant")
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
@@ -517,7 +526,10 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["text"]
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["text"]
+                else:
+                    delta = ""
                 text += delta
                 yield CompletionResponse(
                     delta=delta,
