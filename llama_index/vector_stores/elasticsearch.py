@@ -99,7 +99,7 @@ def _get_elasticsearch_client(
     sync_es_client = elasticsearch.Elasticsearch(**connection_params)
     async_es_client = elasticsearch.AsyncElasticsearch(**connection_params)
     try:
-        sync_es_client.info()  # so don't have to await to just get info
+        sync_es_client.info()  # so don't have to 'await' to just get info
     except Exception as e:
         logger.error(f"Error connecting to Elasticsearch: {e}")
         raise e
@@ -146,8 +146,7 @@ class ElasticsearchStore(VectorStore):
     Args:
 
         index_name: Name of the Elasticsearch index.
-        es_client: Optional. Pre-existing Elasticsearch client.
-        async_es_client: Optional. Pre-existing AsyncElasticsearch client.
+        es_client: Optional. Pre-existing AsyncElasticsearch client.
         es_url: Optional. Elasticsearch URL.
         es_cloud_id: Optional. Elasticsearch cloud ID.
         es_api_key: Optional. Elasticsearch API key.
@@ -161,7 +160,7 @@ class ElasticsearchStore(VectorStore):
                         Defaults to "COSINE".
 
     Raises:
-        ConnectionError: If Elasticsearch client cannot connect to Elasticsearch.
+        ConnectionError: If AsyncElasticsearch client cannot connect to Elasticsearch.
         ValueError: If neither es_client nor es_url nor es_cloud_id is provided.
 
     """
@@ -200,9 +199,8 @@ class ElasticsearchStore(VectorStore):
             )
         else:
             raise ValueError(
-                """Either provide a pre-existing Elasticsearch and \
-                AsyncElasticsearch connection, or valid credentials for \
-                creating a new connection."""
+                """Either provide a pre-existing AsyncElasticsearch or valid \
+                credentials for creating a new connection."""
             )
 
     @property
