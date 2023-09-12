@@ -28,12 +28,12 @@ DISTANCE_STRATEGIES = Literal[
 nest_asyncio.apply()
 
 
-def add_sync_version(func):
+def add_sync_version(func: Any) -> Any:
     """Decorator for adding sync version of an async function."""
     assert asyncio.iscoroutinefunction(func)
 
     @wraps(func)
-    def _wrapper(self, *args, **kwds):
+    def _wrapper(self: Any, *args: Any, **kwds: Any) -> Any:
         return asyncio.get_event_loop().run_until_complete(func(self, *args, **kwds))
 
     func.sync = _wrapper
@@ -47,8 +47,8 @@ def _get_elasticsearch_client(
     api_key: Optional[str] = None,
     username: Optional[str] = None,
     password: Optional[str] = None,
-) -> Tuple[Any, Any]:
-    """Get Elasticsearch clients.
+) -> Any:
+    """Get AsyncElasticsearch client.
 
     Args:
         es_url: Elasticsearch URL.
@@ -58,7 +58,7 @@ def _get_elasticsearch_client(
         password: Elasticsearch password.
 
     Returns:
-        Elasticsearch and AsyncElasticsearch clients.
+        AsyncElasticsearch client.
 
     Raises:
         ConnectionError: If Elasticsearch client cannot connect to Elasticsearch.
@@ -287,7 +287,7 @@ class ElasticsearchStore(VectorStore):
             ImportError: If elasticsearch['async'] python package is not installed.
             BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
         """
-        self.async_add.sync(
+        return self.async_add.sync(
             self, nodes, create_index_if_not_exists=create_index_if_not_exists
         )
 
