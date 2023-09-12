@@ -189,9 +189,9 @@ class ElasticsearchStore(VectorStore):
         self.distance_strategy = distance_strategy
 
         if async_es_client is not None:
-            self._async_client = async_es_client
+            self._client = async_es_client
         elif es_url is not None or es_cloud_id is not None:
-            self._async_client = _get_elasticsearch_client(
+            self._client = _get_elasticsearch_client(
                 es_url=es_url,
                 username=es_user,
                 password=es_password,
@@ -206,9 +206,9 @@ class ElasticsearchStore(VectorStore):
             )
 
     @property
-    def async_client(self) -> Any:
+    def client(self) -> Any:
         """Get async elasticsearch client"""
-        return self._async_client
+        return self._client
 
     async def _create_index_if_not_exists(
         self, index_name: str, dims_length: Optional[int] = None
@@ -220,7 +220,7 @@ class ElasticsearchStore(VectorStore):
             dims_length: Length of the embedding vectors.
         """
 
-        if await self.async_client.indices.exists(index=index_name):
+        if await self.client.indices.exists(index=index_name):
             logger.debug(f"Index {index_name} already exists. Skipping creation.")
 
         else:
@@ -265,7 +265,7 @@ class ElasticsearchStore(VectorStore):
             logger.debug(
                 f"Creating index {index_name} with mappings {index_settings['mappings']}"  # noqa: E501
             )
-            await self.async_client.indices.create(index=index_name, **index_settings)
+            await self.client.indices.create(index=index_name, **index_settings)
 
     def add(
         self,
@@ -361,11 +361,11 @@ class ElasticsearchStore(VectorStore):
             return_ids.append(_id)
 
         await async_bulk(
-            self.async_client, requests, chunk_size=self.batch_size, refresh=True
+            self.client, requests, chunk_size=self.batch_size, refresh=True
         )
         try:
             success, failed = await async_bulk(
-                self.async_client, requests, stats_only=True, refresh=True
+                self.client, requests, stats_only=True, refresh=True
             )
             logger.debug(f"Added {success} and failed to add {failed} texts to index")
 
@@ -404,8 +404,8 @@ class ElasticsearchStore(VectorStore):
         """
 
         try:
-            async with self.async_client as async_client:
-                res = await async_client.delete_by_query(
+            async with self.client as client:
+                res = await client.delete_by_query(
                     index=self.index_name,
                     query={"term": {"metadata.ref_doc_id": ref_doc_id}},
                     refresh=True,
@@ -517,8 +517,8 @@ class ElasticsearchStore(VectorStore):
             es_query = custom_query(es_query, query)
             logger.debug(f"Calling custom_query, Query body now: {es_query}")
 
-        async with self.async_client as async_client:
-            response = await async_client.search(
+        async with self.client as client:
+            response = await client.search(
                 index=self.index_name,
                 **es_query,
                 size=query.similarity_top_k,
