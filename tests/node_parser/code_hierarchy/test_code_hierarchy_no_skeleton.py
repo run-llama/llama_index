@@ -1,4 +1,4 @@
-"""Test text splitter."""
+"""Test CodeHierarchyNodeParser with skeleton option set to False."""
 import os
 from typing import List
 
@@ -23,8 +23,7 @@ class Foo:
         print("bar")
 
     def baz():
-        print("baz")
-        """
+        print("baz")"""
 
     text_node = TextNode(
         text=text,
@@ -36,7 +35,7 @@ class Foo:
     chunks: List[TextNode] = code_splitter.get_nodes_from_documents([text_node])
 
     # This is the module scope
-    assert chunks[0].text.startswith("class Foo:")
+    assert chunks[0].text == text
     assert chunks[0].metadata["module"] == "example.foo"
     assert chunks[0].metadata["inclusive_scopes"] == []
     assert NodeRelationship.PARENT not in chunks[0].relationships
@@ -49,7 +48,7 @@ class Foo:
     assert NodeRelationship.NEXT not in chunks[0].relationships
 
     # This is the class scope
-    assert chunks[1].text.startswith("class Foo:")
+    assert chunks[1].text == text
     assert chunks[1].metadata["module"] == "example.foo"
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "Foo", "type": "class_definition"}
@@ -66,7 +65,9 @@ class Foo:
     assert NodeRelationship.NEXT not in chunks[1].relationships
 
     # This is the first method scope
-    assert chunks[2].text.startswith("def foo():")
+    assert chunks[2].text == """\
+    def foo():
+        print("bar")"""
     assert chunks[2].metadata["module"] == "example.foo"
     assert chunks[2].metadata["inclusive_scopes"] == [
         {"name": "Foo", "type": "class_definition"},
@@ -81,7 +82,9 @@ class Foo:
     assert NodeRelationship.NEXT not in chunks[2].relationships
 
     # This is the second method scope
-    assert chunks[3].text.startswith("def baz():")
+    assert chunks[3].text == """\
+    def baz():
+        print("baz")"""
     assert chunks[3].metadata["module"] == "example.foo"
     assert chunks[3].metadata["inclusive_scopes"] == [
         {"name": "Foo", "type": "class_definition"},
@@ -103,7 +106,7 @@ def test_html_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="html", min_characters=len("<title>My Example Page</title>") + 1
+        language="html", min_characters=len("    <title>My Example Page</title>") + 1
     )
 
     text = """\
@@ -130,7 +133,7 @@ def test_html_code_splitter() -> None:
     chunks = code_splitter.get_nodes_from_documents([text_node])
 
     # This is the DOCTYPE scope
-    assert chunks[0].text.startswith("<!DOCTYPE html>")
+    assert chunks[0].text == text
     assert chunks[0].metadata["inclusive_scopes"] == []
     assert NodeRelationship.PARENT not in chunks[0].relationships
     assert [c.node_id for c in chunks[0].relationships[NodeRelationship.CHILD]] == [
@@ -141,7 +144,22 @@ def test_html_code_splitter() -> None:
     assert NodeRelationship.NEXT not in chunks[0].relationships
 
     # This is the html scope
-    assert chunks[1].text.startswith("<html>")
+    assert chunks[1].text == """\
+<html>
+<head>
+    <title>My Example Page</title>
+</head>
+<body>
+    <h1>Welcome to My Example Page</h1>
+    <p>This is a basic HTML page example.</p>
+    <ul>
+        <li>Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+    </ul>
+    <img src="https://example.com/image.jpg" alt="Example Image">
+</body>
+</html>"""
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "<html>", "type": "element"}
     ]
@@ -155,7 +173,10 @@ def test_html_code_splitter() -> None:
     assert NodeRelationship.NEXT not in chunks[1].relationships
 
     # Head chunk
-    assert chunks[2].text.startswith("<head>")
+    assert chunks[2].text == """\
+<head>
+    <title>My Example Page</title>
+</head>"""
     assert chunks[2].metadata["inclusive_scopes"] == [
         {"name": "<html>", "type": "element"},
         {"name": "<head>", "type": "element"},
@@ -171,7 +192,17 @@ def test_html_code_splitter() -> None:
     assert NodeRelationship.NEXT not in chunks[2].relationships
 
     # Test the fourth chunk (<body> tag and its content)
-    assert chunks[3].text.startswith("<body>")
+    assert chunks[3].text == """\
+<body>
+    <h1>Welcome to My Example Page</h1>
+    <p>This is a basic HTML page example.</p>
+    <ul>
+        <li>Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+    </ul>
+    <img src="https://example.com/image.jpg" alt="Example Image">
+</body>"""
     assert chunks[3].metadata["inclusive_scopes"] == [
         {"name": "<html>", "type": "element"},
         {"name": "<body>", "type": "element"},
@@ -187,7 +218,12 @@ def test_html_code_splitter() -> None:
     assert NodeRelationship.NEXT not in chunks[3].relationships
 
     # Test the seventh chunk (<ul> tag and its content)
-    assert chunks[6].text.startswith("<ul>")
+    assert chunks[6].text == """\
+    <ul>
+        <li>Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+    </ul>"""
     assert chunks[6].metadata["inclusive_scopes"] == [
         {"name": "<html>", "type": "element"},
         {"name": "<body>", "type": "element"},
@@ -233,7 +269,10 @@ function baz() {
     chunks: List[RelatedNodeInfo] = code_splitter.get_nodes_from_documents([text_node])
 
     # Test the second chunk (function foo)
-    assert chunks[1].text.startswith("function foo()")
+    assert chunks[1].text == """\
+function foo() {
+    console.log("bar");
+}"""
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "foo", "type": "function_declaration"}
     ]
@@ -241,7 +280,12 @@ function baz() {
     assert [c.node_id for c in chunks[1].relationships[NodeRelationship.CHILD]] == []
 
     # Test the third chunk (class Example)
-    assert chunks[2].text.startswith("class Example")
+    assert chunks[2].text == """\
+class Example {
+    exampleMethod() {
+        console.log("line1");
+    }
+}"""
     assert chunks[2].metadata["inclusive_scopes"] == [
         {"name": "Example", "type": "class_declaration"}
     ]
@@ -251,7 +295,10 @@ function baz() {
     ]
 
     # Test the fourth chunk (exampleMethod in class Example)
-    assert chunks[3].text.startswith("exampleMethod()")
+    assert chunks[3].text == """\
+    exampleMethod() {
+        console.log("line1");
+    }"""
     assert chunks[3].metadata["inclusive_scopes"] == [
         {"name": "Example", "type": "class_declaration"},
         {"name": "exampleMethod", "type": "method_definition"},
@@ -260,7 +307,10 @@ function baz() {
     assert chunks[3].relationships[NodeRelationship.CHILD] == []
 
     # Test the fifth chunk (function baz)
-    assert chunks[4].text.startswith("function baz()")
+    assert chunks[4].text == """\
+function baz() {
+    console.log("bbq");
+}"""
     assert chunks[4].metadata["inclusive_scopes"] == [
         {"name": "baz", "type": "function_declaration"}
     ]
@@ -308,11 +358,15 @@ export default ExampleComponent;"""
     chunks: List[RelatedNodeInfo] = code_splitter.get_nodes_from_documents([text_node])
 
     # Test the first chunk (import statement)
-    assert chunks[0].text.startswith("import React from 'react';")
+    assert chunks[0].text == text
     assert chunks[0].metadata["inclusive_scopes"] == []
 
     # Test the second chunk (interface definition)
-    assert chunks[1].text.startswith("interface Person")
+    assert chunks[1].text == """\
+interface Person {
+  name: string;
+  age: number;
+}"""
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "Person", "type": "interface_declaration"}
     ]
@@ -320,7 +374,20 @@ export default ExampleComponent;"""
     assert chunks[1].relationships[NodeRelationship.CHILD] == []
 
     # Test the third chunk (ExampleComponent function definition)
-    assert chunks[2].text.startswith("const ExampleComponent: React.FC = () => {")
+    assert chunks[2].text == """\
+const ExampleComponent: React.FC = () => {
+  const person: Person = {
+    name: 'John Doe',
+    age: 30,
+  };
+
+  return (
+    <div>
+      <h1>Hello, {person.name}!</h1>
+      <p>You are {person.age} years old.</p>
+    </div>
+  );
+};"""
     assert chunks[2].metadata["inclusive_scopes"] == [
         {"name": "ExampleComponent", "type": "lexical_declaration"}
     ]
@@ -362,11 +429,19 @@ int main() {
     chunks = code_splitter.get_nodes_from_documents([text_node])
 
     # Test the first chunk (#include statement)
-    assert chunks[0].text.startswith("#include <iostream>")
+    assert chunks[0].text == text
     assert chunks[0].metadata["inclusive_scopes"] == []
 
     # Test the second chunk (class MyClass)
-    assert chunks[1].text.startswith("class MyClass")
+    assert chunks[1].text == """\
+class MyClass {       // The class
+  public:             // Access specifier
+    int myNum;        // Attribute (int variable)
+    string myString;  // Attribute (string variable)
+    void myMethod() { // Method/function defined inside the class
+        cout << "Hello World!";
+    }
+}"""
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "MyClass", "type": "class_specifier"}
     ]
@@ -376,7 +451,10 @@ int main() {
     ]
 
     # Test the third chunk (myMethod in class MyClass)
-    assert chunks[2].text.startswith("void myMethod()")
+    assert chunks[2].text == """\
+    void myMethod() { // Method/function defined inside the class
+        cout << "Hello World!";
+    }"""
     assert chunks[2].metadata["inclusive_scopes"] == [
         {"name": "MyClass", "type": "class_specifier"},
         {"name": "myMethod()", "type": "function_definition"},
@@ -385,7 +463,11 @@ int main() {
     assert chunks[2].relationships[NodeRelationship.CHILD] == []
 
     # Test the fourth chunk (main function)
-    assert chunks[3].text.startswith("int main()")
+    assert chunks[3].text == """\
+int main() {
+    std::cout << "Hello, World!" << std::endl;
+    return 0;
+}"""
     assert chunks[3].metadata["inclusive_scopes"] == [
         {"name": "main()", "type": "function_definition"}
     ]
