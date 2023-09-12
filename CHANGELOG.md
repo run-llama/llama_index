@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Allowed `simple` mode to work with `as_chat_engine()` (#7637)
+- Fixed index error in azure streaming (#7646)
 
 ## [0.8.24] - 2023-09-11
 
