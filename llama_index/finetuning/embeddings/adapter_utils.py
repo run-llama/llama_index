@@ -6,7 +6,7 @@ from typing import Optional, Dict, Type, Callable, Any, List
 from torch.optim import Optimizer
 import transformers
 from tqdm.autonotebook import trange
-from llama_index.embeddings.adapter_utils import LinearLayer
+from llama_index.embeddings.adapter_utils import BaseAdapter
 from llama_index.bridge.langchain import print_text
 
 from sentence_transformers.util import cos_sim
@@ -22,7 +22,7 @@ class MyMultipleNegativesRankingLoss(nn.Module):
 
     def __init__(
         self,
-        model: LinearLayer,
+        model: BaseAdapter,
         scale: float = 20.0,
         similarity_fct: Optional[Callable] = None,
     ):
@@ -49,7 +49,7 @@ class MyMultipleNegativesRankingLoss(nn.Module):
 
 
 def train_model(
-    model: LinearLayer,
+    model: BaseAdapter,
     data_loader: torch.utils.data.DataLoader,
     device: torch.device,
     epochs: int = 1,

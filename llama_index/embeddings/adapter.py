@@ -1,6 +1,6 @@
 """Embedding adapter model."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Type, cast
 
 from llama_index.bridge.pydantic import PrivateAttr
 
@@ -12,11 +12,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class LinearAdapterEmbeddingModel(BaseEmbedding):
-    """Linear adapter for any embedding model."""
+class AdapterEmbeddingModel(BaseEmbedding):
+    """Adapter for any embedding model."""
 
     _base_embed_model: BaseEmbedding = PrivateAttr()
-    _adapter_path: str = PrivateAttr()
     _adapter: Any = PrivateAttr()
     _transform_query: bool = PrivateAttr()
     _device: Optional[str] = PrivateAttr()
@@ -26,6 +25,7 @@ class LinearAdapterEmbeddingModel(BaseEmbedding):
         self,
         base_embed_model: BaseEmbedding,
         adapter_path: str,
+        adapter_cls: Optional[Type[Any]] = None,
         transform_query: bool = True,
         device: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
@@ -33,7 +33,7 @@ class LinearAdapterEmbeddingModel(BaseEmbedding):
     ) -> None:
         """Init params"""
         import torch
-        from llama_index.embeddings.adapter_utils import LinearLayer
+        from llama_index.embeddings.adapter_utils import LinearLayer, BaseAdapter
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -41,10 +41,14 @@ class LinearAdapterEmbeddingModel(BaseEmbedding):
         self._target_device = torch.device(device)
 
         self._base_embed_model = base_embed_model
-        self._adapter_path = adapter_path
 
-        adapter = LinearLayer.load(adapter_path)
-        self._adapter = adapter
+        if adapter_cls is None:
+            adapter_cls = LinearLayer
+        else:
+            adapter_cls = cast(Type[BaseAdapter], adapter_cls)
+
+        adapter = adapter_cls.load(adapter_path)
+        self._adapter = cast(BaseAdapter, adapter)
         self._adapter.to(self._target_device)
 
         self._transform_query = transform_query
@@ -57,7 +61,7 @@ class LinearAdapterEmbeddingModel(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
-        return "LinearAdapterEmbeddingModel"
+        return "AdapterEmbeddingModel"
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
@@ -92,3 +96,7 @@ class LinearAdapterEmbeddingModel(BaseEmbedding):
         text_embedding = await self._base_embed_model._aget_text_embedding(text)
 
         return text_embedding
+
+
+# Maintain for backwards compatibility
+LinearAdapterEmbeddingModel = AdapterEmbeddingModel

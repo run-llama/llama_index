@@ -2,7 +2,7 @@
 
 from llama_index.embeddings.base import BaseEmbedding
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, cast
 
 from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
@@ -13,7 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
-    """Embedding adapter finetune engine."""
+    """Embedding adapter finetune engine.
+
+    Args:
+        dataset (EmbeddingQAFinetuneDataset): Dataset to finetune on.
+        embed_model (BaseEmbedding): Embedding model to finetune.
+        batch_size (Optional[int]): Batch size. Defaults to 10.
+        epochs (Optional[int]): Number of epochs. Defaults to 1.
+        dim (Optional[int]): Dimension of embedding. Defaults to None.
+        adapter_model (Optional[BaseAdapter]): Adapter model. Defaults to None, in which
+            case a linear adapter is used.
+        device (Optional[str]): Device to use. Defaults to None.
+        model_output_path (str): Path to save model output. Defaults to "model_output".
+        verbose (bool): Whether to show progress bar. Defaults to False.
+        bias (bool): Whether to use bias. Defaults to False.
+    
+    """
 
     def __init__(
         self,
@@ -21,6 +36,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         embed_model: BaseEmbedding,
         batch_size: int = 10,
         epochs: int = 1,
+        adapter_model: Optional[Any] = None,
         dim: Optional[int] = None,
         device: Optional[str] = None,
         model_output_path: str = "model_output",
@@ -30,7 +46,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
     ) -> None:
         """Init params."""
         import torch
-        from llama_index.embeddings.adapter_utils import LinearLayer
+        from llama_index.embeddings.adapter_utils import BaseAdapter, LinearLayer
 
         self.dataset = dataset
         self.embed_model = embed_model
@@ -51,7 +67,11 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
             device = "cuda" if torch.cuda.is_available() else "cpu"
             logger.info("Use pytorch device: {}".format(device))
         self._target_device = torch.device(device)
-        self.model = LinearLayer(self.dim, self.dim, bias=bias)
+
+        if adapter_model is not None:
+            self.model = cast(BaseAdapter, adapter_model)
+        else:
+            self.model = LinearLayer(self.dim, self.dim, bias=bias)
 
         self._model_output_path = model_output_path
         self._epochs = epochs
