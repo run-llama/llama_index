@@ -4,7 +4,6 @@ import nest_asyncio
 import uuid
 from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
-from functools import wraps
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
@@ -25,18 +24,6 @@ DISTANCE_STRATEGIES = Literal[
 ]
 
 nest_asyncio.apply()
-
-
-def add_sync_version(func: Any) -> Any:
-    """Decorator for adding sync version of an async function."""
-    assert asyncio.iscoroutinefunction(func)
-
-    @wraps(func)
-    def _wrapper(self: Any, *args: Any, **kwds: Any) -> Any:
-        return asyncio.get_event_loop().run_until_complete(func(self, *args, **kwds))
-
-    func.sync = _wrapper
-    return func
 
 
 def _get_elasticsearch_client(
@@ -169,7 +156,7 @@ class ElasticsearchStore(VectorStore):
     def __init__(
         self,
         index_name: str,
-        async_es_client: Optional[Any] = None,
+        es_client: Optional[Any] = None,
         es_url: Optional[str] = None,
         es_cloud_id: Optional[str] = None,
         es_api_key: Optional[str] = None,
@@ -186,8 +173,8 @@ class ElasticsearchStore(VectorStore):
         self.batch_size = batch_size
         self.distance_strategy = distance_strategy
 
-        if async_es_client is not None:
-            self._client = async_es_client
+        if es_client is not None:
+            self._client = es_client
         elif es_url is not None or es_cloud_id is not None:
             self._client = _get_elasticsearch_client(
                 es_url=es_url,
@@ -286,11 +273,10 @@ class ElasticsearchStore(VectorStore):
             ImportError: If elasticsearch['async'] python package is not installed.
             BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
         """
-        return self.async_add.sync(
-            self, nodes, create_index_if_not_exists=create_index_if_not_exists
+        return asyncio.get_event_loop().run_until_complete(
+            self.async_add(nodes, create_index_if_not_exists=create_index_if_not_exists)
         )
 
-    @add_sync_version
     async def async_add(
         self,
         nodes: List[BaseNode],
@@ -385,9 +371,10 @@ class ElasticsearchStore(VectorStore):
         Raises:
             Exception: If Elasticsearch delete_by_query fails.
         """
-        self.adelete.sync(self, ref_doc_id, **delete_kwargs)
+        return asyncio.get_event_loop().run_until_complete(
+            self.adelete(ref_doc_id, **delete_kwargs)
+        )
 
-    @add_sync_version
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Async delete node from Elasticsearch index.
 
@@ -444,9 +431,10 @@ class ElasticsearchStore(VectorStore):
             Exception: If Elasticsearch query fails.
 
         """
-        return self.aquery.sync(self, query, custom_query, es_filter, **kwargs)
+        return asyncio.get_event_loop().run_until_complete(
+            self.aquery(query, custom_query, es_filter, **kwargs)
+        )
 
-    @add_sync_version
     async def aquery(
         self,
         query: VectorStoreQuery,
