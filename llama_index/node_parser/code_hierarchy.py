@@ -338,21 +338,18 @@ class CodeHierarchyNodeParser(NodeParser):
         return text[start_byte:end_byte].strip()
 
     @staticmethod
-    def _handle_skips(nodes: List[TextNode]) -> List[TextNode]:
+    def _handle_skips(nodes: List[TextNode]) -> None:
         # Starting from the bottom of the heirarchy, delete nodes which are marked "skip"
         # and patch their children and parents
-        def is_skip(node: TextNode) -> bool:
-            return node.metadata["skip"]
         def get_children(node: TextNode) -> List[TextNode]:
             return [n for n in nodes if n.parent_node and n.parent_node.node_id == node.node_id]
+
         def get_parent(node: TextNode) -> TextNode:
             for n in nodes:
-                if node.parent_node.node_id == n.node_id:
+                if node.parent_node and node.parent_node.node_id == n.node_id:
                     return n
-        def set_parent(node: TextNode, new_parent: TextNode) -> None:
-            node.relationships[NodeRelationship.PARENT] = new_parent.as_related_node_info()
-        def add_child(node: TextNode, new_child: TextNode) -> None:
-            node.relationships[NodeRelationship.CHILD].append(new_child.as_related_node_info())
+            raise KeyError("Node does not exist.")
+
         def remove_child(node: TextNode, child: TextNode) -> None:
             node.relationships[NodeRelationship.CHILD] = [c for c in node.child_nodes or [] if c.node_id != child.id_]
 
@@ -361,19 +358,23 @@ class CodeHierarchyNodeParser(NodeParser):
             for child in children:
                 process_node(child)
 
-            if is_skip(node):
+            if node.metadata["skip"]:
                 parent = get_parent(node)
                 for child in children:
-                    set_parent(child, parent)
-                    add_child(parent, child)
+                    # Create the new relationship
+                    child.relationships[NodeRelationship.PARENT] = parent.as_related_node_info()
+                    parent.relationships[NodeRelationship.CHILD].append(child.as_related_node_info())
+
+                    # Delete the old relationship
                     remove_child(node, child)
                 nodes.remove(node)
+
+            # Clean up the skip metadata after
+            del node.metadata["skip"]
 
         roots = [node for node in nodes if NodeRelationship.PARENT not in node.relationships]
         for root in roots:
             process_node(root)
-
-        return nodes
 
     class _ChunkNodeOutput(BaseModel):
         """The output of a chunk_node call."""
@@ -531,7 +532,7 @@ class CodeHierarchyNodeParser(NodeParser):
                         _chunks.this_document is not None
                     ), "Root node must be a chunk"
                     chunks = [_chunks.this_document] + _chunks.children_documents
-                    chunks = self._handle_skips(chunks)
+                    self._handle_skips(chunks)
 
                     # Add your metadata to the chunks here
                     for chunk in chunks:
