@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Allowed `simple` mode to work with `as_chat_engine()` (#7637)
+
 ## [0.8.24] - 2023-09-11
 
 ## New Features
