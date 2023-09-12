@@ -55,7 +55,7 @@ class _ChunkNodeOutput(BaseModel):
     children_documents: List[TextNode]
 
 
-class CodeBlockNodeParser(NodeParser):
+class CodeHierarchyNodeParser(NodeParser):
     """Split code using a AST parser.
 
     Add metadata about the scope of the code block and relationships between

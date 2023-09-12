@@ -2,7 +2,7 @@
 import os
 from typing import List
 
-from llama_index.node_parser.code_hierarchy import CodeBlockNodeParser
+from llama_index.node_parser.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
@@ -13,7 +13,7 @@ def test_python_code_splitter() -> None:
     if "CI" in os.environ:
         return
 
-    code_splitter = CodeBlockNodeParser(
+    code_splitter = CodeHierarchyNodeParser(
         language="python",
     )
 
@@ -102,7 +102,7 @@ def test_html_code_splitter() -> None:
     if "CI" in os.environ:
         return
 
-    code_splitter = CodeBlockNodeParser(
+    code_splitter = CodeHierarchyNodeParser(
         language="html", min_characters=len("<title>My Example Page</title>") + 1
     )
 
@@ -208,7 +208,7 @@ def test_typescript_code_splitter() -> None:
     if "CI" in os.environ:
         return
 
-    code_splitter = CodeBlockNodeParser(
+    code_splitter = CodeHierarchyNodeParser(
         language="typescript",
     )
 
@@ -274,7 +274,7 @@ def test_tsx_code_splitter() -> None:
     if "CI" in os.environ:
         return
 
-    code_splitter = CodeBlockNodeParser(
+    code_splitter = CodeHierarchyNodeParser(
         language="typescript",
     )
 
@@ -335,7 +335,7 @@ def test_cpp_code_splitter() -> None:
     if "CI" in os.environ:
         return
 
-    code_splitter = CodeBlockNodeParser(
+    code_splitter = CodeHierarchyNodeParser(
         language="cpp",  # Removing chunk_lines, chunk_lines_overlap, and max_chars to focus on scopes
     )
 
