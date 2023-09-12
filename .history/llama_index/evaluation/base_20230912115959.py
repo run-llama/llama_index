@@ -435,8 +435,7 @@ class QueryResponseEvaluator(BaseEvaluator):
     def async_evaluate_source_nodes(
         self, query: str, response: Response, pool_size: int = 4
     ) -> List[str]:
-        """Calls asynchronous aevaluate_source_nodes to evaluate\
-            if each source node contains the answer \
+        """Calls asynchronous aevaluate_source_nodes to evaluate if each source node contains the answer \
             to a given query by comparing the query, response, \
                 and context information.
         Args:
