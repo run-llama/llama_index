@@ -77,6 +77,7 @@ class Refine(BaseSynthesizer):
         refine_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
         verbose: bool = False,
+        debug_truncate_chunk: Optional[int] = None,
         structured_answer_filtering: bool = False,
         program_factory: Optional[
             Callable[[BasePromptTemplate], BasePydanticProgram]
@@ -86,6 +87,7 @@ class Refine(BaseSynthesizer):
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._verbose = verbose
+        self._debug_truncate_chunk = debug_truncate_chunk
         self._structured_answer_filtering = structured_answer_filtering
 
         if self._streaming and self._structured_answer_filtering:
@@ -116,6 +118,7 @@ class Refine(BaseSynthesizer):
                 response = self._give_response_single(
                     query_str,
                     text_chunk,
+
                 )
             else:
                 # refine response if possible
@@ -214,7 +217,7 @@ class Refine(BaseSynthesizer):
             response = get_response_text(response)
 
         fmt_text_chunk = truncate_text(
-            text_chunk, response_kwargs.get("debug_truncate_chunk", 50)
+            text_chunk, self._debug_truncate_chunk or 50
         )
         logger.debug(f"> Refine context: {fmt_text_chunk}")
         if self._verbose:
@@ -319,7 +322,7 @@ class Refine(BaseSynthesizer):
             response = get_response_text(response)
 
         fmt_text_chunk = text(
-            text_chunk, response_kwargs.get("debug_truncate_chunk", 50)
+            text_chunk, self._debug_truncate_chunk or 50
         )
         logger.debug(f"> Refine context: {fmt_text_chunk}")
 
