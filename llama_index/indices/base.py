@@ -404,9 +404,7 @@ class BaseIndex(Generic[IS], ABC):
         elif chat_mode == ChatMode.SIMPLE:
             from llama_index.chat_engine import SimpleChatEngine
 
-            service_context = cast(ServiceContext, kwargs["service_context"])
             return SimpleChatEngine.from_defaults(
-                service_context=service_context,
                 **kwargs,
             )
         else:
