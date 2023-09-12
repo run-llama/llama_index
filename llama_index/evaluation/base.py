@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from llama_index.indices.base import ServiceContext
+from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import Document
@@ -394,7 +396,9 @@ class QueryResponseEvaluator(BaseEvaluator):
 
         semaphore = asyncio.Semaphore(pool_size)
 
-        async def worker(query_engine, query_response):
+        async def worker(
+            query_engine: BaseQueryEngine, query_response: str
+        ) -> RESPONSE_TYPE:
             async with semaphore:
                 return await query_engine.aquery(query_response)
 
