@@ -213,7 +213,9 @@ class Refine(BaseSynthesizer):
         if isinstance(response, Generator):
             response = get_response_text(response)
 
-        fmt_text_chunk = truncate_text(text_chunk, 50)
+        fmt_text_chunk = truncate_text(
+            text_chunk, response_kwargs.get("debug_truncate_chunk", 50)
+        )
         logger.debug(f"> Refine context: {fmt_text_chunk}")
         if self._verbose:
             print(f"> Refine context: {fmt_text_chunk}")
@@ -316,7 +318,9 @@ class Refine(BaseSynthesizer):
         if isinstance(response, Generator):
             response = get_response_text(response)
 
-        fmt_text_chunk = truncate_text(text_chunk, 50)
+        fmt_text_chunk = text(
+            text_chunk, response_kwargs.get("debug_truncate_chunk", 50)
+        )
         logger.debug(f"> Refine context: {fmt_text_chunk}")
 
         # NOTE: partial format refine template with query_str and existing_answer here
