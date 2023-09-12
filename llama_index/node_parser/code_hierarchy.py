@@ -40,6 +40,95 @@ DEFAULT_SPLIT_ON_TYPES = {
     "cpp": ["class_specifier", "function_definition"],
 }
 
+ELLIPSES_COMMENT = " ... May have additional code availible in other documents, cut for brevity ..."  # The comment to use when chunking code
+
+def _generate_comment_line(language: str, comment: str) -> str:
+    """
+    Generates a comment line in a given language.
+    Able to handle languages that require closing comment symbols as well.
+    If the language isn't recognized, uses 🦙 emojis.
+    """
+    single_line = {
+        'Ada': '--',
+        'Agda': '--',
+        'Apex': '//',
+        'Bash': '#',
+        'C': '//',
+        'C++': '//',
+        'C#': '//',
+        'Clojure': ';;',
+        'CMake': '#',
+        'Common Lisp': ';;',
+        'CUDA': '//',
+        'Dart': '//',
+        'D': '//',
+        'Dockerfile': '#',
+        'Elixir': '#',
+        'Elm': '--',
+        'Emacs Lisp': ';;',
+        'Erlang': '%',
+        'Fish': '#',
+        'Formula': '#',  # Assuming Excel-like formula
+        'Fortran': '!',
+        'Go': '//',
+        'Graphql': '#',
+        'Hack': '//',
+        'Haskell': '--',
+        'HCL': '#',
+        'HTML': '<!-- {} -->',
+        'Java': '//',
+        'JavaScript': '//',
+        'jq': '#',
+        'JSON5': '//',
+        'Julia': '#',
+        'Kotlin': '//',
+        'Latex': '%',
+        'Lua': '--',
+        'Make': '#',
+        'Markdown': '<!-- {} -->',  # Technically HTML but often used in Markdown
+        'Meson': '#',
+        'Nix': '#',
+        'Objective-C': '//',
+        'OCaml': '(* {} *)',
+        'Pascal': '//',
+        'Perl': '#',
+        'PHP': '//',
+        'PowerShell': '#',
+        'Protocol Buffers': '//',
+        'Python': '#',
+        'QML': '//',
+        'R': '#',
+        'Ruby': '#',
+        'Rust': '//',
+        'Scala': '//',
+        'Scheme': ';',
+        'Scss': '//',
+        'Shell': '#',
+        'SQL': '--',
+        'Svelte': '<!-- {} -->',  # HTML-like
+        'Swift': '//',
+        'TOML': '#',
+        'Turtle': '#',
+        'TypeScript': '//',
+        'Verilog': '//',
+        'VHDL': '--',
+        'Vue': '//',
+        'WASM': ';;',
+        'YAML': '#',
+        'YANG': '//',
+        'Zig': '//',
+    }
+    single_line = {k.lower(): v for k, v in single_line.items()}
+
+    if language.lower() in single_line:
+        syntax = single_line[language.lower()]
+        if '{}' in syntax:
+            return syntax.format(comment)
+        else:
+            return f"{syntax} {comment}"
+    else:
+        return f"🦙{comment}🦙"  # For unknown languages, use emoji to enclose the comment
+
 
 class _ScopeItem(BaseModel):
     """Like a Node from tree_sitter, but with only the str information we need."""
