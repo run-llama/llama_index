@@ -22,7 +22,6 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 
 
-
 class Ollama(CustomLLM):
     base_url: str = "http://localhost:11434"
     """Base url the model is hosted under."""
@@ -147,4 +146,5 @@ class Ollama(CustomLLM):
                     delta=delta,
                     text=text,
                 )
+
         return gen(response.iter_lines(decode_unicode=True))
