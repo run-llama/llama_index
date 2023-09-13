@@ -1,6 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.26] - 2023-09-12
+
+### New Features
+- add non-linear embedding adapter (#7658)
+- Add "finetune + RAG" evaluation to knowledge fine-tuning notebook (#7643)
 
 ### Bug Fixes / Nits
 - Fixed chunk-overlap for sentence splitter (#7590)
