@@ -309,13 +309,13 @@ class BaseIndex(Generic[IS], ABC):
                 existing_doc_hash = self._docstore.get_document_hash(
                     document.get_doc_id()
                 )
-                if existing_doc_hash != document.hash:
+                if existing_doc_hash is None:
+                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+                    refreshed_documents[i] = True
+                elif existing_doc_hash != document.hash:
                     self.update_ref_doc(
                         document, **update_kwargs.pop("update_kwargs", {})
                     )
-                    refreshed_documents[i] = True
-                elif existing_doc_hash is None:
-                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
                     refreshed_documents[i] = True
 
             return refreshed_documents
