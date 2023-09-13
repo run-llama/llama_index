@@ -120,10 +120,10 @@ def test_python_code_splitter_with_decorators() -> None:
     )
 
     text = """\
-@foobar
 @foo
 class Foo:
-    @bar()
+    @bar
+    @barfoo
     def bar() -> None:
         print("bar")"""
 
@@ -150,21 +150,23 @@ class Foo:
     assert NodeRelationship.NEXT not in chunks[0].relationships
 
     # This is the class scope
-    assert chunks[1].text == """\
+    assert (
+        chunks[1].text
+        == """\
 class Foo:
-    @bar()
+    @bar
+    @barfoo
     def bar() -> None:
         print("bar")"""
+    )
     assert chunks[1].metadata["module"] == "example.foo"
     assert chunks[1].metadata["inclusive_scopes"] == [
-        {"name": "Foo", "type": "decorated_definition", "signature": "@foobar\n@foo\nclass Foo:"},
-        {"name": "Foo", "type": "class_definition", "signature": "class Foo:"},
+        {"name": "Foo", "type": "class_definition", "signature": "class Foo:"}
     ]
     assert isinstance(chunks[1].relationships[NodeRelationship.PARENT], RelatedNodeInfo)
     assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
     assert [c.node_id for c in chunks[1].relationships[NodeRelationship.CHILD]] == [
         chunks[2].id_,
-        chunks[3].id_,
     ]
     assert isinstance(chunks[1].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
     assert chunks[1].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
@@ -180,10 +182,12 @@ class Foo:
     )
     assert chunks[2].metadata["module"] == "example.foo"
     assert chunks[2].metadata["inclusive_scopes"] == [
-        {"name": "Foo", "type": "decorated_definition", "signature": "@foobar\n@foo\nclass Foo:"},
         {"name": "Foo", "type": "class_definition", "signature": "class Foo:"},
-        {"name": "bar", "type": "decorated_definition", "signature": "@bar\ndef bar() -> None:"},
-        {"name": "bar", "type": "function_definition", "signature": "def bar() -> None:"}
+        {
+            "name": "bar",
+            "type": "function_definition",
+            "signature": "def bar() -> None:",
+        },
     ]
     assert isinstance(chunks[2].relationships[NodeRelationship.PARENT], RelatedNodeInfo)
     assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_
@@ -525,7 +529,7 @@ const ExampleComponent: React.FC = () => {
         {
             "name": "ExampleComponent",
             "type": "lexical_declaration",
-            "signature": "const ExampleComponent: React.FC = () => ",
+            "signature": "const ExampleComponent: React.FC = () =>",
         }
     ]
     assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
@@ -603,7 +607,7 @@ class MyClass {       // The class
         {
             "name": "myMethod()",
             "type": "function_definition",
-            "signature": "void myMethod",
+            "signature": "void myMethod()",
         },
     ]
     assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_

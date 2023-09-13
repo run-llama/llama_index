@@ -12,20 +12,6 @@ from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.utils import get_tqdm_iterable
 from pydantic import BaseModel
 
-# TODO: Expand these for new languages
-# TODO: Document the way you add to these
-# TODO: Prompt user to contribute if they find a language that hasn't been added yet
-# DEFAULT_NAME_IDENTIFIERS = {
-#     "python": ["identifier"],
-#     "javascript": ["identifier", "type_identifier", "property_identifier"],
-#     "typescript": ["identifier", "type_identifier", "property_identifier"],
-#     "html": ["tag_name"],
-#     "cpp": ["function_declarator", "type_identifier"],
-# }
-class SkipException(Exception):
-    """
-    Should be impossible if DEFAULT_SIGNATURE_IDENTIFIERS is built right.
-    """
 
 class SignatureType(BaseModel):
     """
@@ -45,43 +31,33 @@ class SignatureType(BaseModel):
 
 
 class SignatureOptions(BaseModel):
-    start_signature_types: List[SignatureType]
-    end_signature_types: List[SignatureType]
-    name_identifier: str | Callable[[Node], bool] = Field(
+    start_signature_types: Optional[List[SignatureType]] = Field(
+        None,
+        description="A list of node types any of which indicate the beginning of the signature."
+        "If this is none or empty, use the start_byte of the node.",
+    )
+    end_signature_types: Optional[List[SignatureType]] = Field(
+        None,
+        description="A list of node types any of which indicate the end of the signature."
+        "If this is none or empty, use the end_byte of the node.",
+    )
+    name_identifier: str = Field(
         description="The node type to use for the signatures 'name'."
         "If retrieving the name is more complicated than a simple type match, use a function which "
         "takes a node and returns true or false as to whether its the name or not. "
         "The first match is returned."
-    )
-    skip_block_creation: bool = Field(
-        False,
-        description="Some types, like in python decorator_definitions, are put ahead "
-        "of a normal declaration. You may want these in the context list, but they don't need a full block to themselves.",
     )
 
 
 DEFAULT_SIGNATURE_IDENTIFIERS: Dict[str, Dict[str, SignatureOptions]] = {
     "python": {
         "function_definition": SignatureOptions(
-            start_signature_types=[
-                SignatureType(type="def", inclusive=True),
-                SignatureType(type="async", inclusive=True),
-            ],
             end_signature_types=[SignatureType(type="block", inclusive=False)],
             name_identifier="identifier",
         ),
         "class_definition": SignatureOptions(
-            start_signature_types=[SignatureType(type="class", inclusive=True)],
             end_signature_types=[SignatureType(type="block", inclusive=False)],
             name_identifier="identifier",
-        ),
-        "decorated_definition": SignatureOptions(
-            start_signature_types=[SignatureType(type="@", inclusive=True)],
-            end_signature_types=[
-                SignatureType(type="block", inclusive=False),
-            ],
-            name_identifier=lambda node: node.type == "identifier" and node.parent.type in ("class_definition", "function_definition"),
-            skip_block_creation=True,
         ),
     },
     "html": {
@@ -91,26 +67,40 @@ DEFAULT_SIGNATURE_IDENTIFIERS: Dict[str, Dict[str, SignatureOptions]] = {
             name_identifier="tag_name",
         )
     },
+    "cpp": {
+        "class_specifier": SignatureOptions(
+            end_signature_types=[SignatureType(type="{", inclusive=False)],
+            name_identifier="type_identifier",
+        ),
+        "function_definition": SignatureOptions(
+            end_signature_types=[SignatureType(type="{", inclusive=False)],
+            name_identifier="function_declarator",
+        ),
+    },
+    "typescript": {
+        "interface_declaration": SignatureOptions(
+            end_signature_types=[SignatureType(type="{", inclusive=False)],
+            name_identifier="type_identifier",
+        ),
+        "lexical_declaration": SignatureOptions(
+            end_signature_types=[SignatureType(type="{", inclusive=False)],
+            name_identifier="identifier",
+        ),
+        "function_declaration": SignatureOptions(
+            end_signature_types=[SignatureType(type="{", inclusive=False)],
+            name_identifier="identifier",
+        ),
+        "class_declaration": SignatureOptions(
+            end_signature_types=[SignatureType(type="{", inclusive=False)],
+            name_identifier="type_identifier",
+        ),
+        "method_definition": SignatureOptions(
+            end_signature_types=[SignatureType(type="{", inclusive=False)],
+            name_identifier="property_identifier",
+        ),
+    },
 }
 
-# DEFAULT_SPLIT_ON_TYPES = {
-#     "python": ["decorated_definition", "function_definition", "class_definition"],
-#     "javascript": [
-#         "function_declaration",
-#         "class_declaration",
-#         "lexical_declaration",
-#         "method_definition",
-#     ],
-#     "typescript": [
-#         "function_declaration",
-#         "class_declaration",
-#         "interface_declaration",
-#         "method_definition",
-#         "lexical_declaration",
-#     ],
-#     "html": ["element"],
-#     "cpp": ["class_specifier", "function_definition"],
-# }
 
 ELLIPSES_COMMENT = " ... May have additional code availible in other documents, cut for brevity ..."  # The comment to use when chunking code
 
@@ -226,9 +216,7 @@ class CodeHierarchyNodeParser(NodeParser):
     language: str = Field(
         description="The programming languge of the code being split."
     )
-    signature_identifiers: Dict[
-        str, SignatureOptions
-    ] = Field(
+    signature_identifiers: Dict[str, SignatureOptions] = Field(
         description=(
             "A dictionary mapping the type of a split mapped to the first and last type of its"
             "children which identify its signature."
@@ -250,9 +238,7 @@ class CodeHierarchyNodeParser(NodeParser):
     def __init__(
         self,
         language: str,
-        signature_identifiers: Optional[
-            Dict[str, SignatureOptions]
-        ] = None,
+        signature_identifiers: Optional[Dict[str, SignatureOptions]] = None,
         code_splitter: Optional[CodeSplitter] = None,
         callback_manager: Optional[CallbackManager] = None,
         metadata_extractor: Optional[MetadataExtractor] = None,
@@ -280,14 +266,11 @@ class CodeHierarchyNodeParser(NodeParser):
     def _get_node_name(self, node: Node) -> str:
         """Get the name of a node."""
         signature_identifier = self.signature_identifiers[node.type]
+
         def recur(node: Node) -> str:
             for child in node.children:
-                if isinstance(signature_identifier.name_identifier, str):
-                    if child.type == signature_identifier.name_identifier:
-                        return child.text.decode()
-                else:
-                    if signature_identifier.name_identifier(child):
-                        return child.text.decode()
+                if child.type == signature_identifier.name_identifier:
+                    return child.text.decode()
                 if child.children:
                     out = recur(child)
                     if out:
@@ -298,11 +281,12 @@ class CodeHierarchyNodeParser(NodeParser):
 
     def _get_node_signature(self, text: str, node: Node) -> str:
         """Get the signature of a node."""
-        signature_identifier = self.signature_identifiers[
-            node.type
-        ]
+        signature_identifier = self.signature_identifiers[node.type]
 
         def find_start(node: Node) -> Optional[int]:
+            if not signature_identifier.start_signature_types:
+                signature_identifier.start_signature_types = []
+
             for st in signature_identifier.start_signature_types:
                 if node.type == st.type:
                     if st.inclusive:
@@ -317,6 +301,9 @@ class CodeHierarchyNodeParser(NodeParser):
             return None
 
         def find_end(node: Node) -> Optional[int]:
+            if not signature_identifier.end_signature_types:
+                signature_identifier.end_signature_types = []
+
             for st in signature_identifier.end_signature_types:
                 if node.type == st.type:
                     if st.inclusive:
@@ -332,55 +319,17 @@ class CodeHierarchyNodeParser(NodeParser):
 
         start_byte, end_byte = find_start(node), find_end(node)
         if start_byte is None:
-            raise ValueError(f"Could not find start for signature of node.")
+            start_byte = node.start_byte
         if end_byte is None:
-            raise ValueError(f"Could not find end for signature of node.")
+            end_byte = node.end_byte
         return text[start_byte:end_byte].strip()
-
-    @staticmethod
-    def _handle_skips(nodes: List[TextNode]) -> None:
-        # Starting from the bottom of the heirarchy, delete nodes which are marked "skip"
-        # and patch their children and parents
-        def get_children(node: TextNode) -> List[TextNode]:
-            return [n for n in nodes if n.parent_node and n.parent_node.node_id == node.node_id]
-
-        def get_parent(node: TextNode) -> TextNode:
-            for n in nodes:
-                if node.parent_node and node.parent_node.node_id == n.node_id:
-                    return n
-            raise KeyError("Node does not exist.")
-
-        def remove_child(node: TextNode, child: TextNode) -> None:
-            node.relationships[NodeRelationship.CHILD] = [c for c in node.child_nodes or [] if c.node_id != child.id_]
-
-        def process_node(node: TextNode) -> None:
-            children = get_children(node)
-            for child in children:
-                process_node(child)
-
-            if node.metadata["skip"]:
-                parent = get_parent(node)
-                for child in children:
-                    # Create the new relationship
-                    child.relationships[NodeRelationship.PARENT] = parent.as_related_node_info()
-                    parent.relationships[NodeRelationship.CHILD].append(child.as_related_node_info())
-
-                    # Delete the old relationship
-                    remove_child(node, child)
-                nodes.remove(node)
-
-            # Clean up the skip metadata after
-            del node.metadata["skip"]
-
-        roots = [node for node in nodes if NodeRelationship.PARENT not in node.relationships]
-        for root in roots:
-            process_node(root)
 
     class _ChunkNodeOutput(BaseModel):
         """The output of a chunk_node call."""
 
         this_document: Optional[TextNode]
-        children_documents: List[TextNode]
+        upstream_children_documents: List[TextNode]
+        all_documents: List[TextNode]
 
     def _chunk_node(
         self,
@@ -390,6 +339,11 @@ class CodeHierarchyNodeParser(NodeParser):
         _root: bool = True,
     ) -> _ChunkNodeOutput:
         """
+        This is really the "main" method of this class. It is recursive and recursively
+        chunks the text by the options identified in self.signature_identifiers.
+
+        It is ran by get_nodes_from_documents.
+
         Args:
             parent (Node): The parent node to chunk
             text (str): The text of the entire document
@@ -399,8 +353,8 @@ class CodeHierarchyNodeParser(NodeParser):
         if _context_list is None:
             _context_list = []
 
-        # This is INCLUSIVE children of this node (this nodes children and their children, etc)
-        inclusive_child_documents: List[TextNode] = []
+        upstream_children_documents: List[TextNode] = []
+        all_documents: List[TextNode] = []
 
         # Capture any whitespace before parent.start_byte
         # Very important for space sensitive languages like python
@@ -414,13 +368,12 @@ class CodeHierarchyNodeParser(NodeParser):
         # Return early if the chunk is too small
         if len(current_chunk) < self.min_characters and not _root:
             return self._ChunkNodeOutput(
-                this_document=None,
-                children_documents=[],
-                skip=True
+                this_document=None, all_documents=[], upstream_children_documents=[]
             )
 
-        skip = self.signature_identifiers[parent.type].skip_block_creation if parent.type in self.signature_identifiers else False
-        skip = skip and not _root  # You can't skip _root
+        # TIP: This is a wonderful place to put a debug breakpoint when
+        #      Trying to integrate a new language. Pay attention to parent.type to learn
+        #      all the availible node types and their hierarchy.
         if parent.type in self.signature_identifiers or _root:
             # Get the new context
             if not _root:
@@ -434,12 +387,12 @@ class CodeHierarchyNodeParser(NodeParser):
                 text=current_chunk,
                 metadata={
                     "inclusive_scopes": [cl.dict() for cl in _context_list],
-                    "skip": skip
                 },
                 relationships={
                     NodeRelationship.CHILD: [],
                 },
             )
+            all_documents.append(this_document)
         else:
             this_document = None
 
@@ -452,34 +405,49 @@ class CodeHierarchyNodeParser(NodeParser):
                 )
 
                 # If there is a this_document, then we need to add the children to this_document
+                # and flush upstream_children_documents
                 if this_document is not None:
-                    # If there is both a this_document inside next_chunks and this_document, then we need to add the next_chunks.this_document to this_document as a child
+                    # If we have been given a document, that means it's children are already set, so it needs to become a child of this node
                     if next_chunks.this_document is not None:
+                        assert (
+                            not next_chunks.upstream_children_documents
+                        ), "next_chunks.this_document and next_chunks.upstream_children_documents are exclusive."
                         this_document.relationships[NodeRelationship.CHILD].append(
                             next_chunks.this_document.as_related_node_info()
                         )
                         next_chunks.this_document.relationships[
                             NodeRelationship.PARENT
                         ] = this_document.as_related_node_info()
-
-                    # If there is not a this_document inside next_chunks then we need to add the children to this_document as children
+                    # Otherwise, we have been given a list of upstream_children_documents. We need to make them a child of this node
                     else:
-                        for child_document in next_chunks.children_documents:
-                            child_document.relationships[
+                        for d in next_chunks.upstream_children_documents:
+                            this_document.relationships[NodeRelationship.CHILD].append(
+                                d.as_related_node_info()
+                            )
+                            d.relationships[
                                 NodeRelationship.PARENT
                             ] = this_document.as_related_node_info()
-                            this_document.relationships[NodeRelationship.CHILD].append(
-                                child_document.as_related_node_info()
-                            )
+                # Otherwise we pass the children upstream
+                else:
+                    # If we have been given a document, that means it's children are already set, so it needs to become a child of the next node
+                    if next_chunks.this_document is not None:
+                        assert (
+                            not next_chunks.upstream_children_documents
+                        ), "next_chunks.this_document and next_chunks.upstream_children_documents are exclusive."
+                        upstream_children_documents.append(next_chunks.this_document)
+                    # Otherwise, we have leftover children, they need to become children of the next node
+                    else:
+                        upstream_children_documents.extend(
+                            next_chunks.upstream_children_documents
+                        )
 
-                # Flatten all discoveries into inclusive_child_documents
-                if next_chunks.this_document is not None:
-                    inclusive_child_documents.append(next_chunks.this_document)
-                inclusive_child_documents.extend(next_chunks.children_documents)
+                # Lastly we need to maintain all documents
+                all_documents.extend(next_chunks.all_documents)
 
         return self._ChunkNodeOutput(
             this_document=this_document,
-            children_documents=inclusive_child_documents,
+            upstream_children_documents=upstream_children_documents,
+            all_documents=all_documents,
         )
 
     def get_nodes_from_documents(
@@ -487,11 +455,10 @@ class CodeHierarchyNodeParser(NodeParser):
         documents: Sequence[Document],
         show_progress: bool = False,
     ) -> List[BaseNode]:
-        """Parse documents into nodes.
+        """
+        The main public method of this class.
 
-        Args:
-            documents (Sequence[Document]): documents to parse
-
+        Parse documents into nodes.
         """
         out: List[BaseNode] = []
         with self.callback_manager.event(
@@ -531,8 +498,7 @@ class CodeHierarchyNodeParser(NodeParser):
                     assert (
                         _chunks.this_document is not None
                     ), "Root node must be a chunk"
-                    chunks = [_chunks.this_document] + _chunks.children_documents
-                    self._handle_skips(chunks)
+                    chunks = _chunks.all_documents
 
                     # Add your metadata to the chunks here
                     for chunk in chunks:
