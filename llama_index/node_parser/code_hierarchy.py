@@ -1,19 +1,22 @@
-from typing import Any, Dict, Iterable, Callable, List, Optional, Sequence, Tuple
+from enum import Enum
+from typing import (Any, Callable, Dict, Iterable, List, Optional, Sequence,
+                    Set, Tuple)
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 from tree_sitter import Node
+
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
+from llama_index.node_parser.extractors.metadata_extractors import \
+    MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.schema import BaseNode, Document, NodeRelationship, TextNode
 from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.utils import get_tqdm_iterable
-from pydantic import BaseModel
 
 
-class SignatureType(BaseModel):
+class _SignatureCaptureType(BaseModel):
     """
     Unfortunately some languages need special options for how to make a signature.
 
@@ -30,13 +33,13 @@ class SignatureType(BaseModel):
     )
 
 
-class SignatureOptions(BaseModel):
-    start_signature_types: Optional[List[SignatureType]] = Field(
+class _SignatureCaptureOptions(BaseModel):
+    start_signature_types: Optional[List[_SignatureCaptureType]] = Field(
         None,
         description="A list of node types any of which indicate the beginning of the signature."
         "If this is none or empty, use the start_byte of the node.",
     )
-    end_signature_types: Optional[List[SignatureType]] = Field(
+    end_signature_types: Optional[List[_SignatureCaptureType]] = Field(
         None,
         description="A list of node types any of which indicate the end of the signature."
         "If this is none or empty, use the end_byte of the node.",
@@ -48,150 +51,90 @@ class SignatureOptions(BaseModel):
         "The first match is returned."
     )
 
-
-DEFAULT_SIGNATURE_IDENTIFIERS: Dict[str, Dict[str, SignatureOptions]] = {
+"""
+Maps language -> Node Type -> SignatureCaptureOptions
+"""
+_DEFAULT_SIGNATURE_IDENTIFIERS: Dict[str, Dict[str, _SignatureCaptureOptions]] = {
     "python": {
-        "function_definition": SignatureOptions(
-            end_signature_types=[SignatureType(type="block", inclusive=False)],
+        "function_definition": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="block", inclusive=False)],
             name_identifier="identifier",
         ),
-        "class_definition": SignatureOptions(
-            end_signature_types=[SignatureType(type="block", inclusive=False)],
+        "class_definition": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="block", inclusive=False)],
             name_identifier="identifier",
         ),
     },
     "html": {
-        "element": SignatureOptions(
-            start_signature_types=[SignatureType(type="<", inclusive=True)],
-            end_signature_types=[SignatureType(type=">", inclusive=True)],
+        "element": _SignatureCaptureOptions(
+            start_signature_types=[_SignatureCaptureType(type="<", inclusive=True)],
+            end_signature_types=[_SignatureCaptureType(type=">", inclusive=True)],
             name_identifier="tag_name",
         )
     },
     "cpp": {
-        "class_specifier": SignatureOptions(
-            end_signature_types=[SignatureType(type="{", inclusive=False)],
+        "class_specifier": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
             name_identifier="type_identifier",
         ),
-        "function_definition": SignatureOptions(
-            end_signature_types=[SignatureType(type="{", inclusive=False)],
+        "function_definition": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
             name_identifier="function_declarator",
         ),
     },
     "typescript": {
-        "interface_declaration": SignatureOptions(
-            end_signature_types=[SignatureType(type="{", inclusive=False)],
+        "interface_declaration": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
             name_identifier="type_identifier",
         ),
-        "lexical_declaration": SignatureOptions(
-            end_signature_types=[SignatureType(type="{", inclusive=False)],
+        "lexical_declaration": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
             name_identifier="identifier",
         ),
-        "function_declaration": SignatureOptions(
-            end_signature_types=[SignatureType(type="{", inclusive=False)],
+        "function_declaration": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
             name_identifier="identifier",
         ),
-        "class_declaration": SignatureOptions(
-            end_signature_types=[SignatureType(type="{", inclusive=False)],
+        "class_declaration": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
             name_identifier="type_identifier",
         ),
-        "method_definition": SignatureOptions(
-            end_signature_types=[SignatureType(type="{", inclusive=False)],
+        "method_definition": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="{", inclusive=False)],
             name_identifier="property_identifier",
         ),
     },
 }
 
+class _ScopeMethod(Enum):
+    INDENTATION = "INDENTATION"
+    BRACKETS = "BRACKETS"
 
-ELLIPSES_COMMENT = " ... May have additional code availible in other documents, cut for brevity ..."  # The comment to use when chunking code
+class _CommentOptions(BaseModel):
+    comment_template: str
+    scope_method: _ScopeMethod
 
+_COMMENT_OPTIONS: Dict[str, _CommentOptions] = {
+    "cpp": _CommentOptions(
+        comment_template="// {}",
+        scope_method=_ScopeMethod.BRACKETS
+    ),
+    "html": _CommentOptions(
+        comment_template="<!-- {} -->",
+        scope_method=_ScopeMethod.INDENTATION
+    ),
+    "python": _CommentOptions(
+        comment_template="# {}",
+        scope_method=_ScopeMethod.INDENTATION
+    ),
+    "typescript": _CommentOptions(
+        comment_template="// {}",
+        scope_method=_ScopeMethod.BRACKETS
+    )
+}
 
-def _generate_comment_line(language: str, comment: str) -> str:
-    """
-    Generates a comment line in a given language.
-    Able to handle languages that require closing comment symbols as well.
-    If the language isn't recognized, uses 🦙 emojis.
-    """
-    single_line = {
-        "Ada": "--",
-        "Agda": "--",
-        "Apex": "//",
-        "Bash": "#",
-        "C": "//",
-        "C++": "//",
-        "C#": "//",
-        "Clojure": ";;",
-        "CMake": "#",
-        "Common Lisp": ";;",
-        "CUDA": "//",
-        "Dart": "//",
-        "D": "//",
-        "Dockerfile": "#",
-        "Elixir": "#",
-        "Elm": "--",
-        "Emacs Lisp": ";;",
-        "Erlang": "%",
-        "Fish": "#",
-        "Formula": "#",  # Assuming Excel-like formula
-        "Fortran": "!",
-        "Go": "//",
-        "Graphql": "#",
-        "Hack": "//",
-        "Haskell": "--",
-        "HCL": "#",
-        "HTML": "<!-- {} -->",
-        "Java": "//",
-        "JavaScript": "//",
-        "jq": "#",
-        "JSON5": "//",
-        "Julia": "#",
-        "Kotlin": "//",
-        "Latex": "%",
-        "Lua": "--",
-        "Make": "#",
-        "Markdown": "<!-- {} -->",  # Technically HTML but often used in Markdown
-        "Meson": "#",
-        "Nix": "#",
-        "Objective-C": "//",
-        "OCaml": "(* {} *)",
-        "Pascal": "//",
-        "Perl": "#",
-        "PHP": "//",
-        "PowerShell": "#",
-        "Protocol Buffers": "//",
-        "Python": "#",
-        "QML": "//",
-        "R": "#",
-        "Ruby": "#",
-        "Rust": "//",
-        "Scala": "//",
-        "Scheme": ";",
-        "Scss": "//",
-        "Shell": "#",
-        "SQL": "--",
-        "Svelte": "<!-- {} -->",  # HTML-like
-        "Swift": "//",
-        "TOML": "#",
-        "Turtle": "#",
-        "TypeScript": "//",
-        "Verilog": "//",
-        "VHDL": "--",
-        "Vue": "//",
-        "WASM": ";;",
-        "YAML": "#",
-        "YANG": "//",
-        "Zig": "//",
-    }
-    single_line = {k.lower(): v for k, v in single_line.items()}
-
-    if language.lower() in single_line:
-        syntax = single_line[language.lower()]
-        if "{}" in syntax:
-            return syntax.format(comment)
-        else:
-            return f"{syntax} {comment}"
-    else:
-        return f"🦙{comment}🦙"  # For unknown languages, use emoji to enclose the comment
-
+assert all(language in _DEFAULT_SIGNATURE_IDENTIFIERS for language in _COMMENT_OPTIONS), "Not all languages in _COMMENT_OPTIONS are in _DEFAULT_SIGNATURE_IDENTIFIERS"
+assert all(language in _COMMENT_OPTIONS for language in _DEFAULT_SIGNATURE_IDENTIFIERS), "Not all languages in _DEFAULT_SIGNATURE_IDENTIFIERS are in _COMMENT_OPTIONS"
 
 class _ScopeItem(BaseModel):
     """Like a Node from tree_sitter, but with only the str information we need."""
@@ -216,7 +159,7 @@ class CodeHierarchyNodeParser(NodeParser):
     language: str = Field(
         description="The programming languge of the code being split."
     )
-    signature_identifiers: Dict[str, SignatureOptions] = Field(
+    signature_identifiers: Dict[str, _SignatureCaptureOptions] = Field(
         description=(
             "A dictionary mapping the type of a split mapped to the first and last type of its"
             "children which identify its signature."
@@ -234,11 +177,16 @@ class CodeHierarchyNodeParser(NodeParser):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
+    skeleton: bool = Field(
+        description="Parent nodes have the text of their child nodes replaced with a signature and a comment "
+                    "instructing the language model to visit the child node for the full text of the scope."
+    )
 
     def __init__(
         self,
         language: str,
-        signature_identifiers: Optional[Dict[str, SignatureOptions]] = None,
+        skeleton: bool = True,
+        signature_identifiers: Optional[Dict[str, _SignatureCaptureOptions]] = None,
         code_splitter: Optional[CodeSplitter] = None,
         callback_manager: Optional[CallbackManager] = None,
         metadata_extractor: Optional[MetadataExtractor] = None,
@@ -248,7 +196,7 @@ class CodeHierarchyNodeParser(NodeParser):
 
         if signature_identifiers is None:
             try:
-                signature_identifiers = DEFAULT_SIGNATURE_IDENTIFIERS[language]
+                signature_identifiers = _DEFAULT_SIGNATURE_IDENTIFIERS[language]
             except KeyError:
                 raise ValueError(
                     f"Must provide signature_identifiers for language {language}."
@@ -261,6 +209,7 @@ class CodeHierarchyNodeParser(NodeParser):
             code_splitter=code_splitter,
             signature_identifiers=signature_identifiers,
             min_characters=min_characters,
+            skeleton=skeleton,
         )
 
     def _get_node_name(self, node: Node) -> str:
@@ -499,6 +448,8 @@ class CodeHierarchyNodeParser(NodeParser):
                         _chunks.this_document is not None
                     ), "Root node must be a chunk"
                     chunks = _chunks.all_documents
+                    if self.skeleton:
+                        self._skeletonize_list(chunks)
 
                     # Add your metadata to the chunks here
                     for chunk in chunks:
@@ -537,3 +488,89 @@ class CodeHierarchyNodeParser(NodeParser):
                     )
 
         return out
+
+
+    @staticmethod
+    def _get_indentation(text: str) -> Tuple[str, int]:
+        """
+        Gets the first indentation character and string in a text.
+        Defaults to 4 space indention.
+        """
+        for line in text.splitlines():
+            stripped_line = line.lstrip()
+            if stripped_line and stripped_line != line:
+                char = line[0]
+                for i, c in enumerate(line):
+                    if c != char:
+                        return char, i
+        return " ", 4
+
+
+    @staticmethod
+    def _get_comment_text(node: TextNode) -> str:
+        """Gets just the natural language text for a skeletonize comment."""
+        return f"Code replaced for brevity. See node_id {node.node_id}"
+
+
+    @classmethod
+    def _get_replacement_text(cls, child_node: TextNode) -> str:
+        """Manufactures a the replacement text to use to skeletonize a given child node."""
+        signature = child_node.metadata["inclusive_scope"][-1]["signature"]
+        language = child_node.metadata["language"]
+        if language not in _COMMENT_OPTIONS:
+            # TODO: Create a contribution message
+            raise KeyError("Language not yet supported. Please contribute!")
+        comment_options = _COMMENT_OPTIONS[language]
+
+        # Create the text to replace the child_node.text with
+        indentation_char, indentation_lvl = cls._get_indentation(child_node.text)
+
+        # Start with a properly indented signature
+        replacement_txt = indentation_char*indentation_lvl + signature
+
+        # Add brackets if necessary. Expandable in the future to other methods of scoping.
+        if comment_options.scope_method == _ScopeMethod.BRACKETS:
+            replacement_txt += " {\n"
+            replacement_txt += indentation_char*indentation_lvl + comment_options.comment_template.format(cls._get_comment_text(child_node)) + "\n"
+            replacement_txt += "}"
+
+        elif comment_options.scope_method == _ScopeMethod.INDENTATION:
+            replacement_txt += "\n"
+            replacement_txt += indentation_char*indentation_lvl + comment_options.comment_template.format(cls._get_comment_text(child_node))
+
+        else:
+            raise KeyError(f"Unrecognized enum value {comment_options.scope_method}")
+
+        return replacement_txt
+
+    @classmethod
+    def _skeletonize(cls, parent_node: TextNode, child_node: TextNode) -> None:
+        """WARNING: In Place Operation"""
+        # Simple protection clauses
+        if child_node.text not in parent_node.text:
+            raise ValueError("The child text is not contained inside the parent text.")
+        if child_node.node_id not in (c.node_id for c in parent_node.child_nodes or []):
+            raise ValueError("The child node is not a child of the parent node.")
+
+        # Now do the replacement
+        replacement_text = cls._get_replacement_text(child_node=child_node)
+        parent_node.text = parent_node.text.replace(child_node.text, replacement_text)
+
+    @classmethod
+    def _skeletonize_list(cls, nodes: List[TextNode]) -> None:
+        # Create a convienient map for mapping node id's to nodes
+        node_id_map = {
+            n.node_id: n for n in nodes
+        }
+
+        def recur(node: TextNode) -> None:
+            # If any children exist, skeletonize ourselves, starting at the root DFS
+            for child in node.child_nodes or []:
+                child_node = node_id_map[child.node_id]
+                cls._skeletonize(parent_node=node, child_node=child_node)
+                recur(child_node)
+
+        # Iterate over root nodes and recur
+        for n in nodes:
+            if n.parent_node is None:
+                recur(n)

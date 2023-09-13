@@ -15,6 +15,7 @@ def test_python_code_splitter() -> None:
 
     code_splitter = CodeHierarchyNodeParser(
         language="python",
+        skeleton=False,
     )
 
     text = """\
@@ -117,6 +118,7 @@ def test_python_code_splitter_with_decorators() -> None:
 
     code_splitter = CodeHierarchyNodeParser(
         language="python",
+        skeleton=False,
     )
 
     text = """\
@@ -205,7 +207,7 @@ def test_html_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="html", min_characters=len("    <title>My Example Page</title>") + 1
+        language="html", min_characters=len("    <title>My Example Page</title>") + 1, skeleton=False,
     )
 
     text = """\
@@ -356,7 +358,7 @@ def test_typescript_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="typescript",
+        language="typescript", skeleton=False,
     )
 
     text = """\
@@ -452,7 +454,7 @@ def test_tsx_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="typescript",
+        language="typescript", skeleton=False,
     )
 
     text = """\
@@ -544,7 +546,7 @@ def test_cpp_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="cpp",  # Removing chunk_lines, chunk_lines_overlap, and max_chars to focus on scopes
+        language="cpp", skeleton=False, # Removing chunk_lines, chunk_lines_overlap, and max_chars to focus on scopes
     )
 
     text = """\
