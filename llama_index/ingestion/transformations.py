@@ -48,10 +48,10 @@ class TransformationCategory(BaseModel):
 
     name: str = Field(description="Unique name of the type of transformation")
     description: str = Field(description="Description for the type of transformation")
-    input_type: TransformationIOType = Field(
+    input_type: TransformationIOTypes = Field(
         description="Input type for the transformation type"
     )
-    output_type: TransformationIOType = Field(
+    output_type: TransformationIOTypes = Field(
         description="Output type for the transformation type"
     )
 
