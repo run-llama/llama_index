@@ -15,20 +15,22 @@ logger = logging.getLogger(__name__)
 class AdapterEmbeddingModel(BaseEmbedding):
     """Adapter for any embedding model.
 
-    This is a wrapper around any embedding model that adds an adapter layer on top of it.
+    This is a wrapper around any embedding model that adds an adapter layer \
+        on top of it.
     This is useful for finetuning an embedding model on a downstream task.
     The embedding model can be any model - it does not need to expose gradients.
 
     Args:
         base_embed_model (BaseEmbedding): Base embedding model.
         adapter_path (str): Path to adapter.
-        adapter_cls (Optional[Type[Any]]): Adapter class. Defaults to None, in which case
-            a linear adapter is used.
+        adapter_cls (Optional[Type[Any]]): Adapter class. Defaults to None, in which \
+            case a linear adapter is used.
         transform_query (bool): Whether to transform query embeddings. Defaults to True.
         device (Optional[str]): Device to use. Defaults to None.
         embed_batch_size (int): Batch size for embedding. Defaults to 10.
-        callback_manager (Optional[CallbackManager]): Callback manager. Defaults to None.
-    
+        callback_manager (Optional[CallbackManager]): Callback manager. \
+            Defaults to None.
+
     """
 
     _base_embed_model: BaseEmbedding = PrivateAttr()
