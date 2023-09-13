@@ -126,6 +126,11 @@ class ConfigurableDataSources(Enum):
         component_type=GoogleSheetsReader,
     )
 
+    READER = DataSource(
+        name="Reader",
+        component_type=ReaderConfig,
+    )
+
     @classmethod
     def from_component(cls, component: BaseComponent) -> "ConfigurableDataSources":
         component_class = type(component)
