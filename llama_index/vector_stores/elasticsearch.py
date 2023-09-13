@@ -256,7 +256,7 @@ class ElasticsearchStore(VectorStore):
         *,
         create_index_if_not_exists: bool = True,
     ) -> List[str]:
-        """Add nodes to AsyncElasticsearch index.
+        """Add nodes to Elasticsearch index.
 
         Args:
             nodes: List of nodes with embeddings.
