@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### New Features
+- Added `AGENT_STEP` callback event type (#7652)
+
 ### Bug Fixes / Nits
 - Allowed `simple` mode to work with `as_chat_engine()` (#7637)
+- Fixed index error in azure streaming (#7646)
+- Removed `pdb` from llama-cpp (#7651)
 
 ## [0.8.24] - 2023-09-11
 

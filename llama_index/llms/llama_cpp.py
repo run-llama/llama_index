@@ -2,11 +2,9 @@ import os
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import requests
-
-from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from tqdm import tqdm
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -39,7 +37,9 @@ DEFAULT_LLAMA_CPP_GGUF_MODEL = (
 
 
 class LlamaCPP(CustomLLM):
-    model_url: str = Field(description="The URL llama-cpp model to download and use.")
+    model_url: Optional[str] = Field(
+        description="The URL llama-cpp model to download and use."
+    )
     model_path: Optional[str] = Field(
         description="The path to the llama-cpp model to use."
     )
@@ -102,9 +102,6 @@ class LlamaCPP(CustomLLM):
                 self._model = Llama(model_path=model_path, **model_kwargs)
         else:
             cache_dir = get_cache_dir()
-            import pdb
-
-            pdb.set_trace()
             model_url = model_url or self._get_model_path_for_version()
             model_name = os.path.basename(model_url)
             model_path = os.path.join(cache_dir, "models", model_name)
