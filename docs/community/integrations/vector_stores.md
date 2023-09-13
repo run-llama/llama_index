@@ -32,7 +32,6 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
 
-
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
 Similar to any other index within LlamaIndex (tree, keyword table, list), `VectorStoreIndex` can be constructed upon any collection
@@ -84,7 +83,9 @@ Below we show more examples of how to construct various vector stores we support
 
 **Elasticsearch**
 
-First, start Elasticsearch
+First, you can start Elasticsearch either locally or on [Elastic cloud](https://cloud.elastic.co/registration?utm_source=llama-index&utm_content=documentation).
+
+To start Elasticsearch locally with docker, run the following command:
 
 ```bash
 docker run -p 9200:9200 \
@@ -102,6 +103,10 @@ from llama_index.vector_stores import ElasticsearchStore
 vector_store = ElasticsearchStore(
     index_name="llm-project",
     es_url="http://localhost:9200",
+    # Cloud connection options:
+    # es_cloud_id="<cloud_id>",
+    # es_user="elastic",
+    # es_password="<password>",
 )
 ```
 
@@ -428,17 +433,18 @@ index = VectorStoreIndex.from_documents(uber_docs, storage_context=storage_conte
 
 - Neo4j stores texts, metadata, and embeddings and can be customized to return graph data in the form of metadata.
 
-
 ```python
 from llama_index.vector_stores import Neo4jVectorStore
 
 # construct vector store
 neo4j_vector = Neo4jVectorStore(
     username="neo4j",
-    password="pleaseletmein", 
-    url="bolt://localhost:7687", 
+    password="pleaseletmein",
+    url="bolt://localhost:7687",
     embed_dim=1536
 )
+
+```
 
 **Azure Cognitive Search**
 
