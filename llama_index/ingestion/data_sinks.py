@@ -69,7 +69,7 @@ class ConfigurableDataSinks(Enum):
 
     def build_configured_data_sink(
         self, component: BasePydanticVectorStore
-    ) -> "ConfigurableDataSinks":
+    ) -> "ConfiguredDataSink":
         component_type = self.value.component_type
         if not isinstance(component, component_type):
             raise ValueError(

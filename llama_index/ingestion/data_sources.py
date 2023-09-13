@@ -2,7 +2,22 @@ from enum import Enum
 from typing import Generic, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.readers import ReaderConfig
+from llama_index.readers.base import BasePydanticReader, ReaderConfig
+from llama_index.readers import (
+    DiscordReader,
+    ElasticsearchReader,
+    NotionPageReader,
+    SlackReader,
+    TwitterTweetReader,
+    SimpleWebPageReader,
+    TrafilaturaWebReader,
+    BeautifulSoupWebReader,
+    RssReader,
+    WikipediaReader,
+    YoutubeTranscriptReader,
+)
+from llama_index.readers.google_readers.gdocs import GoogleDocsReader
+from llama_index.readers.google_readers.gsheets import GoogleSheetsReader
 from llama_index.schema import BaseComponent, Document
 
 
@@ -41,14 +56,74 @@ class ConfigurableDataSources(Enum):
         component_type=Document,
     )
 
-    READER = DataSource(
-        name="Reader",
-        component_type=ReaderConfig,
-    )
-
     RAW_FILE = DataSource(
         name="Raw File",
         component_type=RawFile,
+    )
+
+    DISCORD = DataSource(
+        name="Discord",
+        component_type=DiscordReader,
+    )
+
+    ELASTICSEARCH = DataSource(
+        name="Elasticsearch",
+        component_type=ElasticsearchReader,
+    )
+
+    NOTION_PAGE = DataSource(
+        name="Notion Page",
+        component_type=NotionPageReader,
+    )
+
+    SLACK = DataSource(
+        name="Slack",
+        component_type=SlackReader,
+    )
+
+    TWITTER = DataSource(
+        name="Twitter",
+        component_type=TwitterTweetReader,
+    )
+
+    SIMPLE_WEB_PAGE = DataSource(
+        name="Simple Web Page",
+        component_type=SimpleWebPageReader,
+    )
+
+    TRAFILATURA_WEB_PAGE = DataSource(
+        name="Trafilatura Web Page",
+        component_type=TrafilaturaWebReader,
+    )
+
+    BEAUTIFUL_SOUP_WEB_PAGE = DataSource(
+        name="Beautiful Soup Web Page",
+        component_type=BeautifulSoupWebReader,
+    )
+
+    RSS = DataSource(
+        name="RSS",
+        component_type=RssReader,
+    )
+
+    WIKIPEDIA = DataSource(
+        name="Wikipedia",
+        component_type=WikipediaReader,
+    )
+
+    YOUTUBE_TRANSCRIPT = DataSource(
+        name="Youtube Transcript",
+        component_type=YoutubeTranscriptReader,
+    )
+
+    GOOGLE_DOCS = DataSource(
+        name="Google Docs",
+        component_type=GoogleDocsReader,
+    )
+
+    GOOGLE_SHEETS = DataSource(
+        name="Google Sheets",
+        component_type=GoogleSheetsReader,
     )
 
     @classmethod
@@ -63,13 +138,18 @@ class ConfigurableDataSources(Enum):
 
     def build_configured_data_source(
         self, component: BaseComponent
-    ) -> "ConfigurableDataSources":
+    ) -> "ConfiguredDataSource":
         component_type = self.value.component_type
         if not isinstance(component, component_type):
             raise ValueError(
                 f"The enum value {self} is not compatible with component of "
                 f"type {type(component)}"
             )
+        elif isinstance(component, BasePydanticReader):
+            reader_config = ReaderConfig(loader=component)
+            return ConfiguredDataSource[ReaderConfig](
+                component=reader_config
+            )  # type: ignore
         return ConfiguredDataSource[component_type](component=component)  # type: ignore
 
 
