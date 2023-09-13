@@ -8,8 +8,8 @@ from typing import List, Optional
 from llama_index.indices.base import ServiceContext
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.prompts import PromptTemplate
-from llama_index.schema import Document
 from llama_index.response.schema import Response
+from llama_index.schema import Document
 
 
 @dataclass
@@ -18,6 +18,7 @@ class Evaluation:
     response: Response  # The response
     passing: bool = False  # True if the response is correct, False otherwise
     feedback: str = ""  # Feedback for the response
+    score: Optional[float] = None  # Score for the response
 
 
 class BaseEvaluator(ABC):
@@ -26,7 +27,11 @@ class BaseEvaluator(ABC):
         self.service_context = service_context or ServiceContext.from_defaults()
 
     @abstractmethod
-    def evaluate_response(self, query: str, response: Response) -> Evaluation:
+    def evaluate_response(self, query: str, response: Response, **kwargs) -> Evaluation:
+        """Evaluate the response for a query and return an Evaluation."""
+        raise NotImplementedError
+
+    def evaluate_string(self, query: str, response: str, **kwargs) -> Evaluation:
         """Evaluate the response for a query and return an Evaluation."""
         raise NotImplementedError
 
