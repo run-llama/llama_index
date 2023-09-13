@@ -8,6 +8,7 @@ from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
+
 class LangchainEmbedding(BaseEmbedding):
     """External embeddings (taken from Langchain).
 
@@ -47,8 +48,8 @@ class LangchainEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         """Get class name."""
         return "LangchainEmbedding"
-    
-    def _async_warn_once(self):
+
+    def _async_warn_once(self) -> None:
         if not self._async_warned:
             print("Async embedding not available, falling back to sync method.")
             self._async_warned = True
@@ -62,7 +63,7 @@ class LangchainEmbedding(BaseEmbedding):
             return await self._langchain_embedding.aembed_query(query)
         except Exception:
             # Warn the user that sync is being used
-            self._async_warn_once();
+            self._async_warn_once()
             return self._get_query_embedding(query)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
@@ -71,7 +72,7 @@ class LangchainEmbedding(BaseEmbedding):
             return embeds[0]
         except Exception:
             # Warn the user that sync is being used
-            self._async_warn_once();
+            self._async_warn_once()
             return self._get_text_embedding(text)
 
     def _get_text_embedding(self, text: str) -> List[float]:
