@@ -92,16 +92,16 @@ class ConfiguredDataSink(GenericModel, Generic[T]):
     @classmethod
     def from_component(cls, component: BasePydanticVectorStore) -> "ConfiguredDataSink":
         """
-        Build a ConfiguredDataSource from a component.
+        Build a ConfiguredDataSink from a component.
 
-        This should be the preferred way to build a ConfiguredDataSource
+        This should be the preferred way to build a ConfiguredDataSink
         as it will ensure that the component is supported as indicated by having a
         corresponding enum value in DataSources.
 
         This has the added bonus that you don't need to specify the generic type
-        like ConfiguredDataSource[Document]. The return value of
-        this ConfiguredDataSource.from_component(document) will be
-        ConfiguredDataSource[Document] if document is
+        like ConfiguredDataSink[Document]. The return value of
+        this ConfiguredDataSink.from_component(document) will be
+        ConfiguredDataSink[Document] if document is
         a Document object.
         """
         return ConfigurableDataSinks.from_component(
