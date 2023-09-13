@@ -3,23 +3,22 @@ from abc import ABC, abstractmethod
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional
 
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.schema import CBEventType, BASE_TRACE_EVENT
 
 logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
 
 
-class BaseCallbackHandler(ABC):
+class BaseCallbackHandler(BaseModel, ABC):
     """Base callback handler that can be used to track event starts and ends."""
 
-    def __init__(
-        self,
-        event_starts_to_ignore: List[CBEventType],
-        event_ends_to_ignore: List[CBEventType],
-    ) -> None:
-        """Initialize the base callback handler."""
-        self.event_starts_to_ignore = tuple(event_starts_to_ignore)
-        self.event_ends_to_ignore = tuple(event_ends_to_ignore)
+    event_starts_to_ignore: List[CBEventType] = Field(
+        description="List of event types to ignore on start.", default_factory=list
+    )
+    event_ends_to_ignore: List[CBEventType] = Field(
+        description="List of event types to ignore on end.", default_factory=list
+    )
 
     @abstractmethod
     def on_event_start(

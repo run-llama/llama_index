@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, List, Optional, Generator
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import (
     CBEventType,
@@ -49,8 +50,12 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     """
 
-    def __init__(self, handlers: Optional[List[BaseCallbackHandler]] = None):
+    handlers: Optional[List[BaseCallbackHandler]]
+    _trace_map: Dict[str, List[str]] = PrivateAttr()
+
+    def __init__(self, handlers: Optional[List[BaseCallbackHandler]] = None, **kwargs):
         """Initialize the manager with a list of handlers."""
+        super().__init__(**kwargs)
         from llama_index import global_handler
 
         handlers = handlers or []
