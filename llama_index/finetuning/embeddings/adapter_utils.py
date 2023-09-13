@@ -1,6 +1,7 @@
 """Adapter utils."""
 
 import torch
+from pathlib import Path
 from torch import nn, Tensor
 from typing import Optional, Dict, Type, Callable, Any, List
 from torch.optim import Optimizer
@@ -60,15 +61,15 @@ def train_model(
     output_path: str = "model_output",
     max_grad_norm: float = 1,
     show_progress_bar: bool = True,
-    verbose: bool = False
+    verbose: bool = False,
     # callback: Callable[[float, int, int], None] = None,
     # scheduler: str = "WarmupLinear",
     # weight_decay: float = 0.01,
     # evaluation_steps: int = 0,
     # save_best_model: bool = True,
     # use_amp: bool = False,  # disable this option for now
-    # checkpoint_path: str = None,
-    # checkpoint_save_steps: int = 500,
+    checkpoint_path: Optional[str] = None,
+    checkpoint_save_steps: int = 500,
     # checkpoint_save_total_limit: int = 0,
 ) -> None:
     """Train model."""
@@ -98,6 +99,10 @@ def train_model(
 
     global_step = 0
     data_iterator = iter(data_loader)
+
+    # if checkpoint_path is specified, create if doesn't exist
+    if checkpoint_path is not None:
+        Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
 
     for epoch in trange(epochs, desc="Epoch", disable=not show_progress_bar):
         training_steps = 0
@@ -136,8 +141,9 @@ def train_model(
             global_step += 1
 
             # TODO: skip eval for now
-
-            # TODO: skip saving checkpoint
+            if checkpoint_path is not None and global_step % checkpoint_save_steps == 0:
+                full_ck_path = Path(checkpoint_path) / f"step_{global_step}"
+                model.save(str(full_ck_path))
 
     if verbose:
         print_text(f"> Finished training, saving to {output_path}\n", color="blue")
