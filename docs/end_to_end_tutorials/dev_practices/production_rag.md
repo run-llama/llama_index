@@ -27,7 +27,7 @@ Check out [this Tweet thread](https://twitter.com/jerryjliu0/status/169293102896
 
 A key technique for better retrieval is to decouple chunks used for retrieval with those that are used for synthesis. 
 
-![](/docs/_static/production_rag/decouple_chunks.png)
+![](/_static/production_rag/decouple_chunks.png)
 
 #### Motivation
 The optimal chunk representation for retrieval might be different than the optimal consideration used for synthesis. 
@@ -67,7 +67,7 @@ maxdepth: 1
 
 ## Structured Retrieval for Larger Document Sets
 
-![](/docs/_static/production_rag/structured_retrieval.png)
+![](/_static/production_rag/structured_retrieval.png)
 
 #### Motivation
 A big issue with the standard RAG stack (top-k retrieval + basic text splitting) is that it doesn’t do well as the number of documents scales up - e.g. if you have 100 different PDFs.
@@ -104,14 +104,14 @@ maxdepth: 1
 
 ## Dynamically Retrieve Chunks Depending on your Task
 
-![](/docs/_static/production_rag/joint_qa_summary.png)
+![](/_static/production_rag/joint_qa_summary.png)
 
 #### Motivation
 RAG isn't just about question-answering about specific facts, which top-k similarity is optimized for. There can be a broad range of queries that a user might ask. Queries that are handled by naive RAG stacks include ones that ask about specific facts e.g. "Tell me about the D&I initiatives for this company in 2023" or "What did the narrator do during his time at Google". But queries can also include summarization e.g. "Can you give me a high-level overview of this document", or comparisons "Can you compare/contrast X and Y". All of these use cases may require different retrieval techniques.
 
 #### Key Techniques
 
-LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](/docs/core_modules/query_modules/router/root.md) module. This also includes our [data agent](/docs/core_modules/agent_modules/agents/root.md) module.
+LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](/core_modules/query_modules/router/root.md) module. This also includes our [data agent](/core_modules/agent_modules/agents/root.md) module.
 This also includes some advanced query engine modules.
 This also include other modules that join structured and unstructured data.
 

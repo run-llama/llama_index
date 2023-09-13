@@ -98,9 +98,9 @@ index = load_index_from_storage(storage_context)
 
 
 ```{admonition} Next Steps
-* learn more about the [high-level concepts](/docs/getting_started/concepts.md).
-* tell me how to [customize things](/docs/getting_started/customization.rst).
+* learn more about the [high-level concepts](/getting_started/concepts.md).
+* tell me how to [customize things](/getting_started/customization.rst).
 * curious about a specific module? check out the guides 👈
-* have a use case in mind? check out the [end-to-end tutorials](/docs/end_to_end_tutorials/use_cases.md)
+* have a use case in mind? check out the [end-to-end tutorials](/end_to_end_tutorials/use_cases.md)
 ```
 

@@ -166,8 +166,8 @@ A full API reference can be found [here](../../../api_reference/llms/huggingface
 
 Several example notebooks are also listed below:
 
-- [StableLM](/docs/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
-- [Camel](/docs/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
+- [StableLM](/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
+- [Camel](/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
 
 ## Example: Using a Custom LLM Model - Advanced
 
@@ -257,5 +257,5 @@ The decorator is optional, but provides observability via callbacks on the LLM c
 
 Note that you may have to adjust the internal prompts to get good performance. Even then, you should be using a sufficiently large LLM to ensure it's capable of handling the complex queries that LlamaIndex uses internally, so your mileage may vary.
 
-A list of all default internal prompts is available [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py). You can also implement your own custom prompts, as described [here](/docs/core_modules/service_modules/prompts.md).
+A list of all default internal prompts is available [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py). You can also implement your own custom prompts, as described [here](/core_modules/service_modules/prompts.md).
 

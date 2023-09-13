@@ -11,39 +11,39 @@ Some terminology:
 
 The summary index simply stores Nodes as a sequential chain.
 
-![](/docs/_static/indices/list.png)
+![](/_static/indices/list.png)
 
 ### Querying
 
 During query time, if no other query parameters are specified, LlamaIndex simply loads all Nodes in the list into
 our Response Synthesis module.
 
-![](/docs/_static/indices/list_query.png)
+![](/_static/indices/list_query.png)
 
 The summary index does offer numerous ways of querying a summary index, from an embedding-based query which 
 will fetch the top-k neighbors, or with the addition of a keyword filter, as seen below:
 
-![](/docs/_static/indices/list_filter_query.png)
+![](/_static/indices/list_filter_query.png)
 
 
 ## Vector Store Index
 
 The vector store index stores each Node and a corresponding embedding in a [Vector Store](vector-store-index).
 
-![](/docs/_static/indices/vector_store.png)
+![](/_static/indices/vector_store.png)
 
 ### Querying
 
 Querying a vector store index involves fetching the top-k most similar Nodes, and passing
 those into our Response Synthesis module.
 
-![](/docs/_static/indices/vector_store_query.png)
+![](/_static/indices/vector_store_query.png)
 
 ## Tree Index
 
 The tree index builds a hierarchical tree from a set of Nodes (which become leaf nodes in this tree).
 
-![](/docs/_static/indices/tree.png)
+![](/_static/indices/tree.png)
 
 ### Querying
 
@@ -52,14 +52,14 @@ to leaf nodes. By default, (`child_branch_factor=1`), a query
 chooses one child node given a parent node. If `child_branch_factor=2`, a query
 chooses two child nodes per level.
 
-![](/docs/_static/indices/tree_query.png)
+![](/_static/indices/tree_query.png)
 
 ## Keyword Table Index
 
 The keyword table index extracts keywords from each Node and builds a mapping from 
 each keyword to the corresponding Nodes of that keyword.
 
-![](/docs/_static/indices/keyword.png)
+![](/_static/indices/keyword.png)
 
 ### Querying
 
@@ -67,4 +67,4 @@ During query time, we extract relevant keywords from the query, and match those 
 Node keywords to fetch the corresponding Nodes. The extracted Nodes are passed to our 
 Response Synthesis module.
 
-![](/docs/_static/indices/keyword_query.png)
+![](/_static/indices/keyword_query.png)

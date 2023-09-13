@@ -72,7 +72,7 @@ storage_context = llama_index.global_handler.load_storage_context(
 
 ```
 
-![](/docs/_static/integrations/wandb.png)
+![](/_static/integrations/wandb.png)
 
 #### Guides
 ```{toctree}
@@ -139,7 +139,7 @@ tru_query_engine = TruLlama(query_engine)
 tru_query_engine.query("What did the author do growing up?")
 
 ```
-![](/docs/_static/integrations/trulens.png)
+![](/_static/integrations/trulens.png)
 
 #### Guides
 

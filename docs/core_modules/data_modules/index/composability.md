@@ -16,7 +16,7 @@ doc2 = SimpleDirectoryReader('data2').load_data()
 doc3 = SimpleDirectoryReader('data3').load_data()
 ```
 
-![](/docs/_static/composability/diagram_b0.png)
+![](/_static/composability/diagram_b0.png)
 
 Now let's define a tree index for each document. In order to persist the graph later, each index should share the same storage context.
 
@@ -32,7 +32,7 @@ index2 = TreeIndex.from_documents(doc2, storage_context=storage_context)
 index3 = TreeIndex.from_documents(doc3, storage_context=storage_context)
 ```
 
-![](/docs/_static/composability/diagram_b1.png)
+![](/_static/composability/diagram_b1.png)
 
 ### Defining Summary Text
 
@@ -74,7 +74,7 @@ graph = ComposableGraph.from_indices(
 
 ```
 
-![](/docs/_static/composability/diagram.png)
+![](/_static/composability/diagram.png)
 
 
 ### Querying the Graph
@@ -85,7 +85,7 @@ The default query engine for each index is called under the hood (i.e. `index.as
 Below we show an example that configure the tree index retrievers to use `child_branch_factor=2` (instead of the default `child_branch_factor=1`).
 
 
-More detail on how to configure `ComposableGraphQueryEngine` can be found [here](/docs/api_reference/query/query_engines/graph_query_engine.rst).
+More detail on how to configure `ComposableGraphQueryEngine` can be found [here](/api_reference/query/query_engines/graph_query_engine.rst).
 
 
 ```python
@@ -111,11 +111,11 @@ index2.set_index_id("<index_id_2>")
 index3.set_index_id("<index_id_3>")
 ```
 
-![](/docs/_static/composability/diagram_q1.png)
+![](/_static/composability/diagram_q1.png)
 
 So within a node, instead of fetching the text, we would recursively query the stored tree index to retrieve our answer.
 
-![](/docs/_static/composability/diagram_q2.png)
+![](/_static/composability/diagram_q2.png)
 
 NOTE: You can stack indices as many times as you want, depending on the hierarchies of your knowledge base! 
 

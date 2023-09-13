@@ -2,7 +2,7 @@
 
 LlamaIndex contains some fantastic guides for building with knowledge graphs.
 
-Check out the end-to-end tutorials/workshops below. Also check out our knowledge graph query engine guides [here](/docs/core_modules/query_modules/query_engine/modules.md).
+Check out the end-to-end tutorials/workshops below. Also check out our knowledge graph query engine guides [here](/core_modules/query_modules/query_engine/modules.md).
 
 
 ```{toctree}

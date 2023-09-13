@@ -59,7 +59,7 @@ This is especially helpful over a [composed graph](../../index/composability.md)
 
 An example image is shown below.
 
-![](/docs/_static/query_transformations/single_step_diagram.png)
+![](/_static/query_transformations/single_step_diagram.png)
 
 
 Here's a corresponding example code snippet over a composed graph.
@@ -109,7 +109,7 @@ Given the response (along with prior responses) and the query, followup question
 
 An example image is shown below.
 
-![](/docs/_static/query_transformations/multi_step_diagram.png)
+![](/_static/query_transformations/multi_step_diagram.png)
 
 
 Here's a corresponding example code snippet.

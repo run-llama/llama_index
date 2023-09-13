@@ -49,4 +49,4 @@ Right now, we support the following options:
 - `compact_accumulate`: The same as accumulate, but will "compact" each LLM prompt similar to
     `compact`, and run the same query against each text chunk.
 
-See [Response Synthesizer](/docs/core_modules/query_modules/response_synthesizers/root.md) to learn more.
+See [Response Synthesizer](/core_modules/query_modules/response_synthesizers/root.md) to learn more.

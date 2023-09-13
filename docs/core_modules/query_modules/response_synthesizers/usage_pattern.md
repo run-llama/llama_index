@@ -24,7 +24,7 @@ response = query_engine.query("query_text")
 ```
 
 ```{tip}
-To learn how to build an index, see [Index](/docs/core_modules/data_modules/index/root.md)
+To learn how to build an index, see [Index](/core_modules/data_modules/index/root.md)
 ```
 
 ## Configuring the Response Mode

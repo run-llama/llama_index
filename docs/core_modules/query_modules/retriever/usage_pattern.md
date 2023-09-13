@@ -11,7 +11,7 @@ Retrieve relevant context for a question:
 nodes = retriever.retrieve('Who is Paul Graham?')
 ```
 
-> Note: To learn how to build an index, see [Index](/docs/core_modules/data_modules/index/root.md)
+> Note: To learn how to build an index, see [Index](/core_modules/data_modules/index/root.md)
 
 ## High-Level API
 
@@ -24,9 +24,9 @@ retriever = summary_index.as_retriever(
     retriever_mode='llm',
 )
 ```
-This creates a [SummaryIndexLLMRetriever](/docs/api_reference/query/retrievers/list.rst) on top of the summary index.
+This creates a [SummaryIndexLLMRetriever](/api_reference/query/retrievers/list.rst) on top of the summary index.
 
-See [**Retriever Modes**](/docs/core_modules/query_modules/retriever/retriever_modes.md) for a full list of (index-specific) retriever modes
+See [**Retriever Modes**](/core_modules/query_modules/retriever/retriever_modes.md) for a full list of (index-specific) retriever modes
 and the retriever classes they map to.
 
 ```{toctree}

@@ -27,31 +27,31 @@ a more information + a detailed analysis.
 
 ### "Agent-like" Components within LlamaIndex 
 
-LlamaIndex provides core modules capable of automated reasoning for different use cases over your data. Please check out our [use cases doc](/docs/end_to_end_tutorials/use_cases.md) for more details on high-level use cases that LlamaIndex can help fulfill.
+LlamaIndex provides core modules capable of automated reasoning for different use cases over your data. Please check out our [use cases doc](/end_to_end_tutorials/use_cases.md) for more details on high-level use cases that LlamaIndex can help fulfill.
 
 Some of these core modules are shown below along with example tutorials (not comprehensive, please click into the guides/how-tos for more details).
 
 **SubQuestionQueryEngine for Multi-Document Analysis**
 - [Usage](queries.md#multi-document-queries)
-- [Sub Question Query Engine (Intro)](/docs/examples/query_engine/sub_question_query_engine.ipynb)
-- [10Q Analysis (Uber)](/docs/examples/usecases/10q_sub_question.ipynb)
-- [10K Analysis (Uber and Lyft)](/docs/examples/usecases/10k_sub_question.ipynb)
+- [Sub Question Query Engine (Intro)](/examples/query_engine/sub_question_query_engine.ipynb)
+- [10Q Analysis (Uber)](/examples/usecases/10q_sub_question.ipynb)
+- [10K Analysis (Uber and Lyft)](/examples/usecases/10k_sub_question.ipynb)
 
 
 **Query Transformations**
-- [How-To](/docs/core_modules/query_modules/query_engine/advanced/query_transformations.md)
-- [Multi-Step Query Decomposition](/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
+- [How-To](/core_modules/query_modules/query_engine/advanced/query_transformations.md)
+- [Multi-Step Query Decomposition](/examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 **Routing**
 - [Usage](queries.md#routing-over-heterogeneous-data)
-- [Router Query Engine Guide](/docs/examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
+- [Router Query Engine Guide](/examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
 
 **LLM Reranking**
-- [Second Stage Processing How-To](/docs/core_modules/query_modules/node_postprocessors/root.md)
-- [LLM Reranking Guide (Great Gatsby)](/docs/examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
+- [Second Stage Processing How-To](/core_modules/query_modules/node_postprocessors/root.md)
+- [LLM Reranking Guide (Great Gatsby)](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
 
 **Chat Engines**
-- [Chat Engines How-To](/docs/core_modules/query_modules/chat_engines/root.md)
+- [Chat Engines How-To](/core_modules/query_modules/chat_engines/root.md)
 
 
 ### Using LlamaIndex as as Tool within an Agent Framework
@@ -64,9 +64,9 @@ We have deep integrations with LangChain.
 LlamaIndex query engines can be easily packaged as Tools to be used within a LangChain agent, and LlamaIndex can also be used as a memory module / retriever. Check out our guides/tutorials below!
 
 **Resources**
-- [LangChain integration guide](/docs/community/integrations/using_with_langchain.md)
+- [LangChain integration guide](/community/integrations/using_with_langchain.md)
 - [Building a Chatbot Tutorial (LangChain + LlamaIndex)](/guides/tutorials/building_a_chatbot.md)
-- [OnDemandLoaderTool Tutorial](/docs/examples/tools/OnDemandLoaderTool.ipynb)
+- [OnDemandLoaderTool Tutorial](/examples/tools/OnDemandLoaderTool.ipynb)
 
 #### ChatGPT
 
