@@ -7,6 +7,8 @@ Users have a few options to choose from when it comes to embeddings.
 
 - :code:`OpenAIEmbedding`: the default embedding class. Defaults to "text-embedding-ada-002"
 - :code:`LangchainEmbedding`: a wrapper around Langchain's embedding models.
+- :code:`GoogleUnivSentEncoderEmbedding`: a wrapper around Google's Universal Sentence Encoder.
+- :code:`AdapterEmbeddingModel`: an adapter around any embedding model.
 
 
 .. automodule:: llama_index.embeddings
