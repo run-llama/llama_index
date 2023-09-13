@@ -23,8 +23,6 @@ DISTANCE_STRATEGIES = Literal[
     "EUCLIDEAN_DISTANCE",
 ]
 
-nest_asyncio.apply()
-
 
 def _get_elasticsearch_client(
     *,
@@ -167,6 +165,7 @@ class ElasticsearchStore(VectorStore):
         batch_size: int = 200,
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
     ) -> None:
+        nest_asyncio.apply()
         self.index_name = index_name
         self.text_field = text_field
         self.vector_field = vector_field
@@ -447,7 +446,7 @@ class ElasticsearchStore(VectorStore):
         """Asynchronous query index for top k most similar nodes.
 
         Args:
-            query_embedding (List[float]): query embedding
+            query_embedding (VectorStoreQuery): query embedding
             custom_query: Optional. custom query function that takes in the es query
                         body and returns a modified query body.
                         This can be used to add additional query
