@@ -1,22 +1,19 @@
-from tempfile import TemporaryDirectory
 
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 from llama_index.ingestion.pipeline import IngestionPipeline
 from llama_index.llms import MockLLM
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.extractors import KeywordExtractor
-from llama_index.readers import SimpleDirectoryReader, ReaderConfig
+from llama_index.readers import StringIterableReader, ReaderConfig
 from llama_index.schema import Document
 
 
 def test_build_pipeline() -> None:
-    temp_dir = TemporaryDirectory()
-    with open(f"{temp_dir.name}/test.txt", "w") as f:
-        f.write("This is a test.")
-
     pipeline = IngestionPipeline(
         name="Test",
-        reader=ReaderConfig(loader=SimpleDirectoryReader(f"{temp_dir.name}")),
+        reader=ReaderConfig(
+            loader=StringIterableReader(), loader_kwargs={"texts": ["This is a test."]}
+        ),
         documents=[Document.example()],
         transformations=[
             SimpleNodeParser.from_defaults(),
@@ -32,13 +29,11 @@ def test_build_pipeline() -> None:
 
 
 def test_run_local_pipeline() -> None:
-    temp_dir = TemporaryDirectory()
-    with open(f"{temp_dir.name}/test.txt", "w") as f:
-        f.write("This is a test.")
-
     pipeline = IngestionPipeline(
         name="Test",
-        reader=ReaderConfig(loader=SimpleDirectoryReader(f"{temp_dir.name}")),
+        reader=ReaderConfig(
+            loader=StringIterableReader(), loader_kwargs={"texts": ["This is a test."]}
+        ),
         documents=[Document.example()],
         transformations=[
             SimpleNodeParser.from_defaults(),
