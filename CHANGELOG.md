@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+- Fixed chunk-overlap for sentence splitter (#7590)
+
+## [0.8.25] - 2023-09-12
+
 ### New Features
 - Added `AGENT_STEP` callback event type (#7652)
 
