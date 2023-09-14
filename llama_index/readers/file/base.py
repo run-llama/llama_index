@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.docs_reader import DocxReader, PDFReader
+from llama_index.readers.file.docs_reader import DocxReader, PDFReader, HWPReader
 from llama_index.readers.file.epub_reader import EpubReader
 from llama_index.readers.file.image_reader import ImageReader
 from llama_index.readers.file.ipynb_reader import IPYNBReader
@@ -17,6 +17,7 @@ from llama_index.readers.file.video_audio_reader import VideoAudioReader
 from llama_index.schema import Document
 
 DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
+    ".hwp": HWPReader,
     ".pdf": PDFReader,
     ".docx": DocxReader,
     ".pptx": PptxReader,
