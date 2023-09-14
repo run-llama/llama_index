@@ -1,7 +1,8 @@
 """Text splitter implementations."""
 from abc import ABC, abstractmethod
-from typing import List, Union, Any
+from typing import List, Union
 
+from llama_index.bridge.langchain import TextSplitter as LC_TextSplitter
 from llama_index.schema import BaseComponent
 
 
@@ -20,5 +21,4 @@ class MetadataAwareTextSplitter(TextSplitter):
         ...
 
 
-# Splitter type could also be from llama_index.bridge.langchain.TextSplitter
-SplitterType = Union[TextSplitter, Any]
+SplitterType = Union[TextSplitter, LC_TextSplitter]
