@@ -162,7 +162,7 @@ class ConfigurableTransformations(Enum):
         if not isinstance(component, component_type):
             raise ValueError(
                 f"The enum value {self} is not compatible with component of "
-                "type {type(component)}"
+                f"type {type(component)}"
             )
         return ConfiguredTransformation[component_type](  # type: ignore
             component=component
