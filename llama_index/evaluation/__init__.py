@@ -1,17 +1,21 @@
 """Evaluation modules."""
 
+from llama_index.evaluation.correctness_eval import CorrectnessEvaluator
 from llama_index.evaluation.dataset_generation import DatasetGenerator
 from llama_index.evaluation.faithfulness_eval import (FaithfulnessEvaluator,
                                                       ResponseEvaluator)
 from llama_index.evaluation.guideline_eval import GuidelineEvaluator
-from llama_index.evaluation.labeled_eval import LabeledEvaluator
+from llama_index.evaluation.relevancy_eval import (QueryResponseEvaluator,
+                                                   RelevancyEvaluator)
 
 __all__ = [
-    "ResponseEvaluator",
-    "QueryResponseEvaluator",
+    "FaithfulnessEvaluator",
+    "RelevancyEvaluator",
+    "RelevanceEvaluator",
     "DatasetGenerator",
     "GuidelineEvaluator",
-    "LabeledEvaluator",
+    "CorrectnessEvaluator",
     # legacy: kept for backward compatibility
-    "FaithfulnessEvaluator"
+    "QueryResponseEvaluator",
+    "ResponseEvaluator",
 ]

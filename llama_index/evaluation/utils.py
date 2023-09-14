@@ -1,5 +1,3 @@
-
-
 from typing import List
 
 from llama_index.response.schema import Response

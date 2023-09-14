@@ -1,15 +1,14 @@
+"""Guideline evaluation."""
 import logging
-from typing import Optional
+from typing import Any, Optional, Sequence
 
 from llama_index.bridge.langchain import PydanticOutputParser
 from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.evaluation.base import BaseEvaluator, Evaluation
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.base import ServiceContext
 from llama_index.prompts.base import PromptTemplate
-from llama_index.response.schema import Response
 
 logger = logging.getLogger(__name__)
-
 
 
 DEFAULT_GUIDELINES = (
@@ -55,12 +54,19 @@ class GuidelineEvaluator(BaseEvaluator):
         self.guidelines = guidelines or DEFAULT_GUIDELINES
         self.eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
-    def evaluate_response(self, query: str, response: Response) -> Evaluation:
-        response_str = response.response or ""
-        return self.evaluate_response(query, response_str)
-
-    def evaluate_string(self, query: str, response: str) -> Evaluation:
+    def evaluate(
+        self,
+        query: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
+        response: Optional[str] = None,
+        **kwargs: Any,
+    ) -> EvaluationResult:
         """Evaluate the response for a query and an Evaluation."""
+        del contexts  # Unused
+        del kwargs  # Unused
+        if query is None or response is None:
+            raise ValueError("query and response must be provided")
+
         parser: PydanticOutputParser[EvaluationData] = PydanticOutputParser(
             pydantic_object=EvaluationData
         )
@@ -79,5 +85,4 @@ class GuidelineEvaluator(BaseEvaluator):
             format_instructions=format_instructions,
         )
         eval_data = parser.parse(eval_response)
-        return Evaluation(query, response, eval_data.passing, eval_data.feedback)
-
+        return EvaluationResult(query, response, eval_data.passing, eval_data.feedback)

@@ -1,14 +1,13 @@
-"""Evaluating the responses from an index."""
+"""Faithfulness evaluation."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Any, Optional, Sequence
 
-from llama_index.evaluation.base import BaseEvaluator
-from llama_index.evaluation.utils import get_context
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.base import ServiceContext
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.prompts import PromptTemplate
-from llama_index.response.schema import Response
+from llama_index.schema import Document
 
 DEFAULT_EVAL_PROMPT = (
     "Please tell if a given piece of information "
@@ -56,10 +55,7 @@ DEFAULT_REFINE_PROMPT = (
 
 
 class FaithfulnessEvaluator(BaseEvaluator):
-    """Evaluate the faithfulness of 
-
-
-    """
+    """Evaluate the faithfulness of"""
 
     def __init__(
         self,
@@ -74,7 +70,13 @@ class FaithfulnessEvaluator(BaseEvaluator):
         self._eval_template = eval_template or DEFAULT_EVAL_PROMPT
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT
 
-    def evaluate(self, response: Response) -> str:
+    def evaluate(
+        self,
+        query: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
+        response: Optional[str] = None,
+        **kwargs: Any,
+    ) -> EvaluationResult:
         """Evaluate the response from an index.
 
         Args:
@@ -86,12 +88,11 @@ class FaithfulnessEvaluator(BaseEvaluator):
             No -> If answer, context information are not matching \
                     or If Query, answer and context information are not matching.
         """
-        answer = str(response)
+        del query  # Unused
+        del kwargs  # Unused
 
-        context = get_context(response)
-        index = SummaryIndex.from_documents(
-            context, service_context=self.service_context
-        )
+        docs = [Document(text=context) for context in contexts]
+        index = SummaryIndex.from_documents(docs, service_context=self._service_context)
         response_txt = ""
 
         EVAL_PROMPT_TMPL = PromptTemplate(DEFAULT_EVAL_PROMPT)
@@ -101,7 +102,7 @@ class FaithfulnessEvaluator(BaseEvaluator):
             text_qa_template=EVAL_PROMPT_TMPL,
             refine_template=REFINE_PROMPT_TMPL,
         )
-        response_obj = query_engine.query(answer)
+        response_obj = query_engine.query(response)
 
         raw_response_txt = str(response_obj)
 
@@ -109,56 +110,11 @@ class FaithfulnessEvaluator(BaseEvaluator):
             response_txt = "YES"
         else:
             response_txt = "NO"
-            if self.raise_error:
+            if self._raise_error:
                 raise ValueError("The response is invalid")
 
         return response_txt
 
-    def evaluate_source_nodes(self, response: Response) -> List[str]:
-        """Function to evaluate if each source node contains the answer \
-            by comparing the response, and context information (source node).
 
-        Args:
-            response: Response object from an index based on the query.
-        Returns:
-            List of Yes/ No which can be used to know which source node contains \
-                answer.
-            Yes -> If response and context information are matching.
-            No -> If response and context information are not matching.
-        """
-        answer = str(response)
-
-        context_list = self.get_context(response)
-
-        response_texts = []
-
-        for context in context_list:
-            index = SummaryIndex.from_documents(
-                [context], service_context=self.service_context
-            )
-            response_txt = ""
-
-            EVAL_PROMPT_TMPL = PromptTemplate(DEFAULT_EVAL_PROMPT)
-            REFINE_PROMPT_TMPL = PromptTemplate(DEFAULT_REFINE_PROMPT)
-
-            query_engine = index.as_query_engine(
-                text_qa_template=EVAL_PROMPT_TMPL,
-                refine_template=REFINE_PROMPT_TMPL,
-            )
-            response_obj = query_engine.query(answer)
-            raw_response_txt = str(response_obj)
-
-            if "yes" in raw_response_txt.lower():
-                response_txt = "YES"
-            else:
-                response_txt = "NO"
-                if self.raise_error:
-                    raise ValueError("The response is invalid")
-
-            response_texts.append(response_txt)
-
-        return response_texts
-    
-
-
+# legacy: backward compatibility
 ResponseEvaluator = FaithfulnessEvaluator

@@ -1,10 +1,14 @@
-from typing import Optional
+"""Correctness evaluation."""
+from typing import Any, Optional
 
 from llama_index.evaluation.base import BaseEvaluator, Evaluation
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts import (BasePromptTemplate, ChatMessage,
-                                 ChatPromptTemplate, MessageRole)
-from llama_index.response.schema import Response
+from llama_index.prompts import (
+    BasePromptTemplate,
+    ChatMessage,
+    ChatPromptTemplate,
+    MessageRole,
+)
 
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
@@ -49,7 +53,7 @@ DEFAULT_EVAL_TEMPLATE = ChatPromptTemplate(
 )
 
 
-class LabeledEvaluator(BaseEvaluator):
+class CorrectnessEvaluator(BaseEvaluator):
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
@@ -60,7 +64,16 @@ class LabeledEvaluator(BaseEvaluator):
         self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
         self._score_threshold = score_threshold
 
-    def evaluate_string(self, query: str, response: str, reference: str) -> Evaluation:
+    def evaluate(
+        self,
+        query: Optional[str] = None,
+        response: Optional[str] = None,
+        reference: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Evaluation:
+        if query is None or response is None or reference is None:
+            raise ValueError("query, response, and reference must be provided")
+
         eval_response = self._service_context.llm_predictor.predict(
             prompt=self._eval_template,
             query=query,
@@ -80,9 +93,3 @@ class LabeledEvaluator(BaseEvaluator):
             score=score,
             feedback=reasoning,
         )
-
-    def evaluate_response(
-        self, query: str, response: Response, reference: str
-    ) -> Evaluation:
-        response_str = response.response or ""
-        return self.evaluate_string(query, response_str, reference)
