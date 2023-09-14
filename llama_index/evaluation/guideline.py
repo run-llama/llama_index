@@ -1,12 +1,12 @@
 """Guideline evaluation."""
 import logging
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 from llama_index.bridge.langchain import PydanticOutputParser
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.base import ServiceContext
-from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ DEFAULT_GUIDELINES = (
     "The response should be specific and use statistics or numbers when possible.\n"
 )
 
-DEFAULT_EVAL_TEMPLATE = (
+DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Here is the original query:\n"
     "Query: {query}\n"
     "Critique the following response based on the guidelines below:\n"
@@ -48,11 +48,16 @@ class GuidelineEvaluator(BaseEvaluator):
         self,
         service_context: Optional[ServiceContext] = None,
         guidelines: Optional[str] = None,
-        eval_template: Optional[str] = None,
+        eval_template: Optional[Union[str, BasePromptTemplate]] = None,
     ) -> None:
-        self.service_context = service_context or ServiceContext.from_defaults()
-        self.guidelines = guidelines or DEFAULT_GUIDELINES
-        self.eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
+        self._service_context = service_context or ServiceContext.from_defaults()
+        self._guidelines = guidelines or DEFAULT_GUIDELINES
+
+        self._eval_template: BasePromptTemplate
+        if isinstance(eval_template, str):
+            self._eval_template = PromptTemplate(eval_template)
+        else:
+            self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
     def evaluate(
         self,
@@ -71,18 +76,22 @@ class GuidelineEvaluator(BaseEvaluator):
             pydantic_object=EvaluationData
         )
         format_instructions = parser.get_format_instructions()
-        prompt = PromptTemplate(self.eval_template)
-        logger.debug("prompt: %s", prompt)
+        logger.debug("prompt: %s", self._eval_template)
         logger.debug("query: %s", query)
         logger.debug("response: %s", response)
-        logger.debug("guidelines: %s", self.guidelines)
+        logger.debug("guidelines: %s", self._guidelines)
         logger.debug("format_instructions: %s", format_instructions)
-        eval_response = self.service_context.llm_predictor.predict(
-            prompt,
+        eval_response = self._service_context.llm_predictor.predict(
+            self._eval_template,
             query=query,
             response=response,
-            guidelines=self.guidelines,
+            guidelines=self._guidelines,
             format_instructions=format_instructions,
         )
         eval_data = parser.parse(eval_response)
-        return EvaluationResult(query, response, eval_data.passing, eval_data.feedback)
+        return EvaluationResult(
+            query=query,
+            response=response,
+            passing=eval_data.passing,
+            feedback=eval_data.feedback,
+        )

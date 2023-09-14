@@ -1,13 +1,14 @@
 """Correctness evaluation."""
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, Union
 
-from llama_index.evaluation.base import BaseEvaluator, Evaluation
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import (
     BasePromptTemplate,
     ChatMessage,
     ChatPromptTemplate,
     MessageRole,
+    PromptTemplate,
 )
 
 DEFAULT_SYSTEM_TEMPLATE = """
@@ -57,20 +58,30 @@ class CorrectnessEvaluator(BaseEvaluator):
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
-        eval_template: Optional[BasePromptTemplate] = None,
+        eval_template: Optional[Union[BasePromptTemplate, str]] = None,
         score_threshold: float = 4.0,
     ) -> None:
         self._service_context = service_context or ServiceContext.from_defaults()
-        self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
+
+        self._eval_template: BasePromptTemplate
+        if isinstance(eval_template, str):
+            self._eval_template = PromptTemplate(eval_template)
+        else:
+            self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
+
         self._score_threshold = score_threshold
 
     def evaluate(
         self,
         query: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
         response: Optional[str] = None,
         reference: Optional[str] = None,
         **kwargs: Any,
-    ) -> Evaluation:
+    ) -> EvaluationResult:
+        del kwargs  # Unused
+        del contexts  # Unused
+
         if query is None or response is None or reference is None:
             raise ValueError("query, response, and reference must be provided")
 
@@ -86,7 +97,7 @@ class CorrectnessEvaluator(BaseEvaluator):
         score = float(score_str)
         reasoning = reasoning_str.lstrip("\n")
 
-        return Evaluation(
+        return EvaluationResult(
             query=query,
             response=response,
             passing=score >= self._score_threshold,

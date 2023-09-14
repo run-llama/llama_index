@@ -2,19 +2,24 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
 from typing import Any, Optional, Sequence
+
+from pydantic import BaseModel, Field
 
 from llama_index.response.schema import Response
 
 
-@dataclass
-class EvaluationResult:
-    query: str  # The query
-    response: Response  # The response
-    passing: bool = False  # True if the response is correct, False otherwise
-    feedback: str = ""  # Feedback for the response
-    score: Optional[float] = None  # Score for the response
+class EvaluationResult(BaseModel):
+    query: Optional[str] = Field(None, description="Query string")
+    contexts: Optional[Sequence[str]] = Field(None, description="Context strings")
+    response: Optional[str] = Field(None, description="Response string")
+    passing: Optional[bool] = Field(
+        None, description="Binary evaluation result (passing or not)"
+    )
+    feedback: Optional[str] = Field(
+        None, description="Feedback or reasoning for the response"
+    )
+    score: Optional[float] = Field(None, description="Score for the response")
 
 
 class BaseEvaluator(ABC):
@@ -42,7 +47,7 @@ class BaseEvaluator(ABC):
         response: Optional[str] = None,
         **kwargs: Any,
     ) -> Evaluation:
-        """Run evaluation with query string, retrieved contexts, 
+        """Run evaluation with query string, retrieved contexts,
         and generated response string.
         """
         raise NotImplementedError

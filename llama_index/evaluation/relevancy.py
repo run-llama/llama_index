@@ -1,15 +1,16 @@
 """Relevancy evaluation."""
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.base import ServiceContext
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.prompts import PromptTemplate
+from llama_index.prompts.base import BasePromptTemplate
 from llama_index.schema import Document
 
-QUERY_RESPONSE_EVAL_PROMPT = (
+DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the response for the query \
     is in line with the context information provided.\n"
     "You have two options to answer. Either YES/ NO.\n"
@@ -20,7 +21,7 @@ QUERY_RESPONSE_EVAL_PROMPT = (
     "Answer: "
 )
 
-QUERY_RESPONSE_REFINE_PROMPT = (
+DEFAULT_REFINE_TEMPLATE = PromptTemplate(
     "We want to understand if the following query and response is"
     "in line with the context information: \n {query_str}\n"
     "We have provided an existing YES/NO answer: \n {existing_answer}\n"
@@ -49,10 +50,24 @@ class RelevancyEvaluator(BaseEvaluator):
         self,
         service_context: Optional[ServiceContext] = None,
         raise_error: bool = False,
+        eval_template: Optional[Union[str, BasePromptTemplate]] = None,
+        refine_template: Optional[Union[str, BasePromptTemplate]] = None,
     ) -> None:
         """Init params."""
         self._service_context = service_context or ServiceContext.from_defaults()
         self._raise_error = raise_error
+
+        self._eval_template: BasePromptTemplate
+        if isinstance(eval_template, str):
+            self._eval_template = PromptTemplate(eval_template)
+        else:
+            self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
+
+        self._refine_template: BasePromptTemplate
+        if isinstance(refine_template, str):
+            self._refine_template = PromptTemplate(refine_template)
+        else:
+            self._refine_template = refine_template or DEFAULT_REFINE_TEMPLATE
 
     def evaluate(
         self,
@@ -69,30 +84,37 @@ class RelevancyEvaluator(BaseEvaluator):
         Returns:
             EvaluationResult object with passing boolean and feedback "YES" or "NO".
         """
+        del kwargs  # Unused
+
         if query is None or contexts is None or response is None:
             raise ValueError("query, contexts, and response must be provided")
 
         docs = [Document(text=context) for context in contexts]
         index = SummaryIndex.from_documents(docs, service_context=self._service_context)
 
-        QUERY_RESPONSE_EVAL_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_EVAL_PROMPT)
-        QUERY_RESPONSE_REFINE_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_REFINE_PROMPT)
-
         query_response = f"Question: {query}\nResponse: {response}"
 
         query_engine = index.as_query_engine(
-            text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
-            refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
+            text_qa_template=self._eval_template,
+            refine_template=self._refine_template,
         )
         response_obj = query_engine.query(query_response)
 
         raw_response_txt = str(response_obj)
 
         if "yes" in raw_response_txt.lower():
-            return EvaluationResult(query, response, True, "YES")
+            passing = True
         else:
             if self._raise_error:
                 raise ValueError("The response is invalid")
-            return EvaluationResult(query, response, False, "NO")
+            passing = False
+
+        return EvaluationResult(
+            query=query,
+            response=response,
+            passing=passing,
+            feedback=raw_response_txt,
+        )
+
 
 QueryResponseEvaluator = RelevancyEvaluator

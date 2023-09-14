@@ -1,12 +1,10 @@
 """Evaluation modules."""
 
-from llama_index.evaluation.correctness_eval import CorrectnessEvaluator
+from llama_index.evaluation.correctness import CorrectnessEvaluator
 from llama_index.evaluation.dataset_generation import DatasetGenerator
-from llama_index.evaluation.faithfulness_eval import (FaithfulnessEvaluator,
-                                                      ResponseEvaluator)
-from llama_index.evaluation.guideline_eval import GuidelineEvaluator
-from llama_index.evaluation.relevancy_eval import (QueryResponseEvaluator,
-                                                   RelevancyEvaluator)
+from llama_index.evaluation.faithfulness import FaithfulnessEvaluator, ResponseEvaluator
+from llama_index.evaluation.guideline import GuidelineEvaluator
+from llama_index.evaluation.relevancy import QueryResponseEvaluator, RelevancyEvaluator
 
 __all__ = [
     "FaithfulnessEvaluator",
