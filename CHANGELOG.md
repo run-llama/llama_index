@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Simplified portkey LLM interface (#7669)
+
 ### Bug Fixes / Nits
 - Avoid `NotImplementedError` for async langchain embeddings (#7668)
 
