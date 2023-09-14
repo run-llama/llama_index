@@ -6,7 +6,7 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
-from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.interface import NodeParserWithCallbackManager
 from llama_index.node_parser.node_utils import build_nodes_from_splits
 from llama_index.schema import BaseNode, Document
 from llama_index.text_splitter.utils import split_by_sentence_tokenizer
@@ -17,7 +17,7 @@ DEFAULT_WINDOW_METADATA_KEY = "window"
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 
 
-class SentenceWindowNodeParser(NodeParser):
+class SentenceWindowNodeParser(NodeParserWithCallbackManager):
     """Sentence window node parser.
 
     Splits a document into Nodes, with each node being a sentence.
@@ -54,9 +54,6 @@ class SentenceWindowNodeParser(NodeParser):
     )
     metadata_extractor: Optional[MetadataExtractor] = Field(
         default=None, description="Metadata extraction pipeline to apply to nodes."
-    )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
     )
 
     def __init__(
