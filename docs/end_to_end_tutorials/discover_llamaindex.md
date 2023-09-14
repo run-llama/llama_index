@@ -2,20 +2,6 @@
 
 This page contains links to videos + associated notebooks for our ongoing video tutorial series "Discover LlamaIndex".
 
-## Bottoms-Up Development (Llama Docs Bot)
-
-This is a sub-series within Discover LlamaIndex that shows you how to build a document chatbot from scratch. 
-
-We show you how to do this in a "bottoms-up" fashion - start by using the LLMs, data objects as independent modules. Then gradually add higher-level abstractions like indexing, and advanced retrievers/rerankers.
-
-[Full Repo](https://github.com/run-llama/llama_docs_bot)
-[[Part 1] LLMs and Prompts](https://www.youtube.com/watch?v=p0jcvGiBKSA)
-[[Part 2] Documents and Metadata](https://www.youtube.com/watch?v=nGNoacku0YY)
-[[Part 3] Evaluation](https://www.youtube.com/watch?v=LQy8iHOJE2A)
-[[Part 4] Embeddings](https://www.youtube.com/watch?v=2c64G-iDJKQ)
-[[Part 5] Retrievers and Postprocessors](https://www.youtube.com/watch?v=mIyZ_9gqakE)
-
-
 ## SubQuestionQueryEngine + 10K Analysis
 
 This video covers the `SubQuestionQueryEngine` and how it can be applied to financial documents to help decompose complex queries into multiple sub-questions.

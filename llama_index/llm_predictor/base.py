@@ -147,7 +147,7 @@ class LLMPredictor(BaseLLMPredictor):
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
-            prompt = self._extend_prompt(prompt, prompt_args)
+            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             response = self._llm.complete(formatted_prompt)
             output = response.text
@@ -166,7 +166,7 @@ class LLMPredictor(BaseLLMPredictor):
             chat_response = self._llm.stream_chat(messages)
             stream_tokens = stream_chat_response_to_tokens(chat_response)
         else:
-            prompt = self._extend_prompt(prompt, prompt_args)
+            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             stream_response = self._llm.stream_complete(formatted_prompt)
             stream_tokens = stream_completion_response_to_tokens(stream_response)
@@ -184,7 +184,7 @@ class LLMPredictor(BaseLLMPredictor):
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
-            prompt = self._extend_prompt(prompt, prompt_args)
+            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             response = await self._llm.acomplete(formatted_prompt)
             output = response.text
@@ -205,15 +205,13 @@ class LLMPredictor(BaseLLMPredictor):
             chat_response = await self._llm.astream_chat(messages)
             stream_tokens = await astream_chat_response_to_tokens(chat_response)
         else:
-            prompt = self._extend_prompt(prompt, prompt_args)
+            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             stream_response = await self._llm.astream_complete(formatted_prompt)
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
-    def _extend_prompt(
-        self, prompt: BasePromptTemplate, prompt_kwargs: dict
-    ) -> BasePromptTemplate:
+    def _extend_prompt(self, prompt: BasePromptTemplate) -> BasePromptTemplate:
         """Add system and query wrapper prompts to base prompt"""
         # TODO: avoid mutating prompt attributes
         if self.system_prompt:
@@ -234,27 +232,16 @@ class LLMPredictor(BaseLLMPredictor):
 
         if self.query_wrapper_prompt:
             if isinstance(prompt, (PromptTemplate, ChatPromptTemplate)):
-                try:
-                    prompt.kwargs["query_str"] = self.query_wrapper_prompt.format(
-                        query_str=prompt.kwargs["query_str"]
-                    )
-                except KeyError:
-                    prompt_kwargs["query_str"] = self.query_wrapper_prompt.format(
-                        query_str=prompt_kwargs["query_str"]
-                    )
+                prompt.kwargs["query_str"] = self.query_wrapper_prompt.format(
+                    query_str=prompt.kwargs["query_str"]
+                )
             elif isinstance(prompt, SelectorPromptTemplate):
-                default_template = prompt.default_template
                 if isinstance(default_template, PromptTemplate):
-                    try:
-                        prompt.default_template.kwargs[
-                            "query_str"
-                        ] = self.query_wrapper_prompt.format(
-                            query_str=prompt.default_template.kwargs["query_str"]
-                        )
-                    except KeyError:
-                        prompt_kwargs["query_str"] = self.query_wrapper_prompt.format(
-                            query_str=prompt_kwargs["query_str"]
-                        )
+                    prompt.default_template.kwargs[
+                        "query_str"
+                    ] = self.query_wrapper_prompt.format(
+                        query_str=prompt.default_template.kwargs["query_str"]
+                    )
                 else:
                     raise ValueError("PromptTemplate expected as default_template")
 

@@ -5,15 +5,10 @@ An index that is built on top of Alibaba Cloud's Tair database.
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from llama_index.schema import (
-    BaseNode,
-    MetadataMode,
-    NodeRelationship,
-    RelatedNodeInfo,
-    TextNode,
-)
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -125,21 +120,22 @@ class TairVectorStore(VectorStore):
         """Return the Tair client instance"""
         return self._tair_client
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
-        """Add nodes to the index.
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+        """Add embedding results to the index.
 
         Args:
-            nodes (List[BaseNode]): List of nodes with embeddings
+            embedding_results (List[NodeWithEmbedding]): List of embedding results to
+                add to the index.
 
         Returns:
             List[str]: List of ids of the documents added to the index.
         """
         # check to see if empty document list was passed
-        if len(nodes) == 0:
+        if len(embedding_results) == 0:
             return []
 
         # set vector dim for creation if index doesn't exist
-        self.dim = len(nodes[0].get_embedding())
+        self.dim = len(embedding_results[0].embedding)
 
         if self._index_exists():
             if self._overwrite:
@@ -151,22 +147,22 @@ class TairVectorStore(VectorStore):
             self._create_index()
 
         ids = []
-        for node in nodes:
+        for result in embedding_results:
             attributes = {
-                "id": node.node_id,
-                "doc_id": node.ref_doc_id,
-                "text": node.get_content(metadata_mode=MetadataMode.NONE),
+                "id": result.id,
+                "doc_id": result.ref_doc_id,
+                "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
             }
             metadata_dict = node_to_metadata_dict(
-                node, remove_text=True, flat_metadata=self.flat_metadata
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
             )
             attributes.update(metadata_dict)
 
-            ids.append(node.node_id)
+            ids.append(result.id)
             self._tair_client.tvs_hset(
                 self._index_name,
-                "%s#%s" % (node.ref_doc_id, node.node_id),
-                vector=node.get_embedding(),
+                "%s#%s" % (result.ref_doc_id, result.id),
+                vector=result.embedding,
                 is_binary=False,
                 **attributes,
             )

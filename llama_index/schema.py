@@ -1,6 +1,5 @@
 """Base schema for data structures."""
 import json
-import textwrap
 import uuid
 from abc import abstractmethod
 from enum import Enum, auto
@@ -10,13 +9,10 @@ from typing_extensions import Self
 
 from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.bridge.langchain import Document as LCDocument
-from llama_index.utils import SAMPLE_TEXT, truncate_text
+from llama_index.utils import SAMPLE_TEXT
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
-# NOTE: for pretty printing
-TRUNCATE_LENGTH = 350
-WRAP_WIDTH = 70
 
 
 class BaseComponent(BaseModel):
@@ -240,15 +236,6 @@ class BaseNode(BaseComponent):
         """TODO: DEPRECATED: Extra info."""
         return self.metadata
 
-    def __str__(self) -> str:
-        source_text_truncated = truncate_text(
-            self.get_content().strip(), TRUNCATE_LENGTH
-        )
-        source_text_wrapped = textwrap.fill(
-            f"Text: {source_text_truncated}\n", width=WRAP_WIDTH
-        )
-        return f"Node ID: {self.node_id}\n{source_text_wrapped}"
-
     def get_embedding(self) -> List[float]:
         """Get embedding.
 
@@ -424,9 +411,6 @@ class NodeWithScore(BaseComponent):
     node: BaseNode
     score: Optional[float] = None
 
-    def __str__(self) -> str:
-        return f"{self.node}\nScore: {self.score: 0.3f}\n"
-
     def get_score(self, raise_error: bool = False) -> float:
         """Get score."""
         if self.score is None:
@@ -441,42 +425,6 @@ class NodeWithScore(BaseComponent):
     def class_name(cls) -> str:
         """Get class name."""
         return "NodeWithScore"
-
-    ##### pass through methods to BaseNode #####
-    @property
-    def node_id(self) -> str:
-        return self.node.node_id
-
-    @property
-    def id_(self) -> str:
-        return self.node.id_
-
-    @property
-    def text(self) -> str:
-        if isinstance(self.node, TextNode):
-            return self.node.text
-        else:
-            raise ValueError("Node must be a TextNode to get text.")
-
-    @property
-    def metadata(self) -> Dict[str, Any]:
-        return self.node.metadata
-
-    @property
-    def embedding(self) -> Optional[List[float]]:
-        return self.node.embedding
-
-    def get_text(self) -> str:
-        if isinstance(self.node, TextNode):
-            return self.node.get_text()
-        else:
-            raise ValueError("Node must be a TextNode to get text.")
-
-    def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
-        return self.node.get_content(metadata_mode=metadata_mode)
-
-    def get_embedding(self) -> List[float]:
-        return self.node.get_embedding()
 
 
 # Document Classes for Readers
@@ -507,15 +455,6 @@ class Document(TextNode):
     def doc_id(self) -> str:
         """Get document ID."""
         return self.id_
-
-    def __str__(self) -> str:
-        source_text_truncated = truncate_text(
-            self.get_content().strip(), TRUNCATE_LENGTH
-        )
-        source_text_wrapped = textwrap.fill(
-            f"Text: {source_text_truncated}\n", width=WRAP_WIDTH
-        )
-        return f"Doc ID: {self.doc_id}\n{source_text_wrapped}"
 
     def get_doc_id(self) -> str:
         """TODO: Deprecated: Get document ID."""

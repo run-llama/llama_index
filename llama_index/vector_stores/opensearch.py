@@ -4,8 +4,9 @@ from typing import Any, Dict, List, Optional, cast, Iterable, Union
 import json
 import uuid
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -227,18 +228,20 @@ class OpensearchVectorClient:
             self._os_client.indices.create(index=self._index, body=idx_conf)
             self._os_client.indices.refresh(index=self._index)
 
-    def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
+    def index_results(
+        self, results: List[NodeWithEmbedding], **kwargs: Any
+    ) -> List[str]:
         """Store results in the index."""
 
         embeddings: List[List[float]] = []
         texts: List[str] = []
         metadatas: List[dict] = []
         ids: List[str] = []
-        for node in nodes:
-            ids.append(node.node_id)
-            embeddings.append(node.get_embedding())
-            texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
-            metadatas.append(node_to_metadata_dict(node, remove_text=True))
+        for node in results:
+            ids.append(node.id)
+            embeddings.append(node.embedding)
+            texts.append(node.node.get_content(metadata_mode=MetadataMode.NONE))
+            metadatas.append(node_to_metadata_dict(node.node, remove_text=True))
 
         max_chunk_bytes = kwargs.get("max_chunk_bytes", 1 * 1024 * 1024)
 
@@ -366,16 +369,16 @@ class OpensearchVectorStore(VectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
-        """Add nodes to index.
+        """Add embedding results to index.
 
         Args
-            nodes: List[BaseNode]: list of nodes with embeddings.
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
-        self._client.index_results(nodes)
-        return [result.node_id for result in nodes]
+        self._client.index_results(embedding_results)
+        return [result.id for result in embedding_results]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

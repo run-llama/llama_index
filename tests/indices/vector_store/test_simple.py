@@ -1,4 +1,5 @@
 """Test vector store indexes."""
+
 from typing import Any, List, cast
 from llama_index.indices.loading import load_index_from_storage
 

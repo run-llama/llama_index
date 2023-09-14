@@ -11,11 +11,11 @@ from fsspec.implementations.local import LocalFileSystem
 from typing import Any, List, cast, Optional
 
 import numpy as np
-from llama_index.schema import BaseNode
 
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -90,19 +90,19 @@ class FaissVectorStore(VectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
-        """Add nodes to index.
+        """Add embedding results to index.
 
         NOTE: in the Faiss vector store, we do not store text in Faiss.
 
         Args
-            nodes: List[BaseNode]: list of nodes with embeddings
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         new_ids = []
-        for node in nodes:
-            text_embedding = node.get_embedding()
+        for result in embedding_results:
+            text_embedding = result.embedding
             text_embedding_np = np.array(text_embedding, dtype="float32")[np.newaxis, :]
             new_id = str(self._faiss_index.ntotal)
             self._faiss_index.add(text_embedding_np)

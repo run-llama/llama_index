@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
+
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_SIZE
@@ -16,8 +17,8 @@ from llama_index.text_splitter.utils import (
 from llama_index.utils import globals_helper
 
 SENTENCE_CHUNK_OVERLAP = 200
-CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?"
-DEFAULT_PARAGRAPH_SEP = "\n\n\n"
+CHUNKING_REGEX = "[^,.;。]+[,.;。]?"
+DEFUALT_PARAGRAPH_SEP = "\n\n\n"
 
 
 @dataclass
@@ -45,7 +46,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         default=" ", description="Default separator for splitting into words"
     )
     paragraph_separator: str = Field(
-        default=DEFAULT_PARAGRAPH_SEP, description="Separator between paragraphs."
+        default=DEFUALT_PARAGRAPH_SEP, description="Separator between paragraphs."
     )
     secondary_chunking_regex: str = Field(
         default=CHUNKING_REGEX, description="Backup regex for splitting into sentences."
@@ -75,7 +76,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = SENTENCE_CHUNK_OVERLAP,
         tokenizer: Optional[Callable] = None,
-        paragraph_separator: str = DEFAULT_PARAGRAPH_SEP,
+        paragraph_separator: str = DEFUALT_PARAGRAPH_SEP,
         chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
         secondary_chunking_regex: str = CHUNKING_REGEX,
         callback_manager: Optional[CallbackManager] = None,
@@ -203,63 +204,37 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
         chunks: List[str] = []
-        cur_chunk: List[tuple[str, int]] = []  # list of (text, length)
-        last_chunk: List[tuple[str, int]] = []
+        cur_chunk: List[str] = []
         cur_chunk_len = 0
-        new_chunk = True
-
-        def close_chunk() -> None:
-            nonlocal chunks, cur_chunk, last_chunk, cur_chunk_len, new_chunk
-
-            chunks.append("".join([text for text, length in cur_chunk]))
-            last_chunk = cur_chunk
-            cur_chunk = []
-            cur_chunk_len = 0
-            new_chunk = True
-
-            # add overlap to the next chunk using the last one first
-            # there is a small issue with this logic. If the chunk directly after
-            # the overlap is really big, then we could go over the chunk_size, and
-            # in theory the correct thing to do would be to remove some/all of the
-            # overlap. However, it would complicate the logic further without
-            # much real world benefit, so it's not implemented now.
-            if len(last_chunk) > 0:
-                last_index = len(last_chunk) - 1
-                while (
-                    last_index >= 0
-                    and cur_chunk_len + last_chunk[last_index][1] <= self.chunk_overlap
-                ):
-                    text, length = last_chunk[last_index]
-                    cur_chunk_len += length
-                    cur_chunk.insert(0, (text, length))
-                    last_index -= 1
-
         while len(splits) > 0:
             cur_split = splits[0]
             cur_split_len = len(self.tokenizer(cur_split.text))
             if cur_split_len > chunk_size:
-                raise ValueError("Single token exceeded chunk size")
-            if cur_chunk_len + cur_split_len > chunk_size and not new_chunk:
-                # if adding split to current chunk exceeds chunk size: close out chunk
-                close_chunk()
+                raise ValueError("Single token exceed chunk size")
+            if cur_chunk_len + cur_split_len > chunk_size and len(cur_chunk) > 0:
+                # if adding split to current chunk exceed chunk size: close out chunk
+                chunks.append("".join(cur_chunk).strip())
+                cur_chunk = []
+                cur_chunk_len = 0
             else:
                 if (
                     cur_split.is_sentence
-                    or cur_chunk_len + cur_split_len <= chunk_size
-                    or new_chunk  # new chunk, always add at least one split
+                    or cur_chunk_len + cur_split_len < chunk_size - self.chunk_overlap
+                    or len(cur_chunk) == 0
                 ):
                     # add split to chunk
                     cur_chunk_len += cur_split_len
-                    cur_chunk.append((cur_split.text, cur_split_len))
+                    cur_chunk.append(cur_split.text)
                     splits.pop(0)
-                    new_chunk = False
                 else:
                     # close out chunk
-                    close_chunk()
+                    chunks.append("".join(cur_chunk).strip())
+                    cur_chunk = []
+                    cur_chunk_len = 0
 
         # handle the last chunk
-        if not new_chunk:
-            chunk = "".join([text for text, length in cur_chunk])
+        chunk = "".join(cur_chunk).strip()
+        if chunk:
             chunks.append(chunk)
 
         # run postprocessing to remove blank spaces
@@ -268,13 +243,10 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return chunks
 
     def _postprocess_chunks(self, chunks: List[str]) -> List[str]:
-        """Post-process chunks.
-        Remove whitespace only chunks and remove leading and trailing whitespace.
-        """
+        """Post-process chunks."""
         new_chunks = []
-        for chunk in chunks:
-            stripped_chunk = chunk.strip()
-            if stripped_chunk == "":
+        for doc in chunks:
+            if doc.replace(" ", "") == "":
                 continue
-            new_chunks.append(stripped_chunk)
+            new_chunks.append(doc)
         return new_chunks

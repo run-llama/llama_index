@@ -9,6 +9,7 @@ from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import Document, TextNode
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
+from llama_index.vector_stores.types import NodeWithEmbedding
 
 try:
     import deeplake
@@ -64,10 +65,12 @@ def test_build_deeplake(
 
     node = nodes[0].node
 
-    node_with_embedding = node.copy()
-    node_with_embedding.embedding = [1.0 for i in range(EMBEDDING_DIM)]
-    new_nodes = [node_with_embedding for i in range(NUMBER_OF_DATA)]
-    vector_store.add(new_nodes)
+    result = NodeWithEmbedding(
+        node=node,
+        embedding=[1.0 for i in range(EMBEDDING_DIM)],
+    )
+    results = [result for i in range(NUMBER_OF_DATA)]
+    vector_store.add(results)
     assert len(vector_store.vectorstore) == 14
 
     ref_doc_id = str(node.ref_doc_id)
@@ -116,13 +119,14 @@ def test_backwards_compatibility() -> None:
     )
     metadatas = [metadata.update({"doc_id": "2"}) for metadata in metadatas]
     node = TextNode(
-        text="test node text",
-        metadata={"key": "value", "doc_id": "1"},
-        id_="1",
+        text="test node text", metadata={"key": "value", "doc_id": "1"}, id_="1"
+    )
+    result = NodeWithEmbedding(
+        node=node,
         embedding=[1.0 for i in range(EMBEDDING_DIM)],
     )
 
-    nodes = [node for i in range(10)]
+    results = [result for i in range(10)]
 
     dataset_path = "local_ds1"
     ds = deeplake.empty(dataset_path)
@@ -146,6 +150,6 @@ def test_backwards_compatibility() -> None:
         verbose=False,
     )
 
-    vectorstore.add(nodes)
+    vectorstore.add(results)
     assert len(vectorstore.vectorstore) == 20
     deeplake.delete(dataset_path)

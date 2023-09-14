@@ -42,8 +42,6 @@ class DatasetGenerator:
         num_questions_per_chunk: number of question to be \
         generated per chunk. Each document is chunked of size 512 words.
         text_question_template: Question generation template.
-        question_gen_query: Question generation query.
-
     """
 
     def __init__(
@@ -55,7 +53,6 @@ class DatasetGenerator:
         question_gen_query: Optional[str] = None,
         required_keywords: Optional[List[str]] = None,
         exclude_keywords: Optional[List[str]] = None,
-        metadata_mode: MetadataMode = MetadataMode.NONE,
     ) -> None:
         """Init params."""
         if service_context is None:
@@ -73,7 +70,6 @@ class DatasetGenerator:
                                 context information provided."
         )
         self.nodes = nodes
-        self._metadata_mode = metadata_mode
 
     @classmethod
     def from_documents(
@@ -123,7 +119,7 @@ class DatasetGenerator:
             index = SummaryIndex.from_documents(
                 [
                     Document(
-                        text=node.get_content(metadata_mode=self._metadata_mode),
+                        text=node.get_content(metadata_mode=MetadataMode.NONE),
                         metadata=node.metadata,
                     )
                 ]

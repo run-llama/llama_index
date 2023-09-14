@@ -1,9 +1,10 @@
 import math
 from typing import Any, List
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -111,32 +112,34 @@ class MetalVectorStore(VectorStore):
         """Return Metal client."""
         return self.metal_client
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
-        """Add nodes to index.
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+        """Add embedding results to index.
 
         Args
-            nodes: List[BaseNode]: list of nodes with embeddings.
+            embedding_results: List[NodeEmbeddingResult]: list of embedding results
 
         """
         if not self.metal_client:
             raise ValueError("metal_client not initialized")
 
         ids = []
-        for node in nodes:
-            ids.append(node.node_id)
+        for result in embedding_results:
+            ids.append(result.id)
 
             metadata = {}
-            metadata["text"] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
+            metadata["text"] = (
+                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+            )
 
             additional_metadata = node_to_metadata_dict(
-                node, remove_text=True, flat_metadata=self.flat_metadata
+                result.node, remove_text=True, flat_metadata=self.flat_metadata
             )
             metadata.update(additional_metadata)
 
             payload = {
-                "embedding": node.get_embedding(),
+                "embedding": result.embedding,
                 "metadata": metadata,
-                "id": node.node_id,
+                "id": result.id,
             }
 
             self.metal_client.index(payload)

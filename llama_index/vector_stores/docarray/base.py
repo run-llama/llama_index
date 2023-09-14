@@ -6,8 +6,9 @@ import numpy as np
 
 from llama_index.bridge.pydantic import Field
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -99,12 +100,13 @@ class DocArrayVectorStore(VectorStore, ABC):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
-        """Adds nodes to the vector store.
+        """Adds embedding results to the vector store.
 
         Args:
-            nodes (List[BaseNode]): List of nodes with embeddings.
+            embedding_results (List[NodeWithEmbedding]): List of nodes
+            with corresponding embeddings.
 
         Returns:
             List[str]: List of document IDs added to the vector store.
@@ -112,17 +114,19 @@ class DocArrayVectorStore(VectorStore, ABC):
         from docarray import DocList
 
         # check to see if empty document list was passed
-        if len(nodes) == 0:
+        if len(embedding_results) == 0:
             return []
 
         docs = DocList[self._schema](  # type: ignore[name-defined]
             self._schema(
-                id=node.node_id,
-                metadata=node_to_metadata_dict(node, flat_metadata=self.flat_metadata),
-                text=node.get_content(metadata_mode=MetadataMode.NONE),
-                embedding=node.get_embedding(),
+                id=result.id,
+                metadata=node_to_metadata_dict(
+                    result.node, flat_metadata=self.flat_metadata
+                ),
+                text=result.node.get_content(metadata_mode=MetadataMode.NONE),
+                embedding=result.embedding,
             )
-            for node in nodes
+            for result in embedding_results
         )
         self._index.index(docs)
         logger.info(f"Successfully added {len(docs)} documents to the index")

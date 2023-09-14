@@ -40,7 +40,6 @@ class CBEventType(str, Enum):
     FUNCTION_CALL = "function_call"
     RERANKING = "reranking"
     EXCEPTION = "exception"
-    AGENT_STEP = "agent_step"
 
 
 class EventPayload(str, Enum):
