@@ -12,7 +12,7 @@ Instead of using these, the goal here is to educate users on what's going on und
 We show how to build an app from scratch, component by component. For the sake of focus, each tutorial will show how to build a specific component from scratch while using out-of-the-box abstractions for other components. **NOTE**: This is a WIP document, we're in the process of fleshing this out! 
 
 ## Building Ingestion from Scratch
-
+Coming soon!
 
 ## Building Vector Retrieval from Scratch
 This tutorial shows you how to build a retriever to query a vector store.
@@ -21,7 +21,7 @@ This tutorial shows you how to build a retriever to query a vector store.
 ---
 maxdepth: 1
 ---
-/examples/low_level/retrieval.ipynb 
+/examples/low_level/retrieval.ipynb
 ```
 
 

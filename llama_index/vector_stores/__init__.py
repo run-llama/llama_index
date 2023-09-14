@@ -66,5 +66,5 @@ __all__ = [
     "Neo4jVectorStore",
     "CognitiveSearchVectorStore",
     "EpsillaVectorStore",
-    "VectorStoreQuery"
+    "VectorStoreQuery",
 ]
