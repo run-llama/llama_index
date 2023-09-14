@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Sequence, List, Iterator
+from typing import Any, Callable, Dict, Optional, Sequence, Iterator
 import json
 from llama_index.bridge.pydantic import Field, PrivateAttr
 
