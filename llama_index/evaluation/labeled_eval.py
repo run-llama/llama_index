@@ -2,12 +2,8 @@ from typing import Optional
 
 from llama_index.evaluation.base import BaseEvaluator, Evaluation
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts import (
-    BasePromptTemplate,
-    ChatMessage,
-    ChatPromptTemplate,
-    MessageRole,
-)
+from llama_index.prompts import (BasePromptTemplate, ChatMessage,
+                                 ChatPromptTemplate, MessageRole)
 from llama_index.response.schema import Response
 
 DEFAULT_SYSTEM_TEMPLATE = """
@@ -26,9 +22,12 @@ On a separate line provide your reasoning for the score as well.
 
 Follow these guidelines for scoring:
 - Your score has to be between 1 and 5, where 1 is the worst and 5 is the best.
-- If the generated answer is not relevant to the user query, you should give a score of 1.
-- If the generated answer is relevant but contains mistakes, you should give a score between 2 and 3.
-- If the generated answer is relevant and fully correct, you should give a score between 4 and 5.
+- If the generated answer is not relevant to the user query, \
+you should give a score of 1.
+- If the generated answer is relevant but contains mistakes, \
+you should give a score between 2 and 3.
+- If the generated answer is relevant and fully correct, \
+you should give a score between 4 and 5.
 """
 
 DEFAULT_USER_TEMPLATE = """
@@ -56,7 +55,6 @@ class LabeledEvaluator(BaseEvaluator):
         service_context: Optional[ServiceContext] = None,
         eval_template: Optional[BasePromptTemplate] = None,
         score_threshold: float = 4.0,
-        llm: Optional[str] = None,
     ) -> None:
         self._service_context = service_context or ServiceContext.from_defaults()
         self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
@@ -86,4 +84,5 @@ class LabeledEvaluator(BaseEvaluator):
     def evaluate_response(
         self, query: str, response: Response, reference: str
     ) -> Evaluation:
-        return self.evaluate_string(query, response.response, reference)
+        response_str = response.response or ""
+        return self.evaluate_string(query, response_str, reference)
