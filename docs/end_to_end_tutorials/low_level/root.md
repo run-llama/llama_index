@@ -12,7 +12,7 @@ Instead of using these, the goal here is to educate users on what's going on und
 We show how to build an app from scratch, component by component. For the sake of focus, each tutorial will show how to build a specific component from scratch while using out-of-the-box abstractions for other components. **NOTE**: This is a WIP document, we're in the process of fleshing this out! 
 
 ## Building Ingestion from Scratch
-Coming soon!
+This tutorial shows how you can define an ingestion pipeline into a vector store.
 ```{toctree}
 ---
 maxdepth: 1
