@@ -15,7 +15,7 @@ We are actively adding more integrations and improving feature coverage for each
 
 | Vector Store             | Type                | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
 | ------------------------ | ------------------- | ------------------ | ------------- | ------ | --------------- | ----- |
-| Elasticsearch            | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
+| Elasticsearch            | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓    |
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
@@ -40,7 +40,6 @@ We are actively adding more integrations and improving feature coverage for each
 | FAISS                    | in-memory           |                    |               |        |                 |       |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
-| Azure Cognitive Search   | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 

@@ -1,5 +1,23 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Simplified portkey LLM interface (#7669)
+- Added async operation support to `ElasticsearchStore` vector store (#7613)
+
+### Bug Fixes / Nits
+- Avoid `NotImplementedError` for async langchain embeddings (#7668)
+
+## [0.8.27] - 2023-09-14
+
+### New Features
+- add low-level tutorial section (#7673)
+
+### Bug Fixes / Nits
+- default delta should be a dict (#7665)
+- better query wrapper logic on LLMPredictor (#7667)
+
 ## [0.8.26] - 2023-09-12
 
 ### New Features
