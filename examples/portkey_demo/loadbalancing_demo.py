@@ -25,7 +25,7 @@ openai_llm = LLMOptions(
     model="gpt-4",
     weight=0.4,
     metadata=metadata,
-    virtual_key="open-ai-key-66a67d",
+    virtual_key="open-ai-key-66ah788",
 )
 anthropic_llm = LLMOptions(
     provider="openai",

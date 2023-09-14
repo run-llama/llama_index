@@ -26,7 +26,7 @@ openai_llm = LLMOptions(
     weight=0.4,
     trace_id="portkey_llamaindex",
     metadata=metadata,
-    virtual_key="open-ai-key-66a67d",
+    virtual_key="open-ai-key-66ah788",
 )
 anthropic_llm = LLMOptions(
     provider="anthropic",
