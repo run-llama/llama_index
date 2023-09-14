@@ -7,8 +7,10 @@ Notebooks with usage of these components can be found below.
 maxdepth: 1
 ---
 
-../../../examples/evaluation/TestNYC-Evaluation.ipynb
-../../../examples/evaluation/TestNYC-Evaluation-Query.ipynb
-../../../examples/evaluation/QuestionGeneration.ipynb
-../../../examples/evaluation/Deepeval.ipynb
+/examples/evaluation/faithfulness_eval.ipynb
+/examples/evaluation/relevancy_eval.ipynb
+/examples/evaluation/guideline_eval.ipynb
+/examples/evaluation/correctness_eval.ipynb
+/examples/evaluation/Deepeval.ipynb
+/examples/evaluation/QuestionGeneration.ipynb
 ```
