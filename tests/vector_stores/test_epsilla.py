@@ -10,37 +10,29 @@ except ImportError:
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import EpsillaVectorStore
-from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
+from llama_index.vector_stores.types import VectorStoreQuery
 
 
 @pytest.fixture
-def node_embeddings() -> List[NodeWithEmbedding]:
+def node_embeddings() -> List[TextNode]:
     return [
-        NodeWithEmbedding(
+        TextNode(
+            text="epsilla test text 0.",
+            id_="1",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
+            metadata={
+                "date": "2023-08-02",
+            },
             embedding=[1.0, 0.0],
-            node=TextNode(
-                text="epsilla test text 0.",
-                id_="1",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
-                },
-                metadata={
-                    "date": "2023-08-02",
-                },
-            ),
         ),
-        NodeWithEmbedding(
+        TextNode(
+            text="epsilla test text 1.",
+            id_="2",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
+            metadata={
+                "date": "2023-08-11",
+            },
             embedding=[0.0, 1.0],
-            node=TextNode(
-                text="epsilla test text 1.",
-                id_="2",
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
-                },
-                metadata={
-                    "date": "2023-08-11",
-                },
-            ),
         ),
     ]
 
@@ -64,8 +56,8 @@ def test_add_data_and_query() -> None:
     assert vector_store._collection_name == "test_collection"
     assert vector_store._collection_created is not True
 
-    embedding_results = node_embeddings()
-    ids = vector_store.add(embedding_results)
+    nodes = node_embeddings()
+    ids = vector_store.add(nodes)
 
     assert vector_store._collection_created is True
     assert ids is ["1", "2"]

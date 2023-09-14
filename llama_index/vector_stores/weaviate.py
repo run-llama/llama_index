@@ -9,9 +9,9 @@ from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -166,22 +166,15 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to index.
+        """Add nodes to index.
 
-        Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+        Args:
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
-        for result in embedding_results:
-            node = result.node
-            embedding = result.embedding
-            # TODO: always store embedding in node
-            node.embedding = embedding
-
-        nodes = [r.node for r in embedding_results]
-        ids = [r.id for r in embedding_results]
+        ids = [r.node_id for r in nodes]
 
         with self._client.batch as batch:
             for node in nodes:

@@ -162,11 +162,14 @@ class HierarchicalNodeParser(NodeParser):
             )
             # add parent relationship from sub node to parent node
             # add child relationship from parent node to sub node
-            for sub_node in cur_sub_nodes:
-                _add_parent_child_relationship(
-                    parent_node=node,
-                    child_node=sub_node,
-                )
+            # NOTE: Only add relationships if level > 0, since we don't want to add
+            # relationships for the top-level document objects that we are splitting
+            if level > 0:
+                for sub_node in cur_sub_nodes:
+                    _add_parent_child_relationship(
+                        parent_node=node,
+                        child_node=sub_node,
+                    )
 
             sub_nodes.extend(cur_sub_nodes)
 
