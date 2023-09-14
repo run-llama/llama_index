@@ -196,6 +196,7 @@ class CitationQueryEngine(BaseQueryEngine):
                     NodeWithScore(
                         node=TextNode(
                             text=text,
+                            excluded_llm_metadata_keys=node.node.excluded_llm_metadata_keys or [],
                             metadata=node.node.metadata or {},
                             relationships=node.node.relationships or {},
                         ),
