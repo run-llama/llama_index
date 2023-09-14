@@ -12,7 +12,9 @@ from llama_index.vector_stores.docarray import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
-from llama_index.vector_stores.elasticsearch import ElasticsearchStore
+from llama_index.vector_stores.elasticsearch import (
+    ElasticsearchStore,
+)
 from llama_index.vector_stores.epsilla import EpsillaVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
