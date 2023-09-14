@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [0.8.27] - 2023-09-14
+
+### New Features
+- add low-level tutorial section (#7673)
+
+### Bug Fixes / Nits
+- default delta should be a dict (#7665)
+- better query wrapper logic on LLMPredictor (#7667)
+
 ## [0.8.26] - 2023-09-12
 
 ### New Features
