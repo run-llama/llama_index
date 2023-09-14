@@ -88,6 +88,12 @@ class Ollama(CustomLLM):
         }
         return model_kwargs
 
+    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **self._model_kwargs,
+            **kwargs,
+        }
+
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {self.prompt_key: prompt, **self._model_kwargs, **kwargs}
 
@@ -122,11 +128,12 @@ class Ollama(CustomLLM):
                 "Could not import requests library."
                 "Please install requests with `pip install requests`"
             )
+        all_kwargs = self._get_all_kwargs(**kwargs)
         prompt = self._completion_to_prompt(prompt)
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
-            json={"prompt": prompt, "model": self.model, **kwargs},
+            json={"prompt": prompt, "model": self.model, **all_kwargs},
             stream=True,
         )
         response.encoding = "utf-8"
