@@ -13,6 +13,12 @@ We show how to build an app from scratch, component by component. For the sake o
 
 ## Building Ingestion from Scratch
 Coming soon!
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/ingestion.ipynb
+```
 
 ## Building Vector Retrieval from Scratch
 This tutorial shows you how to build a retriever to query a vector store.
