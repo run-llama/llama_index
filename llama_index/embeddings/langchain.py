@@ -18,7 +18,7 @@ class LangchainEmbedding(BaseEmbedding):
     """
 
     _langchain_embedding: LCEmbeddings = PrivateAttr()
-    _async_warned: bool = PrivateAttr(default=False)
+    _async_not_implemented_warned: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -49,10 +49,10 @@ class LangchainEmbedding(BaseEmbedding):
         """Get class name."""
         return "LangchainEmbedding"
 
-    def _async_warn_once(self) -> None:
-        if not self._async_warned:
+    def _async_not_implemented_warn_once(self) -> None:
+        if not self._async_not_implemented_warned:
             print("Async embedding not available, falling back to sync method.")
-            self._async_warned = True
+            self._async_not_implemented_warned = True
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
@@ -61,18 +61,18 @@ class LangchainEmbedding(BaseEmbedding):
     async def _aget_query_embedding(self, query: str) -> List[float]:
         try:
             return await self._langchain_embedding.aembed_query(query)
-        except Exception:
+        except NotImplementedError:
             # Warn the user that sync is being used
-            self._async_warn_once()
+            self._async_not_implemented_warn_once()
             return self._get_query_embedding(query)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         try:
             embeds = await self._langchain_embedding.aembed_documents([text])
             return embeds[0]
-        except Exception:
+        except NotImplementedError:
             # Warn the user that sync is being used
-            self._async_warn_once()
+            self._async_not_implemented_warn_once()
             return self._get_text_embedding(text)
 
     def _get_text_embedding(self, text: str) -> List[float]:
