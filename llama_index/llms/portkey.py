@@ -50,11 +50,9 @@ class Portkey(CustomLLM):
     )
 
     model: Optional[str] = Field(default="gpt-3.5-turbo")
-    llm: "LLMOptions" = Field(
-        description="LLM parameter", default_factory=dict)
+    llm: "LLMOptions" = Field(description="LLM parameter", default_factory=dict)
 
-    llms: List["LLMOptions"] = Field(
-        description="LLM parameters", default_factory=list)
+    llms: List["LLMOptions"] = Field(description="LLM parameters", default_factory=list)
 
     _client: Any = PrivateAttr()
 
@@ -69,38 +67,11 @@ class Portkey(CustomLLM):
         Initialize a Portkey instance.
 
         Args:
-            api_key (Optional[str]): The API key to authenticate with Portkey.
             mode (Optional[Modes]): The mode for using the Portkey integration
             (default: Modes.SINGLE).
-            provider (Optional[ProviderTypes]): The LLM provider to be used for the
-                Portkey integration.
-                Eg: openai, anthropic etc.
-                NOTE: Check the ProviderTypes to see the supported list
-                of LLMs.
-            model (str): The name of the language model to use
-            (default: "gpt-3.5-turbo").
-            model_api_key (Optional[str]): The api key of the provider being used.
-                Eg: api key of openai.
-            temperature (float): The temperature parameter for text generation
-            (default: 0.1).
-            max_tokens (Optional[int]): The maximum number of tokens in the generated
-            text.
-            max_retries (int): The maximum number of retries for failed requests
-            (default: 5).
-            trace_id (Optional[str]): A unique identifier for tracing requests.
-            cache_status (Optional[CacheType]): The type of cache to use
-            (default: "").
-                If cache_status is set, then cache is automatically set to True
-            cache (Optional[bool]): Whether to use caching (default: False).
-            metadata (Optional[Dict[str, Any]]): Metadata associated with the
-            request (default: {}).
-            weight (Optional[float]): The weight of the LLM in the ensemble
-            (default: 1.0).
-            **kwargs (Any): Additional keyword arguments.
-
-        Raises:
-            ValueError: If neither 'llm' nor 'llms' are provided during
-            Portkey initialization.
+            api_key (Optional[str]): The API key to authenticate with Portkey.
+            base_url (Optional[str]): The Base url to the self hosted rubeus \
+                (the opensource version of portkey) or any other self hosted server.
         """
         try:
             import portkey
@@ -150,6 +121,8 @@ class Portkey(CustomLLM):
                 > cache: Optional[bool]
                 > metadata: Dict[str, Any]
                 > weight: Optional[float]
+                > **kwargs : Other additional parameters that are supported by \
+                    LLMOptions in portkey-ai
 
             NOTE: User may choose to pass additional params as well.
         Returns:
@@ -187,8 +160,7 @@ class Portkey(CustomLLM):
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Completion endpoint for LLM."""
         if self._is_chat_model:
-            complete_fn = stream_chat_to_completion_decorator(
-                self._stream_chat)
+            complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
             complete_fn = self._stream_complete
         return complete_fn(prompt, **kwargs)
@@ -200,8 +172,7 @@ class Portkey(CustomLLM):
         if self._is_chat_model:
             stream_chat_fn = self._stream_chat
         else:
-            stream_chat_fn = stream_completion_to_chat_decorator(
-                self._stream_complete)
+            stream_chat_fn = stream_completion_to_chat_decorator(self._stream_complete)
         return stream_chat_fn(messages, **kwargs)
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -229,8 +200,7 @@ class Portkey(CustomLLM):
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
 
         config = Config(llms=self.llms)
-        response = self._client.Completions.create(
-            prompt=prompt, config=config)
+        response = self._client.Completions.create(prompt=prompt, config=config)
         text = response.choices[0].text
         return CompletionResponse(text=text, raw=response)
 
