@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Avoid `NotImplementedError` for async langchain embeddings (#7668)
+
 ## [0.8.27] - 2023-09-14
 
 ### New Features
