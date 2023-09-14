@@ -43,7 +43,7 @@ We support integrations with OpenAI, Azure, and anything LangChain offers. Detai
 
 ```{toctree}
 ---
-maxdepth: 2
+maxdepth: 1
 ---
 modules.md
 ```

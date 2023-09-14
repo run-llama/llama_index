@@ -6,14 +6,9 @@ from typing import Any, Dict, List, Optional
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
-from llama_index.schema import (
-    BaseNode,
-    MetadataMode,
-    NodeRelationship,
-    RelatedNodeInfo,
-    TextNode,
-)
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -21,23 +16,23 @@ from llama_index.vector_stores.types import (
 from llama_index.utils import get_tqdm_iterable
 
 
-def convert_docs_to_json(nodes: List[BaseNode]) -> List[Dict]:
+def convert_docs_to_json(embedding_results: List[NodeWithEmbedding]) -> List[Dict]:
     """Convert docs to JSON."""
     docs = []
-    for node in nodes:
+    for embedding_result in embedding_results:
         # TODO: add information for other fields as well
         # fields taken from
         # https://rb.gy/nmac9u
         doc_dict = {
-            "id": node.node_id,
-            "text": node.get_content(metadata_mode=MetadataMode.NONE),
+            "id": embedding_result.id,
+            "text": embedding_result.node.get_content(metadata_mode=MetadataMode.NONE),
             # NOTE: this is the doc_id to reference document
-            "source_id": node.ref_doc_id,
+            "source_id": embedding_result.ref_doc_id,
             # "url": "...",
             # "created_at": ...,
             # "author": "..."",
         }
-        metadata = node.metadata
+        metadata = embedding_result.node.metadata
         if metadata is not None:
             if "source" in metadata:
                 doc_dict["source"] = metadata["source"]
@@ -93,12 +88,12 @@ class ChatGPTRetrievalPluginClient(VectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
-        """Add nodes to index."""
+        """Add embedding_results to index."""
         headers = {"Authorization": f"Bearer {self._bearer_token}"}
 
-        docs_to_upload = convert_docs_to_json(nodes)
+        docs_to_upload = convert_docs_to_json(embedding_results)
         iterable_docs = get_tqdm_iterable(
             range(0, len(docs_to_upload), self._batch_size),
             show_progress=True,
@@ -112,7 +107,7 @@ class ChatGPTRetrievalPluginClient(VectorStore):
                 json={"documents": docs_to_upload[i:i_end]},
             )
 
-        return [result.node_id for result in nodes]
+        return [result.id for result in embedding_results]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

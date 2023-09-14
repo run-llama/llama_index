@@ -1,7 +1,6 @@
 """DynamoDB vector store index."""
 from __future__ import annotations
 from typing import Optional, List, Any, cast, Dict
-from llama_index.schema import BaseNode
 
 from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
 
@@ -11,6 +10,7 @@ from llama_index.indices.query.embedding_utils import (
 )
 
 from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -72,21 +72,21 @@ class DynamoDBVectorStore(VectorStore):
         item = cast(Dict[str, List[float]], item)
         return item[self._key_value]
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
-        """Add nodes to index."""
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+        """Add embedding_results to index."""
         response = []
-        for node in nodes:
+        for result in embedding_results:
             self._kvstore.put(
-                key=node.node_id,
-                val={self._key_value: node.get_embedding()},
+                key=result.id,
+                val={self._key_value: result.embedding},
                 collection=self._collection_embedding,
             )
             self._kvstore.put(
-                key=node.node_id,
-                val={self._key_value: node.ref_doc_id},
+                key=result.id,
+                val={self._key_value: result.ref_doc_id},
                 collection=self._collection_text_id_to_doc_id,
             )
-            response.append(node.node_id)
+            response.append(result.id)
         return response
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:

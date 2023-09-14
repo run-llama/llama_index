@@ -9,6 +9,7 @@ from llama_index.vector_stores.loading import load_vector_store
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
+    NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
@@ -100,52 +101,64 @@ def pg_hybrid(db: None) -> Any:
 
 
 @pytest.fixture(scope="session")
-def node_embeddings() -> List[TextNode]:
+def node_embeddings() -> List[NodeWithEmbedding]:
     return [
-        TextNode(
-            text="lorem ipsum",
-            id_="aaa",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+        NodeWithEmbedding(
             embedding=_get_sample_vector(1.0),
+            node=TextNode(
+                text="lorem ipsum",
+                id_="aaa",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+            ),
         ),
-        TextNode(
-            text="dolor sit amet",
-            id_="bbb",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
-            extra_info={"test_key": "test_value"},
+        NodeWithEmbedding(
             embedding=_get_sample_vector(0.1),
+            node=TextNode(
+                text="dolor sit amet",
+                id_="bbb",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
+                extra_info={"test_key": "test_value"},
+            ),
         ),
     ]
 
 
 @pytest.fixture(scope="session")
-def hybrid_node_embeddings() -> List[TextNode]:
+def hybrid_node_embeddings() -> List[NodeWithEmbedding]:
     return [
-        TextNode(
-            text="lorem ipsum",
-            id_="aaa",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+        NodeWithEmbedding(
             embedding=_get_sample_vector(0.1),
+            node=TextNode(
+                text="lorem ipsum",
+                id_="aaa",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+            ),
         ),
-        TextNode(
-            text="dolor sit amet",
-            id_="bbb",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
-            extra_info={"test_key": "test_value"},
+        NodeWithEmbedding(
             embedding=_get_sample_vector(1.0),
+            node=TextNode(
+                text="dolor sit amet",
+                id_="bbb",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
+                extra_info={"test_key": "test_value"},
+            ),
         ),
-        TextNode(
-            text="The quick brown fox jumped over the lazy dog.",
-            id_="ccc",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
+        NodeWithEmbedding(
             embedding=_get_sample_vector(5.0),
+            node=TextNode(
+                text="The quick brown fox jumped over the lazy dog.",
+                id_="ccc",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
+            ),
         ),
-        TextNode(
-            text="The fox and the hound",
-            id_="ddd",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ddd")},
-            extra_info={"test_key": "test_value"},
+        NodeWithEmbedding(
             embedding=_get_sample_vector(10.0),
+            node=TextNode(
+                text="The fox and the hound",
+                id_="ddd",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ddd")},
+                extra_info={"test_key": "test_value"},
+            ),
         ),
     ]
 
@@ -166,7 +179,7 @@ async def test_instance_creation(db: None) -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(node_embeddings)
@@ -187,7 +200,7 @@ async def test_add_to_db_and_query(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(node_embeddings)
@@ -213,7 +226,7 @@ async def test_add_to_db_and_query_with_metadata_filters(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_query_and_delete(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(node_embeddings)
@@ -236,7 +249,7 @@ async def test_add_to_db_query_and_delete(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True,), (False,)])
 async def test_save_load(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg: PGVectorStore, node_embeddings: List[NodeWithEmbedding], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(node_embeddings)
@@ -278,7 +291,7 @@ async def test_save_load(
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_sparse_query(
     pg_hybrid: PGVectorStore,
-    hybrid_node_embeddings: List[TextNode],
+    hybrid_node_embeddings: List[NodeWithEmbedding],
     use_async: bool,
 ) -> None:
     if use_async:
@@ -310,7 +323,7 @@ async def test_sparse_query(
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_hybrid_query(
     pg_hybrid: PGVectorStore,
-    hybrid_node_embeddings: List[TextNode],
+    hybrid_node_embeddings: List[NodeWithEmbedding],
     use_async: bool,
 ) -> None:
     if use_async:
@@ -381,7 +394,7 @@ async def test_hybrid_query(
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_hybrid_query_with_metadata_filters(
     pg_hybrid: PGVectorStore,
-    hybrid_node_embeddings: List[TextNode],
+    hybrid_node_embeddings: List[NodeWithEmbedding],
     use_async: bool,
 ) -> None:
     if use_async:
@@ -411,7 +424,7 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 def test_hybrid_query_fails_if_no_query_str_provided(
-    pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[TextNode]
+    pg_hybrid: PGVectorStore, hybrid_node_embeddings: List[NodeWithEmbedding]
 ) -> None:
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(1.0),

@@ -12,14 +12,7 @@ import json
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):
-    """Embedding QA Finetuning Dataset.
-
-    Args:
-        queries (Dict[str, str]): Dict id -> query.
-        corpus (Dict[str, str]): Dict id -> string.
-        relevant_docs (Dict[str, List[str]]): Dict query id -> list of doc ids.
-
-    """
+    """Embedding QA Finetuning Dataset."""
 
     queries: Dict[str, str]  # dict id -> query
     corpus: Dict[str, str]  # dict id -> string

@@ -8,9 +8,10 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -92,29 +93,32 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
-        """Add nodes to index.
+        """Add embedding results to index.
 
         Args
-            nodes: List[BaseNode]: list of nodes with embeddings
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         ids = []
         data_to_insert = []
-        for node in nodes:
+        for result in embedding_results:
+            node_id = result.id
+            node = result.node
+
             metadata = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=self.flat_metadata
             )
 
             entry = {
-                self._id_key: node.node_id,
-                self._embedding_key: node.get_embedding(),
+                self._id_key: node_id,
+                self._embedding_key: result.embedding,
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
             }
             data_to_insert.append(entry)
-            ids.append(node.node_id)
+            ids.append(node_id)
         logger.debug("Inserting data into MongoDB: %s", data_to_insert)
         insert_result = self._collection.insert_many(
             data_to_insert, **self._insert_kwargs

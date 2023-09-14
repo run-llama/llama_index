@@ -33,8 +33,8 @@ from llama_index.llms.openai_utils import (
     is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
-    resolve_openai_credentials,
     to_openai_message_dicts,
+    validate_openai_api_key,
 )
 
 
@@ -51,11 +51,6 @@ class OpenAI(LLM):
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
-    api_key: str = Field(default=None, description="The OpenAI API key.")
-    api_type: str = Field(default=None, description="The OpenAI API type.")
-    api_base: str = Field(description="The base URL for OpenAI API.")
-    api_version: str = Field(description="The API version for OpenAI API.")
-
     def __init__(
         self,
         model: str = "gpt-3.5-turbo",
@@ -65,19 +60,16 @@ class OpenAI(LLM):
         max_retries: int = 10,
         api_key: Optional[str] = None,
         api_type: Optional[str] = None,
-        api_base: Optional[str] = None,
-        api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        additional_kwargs = additional_kwargs or {}
+        validate_openai_api_key(api_key, api_type)
 
-        api_key, api_type, api_base, api_version = resolve_openai_credentials(
-            api_key=api_key,
-            api_type=api_type,
-            api_base=api_base,
-            api_version=api_version,
-        )
+        additional_kwargs = additional_kwargs or {}
+        if api_key is not None:
+            additional_kwargs["api_key"] = api_key
+        if api_type is not None:
+            additional_kwargs["api_type"] = api_type
 
         super().__init__(
             model=model,
@@ -86,10 +78,6 @@ class OpenAI(LLM):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             callback_manager=callback_manager,
-            api_key=api_key,
-            api_type=api_type,
-            api_version=api_version,
-            api_base=api_base,
             **kwargs,
         )
 
@@ -156,16 +144,6 @@ class OpenAI(LLM):
         return is_chat_model(self._get_model_name())
 
     @property
-    def _credential_kwargs(self) -> Dict[str, Any]:
-        credential_kwargs = {
-            "api_key": self.api_key,
-            "api_type": self.api_type,
-            "api_base": self.api_base,
-            "api_version": self.api_version,
-        }
-        return credential_kwargs
-
-    @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "model": self.model,
@@ -180,7 +158,6 @@ class OpenAI(LLM):
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
-            **self._credential_kwargs,
             **self._model_kwargs,
             **kwargs,
         }
@@ -226,10 +203,7 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["delta"]
-                else:
-                    delta = {}
+                delta = response["choices"][0]["delta"]
                 role = delta.get("role", "assistant")
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
@@ -305,10 +279,7 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["text"]
-                else:
-                    delta = ""
+                delta = response["choices"][0]["text"]
                 text += delta
                 yield CompletionResponse(
                     delta=delta,
@@ -343,10 +314,6 @@ class OpenAI(LLM):
             return {}
 
         usage = raw_response.get("usage", {})
-        # NOTE: other model providers that use the OpenAI client may not report usage
-        if usage is None:
-            return {}
-
         return {
             "prompt_tokens": usage.get("prompt_tokens", 0),
             "completion_tokens": usage.get("completion_tokens", 0),
@@ -445,10 +412,7 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["delta"]
-                else:
-                    delta = {}
+                delta = response["choices"][0]["delta"]
                 role = delta.get("role", "assistant")
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
@@ -526,10 +490,7 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["text"]
-                else:
-                    delta = ""
+                delta = response["choices"][0]["text"]
                 text += delta
                 yield CompletionResponse(
                     delta=delta,

@@ -4,8 +4,8 @@ from time import sleep
 from enum import Enum
 from typing import List, Any, Optional, TypeVar, Type
 from types import ModuleType
-from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -123,11 +123,11 @@ class RocksetVectorStore(VectorStore):
     def client(self) -> Any:
         return self.rs
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Stores vectors in the collection
 
         Args:
-            nodes (List[BaseNode]): List of nodes with embeddings
+            embedding_results (List[NodeWithEmbedding]): The embedding nodes to store
 
         Returns:
             Stored node IDs (List[str])
@@ -139,13 +139,13 @@ class RocksetVectorStore(VectorStore):
                 workspace=self.workspace,
                 data=[
                     {
-                        self.embedding_col: node.get_embedding(),
-                        "_id": node.node_id,
+                        self.embedding_col: result.embedding,
+                        "_id": result.id,
                         self.metadata_col: node_to_metadata_dict(
-                            node, text_field=self.text_key
+                            result.node, text_field=self.text_key
                         ),
                     }
-                    for node in nodes
+                    for result in embedding_results
                 ],
             ).data
         ]

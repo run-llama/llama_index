@@ -2,9 +2,10 @@
 import logging
 from typing import Any, List, Optional
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -147,37 +148,37 @@ class EpsillaVectorStore(VectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """
-        Add nodes to Epsilla vector store.
+        Add embedding results to Epsilla vector store.
 
         Args
-            nodes: List[BaseNode]: list of nodes with embeddings
+            embedding_results: List[NodeWithEmbedding]: list of embedding results.
 
         Returns:
             List[str]: List of ids inserted.
         """
         # If the collection doesnt exist yet, create the collection
-        if not self._collection_created and len(nodes) > 0:
-            dimension = len(nodes[0].get_embedding())
+        if not self._collection_created and len(embedding_results) > 0:
+            dimension = len(embedding_results[0].embedding)
             self._create_collection(dimension)
 
-        elif len(nodes) == 0:
+        elif len(embedding_results) == 0:
             return []
 
         ids = []
         records = []
-        for node in nodes:
-            ids.append(node.node_id)
-            text = node.get_content(metadata_mode=MetadataMode.NONE)
-            metadata_dict = node_to_metadata_dict(node, remove_text=True)
+        for result in embedding_results:
+            ids.append(result.id)
+            text = result.node.get_content(metadata_mode=MetadataMode.NONE)
+            metadata_dict = node_to_metadata_dict(result.node, remove_text=True)
             metadata = metadata_dict["_node_content"]
             record = {
-                "id": node.node_id,
-                DEFAULT_DOC_ID_KEY: node.ref_doc_id,
+                "id": result.id,
+                DEFAULT_DOC_ID_KEY: result.ref_doc_id,
                 DEFAULT_TEXT_KEY: text,
-                DEFAULT_EMBEDDING_KEY: node.get_embedding(),
+                DEFAULT_EMBEDDING_KEY: result.embedding,
                 "metadata": metadata,
             }
             records.append(record)

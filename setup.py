@@ -1,7 +1,6 @@
 """Set up the package."""
-import os
 from pathlib import Path
-
+import os
 from setuptools import find_packages, setup
 
 DEFAULT_PACKAGE_NAME = "llama_index"
@@ -28,7 +27,6 @@ install_requires = [
     "typing_extensions>=4.5.0",
     "beautifulsoup4",  # hotfix for langchain 0.0.212 bug
     "nest_asyncio",
-    "nltk",
 ]
 
 setup(

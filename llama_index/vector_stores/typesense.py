@@ -8,9 +8,10 @@ import logging
 from typing import Any, Callable, List, Optional, cast
 
 from llama_index import utils
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -102,16 +103,20 @@ class TypesenseVectorStore(VectorStore):
             {"name": self._collection_name, "fields": fields}
         )
 
-    def _create_upsert_docs(self, nodes: List[BaseNode]) -> List[dict]:
+    def _create_upsert_docs(
+        self, embedding_results: List[NodeWithEmbedding]
+    ) -> List[dict]:
         upsert_docs = []
-        for node in nodes:
+        for node in embedding_results:
             doc = {
-                "id": node.node_id,
-                "vec": node.get_embedding(),
-                f"{self._text_key}": node.get_content(metadata_mode=MetadataMode.NONE),
+                "id": node.id,
+                "vec": node.embedding,
+                f"{self._text_key}": node.node.get_content(
+                    metadata_mode=MetadataMode.NONE
+                ),
                 "ref_doc_id": node.ref_doc_id,
                 f"{self._metadata_key}": node_to_metadata_dict(
-                    node, remove_text=True, flat_metadata=self.flat_metadata
+                    node.node, remove_text=True, flat_metadata=self.flat_metadata
                 ),
             }
             upsert_docs.append(doc)
@@ -129,18 +134,18 @@ class TypesenseVectorStore(VectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
-        """Add nodes to index.
+        """Add embedding results to index.
 
         Args
-            nodes: List[BaseNode]: list of nodes with embeddings
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         from typesense.collection import Collection
         from typesense.exceptions import ObjectNotFound
 
-        docs = self._create_upsert_docs(nodes)
+        docs = self._create_upsert_docs(embedding_results)
 
         try:
             collection = cast(Collection, self.collection)
@@ -149,13 +154,13 @@ class TypesenseVectorStore(VectorStore):
             )
         except ObjectNotFound:
             # Create the collection if it doesn't already exist
-            num_dim = len(nodes[0].get_embedding())
+            num_dim = len(embedding_results[0].embedding)
             self._create_collection(num_dim)
             collection.documents.import_(
                 docs, {"action": "upsert"}, batch_size=self._batch_size
             )
 
-        return [node.node_id for node in nodes]
+        return [result.id for result in embedding_results]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

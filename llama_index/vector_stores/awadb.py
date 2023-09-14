@@ -5,10 +5,12 @@ An index that is built on top of an existing vector store.
 """
 import logging
 import uuid
-from typing import Any, List, Optional, Set
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from typing import Any, List, Set, Optional
+
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -83,12 +85,12 @@ class AwaDBVectorStore(VectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
-        """Add nodes to AwaDB.
+        """Add embedding results to AwaDB.
 
         Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         Returns:
             Added node ids
@@ -100,15 +102,15 @@ class AwaDBVectorStore(VectorStore):
         metadatas = []
         ids = []
         texts = []
-        for node in nodes:
-            embeddings.append(node.get_embedding())
+        for result in embedding_results:
+            embeddings.append(result.embedding)
             metadatas.append(
                 node_to_metadata_dict(
-                    node, remove_text=True, flat_metadata=self.flat_metadata
+                    result.node, remove_text=True, flat_metadata=self.flat_metadata
                 )
             )
-            ids.append(node.node_id)
-            texts.append(node.get_content(metadata_mode=MetadataMode.NONE) or "")
+            ids.append(result.id)
+            texts.append(result.node.get_content(metadata_mode=MetadataMode.NONE) or "")
 
         self.awadb_client.AddTexts(
             "embedding_text",

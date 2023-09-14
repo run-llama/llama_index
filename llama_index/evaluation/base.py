@@ -1,16 +1,13 @@
 """Evaluating the responses from an index."""
 from __future__ import annotations
-import asyncio
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Optional
 
 from llama_index.indices.base import ServiceContext
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.indices.list.base import SummaryIndex
-from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts import PromptTemplate
 from llama_index.schema import Document
 from llama_index.response.schema import Response
 
@@ -117,17 +114,10 @@ class ResponseEvaluator:
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
-        eval_prompt_tmpl: Optional[PromptTemplate] = None,
-        refine_prompt_tmpl: Optional[PromptTemplate] = None,
         raise_error: bool = False,
     ) -> None:
         """Init params."""
         self.service_context = service_context or ServiceContext.from_defaults()
-        self.eval_prompt_tmpl = eval_prompt_tmpl or PromptTemplate(DEFAULT_EVAL_PROMPT)
-        self.refine_prompt_tmpl = refine_prompt_tmpl or PromptTemplate(
-            DEFAULT_REFINE_PROMPT
-        )
-
         self.raise_error = raise_error
 
     def get_context(self, response: Response) -> List[Document]:
@@ -167,9 +157,12 @@ class ResponseEvaluator:
         )
         response_txt = ""
 
+        EVAL_PROMPT_TMPL = PromptTemplate(DEFAULT_EVAL_PROMPT)
+        REFINE_PROMPT_TMPL = PromptTemplate(DEFAULT_REFINE_PROMPT)
+
         query_engine = index.as_query_engine(
-            text_qa_template=self.eval_prompt_tmpl,
-            refine_template=self.refine_prompt_tmpl,
+            text_qa_template=EVAL_PROMPT_TMPL,
+            refine_template=REFINE_PROMPT_TMPL,
         )
         response_obj = query_engine.query(answer)
 
@@ -208,9 +201,12 @@ class ResponseEvaluator:
             )
             response_txt = ""
 
+            EVAL_PROMPT_TMPL = PromptTemplate(DEFAULT_EVAL_PROMPT)
+            REFINE_PROMPT_TMPL = PromptTemplate(DEFAULT_REFINE_PROMPT)
+
             query_engine = index.as_query_engine(
-                text_qa_template=self.eval_prompt_tmpl,
-                refine_template=self.refine_prompt_tmpl,
+                text_qa_template=EVAL_PROMPT_TMPL,
+                refine_template=REFINE_PROMPT_TMPL,
             )
             response_obj = query_engine.query(answer)
             raw_response_txt = str(response_obj)
@@ -240,19 +236,11 @@ class QueryResponseEvaluator(BaseEvaluator):
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
-        query_eval_prompt_tmpl: Optional[PromptTemplate] = None,
-        query_refine_prompt_tmpl: Optional[PromptTemplate] = None,
         raise_error: bool = False,
     ) -> None:
         """Init params."""
         super().__init__(service_context)
         self.raise_error = raise_error
-        self.query_eval_prompt_tmpl = query_eval_prompt_tmpl or PromptTemplate(
-            QUERY_RESPONSE_EVAL_PROMPT
-        )
-        self.query_refine_prompt_tmpl = query_refine_prompt_tmpl or PromptTemplate(
-            QUERY_RESPONSE_REFINE_PROMPT
-        )
 
     def get_context(self, response: Response) -> List[Document]:
         """Get context information from given Response object using source nodes.
@@ -301,11 +289,14 @@ class QueryResponseEvaluator(BaseEvaluator):
             context, service_context=self.service_context
         )
 
+        QUERY_RESPONSE_EVAL_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_EVAL_PROMPT)
+        QUERY_RESPONSE_REFINE_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_REFINE_PROMPT)
+
         query_response = f"Question: {query}\nResponse: {answer}"
 
         query_engine = index.as_query_engine(
-            text_qa_template=self.query_eval_prompt_tmpl,
-            refine_template=self.query_refine_prompt_tmpl,
+            text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
+            refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
         )
         response_obj = query_engine.query(query_response)
 
@@ -348,11 +339,16 @@ class QueryResponseEvaluator(BaseEvaluator):
             )
             response_txt = ""
 
+            QUERY_RESPONSE_EVAL_PROMPT_TMPL = PromptTemplate(QUERY_RESPONSE_EVAL_PROMPT)
+            QUERY_RESPONSE_REFINE_PROMPT_TMPL = PromptTemplate(
+                QUERY_RESPONSE_REFINE_PROMPT
+            )
+
             query_response = f"Question: {query}\nResponse: {answer}"
 
             query_engine = index.as_query_engine(
-                text_qa_template=self.query_eval_prompt_tmpl,
-                refine_template=self.query_refine_prompt_tmpl,
+                text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
+                refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
             )
             response_obj = query_engine.query(query_response)
             raw_response_txt = str(response_obj)
@@ -367,90 +363,3 @@ class QueryResponseEvaluator(BaseEvaluator):
             response_texts.append(response_txt)
 
         return response_texts
-
-    async def aevaluate_source_nodes(
-        self, query: str, response: Response, pool_size: int = 4
-    ) -> List[str]:
-        """Function to evaluate if each source node contains the answer \
-            to a given query by comparing the query, response, \
-                and context information concurrently.
-        Args:
-            query: Query for which response is generated from index.
-            response: Response object from an index based on the query.
-            pool_size: Max no. of call to do in parallel
-        Returns:
-            List of Yes/ No which can be used to know which source node contains \
-                answer.
-            Yes -> If answer, context information are matching \
-                    or If Query, answer and context information are matching \
-                        for a source node.
-            No -> If answer, context information are not matching \
-                    or If Query, answer and context information are not matching \
-                        for a source node.
-        """
-        answer = str(response)
-
-        context_list = self.get_context(response)
-
-        response_texts = []
-
-        semaphore = asyncio.Semaphore(pool_size)
-
-        async def worker(
-            query_engine: BaseQueryEngine, query_response: str
-        ) -> RESPONSE_TYPE:
-            async with semaphore:
-                return await query_engine.aquery(query_response)
-
-        tasks = []
-        for context in context_list:
-            index = SummaryIndex.from_documents(
-                [context], service_context=self.service_context
-            )
-            response_txt = ""
-
-            query_response = f"Question: {query}\nResponse: {answer}"
-
-            query_engine = index.as_query_engine(
-                text_qa_template=self.query_eval_prompt_tmpl,
-                refine_template=self.query_refine_prompt_tmpl,
-            )
-            tasks.append(worker(query_engine, query_response))
-
-        responses = await asyncio.gather(*tasks)
-
-        for response_obj in responses:
-            raw_response_txt = str(response_obj)
-
-            if "yes" in raw_response_txt.lower():
-                response_txt = "YES"
-            else:
-                response_txt = "NO"
-                if self.raise_error:
-                    raise ValueError("The response is invalid")
-
-            response_texts.append(response_txt)
-        return response_texts
-
-    def async_evaluate_source_nodes(
-        self, query: str, response: Response, pool_size: int = 4
-    ) -> List[str]:
-        """Calls asynchronous aevaluate_source_nodes to evaluate\
-            if each source node contains the answer \
-            to a given query by comparing the query, response, \
-                and context information.
-        Args:
-            query: Query for which response is generated from index.
-            response: Response object from an index based on the query.
-            pool_size: Max no. of call to do in parallel
-        Returns:
-            List of Yes/ No which can be used to know which source node contains \
-                answer.
-            Yes -> If answer, context information are matching \
-                    or If Query, answer and context information are matching \
-                        for a source node.
-            No -> If answer, context information are not matching \
-                    or If Query, answer and context information are not matching \
-                        for a source node.
-        """
-        return asyncio.run(self.aevaluate_source_nodes(query, response, pool_size))
