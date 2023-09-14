@@ -1,6 +1,8 @@
 """Test prompts."""
 
 
+from typing import Any
+import pytest
 from llama_index.bridge.langchain import BaseLanguageModel
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
 from llama_index.bridge.langchain import FakeListLLM
@@ -15,6 +17,25 @@ from llama_index.prompts import (
     SelectorPromptTemplate,
 )
 from llama_index.prompts.prompt_type import PromptType
+from llama_index.types import BaseOutputParser
+
+class MockOutputParser(BaseOutputParser):
+    """Mock output parser."""
+    def __init__(self, format_string) -> None:
+        self._format_string = format_string
+
+    def parse(self, output: str) -> Any:
+        return {
+            'output': output
+        }
+    
+    def format(self, query: str) -> str:
+        return query + '\n' + self._format_string
+
+
+@pytest.fixture
+def output_parser() -> BaseOutputParser:
+    return MockOutputParser(format_string='output_instruction')
 
 
 def test_template() -> None:
@@ -31,6 +52,12 @@ def test_template() -> None:
         ChatMessage(content="hello world bar", role=MessageRole.USER)
     ]
 
+def test_template_output_parser(output_parser: BaseOutputParser) -> None:
+    prompt_txt = "hello {text} {foo}"
+    prompt = PromptTemplate(prompt_txt, output_parser=output_parser)
+
+    prompt_fmt = prompt.format(text="world", foo="bar")
+    assert prompt_fmt == "hello world bar\noutput_instruction"
 
 def test_chat_template() -> None:
     chat_template = ChatPromptTemplate(
@@ -57,6 +84,22 @@ def test_chat_template() -> None:
         "assistant: "
     )
 
+def test_chat_template_output_parser(output_parser: BaseOutputParser) -> None:
+    chat_template = ChatPromptTemplate(
+        message_templates=[
+            ChatMessage(
+                content="This is a system message with a {sys_param}",
+                role=MessageRole.SYSTEM,
+            ),
+            ChatMessage(content="hello {text} {foo}", role=MessageRole.USER),
+        ],
+        prompt_type=PromptType.CONVERSATION,
+        output_parser=output_parser,
+
+    )
+
+    messages = chat_template.format_messages(text="world", foo="bar", sys_param="sys_arg")
+    assert messages[0].content == "This is a system message with a sys_arg\noutput_instruction"
 
 def test_selector_template() -> None:
     default_template = PromptTemplate("hello {text} {foo}")

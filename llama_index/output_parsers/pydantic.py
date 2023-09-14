@@ -34,13 +34,8 @@ class PydanticOutputParser(BaseOutputParser):
     def output_cls(self) -> Type[Model]:
         return self._output_cls
 
-    def parse(self, text: str) -> Any:
-        """Parse, validate, and correct errors programmatically."""
-        json_str = extract_json_str(text)
-        return self._output_cls.parse_raw(json_str)
-
-    def format(self, query: str) -> str:
-        """Format a query with structured output formatting instructions."""
+    @property
+    def format_string(self) -> str:
         schema_dict = self._output_cls.schema()
         for key in self._excluded_schema_keys_from_format:
             del schema_dict[key]
@@ -50,5 +45,13 @@ class PydanticOutputParser(BaseOutputParser):
         schema_str = schema_str.replace("{", "{{")
         schema_str = schema_str.replace("}", "}}")
         format_str = self._pydantic_format_tmpl.format(schema=schema_str)
+        return format_str
 
-        return query + "\n\n" + format_str
+    def parse(self, text: str) -> Any:
+        """Parse, validate, and correct errors programmatically."""
+        json_str = extract_json_str(text)
+        return self._output_cls.parse_raw(json_str)
+
+    def format(self, query: str) -> str:
+        """Format a query with structured output formatting instructions."""
+        return query + "\n\n" + self.format_string

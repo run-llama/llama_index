@@ -1,15 +1,16 @@
-"""Evaluating the responses from an index."""
-from __future__ import annotations
-
+"""Evaluator."""
 from abc import ABC
 from typing import Any, Optional, Sequence
 
-from pydantic import BaseModel, Field
-
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.response.schema import Response
 
 
 class EvaluationResult(BaseModel):
+    """Evaluation result.
+
+    Output of an BaseEvaluator. 
+    """
     query: Optional[str] = Field(None, description="Query string")
     contexts: Optional[Sequence[str]] = Field(None, description="Context strings")
     response: Optional[str] = Field(None, description="Response string")
@@ -23,13 +24,34 @@ class EvaluationResult(BaseModel):
 
 
 class BaseEvaluator(ABC):
+    """Base Evaluator class."""
+
+    def evaluate(
+        self,
+        query: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
+        response: Optional[str] = None,
+        **kwargs: Any,
+    ) -> EvaluationResult:
+        """Run evaluation with query string, retrieved contexts,
+        and generated response string.
+
+        Subclasses can override this method to provide custom evaluation logic and
+        take in additional arguments.
+        """
+        raise NotImplementedError
+
     def evaluate_response(
         self,
         query: Optional[str] = None,
         response: Optional[Response] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Run evaluation with query string and generated Response object."""
+        """Run evaluation with query string and generated Response object.
+        
+        Subclasses can override this method to provide custom evaluation logic and
+        take in additional arguments.
+        """
         response_str: Optional[str] = None
         contexts: Optional[Sequence[str]] = None
         if response is not None:
@@ -39,18 +61,6 @@ class BaseEvaluator(ABC):
         return self.evaluate(
             query=query, contexts=contexts, response=response_str, **kwargs
         )
-
-    def evaluate(
-        self,
-        query: Optional[str] = None,
-        contexts: Optional[Sequence[str]] = None,
-        response: Optional[str] = None,
-        **kwargs: Any,
-    ) -> Evaluation:
-        """Run evaluation with query string, retrieved contexts,
-        and generated response string.
-        """
-        raise NotImplementedError
 
 
 # legacy: backward compatibility
