@@ -33,10 +33,10 @@ class BaseOutputParser(Protocol):
     @abstractmethod
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions."""
-    
+
     def format_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Format a list of messages with structured output formatting instructions."""
-        # NOTE: apply output parser to either the first message if it's a system message 
+        # NOTE: apply output parser to either the first message if it's a system message
         #       or the last message
         if messages:
             if messages[0].role == MessageRole.SYSTEM:

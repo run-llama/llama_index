@@ -3,9 +3,13 @@ from typing import Any, Optional, Sequence, Union
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts import (BasePromptTemplate, ChatMessage,
-                                 ChatPromptTemplate, MessageRole,
-                                 PromptTemplate)
+from llama_index.prompts import (
+    BasePromptTemplate,
+    ChatMessage,
+    ChatPromptTemplate,
+    MessageRole,
+    PromptTemplate,
+)
 
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
@@ -61,11 +65,12 @@ class CorrectnessEvaluator(BaseEvaluator):
 
     Args:
         service_context (Optional[ServiceContext]): Service context.
-        eval_template (Optional[Union[BasePromptTemplate, str]]): 
+        eval_template (Optional[Union[BasePromptTemplate, str]]):
             Template for the evaluation prompt.
         score_threshold (float): Numerical threshold for passing the evaluation,
             defaults to 4.0.
     """
+
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,

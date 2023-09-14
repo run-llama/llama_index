@@ -6,8 +6,10 @@ from typing import Type, Optional, List, Any
 import json
 
 PYDANTIC_FORMAT_TMPL = """
-Please use the following JSON schema to format your query:
+Here's a JSON schema to follow:
 {schema}
+
+Output a valid JSON object but do not repeat the schema.
 """
 
 
@@ -41,9 +43,6 @@ class PydanticOutputParser(BaseOutputParser):
             del schema_dict[key]
 
         schema_str = json.dumps(schema_dict)
-        # escape left and right brackets with double brackets
-        schema_str = schema_str.replace("{", "{{")
-        schema_str = schema_str.replace("}", "}}")
         format_str = self._pydantic_format_tmpl.format(schema=schema_str)
         return format_str
 

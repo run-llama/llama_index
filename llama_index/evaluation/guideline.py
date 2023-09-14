@@ -23,8 +23,7 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Critique the following response based on the guidelines below:\n"
     "Response: {response}\n"
     "Guidelines: {guidelines}\n"
-    "Now please provide constructive criticism in the following format:\n"
-    "{format_instructions}"
+    "Now please provide constructive criticism.\n"
 )
 
 
@@ -59,6 +58,9 @@ class GuidelineEvaluator(BaseEvaluator):
         else:
             self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
+        self._output_parser = PydanticOutputParser(output_cls=EvaluationData)
+        self._eval_template.output_parser = self._output_parser
+
     def evaluate(
         self,
         query: Optional[str] = None,
@@ -72,21 +74,17 @@ class GuidelineEvaluator(BaseEvaluator):
         if query is None or response is None:
             raise ValueError("query and response must be provided")
 
-        parser = PydanticOutputParser(output_cls=EvaluationData)
-        format_instructions = parser.format_string
         logger.debug("prompt: %s", self._eval_template)
         logger.debug("query: %s", query)
         logger.debug("response: %s", response)
         logger.debug("guidelines: %s", self._guidelines)
-        logger.debug("format_instructions: %s", format_instructions)
         eval_response = self._service_context.llm_predictor.predict(
             self._eval_template,
             query=query,
             response=response,
             guidelines=self._guidelines,
-            format_instructions=format_instructions,
         )
-        eval_data = parser.parse(eval_response)
+        eval_data = self._output_parser.parse(eval_response)
         eval_data = cast(EvaluationData, eval_data)
 
         return EvaluationResult(

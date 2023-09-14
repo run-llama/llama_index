@@ -9,8 +9,9 @@ from llama_index.response.schema import Response
 class EvaluationResult(BaseModel):
     """Evaluation result.
 
-    Output of an BaseEvaluator. 
+    Output of an BaseEvaluator.
     """
+
     query: Optional[str] = Field(None, description="Query string")
     contexts: Optional[Sequence[str]] = Field(None, description="Context strings")
     response: Optional[str] = Field(None, description="Response string")
@@ -48,7 +49,7 @@ class BaseEvaluator(ABC):
         **kwargs: Any,
     ) -> EvaluationResult:
         """Run evaluation with query string and generated Response object.
-        
+
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
         """

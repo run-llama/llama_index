@@ -169,7 +169,7 @@ class ChatPromptTemplate(BasePromptTemplate):
             message: ChatMessage = message_template.copy()
             message.content = content
             messages.append(message)
-        
+
         if self.output_parser is not None:
             messages = self.output_parser.format_messages(messages)
 
