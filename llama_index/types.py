@@ -40,8 +40,8 @@ class BaseOutputParser(Protocol):
         #       or the last message
         if messages:
             if messages[0].role == MessageRole.SYSTEM:
-                messages[0].content = self.format(messages[0].content)
+                messages[0].content = self.format(messages[0].content or "")
             else:
-                messages[-1].content = self.format(messages[-1].content)
+                messages[-1].content = self.format(messages[-1].content or "")
 
         return messages

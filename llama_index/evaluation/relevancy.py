@@ -36,13 +36,21 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 
 
 class RelevancyEvaluator(BaseEvaluator):
-    """Evaluate based on query and response from indices.
+    """Relenvancy evaluator.
 
-    NOTE: this is a beta feature, subject to change!
+    Evaluates the relevancy of retrieved contexts and response to a query.
+    This evaluator considers the query string, retrieved contexts, and response string.
 
     Args:
-        service_context (Optional[ServiceContext]): ServiceContext object
-
+        service_context(Optional[ServiceContext]):
+            The service context to use for evaluation.
+        raise_error(Optional[bool]):
+            Whether to raise an error if the response is invalid.
+            Defaults to False.
+        eval_template(Optional[Union[str, BasePromptTemplate]]):
+            The template to use for evaluation.
+        refine_template(Optional[Union[str, BasePromptTemplate]]):
+            The template to use for refinement.
     """
 
     def __init__(
@@ -75,14 +83,7 @@ class RelevancyEvaluator(BaseEvaluator):
         response: Optional[str] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Evaluate the response from an index.
-
-        Args:
-            query: Query for which response is generated from index.
-            response: Response object from an index based on the query.
-        Returns:
-            EvaluationResult object with passing boolean and feedback "YES" or "NO".
-        """
+        """Evaluate whether the contexts and response are relevant to the query."""
         del kwargs  # Unused
 
         if query is None or contexts is None or response is None:

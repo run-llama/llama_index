@@ -55,7 +55,23 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 
 
 class FaithfulnessEvaluator(BaseEvaluator):
-    """Evaluate the faithfulness of"""
+    """Faithfulness evaluator.
+
+    Evaluates whether a response is faithful to the contexts
+    (i.e. whether the response is supported by the contexts or hallucinated.)
+
+    This evaluator only considers the response string and the list of context strings.
+
+    Args:
+        service_context(Optional[ServiceContext]):
+            The service context to use for evaluation.
+        raise_error(bool): Whether to raise an error when the response is invalid.
+            Defaults to False.
+        eval_template(Optional[Union[str, BasePromptTemplate]]):
+            The template to use for evaluation.
+        refine_template(Optional[Union[str, BasePromptTemplate]]):
+            The template to use for refining the evaluation.
+    """
 
     def __init__(
         self,
@@ -87,17 +103,7 @@ class FaithfulnessEvaluator(BaseEvaluator):
         response: Optional[str] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Evaluate the response from an index.
-
-        Args:
-            query: Query for which response is generated from index.
-            response: Response object from an index based on the query.
-        Returns:
-            Yes -> If answer, context information are matching \
-                    or If Query, answer and context information are matching.
-            No -> If answer, context information are not matching \
-                    or If Query, answer and context information are not matching.
-        """
+        """Evaluate whether the response is faithful to the contexts."""
         del query  # Unused
         del kwargs  # Unused
         if contexts is None or response is None:

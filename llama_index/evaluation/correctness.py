@@ -58,10 +58,12 @@ class CorrectnessEvaluator(BaseEvaluator):
     """Correctness evaluator.
 
     Evaluates the correctness of a question answering system.
-    The evaluation is calculated from `query`, `reference`, and `response`.
+    This evaluator depends on `reference` answer to be provided, in addition to the
+    query string and response string.
 
     It outputs a score between 1 and 5, where 1 is the worst and 5 is the best,
     along with a reasoning for the score.
+    Passing is defined as a score greater than or equal to the given threshold.
 
     Args:
         service_context (Optional[ServiceContext]): Service context.

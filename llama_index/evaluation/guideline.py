@@ -35,12 +35,19 @@ class EvaluationData(BaseModel):
 
 
 class GuidelineEvaluator(BaseEvaluator):
-    """An evaluator which uses guidelines to evaluate a response.
+    """Guideline evaluator.
+
+    Evaluates whether a query and response pair passes the given guidelines.
+
+    This evaluator only considers the query string and the response string.
 
     Args:
-        service_context(ServiceContext): The service context to use for evaluation.
-        guidelines(str): User-added guidelines to use for evaluation.
-        eval_template(str): The template to use for evaluation.
+        service_context(Optional[ServiceContext]):
+            The service context to use for evaluation.
+        guidelines(Optional[str]): User-added guidelines to use for evaluation.
+            Defaults to None, which uses the default guidelines.
+        eval_template(Optional[Union[str, BasePromptTemplate]] ):
+            The template to use for evaluation.
     """
 
     def __init__(
@@ -68,7 +75,7 @@ class GuidelineEvaluator(BaseEvaluator):
         response: Optional[str] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Evaluate the response for a query and an Evaluation."""
+        """Evaluate whether the query and response pair passes the guidelines."""
         del contexts  # Unused
         del kwargs  # Unused
         if query is None or response is None:

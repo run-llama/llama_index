@@ -23,7 +23,7 @@ from llama_index.types import BaseOutputParser
 class MockOutputParser(BaseOutputParser):
     """Mock output parser."""
 
-    def __init__(self, format_string) -> None:
+    def __init__(self, format_string: str) -> None:
         self._format_string = format_string
 
     def parse(self, output: str) -> Any:
