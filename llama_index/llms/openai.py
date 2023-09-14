@@ -229,7 +229,7 @@ class OpenAI(LLM):
                 if len(response["choices"]) > 0:
                     delta = response["choices"][0]["delta"]
                 else:
-                    delta = ""
+                    delta = {}
                 role = delta.get("role", "assistant")
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
@@ -448,7 +448,7 @@ class OpenAI(LLM):
                 if len(response["choices"]) > 0:
                     delta = response["choices"][0]["delta"]
                 else:
-                    delta = ""
+                    delta = {}
                 role = delta.get("role", "assistant")
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
