@@ -1,18 +1,18 @@
 """Simple node parser."""
-from typing import List, Optional, Sequence, Any
+from typing import List, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field, BaseModel, PrivateAttr
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
-from llama_index.node_parser.interface import NodeParserWithCallbackManager
+from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.schema import BaseNode, Document
 from llama_index.text_splitter import get_default_text_splitter, SplitterType
 from llama_index.utils import get_tqdm_iterable
 
 
-class SimpleNodeParser(NodeParserWithCallbackManager):
+class SimpleNodeParser(NodeParser):
     """Simple node parser.
 
     Splits a document into Nodes using a TextSplitter.
@@ -35,6 +35,9 @@ class SimpleNodeParser(NodeParserWithCallbackManager):
     )
     metadata_extractor: Optional[MetadataExtractor] = Field(
         default=None, description="Metadata extraction pipeline to apply to nodes."
+    )
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, exclude=True
     )
 
     @classmethod
