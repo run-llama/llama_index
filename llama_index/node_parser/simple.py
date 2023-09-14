@@ -1,7 +1,7 @@
 """Simple node parser."""
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Any
 
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import Field, BaseModel, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
@@ -36,9 +36,28 @@ class SimpleNodeParser(NodeParser):
     metadata_extractor: Optional[MetadataExtractor] = Field(
         default=None, description="Metadata extraction pipeline to apply to nodes."
     )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    _callback_manager: CallbackManager = PrivateAttr()
+
+    def __init__(self, callback_manager: Optional[CallbackManager] = None, **kwargs):
+        super().__init__(**kwargs)
+        self._callback_manager = callback_manager or CallbackManager()
+
+    @property
+    def callback_manager(self) -> CallbackManager:
+        """Get callback manager."""
+        return self._callback_manager
+
+    @callback_manager.setter
+    def callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        self._callback_manager = callback_manager
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        whitelist = {"callback_manager"}
+        if name in whitelist:
+            super(BaseModel, self).__setattr__(name, value)
+        else:
+            super().__setattr__(name, value)
 
     @classmethod
     def from_defaults(
