@@ -10,11 +10,14 @@ from llama_index.llms.openai import OpenAI
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
-DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
-"\n---------------------\n{context_str}\n---------------------\n"
-"Given the context information and not prior knowledge.\n"
-"generate only questions based on the below query.\n"
-"{query_str}\n"
+DEFAULT_QUESTION_GENERATION_PROMPT = """\
+Context information is below.
+---------------------
+{context_str}
+---------------------
+Given the context information and not prior knowledge.
+generate only questions based on the below query.
+{query_str}
 """
 
 
