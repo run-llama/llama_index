@@ -118,7 +118,7 @@ class IngestionPipeline(BaseModel):
                 DataSource(
                     name=configured_data_source.name,
                     type=ConfigurableDataSources.from_component(
-                        self.reader.loader
+                        self.reader.reader
                     ).value.component_type,
                     metadata_blob=self.reader.to_dict(),
                 )
@@ -131,7 +131,7 @@ class IngestionPipeline(BaseModel):
                     DataSource(
                         name=configured_data_source.name,
                         type=ConfigurableDataSources.from_component(
-                            self.reader.loader
+                            document
                         ).value.component_type,
                         metadata_blob=document.to_dict(),
                     )
