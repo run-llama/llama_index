@@ -155,7 +155,9 @@ class ConfigurableDataSources(Enum):
             return ConfiguredDataSource[ReaderConfig](
                 component=reader_config
             )  # type: ignore
-        return ConfiguredDataSource[component_type](component=component)  # type: ignore
+        return ConfiguredDataSource[component_type](
+            component=component, name=self.value.name
+        )  # type: ignore
 
 
 T = TypeVar("T", bound=BaseComponent)
@@ -166,6 +168,7 @@ class ConfiguredDataSource(GenericModel, Generic[T]):
     A class containing metdata & implementation for a data source in a pipeline.
     """
 
+    name: str
     component: T = Field(description="Component that implements the data source")
 
     @classmethod

@@ -76,7 +76,9 @@ class ConfigurableDataSinks(Enum):
                 f"The enum value {self} is not compatible with component of "
                 f"type {type(component)}"
             )
-        return ConfiguredDataSink[component_type](component=component)  # type: ignore
+        return ConfiguredDataSink[component_type](
+            component=component, name=self.value.name
+        )  # type: ignore
 
 
 T = TypeVar("T", bound=BasePydanticVectorStore)
@@ -87,6 +89,7 @@ class ConfiguredDataSink(GenericModel, Generic[T]):
     A class containing metdata & implementation for a data sink in a pipeline.
     """
 
+    name: str
     component: T = Field(description="Component that implements the data sink")
 
     @classmethod

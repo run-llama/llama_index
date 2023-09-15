@@ -49,6 +49,15 @@ class ReaderConfig(BaseComponent):
         """Get the name identifier of the class."""
         return "LoaderConfig"
 
+    def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
+        """Convert the class to a dictionary."""
+        return {
+            "loader": self.loader.to_dict(**kwargs),
+            "loader_args": self.loader_args,
+            "loader_kwargs": self.loader_kwargs,
+            "class_name": self.class_name(),
+        }
+
     def read(self) -> List[Document]:
         """Call the loader with the given arguments."""
         return self.loader.load_data(*self.loader_args, **self.loader_kwargs)

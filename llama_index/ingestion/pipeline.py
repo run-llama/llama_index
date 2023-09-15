@@ -1,12 +1,20 @@
 from typing import Callable, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
-
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
-from llama_index.ingestion.transformations import (
-    ConfiguredTransformation,
+from llama_index.ingestion.client import (
+    ConfiguredTransformationItem,
+    DataSink,
+    DataSource,
 )
+from llama_index.ingestion.client.client import PlatformApi
+from llama_index.ingestion.data_sinks import ConfiguredDataSink, ConfigurableDataSinks
+from llama_index.ingestion.data_sources import (
+    ConfiguredDataSource,
+    ConfigurableDataSources,
+)
+from llama_index.ingestion.transformations import ConfiguredTransformation
 from llama_index.llms.base import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.node_parser import SimpleNodeParser
@@ -81,11 +89,70 @@ class IngestionPipeline(BaseModel):
             SimpleNodeParser.from_defaults(),
         ]
 
-    def run_remote(self) -> str:
-        print("Running ingestion pipeline remotely...")
-        print("DEBUG: Current transformations:")
-        print("\n----\n".join([t.to_json() for t in self.transformations]))
-        return "Find your remote results here: https://llamaindex.com/"
+    def run_remote(self, pipeline_name="pipeline", project_name="llamaindex") -> str:
+        client = PlatformApi(base_url="http://localhost:8000")
+
+        configured_transformations: List[ConfiguredTransformationItem] = []
+        for item in self.configured_transformations:
+            configured_transformations.append(
+                ConfiguredTransformationItem(name=item.name, component=item.component)
+            )
+
+        data_sinks = []
+        if self.vector_store is not None:
+            configured_data_sink = ConfiguredDataSink.from_component(self.vector_store)
+            data_sinks.append(
+                DataSink(
+                    name=configured_data_sink.name,
+                    type=ConfigurableDataSinks.from_component(
+                        self.vector_store
+                    ).value.component_type,
+                    metadata_blob=self.vector_store.to_dict(),
+                )
+            )
+
+        data_sources = []
+        if self.reader is not None:
+            configured_data_source = ConfiguredDataSource.from_component(self.reader)
+            data_sources.append(
+                DataSource(
+                    name=configured_data_source.name,
+                    type=ConfigurableDataSources.from_component(
+                        self.reader.loader
+                    ).value.component_type,
+                    metadata_blob=self.reader.to_dict(),
+                )
+            )
+
+        if self.documents is not None:
+            for document in self.documents:
+                configured_data_source = ConfiguredDataSource.from_component(document)
+                data_sources.append(
+                    DataSource(
+                        name=configured_data_source.name,
+                        type=ConfigurableDataSources.from_component(
+                            self.reader.loader
+                        ).value.component_type,
+                        metadata_blob=document.to_dict(),
+                    )
+                )
+
+        # upload?
+        client.project.create_pipeline_for_project_api_project_project_id_pipeline_post(
+            name=pipeline_name,
+            project_id=project_name,
+            configured_transformations=configured_transformations,
+            data_sinks=data_sinks,
+            data_sources=data_sources,
+        )
+
+        # start pipeline?
+        # the `PipeLineExecution` object should likely generate a URL at some point
+        response = client.project.create_pipeline_execution_api_project_project_id_pipeline_pipeline_id_execution_post(
+            project_id=project_name, pipeline_id=pipeline_name
+        )
+
+        return f"Find your remote results here: {response.id}"
 
     def run_local(
         self, run_embeddings: bool = True, show_progress: bool = False
