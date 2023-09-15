@@ -70,14 +70,11 @@ class DocxReader(BaseReader):
 
         return [Document(text=text, metadata=metadata or {})]
 
+
 class HWPReader(BaseReader):
     """Hwp Parser"""
 
-    def __init__(
-            self,
-            *args: Any,
-            **kwargs: Any
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.FILE_HEADER_SECTION = "FileHeader"
         self.HWP_SUMMARY_SECTION = "\x05HwpSummaryInformation"
@@ -86,9 +83,7 @@ class HWPReader(BaseReader):
         self.HWP_TEXT_TAGS = [67]
 
     def load_data(
-            self,
-            file: Path,
-            extra_info: Optional[Dict] = None
+        self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Load data and extract table from Hwp file.
         Args:
@@ -97,9 +92,10 @@ class HWPReader(BaseReader):
             List[Document]
         """
         import olefile
+
         load_file = olefile.OleFileIO(file)
         file_dir = load_file.listdir()
-        if self.is_valid(file_dir) == False:
+        if self.is_valid(file_dir) is False:
             raise Exception("Not Valid HwpFile")
 
         result_text = self._get_text(load_file, file_dir)
@@ -116,20 +112,20 @@ class HWPReader(BaseReader):
         m = []
         for d in dirs:
             if d[0] == self.BODYTEXT_SECTION:
-                m.append(int(d[1][self.SECTION_NAME_LENGTH:]))
+                m.append(int(d[1][self.SECTION_NAME_LENGTH :]))
 
-        return ["BodyText/Section"+str(x) for x in sorted(m)]
+        return ["BodyText/Section" + str(x) for x in sorted(m)]
 
-    def _text_to_document(self, text: str, extra_info: Optional[Dict] = None) -> Document:
-        return Document(
-            text=text,
-            extra_info=extra_info or {}
-        )
+    def _text_to_document(
+        self, text: str, extra_info: Optional[Dict] = None
+    ) -> Document:
+        return Document(text=text, extra_info=extra_info or {})
 
     def get_text(self):
         return self.text
 
         # 전체 text 추출
+
     def _get_text(self, load_file, file_dir):
         sections = self.get_body_sections(file_dir)
         text = ""
@@ -149,7 +145,9 @@ class HWPReader(BaseReader):
         bodytext = load_file.openstream(section)
         data = bodytext.read()
 
-        unpacked_data = zlib.decompress(data, -15) if self.is_compressed(load_file) else data
+        unpacked_data = (
+            zlib.decompress(data, -15) if self.is_compressed(load_file) else data
+        )
         size = len(unpacked_data)
 
         i = 0
@@ -157,13 +155,13 @@ class HWPReader(BaseReader):
         text = ""
         while i < size:
             header = struct.unpack_from("<I", unpacked_data, i)[0]
-            rec_type = header & 0x3ff
-            level = (header >> 10) & 0x3ff
-            rec_len = (header >> 20) & 0xfff
+            rec_type = header & 0x3FF
+            (header >> 10) & 0x3FF
+            rec_len = (header >> 20) & 0xFFF
 
             if rec_type in self.HWP_TEXT_TAGS:
-                rec_data = unpacked_data[i+4:i+4+rec_len]
-                text += rec_data.decode('utf-16')
+                rec_data = unpacked_data[i + 4 : i + 4 + rec_len]
+                text += rec_data.decode("utf-16")
                 text += "\n"
 
             i += 4 + rec_len
