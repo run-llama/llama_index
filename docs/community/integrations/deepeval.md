@@ -45,7 +45,7 @@ You can more about the [DeepEval Framework](https://docs.confident-ai.com/docs/f
 
 ## Use With Your LlamaIndex
 
-DeepEval integrates nicely with LlamaIndex's `ResponseEvaluator` class. Below is an example of the factual consistency documentation.
+DeepEval integrates nicely with LlamaIndex's `FaithfulnessEvaluator` class. Below is an example of the factual consistency documentation.
 
 ```python
 
@@ -63,7 +63,7 @@ from llama_index import (
     Response,
 )
 from llama_index.llms import OpenAI
-from llama_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import FaithfulnessEvaluator
 
 import os
 import openai
@@ -73,7 +73,7 @@ openai.api_key = api_key
 
 gpt4 = OpenAI(temperature=0, model="gpt-4", api_key=api_key)
 service_context_gpt4 = ServiceContext.from_defaults(llm=gpt4)
-evaluator_gpt4 = ResponseEvaluator(service_context=service_context_gpt4)
+evaluator_gpt4 = FaithfulnessEvaluator(service_context=service_context_gpt4)
 
 ```
 
@@ -97,7 +97,7 @@ We then build an evaluator based on the `BaseEvaluator` class that requires an `
 In this example, we show you how to write a factual consistency check.
 
 ```python
-class FactualConsistencyResponseEvaluator:
+class FactualConsistencyFaithfulnessEvaluator:
   def get_context(self, response: Response) -> List[Document]:
     """Get context information from given Response object using source nodes.
 
@@ -127,7 +127,7 @@ class FactualConsistencyResponseEvaluator:
     else:
         return "NO"
 
-evaluator = FactualConsistencyResponseEvaluator()
+evaluator = FactualConsistencyFaithfulnessEvaluator()
 ```
 
 You can then evaluate as such:

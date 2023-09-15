@@ -9,7 +9,7 @@ This mode of evaluation will return "YES"/"NO" if the synthesized response match
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import FaithfulnessEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -19,7 +19,7 @@ service_context = ServiceContext.from_defaults(llm=llm)
 ...
 
 # define evaluator
-evaluator = ResponseEvaluator(service_context=service_context)
+evaluator = FaithfulnessEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
@@ -40,7 +40,7 @@ This mode of evaluation will return "YES"/"NO" for every source node.
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import FaithfulnessEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -50,7 +50,7 @@ service_context = ServiceContext.from_defaults(llm=llm)
 ...
 
 # define evaluator
-evaluator = ResponseEvaluator(service_context=service_context)
+evaluator = FaithfulnessEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
@@ -71,7 +71,7 @@ This mode of evaluation will return "YES"/"NO" if the synthesized response match
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import QueryResponseEvaluator
+from llama_index.evaluation import QueryFaithfulnessEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -81,7 +81,7 @@ service_context = ServiceContext.from_defaults(llm=llm)
 ...
 
 # define evaluator
-evaluator = QueryResponseEvaluator(service_context=service_context)
+evaluator = QueryFaithfulnessEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
@@ -101,7 +101,7 @@ This mode of evaluation will look at each source node, and see if each source no
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import QueryResponseEvaluator
+from llama_index.evaluation import QueryFaithfulnessEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -111,7 +111,7 @@ service_context = ServiceContext.from_defaults(llm=llm)
 ...
 
 # define evaluator
-evaluator = QueryResponseEvaluator(service_context=service_context)
+evaluator = QueryFaithfulnessEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
@@ -130,7 +130,7 @@ LlamaIndex can also generate questions to answer using your data. Using in combi
 ```python
 from llama_index import SimpleDirectoryReader, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import FaithfulnessEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
