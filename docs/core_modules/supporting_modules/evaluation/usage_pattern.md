@@ -25,7 +25,7 @@ def evaluate_response(
 ```
 It's functionally the same as `evaluate`, just simpler to use when working with llamaindex objects directly.
 
-### Using `EvaluationResult`
+## Using `EvaluationResult`
 Each evaluator outputs a `EvaluationResult` when executed:
 ```python
 eval_result = evaluator.evaluate(query=..., contexts=..., response=...)
@@ -37,7 +37,7 @@ Different evaluators may populate a subset of the result fields.
 
 ## Evaluating Response Faithfulness (i.e. Hallucination)
 
-The `FaithfulnessEvaluator` evaluates if the answer is faithful to the retrieved contexts (in other words, whether if there's model hallucination).
+The `FaithfulnessEvaluator` evaluates if the answer is faithful to the retrieved contexts (in other words, whether if there's hallucination).
 
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
