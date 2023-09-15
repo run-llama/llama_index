@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.response.schema import Response
+from llama_index.response.schema import Response, RESPONSE_TYPE
 
 
 class BatchEvalRunner:
@@ -18,9 +18,11 @@ class BatchEvalRunner:
     async def aevaluate_queries(
         self,
         query_engine: BaseQueryEngine,
-        queries: List[str] = None,
+        queries: Optional[List[str]] = None,
         query_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, List[EvaluationResult]]:
+        if queries is None:
+            raise ValueError("`queries` must be provided")
         query_kwargs = query_kwargs or {}
 
         semaphore = asyncio.Semaphore(self.workers)
@@ -28,7 +30,7 @@ class BatchEvalRunner:
         async def response_worker(
             query_engine: BaseQueryEngine,
             query: str,
-        ) -> Response:
+        ) -> RESPONSE_TYPE:
             async with semaphore:
                 return await query_engine.aquery(query)
 
@@ -37,9 +39,9 @@ class BatchEvalRunner:
             evaluator_name: str,
             query: str,
             response: Response,
+            evaluator_kwargs: Dict[str, Any],
         ) -> Tuple[str, EvaluationResult]:
             async with semaphore:
-                evaluator_kwargs = query_kwargs.get(query, {})
                 return (
                     evaluator_name,
                     await evaluator.aevaluate_response(
@@ -57,11 +59,17 @@ class BatchEvalRunner:
         eval_jobs = []
         for query, response in zip(queries, responses):
             for name, evaluator in self.evaluators.items():
-                eval_jobs.append(eval_worker(evaluator, name, query, response))
+                eval_jobs.append(
+                    eval_worker(
+                        evaluator, name, query, response, query_kwargs.get(query, {})
+                    )
+                )
         results = await asyncio.gather(*eval_jobs)
 
         # Format results
-        results_dict = {name: [] for name in self.evaluators.keys()}
+        results_dict: Dict[str, List[EvaluationResult]] = {
+            name: [] for name in self.evaluators.keys()
+        }
         for name, result in results:
             results_dict[name].append(result)
 
@@ -70,9 +78,11 @@ class BatchEvalRunner:
     def evaluate_queries(
         self,
         query_engine: BaseQueryEngine,
-        queries: List[str] = None,
-        **kwargs: Any,
+        queries: Optional[List[str]] = None,
+        query_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, List[EvaluationResult]]:
         return asyncio.run(
-            self.aevaluate_queries(query_engine=query_engine, queries=queries, **kwargs)
+            self.aevaluate_queries(
+                query_engine=query_engine, queries=queries, query_kwargs=query_kwargs
+            )
         )

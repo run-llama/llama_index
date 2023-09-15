@@ -16,7 +16,7 @@ class MockEvaluator(BaseEvaluator):
         self._mock_passing = mock_passing
         self._mock_feedback = mock_feedback
 
-    def evaluate(
+    async def aevaluate(
         self,
         query: Optional[str] = None,
         response: Optional[str] = None,
