@@ -1,7 +1,7 @@
 import os
 from llama_index.llms import Portkey
 from llama_index.llms import ChatMessage  # We'll use this later
-from rubeus import LLMBase
+from portkey import LLMOptions
 
 os.environ["PORTKEY_API_KEY"] = ""
 os.environ["OPENAI_API_KEY"] = ""
@@ -16,16 +16,29 @@ metadata = {
 }
 
 # Define the Portkey interface.
-pk_llm = Portkey(mode="loadbalance", trace_id="portkey_llamaindex", metadata=metadata)
+pk_client = Portkey(mode="ab_test")
 
-# Define the provider spec in the LLMBase spec. Customise the LLMs as per requirement.
+# Define the provider spec in the LLMOptions spec. Customise the LLMs as per requirement.
 # Added here are the weights that specify a 40:60 split in the requests.
-openai_llm = LLMBase(provider="openai", model="gpt-4", weight=0.4)
-anthropic_llm = LLMBase(
-    provider="anthropic", model="claude-2", max_tokens=256, weight=0.6
+openai_llm = LLMOptions(
+    provider="openai",
+    model="gpt-4",
+    weight=0.4,
+    trace_id="portkey_llamaindex",
+    metadata=metadata,
+    virtual_key="open-ai-key-66ah788",
+)
+anthropic_llm = LLMOptions(
+    provider="anthropic",
+    model="claude-2",
+    max_tokens=256,
+    weight=0.6,
+    trace_id="portkey_llamaindex",
+    metadata=metadata,
+    virtual_key="anthropic-key-351feb",
 )
 
-pk_llm.add_llms([openai_llm, anthropic_llm])
+pk_client.add_llms([openai_llm, anthropic_llm])
 
 messages = [
     ChatMessage(role="system", content="You are a helpful assistant"),
@@ -33,6 +46,6 @@ messages = [
 ]
 
 print("Testing Portkey Llamaindex integration:")
-response = pk_llm.stream_chat(messages)
+response = pk_client.stream_chat(messages)
 for i in response:
     print(i.delta, end="", flush=True)
