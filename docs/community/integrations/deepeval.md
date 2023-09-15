@@ -135,7 +135,7 @@ You can then evaluate as such:
 ```python
 query_engine = tree_index.as_query_engine()
 response = query_engine.query("How did Tokyo get its name?")
-eval_result = evaluator.evaluate(response)
+eval_result = evaluator.evaluate_response(response=response)
 ```
 
 ### Useful Links
