@@ -4,7 +4,17 @@
 
 ### New Features
 - Add CorrectnessEvaluator (#7661)
+- Added support for `Ollama` LLMs (#7635)
+- Added `HWPReader` (#7672)
+- Simplified portkey LLM interface (#7669)
+- Added async operation support to `ElasticsearchStore` vector store (#7613)
+- Added support for `LiteLLM` (#7600)
 
+### Bug Fixes / Nits
+- Avoid `NotImplementedError` for async langchain embeddings (#7668)
+- Imrpoved reliability of LLM selectors (#7678)
+- Fixed `query_wrapper_prompt` and `system_prompt` for output parsers and completion models (#7678)
+- Fixed node attribute inheritance in citation query engine (#7675)
 
 ### Breaking Changes
 - Refactor and update `BaseEvaluator` interface to be more consistent (#7661)
@@ -14,6 +24,15 @@
   - `ResponseEvaluator` -> `FaithfulnessEvaluator`
   - `QueryResponseEvaluator` -> `RelevancyEvaluator`
   - old names are kept as class aliases for backwards compatibility
+
+## [0.8.27] - 2023-09-14
+
+### New Features
+- add low-level tutorial section (#7673)
+
+### Bug Fixes / Nits
+- default delta should be a dict (#7665)
+- better query wrapper logic on LLMPredictor (#7667)
 
 ## [0.8.26] - 2023-09-12
 
