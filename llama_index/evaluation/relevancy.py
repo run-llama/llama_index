@@ -79,8 +79,8 @@ class RelevancyEvaluator(BaseEvaluator):
     def evaluate(
         self,
         query: Optional[str] = None,
-        contexts: Optional[Sequence[str]] = None,
         response: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the contexts and response are relevant to the query."""

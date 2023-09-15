@@ -1,5 +1,5 @@
 """Evaluator."""
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Any, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
@@ -27,11 +27,12 @@ class EvaluationResult(BaseModel):
 class BaseEvaluator(ABC):
     """Base Evaluator class."""
 
+    @abstractmethod
     def evaluate(
         self,
         query: Optional[str] = None,
-        contexts: Optional[Sequence[str]] = None,
         response: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Run evaluation with query string, retrieved contexts,
@@ -60,7 +61,7 @@ class BaseEvaluator(ABC):
             contexts = [node.get_content() for node in response.source_nodes]
 
         return self.evaluate(
-            query=query, contexts=contexts, response=response_str, **kwargs
+            query=query, response=response_str, contexts=contexts, **kwargs
         )
 
 

@@ -99,8 +99,8 @@ class FaithfulnessEvaluator(BaseEvaluator):
     def evaluate(
         self,
         query: Optional[str] = None,
-        contexts: Optional[Sequence[str]] = None,
         response: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the response is faithful to the contexts."""

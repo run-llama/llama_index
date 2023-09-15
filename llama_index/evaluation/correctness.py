@@ -92,8 +92,8 @@ class CorrectnessEvaluator(BaseEvaluator):
     def evaluate(
         self,
         query: Optional[str] = None,
-        contexts: Optional[Sequence[str]] = None,
         response: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
