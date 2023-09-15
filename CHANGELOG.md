@@ -11,6 +11,7 @@
 - Avoid `NotImplementedError` for async langchain embeddings (#7668)
 - Imrpoved reliability of LLM selectors (#7678)
 - Fixed `query_wrapper_prompt` and `system_prompt` for output parsers and completion models (#7678)
+- Fixed node attribute inheritance in citation query engine (#7675)
 
 ## [0.8.27] - 2023-09-14
 
