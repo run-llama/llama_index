@@ -1,5 +1,6 @@
 """General utils functions."""
 
+import asyncio
 import os
 import random
 import sys
@@ -8,7 +9,7 @@ import traceback
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
-from functools import partial
+from functools import partial, wraps
 from itertools import islice
 from pathlib import Path
 from typing import (
@@ -278,6 +279,23 @@ def get_cache_dir() -> str:
             path, exist_ok=True
         )  # prevents https://github.com/jerryjliu/llama_index/issues/7362
     return str(path)
+
+
+def add_sync_version(func: Any) -> Any:
+    """Decorator for adding sync version of an async function. The sync version
+    is added as a function attribute to the original function, func.
+
+    Args:
+        func(Any): the async function for which a sync variant will be built.
+    """
+    assert asyncio.iscoroutinefunction(func)
+
+    @wraps(func)
+    def _wrapper(*args: Any, **kwds: Any) -> Any:
+        return asyncio.get_event_loop().run_until_complete(func(*args, **kwds))
+
+    func.sync = _wrapper
+    return func
 
 
 # Sample text from llama_index's readme
