@@ -1,4 +1,5 @@
 import logging
+from openai.openai_object import OpenAIObject
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 from llama_index.bridge.pydantic import BaseModel
@@ -22,8 +23,6 @@ https://platform.openai.com/account/api-keys
 INVALID_API_KEY_ERROR_MESSAGE = """Invalid LLM API key."""
 
 logger = logging.getLogger(__name__)
-
-from openai.openai_object import OpenAIObject
 
 CompletionClientType = Type[OpenAIObject]
 
@@ -106,7 +105,7 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
 
     try:
         context_size = litellm.get_max_tokens(modelname)
-    except:
+    except Exception:
         context_size = 2048  # by default assume models have at least 2048 tokens
 
     if context_size is None:
