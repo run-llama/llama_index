@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added `HWPReader` (#7672)
+
 ### Bug Fixes / Nits
 - Avoid `NotImplementedError` for async langchain embeddings (#7668)
 
