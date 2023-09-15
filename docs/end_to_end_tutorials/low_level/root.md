@@ -32,5 +32,12 @@ maxdepth: 1
 
 
 ## Building Response Synthesis from Scratch
-Coming soon!
+This tutorial shows you how to use the LLM to synthesize results given a set of retrieved context. Deals with context overflows, async calls, and source citations!
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/response_synthesis.ipynb
+```
+
 
