@@ -45,5 +45,5 @@ __all__ = [
     "FLAREInstructQueryEngine",
     "PandasQueryEngine",
     "KnowledgeGraphQueryEngine",
-    "BaseQueryEngine"
+    "BaseQueryEngine",
 ]
