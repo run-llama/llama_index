@@ -1,5 +1,20 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Add CorrectnessEvaluator (#7661)
+
+
+### Breaking Changes
+- Refactor and update `BaseEvaluator` interface to be more consistent (#7661)
+  - Use `evaluate` function for generic input
+  - Use `evaluate_response` function with `Response` objects from llama index query engine
+- Update existing evaluators with more explicit naming
+  - `ResponseEvaluator` -> `FaithfulnessEvaluator`
+  - `QueryResponseEvaluator` -> `RelevancyEvaluator`
+  - old names are kept as class aliases for backwards compatibility
+
 ## [0.8.26] - 2023-09-12
 
 ### New Features
