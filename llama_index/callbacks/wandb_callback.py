@@ -387,6 +387,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
             span_kind = self._trace_tree.SpanKind.LLM
         elif event_type == CBEventType.QUERY:
             span_kind = self._trace_tree.SpanKind.AGENT
+        elif event_type == CBEventType.AGENT_STEP:
+            span_kind = self._trace_tree.SpanKind.AGENT
         elif event_type == CBEventType.RETRIEVE:
             span_kind = self._trace_tree.SpanKind.TOOL
         elif event_type == CBEventType.SYNTHESIZE:

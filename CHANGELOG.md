@@ -2,8 +2,40 @@
 
 ## Unreleased
 
+### New Features
+- Simplified portkey LLM interface (#7669)
+- Added async operation support to `ElasticsearchStore` vector store (#7613)
+
+### Bug Fixes / Nits
+- Avoid `NotImplementedError` for async langchain embeddings (#7668)
+
+## [0.8.27] - 2023-09-14
+
+### New Features
+- add low-level tutorial section (#7673)
+
+### Bug Fixes / Nits
+- default delta should be a dict (#7665)
+- better query wrapper logic on LLMPredictor (#7667)
+
+## [0.8.26] - 2023-09-12
+
+### New Features
+- add non-linear embedding adapter (#7658)
+- Add "finetune + RAG" evaluation to knowledge fine-tuning notebook (#7643)
+
+### Bug Fixes / Nits
+- Fixed chunk-overlap for sentence splitter (#7590)
+
+## [0.8.25] - 2023-09-12
+
+### New Features
+- Added `AGENT_STEP` callback event type (#7652)
+
 ### Bug Fixes / Nits
 - Allowed `simple` mode to work with `as_chat_engine()` (#7637)
+- Fixed index error in azure streaming (#7646)
+- Removed `pdb` from llama-cpp (#7651)
 
 ## [0.8.24] - 2023-09-11
 
