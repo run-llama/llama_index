@@ -337,10 +337,15 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
-        chat_response = self._chat(
-            message, chat_history, function_call, mode=ChatResponseMode.WAIT
-        )
-        assert isinstance(chat_response, AgentChatResponse)
+        with self.callback_manager.event(
+            CBEventType.AGENT_STEP,
+            payload={EventPayload.MESSAGES: [message]},
+        ) as e:
+            chat_response = self._chat(
+                message, chat_history, function_call, mode=ChatResponseMode.WAIT
+            )
+            assert isinstance(chat_response, AgentChatResponse)
+            e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
     @trace_method("chat")
@@ -350,10 +355,15 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
-        chat_response = await self._achat(
-            message, chat_history, function_call, mode=ChatResponseMode.WAIT
-        )
-        assert isinstance(chat_response, AgentChatResponse)
+        with self.callback_manager.event(
+            CBEventType.AGENT_STEP,
+            payload={EventPayload.MESSAGES: [message]},
+        ) as e:
+            chat_response = await self._achat(
+                message, chat_history, function_call, mode=ChatResponseMode.WAIT
+            )
+            assert isinstance(chat_response, AgentChatResponse)
+            e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
     @trace_method("chat")
@@ -363,10 +373,15 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
-        chat_response = self._chat(
-            message, chat_history, function_call, mode=ChatResponseMode.STREAM
-        )
-        assert isinstance(chat_response, StreamingAgentChatResponse)
+        with self.callback_manager.event(
+            CBEventType.AGENT_STEP,
+            payload={EventPayload.MESSAGES: [message]},
+        ) as e:
+            chat_response = self._chat(
+                message, chat_history, function_call, mode=ChatResponseMode.STREAM
+            )
+            assert isinstance(chat_response, StreamingAgentChatResponse)
+            e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
     @trace_method("chat")
@@ -376,10 +391,15 @@ class BaseOpenAIAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
-        chat_response = await self._achat(
-            message, chat_history, function_call, mode=ChatResponseMode.STREAM
-        )
-        assert isinstance(chat_response, StreamingAgentChatResponse)
+        with self.callback_manager.event(
+            CBEventType.AGENT_STEP,
+            payload={EventPayload.MESSAGES: [message]},
+        ) as e:
+            chat_response = await self._achat(
+                message, chat_history, function_call, mode=ChatResponseMode.STREAM
+            )
+            assert isinstance(chat_response, StreamingAgentChatResponse)
+            e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
 

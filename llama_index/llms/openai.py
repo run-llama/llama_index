@@ -226,7 +226,16 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["delta"]
+                if len(response["choices"]) == 0 and response.get("prompt_annotations"):
+                    # When asking a stream response from the Azure OpenAI API
+                    # you first get an empty message with the content filtering
+                    # results. Ignore this message
+                    continue
+
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["delta"]
+                else:
+                    delta = {}
                 role = delta.get("role", "assistant")
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
@@ -240,7 +249,10 @@ class OpenAI(LLM):
                         if function_call.get("function_name", "") is None:
                             del function_call["function_name"]
                     else:
-                        function_call["arguments"] += function_call_delta["arguments"]
+                        function_call["arguments"] = (
+                            function_call.get("arguments", "")
+                            + function_call_delta["arguments"]
+                        )
 
                 additional_kwargs = {}
                 if function_call is not None:
@@ -302,7 +314,10 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["text"]
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["text"]
+                else:
+                    delta = ""
                 text += delta
                 yield CompletionResponse(
                     delta=delta,
@@ -439,7 +454,10 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["delta"]
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["delta"]
+                else:
+                    delta = {}
                 role = delta.get("role", "assistant")
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
@@ -517,7 +535,10 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                delta = response["choices"][0]["text"]
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["text"]
+                else:
+                    delta = ""
                 text += delta
                 yield CompletionResponse(
                     delta=delta,
