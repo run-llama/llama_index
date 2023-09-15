@@ -1,4 +1,5 @@
 try:
+    import pydantic.v1 as pydantic
     from pydantic.v1 import (
         BaseModel,
         Field,
@@ -14,6 +15,7 @@ try:
     from pydantic.v1.error_wrappers import ValidationError
     from pydantic.v1.generics import GenericModel
 except ImportError:
+    import pydantic
     from pydantic import (
         BaseModel,
         Field,
@@ -30,6 +32,7 @@ except ImportError:
     from pydantic.generics import GenericModel
 
 __all__ = [
+    "pydantic",
     "BaseModel",
     "Field",
     "PrivateAttr",
