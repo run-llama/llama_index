@@ -1,7 +1,5 @@
 import logging
-import os
-import re
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 from llama_index.bridge.pydantic import BaseModel
 
@@ -26,11 +24,13 @@ INVALID_API_KEY_ERROR_MESSAGE = """Invalid LLM API key."""
 logger = logging.getLogger(__name__)
 
 from openai.openai_object import OpenAIObject
+
 CompletionClientType = Type[OpenAIObject]
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     import litellm
+
     min_seconds = 4
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
@@ -51,7 +51,8 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
 
 
 def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) -> Any:
-    from litellm import completion 
+    from litellm import completion
+
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
@@ -66,6 +67,7 @@ async def acompletion_with_retry(
     is_chat_model: bool, max_retries: int, **kwargs: Any
 ) -> Any:
     from litellm import acompletion
+
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
@@ -79,6 +81,7 @@ async def acompletion_with_retry(
 
 def openai_modelname_to_contextsize(modelname: str) -> int:
     import litellm
+
     """Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
@@ -103,13 +106,16 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
 
     try:
         context_size = litellm.get_max_tokens(modelname)
-    except: 
-        context_size = 2048 # by default assume models have at least 2048 tokens 
+    except:
+        context_size = 2048  # by default assume models have at least 2048 tokens
 
     if context_size is None:
         raise ValueError(
             f"Unknown model: {modelname}. Please provide a valid OpenAI model name."
-            "Known models are: " + ", ".join(litellm.model_list) + "\nKnown providers are: " + ", ".join(litellm.provider_list)
+            "Known models are: "
+            + ", ".join(litellm.model_list)
+            + "\nKnown providers are: "
+            + ", ".join(litellm.provider_list)
         )
 
     return context_size
@@ -117,6 +123,7 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
 
 def is_chat_model(model: str) -> bool:
     import litellm
+
     return model in litellm.model_list
 
 
@@ -128,6 +135,7 @@ def is_function_calling_model(model: str) -> bool:
 
 def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
     from litellm import completion
+
     return completion
 
 
@@ -183,6 +191,7 @@ def validate_litellm_api_key(
     api_key: Optional[str] = None, api_type: Optional[str] = None
 ) -> None:
     import litellm
+
     api_key = litellm.validate_environment()
     if api_key is None:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
