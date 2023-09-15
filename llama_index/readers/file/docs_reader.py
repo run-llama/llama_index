@@ -81,6 +81,7 @@ class HWPReader(BaseReader):
         self.SECTION_NAME_LENGTH = len("Section")
         self.BODYTEXT_SECTION = "BodyText"
         self.HWP_TEXT_TAGS = [67]
+        self.text = ""
 
     def load_data(
         self, file: Path, extra_info: Optional[Dict] = None
@@ -102,13 +103,13 @@ class HWPReader(BaseReader):
         result = self._text_to_document(text=result_text, extra_info=extra_info)
         return [result]
 
-    def is_valid(self, dirs):
+    def is_valid(self, dirs: List[str]) -> bool:
         if [self.FILE_HEADER_SECTION] not in dirs:
             return False
 
         return [self.HWP_SUMMARY_SECTION] in dirs
 
-    def get_body_sections(self, dirs):
+    def get_body_sections(self, dirs: List[str]) -> List[str]:
         m = []
         for d in dirs:
             if d[0] == self.BODYTEXT_SECTION:
@@ -121,13 +122,13 @@ class HWPReader(BaseReader):
     ) -> Document:
         return Document(text=text, extra_info=extra_info or {})
 
-    def get_text(self):
+    def get_text(self) -> str:
         return self.text
 
         # 전체 text 추출
 
-    def _get_text(self, load_file, file_dir):
-        sections = self.get_body_sections(file_dir)
+    def _get_text(self, load_file: Any, file_dirs: List[str]) -> str:
+        sections = self.get_body_sections(file_dirs)
         text = ""
         for section in sections:
             text += self.get_text_from_section(load_file, section)
@@ -136,12 +137,12 @@ class HWPReader(BaseReader):
         self.text = text
         return self.text
 
-    def is_compressed(self, load_file):
+    def is_compressed(self, load_file: Any) -> bool:
         header = load_file.openstream("FileHeader")
         header_data = header.read()
         return (header_data[36] & 1) == 1
 
-    def get_text_from_section(self, load_file, section):
+    def get_text_from_section(self, load_file: Any, section: str) -> str:
         bodytext = load_file.openstream(section)
         data = bodytext.read()
 
