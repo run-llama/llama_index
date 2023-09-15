@@ -92,7 +92,10 @@ class PromptTemplate(BasePromptTemplate):
             **kwargs,
         }
 
-        return self.template.format(**all_kwargs)
+        prompt = self.template.format(**all_kwargs)
+        if self.output_parser is not None:
+            prompt = self.output_parser.format(prompt)
+        return prompt
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
@@ -154,7 +157,7 @@ class ChatPromptTemplate(BasePromptTemplate):
             **kwargs,
         }
 
-        messages = []
+        messages: List[ChatMessage] = []
         for message_template in self.message_templates:
             template_vars = get_template_vars(message_template.content or "")
             relevant_kwargs = {
@@ -163,9 +166,12 @@ class ChatPromptTemplate(BasePromptTemplate):
             content_template = message_template.content or ""
             content = content_template.format(**relevant_kwargs)
 
-            message = message_template.copy()
+            message: ChatMessage = message_template.copy()
             message.content = content
             messages.append(message)
+
+        if self.output_parser is not None:
+            messages = self.output_parser.format_messages(messages)
 
         return messages
 
