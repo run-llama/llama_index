@@ -132,3 +132,11 @@ maxdepth: 1
 ---
 /examples/llm/anyscale.ipynb
 ```
+
+## Ollama
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/ollama.ipynb
+```
