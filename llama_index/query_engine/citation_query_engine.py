@@ -191,18 +191,10 @@ class CitationQueryEngine(BaseQueryEngine):
 
             for text_chunk in text_chunks:
                 text = f"Source {len(new_nodes)+1}:\n{text_chunk}\n"
-
-                new_nodes.append(
-                    NodeWithScore(
-                        node=TextNode(
-                            text=text,
-                            excluded_llm_metadata_keys=node.node.excluded_llm_metadata_keys or [],
-                            metadata=node.node.metadata or {},
-                            relationships=node.node.relationships or {},
-                        ),
-                        score=node.score,
-                    )
-                )
+                
+                new_node = NodeWithScore(node=TextNode.parse_obj(node.node), score=node.score)
+                new_node.node.text = text
+                new_nodes.append(new_node)
         return new_nodes
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
