@@ -138,7 +138,7 @@ class IngestionPipeline(BaseModel):
                 )
 
         # upload?
-        client.project.create_pipeline_for_project_api_project_project_id_pipeline_post(
+        pipeline = client.project.create_pipeline_for_project_api_project_project_id_pipeline_post(
             name=pipeline_name,
             project_id=project_name,
             configured_transformations=configured_transformations,
@@ -148,11 +148,11 @@ class IngestionPipeline(BaseModel):
 
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
-        response = client.project.create_pipeline_execution_api_project_project_id_pipeline_pipeline_id_execution_post(
+        pipeline_execution = client.project.create_pipeline_execution_api_project_project_id_pipeline_pipeline_id_execution_post(
             project_id=project_name, pipeline_id=pipeline_name
         )
 
-        return f"Find your remote results here: {response.id}"
+        return f"Find your remote results here: {pipeline_execution.id}"
 
     def run_local(
         self, run_embeddings: bool = True, show_progress: bool = False
