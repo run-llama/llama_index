@@ -37,7 +37,19 @@ And that's it! Executions will get seamlessly piped to downstream service (e.g. 
 
 **NOTE**: TruLens (by TruEra) uses a different "one-click" experience. See below for details.
 
-## Partners
+## Simple (LLM Inputs/Outputs)
+
+This simpe obvservability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
+
+#### Usage Pattern
+
+```python
+import llama_index
+
+llama_index.set_global_handler("simple")
+```
+
+## Partner `One-Click` Integrations
 
 We offer a rich set of integrations with our partners. A short description + usage pattern, and guide is provided for each partner.
 
@@ -151,5 +163,3 @@ maxdepth: 1
 Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
 Colab <https://colab.research.google.com/github/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
 ```
-
-

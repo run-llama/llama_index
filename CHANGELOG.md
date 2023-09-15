@@ -8,6 +8,8 @@
 
 ### Bug Fixes / Nits
 - Avoid `NotImplementedError` for async langchain embeddings (#7668)
+- Imrpoved reliability of LLM selectors (#7678)
+- Fixed `query_wrapper_prompt` and `system_prompt` for output parsers and completion models (#7678)
 
 ## [0.8.27] - 2023-09-14
 
