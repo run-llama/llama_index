@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.evaluation import RelevancyEvaluator
+from llama_index.evaluation import BaseEvaluator
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
@@ -20,7 +20,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         query_engine: RetrieverQueryEngine,
-        evaluator: RelevancyEvaluator,
+        evaluator: BaseEvaluator,
         service_context: Optional[ServiceContext] = None,
         max_retries: int = 3,
         callback_manager: Optional[CallbackManager] = None,
