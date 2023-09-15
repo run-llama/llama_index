@@ -177,6 +177,26 @@ data_generator = DatasetGenerator.from_documents(documents)
 eval_questions = data_generator.generate_questions_from_nodes()
 ```
 
+## Batch Evaluation
+
+We also provide a batch evaluation runner for running a set of evaluators across many questions.
+
+```python
+from llama_index.evaluation import BatchEvalRunner
+
+runner = BatchEvalRunner(
+    {
+        "faithfulness": faithfulness_evaluator, "
+        "relevancy": relevancy_evaluator
+    },
+    workers=8,
+)
+
+eval_results = await runner.aevaluate_queries(
+    vector_index.as_query_engine(), queries=questions
+)
+```
+
 ## Integrations
 
 We also integrate with community evaluation tools.

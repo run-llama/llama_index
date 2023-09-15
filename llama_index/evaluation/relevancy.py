@@ -76,7 +76,7 @@ class RelevancyEvaluator(BaseEvaluator):
         else:
             self._refine_template = refine_template or DEFAULT_REFINE_TEMPLATE
 
-    def evaluate(
+    async def aevaluate(
         self,
         query: Optional[str] = None,
         response: Optional[str] = None,
@@ -98,7 +98,7 @@ class RelevancyEvaluator(BaseEvaluator):
             text_qa_template=self._eval_template,
             refine_template=self._refine_template,
         )
-        response_obj = query_engine.query(query_response)
+        response_obj = await query_engine.aquery(query_response)
 
         raw_response_txt = str(response_obj)
 
