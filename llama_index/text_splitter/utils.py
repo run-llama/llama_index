@@ -31,8 +31,10 @@ def split_by_char() -> Callable[[str], List[str]]:
 
 
 def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
-    import nltk
     import os
+
+    import nltk
+
     from llama_index.utils import get_cache_dir
 
     cache_dir = get_cache_dir()
@@ -47,7 +49,25 @@ def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
     except LookupError:
         nltk.download("punkt", download_dir=nltk_data_dir)
 
-    return nltk.sent_tokenize
+    tokenizer = nltk.tokenize.PunktSentenceTokenizer()
+
+    # get the spans and then return the sentences
+    # using the start index of each span
+    # instead of using end, use the start of the next span if available
+    def split(text: str) -> List[str]:
+        spans = [s for s in tokenizer.span_tokenize(text)]
+        sentences = []
+        for i, span in enumerate(spans):
+            start = span[0]
+            if i < len(spans) - 1:
+                end = spans[i + 1][0]
+            else:
+                end = len(text)
+            sentences.append(text[start:end])
+
+        return sentences
+
+    return split
 
 
 def split_by_regex(regex: str) -> Callable[[str], List[str]]:

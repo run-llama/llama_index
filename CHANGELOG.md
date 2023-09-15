@@ -2,12 +2,69 @@
 
 ## Unreleased
 
+### New Features
+- Added `HWPReader` (#7672)
+- Simplified portkey LLM interface (#7669)
+- Added async operation support to `ElasticsearchStore` vector store (#7613)
+
+### Bug Fixes / Nits
+- Avoid `NotImplementedError` for async langchain embeddings (#7668)
+- Imrpoved reliability of LLM selectors (#7678)
+- Fixed `query_wrapper_prompt` and `system_prompt` for output parsers and completion models (#7678)
+- Fixed node attribute inheritance in citation query engine (#7675)
+
+## [0.8.27] - 2023-09-14
+
+### New Features
+- add low-level tutorial section (#7673)
+
+### Bug Fixes / Nits
+- default delta should be a dict (#7665)
+- better query wrapper logic on LLMPredictor (#7667)
+
+## [0.8.26] - 2023-09-12
+
+### New Features
+- add non-linear embedding adapter (#7658)
+- Add "finetune + RAG" evaluation to knowledge fine-tuning notebook (#7643)
+
+### Bug Fixes / Nits
+- Fixed chunk-overlap for sentence splitter (#7590)
+
+## [0.8.25] - 2023-09-12
+
+### New Features
+- Added `AGENT_STEP` callback event type (#7652)
+
+### Bug Fixes / Nits
+- Allowed `simple` mode to work with `as_chat_engine()` (#7637)
+- Fixed index error in azure streaming (#7646)
+- Removed `pdb` from llama-cpp (#7651)
+
+## [0.8.24] - 2023-09-11
+
+## New Features
+- guide: fine-tuning to memorize knowledge (#7626)
+- added ability to customize prompt template for eval modules (#7626)
+
+### Bug Fixes
+- Properly detect `llama-cpp-python` version for loading the default GGML or GGUF `llama2-chat-13b` model (#7616)
+- Pass in `summary_template` properly with `RetrieverQueryEngine.from_args()` (#7621)
+- Fix span types in wandb callback (#7631)
+
+## [0.8.23] - 2023-09-09
+
 ### Bug Fixes
 - Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
+- Avoid negative chunk size error in refine process (#7607)
+- Fix relationships for small documents in hierarchical node parser (#7611)
+- Update Anyscale Endpoints integration with full streaming and async support (#7602)
+- Better support of passing credentials as LLM constructor args in `OpenAI`, `AzureOpenAI`, and `Anyscale` (#7602)
 
 ### Breaking Changes
 - Update milvus vector store to support filters and dynamic schemas (#7286)
   - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
+- Added NLTK to core dependencies to support the default sentence splitter (#7606)
 
 ## [0.8.22] - 2023-09-07
 

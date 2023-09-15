@@ -4,9 +4,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-
-from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -15,6 +12,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import validate_openai_api_key
@@ -250,10 +248,8 @@ class OpenAIEmbedding(BaseEmbedding):
     ) -> None:
         # Validate that either the openai.api_key property
         # or OPENAI_API_KEY env variable are set to a valid key
-        # Raises ValueError if missing or doesn't match valid format
-        validate_openai_api_key(
-            kwargs.get("api_key", None), kwargs.get("api_type", None)
-        )
+        # Raises ValueError if missing
+        validate_openai_api_key(kwargs.get("api_key", None))
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
