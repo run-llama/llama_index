@@ -3,11 +3,17 @@
 ## Unreleased
 
 ### New Features
+- Added support for `Ollama` LLMs (#7635)
+- Added `HWPReader` (#7672)
 - Simplified portkey LLM interface (#7669)
 - Added async operation support to `ElasticsearchStore` vector store (#7613)
+- Added support for `LiteLLM` (#7600)
 
 ### Bug Fixes / Nits
 - Avoid `NotImplementedError` for async langchain embeddings (#7668)
+- Imrpoved reliability of LLM selectors (#7678)
+- Fixed `query_wrapper_prompt` and `system_prompt` for output parsers and completion models (#7678)
+- Fixed node attribute inheritance in citation query engine (#7675)
 
 ## [0.8.27] - 2023-09-14
 
