@@ -21,6 +21,15 @@ maxdepth: 1
 
 ```
 
+## LiteLLM
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/litellm.ipynb
+
+```
+
 ## Hugging Face
 ```{toctree}
 ---
