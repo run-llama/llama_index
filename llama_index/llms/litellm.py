@@ -41,13 +41,16 @@ from llama_index.llms.litellm_utils import (
 class LiteLLM(LLM):
     class_type = "litellm"
 
-    model: str = Field(description="The LiteLLM model to use.") # For complete list of providers https://docs.litellm.ai/docs/providers
+    model: str = Field(
+        description="The LiteLLM model to use."
+    )  # For complete list of providers https://docs.litellm.ai/docs/providers
     temperature: float = Field(description="The tempature to use during generation.")
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the LLM API." # for all inputs https://docs.litellm.ai/docs/completion/input
+        default_factory=dict,
+        description="Additonal kwargs for the LLM API.",  # for all inputs https://docs.litellm.ai/docs/completion/input
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
@@ -64,11 +67,13 @@ class LiteLLM(LLM):
         **kwargs: Any,
     ) -> None:
         if "custom_llm_provider" in kwargs:
-            if "ollama" != kwargs["custom_llm_provider"] and "vllm" != kwargs["custom_llm_provider"]: # don't check keys for local models
+            if (
+                "ollama" != kwargs["custom_llm_provider"]
+                and "vllm" != kwargs["custom_llm_provider"]
+            ):  # don't check keys for local models
                 validate_litellm_api_key(api_key, api_type)
-        else: # by default assume it's a hosted endpoint
+        else:  # by default assume it's a hosted endpoint
             validate_litellm_api_key(api_key, api_type)
-
 
         additional_kwargs = additional_kwargs or {}
         if api_key is not None:
