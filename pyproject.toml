@@ -1,7 +1,7 @@
 [tool.mypy]
 ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
-exclude = ["notebooks", "build", "examples"]
+exclude = ["notebooks", "build", "examples", "llama_index/ingestion/client"]
 
 [tool.ruff]
 exclude = [
@@ -12,5 +12,6 @@ exclude = [
     ".ruff_cache",
     "examples",
     "notebooks",
-    ".git"
+    ".git",
+    "llama_index/ingestion/client",
 ]
