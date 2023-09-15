@@ -50,7 +50,8 @@ class LiteLLM(LLM):
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
-        description="Additonal kwargs for the LLM API.",  # for all inputs https://docs.litellm.ai/docs/completion/input
+        description="Additonal kwargs for the LLM API.",
+        # for all inputs https://docs.litellm.ai/docs/completion/input
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
