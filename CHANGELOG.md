@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.28] - 2023-09-16
 
 ### New Features
 - Add CorrectnessEvaluator (#7661)
