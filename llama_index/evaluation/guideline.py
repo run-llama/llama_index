@@ -68,7 +68,7 @@ class GuidelineEvaluator(BaseEvaluator):
         self._output_parser = PydanticOutputParser(output_cls=EvaluationData)
         self._eval_template.output_parser = self._output_parser
 
-    def evaluate(
+    async def aevaluate(
         self,
         query: Optional[str] = None,
         response: Optional[str] = None,
@@ -85,7 +85,7 @@ class GuidelineEvaluator(BaseEvaluator):
         logger.debug("query: %s", query)
         logger.debug("response: %s", response)
         logger.debug("guidelines: %s", self._guidelines)
-        eval_response = self._service_context.llm_predictor.predict(
+        eval_response = await self._service_context.llm_predictor.apredict(
             self._eval_template,
             query=query,
             response=response,

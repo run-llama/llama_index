@@ -89,7 +89,7 @@ class CorrectnessEvaluator(BaseEvaluator):
 
         self._score_threshold = score_threshold
 
-    def evaluate(
+    async def aevaluate(
         self,
         query: Optional[str] = None,
         response: Optional[str] = None,
@@ -101,9 +101,10 @@ class CorrectnessEvaluator(BaseEvaluator):
         del contexts  # Unused
 
         if query is None or response is None or reference is None:
+            print(query, response, reference, flush=True)
             raise ValueError("query, response, and reference must be provided")
 
-        eval_response = self._service_context.llm_predictor.predict(
+        eval_response = await self._service_context.llm_predictor.apredict(
             prompt=self._eval_template,
             query=query,
             generated_answer=response,

@@ -13,4 +13,5 @@ maxdepth: 1
 /examples/evaluation/correctness_eval.ipynb
 /examples/evaluation/Deepeval.ipynb
 /examples/evaluation/QuestionGeneration.ipynb
+/examples/evaluation/batch_eval.ipynb
 ```
