@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix context window metadata in lite-llm (#7696)
+
 ## [0.8.28] - 2023-09-16
 
 ### New Features
