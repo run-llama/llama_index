@@ -24,6 +24,7 @@ from llama_index.query_engine.sub_question_query_engine import (
     SubQuestionQueryEngine,
 )
 from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.custom import CustomQueryEngine
 from llama_index.indices.query.base import BaseQueryEngine
 
 __all__ = [
@@ -45,5 +46,6 @@ __all__ = [
     "FLAREInstructQueryEngine",
     "PandasQueryEngine",
     "KnowledgeGraphQueryEngine",
+    "CustomQueryEngine",
     "BaseQueryEngine",
 ]
