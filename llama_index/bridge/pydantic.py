@@ -11,6 +11,7 @@ try:
         StrictStr,
     )
     from pydantic.v1.fields import FieldInfo
+    from pydantic.v1.error_wrappers import ValidationError
 except ImportError:
     from pydantic import (
         BaseModel,
@@ -24,6 +25,7 @@ except ImportError:
         StrictStr,
     )
     from pydantic.fields import FieldInfo
+    from pydantic.error_wrappers import ValidationError
 
 __all__ = [
     "BaseModel",
@@ -36,4 +38,5 @@ __all__ = [
     "StrictInt",
     "StrictStr",
     "FieldInfo",
+    "ValidationError",
 ]

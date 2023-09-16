@@ -19,9 +19,6 @@ from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import (
     BasePromptTemplate,
-    ChatPromptTemplate,
-    PromptTemplate,
-    SelectorPromptTemplate,
 )
 from llama_index.schema import BaseComponent
 from llama_index.types import TokenAsyncGen, TokenGen
@@ -147,8 +144,8 @@ class LLMPredictor(BaseLLMPredictor):
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
-            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+            formatted_prompt = self._extend_prompt(formatted_prompt)
             response = self._llm.complete(formatted_prompt)
             output = response.text
 
@@ -166,8 +163,8 @@ class LLMPredictor(BaseLLMPredictor):
             chat_response = self._llm.stream_chat(messages)
             stream_tokens = stream_chat_response_to_tokens(chat_response)
         else:
-            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+            formatted_prompt = self._extend_prompt(formatted_prompt)
             stream_response = self._llm.stream_complete(formatted_prompt)
             stream_tokens = stream_completion_response_to_tokens(stream_response)
         return stream_tokens
@@ -184,8 +181,8 @@ class LLMPredictor(BaseLLMPredictor):
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
-            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+            formatted_prompt = self._extend_prompt(formatted_prompt)
             response = await self._llm.acomplete(formatted_prompt)
             output = response.text
 
@@ -205,47 +202,27 @@ class LLMPredictor(BaseLLMPredictor):
             chat_response = await self._llm.astream_chat(messages)
             stream_tokens = await astream_chat_response_to_tokens(chat_response)
         else:
-            prompt = self._extend_prompt(prompt)
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+            formatted_prompt = self._extend_prompt(formatted_prompt)
             stream_response = await self._llm.astream_complete(formatted_prompt)
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
-    def _extend_prompt(self, prompt: BasePromptTemplate) -> BasePromptTemplate:
+    def _extend_prompt(
+        self,
+        formatted_prompt: str,
+    ) -> str:
         """Add system and query wrapper prompts to base prompt"""
-        # TODO: avoid mutating prompt attributes
+        extended_prompt = formatted_prompt
         if self.system_prompt:
-            if isinstance(prompt, SelectorPromptTemplate):
-                default_template = prompt.default_template
-                if isinstance(default_template, PromptTemplate):
-                    default_template.template = (
-                        self.system_prompt + "\n\n" + default_template.template
-                    )
-                else:
-                    raise ValueError("PromptTemplate expected as default_template")
-            elif isinstance(prompt, ChatPromptTemplate):
-                prompt.message_templates = [
-                    ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt)
-                ] + prompt.message_templates
-            elif isinstance(prompt, PromptTemplate):
-                prompt.template = self.system_prompt + "\n\n" + prompt.template
+            extended_prompt = self.system_prompt + "\n\n" + extended_prompt
 
         if self.query_wrapper_prompt:
-            if isinstance(prompt, (PromptTemplate, ChatPromptTemplate)):
-                prompt.kwargs["query_str"] = self.query_wrapper_prompt.format(
-                    query_str=prompt.kwargs["query_str"]
-                )
-            elif isinstance(prompt, SelectorPromptTemplate):
-                if isinstance(default_template, PromptTemplate):
-                    prompt.default_template.kwargs[
-                        "query_str"
-                    ] = self.query_wrapper_prompt.format(
-                        query_str=prompt.default_template.kwargs["query_str"]
-                    )
-                else:
-                    raise ValueError("PromptTemplate expected as default_template")
+            extended_prompt = self.query_wrapper_prompt.format(
+                query_str=extended_prompt
+            )
 
-        return prompt
+        return extended_prompt
 
     def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Add system prompt to chat message list"""

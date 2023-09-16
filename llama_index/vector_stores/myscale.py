@@ -13,10 +13,15 @@ from llama_index.readers.myscale import (
     escape_str,
     format_list_to_string,
 )
-from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -98,25 +103,25 @@ class MyScaleVectorStore(VectorStore):
 
         # schema column name, type, and construct format method
         self.column_config: Dict = {
-            "id": {"type": "String", "extract_func": lambda x: x.id},
+            "id": {"type": "String", "extract_func": lambda x: x.node_id},
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
                 "type": "String",
                 "extract_func": lambda x: escape_str(
-                    x.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+                    x.get_content(metadata_mode=MetadataMode.NONE) or ""
                 ),
             },
             "vector": {
                 "type": "Array(Float32)",
-                "extract_func": lambda x: format_list_to_string(x.embedding),
+                "extract_func": lambda x: format_list_to_string(x.get_embedding()),
             },
             "node_info": {
                 "type": "JSON",
-                "extract_func": lambda x: json.dumps(x.node.node_info),
+                "extract_func": lambda x: json.dumps(x.node_info),
             },
             "metadata": {
                 "type": "JSON",
-                "extract_func": lambda x: json.dumps(x.node.metadata),
+                "extract_func": lambda x: json.dumps(x.metadata),
             },
         }
 
@@ -153,7 +158,7 @@ class MyScaleVectorStore(VectorStore):
 
     def _build_insert_statement(
         self,
-        values: List[NodeWithEmbedding],
+        values: List[BaseNode],
     ) -> str:
         _data = []
         for item in values:
@@ -175,26 +180,26 @@ class MyScaleVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to index.
+        """Add nodes to index.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
 
-        if not embedding_results:
+        if not nodes:
             return []
 
         if not self._index_existed:
-            self._create_index(len(embedding_results[0].embedding))
+            self._create_index(len(nodes[0].get_embedding()))
 
-        for result_batch in iter_batch(embedding_results, self.config.batch_size):
+        for result_batch in iter_batch(nodes, self.config.batch_size):
             insert_statement = self._build_insert_statement(values=result_batch)
             self._client.command(insert_statement)
 
-        return [result.id for result in embedding_results]
+        return [result.node_id for result in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

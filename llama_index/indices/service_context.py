@@ -239,11 +239,13 @@ class ServiceContext:
         embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
-        prompt_helper = prompt_helper or _get_default_prompt_helper(
-            llm_metadata=llm_predictor.metadata,
-            context_window=context_window,
-            num_output=num_output,
-        )
+        prompt_helper = prompt_helper or service_context.prompt_helper
+        if context_window is not None or num_output is not None:
+            prompt_helper = _get_default_prompt_helper(
+                llm_metadata=llm_predictor.metadata,
+                context_window=context_window,
+                num_output=num_output,
+            )
 
         node_parser = node_parser or service_context.node_parser
         if chunk_size is not None or chunk_overlap is not None:

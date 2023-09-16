@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -48,11 +48,52 @@ class Answer(DataClassJsonMixin):
 
 
 class SelectionOutputParser(BaseOutputParser):
+    REQUIRED_KEYS = {"choice", "reason"}
+
+    def _filter_dict(self, json_dict: dict) -> dict:
+        output_dict = json_dict
+        for key, val in json_dict.items():
+            if key in self.REQUIRED_KEYS:
+                continue
+            elif isinstance(val, dict):
+                found = True
+                for key in self.REQUIRED_KEYS:
+                    if key not in val:
+                        found = False
+                        break
+                if found:
+                    output_dict = val
+                    break
+            elif isinstance(val, list):
+                for item in val:
+                    if isinstance(item, dict):
+                        output_dict = self._filter_dict(item)
+
+        return output_dict
+
+    def _validate_output(self, output: List[dict]) -> List[dict]:
+        output_json = []
+        for json_dict in output:
+            valid = True
+            for key in self.REQUIRED_KEYS:
+                if key not in json_dict:
+                    valid = False
+                    break
+
+            if not valid:
+                json_dict = self._filter_dict(json_dict)
+
+            output_json.append(json_dict)
+
+        return output_json
+
     def parse(self, output: str) -> Any:
         output = _marshal_llm_to_json(output)
         json_output = json.loads(output)
         if isinstance(json_output, dict):
             json_output = [json_output]
+
+        json_output = self._validate_output(json_output)
         answers = [Answer.from_dict(json_dict) for json_dict in json_output]
         return StructuredOutput(raw_output=output, parsed_output=answers)
 

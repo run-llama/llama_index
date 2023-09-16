@@ -7,10 +7,9 @@ import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.schema import TextNode
+from llama_index.schema import BaseNode, TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -116,32 +115,30 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "QdraantVectorStore"
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        """Add embedding results to index.
+    def add(self, nodes: List[BaseNode]) -> List[str]:
+        """Add nodes to index.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
         from qdrant_client.http import models as rest
 
-        if len(embedding_results) > 0 and not self._collection_initialized:
+        if len(nodes) > 0 and not self._collection_initialized:
             self._create_collection(
                 collection_name=self.collection_name,
-                vector_size=len(embedding_results[0].embedding),
+                vector_size=len(nodes[0].get_embedding()),
             )
 
         ids = []
-        for result_batch in iter_batch(embedding_results, self.batch_size):
+        for node_batch in iter_batch(nodes, self.batch_size):
             node_ids = []
             vectors = []
             payloads = []
-            for result in result_batch:
-                assert isinstance(result, NodeWithEmbedding)
-                assert isinstance(result.node, TextNode)
-                node_ids.append(result.id)
-                vectors.append(result.embedding)
-                node = result.node
+            for node in node_batch:
+                assert isinstance(node, BaseNode)
+                node_ids.append(node.node_id)
+                vectors.append(node.get_embedding())
 
                 metadata = node_to_metadata_dict(
                     node, remove_text=False, flat_metadata=self.flat_metadata

@@ -40,6 +40,7 @@ Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can t
 ---
 maxdepth: 1
 ---
+Fine-tuning an Adapter </examples/finetuning/embeddings/finetune_embedding_adapter.ipynb>
 Embedding Fine-tuning Guide </examples/finetuning/embeddings/finetune_embedding.ipynb>
 ```
 
@@ -78,6 +79,19 @@ maxdepth: 1
 GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1vWeJBXdFEObuihO7Z8ui2CAYkdHQORqo?usp=sharing>
 GPT-3.5 Fine-tuning Notebook (in Repo) <https://github.com/jerryjliu/llama_index/blob/main/experimental/openai_fine_tuning/openai_fine_tuning.ipynb>
 ```
+
+### [WIP] Finetuning GPT-3.5 to Memorize Knowledge
+
+We have a guide experimenting with showing how to use OpenAI fine-tuning to memorize a body of text.
+Still WIP! Not quite as good as RAG yet.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/finetuning/knowledge/finetune_knowledge.ipynb
+```
+
 
 
 ### Finetuning Llama 2 for Better Text-to-SQL 
