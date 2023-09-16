@@ -146,3 +146,8 @@ def test_chat_model_basic(monkeypatch: MonkeyPatch) -> None:
 
         chat_response = llm.chat([message])
         assert chat_response.message.content == "\n\nThis is a test!"
+
+
+def test_metadata():
+    llm = LiteLLM(model="gpt-3.5-turbo")
+    assert isinstance(llm.metadata.context_window, int)

@@ -104,7 +104,7 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         modelname = modelname.split(":")[0]
 
     try:
-        context_size = litellm.get_max_tokens(modelname)
+        context_size = litellm.get_max_tokens(modelname)["max_tokens"]
     except Exception:
         context_size = 2048  # by default assume models have at least 2048 tokens
 
