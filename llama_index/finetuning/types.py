@@ -28,3 +28,15 @@ class BaseEmbeddingFinetuneEngine(ABC):
     @abstractmethod
     def get_finetuned_model(self, **model_kwargs: Any) -> BaseEmbedding:
         """Gets finetuned model."""
+
+
+class BaseCrossEncoderFinetuningEngine(ABC):
+    """Base Cross Encoder Finetuning Engine"""
+
+    @abstractmethod
+    def finetune(self) -> None:
+        """Goes off and does stuff."""
+
+    @abstractmethod
+    def get_finetuned_model(self, **model_kwargs: Any):
+        """Gets finetuned model."""
