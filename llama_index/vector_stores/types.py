@@ -2,7 +2,16 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable, Dict
+from typing import (
+    Any,
+    List,
+    Optional,
+    Protocol,
+    Sequence,
+    Union,
+    runtime_checkable,
+    Dict,
+)
 
 import fsspec
 
@@ -72,6 +81,7 @@ class MetadataFilters(BaseModel):
             filter = ExactMatchFilter(key=k, value=v)
             filters.append(filter)
         return cls(filters=filters)
+
 
 class VectorStoreQuerySpec(BaseModel):
     """Schema for a structured request for vector store
