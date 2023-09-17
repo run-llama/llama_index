@@ -5,6 +5,7 @@ from llama_index.indices.knowledge_graph.retrievers import (
     KGTableRetriever,
     KnowledgeGraphRAGRetriever,
 )
+from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 from llama_index.indices.list.retrievers import (
     ListIndexEmbeddingRetriever,
     ListIndexRetriever,
@@ -48,6 +49,7 @@ __all__ = [
     "AutoMergingRetriever",
     "RouterRetriever",
     "BM25Retriever",
+    "VectaraRetriever",
     # legacy
     "ListIndexEmbeddingRetriever",
     "ListIndexRetriever",

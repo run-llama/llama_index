@@ -14,6 +14,7 @@ from llama_index.indices.keyword_table.simple_base import (
     GPTSimpleKeywordTableIndex,
 )
 from llama_index.indices.list.base import GPTListIndex, SummaryIndex, ListIndex
+from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.indices.tree.base import TreeIndex, GPTTreeIndex
 
 __all__ = [
@@ -22,6 +23,7 @@ __all__ = [
     "RAKEKeywordTableIndex",
     "SummaryIndex",
     "TreeIndex",
+    "VectaraIndex",
     # legacy
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",

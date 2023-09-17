@@ -73,7 +73,7 @@ class ElasticsearchReader(BasePydanticReader):
             List[Document]: A list of documents.
 
         """
-        res = self._client.post(f"{self._index}/_search", json=query).json()
+        res = self._client.post(f"{self.index}/_search", json=query).json()
         documents = []
         for hit in res["hits"]["hits"]:
             value = hit["_source"][field]

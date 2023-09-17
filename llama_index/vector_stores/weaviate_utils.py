@@ -154,7 +154,7 @@ def add_node(
     )
     metadata.update(additional_metadata)
 
-    vector = node.embedding
+    vector = node.get_embedding()
     id = node.node_id
 
     # if batch object is provided (via a context manager), use that instead

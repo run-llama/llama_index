@@ -15,7 +15,9 @@ as the storage backend for `VectorStoreIndex`.
 - Azure Cognitive Search (`CognitiveSearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - [Apache Cassandra®](https://cassandra.apache.org/) and compatible databases such as [Astra DB](https://www.datastax.com/press-release/datastax-adds-vector-search-to-astra-db-on-google-cloud-for-building-real-time-generative-ai-applications) (`CassandraVectorStore`)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
+- Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
+- Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
@@ -29,7 +31,6 @@ as the storage backend for `VectorStoreIndex`.
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
-
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -79,6 +80,37 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+**Elasticsearch**
+
+First, you can start Elasticsearch either locally or on [Elastic cloud](https://cloud.elastic.co/registration?utm_source=llama-index&utm_content=documentation).
+
+To start Elasticsearch locally with docker, run the following command:
+
+```bash
+docker run -p 9200:9200 \
+  -e "discovery.type=single-node" \
+  -e "xpack.security.enabled=false" \
+  -e "xpack.security.http.ssl.enabled=false" \
+  -e "xpack.license.self_generated.type=trial" \
+  docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+```
+
+Then connect and use Elasticsearch as a vector database with LlamaIndex
+
+```python
+from llama_index.vector_stores import ElasticsearchStore
+vector_store = ElasticsearchStore(
+    index_name="llm-project",
+    es_url="http://localhost:9200",
+    # Cloud connection options:
+    # es_cloud_id="<cloud_id>",
+    # es_user="elastic",
+    # es_password="<password>",
+)
+```
+
+This can be used with the `VectorStoreIndex` to provide a query interface for retrieval, querying, deleting, persisting the index, and more.
 
 **Redis**
 
@@ -274,9 +306,28 @@ vector_store = ChromaVectorStore(
 )
 ```
 
+**Epsilla**
+
+```python
+from pyepsilla import vectordb
+from llama_index.vector_stores import EpsillaVectorStore
+
+# Creating an Epsilla client
+epsilla_client = vectordb.Client()
+
+# Construct vector store
+vector_store = EpsillaVectorStore(client=epsilla_client)
+```
+
+**Note**: `EpsillaVectorStore` depends on the `pyepsilla` library and a running Epsilla vector database.
+Use `pip/pip3 install pyepsilla` if not installed yet.
+A running Epsilla vector database could be found through docker image.
+For complete instructions, see the following documentation:
+https://epsilla-inc.gitbook.io/epsilladb/quick-start
+
 **Milvus**
 
-- Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include metadata.
+- Milvus Index offers the ability to store both Documents and their embeddings.
 
 ```python
 import pymilvus
@@ -284,8 +335,7 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    host='localhost',
-    port=19530,
+    uri='https://localhost:19530',
     overwrite='True'
 )
 
@@ -308,11 +358,8 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    host='foo.vectordb.zillizcloud.com',
-    port=403,
-    user="db_admin",
-    password="foo",
-    use_secure=True,
+    uri='foo.vectordb.zillizcloud.com',
+    token="your_token_here"
     overwrite='True'
 )
 ```
@@ -386,17 +433,18 @@ index = VectorStoreIndex.from_documents(uber_docs, storage_context=storage_conte
 
 - Neo4j stores texts, metadata, and embeddings and can be customized to return graph data in the form of metadata.
 
-
 ```python
 from llama_index.vector_stores import Neo4jVectorStore
 
 # construct vector store
 neo4j_vector = Neo4jVectorStore(
     username="neo4j",
-    password="pleaseletmein", 
-    url="bolt://localhost:7687", 
+    password="pleaseletmein",
+    url="bolt://localhost:7687",
     embed_dim=1536
 )
+
+```
 
 **Azure Cognitive Search**
 
@@ -535,6 +583,7 @@ documents = reader.load_data(
 caption: Examples
 maxdepth: 1
 ---
+../../examples/vector_stores/Elasticsearch_demo.ipynb
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
 ../../examples/vector_stores/SimpleIndexDemoMMR.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
@@ -549,6 +598,7 @@ maxdepth: 1
 ../../examples/vector_stores/PineconeIndexDemo.ipynb
 ../../examples/vector_stores/CassandraIndexDemo.ipynb
 ../../examples/vector_stores/ChromaIndexDemo.ipynb
+../../examples/vector_stores/EpsillaIndexDemo.ipynb
 ../../examples/vector_stores/LanceDBIndexDemo.ipynb
 ../../examples/vector_stores/MilvusIndexDemo.ipynb
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
