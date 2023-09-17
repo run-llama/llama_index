@@ -6,7 +6,6 @@ from llama_index.vector_stores import SimpleVectorStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStoreQuery,
 )
 
@@ -15,40 +14,28 @@ _NODE_ID_WEIGHT_2_RANK_C = "7D9CD555-846C-445C-A9DD-F8924A01411D"
 _NODE_ID_WEIGHT_3_RANK_C = "452D24AB-F185-414C-A352-590B4B9EE51B"
 
 
-def _node_embeddings_for_test() -> List[NodeWithEmbedding]:
+def _node_embeddings_for_test() -> List[TextNode]:
     return [
-        NodeWithEmbedding(
+        TextNode(
+            text="lorem ipsum",
+            id_=_NODE_ID_WEIGHT_1_RANK_A,
             embedding=[1.0, 0.0],
-            node=TextNode(
-                text="lorem ipsum",
-                id_=_NODE_ID_WEIGHT_1_RANK_A,
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
-                },
-                metadata={"weight": 1.0, "rank": "a"},
-            ),
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
+            metadata={"weight": 1.0, "rank": "a"},
         ),
-        NodeWithEmbedding(
+        TextNode(
+            text="lorem ipsum",
+            id_=_NODE_ID_WEIGHT_2_RANK_C,
             embedding=[0.0, 1.0],
-            node=TextNode(
-                text="lorem ipsum",
-                id_=_NODE_ID_WEIGHT_2_RANK_C,
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
-                },
-                metadata={"weight": 2.0, "rank": "c"},
-            ),
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
+            metadata={"weight": 2.0, "rank": "c"},
         ),
-        NodeWithEmbedding(
+        TextNode(
+            text="lorem ipsum",
+            id_=_NODE_ID_WEIGHT_3_RANK_C,
             embedding=[1.0, 1.0],
-            node=TextNode(
-                text="lorem ipsum",
-                id_=_NODE_ID_WEIGHT_3_RANK_C,
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")
-                },
-                metadata={"weight": 3.0, "rank": "c"},
-            ),
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")},
+            metadata={"weight": 3.0, "rank": "c"},
         ),
     ]
 
