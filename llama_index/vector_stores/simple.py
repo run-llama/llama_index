@@ -172,7 +172,7 @@ class SimpleVectorStore(VectorStore):
             and not self._data.metadata_dict
         ):
             raise ValueError(
-                "Cannot filter on metadata for stores that were persisted without metadata. "
+                "Cannot filter stores that were persisted without metadata. "
                 "Please rebuild the store with metadata to enable filtering."
             )
         # Prefilter nodes based on the query filter and node ID restrictions.

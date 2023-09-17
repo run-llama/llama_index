@@ -12,7 +12,8 @@ def test_storage_context_dict() -> None:
     storage_context.vector_store.add([node])
     storage_context.docstore.add_documents([node])
     storage_context.index_store.add_index_struct(index_struct)
-    # Refetch the node from the storage context, as its metadata and hash may have changed.
+    # Refetch the node from the storage context,
+    # as its metadata and hash may have changed.
     retrieved_node = storage_context.docstore.get_document(node.node_id)
 
     # save
