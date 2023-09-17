@@ -47,6 +47,7 @@ class SimpleVectorStoreTest(unittest.TestCase):
 
         query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3)
         result = simple_vector_store.query(query)
+        assert result.ids is not None
         self.assertCountEqual(
             result.ids,
             [
@@ -121,6 +122,7 @@ class SimpleVectorStoreTest(unittest.TestCase):
         )
         query = VectorStoreQuery(query_embedding=[1.0, 1.0], filters=filters)
         result = simple_vector_store.query(query)
+        assert result.ids is not None
         self.assertEqual(len(result.ids), 0)
 
     def test_query_with_filter_on_unknown_field_returns_no_matches(self) -> None:
@@ -132,6 +134,7 @@ class SimpleVectorStoreTest(unittest.TestCase):
         )
         query = VectorStoreQuery(query_embedding=[1.0, 1.0], filters=filters)
         result = simple_vector_store.query(query)
+        assert result.ids is not None
         self.assertEqual(len(result.ids), 0)
 
     def test_delete_removes_document_from_query_results(self) -> None:

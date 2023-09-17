@@ -13,7 +13,7 @@ def test_storage_context_dict() -> None:
     storage_context.docstore.add_documents([node])
     storage_context.index_store.add_index_struct(index_struct)
     # Refetch the node from the storage context, as its metadata and hash may have changed.
-    node = storage_context.docstore.get_document(node.node_id)
+    retrieved_node = storage_context.docstore.get_document(node.node_id)
 
     # save
     save_dict = storage_context.to_dict()
@@ -22,7 +22,7 @@ def test_storage_context_dict() -> None:
     loaded_storage_context = StorageContext.from_dict(save_dict)
 
     # test
-    assert loaded_storage_context.docstore.get_node(node.node_id) == node
+    assert loaded_storage_context.docstore.get_node(node.node_id) == retrieved_node
     assert (
         storage_context.index_store.get_index_struct(index_struct.index_id)
         == index_struct
