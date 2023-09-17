@@ -1,7 +1,7 @@
 """Custom query engine."""
 
 from llama_index.indices.query.base import BaseQueryEngine
-from typing import Optional, Any
+from typing import Union
 from pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.response.schema import Response
@@ -11,18 +11,27 @@ from llama_index.bridge.pydantic import Field
 from abc import abstractmethod
 
 
+STR_OR_RESPONSE_TYPE = Union[Response, str]
+
+
 class CustomQueryEngine(BaseModel, BaseQueryEngine):
     """Custom query engine.
-    
+
+    Subclasses can define additional attributes as Pydantic fields.
+    Subclasses must implement the `custom_query` method, which takes a query string
+    and returns either a Response object or a string as output.
+
+    They can optionally implement the `acustom_query` method for async support.
+
     """
 
-    callback_manager: Optional[CallbackManager] = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
 
     class Config:
         arbitrary_types_allowed = True
-  
+
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         with self.callback_manager.as_trace("query"):
             # if query bundle, just run the query
@@ -30,7 +39,12 @@ class CustomQueryEngine(BaseModel, BaseQueryEngine):
                 query_str = str_or_query_bundle.query_str
             else:
                 query_str = str_or_query_bundle
-            response = self.custom_query(query_str)
+            raw_response = self.custom_query(query_str)
+            response = (
+                Response(raw_response)
+                if isinstance(raw_response, str)
+                else raw_response
+            )
             return response
 
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
@@ -39,20 +53,25 @@ class CustomQueryEngine(BaseModel, BaseQueryEngine):
                 query_str = str_or_query_bundle.query_str
             else:
                 query_str = str_or_query_bundle
-            response = await self.acustom_query(query_str)
+            raw_response = await self.acustom_query(query_str)
+            response = (
+                Response(raw_response)
+                if isinstance(raw_response, str)
+                else raw_response
+            )
             return response
 
     @abstractmethod
-    def custom_query(self, query_str: str) -> Response:
+    def custom_query(self, query_str: str) -> STR_OR_RESPONSE_TYPE:
         """Run a custom query."""
 
-    async def acustom_query(self, query_str: str) -> Response:
+    async def acustom_query(self, query_str: str) -> STR_OR_RESPONSE_TYPE:
         """Run a custom query asynchronously."""
         # by default, just run the synchronous version
         return self.custom_query(query_str)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        pass
+        raise NotImplementedError("This query engine does not support _query.")
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        pass
+        raise NotImplementedError("This query engine does not support _aquery.")

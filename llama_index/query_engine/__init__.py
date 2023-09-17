@@ -47,5 +47,5 @@ __all__ = [
     "PandasQueryEngine",
     "KnowledgeGraphQueryEngine",
     "BaseQueryEngine",
-    "CustomQueryEngine"
+    "CustomQueryEngine",
 ]
