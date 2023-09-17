@@ -1,9 +1,12 @@
 """Cross Encoder Finetuning Engine."""
 
 
-from typing import Any, Optional,List
-from llama_index.finetuning.cross_encoders.dataset_gen import CrossEncoderFinetuningDatasetSample
+from typing import Any, Optional, List, Union
+from llama_index.finetuning.cross_encoders.dataset_gen import (
+    CrossEncoderFinetuningDatasetSample,
+)
 from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
+from sentence_transformers import CrossEncoder
 
 
 class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
@@ -15,8 +18,8 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
         model_id: str = "cross-encoder/ms-marco-MiniLM-L-12-v2",
         model_output_path: str = "exp_finetune",
         batch_size: int = 10,
-        val_dataset: List[CrossEncoderFinetuningDatasetSample] = None,
-        loss: Optional[Any] = None,
+        val_dataset: Union[List[CrossEncoderFinetuningDatasetSample], None] = None,
+        loss: Union[Any, None] = None,
         epochs: int = 2,
         show_progress_bar: bool = True,
         evaluation_steps: int = 50,
@@ -44,7 +47,9 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
         self.loader: DataLoader = DataLoader(examples, batch_size=batch_size)
 
         # define evaluator
-        from sentence_transformers.cross_encoder.evaluation import CEBinaryClassificationEvaluator
+        from sentence_transformers.cross_encoder.evaluation import (
+            CEBinaryClassificationEvaluator,
+        )
 
         # Todo: also add support for CERerankingEvaluator
         evaluator: Optional[CEBinaryClassificationEvaluator] = None
@@ -56,7 +61,7 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
                 val_query = val_sample.query
                 val_text = val_sample.context
                 val_score = val_sample.score
-                val_example = InputExample(texts=[val_query,val_text], label=val_score)
+                val_example = InputExample(texts=[val_query, val_text], label=val_score)
                 dev_samples.append(val_example)
 
             evaluator = CEBinaryClassificationEvaluator.from_input_examples(dev_samples)
@@ -83,7 +88,7 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
             evaluation_steps=self.evaluation_steps,
         )
 
-    def get_finetuned_model(self, **model_kwargs: Any):
+    def get_finetuned_model(self, **model_kwargs: Any) -> CrossEncoder:
         """Gets finetuned model."""
 
         from sentence_transformers.cross_encoder import CrossEncoder

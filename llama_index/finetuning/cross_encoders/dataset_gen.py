@@ -9,7 +9,7 @@ import tiktoken
 from llama_index.llms.base import LLM
 from llama_index.schema import Document, TextNode, MetadataMode
 from llama_index import VectorStoreIndex
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import uuid
 import re
 import json
@@ -19,6 +19,7 @@ from dataclasses import dataclass
 @dataclass
 class CrossEncoderFinetuningDatasetSample:
     """Class for keeping track of each item of Cross-Encoder training Dataset"""
+
     query: str
     context: str
     score: int
@@ -33,18 +34,22 @@ DEFAULT_QUERY_GEN_USER_PROMPT = """Take a deep breath, read through the below pr
 Document: {context}"""
 
 
-def generate_synthetic_queries_over_documents(documents: List[Document], num_questions_per_chunk: int =5,
-                                              max_chunk_length: int = 3000, qa_topic: str= "everything",
-                                              llm: Optional[LLM] = None,
-                                              qa_generate_system_msg: str = DEFAULT_QUERY_GEN_SYSTEM_PROMPT,
-                                              qa_generate_user_msg: str = DEFAULT_QUERY_GEN_USER_PROMPT) -> List[str]:
+def generate_synthetic_queries_over_documents(
+    documents: List[Document],
+    num_questions_per_chunk: int = 5,
+    max_chunk_length: int = 3000,
+    qa_topic: str = "everything",
+    llm: Optional[LLM] = None,
+    qa_generate_system_msg: str = DEFAULT_QUERY_GEN_SYSTEM_PROMPT,
+    qa_generate_user_msg: str = DEFAULT_QUERY_GEN_USER_PROMPT,
+) -> List[str]:
     questions = []
     text_splitter = TokenTextSplitter(
         separator=" ",
         chunk_size=max_chunk_length,
         chunk_overlap=0,
         backup_separators=["\n"],
-        tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode
+        tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode,
     )
 
     llm = llm or OpenAI(model="gpt-3.5-turbo-16k", temperature=0.3)
@@ -57,22 +62,27 @@ def generate_synthetic_queries_over_documents(documents: List[Document], num_que
     }
 
     for node_id, text in tqdm(node_dict.items()):
-        system_msg = qa_generate_system_msg.format(num_questions_per_chunk=num_questions_per_chunk, qa_topic=qa_topic)
-        user_msg = qa_generate_user_msg.format(num_questions_per_chunk=num_questions_per_chunk, context=text)
+        system_msg = qa_generate_system_msg.format(
+            num_questions_per_chunk=num_questions_per_chunk, qa_topic=qa_topic
+        )
+        user_msg = qa_generate_user_msg.format(
+            num_questions_per_chunk=num_questions_per_chunk, context=text
+        )
         messages = [
             ChatMessage(role="system", content=system_msg),
             ChatMessage(role="user", content=user_msg),
         ]
         response = llm.chat(messages)
-        response_content = response.message.content
+        response_content: str = response.message.content if response.message.content is not None else ""
         response_questions = re.split(";|\n", response_content)
         questions.extend(response_questions)
 
     return questions
 
+
 # Query-Doc relevance prompt taken from OpenAI cookbook:-
 # https://github.com/openai/openai-cookbook/blob/main/examples/Search_reranking_with_cross-encoders.ipynb
-DEFAULT_QUERY_DOC_RELEVANCE_PROMPT ='''You are an Assistant responsible for helping detect whether the retrieved document is relevant to the query. For a given input, you need to output a single token: "Yes" or "No" indicating the retrieved document is relevant to the query.
+DEFAULT_QUERY_DOC_RELEVANCE_PROMPT = '''You are an Assistant responsible for helping detect whether the retrieved document is relevant to the query. For a given input, you need to output a single token: "Yes" or "No" indicating the retrieved document is relevant to the query.
 
 Query: How to plant a tree?
 Document: """Cars were invented in 1886, when German inventor Carl Benz patented his Benz Patent-Motorwagen.[3][4][5] Cars became widely available during the 20th century. One of the first cars affordable by the masses was the 1908 Model T, an American car manufactured by the Ford Motor Company. Cars were rapidly adopted in the US, where they replaced horse-drawn carriages.[6] In Europe and other parts of the world, demand for automobiles did not increase until after World War II.[7] The car is considered an essential part of the developed economy."""
@@ -100,10 +110,14 @@ Relevant:
 '''
 
 
-def generate_ce_fine_tuning_dataset(documents: List[Document], questions_list: List[str], max_chunk_length: int = 1000,
-                                    llm: Optional[LLM] = None,
-                                    qa_doc_relevance_prompt: str = DEFAULT_QUERY_DOC_RELEVANCE_PROMPT,
-                                    top_k: int = 8) -> List[CrossEncoderFinetuningDatasetSample]:
+def generate_ce_fine_tuning_dataset(
+    documents: List[Document],
+    questions_list: List[str],
+    max_chunk_length: int = 1000,
+    llm: Optional[LLM] = None,
+    qa_doc_relevance_prompt: str = DEFAULT_QUERY_DOC_RELEVANCE_PROMPT,
+    top_k: int = 8,
+) -> List[CrossEncoderFinetuningDatasetSample]:
     ce_dataset_list = []
 
     text_splitter = TokenTextSplitter(
@@ -111,12 +125,14 @@ def generate_ce_fine_tuning_dataset(documents: List[Document], questions_list: L
         chunk_size=max_chunk_length,
         chunk_overlap=0,
         backup_separators=["\n"],
-        tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode
+        tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode,
     )
 
     # Use logit bias in case of OpenAI for the tokens for Yes and No
     # to decrease the likelihood of any other tokens occurring
-    llm = llm or OpenAI(model="gpt-3.5-turbo-16k", temperature=0.1, logit_bias={9642: 1, 2822: 1})
+    llm = llm or OpenAI(
+        model="gpt-3.5-turbo-16k", temperature=0.1, logit_bias={9642: 1, 2822: 1}
+    )
 
     node_parser = SimpleNodeParser(text_splitter=text_splitter)
     nodes = node_parser.get_nodes_from_documents(documents, show_progress=False)
@@ -125,51 +141,27 @@ def generate_ce_fine_tuning_dataset(documents: List[Document], questions_list: L
     retriever = index.as_retriever(similarity_top_k=top_k)
 
     for question in tqdm(questions_list):
-        if question != '':
+        if question != "":
             retrieved_nodes = retriever.retrieve(question)
             for node in retrieved_nodes:
                 node_content = node.get_text()
-                msg_prompt = qa_doc_relevance_prompt.format(query=question, document=node_content)
+                msg_prompt = qa_doc_relevance_prompt.format(
+                    query=question, document=node_content
+                )
                 response = llm.complete(msg_prompt)
                 result = response.text.strip().lower()
 
                 if result == "yes":
                     question_row = CrossEncoderFinetuningDatasetSample(
-                        query=question,
-                        context=node_content,
-                        score=1
+                        query=question, context=node_content, score=1
                     )
                     ce_dataset_list.append(question_row)
                 elif result == "no":
                     question_row = CrossEncoderFinetuningDatasetSample(
-                        query=question,
-                        context=node_content,
-                        score=0
+                        query=question, context=node_content, score=0
                     )
                     ce_dataset_list.append(question_row)
                 else:
                     pass
 
     return ce_dataset_list
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
