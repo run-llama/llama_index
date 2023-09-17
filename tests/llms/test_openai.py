@@ -248,15 +248,3 @@ def test_validates_api_key_is_present() -> None:
     # We can create a new LLM when the api_key is set on the
     # library directly
     assert OpenAI()
-
-
-def test_validates_api_key_format_from_env() -> None:
-    with CachedOpenAIApiKeys(set_env_key_to="api-fake123"):
-        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
-            OpenAI()
-
-
-def test_validates_api_key_format_in_library() -> None:
-    with CachedOpenAIApiKeys(set_library_key_to="api-fake123"):
-        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
-            OpenAI()

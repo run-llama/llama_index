@@ -19,6 +19,7 @@ LLM Implementations
    llms/huggingface.rst
    llms/langchain.rst
    llms/anthropic.rst
+   llms/litellm.rst
    llms/llama_cpp.rst
    llms/palm.rst
    llms/predibase.rst

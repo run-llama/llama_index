@@ -41,8 +41,10 @@ class VectorIndexAutoRetriever(BaseRetriever):
             Uses default template string if None.
         service_context: service context containing reference to LLMPredictor.
             Uses service context from index be default if None.
-        max_top_k: the maximum top_k allowed. The top_k set by LLM will be clamped
-            to this value.
+        similarity_top_k (int): number of top k results to return.
+        max_top_k (int):
+            the maximum top_k allowed. The top_k set by LLM or similarity_top_k will
+            be clamped to this value.
     """
 
     def __init__(
@@ -52,6 +54,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         prompt_template_str: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,
         max_top_k: int = 10,
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
         self._index = index
         self._vector_store_info = vector_store_info
@@ -69,6 +72,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
 
         # additional config
         self._max_top_k = max_top_k
+        self._similarity_top_k = similarity_top_k
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
@@ -103,9 +107,11 @@ class VectorIndexAutoRetriever(BaseRetriever):
         _logger.info(f"Using filters: {filter_dict}")
 
         if query_spec.top_k is None:
-            similarity_top_k = DEFAULT_SIMILARITY_TOP_K
+            similarity_top_k = self._similarity_top_k
         else:
-            similarity_top_k = min(query_spec.top_k, self._max_top_k)
+            similarity_top_k = min(
+                query_spec.top_k, self._max_top_k, self._similarity_top_k
+            )
 
         _logger.info(f"Using top_k: {similarity_top_k}")
 

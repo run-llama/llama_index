@@ -15,11 +15,11 @@ from llama_index.indices.query.embedding_utils import (
     get_top_k_mmr_embeddings,
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -51,8 +51,14 @@ def _build_metadata_filter_fn(
         metadata = metadata_lookup_fn(node_id)
         for filter_ in filter_list:
             metadata_value = metadata.get(filter_.key, None)
-            if metadata_value is None or metadata_value != filter_.value:
+            if metadata_value is None:
                 return False
+            elif isinstance(metadata_value, list):
+                if filter_.value not in metadata_value:
+                    return False
+            elif isinstance(metadata_value, (int, float, str, bool)):
+                if metadata_value != filter_.value:
+                    return False
         return True
 
     return filter_fn
@@ -121,16 +127,19 @@ class SimpleVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding_results to index."""
-        for result in embedding_results:
-            self._data.embedding_dict[result.id] = result.embedding
-            self._data.metadata_dict[result.id] = node_to_metadata_dict(
-                result.node, remove_text=True, flat_metadata=True
+        """Add nodes to index."""
+        for node in nodes:
+            self._data.embedding_dict[node.node_id] = node.get_embedding()
+            self._data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
+
+            metadata = node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=False
             )
-            self._data.text_id_to_ref_doc_id[result.id] = result.ref_doc_id
-        return [result.id for result in embedding_results]
+            metadata.pop("_node_content", None)
+            self._data.metadata_dict[node.node_id] = metadata
+        return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -173,9 +182,14 @@ class SimpleVectorStore(VectorStore):
 
         if query.node_ids is not None:
             available_ids = set(query.node_ids)
-            node_filter_fn = lambda node_id: node_id in available_ids
+
+            def node_filter_fn(node_id: str) -> bool:
+                return node_id in available_ids
+
         else:
-            node_filter_fn = lambda _: True
+
+            def node_filter_fn(node_id: str) -> bool:
+                return True
 
         node_ids = []
         embeddings = []

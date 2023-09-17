@@ -4,9 +4,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-
-from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -15,6 +12,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import validate_openai_api_key
@@ -115,13 +113,8 @@ def get_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    if (
-        engine is not None
-        and engine.endswith("001")
-        and not engine.endswith("code-001")
-    ):
-        # replace newlines, which can negatively affect performance on text-001 models.
-        text = text.replace("\n", " ")
+    text = text.replace("\n", " ")
+
     return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
         "embedding"
     ]
@@ -143,13 +136,7 @@ async def aget_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    if (
-        engine is not None
-        and engine.endswith("001")
-        and not engine.endswith("code-001")
-    ):
-        # replace newlines, which can negatively affect performance on text-001 models.
-        text = text.replace("\n", " ")
+    text = text.replace("\n", " ")
 
     return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))[
         "data"
@@ -174,13 +161,7 @@ def get_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    if (
-        engine is not None
-        and engine.endswith("001")
-        and not engine.endswith("code-001")
-    ):
-        # replace newlines, which can negatively affect performance on text-001 models.
-        list_of_text = [text.replace("\n", " ") for text in list_of_text]
+    list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
@@ -204,13 +185,7 @@ async def aget_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    if (
-        engine is not None
-        and engine.endswith("001")
-        and not engine.endswith("code-001")
-    ):
-        # replace newlines, which can negatively affect performance on text-001 models.
-        list_of_text = [text.replace("\n", " ") for text in list_of_text]
+    list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = (
         await openai.Embedding.acreate(input=list_of_text, model=engine, **kwargs)
@@ -273,10 +248,8 @@ class OpenAIEmbedding(BaseEmbedding):
     ) -> None:
         # Validate that either the openai.api_key property
         # or OPENAI_API_KEY env variable are set to a valid key
-        # Raises ValueError if missing or doesn't match valid format
-        validate_openai_api_key(
-            kwargs.get("api_key", None), kwargs.get("api_type", None)
-        )
+        # Raises ValueError if missing
+        validate_openai_api_key(kwargs.get("api_key", None))
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)

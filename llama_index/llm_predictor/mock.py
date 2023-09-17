@@ -132,7 +132,8 @@ class MockLLMPredictor(BaseLLMPredictor):
             output = _mock_query_keyword_extract(prompt_args)
         elif prompt_str == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
             output = _mock_knowledge_graph_triplet_extract(
-                prompt_args, int(prompt.kwargs.get("max_knowledge_triplets", 2))
+                prompt_args,
+                int(prompt.kwargs.get("max_knowledge_triplets", 2)),
             )
         elif prompt_str == PromptType.CUSTOM:
             # we don't know specific prompt type, return generic response
