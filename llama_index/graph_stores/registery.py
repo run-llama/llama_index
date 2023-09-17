@@ -6,6 +6,7 @@ from llama_index.graph_stores.kuzu import KuzuGraphStore
 from llama_index.graph_stores.nebulagraph import NebulaGraphStore
 from llama_index.graph_stores.neo4j import Neo4jGraphStore
 from llama_index.graph_stores.simple import SimpleGraphStore
+from llama_index.graph_stores.types import SparqlGraphStore
 from llama_index.graph_stores.types import GraphStore
 
 
@@ -15,6 +16,7 @@ class GraphStoreType(str, Enum):
     KUZU = "kuzu"
     NEO4J = "neo4j"
     FALKORDB = "falkordb"
+    SPARQL = "sparql"
 
 
 GRAPH_STORE_TYPE_TO_GRAPH_STORE_CLASS: Dict[GraphStoreType, Type[GraphStore]] = {
@@ -23,6 +25,7 @@ GRAPH_STORE_TYPE_TO_GRAPH_STORE_CLASS: Dict[GraphStoreType, Type[GraphStore]] = 
     GraphStoreType.KUZU: KuzuGraphStore,
     GraphStoreType.NEO4J: Neo4jGraphStore,
     GraphStoreType.FALKORDB: FalkorDBGraphStore,
+    GraphStoreType.SPARQL: SparqlGraphStore,
 }
 
 GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE: Dict[Type[GraphStore], GraphStoreType] = {
