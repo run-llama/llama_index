@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added metadata filtering to the base simple vector store (#7564)
+
 ### Bug Fixes / Nits
 - Fix context window metadata in lite-llm (#7696)
 
