@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable
+from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable, Dict
 
 import fsspec
 
@@ -64,6 +64,14 @@ class MetadataFilters(BaseModel):
 
     filters: List[ExactMatchFilter]
 
+    @classmethod
+    def from_dict(cls, filter_dict: Dict) -> "MetadataFilters":
+        """Create MetadataFilters from json."""
+        filters = []
+        for k, v in filter_dict.items():
+            filter = ExactMatchFilter(key=k, value=v)
+            filters.append(filter)
+        return cls(filters=filters)
 
 class VectorStoreQuerySpec(BaseModel):
     """Schema for a structured request for vector store
