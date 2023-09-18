@@ -1,13 +1,45 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.29.post1] - 2023-09-18
+
+### Bug Fixes / Nits
+- Fix langchain import error for embeddings (#7714)
+
+## [0.8.29] - 2023-09-18
 
 ### New Features
+- Added metadata filtering to the base simple vector store (#7564)
+- add low-level router guide (#7708)
+- Add CustomQueryEngine class (#7703)
+
+### Bug Fixes / Nits
+- Fix context window metadata in lite-llm (#7696)
+
+## [0.8.28] - 2023-09-16
+
+### New Features
+- Add CorrectnessEvaluator (#7661)
+- Added support for `Ollama` LLMs (#7635)
+- Added `HWPReader` (#7672)
 - Simplified portkey LLM interface (#7669)
 - Added async operation support to `ElasticsearchStore` vector store (#7613)
+- Added support for `LiteLLM` (#7600)
+- Added batch evaluation runner (#7692)
 
 ### Bug Fixes / Nits
 - Avoid `NotImplementedError` for async langchain embeddings (#7668)
+- Imrpoved reliability of LLM selectors (#7678)
+- Fixed `query_wrapper_prompt` and `system_prompt` for output parsers and completion models (#7678)
+- Fixed node attribute inheritance in citation query engine (#7675)
+
+### Breaking Changes
+- Refactor and update `BaseEvaluator` interface to be more consistent (#7661)
+  - Use `evaluate` function for generic input
+  - Use `evaluate_response` function with `Response` objects from llama index query engine
+- Update existing evaluators with more explicit naming
+  - `ResponseEvaluator` -> `FaithfulnessEvaluator`
+  - `QueryResponseEvaluator` -> `RelevancyEvaluator`
+  - old names are kept as class aliases for backwards compatibility
 
 ## [0.8.27] - 2023-09-14
 
