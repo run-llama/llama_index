@@ -17,7 +17,7 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.document import Document
 
 # embeddings
-from langchain.embeddings.base import Embeddings
+from langchain.schema.base import Embeddings
 from langchain.embeddings import HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings
 
 # LLMs
