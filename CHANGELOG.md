@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [0.8.29.post1] - 2023-09-18
+
+### Bug Fixes / Nits
+- Fix langchain import error for embeddings (#7714)
+
 ## [0.8.29] - 2023-09-18
 
 ### New Features
