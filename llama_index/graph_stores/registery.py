@@ -6,7 +6,7 @@ from llama_index.graph_stores.kuzu import KuzuGraphStore
 from llama_index.graph_stores.nebulagraph import NebulaGraphStore
 from llama_index.graph_stores.neo4j import Neo4jGraphStore
 from llama_index.graph_stores.simple import SimpleGraphStore
-from llama_index.graph_stores.types import SparqlGraphStore
+from llama_index.graph_stores.sparql import SparqlGraphStore
 from llama_index.graph_stores.types import GraphStore
 
 

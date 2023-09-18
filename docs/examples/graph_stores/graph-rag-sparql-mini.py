@@ -36,9 +36,9 @@ logger = logging.getLogger(__name__)
 ############
 # LLM Config
 ############
-os.environ["OPENAI_API_KEY"] = ""
+os.environ["OPENAI_API_KEY"] = "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"
 
-openai.api_key = ""
+openai.api_key = "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"
 
 llm = OpenAI(temperature=0, model="text-davinci-002")
 service_context = ServiceContext.from_defaults(llm=llm, chunk_size=512)
@@ -108,6 +108,6 @@ kg_rag_query_engine = kg_index.as_query_engine(
 
 response_graph_rag = kg_rag_query_engine.query(
     "Who is Quill?")
-# print(str(response_graph_rag))
+print(str(response_graph_rag))
 
 # display(Markdown(f"<b>{response_graph_rag}</b>"))
