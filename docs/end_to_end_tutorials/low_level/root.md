@@ -53,3 +53,11 @@ maxdepth: 1
 ```
 
 
+## Building a Router from Scratch
+Beyond the standard RAG pipeline, this takes you one step towards automated decision making with LLMs by showing you how to build a router module from scratch.
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/router.ipynb
+```
