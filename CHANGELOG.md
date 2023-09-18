@@ -1,9 +1,11 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.29] - 2023-09-18
 
 ### New Features
 - Added metadata filtering to the base simple vector store (#7564)
+- add low-level router guide (#7708)
+- Add CustomQueryEngine class (#7703)
 
 ### Bug Fixes / Nits
 - Fix context window metadata in lite-llm (#7696)
