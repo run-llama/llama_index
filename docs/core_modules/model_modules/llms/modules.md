@@ -32,6 +32,13 @@ maxdepth: 1
 
 ```
 
+## LiteLLM
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/litellm.ipynb
+```
 
 ## PaLM
 
@@ -131,4 +138,12 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/anyscale.ipynb
+```
+
+## Ollama
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/ollama.ipynb
 ```

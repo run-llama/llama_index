@@ -25,7 +25,7 @@ This allows you to measure hallucination - if the response does not match the re
 There are two sub-modes of evaluation here. We can either get a binary response "YES"/"NO" on whether response matches *any* source context,
 and also get a response list across sources to see which sources match.
 
-The `ResponseEvaluator` handles both modes for evaluating in this context.
+The `FaithfulnessEvaluator` handles both modes for evaluating in this context.
 
 ### Evaluation of the Query + Response + Source Context
 
