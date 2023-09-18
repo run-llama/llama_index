@@ -12,8 +12,9 @@ Preparation :
 @danja 2023-09-17
 """
 
-import llama_index 
-from llama_index import download_loader
+# import llama_index 
+from llama_index.readers.download import download_loader
+# from llama_index import download_loader
 import os
 import logging
 from llama_index import (
