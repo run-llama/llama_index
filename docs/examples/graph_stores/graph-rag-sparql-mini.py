@@ -36,9 +36,9 @@ logger = logging.getLogger(__name__)
 ############
 # LLM Config
 ############
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = ""
 
-openai.api_key = "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"
+openai.api_key = ""
 
 llm = OpenAI(temperature=0, model="text-davinci-002")
 service_context = ServiceContext.from_defaults(llm=llm, chunk_size=512)
