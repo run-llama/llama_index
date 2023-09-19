@@ -372,8 +372,11 @@ class LongContextReorder(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        reordered_nodes = []
-        for i, node in enumerate(sorted(nodes, key=lambda x: x.score)):
+        reordered_nodes: List[NodeWithScore] = []
+        ordered_nodes: List[NodeWithScore] = sorted(
+            nodes, key=lambda x: x.score if x.score is not None else 0
+        )
+        for i, node in enumerate(ordered_nodes):
             if i % 2 == 0:
                 reordered_nodes.insert(0, node)
             else:
