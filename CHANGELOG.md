@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Add support for `gpt-3.5-turbo-instruct` (#7729)
+
 ## [0.8.29.post1] - 2023-09-18
 
 ### Bug Fixes / Nits
