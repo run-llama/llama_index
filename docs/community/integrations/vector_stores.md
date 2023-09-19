@@ -31,6 +31,7 @@ as the storage backend for `VectorStoreIndex`.
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
+- TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -391,6 +392,17 @@ vector_store = MyScaleVectorStore(
 )
 ```
 
+**Timescale**
+
+```python
+from llama_index.vector_stores import TimescaleVectorStore
+
+vector_store = TimescaleVectorStore.from_params(
+    service_url='YOUR TIMESCALE SERVICE URL',
+    table_name="paul_graham_essay",
+)
+```
+
 **DocArray**
 
 ```python
@@ -612,4 +624,5 @@ maxdepth: 1
 ../../examples/vector_stores/AwadbDemo.ipynb
 ../../examples/vector_stores/Neo4jVectorDemo.ipynb
 ../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
+../../examples/vector_stores/Timescalevector.ipynb
 ```
