@@ -26,7 +26,16 @@ from llama_index.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.konko_utils import *
+from llama_index.llms.konko_utils import (
+    resolve_konko_credentials,
+    konko_modelname_to_contextsize,
+    is_chat_model,
+    to_openai_message_dicts,
+    completion_with_retry,
+    from_openai_message_dict,
+    acompletion_with_retry
+)
+
 
 class Konko(LLM):
     class_type = "konko"
@@ -63,10 +72,16 @@ class Konko(LLM):
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
-        
-        konko_api_key, openai_api_key, api_type, api_base, api_version = resolve_konko_credentials(
+
+        (
+            konko_api_key,
+            openai_api_key,
+            api_type,
+            api_base,
+            api_version,
+        ) = resolve_konko_credentials(
             konko_api_key=konko_api_key,
-            openai_api_key = openai_api_key,
+            openai_api_key=openai_api_key,
             api_type=api_type,
             api_base=api_base,
             api_version=api_version,
@@ -104,7 +119,7 @@ class Konko(LLM):
             is_chat_model=True,
             model_name=self.model,
         )
-    
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         if self._is_chat_model:
@@ -112,7 +127,7 @@ class Konko(LLM):
         else:
             chat_fn = completion_to_chat_decorator(self._complete)
         return chat_fn(messages, **kwargs)
-    
+
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -122,11 +137,11 @@ class Konko(LLM):
         else:
             stream_chat_fn = stream_completion_to_chat_decorator(self._stream_complete)
         return stream_chat_fn(messages, **kwargs)
-    
+
     @property
     def _is_chat_model(self) -> bool:
         return is_chat_model(self._get_model_name())
-    
+
     @property
     def _credential_kwargs(self) -> Dict[str, Any]:
         credential_kwargs = {
@@ -134,10 +149,10 @@ class Konko(LLM):
             "api_type": self.api_type,
             "api_base": self.api_base,
             "api_version": self.api_version,
-            "openai_api_key":self.openai_api_key,
+            "openai_api_key": self.openai_api_key,
         }
         return credential_kwargs
-    
+
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
@@ -150,13 +165,13 @@ class Konko(LLM):
             **self.additional_kwargs,
         }
         return model_kwargs
-    
+
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
             **self._model_kwargs,
             **kwargs,
         }
-    
+
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         if not self._is_chat_model:
             raise ValueError("This model is not a chat model.")
@@ -178,7 +193,7 @@ class Konko(LLM):
             raw=response,
             additional_kwargs=self._get_response_token_counts(response),
         )
-    
+
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -243,7 +258,7 @@ class Konko(LLM):
                 )
 
         return gen()
-    
+
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         if self._is_chat_model:
@@ -259,7 +274,7 @@ class Konko(LLM):
         else:
             stream_complete_fn = self._stream_complete
         return stream_complete_fn(prompt, **kwargs)
-    
+
     def _get_response_token_counts(self, raw_response: Any) -> dict:
         """Get the token usage reported by the response."""
         if not isinstance(raw_response, dict):
@@ -275,7 +290,82 @@ class Konko(LLM):
             "completion_tokens": usage.get("completion_tokens", 0),
             "total_tokens": usage.get("total_tokens", 0),
         }
-    
+
+    def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        if self._is_chat_model:
+            raise ValueError("This model is a chat model.")
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.max_tokens is None:
+            # NOTE: non-chat completion endpoint requires max_tokens to be set
+            max_tokens = self._get_max_token_for_prompt(prompt)
+            all_kwargs["max_tokens"] = max_tokens
+
+        response = completion_with_retry(
+            is_chat_model=self._is_chat_model,
+            max_retries=self.max_retries,
+            prompt=prompt,
+            stream=False,
+            **all_kwargs,
+        )
+        text = response["choices"][0]["text"]
+        return CompletionResponse(
+            text=text,
+            raw=response,
+            additional_kwargs=self._get_response_token_counts(response),
+        )
+
+    def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        if self._is_chat_model:
+            raise ValueError("This model is a chat model.")
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.max_tokens is None:
+            # NOTE: non-chat completion endpoint requires max_tokens to be set
+            max_tokens = self._get_max_token_for_prompt(prompt)
+            all_kwargs["max_tokens"] = max_tokens
+
+        def gen() -> CompletionResponseGen:
+            text = ""
+            for response in completion_with_retry(
+                is_chat_model=self._is_chat_model,
+                max_retries=self.max_retries,
+                prompt=prompt,
+                stream=True,
+                **all_kwargs,
+            ):
+                if len(response["choices"]) > 0:
+                    delta = response["choices"][0]["text"]
+                else:
+                    delta = ""
+                text += delta
+                yield CompletionResponse(
+                    delta=delta,
+                    text=text,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
+                )
+
+        return gen()
+
+    def _get_max_token_for_prompt(self, prompt: str) -> int:
+        try:
+            import tiktoken
+        except ImportError:
+            raise ImportError(
+                "Please install tiktoken to use the max_tokens=None feature."
+            )
+        context_window = self.metadata.context_window
+        encoding = tiktoken.encoding_for_model(self._get_model_name())
+        tokens = encoding.encode(prompt)
+        max_token = context_window - len(tokens)
+        if max_token <= 0:
+            raise ValueError(
+                f"The prompt is too long for the model. "
+                f"Please use a prompt that is less than {context_window} tokens."
+            )
+        return max_token
+
     # ===== Async Endpoints =====
     @llm_chat_callback()
     async def achat(
@@ -462,5 +552,3 @@ class Konko(LLM):
                 )
 
         return gen()
-
-
