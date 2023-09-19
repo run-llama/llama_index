@@ -62,6 +62,8 @@ TURBO_MODELS = {
 GPT3_5_MODELS = {
     "text-davinci-003": 4097,
     "text-davinci-002": 4097,
+    # instruct models
+    "gpt-3.5-turbo-instruct": 4096,
 }
 
 GPT3_MODELS = {

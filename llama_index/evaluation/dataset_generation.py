@@ -4,22 +4,20 @@ from __future__ import annotations
 import re
 from typing import List, Optional
 
-
-from llama_index import (
-    Document,
-    SummaryIndex,
-    ServiceContext,
-)
+from llama_index import Document, ServiceContext, SummaryIndex
+from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 from llama_index.llms.openai import OpenAI
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
-from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
-DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
-"\n---------------------\n{context_str}\n---------------------\n"
-"Given the context information and not prior knowledge.\n"
-"generate only questions based on the below query.\n"
-"{query_str}\n"
+DEFAULT_QUESTION_GENERATION_PROMPT = """\
+Context information is below.
+---------------------
+{context_str}
+---------------------
+Given the context information and not prior knowledge.
+generate only questions based on the below query.
+{query_str}
 """
 
 
@@ -53,8 +51,6 @@ class DatasetGenerator:
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[BasePromptTemplate] = None,
         question_gen_query: Optional[str] = None,
-        required_keywords: Optional[List[str]] = None,
-        exclude_keywords: Optional[List[str]] = None,
         metadata_mode: MetadataMode = MetadataMode.NONE,
     ) -> None:
         """Init params."""

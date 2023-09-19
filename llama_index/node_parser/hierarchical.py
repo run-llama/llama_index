@@ -103,7 +103,9 @@ class HierarchicalNodeParser(NodeParser):
             if chunk_sizes is None:
                 chunk_sizes = [2048, 512, 128]
 
-            text_splitter_ids = ["2048", "512", "128"]
+            text_splitter_ids = [
+                f"chunk_size_{chunk_size}" for chunk_size in chunk_sizes
+            ]
             text_splitter_map = {}
             for chunk_size, text_splitter_id in zip(chunk_sizes, text_splitter_ids):
                 text_splitter_map[text_splitter_id] = get_default_text_splitter(

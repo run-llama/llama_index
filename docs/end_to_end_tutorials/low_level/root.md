@@ -21,7 +21,7 @@ maxdepth: 1
 ```
 
 ## Building Vector Retrieval from Scratch
-This tutorial shows you how to build a retriever to query a vector store.
+This tutorial shows you how to build a retriever to query an vector store.
 
 ```{toctree}
 ---
@@ -30,6 +30,18 @@ maxdepth: 1
 /examples/low_level/retrieval.ipynb
 ```
 
+## Building a (Very Simple) Vector Store from Scratch
+
+If you want to learn more about how vector stores work, here's a tutorial showing you how to build a very simple vector store capable of dense search + metadata filtering.
+
+Obviously not a replacement for production databases.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/vector_store.ipynb
+```
 
 ## Building Response Synthesis from Scratch
 This tutorial shows you how to use the LLM to synthesize results given a set of retrieved context. Deals with context overflows, async calls, and source citations!
@@ -41,3 +53,22 @@ maxdepth: 1
 ```
 
 
+## Building a Router from Scratch
+Beyond the standard RAG pipeline, this takes you one step towards automated decision making with LLMs by showing you how to build a router module from scratch.
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/router.ipynb
+```
+
+## Building Evaluation from Scratch
+
+Learn how to build common LLM-based eval modules (correctness, faithfulness) using LLMs and prompt modules; this will help you define your own custom evals!
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/evaluation.ipynb
+```
