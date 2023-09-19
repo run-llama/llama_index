@@ -3,7 +3,6 @@ import os
 from typing import List
 
 from llama_index.node_parser.code_hierarchy import CodeHierarchyNodeParser
-from llama_index.node_parser.interface import NodeParser
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
 
@@ -43,7 +42,7 @@ class Foo:
         chunks[1].id_
     ]
     assert isinstance(chunks[0].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
-    assert chunks[0].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[0].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[0].relationships
     assert NodeRelationship.NEXT not in chunks[0].relationships
 
@@ -54,13 +53,13 @@ class Foo:
         {"name": "Foo", "type": "class_definition", "signature": "class Foo:"}
     ]
     assert isinstance(chunks[1].relationships[NodeRelationship.PARENT], RelatedNodeInfo)
-    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert [c.node_id for c in chunks[1].relationships[NodeRelationship.CHILD]] == [
         chunks[2].id_,
         chunks[3].id_,
     ]
     assert isinstance(chunks[1].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
-    assert chunks[1].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[1].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[1].relationships
     assert NodeRelationship.NEXT not in chunks[1].relationships
 
@@ -81,10 +80,10 @@ class Foo:
         },
     ]
     assert isinstance(chunks[2].relationships[NodeRelationship.PARENT], RelatedNodeInfo)
-    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_
+    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_  # type: ignore
     assert chunks[2].relationships[NodeRelationship.CHILD] == []
     assert isinstance(chunks[2].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
-    assert chunks[2].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[2].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[2].relationships
     assert NodeRelationship.NEXT not in chunks[2].relationships
 
@@ -101,10 +100,10 @@ class Foo:
         {"name": "baz", "type": "function_definition", "signature": "async def baz():"},
     ]
     assert isinstance(chunks[3].relationships[NodeRelationship.PARENT], RelatedNodeInfo)
-    assert chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_
+    assert chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_  # type: ignore
     assert chunks[3].relationships[NodeRelationship.CHILD] == []
     assert isinstance(chunks[3].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
-    assert chunks[3].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[3].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[3].relationships
     assert NodeRelationship.NEXT not in chunks[3].relationships
 
@@ -145,7 +144,7 @@ class Foo:
         chunks[1].id_
     ]
     assert isinstance(chunks[0].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
-    assert chunks[0].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[0].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[0].relationships
     assert NodeRelationship.NEXT not in chunks[0].relationships
 
@@ -164,12 +163,12 @@ class Foo:
         {"name": "Foo", "type": "class_definition", "signature": "class Foo:"}
     ]
     assert isinstance(chunks[1].relationships[NodeRelationship.PARENT], RelatedNodeInfo)
-    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert [c.node_id for c in chunks[1].relationships[NodeRelationship.CHILD]] == [
         chunks[2].id_,
     ]
     assert isinstance(chunks[1].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
-    assert chunks[1].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[1].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[1].relationships
     assert NodeRelationship.NEXT not in chunks[1].relationships
 
@@ -190,10 +189,10 @@ class Foo:
         },
     ]
     assert isinstance(chunks[2].relationships[NodeRelationship.PARENT], RelatedNodeInfo)
-    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_
+    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_  # type: ignore
     assert chunks[2].relationships[NodeRelationship.CHILD] == []
     assert isinstance(chunks[2].relationships[NodeRelationship.SOURCE], RelatedNodeInfo)
-    assert chunks[2].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[2].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[2].relationships
     assert NodeRelationship.NEXT not in chunks[2].relationships
 
@@ -208,7 +207,6 @@ def test_html_code_splitter() -> None:
         language="html",
         min_characters=len("    <title>My Example Page</title>") + 1,
         skeleton=False,
-        min_characters=0,
     )
 
     text = """\
@@ -241,7 +239,7 @@ def test_html_code_splitter() -> None:
     assert [c.node_id for c in chunks[0].relationships[NodeRelationship.CHILD]] == [
         chunks[1].id_
     ]
-    assert chunks[0].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[0].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[0].relationships
     assert NodeRelationship.NEXT not in chunks[0].relationships
 
@@ -268,12 +266,12 @@ def test_html_code_splitter() -> None:
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "html", "type": "element", "signature": "<html>"}
     ]
-    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert [c.node_id for c in chunks[1].relationships[NodeRelationship.CHILD]] == [
         chunks[2].id_,
         chunks[3].id_,
     ]
-    assert chunks[1].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[1].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[1].relationships
     assert NodeRelationship.NEXT not in chunks[1].relationships
 
@@ -290,12 +288,12 @@ def test_html_code_splitter() -> None:
         {"name": "head", "type": "element", "signature": "<head>"},
     ]
     assert (
-        chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_
+        chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_  # type: ignore
     )  # Parent should be <html>
     assert [
         c.node_id for c in chunks[2].relationships[NodeRelationship.CHILD]
     ] == []  # Child should be <title>
-    assert chunks[2].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[2].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[2].relationships
     assert NodeRelationship.NEXT not in chunks[2].relationships
 
@@ -319,12 +317,12 @@ def test_html_code_splitter() -> None:
         {"name": "body", "type": "element", "signature": "<body>"},
     ]
     assert (
-        chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_
+        chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_  # type: ignore
     )  # Parent should be <html>
     assert chunks[5].id_ in [
         c.node_id for c in chunks[3].relationships[NodeRelationship.CHILD]
     ]
-    assert chunks[3].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[3].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[3].relationships
     assert NodeRelationship.NEXT not in chunks[3].relationships
 
@@ -344,10 +342,10 @@ def test_html_code_splitter() -> None:
         {"name": "ul", "type": "element", "signature": "<ul>"},
     ]
     assert (
-        chunks[6].relationships[NodeRelationship.PARENT].node_id == chunks[3].id_
+        chunks[6].relationships[NodeRelationship.PARENT].node_id == chunks[3].id_  # type: ignore
     )  # Parent should be <body>
     assert [c.node_id for c in chunks[6].relationships[NodeRelationship.CHILD]] == []
-    assert chunks[6].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
+    assert chunks[6].relationships[NodeRelationship.SOURCE].node_id == text_node.id_  # type: ignore
     assert NodeRelationship.PREVIOUS not in chunks[6].relationships
     assert NodeRelationship.NEXT not in chunks[6].relationships
 
@@ -393,7 +391,7 @@ function foo() {
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "foo", "type": "function_declaration", "signature": "function foo()"}
     ]
-    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert [c.node_id for c in chunks[1].relationships[NodeRelationship.CHILD]] == []
 
     # Test the third chunk (class Example)
@@ -409,7 +407,7 @@ class Example {
     assert chunks[2].metadata["inclusive_scopes"] == [
         {"name": "Example", "type": "class_declaration", "signature": "class Example"}
     ]
-    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert [c.node_id for c in chunks[2].relationships[NodeRelationship.CHILD]] == [
         chunks[3].id_
     ]
@@ -430,7 +428,7 @@ class Example {
             "signature": "exampleMethod()",
         },
     ]
-    assert chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[2].id_
+    assert chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[2].id_  # type: ignore
     assert chunks[3].relationships[NodeRelationship.CHILD] == []
 
     # Test the fifth chunk (function baz)
@@ -444,7 +442,7 @@ function baz() {
     assert chunks[4].metadata["inclusive_scopes"] == [
         {"name": "baz", "type": "function_declaration", "signature": "function baz()"}
     ]
-    assert chunks[4].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[4].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert chunks[4].relationships[NodeRelationship.CHILD] == []
 
 
@@ -507,7 +505,7 @@ interface Person {
             "signature": "interface Person",
         }
     ]
-    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert chunks[1].relationships[NodeRelationship.CHILD] == []
 
     # Test the third chunk (ExampleComponent function definition)
@@ -535,7 +533,7 @@ const ExampleComponent: React.FC = () => {
             "signature": "const ExampleComponent: React.FC = () =>",
         }
     ]
-    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
 
     # TODO: Unfortunately tree_splitter errors on the html elements
 
@@ -594,7 +592,7 @@ class MyClass {       // The class
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "MyClass", "type": "class_specifier", "signature": "class MyClass"}
     ]
-    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[1].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert [c.node_id for c in chunks[1].relationships[NodeRelationship.CHILD]] == [
         chunks[2].id_
     ]
@@ -615,7 +613,7 @@ class MyClass {       // The class
             "signature": "void myMethod()",
         },
     ]
-    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_
+    assert chunks[2].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_  # type: ignore
     assert chunks[2].relationships[NodeRelationship.CHILD] == []
 
     # Test the fourth chunk (main function)
@@ -630,5 +628,5 @@ int main() {
     assert chunks[3].metadata["inclusive_scopes"] == [
         {"name": "main()", "type": "function_definition", "signature": "int main()"}
     ]
-    assert chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
+    assert chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_  # type: ignore
     assert chunks[3].relationships[NodeRelationship.CHILD] == []

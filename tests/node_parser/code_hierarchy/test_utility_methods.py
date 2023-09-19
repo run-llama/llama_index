@@ -3,7 +3,7 @@ import pytest
 from llama_index.node_parser.code_hierarchy import CodeHierarchyNodeParser
 
 
-def test_space_indentation():
+def test_space_indentation() -> None:
     text = """\
 def function():
     print("First level of indentation")
@@ -20,7 +20,7 @@ def function():
     assert first_indent_level == 0
 
 
-def test_tab_indentation():
+def test_tab_indentation() -> None:
     text = """\
 def function():
 \tprint("First level of indentation")
@@ -37,7 +37,7 @@ def function():
     assert first_indent_level == 0
 
 
-def test_tab_indentation_2():
+def test_tab_indentation_2() -> None:
     text = """\
 \tdef function():
 \t\tprint("First level of indentation")
@@ -54,7 +54,7 @@ def test_tab_indentation_2():
     assert first_indent_level == 1
 
 
-def test_mixed_indentation():
+def test_mixed_indentation() -> None:
     text = """\
 def function():
 \tprint("First level of indentation")
@@ -65,7 +65,7 @@ def function():
         CodeHierarchyNodeParser._get_indentation(text)
 
 
-def test_mixed_indentation_2():
+def test_mixed_indentation_2() -> None:
     text = """\
 \tdef function():
   print("First level of indentation")
@@ -76,7 +76,7 @@ def test_mixed_indentation_2():
         CodeHierarchyNodeParser._get_indentation(text)
 
 
-def test_no_indentation():
+def test_no_indentation() -> None:
     text = """\"
 def function():
 print("No indentation")
@@ -91,7 +91,7 @@ print("No indentation")
     assert first_indent_level == 0
 
 
-def test_typescript():
+def test_typescript() -> None:
     text = """\
 class Example {
     exampleMethod() {
@@ -109,7 +109,7 @@ class Example {
     assert first_indent_level == 0
 
 
-def test_typescript_2():
+def test_typescript_2() -> None:
     text = """\
 function foo() {
     console.log("bar");

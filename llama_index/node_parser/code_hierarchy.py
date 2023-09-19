@@ -1,6 +1,5 @@
 from enum import Enum
-from typing import (Any, Callable, Dict, Iterable, List, Optional, Sequence,
-                    Set, Tuple)
+from typing import Dict, List, Optional, Sequence, Tuple
 
 try:
     from pydantic.v1 import BaseModel, Field
@@ -15,7 +14,6 @@ from llama_index.node_parser.extractors.metadata_extractors import \
     MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_node
-from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.schema import BaseNode, Document, NodeRelationship, TextNode
 from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.utils import get_tqdm_iterable
