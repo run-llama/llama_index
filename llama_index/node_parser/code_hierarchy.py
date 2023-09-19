@@ -10,8 +10,7 @@ from tree_sitter import Node
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.extractors.metadata_extractors import \
-    MetadataExtractor
+from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_node
 from llama_index.schema import BaseNode, Document, NodeRelationship, TextNode
@@ -26,32 +25,41 @@ class _SignatureCaptureType(BaseModel):
     For example, html element signatures should include their closing >, there is no
     easy way to include this using an always-exclusive system.
 
-    However, using an always-inclusive system, python decorators don't work, as there isn't
-    an easy to define terminator for decorators that is inclusive to their signature.
+    However, using an always-inclusive system, python decorators don't work,
+    as there isn't an easy to define terminator for decorators that is inclusive
+    to their signature.
     """
 
     type: str = Field(description="The type string to match on.")
     inclusive: bool = Field(
-        description="Whether to include the text of the node matched by this type or not.",
+        description=(
+            "Whether to include the text of the node matched by this type or not."
+        ),
     )
 
 
 class _SignatureCaptureOptions(BaseModel):
     start_signature_types: Optional[List[_SignatureCaptureType]] = Field(
         None,
-        description="A list of node types any of which indicate the beginning of the signature."
-        "If this is none or empty, use the start_byte of the node.",
+        description=(
+            "A list of node types any of which indicate the beginning of the signature."
+            "If this is none or empty, use the start_byte of the node."
+        ),
     )
     end_signature_types: Optional[List[_SignatureCaptureType]] = Field(
         None,
-        description="A list of node types any of which indicate the end of the signature."
-        "If this is none or empty, use the end_byte of the node.",
+        description=(
+            "A list of node types any of which indicate the end of the signature."
+            "If this is none or empty, use the end_byte of the node."
+        ),
     )
     name_identifier: str = Field(
-        description="The node type to use for the signatures 'name'."
-        "If retrieving the name is more complicated than a simple type match, use a function which "
-        "takes a node and returns true or false as to whether its the name or not. "
-        "The first match is returned."
+        description=(
+            "The node type to use for the signatures 'name'.If retrieving the name is"
+            " more complicated than a simple type match, use a function which takes a"
+            " node and returns true or false as to whether its the name or not. The"
+            " first match is returned."
+        )
     )
 
 
@@ -178,14 +186,16 @@ class CodeHierarchyNodeParser(NodeParser):
     )
     signature_identifiers: Dict[str, _SignatureCaptureOptions] = Field(
         description=(
-            "A dictionary mapping the type of a split mapped to the first and last type of its"
-            "children which identify its signature."
+            "A dictionary mapping the type of a split mapped to the first and last type"
+            " of itschildren which identify its signature."
         )
     )
     min_characters: int = Field(
         default=80,
-        description="Minimum number of characters per chunk."
-        "Defaults to 80 because that's about how long a replacement comment is in skeleton mode.",
+        description=(
+            "Minimum number of characters per chunk.Defaults to 80 because that's about"
+            " how long a replacement comment is in skeleton mode."
+        ),
     )
     code_splitter: Optional[CodeSplitter] = Field(
         description="The text splitter to use when splitting documents."
@@ -198,8 +208,11 @@ class CodeHierarchyNodeParser(NodeParser):
     )
     skeleton: bool = Field(
         True,
-        description="Parent nodes have the text of their child nodes replaced with a signature and a comment "
-        "instructing the language model to visit the child node for the full text of the scope.",
+        description=(
+            "Parent nodes have the text of their child nodes replaced with a signature"
+            " and a comment instructing the language model to visit the child node for"
+            " the full text of the scope."
+        ),
     )
 
     def __init__(
@@ -309,7 +322,8 @@ class CodeHierarchyNodeParser(NodeParser):
         Args:
             parent (Node): The parent node to chunk
             text (str): The text of the entire document
-            _context_list (Optional[List[_ScopeItem]]): The scope context of the parent node
+            _context_list (Optional[List[_ScopeItem]]): The scope context of the
+                                                        parent node
             _root (bool): Whether or not this is the root node
         """
         if _context_list is None:
@@ -366,24 +380,33 @@ class CodeHierarchyNodeParser(NodeParser):
                     child, text, _context_list=_context_list.copy(), _root=False
                 )
 
-                # If there is a this_document, then we need to add the children to this_document
+                # If there is a this_document, then we need
+                # to add the children to this_document
                 # and flush upstream_children_documents
                 if this_document is not None:
-                    # If we have been given a document, that means it's children are already set, so it needs to become a child of this node
+                    # If we have been given a document, that means it's children
+                    # are already set, so it needs to become a child of this node
                     if next_chunks.this_document is not None:
-                        assert (
-                            not next_chunks.upstream_children_documents
-                        ), "next_chunks.this_document and next_chunks.upstream_children_documents are exclusive."
-                        this_document.relationships[NodeRelationship.CHILD].append(  # type: ignore
+                        assert not next_chunks.upstream_children_documents, (
+                            "next_chunks.this_document and"
+                            " next_chunks.upstream_children_documents are exclusive."
+                        )
+                        this_document.relationships[
+                            NodeRelationship.CHILD
+                        ].append(  # type: ignore
                             next_chunks.this_document.as_related_node_info()
                         )
                         next_chunks.this_document.relationships[
                             NodeRelationship.PARENT
                         ] = this_document.as_related_node_info()
-                    # Otherwise, we have been given a list of upstream_children_documents. We need to make them a child of this node
+                    # Otherwise, we have been given a list of
+                    # upstream_children_documents. We need to make
+                    # them a child of this node
                     else:
                         for d in next_chunks.upstream_children_documents:
-                            this_document.relationships[NodeRelationship.CHILD].append(  # type: ignore
+                            this_document.relationships[
+                                NodeRelationship.CHILD
+                            ].append(  # type: ignore
                                 d.as_related_node_info()
                             )
                             d.relationships[
@@ -391,13 +414,17 @@ class CodeHierarchyNodeParser(NodeParser):
                             ] = this_document.as_related_node_info()
                 # Otherwise we pass the children upstream
                 else:
-                    # If we have been given a document, that means it's children are already set, so it needs to become a child of the next node
+                    # If we have been given a document, that means it's
+                    # children are already set, so it needs to become a
+                    # child of the next node
                     if next_chunks.this_document is not None:
-                        assert (
-                            not next_chunks.upstream_children_documents
-                        ), "next_chunks.this_document and next_chunks.upstream_children_documents are exclusive."
+                        assert not next_chunks.upstream_children_documents, (
+                            "next_chunks.this_document and"
+                            " next_chunks.upstream_children_documents are exclusive."
+                        )
                         upstream_children_documents.append(next_chunks.this_document)
-                    # Otherwise, we have leftover children, they need to become children of the next node
+                    # Otherwise, we have leftover children, they need
+                    # to become children of the next node
                     else:
                         upstream_children_documents.extend(
                             next_chunks.upstream_children_documents
@@ -488,15 +515,23 @@ class CodeHierarchyNodeParser(NodeParser):
                                 include_prev_next_rel=True,
                             )
 
-                            # Force the first new_split_node to have the same id as the original_node
+                            # Force the first new_split_node to have the
+                            # same id as the original_node
                             new_split_nodes[0].id_ = original_node.id_
 
-                            # Add the parent child info to all the new_nodes_ derived from node
+                            # Add the parent child info to all the new_nodes_
+                            # derived from node
                             for new_split_node in new_split_nodes:
-                                new_split_node.relationships[NodeRelationship.CHILD] = original_node.child_nodes  # type: ignore
-                                new_split_node.relationships[NodeRelationship.PARENT] = original_node.parent_node  # type: ignore
+                                new_split_node.relationships[
+                                    NodeRelationship.CHILD
+                                ] = original_node.child_nodes  # type: ignore
+                                new_split_node.relationships[
+                                    NodeRelationship.PARENT
+                                ] = original_node.parent_node  # type: ignore
 
-                            # Go through chunks and replace all instances of node.node_id in relationships with new_nodes_[0].node_id
+                            # Go through chunks and replace all
+                            # instances of node.node_id in relationships
+                            # with new_nodes_[0].node_id
                             for old_node in chunks:
                                 # Handle child nodes, which are a list
                                 new_children = []
@@ -527,7 +562,9 @@ class CodeHierarchyNodeParser(NodeParser):
 
                     # Or just extract metadata
                     if self.metadata_extractor:
-                        chunks = self.metadata_extractor.process_nodes(chunks)  # type: ignore
+                        chunks = self.metadata_extractor.process_nodes(  # type: ignore
+                            chunks
+                        )
 
                     event.on_end(
                         payload={EventPayload.CHUNKS: chunks},
@@ -610,7 +647,9 @@ class CodeHierarchyNodeParser(NodeParser):
 
     @classmethod
     def _get_replacement_text(cls, child_node: TextNode) -> str:
-        """Manufactures a the replacement text to use to skeletonize a given child node."""
+        """
+        Manufactures a the replacement text to use to skeletonize a given child node.
+        """
         signature = child_node.metadata["inclusive_scopes"][-1]["signature"]
         language = child_node.metadata["language"]
         if language not in _COMMENT_OPTIONS:
@@ -631,7 +670,8 @@ class CodeHierarchyNodeParser(NodeParser):
             + signature
         )
 
-        # Add brackets if necessary. Expandable in the future to other methods of scoping.
+        # Add brackets if necessary. Expandable in the
+        # future to other methods of scoping.
         if comment_options.scope_method == _ScopeMethod.BRACKETS:
             replacement_txt += " {\n"
             replacement_txt += (
