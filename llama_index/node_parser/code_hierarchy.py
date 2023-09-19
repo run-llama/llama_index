@@ -1,15 +1,18 @@
 from enum import Enum
-from typing import (Any, Callable, Dict, Iterable, List, Optional, Sequence,
-                    Set, Tuple)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-from pydantic import BaseModel, Field
+try:
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    from pydantic import BaseModel, Field
+
 from tree_sitter import Node
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.extractors.metadata_extractors import \
-    MetadataExtractor
+from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.node_utils import get_nodes_from_node
 from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.schema import BaseNode, Document, NodeRelationship, TextNode
 from llama_index.text_splitter.code_splitter import CodeSplitter
@@ -50,6 +53,7 @@ class _SignatureCaptureOptions(BaseModel):
         "takes a node and returns true or false as to whether its the name or not. "
         "The first match is returned."
     )
+
 
 """
 Maps language -> Node Type -> SignatureCaptureOptions
@@ -106,35 +110,40 @@ _DEFAULT_SIGNATURE_IDENTIFIERS: Dict[str, Dict[str, _SignatureCaptureOptions]] =
     },
 }
 
+
 class _ScopeMethod(Enum):
     INDENTATION = "INDENTATION"
     BRACKETS = "BRACKETS"
+    HTML_END_TAGS = "HTML_END_TAGS"
+
 
 class _CommentOptions(BaseModel):
     comment_template: str
     scope_method: _ScopeMethod
 
+
 _COMMENT_OPTIONS: Dict[str, _CommentOptions] = {
     "cpp": _CommentOptions(
-        comment_template="// {}",
-        scope_method=_ScopeMethod.BRACKETS
+        comment_template="// {}", scope_method=_ScopeMethod.BRACKETS
     ),
     "html": _CommentOptions(
-        comment_template="<!-- {} -->",
-        scope_method=_ScopeMethod.INDENTATION
+        comment_template="<!-- {} -->", scope_method=_ScopeMethod.HTML_END_TAGS
     ),
     "python": _CommentOptions(
-        comment_template="# {}",
-        scope_method=_ScopeMethod.INDENTATION
+        comment_template="# {}", scope_method=_ScopeMethod.INDENTATION
     ),
     "typescript": _CommentOptions(
-        comment_template="// {}",
-        scope_method=_ScopeMethod.BRACKETS
-    )
+        comment_template="// {}", scope_method=_ScopeMethod.BRACKETS
+    ),
 }
 
-assert all(language in _DEFAULT_SIGNATURE_IDENTIFIERS for language in _COMMENT_OPTIONS), "Not all languages in _COMMENT_OPTIONS are in _DEFAULT_SIGNATURE_IDENTIFIERS"
-assert all(language in _COMMENT_OPTIONS for language in _DEFAULT_SIGNATURE_IDENTIFIERS), "Not all languages in _DEFAULT_SIGNATURE_IDENTIFIERS are in _COMMENT_OPTIONS"
+assert all(
+    language in _DEFAULT_SIGNATURE_IDENTIFIERS for language in _COMMENT_OPTIONS
+), "Not all languages in _COMMENT_OPTIONS are in _DEFAULT_SIGNATURE_IDENTIFIERS"
+assert all(
+    language in _COMMENT_OPTIONS for language in _DEFAULT_SIGNATURE_IDENTIFIERS
+), "Not all languages in _DEFAULT_SIGNATURE_IDENTIFIERS are in _COMMENT_OPTIONS"
+
 
 class _ScopeItem(BaseModel):
     """Like a Node from tree_sitter, but with only the str information we need."""
@@ -142,6 +151,14 @@ class _ScopeItem(BaseModel):
     name: str
     type: str
     signature: str
+
+
+class _ChunkNodeOutput(BaseModel):
+    """The output of a chunk_node call."""
+
+    this_document: Optional[TextNode]
+    upstream_children_documents: List[TextNode]
+    all_documents: List[TextNode]
 
 
 class CodeHierarchyNodeParser(NodeParser):
@@ -166,7 +183,9 @@ class CodeHierarchyNodeParser(NodeParser):
         )
     )
     min_characters: int = Field(
-        default=0, description="Minimum number of characters per chunk."
+        default=80,
+        description="Minimum number of characters per chunk."
+        "Defaults to 80 because that's about how long a replacement comment is in skeleton mode.",
     )
     code_splitter: Optional[CodeSplitter] = Field(
         description="The text splitter to use when splitting documents."
@@ -178,8 +197,9 @@ class CodeHierarchyNodeParser(NodeParser):
         default_factory=CallbackManager, exclude=True
     )
     skeleton: bool = Field(
+        True,
         description="Parent nodes have the text of their child nodes replaced with a signature and a comment "
-                    "instructing the language model to visit the child node for the full text of the scope."
+        "instructing the language model to visit the child node for the full text of the scope.",
     )
 
     def __init__(
@@ -190,7 +210,7 @@ class CodeHierarchyNodeParser(NodeParser):
         code_splitter: Optional[CodeSplitter] = None,
         callback_manager: Optional[CallbackManager] = None,
         metadata_extractor: Optional[MetadataExtractor] = None,
-        min_characters: int = 0,
+        min_characters: int = 80,
     ):
         callback_manager = callback_manager or CallbackManager([])
 
@@ -273,13 +293,6 @@ class CodeHierarchyNodeParser(NodeParser):
             end_byte = node.end_byte
         return text[start_byte:end_byte].strip()
 
-    class _ChunkNodeOutput(BaseModel):
-        """The output of a chunk_node call."""
-
-        this_document: Optional[TextNode]
-        upstream_children_documents: List[TextNode]
-        all_documents: List[TextNode]
-
     def _chunk_node(
         self,
         parent: Node,
@@ -316,7 +329,7 @@ class CodeHierarchyNodeParser(NodeParser):
 
         # Return early if the chunk is too small
         if len(current_chunk) < self.min_characters and not _root:
-            return self._ChunkNodeOutput(
+            return _ChunkNodeOutput(
                 this_document=None, all_documents=[], upstream_children_documents=[]
             )
 
@@ -361,7 +374,7 @@ class CodeHierarchyNodeParser(NodeParser):
                         assert (
                             not next_chunks.upstream_children_documents
                         ), "next_chunks.this_document and next_chunks.upstream_children_documents are exclusive."
-                        this_document.relationships[NodeRelationship.CHILD].append(
+                        this_document.relationships[NodeRelationship.CHILD].append(  # type: ignore
                             next_chunks.this_document.as_related_node_info()
                         )
                         next_chunks.this_document.relationships[
@@ -370,7 +383,7 @@ class CodeHierarchyNodeParser(NodeParser):
                     # Otherwise, we have been given a list of upstream_children_documents. We need to make them a child of this node
                     else:
                         for d in next_chunks.upstream_children_documents:
-                            this_document.relationships[NodeRelationship.CHILD].append(
+                            this_document.relationships[NodeRelationship.CHILD].append(  # type: ignore
                                 d.as_related_node_info()
                             )
                             d.relationships[
@@ -393,7 +406,7 @@ class CodeHierarchyNodeParser(NodeParser):
                 # Lastly we need to maintain all documents
                 all_documents.extend(next_chunks.all_documents)
 
-        return self._ChunkNodeOutput(
+        return _ChunkNodeOutput(
             this_document=this_document,
             upstream_children_documents=upstream_children_documents,
             all_documents=all_documents,
@@ -448,8 +461,6 @@ class CodeHierarchyNodeParser(NodeParser):
                         _chunks.this_document is not None
                     ), "Root node must be a chunk"
                     chunks = _chunks.all_documents
-                    if self.skeleton:
-                        self._skeletonize_list(chunks)
 
                     # Add your metadata to the chunks here
                     for chunk in chunks:
@@ -462,20 +473,58 @@ class CodeHierarchyNodeParser(NodeParser):
                             NodeRelationship.SOURCE
                         ] = document.as_related_node_info()
 
+                    if self.skeleton:
+                        self._skeletonize_list(chunks)
+
                     # Now further split the code by lines and characters
+                    # TODO: Test this and the relationships it creates
                     if self.code_splitter:
-                        simple = SimpleNodeParser(
-                            text_splitter=self.code_splitter,
-                            include_metadata=True,
-                            include_prev_next_rel=True,
-                            metadata_extractor=self.metadata_extractor,
-                            callback_manager=self.callback_manager,
-                        )
-                        chunks = simple.process_nodes(chunks)
+                        new_nodes = []
+                        for original_node in chunks:
+                            new_split_nodes = get_nodes_from_node(
+                                original_node,
+                                text_splitter=self.code_splitter,
+                                include_metadata=True,
+                                include_prev_next_rel=True,
+                            )
+
+                            # Add the parent child info to all the new_nodes_ derived from node
+                            for new_split_node in new_split_nodes:
+                                new_split_node.relationships[NodeRelationship.CHILD] = original_node.child_nodes  # type: ignore
+                                new_split_node.relationships[NodeRelationship.PARENT] = original_node.parent_node  # type: ignore
+
+                            # Go through chunks and replace all instances of node.node_id in relationships with new_nodes_[0].node_id
+                            for old_node in chunks:
+                                # Handle child nodes, which are a list
+                                new_children = []
+                                for old_nodes_child in old_node.child_nodes or []:
+                                    if old_nodes_child.node_id == original_node.node_id:
+                                        new_children.append(
+                                            new_split_nodes[0].as_related_node_info()
+                                        )
+                                    new_children.append(old_nodes_child)
+                                old_node.relationships[
+                                    NodeRelationship.CHILD
+                                ] = new_children
+
+                                # Handle parent node
+                                if (
+                                    old_node.parent_node
+                                    and old_node.parent_node.node_id
+                                    == original_node.node_id
+                                ):
+                                    old_node.relationships[
+                                        NodeRelationship.PARENT
+                                    ] = new_split_nodes[0].as_related_node_info()
+
+                            # Now save new_nodes_
+                            new_nodes += new_split_nodes
+
+                        chunks = new_nodes
 
                     # Or just extract metadata
-                    elif self.metadata_extractor:
-                        chunks = self.metadata_extractor.process_nodes(chunks)
+                    if self.metadata_extractor:
+                        chunks = self.metadata_extractor.process_nodes(chunks)  # type: ignore
 
                     event.on_end(
                         payload={EventPayload.CHUNKS: chunks},
@@ -489,33 +538,77 @@ class CodeHierarchyNodeParser(NodeParser):
 
         return out
 
-
     @staticmethod
-    def _get_indentation(text: str) -> Tuple[str, int]:
-        """
-        Gets the first indentation character and string in a text.
-        Defaults to 4 space indention.
-        """
-        for line in text.splitlines():
-            stripped_line = line.lstrip()
-            if stripped_line and stripped_line != line:
-                char = line[0]
-                for i, c in enumerate(line):
-                    if c != char:
-                        return char, i
-        return " ", 4
+    def _get_indentation(text: str) -> Tuple[str, int, int]:
+        indent_char = None
+        minimum_chain = None
 
+        # Check that text is at least 1 line long
+        text_split = text.splitlines()
+        if len(text_split) == 0:
+            raise ValueError("Text should be at least one line long.")
+
+        for line in text_split:
+            stripped_line = line.lstrip()
+
+            if stripped_line:
+                # Get whether it's tabs or spaces
+                spaces_count = line.count(" ", 0, len(line) - len(stripped_line))
+                tabs_count = line.count("\t", 0, len(line) - len(stripped_line))
+
+                if not indent_char:
+                    if spaces_count:
+                        indent_char = " "
+                    if tabs_count:
+                        indent_char = "\t"
+
+                # Detect mixed indentation.
+                if spaces_count > 0 and tabs_count > 0:
+                    raise ValueError("Mixed indentation found.")
+                if indent_char == " " and tabs_count > 0:
+                    raise ValueError("Mixed indentation found.")
+                if indent_char == "\t" and spaces_count > 0:
+                    raise ValueError("Mixed indentation found.")
+
+                # Get the minimum chain of indent_char
+                if indent_char:
+                    char_count = line.count(
+                        indent_char, 0, len(line) - len(stripped_line)
+                    )
+                    if minimum_chain is not None:
+                        if char_count > 0:
+                            minimum_chain = min(char_count, minimum_chain)
+                    else:
+                        if char_count > 0:
+                            minimum_chain = char_count
+
+        # Handle edge case
+        if indent_char is None:
+            indent_char = " "
+        if minimum_chain is None:
+            minimum_chain = 4
+
+        # Get the first indent count
+        first_line = text_split[0]
+        first_indent_count = 0
+        for char in first_line:
+            if char == indent_char:
+                first_indent_count += 1
+            else:
+                break
+
+        # Return the default indent level if only one indentation level was found.
+        return indent_char, minimum_chain, first_indent_count // minimum_chain
 
     @staticmethod
     def _get_comment_text(node: TextNode) -> str:
         """Gets just the natural language text for a skeletonize comment."""
         return f"Code replaced for brevity. See node_id {node.node_id}"
 
-
     @classmethod
     def _get_replacement_text(cls, child_node: TextNode) -> str:
         """Manufactures a the replacement text to use to skeletonize a given child node."""
-        signature = child_node.metadata["inclusive_scope"][-1]["signature"]
+        signature = child_node.metadata["inclusive_scopes"][-1]["signature"]
         language = child_node.metadata["language"]
         if language not in _COMMENT_OPTIONS:
             # TODO: Create a contribution message
@@ -523,20 +616,60 @@ class CodeHierarchyNodeParser(NodeParser):
         comment_options = _COMMENT_OPTIONS[language]
 
         # Create the text to replace the child_node.text with
-        indentation_char, indentation_lvl = cls._get_indentation(child_node.text)
+        (
+            indentation_char,
+            indentation_count_per_lvl,
+            first_indentation_lvl,
+        ) = cls._get_indentation(child_node.text)
 
         # Start with a properly indented signature
-        replacement_txt = indentation_char*indentation_lvl + signature
+        replacement_txt = (
+            indentation_char * indentation_count_per_lvl * first_indentation_lvl
+            + signature
+        )
 
         # Add brackets if necessary. Expandable in the future to other methods of scoping.
         if comment_options.scope_method == _ScopeMethod.BRACKETS:
             replacement_txt += " {\n"
-            replacement_txt += indentation_char*indentation_lvl + comment_options.comment_template.format(cls._get_comment_text(child_node)) + "\n"
-            replacement_txt += "}"
+            replacement_txt += (
+                indentation_char
+                * indentation_count_per_lvl
+                * (first_indentation_lvl + 1)
+                + comment_options.comment_template.format(
+                    cls._get_comment_text(child_node)
+                )
+                + "\n"
+            )
+            replacement_txt += (
+                indentation_char * indentation_count_per_lvl * first_indentation_lvl
+                + "}"
+            )
 
         elif comment_options.scope_method == _ScopeMethod.INDENTATION:
             replacement_txt += "\n"
-            replacement_txt += indentation_char*indentation_lvl + comment_options.comment_template.format(cls._get_comment_text(child_node))
+            replacement_txt += indentation_char * indentation_count_per_lvl * (
+                first_indentation_lvl + 1
+            ) + comment_options.comment_template.format(
+                cls._get_comment_text(child_node)
+            )
+
+        elif comment_options.scope_method == _ScopeMethod.HTML_END_TAGS:
+            tag_name = child_node.metadata["inclusive_scopes"][-1]["name"]
+            end_tag = f"</{tag_name}>"
+            replacement_txt += "\n"
+            replacement_txt += (
+                indentation_char
+                * indentation_count_per_lvl
+                * (first_indentation_lvl + 1)
+                + comment_options.comment_template.format(
+                    cls._get_comment_text(child_node)
+                )
+                + "\n"
+            )
+            replacement_txt += (
+                indentation_char * indentation_count_per_lvl * first_indentation_lvl
+                + end_tag
+            )
 
         else:
             raise KeyError(f"Unrecognized enum value {comment_options.scope_method}")
@@ -559,9 +692,7 @@ class CodeHierarchyNodeParser(NodeParser):
     @classmethod
     def _skeletonize_list(cls, nodes: List[TextNode]) -> None:
         # Create a convienient map for mapping node id's to nodes
-        node_id_map = {
-            n.node_id: n for n in nodes
-        }
+        node_id_map = {n.node_id: n for n in nodes}
 
         def recur(node: TextNode) -> None:
             # If any children exist, skeletonize ourselves, starting at the root DFS

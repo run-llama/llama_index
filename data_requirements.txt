@@ -15,3 +15,7 @@ google-auth-oauthlib
 
 # vellum
 vellum-ai==0.0.15
+
+# Code Parsing
+tree_sitter==0.20.2
+tree_sitter_languages==1.7.0

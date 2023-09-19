@@ -4,15 +4,8 @@
 import logging
 from typing import List, Optional
 
-from llama_index.schema import (
-    BaseNode,
-    Document,
-    ImageDocument,
-    ImageNode,
-    MetadataMode,
-    NodeRelationship,
-    TextNode,
-)
+from llama_index.schema import (BaseNode, Document, ImageDocument, ImageNode,
+                                MetadataMode, NodeRelationship, TextNode)
 from llama_index.text_splitter import TextSplitter
 from llama_index.text_splitter.types import MetadataAwareTextSplitter
 from llama_index.utils import truncate_text

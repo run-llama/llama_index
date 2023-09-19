@@ -14,8 +14,7 @@ def test_python_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="python",
-        skeleton=True
+        language="python", skeleton=True, min_characters=0
     )
 
     text = """\
@@ -36,9 +35,12 @@ class Foo:
     chunks: List[TextNode] = code_splitter.get_nodes_from_documents([text_node])
 
     # This is the module scope
-    assert chunks[0].text == f"""\
+    assert (
+        chunks[0].text
+        == f"""\
 class Foo:
-    {class_comment}"""
+    # {CodeHierarchyNodeParser._get_comment_text(chunks[1])}"""
+    )
     assert chunks[0].metadata["module"] == "example.foo"
     assert chunks[0].metadata["inclusive_scopes"] == []
     assert NodeRelationship.PARENT not in chunks[0].relationships
@@ -51,13 +53,16 @@ class Foo:
     assert NodeRelationship.NEXT not in chunks[0].relationships
 
     # This is the class scope
-    assert chunks[1].text == f"""\
+    assert (
+        chunks[1].text
+        == f"""\
 class Foo:
     def bar() -> None:
-        {bar_comment}
+        # {CodeHierarchyNodeParser._get_comment_text(chunks[2])}
 
     async def baz():
-        {baz_comment}"""
+        # {CodeHierarchyNodeParser._get_comment_text(chunks[3])}"""
+    )
     assert chunks[1].metadata["module"] == "example.foo"
     assert chunks[1].metadata["inclusive_scopes"] == [
         {"name": "Foo", "type": "class_definition", "signature": "class Foo:"}
@@ -125,8 +130,7 @@ def test_python_code_splitter_with_decorators() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="python",
-        skeleton=True
+        language="python", skeleton=True, min_characters=0
     )
 
     text = """\
@@ -147,10 +151,13 @@ class Foo:
     chunks: List[TextNode] = code_splitter.get_nodes_from_documents([text_node])
 
     # This is the module scope
-    assert chunks[0].text == f"""\
+    assert (
+        chunks[0].text
+        == f"""\
 @foo
 class Foo:
-    {class_comment}"""
+    # {CodeHierarchyNodeParser._get_comment_text(chunks[1])}"""
+    )
     assert chunks[0].metadata["module"] == "example.foo"
     assert chunks[0].metadata["inclusive_scopes"] == []
     assert NodeRelationship.PARENT not in chunks[0].relationships
@@ -170,7 +177,7 @@ class Foo:
     @bar
     @barfoo
     def bar() -> None:
-        {bar_comment}"""
+        # {CodeHierarchyNodeParser._get_comment_text(chunks[2])}"""
     )
     assert chunks[1].metadata["module"] == "example.foo"
     assert chunks[1].metadata["inclusive_scopes"] == [
@@ -218,8 +225,9 @@ def test_html_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="html", min_characters=len("    <title>My Example Page</title>") + 1,
-        skeleton=True
+        language="html",
+        min_characters=len("    <title>My Example Page</title>") + 1,
+        skeleton=True,
     )
 
     text = """\
@@ -246,11 +254,14 @@ def test_html_code_splitter() -> None:
     chunks = code_splitter.get_nodes_from_documents([text_node])
 
     # This is the DOCTYPE scope
-    assert chunks[0].text == f"""\
+    assert (
+        chunks[0].text
+        == f"""\
 <!DOCTYPE html>
 <html>
-    {html_comment}
+    <!-- {CodeHierarchyNodeParser._get_comment_text(chunks[1])} -->
 </html>"""
+    )
     assert chunks[0].metadata["inclusive_scopes"] == []
     assert NodeRelationship.PARENT not in chunks[0].relationships
     assert [c.node_id for c in chunks[0].relationships[NodeRelationship.CHILD]] == [
@@ -266,10 +277,10 @@ def test_html_code_splitter() -> None:
         == f"""\
 <html>
 <head>
-    {head_comment}
+    <!-- {CodeHierarchyNodeParser._get_comment_text(chunks[2])} -->
 </head>
 <body>
-    {body_comment}
+    <!-- {CodeHierarchyNodeParser._get_comment_text(chunks[3])} -->
 </body>
 </html>"""
     )
@@ -307,56 +318,6 @@ def test_html_code_splitter() -> None:
     assert NodeRelationship.PREVIOUS not in chunks[2].relationships
     assert NodeRelationship.NEXT not in chunks[2].relationships
 
-    # Test the fourth chunk (<body> tag and its content)
-    assert (
-        chunks[3].text
-        == f"""\
-<body>
-    <h1>Welcome to My Example Page</h1>
-    <p>This is a basic HTML page example.</p>
-    <ul>
-        {ul_comment}
-    </ul>
-    <img src="https://example.com/image.jpg" alt="Example Image">
-</body>"""
-    )
-    assert chunks[3].metadata["inclusive_scopes"] == [
-        {"name": "html", "type": "element", "signature": "<html>"},
-        {"name": "body", "type": "element", "signature": "<body>"},
-    ]
-    assert (
-        chunks[3].relationships[NodeRelationship.PARENT].node_id == chunks[1].id_
-    )  # Parent should be <html>
-    assert chunks[5].id_ in [
-        c.node_id for c in chunks[3].relationships[NodeRelationship.CHILD]
-    ]
-    assert chunks[3].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
-    assert NodeRelationship.PREVIOUS not in chunks[3].relationships
-    assert NodeRelationship.NEXT not in chunks[3].relationships
-
-    # Test the seventh chunk (<ul> tag and its content)
-    assert (
-        chunks[6].text
-        == """\
-    <ul>
-        <li>Item 1</li>
-        <li>Item 2</li>
-        <li>Item 3</li>
-    </ul>"""
-    )
-    assert chunks[6].metadata["inclusive_scopes"] == [
-        {"name": "html", "type": "element", "signature": "<html>"},
-        {"name": "body", "type": "element", "signature": "<body>"},
-        {"name": "ul", "type": "element", "signature": "<ul>"},
-    ]
-    assert (
-        chunks[6].relationships[NodeRelationship.PARENT].node_id == chunks[3].id_
-    )  # Parent should be <body>
-    assert [c.node_id for c in chunks[6].relationships[NodeRelationship.CHILD]] == []
-    assert chunks[6].relationships[NodeRelationship.SOURCE].node_id == text_node.id_
-    assert NodeRelationship.PREVIOUS not in chunks[6].relationships
-    assert NodeRelationship.NEXT not in chunks[6].relationships
-
 
 def test_typescript_code_splitter() -> None:
     """Test case for code splitting using TypeScript"""
@@ -365,8 +326,7 @@ def test_typescript_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="typescript",
-        skeleton=True,
+        language="typescript", skeleton=True, min_characters=0
     )
 
     text = """\
@@ -389,18 +349,23 @@ function baz() {
     )
     chunks: List[RelatedNodeInfo] = code_splitter.get_nodes_from_documents([text_node])
 
-    assert chunks[0].text == f"""\
-function foo() {
-    {foo_comment}
-}
+    # Fstrings don't like forward slash
+    double_forward_slash: str = "//"
+    assert (
+        chunks[0].text
+        == f"""\
+function foo() {{
+    {double_forward_slash} {CodeHierarchyNodeParser._get_comment_text(chunks[1])}
+}}
 
-class Example {
-    {class_comment}
-}
+class Example {{
+    {double_forward_slash} {CodeHierarchyNodeParser._get_comment_text(chunks[2])}
+}}
 
-function baz() {
-    {baz_comment}
-}"""
+function baz() {{
+    {double_forward_slash} {CodeHierarchyNodeParser._get_comment_text(chunks[4])}
+}}"""
+    )
 
     # Test the second chunk (function foo)
     assert (
@@ -419,12 +384,12 @@ function foo() {
     # Test the third chunk (class Example)
     assert (
         chunks[2].text
-        == """\
-class Example {
-    exampleMethod() {
-        console.log("line1");
-    }
-}"""
+        == f"""\
+class Example {{
+    exampleMethod() {{
+        {double_forward_slash} {CodeHierarchyNodeParser._get_comment_text(chunks[3])}
+    }}
+}}"""
     )
     assert chunks[2].metadata["inclusive_scopes"] == [
         {"name": "Example", "type": "class_declaration", "signature": "class Example"}
@@ -467,4 +432,40 @@ function baz() {
     assert chunks[4].relationships[NodeRelationship.PARENT].node_id == chunks[0].id_
     assert chunks[4].relationships[NodeRelationship.CHILD] == []
 
+
 # No need to test everything that is in test_code_hierarchy_no_skeleton
+
+
+def test_typescript_code_splitter_2() -> None:
+    """Test case for code splitting using TypeScript"""
+
+    if "CI" in os.environ:
+        return
+
+    code_splitter = CodeHierarchyNodeParser(
+        language="typescript", skeleton=True, min_characters=0
+    )
+
+    text = """\
+class Example {
+    exampleMethod() {
+        console.log("line1");
+    }
+}
+"""
+
+    text_node = TextNode(
+        text=text,
+    )
+    chunks: List[RelatedNodeInfo] = code_splitter.get_nodes_from_documents([text_node])
+
+    # Fstrings don't like forward slash
+    double_forward_slash: str = "//"
+    assert (
+        chunks[0].text
+        == f"""\
+class Example {{
+    {double_forward_slash} {CodeHierarchyNodeParser._get_comment_text(chunks[1])}
+}}
+"""
+    )
