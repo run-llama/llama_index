@@ -36,7 +36,6 @@ from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.timescalevector import TimescaleVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
-from llama_index.vector_stores.zep import ZepVectorStore
 from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -67,7 +66,7 @@ __all__ = [
     "DocArrayHnswVectorStore",
     "SupabaseVectorStore",
     "PGVectorStore",
-    "TimescaleVectorStore"
+    "TimescaleVectorStore",
     "ZepVectorStore",
     "AwaDBVectorStore",
     "BagelVectorStore",

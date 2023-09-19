@@ -1,12 +1,12 @@
-from typing import List, Any, Dict, Union, Generator
+from typing import List, Any, Generator
 
 import pytest
 import asyncio
 import os
-import uuid
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import TimescaleVectorStore
+from llama_index.vector_stores.timescalevector import IndexType
 from llama_index.vector_stores.types import (
     VectorStoreQuery,
     MetadataFilters,
@@ -18,13 +18,16 @@ from datetime import timedelta, datetime
 # from testing find install here https://github.com/timescale/python-vector/
 
 TEST_SERVICE_URL = os.environ.get(
-    "TEST_TIMESCALE_SERVICE_URL", "postgres://tsdbadmin:<password>@<id>.tsdb.cloud.timescale.com:<port>/tsdb?sslmode=require")
+    "TEST_TIMESCALE_SERVICE_URL",
+    "postgres://tsdbadmin:<password>@<id>.tsdb.cloud.timescale.com:<port>/tsdb?sslmode=require",
+)
 TEST_TABLE_NAME = "lorem_ipsum"
 
 try:
     from timescale_vector import client  # noqa: F401
+
     cli = client.Sync(TEST_SERVICE_URL, TEST_TABLE_NAME, 1536)
-    with cli.connect() as conn:
+    with cli.connect() as test_conn:
         pass
 
     cli.close()
@@ -92,22 +95,22 @@ def node_embeddings() -> List[TextNode]:
         TextNode(
             text="lorem ipsum",
             id_="aaa",
-            relationships={
-                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
             embedding=[1.0] * 1536,
         ),
         TextNode(
             text="dolor sit amet",
             id_="bbb",
-            relationships={
-                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
             extra_info={"test_key": "test_value"},
             embedding=[0.1] * 1536,
         ),
     ]
 
 
-@pytest.mark.skipif(timescale_not_available, reason="timescale vector store is not available")
+@pytest.mark.skipif(
+    timescale_not_available, reason="timescale vector store is not available"
+)
 @pytest.mark.asyncio
 async def test_instance_creation(db: None) -> None:
     tvs = TimescaleVectorStore.from_params(
@@ -118,7 +121,9 @@ async def test_instance_creation(db: None) -> None:
     await tvs.close()
 
 
-@pytest.mark.skipif(timescale_not_available, reason="timescale vector store is not available")
+@pytest.mark.skipif(
+    timescale_not_available, reason="timescale vector store is not available"
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_add_to_db_and_query(
@@ -139,7 +144,9 @@ async def test_add_to_db_and_query(
     assert res.nodes[0].node_id == "aaa"
 
 
-@pytest.mark.skipif(timescale_not_available, reason="timescale vector store is not available")
+@pytest.mark.skipif(
+    timescale_not_available, reason="timescale vector store is not available"
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_add_to_db_and_query_with_metadata_filters(
@@ -163,13 +170,16 @@ async def test_add_to_db_and_query_with_metadata_filters(
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "bbb"
+    assert res.ids is not None
     assert res.ids[0] == "bbb"
 
 
-@pytest.mark.skipif(timescale_not_available, reason="timescale vector store is not available")
+@pytest.mark.skipif(
+    timescale_not_available, reason="timescale vector store is not available"
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True), (False)])
-async def test_add_to_db_query_and_delete(
+async def test_async_add_to_db_query_and_delete(
     tvs: TimescaleVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
@@ -198,7 +208,9 @@ async def test_add_to_db_query_and_delete(
     assert res.nodes[0].node_id == "aaa"
 
 
-@pytest.mark.skipif(timescale_not_available, reason="timescale vector store is not available")
+@pytest.mark.skipif(
+    timescale_not_available, reason="timescale vector store is not available"
+)
 def test_add_to_db_query_and_delete(
     tvs: TimescaleVectorStore, node_embeddings: List[TextNode]
 ) -> None:
@@ -214,17 +226,19 @@ def test_add_to_db_query_and_delete(
     tvs.create_index()
     tvs.drop_index()
 
-    tvs.create_index("tsv", max_alpha=1.0, num_neighbors=50)
+    tvs.create_index(IndexType.TIMESCALE_VECTOR, max_alpha=1.0, num_neighbors=50)
     tvs.drop_index()
 
-    tvs.create_index("ivfflat", num_lists=20, num_records=1000)
+    tvs.create_index(IndexType.PGVECTOR_IVFFLAT, num_lists=20, num_records=1000)
     tvs.drop_index()
 
-    tvs.create_index("hnsw", m=16, ef_construction=64)
+    tvs.create_index(IndexType.PGVECTOR_HNSW, m=16, ef_construction=64)
     tvs.drop_index()
 
 
-@pytest.mark.skipif(timescale_not_available, reason="timescale vector store is not available")
+@pytest.mark.skipif(
+    timescale_not_available, reason="timescale vector store is not available"
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_time_partitioning_default_uuid(
@@ -247,7 +261,9 @@ async def test_time_partitioning_default_uuid(
     assert res.nodes[0].node_id == "bbb"
 
 
-@pytest.mark.skipif(timescale_not_available, reason="timescale vector store is not available")
+@pytest.mark.skipif(
+    timescale_not_available, reason="timescale vector store is not available"
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_time_partitioning_explicit_uuid(
@@ -273,14 +289,15 @@ async def test_time_partitioning_explicit_uuid(
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == node_embeddings[1].node_id
+    assert res.ids is not None
     assert res.ids[0] != node_embeddings[1].node_id
 
     # make sure time filter works. This query should return only the first node
     q = VectorStoreQuery(query_embedding=[0.1] * 1536, similarity_top_k=4)
     if use_async:
-        res = await tvs_tp.aquery(q, end_date=t0+timedelta(minutes=1))
+        res = await tvs_tp.aquery(q, end_date=t0 + timedelta(minutes=1))
     else:
-        res = tvs_tp.query(q, end_date=t0+timedelta(minutes=1))
+        res = tvs_tp.query(q, end_date=t0 + timedelta(minutes=1))
 
     assert res.nodes
     assert len(res.nodes) == 1
@@ -288,9 +305,9 @@ async def test_time_partitioning_explicit_uuid(
     # here the filter should return both nodes
     q = VectorStoreQuery(query_embedding=[0.1] * 1536, similarity_top_k=4)
     if use_async:
-        res = await tvs_tp.aquery(q, end_date=t0+timedelta(days=3))
+        res = await tvs_tp.aquery(q, end_date=t0 + timedelta(days=3))
     else:
-        res = tvs_tp.query(q, end_date=t0+timedelta(days=3))
+        res = tvs_tp.query(q, end_date=t0 + timedelta(days=3))
 
     assert res.nodes
     assert len(res.nodes) == 2
