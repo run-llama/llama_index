@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import (Any, Callable, Dict, Iterable, List, Optional, Sequence,
+                    Set, Tuple)
 
 try:
     from pydantic.v1 import BaseModel, Field
@@ -10,7 +11,8 @@ from tree_sitter import Node
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
+from llama_index.node_parser.extractors.metadata_extractors import \
+    MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_node
 from llama_index.node_parser.simple import SimpleNodeParser
@@ -487,6 +489,9 @@ class CodeHierarchyNodeParser(NodeParser):
                                 include_metadata=True,
                                 include_prev_next_rel=True,
                             )
+
+                            # Force the first new_split_node to have the same id as the original_node
+                            new_split_nodes[0].id_ = original_node.id_
 
                             # Add the parent child info to all the new_nodes_ derived from node
                             for new_split_node in new_split_nodes:
