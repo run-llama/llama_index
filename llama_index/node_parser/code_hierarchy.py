@@ -10,7 +10,8 @@ from tree_sitter import Node
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
+from llama_index.node_parser.extractors.metadata_extractors import \
+    MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_node
 from llama_index.schema import BaseNode, Document, NodeRelationship, TextNode
@@ -65,6 +66,10 @@ class _SignatureCaptureOptions(BaseModel):
 
 """
 Maps language -> Node Type -> SignatureCaptureOptions
+
+The best way for a developer to discover these is to put a breakpoint at the TIP
+tag in _chunk_node, and then create a unit test for some code, and then iterate
+through the code discovering the node names.
 """
 _DEFAULT_SIGNATURE_IDENTIFIERS: Dict[str, Dict[str, _SignatureCaptureOptions]] = {
     "python": {
@@ -179,7 +184,7 @@ class CodeHierarchyNodeParser(NodeParser):
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
-        return cls.__name__
+        return "CodeHierarchyNodeParser"
 
     language: str = Field(
         description="The programming languge of the code being split."
