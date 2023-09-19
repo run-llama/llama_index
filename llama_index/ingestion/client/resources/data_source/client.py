@@ -4,14 +4,16 @@ import typing
 import urllib.parse
 from json.decoder import JSONDecodeError
 
-from llama_index.bridge.pydantic import pydantic
+import pydantic
 
 from ...core.api_error import ApiError
 from ...core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ...core.jsonable_encoder import jsonable_encoder
 from ...errors.unprocessable_entity_error import UnprocessableEntityError
+from ...types.configurable_data_source_names import ConfigurableDataSourceNames
 from ...types.data_source import DataSource
 from ...types.data_source_create import DataSourceCreate
+from ...types.data_source_update_component import DataSourceUpdateComponent
 from ...types.http_validation_error import HttpValidationError
 
 # this is used as the default value for optional parameters
@@ -76,6 +78,77 @@ class DataSourceClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
+    def update_data_source(
+        self,
+        data_source_id: str,
+        *,
+        source_type: ConfigurableDataSourceNames,
+        component: typing.Optional[DataSourceUpdateComponent] = OMIT,
+        name: typing.Optional[str] = OMIT,
+    ) -> DataSource:
+        """
+        Get a data source by ID.
+
+        Parameters:
+            - data_source_id: str.
+
+            - source_type: ConfigurableDataSourceNames.
+
+            - component: typing.Optional[DataSourceUpdateComponent].
+
+            - name: typing.Optional[str].
+        """
+        _request: typing.Dict[str, typing.Any] = {"source_type": source_type}
+        if component is not OMIT:
+            _request["component"] = component
+        if name is not OMIT:
+            _request["name"] = name
+        _response = self._client_wrapper.httpx_client.request(
+            "PUT",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/data_source/{data_source_id}",
+            ),
+            json=jsonable_encoder(_request),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(DataSource, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def delete_data_source(self, data_source_id: str) -> None:
+        """
+        Get a data source by ID.
+
+        Parameters:
+            - data_source_id: str.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "DELETE",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/data_source/{data_source_id}",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
 
 class AsyncDataSourceClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -127,6 +200,77 @@ class AsyncDataSourceClient:
         )
         if 200 <= _response.status_code < 300:
             return pydantic.parse_obj_as(DataSource, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def update_data_source(
+        self,
+        data_source_id: str,
+        *,
+        source_type: ConfigurableDataSourceNames,
+        component: typing.Optional[DataSourceUpdateComponent] = OMIT,
+        name: typing.Optional[str] = OMIT,
+    ) -> DataSource:
+        """
+        Get a data source by ID.
+
+        Parameters:
+            - data_source_id: str.
+
+            - source_type: ConfigurableDataSourceNames.
+
+            - component: typing.Optional[DataSourceUpdateComponent].
+
+            - name: typing.Optional[str].
+        """
+        _request: typing.Dict[str, typing.Any] = {"source_type": source_type}
+        if component is not OMIT:
+            _request["component"] = component
+        if name is not OMIT:
+            _request["name"] = name
+        _response = await self._client_wrapper.httpx_client.request(
+            "PUT",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/data_source/{data_source_id}",
+            ),
+            json=jsonable_encoder(_request),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(DataSource, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def delete_data_source(self, data_source_id: str) -> None:
+        """
+        Get a data source by ID.
+
+        Parameters:
+            - data_source_id: str.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "DELETE",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/data_source/{data_source_id}",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:

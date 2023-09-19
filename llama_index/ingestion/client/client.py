@@ -8,6 +8,7 @@ from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from .resources.data_sink.client import AsyncDataSinkClient, DataSinkClient
 from .resources.data_source.client import AsyncDataSourceClient, DataSourceClient
 from .resources.health.client import AsyncHealthClient, HealthClient
+from .resources.pipeline.client import AsyncPipelineClient, PipelineClient
 from .resources.project.client import AsyncProjectClient, ProjectClient
 from .resources.transformation.client import (
     AsyncTransformationClient,
@@ -24,10 +25,11 @@ class PlatformApi:
         self.data_sink = DataSinkClient(client_wrapper=self._client_wrapper)
         self.data_source = DataSourceClient(client_wrapper=self._client_wrapper)
         self.project = ProjectClient(client_wrapper=self._client_wrapper)
+        self.pipeline = PipelineClient(client_wrapper=self._client_wrapper)
         self.transformation = TransformationClient(client_wrapper=self._client_wrapper)
 
 
-class AsyncPlatformApiApi:
+class AsyncPlatformApi:
     def __init__(self, *, base_url: str, timeout: typing.Optional[float] = 60):
         self._client_wrapper = AsyncClientWrapper(
             base_url=base_url, httpx_client=httpx.AsyncClient(timeout=timeout)
@@ -36,6 +38,7 @@ class AsyncPlatformApiApi:
         self.data_sink = AsyncDataSinkClient(client_wrapper=self._client_wrapper)
         self.data_source = AsyncDataSourceClient(client_wrapper=self._client_wrapper)
         self.project = AsyncProjectClient(client_wrapper=self._client_wrapper)
+        self.pipeline = AsyncPipelineClient(client_wrapper=self._client_wrapper)
         self.transformation = AsyncTransformationClient(
             client_wrapper=self._client_wrapper
         )

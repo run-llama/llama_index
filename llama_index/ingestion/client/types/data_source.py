@@ -3,10 +3,11 @@
 import datetime as dt
 import typing
 
-from llama_index.bridge.pydantic import pydantic
+import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .data_source_type_enum import DataSourceTypeEnum
+from .configurable_data_source_names import ConfigurableDataSourceNames
+from .data_source_component import DataSourceComponent
 
 
 class DataSource(pydantic.BaseModel):
@@ -14,9 +15,6 @@ class DataSource(pydantic.BaseModel):
     Schema for a data source.
     """
 
-    name: str
-    source_type: DataSourceTypeEnum
-    metadata_blob: typing.Dict[str, typing.Any]
     id: typing.Optional[str] = pydantic.Field(description="Unique identifier")
     created_at: typing.Optional[dt.datetime] = pydantic.Field(
         description="Creation datetime"
@@ -24,6 +22,9 @@ class DataSource(pydantic.BaseModel):
     updated_at: typing.Optional[dt.datetime] = pydantic.Field(
         description="Update datetime"
     )
+    source_type: ConfigurableDataSourceNames
+    component: DataSourceComponent
+    name: str
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

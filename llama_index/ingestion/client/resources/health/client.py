@@ -4,7 +4,7 @@ import typing
 import urllib.parse
 from json.decoder import JSONDecodeError
 
-from llama_index.bridge.pydantic import pydantic
+import pydantic
 
 from ...core.api_error import ApiError
 from ...core.client_wrapper import AsyncClientWrapper, SyncClientWrapper

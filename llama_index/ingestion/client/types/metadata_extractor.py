@@ -3,7 +3,7 @@
 import datetime as dt
 import typing
 
-from llama_index.bridge.pydantic import pydantic
+import pydantic
 
 from ..core.datetime_utils import serialize_datetime
 from .metadata_feature_extractor import MetadataFeatureExtractor

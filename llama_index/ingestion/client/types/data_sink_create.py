@@ -3,10 +3,11 @@
 import datetime as dt
 import typing
 
-from llama_index.bridge.pydantic import pydantic
+import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .data_sink_type_enum import DataSinkTypeEnum
+from .configurable_data_sink_names import ConfigurableDataSinkNames
+from .data_sink_create_component import DataSinkCreateComponent
 
 
 class DataSinkCreate(pydantic.BaseModel):
@@ -14,9 +15,9 @@ class DataSinkCreate(pydantic.BaseModel):
     Schema for creating a data sink.
     """
 
+    sink_type: ConfigurableDataSinkNames
+    component: DataSinkCreateComponent
     name: str
-    sink_type: DataSinkTypeEnum
-    metadata_blob: typing.Dict[str, typing.Any]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

@@ -3,7 +3,7 @@
 import datetime as dt
 import typing
 
-from llama_index.bridge.pydantic import pydantic
+import pydantic
 
 from ..core.datetime_utils import serialize_datetime
 from .configurable_transformation_names import ConfigurableTransformationNames
@@ -21,7 +21,9 @@ class ConfiguredTransformationItem(pydantic.BaseModel):
     """
 
     id: typing.Optional[str]
-    transformation_name: ConfigurableTransformationNames
+    transformation_name: ConfigurableTransformationNames = pydantic.Field(
+        description="Name for the type of transformation this is (e.g. SIMPLE_NODE_PARSER)"
+    )
     component: ConfiguredTransformationItemComponent = pydantic.Field(
         description="Component that implements the transformation"
     )
