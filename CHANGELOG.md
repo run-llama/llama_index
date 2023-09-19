@@ -1,5 +1,203 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Add support for `gpt-3.5-turbo-instruct` (#7729)
+
+## [0.8.29.post1] - 2023-09-18
+
+### Bug Fixes / Nits
+- Fix langchain import error for embeddings (#7714)
+
+## [0.8.29] - 2023-09-18
+
+### New Features
+- Added metadata filtering to the base simple vector store (#7564)
+- add low-level router guide (#7708)
+- Add CustomQueryEngine class (#7703)
+
+### Bug Fixes / Nits
+- Fix context window metadata in lite-llm (#7696)
+
+## [0.8.28] - 2023-09-16
+
+### New Features
+- Add CorrectnessEvaluator (#7661)
+- Added support for `Ollama` LLMs (#7635)
+- Added `HWPReader` (#7672)
+- Simplified portkey LLM interface (#7669)
+- Added async operation support to `ElasticsearchStore` vector store (#7613)
+- Added support for `LiteLLM` (#7600)
+- Added batch evaluation runner (#7692)
+
+### Bug Fixes / Nits
+- Avoid `NotImplementedError` for async langchain embeddings (#7668)
+- Imrpoved reliability of LLM selectors (#7678)
+- Fixed `query_wrapper_prompt` and `system_prompt` for output parsers and completion models (#7678)
+- Fixed node attribute inheritance in citation query engine (#7675)
+
+### Breaking Changes
+- Refactor and update `BaseEvaluator` interface to be more consistent (#7661)
+  - Use `evaluate` function for generic input
+  - Use `evaluate_response` function with `Response` objects from llama index query engine
+- Update existing evaluators with more explicit naming
+  - `ResponseEvaluator` -> `FaithfulnessEvaluator`
+  - `QueryResponseEvaluator` -> `RelevancyEvaluator`
+  - old names are kept as class aliases for backwards compatibility
+
+## [0.8.27] - 2023-09-14
+
+### New Features
+- add low-level tutorial section (#7673)
+
+### Bug Fixes / Nits
+- default delta should be a dict (#7665)
+- better query wrapper logic on LLMPredictor (#7667)
+
+## [0.8.26] - 2023-09-12
+
+### New Features
+- add non-linear embedding adapter (#7658)
+- Add "finetune + RAG" evaluation to knowledge fine-tuning notebook (#7643)
+
+### Bug Fixes / Nits
+- Fixed chunk-overlap for sentence splitter (#7590)
+
+## [0.8.25] - 2023-09-12
+
+### New Features
+- Added `AGENT_STEP` callback event type (#7652)
+
+### Bug Fixes / Nits
+- Allowed `simple` mode to work with `as_chat_engine()` (#7637)
+- Fixed index error in azure streaming (#7646)
+- Removed `pdb` from llama-cpp (#7651)
+
+## [0.8.24] - 2023-09-11
+
+## New Features
+- guide: fine-tuning to memorize knowledge (#7626)
+- added ability to customize prompt template for eval modules (#7626)
+
+### Bug Fixes
+- Properly detect `llama-cpp-python` version for loading the default GGML or GGUF `llama2-chat-13b` model (#7616)
+- Pass in `summary_template` properly with `RetrieverQueryEngine.from_args()` (#7621)
+- Fix span types in wandb callback (#7631)
+
+## [0.8.23] - 2023-09-09
+
+### Bug Fixes
+- Make sure context and system prompt is included in prompt for first chat for llama2 (#7597)
+- Avoid negative chunk size error in refine process (#7607)
+- Fix relationships for small documents in hierarchical node parser (#7611)
+- Update Anyscale Endpoints integration with full streaming and async support (#7602)
+- Better support of passing credentials as LLM constructor args in `OpenAI`, `AzureOpenAI`, and `Anyscale` (#7602)
+
+### Breaking Changes
+- Update milvus vector store to support filters and dynamic schemas (#7286)
+  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
+- Added NLTK to core dependencies to support the default sentence splitter (#7606)
+
+## [0.8.22] - 2023-09-07
+
+### New Features
+- Added support for ElasticSearch Vector Store (#7543)
+
+### Bug Fixes / Nits
+- Fixed small `_index` bug in `ElasticSearchReader` (#7570)
+- Fixed bug with prompt helper settings in global service contexts (#7576)
+- Remove newlines from openai embeddings again (#7588)
+- Fixed small bug with setting `query_wrapper_prompt` in the service context (#7585)
+
+### Breaking/Deprecated API Changes
+- Clean up vector store interface to use `BaseNode` instead of `NodeWithEmbedding`
+  - For majority of users, this is a no-op change
+  - For users directly operating with the `VectorStore` abstraction and manually constructing `NodeWithEmbedding` objects, this is a minor breaking change. Use `TextNode` with `embedding` set directly, instead of `NodeWithEmbedding`.
+
+## [0.8.21] - 2023-09-06
+
+### New Features
+- add embedding adapter fine-tuning engine + guide (#7565)
+- Added support for Azure Cognitive Search vector store (#7469)
+- Support delete in supabase (#6951)
+- Added support for Espilla vector store (#7539)
+- Added support for AnyScale LLM (#7497)
+
+### Bug Fixes / Nits
+- Default to user-configurable top-k in `VectorIndexAutoRetriever` (#7556)
+- Catch validation errors for structured responses (#7523)
+- Fix streaming refine template (#7561)
+
+## [0.8.20] - 2023-09-04
+
+### New Features
+- Added Portkey LLM integration (#7508)
+- Support postgres/pgvector hybrid search (#7501)
+- upgrade recursive retriever node reference notebook (#7537)
+
+## [0.8.19] - 2023-09-03
+
+### New Features
+- replace list index with summary index  (#7478)
+- rename list index to summary index part 2 (#7531)
+
+## [0.8.18] - 2023-09-03
+
+### New Features
+- add agent finetuning guide (#7526)
+
+## [0.8.17] - 2023-09-02
+
+### New Features
+- Make (some) loaders serializable (#7498)
+- add node references to recursive retrieval (#7522)
+
+### Bug Fixes / Nits
+- Raise informative error when metadata is too large during splitting (#7513)
+- Allow langchain splitter in simple node parser (#7517)
+
+## [0.8.16] - 2023-09-01
+
+### Bug Fixes / Nits
+- fix link to Marvin notebook in docs (#7504)
+- Ensure metadata is not `None` in `SimpleWebPageReader` (#7499)
+- Fixed KGIndex visualization (#7493)
+- Improved empty response in KG Index (#7493)
+
+## [0.8.15] - 2023-08-31
+
+### New Features
+- Added support for `MarvinEntityExtractor` metadata extractor (#7438)
+- Added a url_metadata callback to SimpleWebPageReader (#7445)
+- Expanded callback logging events (#7472)
+
+### Bug Fixes / Nits
+- Only convert newlines to spaces for text 001 embedding models in OpenAI (#7484)
+- Fix `KnowledgeGraphRagRetriever` for non-nebula indexes (#7488)
+- Support defined embedding dimension in `PGVectorStore` (#7491)
+- Greatly improved similarity calculation speed for the base vector store (#7494)
+
+## [0.8.14] - 2023-08-30
+
+### New Features
+- feat: non-kg heterogeneous graph support in Graph RAG (#7459)
+- rag guide (#7480)
+
+### Bug Fixes / Nits
+- Improve openai fine-tuned model parsing (#7474)
+- doing some code de-duplication (#7468)
+- support both str and templates for query_wrapper_prompt in HF LLMs (#7473)
+
+## [0.8.13] - 2023-08-29
+
+### New Features
+- Add embedding finetuning (#7452)
+- Added support for RunGPT LLM (#7401)
+- Integration guide and notebook with DeepEval (#7425)
+- Added `VectorIndex` and `VectaraRetriever` as a managed index (#7440)
+- Added support for `to_tool_list` to detect and use async functions (#7282)
+
 ## [0.8.12] - 2023-08-28
 
 ### New Features

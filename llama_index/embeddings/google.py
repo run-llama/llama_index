@@ -2,10 +2,7 @@
 
 from typing import Any, List, Optional
 
-try:
-    from pydantic.v1 import PrivateAttr
-except ImportError:
-    from pydantic import PrivateAttr
+from llama_index.bridge.pydantic import PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding

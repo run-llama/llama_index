@@ -5,13 +5,14 @@ This only uses the basic search api, so it will work with Elasticsearch and Open
 """
 
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from llama_index.readers.base import BaseReader
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 
-class ElasticsearchReader(BaseReader):
+class ElasticsearchReader(BasePydanticReader):
     """
     Read documents from an Elasticsearch/Opensearch index.
 
@@ -22,6 +23,13 @@ class ElasticsearchReader(BaseReader):
         index (str): Name of the index (required)
         httpx_client_args (dict): Optional additional args to pass to the `httpx.Client`
     """
+
+    is_remote: bool = True
+    endpoint: str
+    index: str
+    httpx_client_args: Optional[dict] = None
+
+    _client: Any = PrivateAttr()
 
     def __init__(
         self, endpoint: str, index: str, httpx_client_args: Optional[dict] = None
@@ -35,8 +43,15 @@ class ElasticsearchReader(BaseReader):
         except ImportError:
             raise ImportError(import_err_msg)
         self._client = httpx.Client(base_url=endpoint, **(httpx_client_args or {}))
-        self._index = index
-        self._endpoint = endpoint
+
+        super().__init__(
+            endpoint=endpoint, index=index, httpx_client_args=httpx_client_args
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "ElasticsearchReader"
 
     def load_data(
         self,
@@ -58,7 +73,7 @@ class ElasticsearchReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        res = self._client.post(f"{self._index}/_search", json=query).json()
+        res = self._client.post(f"{self.index}/_search", json=query).json()
         documents = []
         for hit in res["hits"]["hits"]:
             value = hit["_source"][field]

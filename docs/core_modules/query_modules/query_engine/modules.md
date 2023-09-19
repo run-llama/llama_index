@@ -2,10 +2,16 @@
 
 
 ## Basic
+
+First, check out our [module guide on Indexes](/core_modules/data_modules/index/modules.md) for in-depth guides for each index (vector index, summary index, knowledge graph index). Each index corresponds to a default query engine for that index.
+
+Then check out the rest of the sections below.
+
 ```{toctree}
 ---
 maxdepth: 1
 ---
+Custom Query Engine </examples/query_engine/custom_query_engine.ipynb>
 Retriever Query Engine </examples/query_engine/CustomRetrievers.ipynb>
 ```
 

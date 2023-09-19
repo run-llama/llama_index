@@ -7,9 +7,9 @@ Some terminology:
 - **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to 
     [specify different response modes](setting-response-mode) here. 
 
-## List Index
+## Summary Index (formerly List Index)
 
-The list index simply stores Nodes as a sequential chain.
+The summary index simply stores Nodes as a sequential chain.
 
 ![](/_static/indices/list.png)
 
@@ -20,7 +20,7 @@ our Response Synthesis module.
 
 ![](/_static/indices/list_query.png)
 
-The list index does offer numerous ways of querying a list index, from an embedding-based query which 
+The summary index does offer numerous ways of querying a summary index, from an embedding-based query which 
 will fetch the top-k neighbors, or with the addition of a keyword filter, as seen below:
 
 ![](/_static/indices/list_filter_query.png)

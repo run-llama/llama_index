@@ -6,9 +6,8 @@ An index that is built within DeepLake.
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.schema import MetadataMode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -124,11 +123,11 @@ class DeepLakeVectorStore(VectorStoreBase):
         """
         return self.vectorstore.dataset
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+    def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): The embeddings and their data
+            nodes (List[BaseNode]): List of nodes with embeddings
                 to insert.
 
         Returns:
@@ -139,15 +138,15 @@ class DeepLakeVectorStore(VectorStoreBase):
         id_ = []
         text = []
 
-        for result in embedding_results:
-            embedding.append(result.embedding)
+        for node in nodes:
+            embedding.append(node.get_embedding())
             metadata.append(
                 node_to_metadata_dict(
-                    result.node, remove_text=False, flat_metadata=self.flat_metadata
+                    node, remove_text=False, flat_metadata=self.flat_metadata
                 )
             )
-            id_.append(result.id)
-            text.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
+            id_.append(node.node_id)
+            text.append(node.get_content(metadata_mode=MetadataMode.NONE))
 
         kwargs = {
             "embedding": embedding,

@@ -1,15 +1,15 @@
 import logging
-from typing import Any, Generator, Optional, Sequence, cast, Type, Callable
+from typing import Any, Callable, Generator, Optional, Sequence, Type, cast
 
-try:
-    from pydantic.v1 import BaseModel, Field
-except ImportError:
-    from pydantic import BaseModel, Field
-
+from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.indices.utils import truncate_text
+from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.output_parsers.pydantic import PydanticOutputParser
+from llama_index.program.base_program import BasePydanticProgram
+from llama_index.program.llm_program import LLMTextCompletionProgram
+from llama_index.program.openai_program import OpenAIPydanticProgram
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
     DEFAULT_TEXT_QA_PROMPT_SEL,
@@ -17,10 +17,6 @@ from llama_index.prompts.default_prompt_selectors import (
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
-from llama_index.program.base_program import BasePydanticProgram
-from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.program.llm_program import LLMTextCompletionProgram
-from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +118,7 @@ class Refine(BaseSynthesizer):
                     text_chunk,
                 )
             else:
+                # refine response if possible
                 response = self._refine_response_single(
                     prev_response_obj, query_str, text_chunk
                 )
@@ -173,12 +170,17 @@ class Refine(BaseSynthesizer):
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if response is None and not self._streaming:
-                structured_response = cast(
-                    StructuredRefineResponse, program(context_str=cur_text_chunk)
-                )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
-                    response = structured_response.answer
+                try:
+                    structured_response = cast(
+                        StructuredRefineResponse, program(context_str=cur_text_chunk)
+                    )
+                    query_satisfied = structured_response.query_satisfied
+                    if query_satisfied:
+                        response = structured_response.answer
+                except ValidationError as e:
+                    logger.warning(
+                        f"Validation error on structured response: {e}", exc_info=True
+                    )
             elif response is None and self._streaming:
                 response = self._service_context.llm_predictor.stream(
                     text_qa_template,
@@ -215,10 +217,27 @@ class Refine(BaseSynthesizer):
         logger.debug(f"> Refine context: {fmt_text_chunk}")
         if self._verbose:
             print(f"> Refine context: {fmt_text_chunk}")
+
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self._refine_template.partial_format(
             query_str=query_str, existing_answer=response
         )
+
+        # compute available chunk size to see if there is any available space
+        # determine if the refine template is too big (which can happen if
+        # prompt template + query + existing answer is too large)
+        avail_chunk_size = (
+            self._service_context.prompt_helper._get_available_chunk_size(
+                refine_template
+            )
+        )
+
+        if avail_chunk_size < 0:
+            # if the available chunk size is negative, then the refine template
+            # is too big and we just return the original response
+            return response
+
+        # obtain text chunks to add to the refine template
         text_chunks = self._service_context.prompt_helper.repack(
             refine_template, text_chunks=[text_chunk]
         )
@@ -227,21 +246,29 @@ class Refine(BaseSynthesizer):
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if not self._streaming:
-                structured_response = cast(
-                    StructuredRefineResponse, program(context_msg=cur_text_chunk)
-                )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
-                    response = structured_response.answer
+                try:
+                    structured_response = cast(
+                        StructuredRefineResponse, program(context_msg=cur_text_chunk)
+                    )
+                    query_satisfied = structured_response.query_satisfied
+                    if query_satisfied:
+                        response = structured_response.answer
+                except ValidationError as e:
+                    logger.warning(
+                        f"Validation error on structured response: {e}", exc_info=True
+                    )
             else:
+                # TODO: structured response not supported for streaming
+                if isinstance(response, Generator):
+                    response = "".join(response)
+
+                refine_template = self._refine_template.partial_format(
+                    query_str=query_str, existing_answer=response
+                )
+
                 response = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
-                )
-                query_satisfied = True
-            if query_satisfied:
-                refine_template = self._refine_template.partial_format(
-                    query_str=query_str, existing_answer=response
                 )
 
         return response
@@ -291,10 +318,27 @@ class Refine(BaseSynthesizer):
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
         logger.debug(f"> Refine context: {fmt_text_chunk}")
+
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self._refine_template.partial_format(
             query_str=query_str, existing_answer=response
         )
+
+        # compute available chunk size to see if there is any available space
+        # determine if the refine template is too big (which can happen if
+        # prompt template + query + existing answer is too large)
+        avail_chunk_size = (
+            self._service_context.prompt_helper._get_available_chunk_size(
+                refine_template
+            )
+        )
+
+        if avail_chunk_size < 0:
+            # if the available chunk size is negative, then the refine template
+            # is too big and we just return the original response
+            return response
+
+        # obtain text chunks to add to the refine template
         text_chunks = self._service_context.prompt_helper.repack(
             refine_template, text_chunks=[text_chunk]
         )
@@ -303,13 +347,20 @@ class Refine(BaseSynthesizer):
         for cur_text_chunk in text_chunks:
             query_satisfied = False
             if not self._streaming:
-                structured_response = await program.acall(context_msg=cur_text_chunk)
-                structured_response = cast(
-                    StructuredRefineResponse, structured_response
-                )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
-                    response = structured_response.answer
+                try:
+                    structured_response = await program.acall(
+                        context_msg=cur_text_chunk
+                    )
+                    structured_response = cast(
+                        StructuredRefineResponse, structured_response
+                    )
+                    query_satisfied = structured_response.query_satisfied
+                    if query_satisfied:
+                        response = structured_response.answer
+                except ValidationError as e:
+                    logger.warning(
+                        f"Validation error on structured response: {e}", exc_info=True
+                    )
             else:
                 raise ValueError("Streaming not supported for async")
 
@@ -337,13 +388,20 @@ class Refine(BaseSynthesizer):
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                structured_response = await program.acall(context_str=cur_text_chunk)
-                structured_response = cast(
-                    StructuredRefineResponse, structured_response
-                )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
-                    response = structured_response.answer
+                try:
+                    structured_response = await program.acall(
+                        context_str=cur_text_chunk
+                    )
+                    structured_response = cast(
+                        StructuredRefineResponse, structured_response
+                    )
+                    query_satisfied = structured_response.query_satisfied
+                    if query_satisfied:
+                        response = structured_response.answer
+                except ValidationError as e:
+                    logger.warning(
+                        f"Validation error on structured response: {e}", exc_info=True
+                    )
             elif response is None and self._streaming:
                 raise ValueError("Streaming not supported for async")
             else:

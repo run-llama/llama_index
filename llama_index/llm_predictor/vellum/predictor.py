@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Tuple, cast
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import PrivateAttr
 
 from llama_index.prompts import BasePromptTemplate
 from llama_index.callbacks import CallbackManager
@@ -21,9 +18,7 @@ from llama_index.types import TokenAsyncGen, TokenGen
 
 
 class VellumPredictor(BaseLLMPredictor):
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    _callback_manager: CallbackManager = PrivateAttr(default_factory=CallbackManager)
 
     _vellum_client: Any = PrivateAttr()
     _async_vellum_client = PrivateAttr()
@@ -45,14 +40,14 @@ class VellumPredictor(BaseLLMPredictor):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        callback_manager = callback_manager or CallbackManager([])
+        self._callback_manager = callback_manager or CallbackManager([])
 
         # Vellum-specific
         self._vellum_client = Vellum(api_key=vellum_api_key)
         self._async_vellum_client = AsyncVellum(api_key=vellum_api_key)
         self._prompt_registry = VellumPromptRegistry(vellum_api_key=vellum_api_key)
 
-        super().__init__(callback_manager=callback_manager)
+        super().__init__()
 
     @classmethod
     def class_name(cls) -> str:
@@ -67,6 +62,11 @@ class VellumPredictor(BaseLLMPredictor):
         # via Vellum's API based on the LLM that backs the registered prompt's
         # deployment. This is not currently possible, so we use default values.
         return LLMMetadata()
+
+    @property
+    def callback_manager(self) -> CallbackManager:
+        """Get callback manager."""
+        return self._callback_manager
 
     @property
     def llm(self) -> LLM:

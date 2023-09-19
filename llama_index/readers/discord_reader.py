@@ -10,7 +10,7 @@ import logging
 import os
 from typing import List, Optional
 
-from llama_index.readers.base import BaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ async def read_channel(
     return "\n\n".join(msg_txt_list)
 
 
-class DiscordReader(BaseReader):
+class DiscordReader(BasePydanticReader):
     """Discord reader.
 
     Reads conversations from channels.
@@ -81,6 +81,9 @@ class DiscordReader(BaseReader):
             assume the environment variable `DISCORD_TOKEN` is set.
 
     """
+
+    is_remote: bool = True
+    discord_token: str
 
     def __init__(self, discord_token: Optional[str] = None) -> None:
         """Initialize with parameters."""
@@ -98,7 +101,12 @@ class DiscordReader(BaseReader):
                     "variable `DISCORD_TOKEN`."
                 )
 
-        self.discord_token = discord_token
+        super().__init__(discord_token=discord_token)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "DiscordReader"
 
     def _read_channel(
         self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True

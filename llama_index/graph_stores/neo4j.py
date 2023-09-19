@@ -108,7 +108,7 @@ class Neo4jGraphStore(GraphStore):
         return retval
 
     def get_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2
+        self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> Dict[str, List[List[str]]]:
         """Get flat rel map."""
         # The flat means for multi-hop relation path, we could get
@@ -133,7 +133,7 @@ class Neo4jGraphStore(GraphStore):
             "UNWIND relationships(p) AS rel "
             "WITH n1.id AS subj, p, apoc.coll.flatten(apoc.coll.toSet("
             "collect([type(rel), endNode(rel).id]))) AS flattened_rels "
-            "RETURN subj, collect(flattened_rels) AS flattened_rels "
+            f"RETURN subj, collect(flattened_rels) AS flattened_rels LIMIT {limit}"
         )
 
         data = list(self.query(query, {"subjs": subjs}))

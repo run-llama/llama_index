@@ -2,8 +2,8 @@ import logging
 from typing import Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.evaluation.base import QueryResponseEvaluator
-from llama_index.indices.list.base import ListIndex
+from llama_index.evaluation import BaseEvaluator
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -20,7 +20,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         query_engine: RetrieverQueryEngine,
-        evaluator: QueryResponseEvaluator,
+        evaluator: BaseEvaluator,
         service_context: Optional[ServiceContext] = None,
         max_retries: int = 3,
         callback_manager: Optional[CallbackManager] = None,
@@ -47,9 +47,14 @@ class RetrySourceQueryEngine(BaseQueryEngine):
         else:
             logger.debug("Evaluation returned False.")
             # Test source nodes
-            source_evals = self._evaluator.evaluate_source_nodes(
-                query_str, typed_response
-            )
+            source_evals = [
+                self._evaluator.evaluate(
+                    query=query_str,
+                    response=typed_response.response,
+                    contexts=[source_node.get_content()],
+                )
+                for source_node in typed_response.source_nodes
+            ]
             orig_nodes = typed_response.source_nodes
             assert len(source_evals) == len(orig_nodes)
             new_docs = []
@@ -58,7 +63,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
                     new_docs.append(Document(text=node.node.get_content()))
             if len(new_docs) == 0:
                 raise ValueError("No source nodes passed evaluation.")
-            new_index = ListIndex.from_documents(
+            new_index = SummaryIndex.from_documents(
                 new_docs,
                 service_context=self._service_context,
             )

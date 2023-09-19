@@ -60,7 +60,7 @@ class KuzuGraphStore(GraphStore):
         return retval
 
     def get_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2
+        self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> Dict[str, List[List[str]]]:
         """Get depth-aware rel map."""
         rel_wildcard = "r:%s*1..%d" % (self.rel_table_name, depth)
@@ -69,7 +69,7 @@ class KuzuGraphStore(GraphStore):
             rel_wildcard,
             self.node_table_name,
         )
-        return_clause = "RETURN n1, r, n2"
+        return_clause = "RETURN n1, r, n2 LIMIT %d" % limit
         params = []
         if subjs is not None:
             for i, curr_subj in enumerate(subjs):

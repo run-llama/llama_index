@@ -1,10 +1,7 @@
 """Code splitter."""
 from typing import Any, List, Optional
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

@@ -39,7 +39,12 @@ class RetrieverQueryEngine(BaseQueryEngine):
             service_context=retriever.get_service_context(),
             callback_manager=callback_manager,
         )
+
         self._node_postprocessors = node_postprocessors or []
+        callback_manager = callback_manager or CallbackManager([])
+        for node_postprocessor in self._node_postprocessors:
+            node_postprocessor.callback_manager = callback_manager
+
         super().__init__(callback_manager)
 
     @classmethod
@@ -53,6 +58,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         response_mode: ResponseMode = ResponseMode.COMPACT,
         text_qa_template: Optional[BasePromptTemplate] = None,
         refine_template: Optional[BasePromptTemplate] = None,
+        summary_template: Optional[BasePromptTemplate] = None,
         simple_template: Optional[BasePromptTemplate] = None,
         use_async: bool = False,
         streaming: bool = False,
@@ -83,6 +89,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
+            summary_template=summary_template,
             simple_template=simple_template,
             response_mode=response_mode,
             use_async=use_async,

@@ -1,9 +1,6 @@
 from typing import TYPE_CHECKING, Any, Optional, Type, cast
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import PromptTemplate

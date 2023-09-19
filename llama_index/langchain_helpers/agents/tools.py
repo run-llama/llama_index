@@ -2,10 +2,7 @@
 
 from typing import Any, Dict, List
 
-try:
-    from pydantic.v1 import BaseModel, Field
-except ImportError:
-    from pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel, Field
 
 from llama_index.bridge.langchain import BaseTool
 from llama_index.indices.query.base import BaseQueryEngine

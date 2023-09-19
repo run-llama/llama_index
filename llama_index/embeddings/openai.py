@@ -4,12 +4,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
-
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -18,6 +12,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import validate_openai_api_key
@@ -119,6 +114,7 @@ def get_embedding(
 
     """
     text = text.replace("\n", " ")
+
     return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
         "embedding"
     ]
@@ -140,7 +136,6 @@ async def aget_embedding(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
 
     return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))[
@@ -166,7 +161,6 @@ def get_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
@@ -191,7 +185,6 @@ async def aget_embeddings(
     """
     assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
 
-    # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = (
@@ -255,10 +248,8 @@ class OpenAIEmbedding(BaseEmbedding):
     ) -> None:
         # Validate that either the openai.api_key property
         # or OPENAI_API_KEY env variable are set to a valid key
-        # Raises ValueError if missing or doesn't match valid format
-        validate_openai_api_key(
-            kwargs.get("api_key", None), kwargs.get("api_type", None)
-        )
+        # Raises ValueError if missing
+        validate_openai_api_key(kwargs.get("api_key", None))
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)

@@ -4,10 +4,17 @@
 import logging
 from typing import List, Optional
 
-from llama_index.schema import (BaseNode, Document, ImageDocument, ImageNode,
-                                MetadataMode, NodeRelationship, TextNode)
+from llama_index.schema import (
+    BaseNode,
+    Document,
+    ImageDocument,
+    ImageNode,
+    MetadataMode,
+    NodeRelationship,
+    TextNode,
+)
 from llama_index.text_splitter import TextSplitter
-from llama_index.text_splitter.types import MetadataAwareTextSplitter
+from llama_index.text_splitter.types import MetadataAwareTextSplitter, SplitterType
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -87,7 +94,7 @@ def build_nodes_from_splits(
 
 def get_nodes_from_document(
     document: BaseNode,
-    text_splitter: TextSplitter,
+    text_splitter: SplitterType,
     include_metadata: bool = True,
     include_prev_next_rel: bool = False,
 ) -> List[TextNode]:
@@ -108,7 +115,7 @@ def get_nodes_from_document(
 
 def get_nodes_from_node(
     node: BaseNode,
-    text_splitter: TextSplitter,
+    text_splitter: SplitterType,
     include_metadata: bool = True,
     include_prev_next_rel: bool = False,
     ref_doc: Optional[BaseNode] = None,

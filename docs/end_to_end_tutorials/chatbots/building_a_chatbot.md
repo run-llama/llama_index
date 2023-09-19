@@ -84,10 +84,10 @@ for year in years:
 
 Since we have access to documents of 4 years, we may not only want to ask questions regarding the 10-K document of a given year, but ask questions that require analysis over all 10-K filings. 
 
-To address this, we compose a "graph" which consists of a list index defined over the 4 vector indices. Querying this graph would first retrieve information from each vector index, and combine information together via the list index.
+To address this, we compose a "graph" which consists of a summary index defined over the 4 vector indices. Querying this graph would first retrieve information from each vector index, and combine information together via the summary index.
 
 ```python
-from llama_index import ListIndex, LLMPredictor, ServiceContext, load_graph_from_storage
+from llama_index import SummaryIndex, LLMPredictor, ServiceContext, load_graph_from_storage
 from llama_index.llms import OpenAI
 from llama_index.indices.composability import ComposableGraph
 
@@ -99,10 +99,10 @@ llm = OpenAI(temperature=0, max_tokens=512, model="gpt-4")
 service_context = ServiceContext.from_defaults(llm=llm)
 storage_context = StorageContext.from_defaults()
 
-# define a list index over the vector indices
+# define a summary index over the vector indices
 # allows us to synthesize information across each index
 graph = ComposableGraph.from_indices(
-    ListIndex,
+    SummaryIndex,
     [index_set[y] for y in years], 
     index_summaries=index_summaries,
     service_context=service_context,

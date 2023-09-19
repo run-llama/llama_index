@@ -2,10 +2,7 @@ from typing import Any, List, Optional, Type, cast
 
 import pandas as pd
 
-try:
-    from pydantic.v1 import BaseModel, Field
-except ImportError:
-    from pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel, Field
 
 from llama_index.program.base_program import BasePydanticProgram
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram

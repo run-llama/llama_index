@@ -25,7 +25,7 @@ This allows you to measure hallucination - if the response does not match the re
 There are two sub-modes of evaluation here. We can either get a binary response "YES"/"NO" on whether response matches *any* source context,
 and also get a response list across sources to see which sources match.
 
-The `ResponseEvaluator` handles both modes for evaluating in this context.
+The `FaithfulnessEvaluator` handles both modes for evaluating in this context.
 
 ### Evaluation of the Query + Response + Source Context
 
@@ -41,6 +41,13 @@ if it matches the query.
 ### Question Generation
 
 In addition to evaluating queries, LlamaIndex can also use your data to generate questions to evaluate on. This means that you can automatically generate questions, and then run an evaluation pipeline to test if the LLM can actually answer questions accurately using your data.
+
+## Integrations
+
+We also integrate with community evaluation tools.
+
+- [DeepEval](../../../community/integrations/deepeval.md)
+- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/integrations/llamaindex.ipynb)
 
 ## Usage Pattern
 

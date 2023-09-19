@@ -2,10 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 import llama_index
 from llama_index.callbacks.base import CallbackManager
@@ -21,6 +18,7 @@ from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.prompts.base import BasePromptTemplate
+from llama_index.text_splitter.types import TextSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -241,11 +239,13 @@ class ServiceContext:
         embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
-        prompt_helper = prompt_helper or _get_default_prompt_helper(
-            llm_metadata=llm_predictor.metadata,
-            context_window=context_window,
-            num_output=num_output,
-        )
+        prompt_helper = prompt_helper or service_context.prompt_helper
+        if context_window is not None or num_output is not None:
+            prompt_helper = _get_default_prompt_helper(
+                llm_metadata=llm_predictor.metadata,
+                context_window=context_window,
+                num_output=num_output,
+            )
 
         node_parser = node_parser or service_context.node_parser
         if chunk_size is not None or chunk_overlap is not None:
@@ -286,7 +286,9 @@ class ServiceContext:
         metadata_extractor_dict = None
         extractor_dicts = None
         text_splitter_dict = None
-        if isinstance(self.node_parser, SimpleNodeParser):
+        if isinstance(self.node_parser, SimpleNodeParser) and isinstance(
+            self.node_parser.text_splitter, TextSplitter
+        ):
             text_splitter_dict = self.node_parser.text_splitter.to_dict()
 
         if isinstance(self.node_parser, (SimpleNodeParser, SentenceWindowNodeParser)):

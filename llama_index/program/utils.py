@@ -2,10 +2,7 @@
 
 from typing import List, Type
 
-try:
-    from pydantic.v1 import BaseModel, Field, create_model
-except ImportError:
-    from pydantic import BaseModel, Field, create_model
+from llama_index.bridge.pydantic import BaseModel, Field, create_model
 
 
 def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:

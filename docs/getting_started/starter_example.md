@@ -68,6 +68,14 @@ logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 You can set the level to `DEBUG` for verbose output, or use `level=logging.INFO` for less.
 
+To view all requests made to your LLMs, you can set the `openai` logging flag:
+
+```python
+openai.log = "debug"
+```
+
+This will print out every request and response made via `openai`. Change it back to `None` to turn off.
+
 ### Saving and Loading
 
 By default, data is stored in-memory.

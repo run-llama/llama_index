@@ -27,9 +27,9 @@ def node_to_metadata_dict(
     remove_text: bool = False,
     text_field: str = DEFAULT_TEXT_KEY,
     flat_metadata: bool = False,
-) -> dict:
+) -> Dict[str, Any]:
     """Common logic for saving Node data into metadata dict."""
-    metadata: Dict[str, Any] = node.metadata
+    metadata: Dict[str, Any] = node.metadata.copy()
 
     if flat_metadata:
         _validate_is_flat_dict(metadata)

@@ -1,9 +1,9 @@
 .. _Ref-Indices-List:
 
-List Index
+Summary Index
 ==========
 
-Building the List Index
+Building the Summary Index
 
 .. automodule:: llama_index.indices.list
    :members:
