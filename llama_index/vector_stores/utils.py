@@ -29,13 +29,13 @@ def node_to_metadata_dict(
     flat_metadata: bool = False,
 ) -> Dict[str, Any]:
     """Common logic for saving Node data into metadata dict."""
-    metadata: Dict[str, Any] = node.metadata.copy()
+    node_dict = node.dict()
+    metadata: Dict[str, Any] = node.get("metadata", {})
 
     if flat_metadata:
         _validate_is_flat_dict(metadata)
 
     # store entire node as json string - some minor text duplication
-    node_dict = node.dict()
     if remove_text:
         node_dict[text_field] = ""
 
