@@ -1,5 +1,85 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Add support for `gpt-3.5-turbo-instruct` (#7729)
+- Add support for `TimescaleVectorStore` (#7727)
+- Added `LongContextReorder` for lost-in-the-middle issues (#7719)
+
+### Bug Fixes / Nits
+- Added node post-processors to async context chat engine (#7731)
+- Added unique index name for postgres tsv column (#7741)
+
+## [0.8.29.post1] - 2023-09-18
+
+### Bug Fixes / Nits
+- Fix langchain import error for embeddings (#7714)
+
+## [0.8.29] - 2023-09-18
+
+### New Features
+- Added metadata filtering to the base simple vector store (#7564)
+- add low-level router guide (#7708)
+- Add CustomQueryEngine class (#7703)
+
+### Bug Fixes / Nits
+- Fix context window metadata in lite-llm (#7696)
+
+## [0.8.28] - 2023-09-16
+
+### New Features
+- Add CorrectnessEvaluator (#7661)
+- Added support for `Ollama` LLMs (#7635)
+- Added `HWPReader` (#7672)
+- Simplified portkey LLM interface (#7669)
+- Added async operation support to `ElasticsearchStore` vector store (#7613)
+- Added support for `LiteLLM` (#7600)
+- Added batch evaluation runner (#7692)
+
+### Bug Fixes / Nits
+- Avoid `NotImplementedError` for async langchain embeddings (#7668)
+- Imrpoved reliability of LLM selectors (#7678)
+- Fixed `query_wrapper_prompt` and `system_prompt` for output parsers and completion models (#7678)
+- Fixed node attribute inheritance in citation query engine (#7675)
+
+### Breaking Changes
+- Refactor and update `BaseEvaluator` interface to be more consistent (#7661)
+  - Use `evaluate` function for generic input
+  - Use `evaluate_response` function with `Response` objects from llama index query engine
+- Update existing evaluators with more explicit naming
+  - `ResponseEvaluator` -> `FaithfulnessEvaluator`
+  - `QueryResponseEvaluator` -> `RelevancyEvaluator`
+  - old names are kept as class aliases for backwards compatibility
+
+## [0.8.27] - 2023-09-14
+
+### New Features
+- add low-level tutorial section (#7673)
+
+### Bug Fixes / Nits
+- default delta should be a dict (#7665)
+- better query wrapper logic on LLMPredictor (#7667)
+
+## [0.8.26] - 2023-09-12
+
+### New Features
+- add non-linear embedding adapter (#7658)
+- Add "finetune + RAG" evaluation to knowledge fine-tuning notebook (#7643)
+
+### Bug Fixes / Nits
+- Fixed chunk-overlap for sentence splitter (#7590)
+
+## [0.8.25] - 2023-09-12
+
+### New Features
+- Added `AGENT_STEP` callback event type (#7652)
+
+### Bug Fixes / Nits
+- Allowed `simple` mode to work with `as_chat_engine()` (#7637)
+- Fixed index error in azure streaming (#7646)
+- Removed `pdb` from llama-cpp (#7651)
+
 ## [0.8.24] - 2023-09-11
 
 ## New Features
