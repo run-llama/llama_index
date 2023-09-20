@@ -44,6 +44,7 @@ def get_data_model(
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
+    indexname = "%s_idx"  % index_name  # dynamic class name
 
     if hybrid_search:
 
@@ -64,7 +65,7 @@ def get_data_model(
         model = type(class_name, (HybridAbstractData,), {"__tablename__": tablename})
 
         Index(
-            "text_search_tsv_idx",
+            indexname,
             model.text_search_tsv,  # type: ignore
             postgresql_using="gin",
         )
