@@ -7,14 +7,13 @@ from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 import logging
 import fsspec
 from llama_index.graph_stores.types import GraphStore
+from typing import List, Dict, Any
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "graph_store.json"
 
 logging.basicConfig(filename='sparqy.log', filemode='w', level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.info('sparql HERE')
-
 
 class SparqlGraphStore(GraphStore):
     """SPARQL graph store
@@ -53,10 +52,11 @@ BASE <{sparql_base_uri}>
 
 # SPARQL comms --------------------------------------------
 
-    def create_graph(self, uri):
+    def create_graph(self, uri: str) -> None:
         self.sparql_update('CREATE GRAPH <'+uri+'>')
 
-    def sparql_query(self, query_string):
+# List[Dict[str, str]]?
+    def sparql_query(self, query_string: str) -> List[Dict[str, Any]]:
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
         sparql_client.setMethod(GET)
         sparql_client.setQuery(query_string)
@@ -70,7 +70,7 @@ BASE <{sparql_base_uri}>
             logger.info(e)
         return results
 
-    def sparql_update(self, query_string):
+    def sparql_update(self, query_string: str) -> None:
         # print(query_string)
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
         sparql_client.setMethod(POST)
@@ -79,20 +79,23 @@ BASE <{sparql_base_uri}>
         message = results.response.read().decode('utf-8')
         logger.info('Endpoint says : ' + message)
 
-    def insert_data(self, data):  # data is 'floating' string, without prefixes
+
+    def insert_data(self, data: str) -> None:  # data is 'floating' string, without prefixes
         insert_query = self.sparql_prefixes + \
             'INSERT DATA { GRAPH <'+self.sparql_graph+'> { '+data+' }}'
         self.sparql_update(insert_query)
 
+
 # Helpers --------------------------------------------------
-    def make_id(self):
+    def make_id(self) -> str:
         """
         Generate a random 4-character string using only numeric characters and capital letters.
         """
         characters = string.ascii_uppercase + string.digits  # available characters
         return ''.join(random.choice(characters) for _ in range(4))
 
-    def escape_for_rdf(self, str):
+
+    def escape_for_rdf(self, str: str) -> str:
         # control characters
         str = str.encode("unicode_escape").decode(
             "utf-8").replace('\\x', '\\u00')
@@ -100,14 +103,14 @@ BASE <{sparql_base_uri}>
         str = re.sub(r'(["\'])', r'\\\1', str)
         return str
 
-    def unescape_from_rdf(self, str):
+    def unescape_from_rdf(self, str: str) -> str:
         # Unescape single and double quotes
         str = re.sub(r'\\(["\'])', r'\1', str)
         # Replace SPARQL's unicode escape sequences with the actual characters
         str = bytes(str, "utf-8").decode("unicode_escape")
         return str
 
-    def select_triplets(self, subj, limit=-1):
+    def select_triplets(self, subj: str, limit: int = -1) -> List[Dict[str, Any]]:
         # print('select triplets')
         logger.info('sparql get_triplets called')
         subj = self.escape_for_rdf(subj)
@@ -138,7 +141,7 @@ BASE <{sparql_base_uri}>
         triplets = self.sparql_query(query_string)
         return triplets
 
-    def rels(self, subj, limit=-1):
+    def rels(self, subj: str, limit: int = -1) -> List[Dict[str, Any]]:
         logger.info('#### sparql get_triplets called')
         subj = self.escape_for_rdf(subj)
         template = Template("""
@@ -178,7 +181,7 @@ BASE <{sparql_base_uri}>
 
         return self.to_arrows(subj, triplets_json)
 
-    def to_arrows(self, subj, rels):
+    def to_arrows(self, subj: str, rels: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Convert subject and relations to a string in the desired format.
         """
