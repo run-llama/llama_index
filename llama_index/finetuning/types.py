@@ -41,5 +41,5 @@ class BaseCrossEncoderFinetuningEngine(ABC):
         """Goes off and does stuff."""
 
     @abstractmethod
-    def get_finetuned_model(self, **model_kwargs: Any) -> CrossEncoder:
+    def get_finetuned_model(self, **model_kwargs: Any) -> "CrossEncoder":
         """Gets finetuned model."""
