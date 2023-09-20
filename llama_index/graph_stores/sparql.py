@@ -2,8 +2,8 @@ import re
 import random
 import string
 from string import Template
-from SPARQLWrapper import SPARQLWrapper, GET, POST, JSON, DIGEST
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from SPARQLWrapper import SPARQLWrapper, GET, POST, JSON
+from typing import Any, Dict, List, Optional
 import logging
 import fsspec
 from llama_index.graph_stores.types import GraphStore
