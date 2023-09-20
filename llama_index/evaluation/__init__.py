@@ -8,6 +8,13 @@ from llama_index.evaluation.faithfulness import FaithfulnessEvaluator, ResponseE
 from llama_index.evaluation.guideline import GuidelineEvaluator
 from llama_index.evaluation.relevancy import QueryResponseEvaluator, RelevancyEvaluator
 
+from llama_index.evaluation.retrieval.base import BaseRetrievalEvaluator, RetrievalEvalResult
+from llama_index.evaluation.retrieval.evaluator import RetrieverEvaluator
+from llama_index.evaluation.retrieval.metrics import resolve_metrics, HitRate, MRR, RetrievalMetricResult
+
+# import dataset generation too
+from llama_index.finetuning.embeddings.common import generate_qa_embedding_pairs
+
 __all__ = [
     "BaseEvaluator",
     "EvaluationResult",
@@ -21,4 +28,13 @@ __all__ = [
     # legacy: kept for backward compatibility
     "QueryResponseEvaluator",
     "ResponseEvaluator",
+    # retrieval
+    "generate_qa_embedding_pairs",
+    "BaseRetrievalEvaluator",
+    "RetrievalEvalResult",
+    "RetrieverEvaluator",
+    "RetrievalMetricResult",
+    "resolve_metrics",
+    "HitRate",
+    "MRR",
 ]
