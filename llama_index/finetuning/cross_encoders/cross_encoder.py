@@ -25,7 +25,7 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
         evaluation_steps: int = 50,
     ) -> None:
         """Init params."""
-        from sentence_transformers import InputExample, util
+        from sentence_transformers import InputExample
         from sentence_transformers.cross_encoder import CrossEncoder
         from torch.utils.data import DataLoader
 

@@ -1,8 +1,5 @@
-import json
 import os
 from llama_index import SimpleDirectoryReader
-from llama_index.node_parser import SimpleNodeParser
-from llama_index.schema import MetadataMode
 import openai
 from llama_index.finetuning.cross_encoders.dataset_gen import (
     generate_ce_fine_tuning_dataset,
@@ -44,7 +41,7 @@ def main() -> None:
     finetuning_engine.finetune()
 
     # get the cross-encoder fine-tuning model
-    cross_encoder_model = finetuning_engine.get_finetuned_model()
+    finetuning_engine.get_finetuned_model()
 
 
 if __name__ == "__main__":

@@ -1,18 +1,14 @@
 """Dataset Generator for Cross Encoder Finetuning"""
-from typing import Dict, List, Optional
-from llama_index import SimpleDirectoryReader, ServiceContext
-from llama_index.bridge.pydantic import BaseModel
+from typing import List, Optional
 from llama_index.llms import OpenAI, ChatMessage
 from llama_index.text_splitter import TokenTextSplitter
 from llama_index.node_parser import SimpleNodeParser
 import tiktoken
 from llama_index.llms.base import LLM
-from llama_index.schema import Document, TextNode, MetadataMode
+from llama_index.schema import Document, MetadataMode
 from llama_index import VectorStoreIndex
 from tqdm.auto import tqdm
-import uuid
 import re
-import json
 from dataclasses import dataclass
 
 
@@ -73,7 +69,9 @@ def generate_synthetic_queries_over_documents(
             ChatMessage(role="user", content=user_msg),
         ]
         response = llm.chat(messages)
-        response_content: str = response.message.content if response.message.content is not None else ""
+        response_content: str = (
+            response.message.content if response.message.content is not None else ""
+        )
         response_questions = re.split(";|\n", response_content)
         questions.extend(response_questions)
 
