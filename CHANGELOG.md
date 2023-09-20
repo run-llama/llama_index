@@ -8,6 +8,7 @@
 
 ### Bug Fixes / Nits
 - Added node post-processors to async context chat engine (#7731)
+- Added unique index name for postgres tsv column (#7741)
 
 ## [0.8.29.post1] - 2023-09-18
 
