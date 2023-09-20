@@ -8,7 +8,8 @@ import logging
 from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
-
+import asyncio
+from llama_index.utils import iter_batch
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
@@ -30,7 +31,7 @@ VECTOR_KEY = "values"
 SPARSE_VECTOR_KEY = "sparse_values"
 METADATA_KEY = "metadata"
 
-DEFAULT_BATCH_SIZE = 100
+DEFAULT_BATCH_SIZE = 200
 
 _logger = logging.getLogger(__name__)
 
@@ -170,7 +171,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         if tokenizer is None and add_sparse_vector:
             tokenizer = get_default_tokenizer()
-        self._tokenizer = tokenizer
+        self._tokenizer = tokenizer  # type: ignore
 
         super().__init__(
             index_name=index_name,
@@ -256,13 +257,30 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
             ids.append(node_id)
             entries.append(entry)
-        self._pinecone_index.upsert(
-            entries,
-            namespace=self.namespace,
-            batch_size=self.batch_size,
-            **self.insert_kwargs,
-        )
+
+        [
+            self._pinecone_index.upsert(
+                vectors=batch,
+                async_req=True,
+            )
+            for batch in iter_batch(entries, self.batch_size)
+        ]
+
         return ids
+
+    async def async_add(
+        self,
+        nodes: List[BaseNode],
+    ) -> List[str]:
+        """Asynchronously add a list of embedding results to the collection.
+
+        Args:
+            nodes (List[BaseNode]): Embedding results to add.
+
+        Returns:
+            List[str]: List of IDs of the added documents.
+        """
+        return await asyncio.to_thread(self.add, nodes)  # type: ignore
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

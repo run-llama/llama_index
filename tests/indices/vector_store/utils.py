@@ -12,19 +12,19 @@ from tests.mock_utils.mock_utils import mock_tokenizer
 class MockPineconeIndex:
     def __init__(self) -> None:
         """Mock pinecone index."""
-        self._tuples: List[Dict[str, Any]] = []
+        self._vectors: List[Dict[str, Any]] = []
 
-    def upsert(self, tuples: List[Dict[str, Any]], **kwargs: Any) -> None:
+    def upsert(self, vectors: List[Dict[str, Any]], **kwargs: Any) -> None:
         """Mock upsert."""
-        self._tuples.extend(tuples)
+        self._vectors.extend(vectors)
 
     def delete(self, ids: List[str]) -> None:
         """Mock delete."""
-        new_tuples = []
-        for tup in self._tuples:
-            if tup["id"] not in ids:
-                new_tuples.append(tup)
-        self._tuples = new_tuples
+        new_vectors = []
+        for vec in self._vectors:
+            if vec["id"] not in ids:
+                new_vectors.append(vec)
+        self._vectors = new_vectors
 
     def query(
         self,
@@ -38,7 +38,7 @@ class MockPineconeIndex:
     ) -> Any:
         """Mock query."""
         # index_mat is n x k
-        index_mat = np.array([tup["values"] for tup in self._tuples])
+        index_mat = np.array([tup["values"] for tup in self._vectors])
         query_vec = np.array(vector)[np.newaxis, :]
 
         # compute distances
@@ -49,10 +49,10 @@ class MockPineconeIndex:
 
         matches = []
         for index in indices:
-            tup = self._tuples[index]
+            vec = self._vectors[index]
             match = MagicMock()
-            match.metadata = tup["metadata"]
-            match.id = tup["id"]
+            match.metadata = vec["metadata"]
+            match.id = vec["id"]
             matches.append(match)
 
         response = MagicMock()
