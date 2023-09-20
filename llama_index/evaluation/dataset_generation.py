@@ -62,7 +62,7 @@ class DatasetGenerator:
         )
         self.question_gen_query = (
             question_gen_query
-            or f"You are a Teacher/ Professor. Your task is to setup \
+            or f"You are a Teacher/Professor. Your task is to setup \
                         {num_questions_per_chunk} questions for an upcoming \
                         quiz/examination. The questions should be diverse in nature \
                             across the document. Restrict the questions to the \
@@ -122,7 +122,8 @@ class DatasetGenerator:
                         text=node.get_content(metadata_mode=self._metadata_mode),
                         metadata=node.metadata,
                     )
-                ]
+                ],
+                service_context=self.service_context,
             )
 
             query_engine = index.as_query_engine(
