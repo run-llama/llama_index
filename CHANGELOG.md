@@ -5,6 +5,7 @@
 ### New Features
 - Add support for `gpt-3.5-turbo-instruct` (#7729)
 - Add support for `TimescaleVectorStore` (#7727)
+- Allow users to set the embedding dimensions in azure cognitive  vector store (#7734)
 
 ### Bug Fixes / Nits
 - Added node post-processors to async context chat engine (#7731)

@@ -236,7 +236,7 @@ class CognitiveSearchVectorStore(VectorStore):
             Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]]
         ] = None,
         index_management: IndexManagement = IndexManagement.NO_VALIDATION,
-        embedding_dimensionality = 1536,
+        embedding_dimensionality=1536,
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
