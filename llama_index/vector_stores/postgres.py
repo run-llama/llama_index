@@ -44,7 +44,7 @@ def get_data_model(
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
-    indexname = "%s_idx"  % index_name  # dynamic class name
+    indexname = "%s_idx" % index_name  # dynamic class name
 
     if hybrid_search:
 
