@@ -6,7 +6,6 @@ from llama_index.finetuning.cross_encoders.dataset_gen import (
     CrossEncoderFinetuningDatasetSample,
 )
 from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
-from sentence_transformers import CrossEncoder
 
 
 class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
@@ -25,9 +24,15 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
         evaluation_steps: int = 50,
     ) -> None:
         """Init params."""
-        from sentence_transformers import InputExample
-        from sentence_transformers.cross_encoder import CrossEncoder
-        from torch.utils.data import DataLoader
+        try:
+            from sentence_transformers import InputExample
+            from sentence_transformers.cross_encoder import CrossEncoder
+            from torch.utils.data import DataLoader
+        except ImportError:
+            raise ImportError(
+                "Cannot import sentence-transformers package,",
+                "please `pip install sentence-transformers`",
+            )
 
         self.dataset = dataset
 

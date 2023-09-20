@@ -3,8 +3,10 @@
 from abc import ABC, abstractmethod
 from llama_index.llms.base import LLM
 from llama_index.embeddings.base import BaseEmbedding
-from typing import Any
-from sentence_transformers import CrossEncoder
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from sentence_transformers import CrossEncoder
 
 
 class BaseLLMFinetuneEngine(ABC):
