@@ -222,7 +222,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
             nodes.append(node)
 
-            similarity_score = 1.0 - math.exp(-distance)
+            similarity_score = math.exp(-distance)
             similarities.append(similarity_score)
 
             logger.debug(
