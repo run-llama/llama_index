@@ -162,6 +162,6 @@ class LanceDBVectorStore(VectorStore):
 
         return VectorStoreQueryResult(
             nodes=nodes,
-            similarities=results["score"].tolist(),
+            similarities=results["_distance"].tolist(),
             ids=results["id"].tolist(),
         )
