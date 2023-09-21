@@ -4,7 +4,13 @@ from pydantic import BaseModel, Field
 
 
 class RetrievalMetricResult(BaseModel):
-    """Metric result."""
+    """Metric result.
+
+    Attributes:
+        score (float): Score for the metric
+        metadata (Dict[str, Any]): Metadata for the metric result
+
+    """
 
     score: float = Field(..., description="Score for the metric")
     metadata: Dict[str, Any] = Field(
@@ -12,9 +18,11 @@ class RetrievalMetricResult(BaseModel):
     )
 
     def __str__(self) -> str:
+        """String representation."""
         return f"Score: {self.score}\nMetadata: {self.metadata}"
-    
+
     def __float__(self) -> float:
+        """Float representation."""
         return self.score
 
 
@@ -22,13 +30,21 @@ class BaseRetrievalMetric(ABC):
     """Base class for retrieval metrics."""
 
     metric_name: str
-    
+
     @abstractmethod
     def compute(
         self,
         query: Optional[str] = None,
         expected_ids: Optional[List[str]] = None,
         retrieved_ids: Optional[List[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> RetrievalMetricResult:
-        """Compute metric."""
+        """Compute metric.
+
+        Args:
+            query (Optional[str]): Query string
+            expected_ids (Optional[List[str]]): Expected ids
+            retrieved_ids (Optional[List[str]]): Retrieved ids
+            **kwargs: Additional keyword arguments
+
+        """
