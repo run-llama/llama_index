@@ -5,6 +5,10 @@
 ### New Features
 - Allow users to set the embedding dimensions in azure cognitive  vector store (#7734)
 
+### Bug Fixes / Nits
+- Fix `NotImplementedError` in auto vector retriever (#7764)
+- Pass service context to index for dataset generator (#7748)
+
 ## [0.8.30] - 2023-09-21
 
 ### New Features
