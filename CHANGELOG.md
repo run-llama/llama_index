@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Pass service context to index for dataset generator (#7748)
+
 ## [0.8.30] - 2023-09-21
 
 ### New Features
