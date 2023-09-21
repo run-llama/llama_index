@@ -63,6 +63,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         text_key: str = "text",
         metadata_key: str = "metadata",
         insert_kwargs: Optional[Dict] = None,
+        compatibility_mode: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -89,6 +90,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._text_key = text_key
         self._metadata_key = metadata_key
         self._insert_kwargs = insert_kwargs or {}
+        self._use_vectorsearch = True if not compatibility_mode else False
 
     def add(
         self,
@@ -140,16 +142,24 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """Return MongoDB client."""
         return self._mongodb_client
 
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+    def _query_vectorsearch(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        params = {
+            "queryVector": query.query_embedding,
+            "path": self._embedding_key,
+            "numCandidates": query.similarity_top_k,
+            "limit": query.similarity_top_k,
+            "index": self._index_name,
+        }
+        if query.filters:
+            params["filter"] = pre_filter
 
-        Args:
-            query_embedding (List[float]): query embedding
-            similarity_top_k (int): top k most similar nodes
+        query_field = {"$vectorSearch": params}
+        search_field = "vectorSearchScore"
 
-        """
+        return self._query(query_field, search_field)
 
-        knn_beta: Dict[str, Any] = {
+    def _query_search(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        knn_beta = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
             "k": query.similarity_top_k,
@@ -157,14 +167,20 @@ class MongoDBAtlasVectorSearch(VectorStore):
         if query.filters:
             knn_beta["filter"] = _to_mongodb_filter(query.filters)
 
+        query_field = {
+            "$search": {
+                "index": self._index_name,
+                "knnBeta": knn_beta,
+            }
+        }
+        search_field = "searchScore"
+
+        return self._query(query_field, search_field)
+
+    def _query(self, query: dict[str, Any], search_field: str):
         pipeline = [
-            {
-                "$search": {
-                    "index": self._index_name,
-                    "knnBeta": knn_beta,
-                }
-            },
-            {"$project": {"score": {"$meta": "searchScore"}, self._embedding_key: 0}},
+            query,
+            {"$project": {"score": {"$meta": search_field}, self._embedding_key: 0}},
         ]
         logger.debug("Running query pipeline: %s", pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore
@@ -202,4 +218,28 @@ class MongoDBAtlasVectorSearch(VectorStore):
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
         logger.debug("Result of query: %s", result)
+        return result
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """Query index for top k most similar nodes.
+
+        Args:
+            query: a VectorStoreQuery object
+        """
+        if self._use_vectorsearch:
+            try:
+                result = self._query_vectorsearch(query)
+            except OperationFailure as e:
+                # Check for unsupported operation errors
+                if "$vectorSearch" in str(e):
+                    logger.error(
+                        f"$vectorSearch not supported for this Atlas version. "
+                        f"Attempting to use $search. Original error:\n\t{e}"
+                    )
+                    self._use_vectorsearch = False
+                    result = self._query_search(query)
+                else:
+                    raise
+        else:
+            result = self._query_search(query)
         return result
