@@ -1,5 +1,22 @@
 # ChangeLog
 
+## [0.8.30] - 2023-09-21
+
+### New Features
+- Add support for `gpt-3.5-turbo-instruct` (#7729)
+- Add support for `TimescaleVectorStore` (#7727)
+- Added `LongContextReorder` for lost-in-the-middle issues (#7719)
+- Add retrieval evals (#7738)
+
+### Bug Fixes / Nits
+- Added node post-processors to async context chat engine (#7731)
+- Added unique index name for postgres tsv column (#7741)
+
+## [0.8.29.post1] - 2023-09-18
+
+### Bug Fixes / Nits
+- Fix langchain import error for embeddings (#7714)
+
 ## [0.8.29] - 2023-09-18
 
 ### New Features

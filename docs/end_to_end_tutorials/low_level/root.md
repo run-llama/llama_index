@@ -61,3 +61,14 @@ maxdepth: 1
 ---
 /examples/low_level/router.ipynb
 ```
+
+## Building Evaluation from Scratch
+
+Learn how to build common LLM-based eval modules (correctness, faithfulness) using LLMs and prompt modules; this will help you define your own custom evals!
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/evaluation.ipynb
+```

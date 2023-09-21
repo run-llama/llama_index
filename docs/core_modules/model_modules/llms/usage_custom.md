@@ -2,7 +2,7 @@
 
 You can plugin these LLM abstractions within our other modules in LlamaIndex (indexes, retrievers, query engines, agents) which allow you to build advanced workflows over your data.
 
-By default, we use OpenAI's `text-davinci-003` model. But you may choose to customize
+By default, we use OpenAI's `gpt-3.5-turbo` model. But you may choose to customize
 the underlying LLM being used.
 
 Below we show a few examples of LLM customization. This includes
@@ -14,7 +14,7 @@ Below we show a few examples of LLM customization. This includes
 ## Example: Changing the underlying LLM
 
 An example snippet of customizing the LLM being used is shown below.
-In this example, we use `gpt-4` instead of `text-davinci-003`. Available models include `gpt-3.5-turbo`, `gpt-3.5-turbo-16k`, `gpt-4`, `gpt-4-32k`, `text-davinci-003`, and `text-davinci-002`. 
+In this example, we use `gpt-4` instead of `gpt-3.5-turbo`. Available models include `gpt-3.5-turbo`, `gpt-3.5-turbo-instruct`, `gpt-3.5-turbo-16k`, `gpt-4`, `gpt-4-32k`, `text-davinci-003`, and `text-davinci-002`. 
 
 Note that
 you may also plug in any LLM shown on Langchain's
