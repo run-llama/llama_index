@@ -17,7 +17,7 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.document import Document
 
 # embeddings
-from langchain.embeddings.base import Embeddings
+from langchain.schema.embeddings import Embeddings
 from langchain.embeddings import HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings
 
 # LLMs
@@ -26,7 +26,7 @@ from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 
 # chat and memory
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.output_parsers import PydanticOutputParser, ResponseSchema
+from langchain.output_parsers import ResponseSchema
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
@@ -90,7 +90,6 @@ __all__ = [
     "Tool",
     "BaseTool",
     "ResponseSchema",
-    "PydanticOutputParser",
     "print_text",
     "get_color_mapping",
     "BaseCallbackHandler",
