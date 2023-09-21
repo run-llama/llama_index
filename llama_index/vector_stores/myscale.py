@@ -20,6 +20,7 @@ from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    VectorStoreQueryMode, ExactMatchFilter,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,7 @@ class MyScaleVectorStore(VectorStore):
 
     stores_text: bool = True
     _index_existed: bool = False
+    metadata_column: str = "metadata"
 
     def __init__(
         self,
@@ -77,7 +79,7 @@ class MyScaleVectorStore(VectorStore):
             please run `pip install clickhouse-connect`
         """
         try:
-            from clickhouse_connect.driver.httpclient import HttpClient  # noqa: F401
+            from clickhouse_connect.driver.httpclient import HttpClient
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -173,6 +175,35 @@ class MyScaleVectorStore(VectorStore):
                 """
         return insert_statement
 
+    def _build_hybrid_search_statement(
+            self,
+            stage_one_sql: str,
+            query_str: str,
+            similarity_top_k: int
+    ) -> str:
+        terms_pattern = [f'(?i){x}' for x in query_str.split(' ')]
+        column_keys = self.column_config.keys()
+        query_statement = \
+            f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, dist FROM ({stage_one_sql}) tempt " \
+            f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) " \
+            f"AS distance1 DESC, " \
+            f"log(1 + countMatches(text, '(?i)({query_str.replace(' ', '|')})')) " \
+            f"AS distance2 DESC limit {similarity_top_k}"
+        return query_statement
+
+    def _append_meta_filter_condition(
+            self,
+            where_str: str,
+            exact_match_filter: list
+    ) -> str:
+        filter_str = ' AND '.join(f"JSONExtractString(toJSONString({self.metadata_column}), '{filter_item.key}') "
+                                  f"= '{filter_item.value}'" for filter_item in exact_match_filter)
+        if where_str is None:
+            where_str = filter_str
+        else:
+            where_str = ' AND ' + filter_str
+        return where_str
+
     def add(
         self,
         embedding_results: List[NodeWithEmbedding],
@@ -183,7 +214,7 @@ class MyScaleVectorStore(VectorStore):
             embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
-
+        logger.info(f"start call add func")
         if not embedding_results:
             return []
 
@@ -193,7 +224,6 @@ class MyScaleVectorStore(VectorStore):
         for result_batch in iter_batch(embedding_results, self.config.batch_size):
             insert_statement = self._build_insert_statement(values=result_batch)
             self._client.command(insert_statement)
-
         return [result.id for result in embedding_results]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -214,28 +244,32 @@ class MyScaleVectorStore(VectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
-
         Args:
             query (VectorStoreQuery): query
-
         """
-        if query.filters is not None:
-            raise ValueError(
-                "Metadata filters not implemented for SimpleVectorStore yet."
-            )
-
         query_embedding = cast(List[float], query.query_embedding)
+        # construct where str
         where_str = (
             f"doc_id in {format_list_to_string(query.doc_ids)}"
             if query.doc_ids
             else None
         )
+        if query.filters is not None:
+            where_str = self._append_meta_filter_condition(where_str, query.filters.filters)
+
+        # build query sql
         query_statement = self.config.build_query_statement(
             query_embed=query_embedding,
             where_str=where_str,
             limit=query.similarity_top_k,
         )
-
+        if query.mode == VectorStoreQueryMode.HYBRID and query.query_str is not None:
+            query_statement = self._build_hybrid_search_statement(self.config.build_query_statement(
+                query_embed=query_embedding,
+                where_str=where_str,
+                limit=query.similarity_top_k * 100,
+            ), query.query_str, query.similarity_top_k)
+        logger.debug(f"query_statement={query_statement}")
         nodes = []
         ids = []
         similarities = []
@@ -245,7 +279,6 @@ class MyScaleVectorStore(VectorStore):
             if isinstance(r["node_info"], dict):
                 start_char_idx = r["node_info"].get("start", None)
                 end_char_idx = r["node_info"].get("end", None)
-
             node = TextNode(
                 id_=r["doc_id"],
                 text=r["text"],
@@ -256,7 +289,6 @@ class MyScaleVectorStore(VectorStore):
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id=r["doc_id"])
                 },
             )
-
             nodes.append(node)
             similarities.append(r["dist"])
             ids.append(r["id"])
