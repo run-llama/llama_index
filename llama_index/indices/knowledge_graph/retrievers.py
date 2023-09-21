@@ -444,7 +444,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 "graph_response_answer_prompt",
                 None,
             )
-            if graph_query_synthesis_prompt is not None:
+            if graph_response_answer_prompt is not None:
                 del kwargs["graph_response_answer_prompt"]
 
             refresh_schema = kwargs.get("refresh_schema", False)
