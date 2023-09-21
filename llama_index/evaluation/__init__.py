@@ -13,7 +13,10 @@ from llama_index.evaluation.retrieval.evaluator import RetrieverEvaluator
 from llama_index.evaluation.retrieval.metrics import resolve_metrics, HitRate, MRR, RetrievalMetricResult
 
 # import dataset generation too
-from llama_index.finetuning.embeddings.common import generate_qa_embedding_pairs
+from llama_index.finetuning.embeddings.common import generate_qa_embedding_pairs, EmbeddingQAFinetuneDataset
+
+# aliases for generate_qa_embedding_pairs
+generate_question_context_pairs = generate_qa_embedding_pairs
 
 __all__ = [
     "BaseEvaluator",
@@ -30,6 +33,8 @@ __all__ = [
     "ResponseEvaluator",
     # retrieval
     "generate_qa_embedding_pairs",
+    "generate_question_context_pairs",
+    "EmbeddingQAFinetuneDataset",
     "BaseRetrievalEvaluator",
     "RetrievalEvalResult",
     "RetrieverEvaluator",

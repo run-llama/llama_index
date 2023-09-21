@@ -65,6 +65,11 @@ class BaseRetrievalEvaluator(BaseModel):
         metrics = resolve_metrics(metric_names)
         return cls(metrics=metrics, **kwargs)
 
+    @abstractmethod
+    async def _get_retrieved_ids(self, query: str) -> List[str]:
+        """Get retrieved ids."""
+        raise NotImplementedError
+
     def evaluate(
         self,
         query: str,
@@ -85,7 +90,7 @@ class BaseRetrievalEvaluator(BaseModel):
             self.aevaluate(query=query, expected_ids=expected_ids, **kwargs)
         )
 
-    @abstractmethod
+    # @abstractmethod
     async def aevaluate(
         self,
         query: str,
@@ -98,4 +103,16 @@ class BaseRetrievalEvaluator(BaseModel):
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
         """
-        raise NotImplementedError
+        # raise NotImplementedError
+        
+        retrieved_ids = await self._aget_retrieved_ids(query)
+        metric_dict = {}
+        for metric in self.metrics:
+            eval_result = metric.compute(query, expected_ids, retrieved_ids)
+            metric_dict[metric.metric_name] = eval_result
+        return RetrievalEvalResult(
+            query=query,
+            expected_ids=expected_ids,
+            retrieved_ids=retrieved_ids,
+            metric_dict=metric_dict,
+        )
