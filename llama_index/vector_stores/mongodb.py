@@ -21,6 +21,8 @@ from llama_index.vector_stores.utils import (
     legacy_metadata_dict_to_node,
 )
 
+from pymongo.errors import OperationFailure
+
 logger = logging.getLogger(__name__)
 
 
@@ -63,7 +65,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         text_key: str = "text",
         metadata_key: str = "metadata",
         insert_kwargs: Optional[Dict] = None,
-        compatibility_mode: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -90,7 +91,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._text_key = text_key
         self._metadata_key = metadata_key
         self._insert_kwargs = insert_kwargs or {}
-        self._use_vectorsearch = True if not compatibility_mode else False
+        self._use_vectorsearch = True
 
     def add(
         self,
@@ -143,7 +144,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return self._mongodb_client
 
     def _query_vectorsearch(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-        params = {
+        params: dict[str, Any] = {
             "queryVector": query.query_embedding,
             "path": self._embedding_key,
             "numCandidates": query.similarity_top_k,
@@ -151,7 +152,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             "index": self._index_name,
         }
         if query.filters:
-            params["filter"] = pre_filter
+            params["filter"] = _to_mongodb_filter(query.filters)
 
         query_field = {"$vectorSearch": params}
         search_field = "vectorSearchScore"
@@ -159,7 +160,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return self._query(query_field, search_field)
 
     def _query_search(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-        knn_beta = {
+        knn_beta: dict[str, Any] = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
             "k": query.similarity_top_k,
@@ -177,7 +178,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         return self._query(query_field, search_field)
 
-    def _query(self, query: dict[str, Any], search_field: str):
+    def _query(self, query: dict[str, Any], search_field: str) -> VectorStoreQueryResult:
         pipeline = [
             query,
             {"$project": {"score": {"$meta": search_field}, self._embedding_key: 0}},
