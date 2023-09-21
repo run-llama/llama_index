@@ -35,19 +35,12 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
-    """MongoDB Vector Store.
+    """MongoDB Atlas Vector Store.
 
-    In this vector store, embeddings and docs are stored within a
-    MongoDB index.
-
-    During query time, the index uses Atlas knnbeta to query for the top
-    k most similar nodes.
-
-    Args:
-        mongodb_index (Optional[pymongo.MongoClient]): MongoDB index instance
-        db_name (str): MongoDB database name
-        collection_name (str): MongoDB collection name
-        insert_kwargs (Optional[Dict]): kwargs used during `insert`.
+    To use, you should have both:
+    - the ``pymongo`` python package installed
+    - a connection string associated with a MongoDB Atlas Cluster
+    that has a Atlas Vector Search index
 
     """
 
@@ -67,7 +60,17 @@ class MongoDBAtlasVectorSearch(VectorStore):
         insert_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize params."""
+        """Args:
+        mongodb_client: A MongoDB client.
+        db_name: A MongoDB database name.
+        collection_name: A MongoDB collection name.
+        index_name: A MongoDB Atlas Vector Search index name.
+        id_key: The data field to use as the id.
+        embedding_key: A MongoDB field that will contain the embedding for each document.
+        text_key: A MongoDB field that will contain the text for each document.
+        metadata_key: A MongoDB field that will contain the metadata for each document.
+        insert_kwargs: The kwargs used during `insert`.
+        """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
         try:
             import pymongo  # noqa: F401
@@ -99,8 +102,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
+
+        Returns:
+            A List of ids for successfully added nodes.
 
         """
         ids = []
@@ -178,7 +184,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         return self._query(query_field, search_field)
 
-    def _query(self, query: dict[str, Any], search_field: str) -> VectorStoreQueryResult:
+    def _query(
+        self, query: dict[str, Any], search_field: str
+    ) -> VectorStoreQueryResult:
         pipeline = [
             query,
             {"$project": {"score": {"$meta": search_field}, self._embedding_key: 0}},
@@ -226,6 +234,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         Args:
             query: a VectorStoreQuery object
+
+        Returns:
+            A VectorStoreQueryResult containing the results of the query.
         """
         if self._use_vectorsearch:
             try:
