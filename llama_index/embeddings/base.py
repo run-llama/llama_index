@@ -185,6 +185,22 @@ class BaseEmbedding(BaseComponent):
 
         return text_embedding
 
+    async def aget_text_embedding(self, text: str) -> List[float]:
+        """Get text embedding."""
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
+            text_embedding = await self._aget_text_embedding(text)
+
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [text],
+                    EventPayload.EMBEDDINGS: [text_embedding],
+                }
+            )
+
+        return text_embedding
+
     def queue_text_for_embedding(self, text_id: str, text: str) -> None:
         """Queue text for embedding.
 
