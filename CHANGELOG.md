@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix `NotImplementedError` in auto vector retriever (#7764)
+
 ## [0.8.30] - 2023-09-21
 
 ### New Features
