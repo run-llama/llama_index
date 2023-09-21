@@ -7,7 +7,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.embeddings.base import SimilarityMode, similarity
 
 
-class EmbeddingSimilarityEvaluator(BaseEvaluator):
+class SemanticSimilarityEvaluator(BaseEvaluator):
     """Embedding similarity evaluator.
 
     Evaluate the quality of a question answering system by
