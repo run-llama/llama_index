@@ -33,7 +33,7 @@ from llama_index.llms.konko_utils import (
     to_openai_message_dicts,
     completion_with_retry,
     from_openai_message_dict,
-    acompletion_with_retry
+    acompletion_with_retry,
 )
 
 

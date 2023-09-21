@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-import konko
+
 from openai import ChatCompletion, Completion
 import openai
 
@@ -127,6 +127,7 @@ def is_function_calling_model(model: str) -> bool:
 
 
 def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
+    import konko
     if is_chat_model:
         return konko.ChatCompletion
     else:
@@ -191,6 +192,8 @@ def resolve_konko_credentials(
     3. konkoai module
     4. default
     """
+
+    import konko
 
     # resolve from param or env
     konko_api_key = get_from_param_or_env(
