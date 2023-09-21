@@ -275,7 +275,7 @@ class BaseIndex(Generic[IS], ABC):
         """
         with self._service_context.callback_manager.as_trace("update"):
             self.delete_ref_doc(
-                document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {})
+                document.get_doc_id(), delete_from_docstore = True, **update_kwargs.pop("delete_kwargs", {})
             )
             self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
