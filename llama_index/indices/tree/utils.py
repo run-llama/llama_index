@@ -1,7 +1,8 @@
 from typing import List, Optional
 
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.schema import BaseNode
+from llama_index.text_splitter import TokenTextSplitter
+from llama_index.text_splitter.utils import truncate_text
 
 
 def get_numbered_text_from_nodes(
@@ -18,7 +19,7 @@ def get_numbered_text_from_nodes(
     for node in node_list:
         node_text = " ".join(node.get_content().splitlines())
         if text_splitter is not None:
-            node_text = text_splitter.truncate_text(node_text)
+            node_text = truncate_text(node_text, text_splitter)
         text = f"({number}) {node_text}"
         results.append(text)
         number += 1

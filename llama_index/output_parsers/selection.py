@@ -1,10 +1,11 @@
 import json
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 
 from dataclasses_json import DataClassJsonMixin
 
 from llama_index.output_parsers.base import StructuredOutput
+from llama_index.output_parsers.utils import _marshal_llm_to_json
 from llama_index.types import BaseOutputParser
 
 
@@ -47,37 +48,52 @@ class Answer(DataClassJsonMixin):
 
 
 class SelectionOutputParser(BaseOutputParser):
-    def _marshal_llm_to_json(self, output: str) -> str:
-        """Extract a valid JSON object or array from a string.
-        Extracts a substring that represents a valid JSON object or array.
+    REQUIRED_KEYS = {"choice", "reason"}
 
-        Args:
-            output: A string that may contain a valid JSON object or array surrounded by
-            extraneous characters or information.
+    def _filter_dict(self, json_dict: dict) -> dict:
+        output_dict = json_dict
+        for key, val in json_dict.items():
+            if key in self.REQUIRED_KEYS:
+                continue
+            elif isinstance(val, dict):
+                found = True
+                for key in self.REQUIRED_KEYS:
+                    if key not in val:
+                        found = False
+                        break
+                if found:
+                    output_dict = val
+                    break
+            elif isinstance(val, list):
+                for item in val:
+                    if isinstance(item, dict):
+                        output_dict = self._filter_dict(item)
 
-        Returns:
-            A string representing a valid JSON object or array.
+        return output_dict
 
-        """
-        output = output.strip()
-        left_square = output.find("[")
-        left_brace = output.find("{")
+    def _validate_output(self, output: List[dict]) -> List[dict]:
+        output_json = []
+        for json_dict in output:
+            valid = True
+            for key in self.REQUIRED_KEYS:
+                if key not in json_dict:
+                    valid = False
+                    break
 
-        if left_square < left_brace:
-            left = left_square
-            right = output.rfind("]")
-        else:
-            left = left_brace
-            right = output.rfind("}")
+            if not valid:
+                json_dict = self._filter_dict(json_dict)
 
-        output = output[left : right + 1]
-        return output
+            output_json.append(json_dict)
+
+        return output_json
 
     def parse(self, output: str) -> Any:
-        output = self._marshal_llm_to_json(output)
+        output = _marshal_llm_to_json(output)
         json_output = json.loads(output)
         if isinstance(json_output, dict):
             json_output = [json_output]
+
+        json_output = self._validate_output(json_output)
         answers = [Answer.from_dict(json_dict) for json_dict in json_output]
         return StructuredOutput(raw_output=output, parsed_output=answers)
 

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Generic, Type
+
 from llama_index.types import Model
 
 
@@ -17,3 +18,6 @@ class BasePydanticProgram(ABC, Generic[Model]):
     @abstractmethod
     def __call__(self, *args: Any, **kwds: Any) -> Model:
         pass
+
+    async def acall(self, *args: Any, **kwds: Any) -> Model:
+        return self(*args, **kwds)

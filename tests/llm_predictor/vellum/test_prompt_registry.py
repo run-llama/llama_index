@@ -1,16 +1,15 @@
-from typing import Callable, Type
+from typing import Callable
 from unittest import mock
 
-from llama_index import Prompt
 from llama_index.llm_predictor.vellum import (
     VellumRegisteredPrompt,
     VellumCompiledPrompt,
     VellumPromptRegistry,
 )
+from llama_index.prompts.base import PromptTemplate
 
 
 def test_from_prompt__new(
-    dummy_prompt_class: Type[Prompt],
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
@@ -18,7 +17,7 @@ def test_from_prompt__new(
 
     from vellum.core import ApiError
 
-    dummy_prompt = dummy_prompt_class(template="What's your favorite {thing}?")
+    dummy_prompt = PromptTemplate(template="What's your favorite {thing}?")
 
     vellum_client = mock_vellum_client_factory()
 
@@ -31,13 +30,12 @@ def test_from_prompt__new(
 
 
 def test_from_prompt__existing(
-    dummy_prompt_class: Type[Prompt],
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
     """We shouldn't register a new prompt if a deployment id or name is provided"""
 
-    dummy_prompt = dummy_prompt_class(
+    dummy_prompt = PromptTemplate(
         template="What's your favorite {thing}?",
         metadata={"vellum_deployment_id": "abc"},
     )

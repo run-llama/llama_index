@@ -1,7 +1,7 @@
 """Autoretriever prompts."""
 
 
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
@@ -103,9 +103,9 @@ DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL = PREFIX + EXAMPLES + SUFFIX
 
 # deprecated, kept for backwards compatibility
 """Vector store query prompt."""
-VectorStoreQueryPrompt = Prompt
+VectorStoreQueryPrompt = PromptTemplate
 
-DEFAULT_VECTOR_STORE_QUERY_PROMPT = Prompt(
+DEFAULT_VECTOR_STORE_QUERY_PROMPT = PromptTemplate(
     template=DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
     prompt_type=PromptType.VECTOR_STORE_QUERY,
 )

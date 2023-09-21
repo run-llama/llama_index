@@ -5,16 +5,15 @@ An index that that is built on top of an existing vector store.
 """
 
 import logging
-import os
 from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -100,7 +99,12 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     return filters
 
 
-class PineconeVectorStore(VectorStore):
+import_err_msg = (
+    "`pinecone` package not found, please run `pip install pinecone-client`"
+)
+
+
+class PineconeVectorStore(BasePydanticVectorStore):
     """Pinecone Vector Store.
 
     In this vector store, embeddings and docs are stored within a
@@ -120,9 +124,22 @@ class PineconeVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    api_key: Optional[str]
+    index_name: Optional[str]
+    environment: Optional[str]
+    namespace: Optional[str]
+    insert_kwargs: Optional[Dict]
+    add_sparse_vector: bool
+    text_key: str
+    batch_size: int
+
+    _pinecone_index: Any = PrivateAttr()
+    _tokenizer: Callable = PrivateAttr()
+
     def __init__(
         self,
         pinecone_index: Optional[Any] = None,
+        api_key: Optional[str] = None,
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
         namespace: Optional[str] = None,
@@ -134,58 +151,94 @@ class PineconeVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        import_err_msg = (
-            "`pinecone` package not found, please run `pip install pinecone-client`"
-        )
         try:
             import pinecone  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self._index_name = index_name
-        self._environment = environment
-        self._namespace = namespace
         if pinecone_index is not None:
             self._pinecone_index = cast(pinecone.Index, pinecone_index)
         else:
-            if "PINECONE_API_KEY" not in os.environ:
-                raise ValueError(
-                    "Must specify PINECONE_API_KEY via env variable "
-                    "if not directly passing in client."
-                )
             if index_name is None or environment is None:
                 raise ValueError(
                     "Must specify index_name and environment "
                     "if not directly passing in client."
                 )
 
-            pinecone.init(environment=environment)
+            pinecone.init(api_key=api_key, environment=environment)
             self._pinecone_index = pinecone.Index(index_name)
 
-        self._insert_kwargs = insert_kwargs or {}
+        insert_kwargs = insert_kwargs or {}
 
-        self._add_sparse_vector = add_sparse_vector
         if tokenizer is None:
             tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
-        self._text_key = text_key
-        self._batch_size = batch_size
+
+        super().__init__(
+            index_name=index_name,
+            environment=environment,
+            api_key=api_key,
+            namespace=namespace,
+            insert_kwargs=insert_kwargs,
+            add_sparse_vector=add_sparse_vector,
+            text_key=text_key,
+            batch_size=batch_size,
+        )
+
+    @classmethod
+    def from_params(
+        cls,
+        api_key: Optional[str] = None,
+        index_name: Optional[str] = None,
+        environment: Optional[str] = None,
+        namespace: Optional[str] = None,
+        insert_kwargs: Optional[Dict] = None,
+        add_sparse_vector: bool = False,
+        tokenizer: Optional[Callable] = None,
+        text_key: str = DEFAULT_TEXT_KEY,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        **kwargs: Any,
+    ) -> "PineconeVectorStore":
+        try:
+            import pinecone  # noqa: F401
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        pinecone.init(api_key=api_key, environment=environment)
+        pinecone_index = pinecone.Index(index_name)
+
+        return cls(
+            pinecone_index=pinecone_index,
+            api_key=api_key,
+            index_name=index_name,
+            environment=environment,
+            namespace=namespace,
+            insert_kwargs=insert_kwargs,
+            add_sparse_vector=add_sparse_vector,
+            tokenizer=tokenizer,
+            text_key=text_key,
+            batch_size=batch_size,
+            **kwargs,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PinconeVectorStore"
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to index.
+        """Add nodes to index.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
         ids = []
         entries = []
-        for result in embedding_results:
-            node_id = result.id
-            node = result.node
+        for node in nodes:
+            node_id = node.node_id
 
             metadata = node_to_metadata_dict(
                 node, remove_text=False, flat_metadata=self.flat_metadata
@@ -193,10 +246,10 @@ class PineconeVectorStore(VectorStore):
 
             entry = {
                 ID_KEY: node_id,
-                VECTOR_KEY: result.embedding,
+                VECTOR_KEY: node.get_embedding(),
                 METADATA_KEY: metadata,
             }
-            if self._add_sparse_vector:
+            if self.add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
                     [node.get_content(metadata_mode=MetadataMode.EMBED)],
                     self._tokenizer,
@@ -207,9 +260,9 @@ class PineconeVectorStore(VectorStore):
             entries.append(entry)
         self._pinecone_index.upsert(
             entries,
-            namespace=self._namespace,
-            batch_size=self._batch_size,
-            **self._insert_kwargs,
+            namespace=self.namespace,
+            batch_size=self.batch_size,
+            **self.insert_kwargs,
         )
         return ids
 
@@ -224,7 +277,7 @@ class PineconeVectorStore(VectorStore):
         # delete by filtering on the doc_id metadata
         self._pinecone_index.delete(
             filter={"doc_id": {"$eq": ref_doc_id}},
-            namespace=self._namespace,
+            namespace=self.namespace,
             **delete_kwargs,
         )
 
@@ -279,7 +332,7 @@ class PineconeVectorStore(VectorStore):
             top_k=query.similarity_top_k,
             include_values=True,
             include_metadata=True,
-            namespace=self._namespace,
+            namespace=self.namespace,
             filter=filter,
             **kwargs,
         )
@@ -290,16 +343,17 @@ class PineconeVectorStore(VectorStore):
         for match in response.matches:
             try:
                 node = metadata_dict_to_node(match.metadata)
+                node.embedding = match.values
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    match.metadata, text_key=self._text_key
+                    match.metadata, text_key=self.text_key
                 )
 
-                text = match.metadata[self._text_key]
+                text = match.metadata[self.text_key]
                 id = match.id
                 node = TextNode(
                     text=text,

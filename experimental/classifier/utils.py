@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 
 from llama_index.indices.utils import extract_numbers_given_response
 from llama_index.llm_predictor import LLMPredictor
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import BasePromptTemplate, PromptTemplate
 
 
 def get_train_and_eval_data(
@@ -74,7 +74,7 @@ def extract_float_given_response(response: str, n: int = 1) -> Optional[float]:
 
 
 def get_eval_preds(
-    train_prompt: Prompt, train_str: str, eval_df: pd.DataFrame, n: int = 20
+    train_prompt: BasePromptTemplate, train_str: str, eval_df: pd.DataFrame, n: int = 20
 ) -> List:
     """Get eval preds."""
     llm_predictor = LLMPredictor()
@@ -111,9 +111,7 @@ train_prompt_str = (
     "Survived: "
 )
 
-train_prompt = Prompt(
-    input_variables=["train_str", "eval_str"], template=train_prompt_str
-)
+train_prompt = PromptTemplate(template=train_prompt_str)
 
 
 # prompt to summarize the data
@@ -130,9 +128,7 @@ qa_data_str = (
     "Given this, answer the question: {query_str}"
 )
 
-qa_data_prompt = Prompt(
-    input_variables=["context_str", "query_str"], template=qa_data_str
-)
+qa_data_prompt = PromptTemplate(template=qa_data_str)
 
 # prompt to refine the answer
 refine_str = (
@@ -151,10 +147,7 @@ refine_str = (
     "answer the question. "
     "If the context isn't useful, return the original answer."
 )
-refine_prompt = Prompt(
-    input_variables=["query_str", "existing_answer", "context_msg"],
-    template=refine_str,
-)
+refine_prompt = PromptTemplate(template=refine_str)
 
 
 # train prompt with refined context
@@ -174,6 +167,4 @@ train_prompt_with_context_str = (
     "Survived: "
 )
 
-train_prompt_with_context = Prompt(
-    input_variables=["train_str", "eval_str"], template=train_prompt_with_context_str
-)
+train_prompt_with_context = PromptTemplate(template=train_prompt_with_context_str)

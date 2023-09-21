@@ -2,15 +2,15 @@ from typing import Any, Optional, cast
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool
-from llama_index.tools.types import BaseTool, ToolMetadata
+from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 
-DEFAULT_NAME = "Query Engine Tool"
+DEFAULT_NAME = "query_engine_tool"
 DEFAULT_DESCRIPTION = """Useful for running a natural language query
 against a knowledge base and get back a natural language response.
 """
 
 
-class QueryEngineTool(BaseTool):
+class QueryEngineTool(AsyncBaseTool):
     """Query engine tool.
 
     A tool making use of a query engine.
@@ -37,6 +37,7 @@ class QueryEngineTool(BaseTool):
     ) -> "QueryEngineTool":
         name = name or DEFAULT_NAME
         description = description or DEFAULT_DESCRIPTION
+
         metadata = ToolMetadata(name=name, description=description)
         return cls(query_engine=query_engine, metadata=metadata)
 
@@ -48,10 +49,25 @@ class QueryEngineTool(BaseTool):
     def metadata(self) -> ToolMetadata:
         return self._metadata
 
-    def __call__(self, input: Any) -> Any:
+    def call(self, input: Any) -> ToolOutput:
         query_str = cast(str, input)
         response = self._query_engine.query(query_str)
-        return str(response)
+        return ToolOutput(
+            content=str(response),
+            tool_name=self.metadata.name,
+            raw_input={"input": input},
+            raw_output=response,
+        )
+
+    async def acall(self, input: Any) -> ToolOutput:
+        query_str = cast(str, input)
+        response = await self._query_engine.aquery(query_str)
+        return ToolOutput(
+            content=str(response),
+            tool_name=self.metadata.name,
+            raw_input={"input": input},
+            raw_output=response,
+        )
 
     def as_langchain_tool(self) -> LlamaIndexTool:
         tool_config = IndexToolConfig(

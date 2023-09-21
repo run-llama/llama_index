@@ -10,7 +10,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE, Response
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate, BasePromptTemplate
 from llama_index.callbacks.base import CallbackManager
 from llama_index.query_engine.flare.output_parser import (
     IsDoneOutputParser,
@@ -87,7 +87,7 @@ Answer: """
     )
 )
 
-DEFAULT_INSTRUCT_PROMPT = Prompt(DEFAULT_INSTRUCT_PROMPT_TMPL)
+DEFAULT_INSTRUCT_PROMPT = PromptTemplate(DEFAULT_INSTRUCT_PROMPT_TMPL)
 
 
 class FLAREInstructQueryEngine(BaseQueryEngine):
@@ -102,7 +102,7 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         query_engine (BaseQueryEngine): query engine to use
         service_context (Optional[ServiceContext]): service context.
             Defaults to None.
-        instruct_prompt (Optional[Prompt]): instruct prompt. Defaults to None.
+        instruct_prompt (Optional[PromptTemplate]): instruct prompt. Defaults to None.
         lookahead_answer_inserter (Optional[BaseLookaheadAnswerInserter]):
             lookahead answer inserter. Defaults to None.
         done_output_parser (Optional[IsDoneOutputParser]): done output parser.
@@ -121,7 +121,7 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         self,
         query_engine: BaseQueryEngine,
         service_context: Optional[ServiceContext] = None,
-        instruct_prompt: Optional[Prompt] = None,
+        instruct_prompt: Optional[BasePromptTemplate] = None,
         lookahead_answer_inserter: Optional[BaseLookaheadAnswerInserter] = None,
         done_output_parser: Optional[IsDoneOutputParser] = None,
         query_task_output_parser: Optional[QueryTaskOutputParser] = None,

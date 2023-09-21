@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, List, Optional, Sequence, cast
 
-from pydantic import BaseModel
-
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.program.guidance_program import GuidancePydanticProgram
 from llama_index.prompts.guidance_utils import convert_to_handlebars
@@ -9,7 +7,11 @@ from llama_index.question_gen.prompts import (
     DEFAULT_SUB_QUESTION_PROMPT_TMPL,
     build_tools_text,
 )
-from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
+from llama_index.question_gen.types import (
+    BaseQuestionGenerator,
+    SubQuestion,
+    SubQuestionList,
+)
 from llama_index.tools.types import ToolMetadata
 
 if TYPE_CHECKING:
@@ -18,15 +20,6 @@ if TYPE_CHECKING:
 DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = convert_to_handlebars(
     DEFAULT_SUB_QUESTION_PROMPT_TMPL
 )
-
-
-class SubQuestionList(BaseModel):
-    """A pydantic object wrapping a list of sub-questions.
-
-    This is mostly used to make getting a json schema easier.
-    """
-
-    items: List[SubQuestion]
 
 
 class GuidanceQuestionGenerator(BaseQuestionGenerator):

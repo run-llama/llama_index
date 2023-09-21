@@ -6,11 +6,11 @@ An index that is built on top of an existing Qdrant collection.
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.schema import TextNode
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.schema import BaseNode, TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -21,9 +21,12 @@ from llama_index.vector_stores.utils import (
 )
 
 logger = logging.getLogger(__name__)
+import_err_msg = (
+    "`qdrant-client` package not found, please run `pip install qdrant-client`"
+)
 
 
-class QdrantVectorStore(VectorStore):
+class QdrantVectorStore(BasePydanticVectorStore):
     """Qdrant Vector Store.
 
     In this vector store, embeddings and docs are stored within a
@@ -40,13 +43,26 @@ class QdrantVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
+    collection_name: str
+    url: Optional[str]
+    api_key: Optional[str]
+    batch_size: int
+    client_kwargs: dict = Field(default_factory=dict)
+
+    _client: Any = PrivateAttr()
+    _collection_initialized: bool = PrivateAttr()
+
     def __init__(
-        self, collection_name: str, client: Optional[Any] = None, **kwargs: Any
+        self,
+        collection_name: str,
+        client: Optional[Any] = None,
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        batch_size: int = 100,
+        client_kwargs: Optional[dict] = None,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
-        import_err_msg = (
-            "`qdrant-client` package not found, please run `pip install qdrant-client`"
-        )
         try:
             import qdrant_client  # noqa: F401
         except ImportError:
@@ -56,37 +72,73 @@ class QdrantVectorStore(VectorStore):
             raise ValueError("Missing Qdrant client!")
 
         self._client = cast(qdrant_client.QdrantClient, client)
-        self._collection_name = collection_name
         self._collection_initialized = self._collection_exists(collection_name)
 
-        self._batch_size = kwargs.get("batch_size", 100)
+        super().__init__(
+            collection_name=collection_name,
+            url=url,
+            api_key=api_key,
+            batch_size=batch_size,
+            client_kwargs=client_kwargs or {},
+        )
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        """Add embedding results to index.
+    @classmethod
+    def from_params(
+        cls,
+        collection_name: str,
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        client_kwargs: Optional[dict] = None,
+        batch_size: int = 100,
+        **kwargs: Any,
+    ) -> "QdrantVectorStore":
+        """Create a connection to a remote Qdrant vector store from a config."""
+        try:
+            import qdrant_client  # noqa: F401
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        client_kwargs = client_kwargs or {}
+        return cls(
+            collection_name=collection_name,
+            client=qdrant_client.QdrantClient(
+                url=url, api_key=api_key, **client_kwargs
+            ),
+            batch_size=batch_size,
+            client_kwargs=client_kwargs,
+            url=url,
+            api_key=api_key,
+            **kwargs,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "QdraantVectorStore"
+
+    def add(self, nodes: List[BaseNode]) -> List[str]:
+        """Add nodes to index.
 
         Args
-            embedding_results: List[NodeWithEmbedding]: list of embedding results
+            nodes: List[BaseNode]: list of nodes with embeddings
 
         """
         from qdrant_client.http import models as rest
 
-        if len(embedding_results) > 0 and not self._collection_initialized:
+        if len(nodes) > 0 and not self._collection_initialized:
             self._create_collection(
-                collection_name=self._collection_name,
-                vector_size=len(embedding_results[0].embedding),
+                collection_name=self.collection_name,
+                vector_size=len(nodes[0].get_embedding()),
             )
 
         ids = []
-        for result_batch in iter_batch(embedding_results, self._batch_size):
+        for node_batch in iter_batch(nodes, self.batch_size):
             node_ids = []
             vectors = []
             payloads = []
-            for result in result_batch:
-                assert isinstance(result, NodeWithEmbedding)
-                assert isinstance(result.node, TextNode)
-                node_ids.append(result.id)
-                vectors.append(result.embedding)
-                node = result.node
+            for node in node_batch:
+                assert isinstance(node, BaseNode)
+                node_ids.append(node.node_id)
+                vectors.append(node.get_embedding())
 
                 metadata = node_to_metadata_dict(
                     node, remove_text=False, flat_metadata=self.flat_metadata
@@ -95,7 +147,7 @@ class QdrantVectorStore(VectorStore):
                 payloads.append(metadata)
 
             self._client.upsert(
-                collection_name=self._collection_name,
+                collection_name=self.collection_name,
                 points=rest.Batch.construct(
                     ids=node_ids,
                     vectors=vectors,
@@ -116,7 +168,7 @@ class QdrantVectorStore(VectorStore):
         from qdrant_client.http import models as rest
 
         self._client.delete(
-            collection_name=self._collection_name,
+            collection_name=self.collection_name,
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
@@ -170,7 +222,7 @@ class QdrantVectorStore(VectorStore):
         query_embedding = cast(List[float], query.query_embedding)
 
         response = self._client.search(
-            collection_name=self._collection_name,
+            collection_name=self.collection_name,
             query_vector=query_embedding,
             limit=cast(int, query.similarity_top_k),
             query_filter=cast(Filter, self._build_query_filter(query)),

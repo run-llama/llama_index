@@ -6,32 +6,32 @@ Full credits go to: https://github.com/HazyResearch/evaporate
 
 """
 
-from llama_index.prompts.prompts import Prompt
+from llama_index.prompts import PromptTemplate
 
 # deprecated, kept for backward compatibility
 
-"""Pandas prompt. Convert query to python code.
+"""Pandas PromptTemplate. Convert query to python code.
 
 Required template variables: `chunk`, `topic`.
 
 Args:
-    template (str): Template for the prompt.
-    **prompt_kwargs: Keyword arguments for the prompt.
+    template (str): Template for the PromptTemplate.
+    **prompt_kwargs: Keyword arguments for the PromptTemplate.
 
 """
-SchemaIDPrompt = Prompt
+SchemaIDPrompt = PromptTemplate
 
-"""Function generation prompt. Generate a function from existing text.
+"""Function generation PromptTemplate. Generate a function from existing text.
 
 Required template variables: `context_str`, `query_str`,
     `attribute`, `function_field`.
 
 Args:
-    template (str): Template for the prompt.
-    **prompt_kwargs: Keyword arguments for the prompt.
+    template (str): Template for the PromptTemplate.
+    **prompt_kwargs: Keyword arguments for the PromptTemplate.
 
 """
-FnGeneratePrompt = Prompt
+FnGeneratePrompt = PromptTemplate
 
 # used for schema identification
 SCHEMA_ID_PROMPT_TMPL = f"""Sample text:
@@ -81,7 +81,7 @@ Sample text:
 Question: List all relevant attributes about '{{topic:}}' that are exactly mentioned in this sample text if any. 
 Answer:"""  # noqa: E501, F541
 
-SCHEMA_ID_PROMPT = Prompt(SCHEMA_ID_PROMPT_TMPL)
+SCHEMA_ID_PROMPT = PromptTemplate(SCHEMA_ID_PROMPT_TMPL)
 
 
 # used for function generation
@@ -108,7 +108,7 @@ def get_{{function_field:}}_field(text: str):
     \"""
     """  # noqa: E501, F541
 
-FN_GENERATION_PROMPT = Prompt(FN_GENERATION_PROMPT_TMPL)
+FN_GENERATION_PROMPT = PromptTemplate(FN_GENERATION_PROMPT_TMPL)
 
 
 FN_GENERATION_LIST_PROMPT_TMPL = f"""Here is a sample of text:
@@ -134,7 +134,7 @@ def get_{{function_field:}}_field(text: str) -> List:
     \"""
     """  # noqa: E501, F541
 
-FN_GENERATION_LIST_PROMPT = Prompt(FN_GENERATION_LIST_PROMPT_TMPL)
+FN_GENERATION_LIST_PROMPT = PromptTemplate(FN_GENERATION_LIST_PROMPT_TMPL)
 
 DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL = (
     "Here is the expected output on the text after running the function. "

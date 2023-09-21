@@ -1,18 +1,15 @@
-.PHONY: format lint
-
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
+help: ## Show all Makefile targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
-format:
+.PHONY: format lint
+format: ## Run code formatter: black
 	black .
-
-lint:
+lint: ## Run linters: mypy, black, ruff
 	mypy .
 	black . --check
 	ruff check .
-
-test:
+test: ## Run tests
 	pytest tests
-
-# Docs
 watch-docs: ## Build and watch documentation
 	sphinx-autobuild docs/ docs/_build/html --open-browser --watch $(GIT_ROOT)/llama_index/

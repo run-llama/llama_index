@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 from llama_index.data_structs.table import BaseStructTable
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
-from llama_index.prompts.prompts import SchemaExtractPrompt
 from llama_index.schema import BaseNode
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -44,7 +44,7 @@ class BaseStructStoreIndex(BaseIndex[BST], Generic[BST]):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[BST] = None,
         service_context: Optional[ServiceContext] = None,
-        schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
+        schema_extract_prompt: Optional[BasePromptTemplate] = None,
         output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
         **kwargs: Any,
     ) -> None:

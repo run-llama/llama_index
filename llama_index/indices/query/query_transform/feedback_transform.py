@@ -6,8 +6,7 @@ from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.prompts.base import Prompt
-from llama_index.response.schema import Response
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ DEFAULT_RESYNTHESIS_PROMPT_TMPL = (
     "Otherwise, please return the original query.\n"
 )
 
-DEFAULT_RESYNTHESIS_PROMPT = Prompt(DEFAULT_RESYNTHESIS_PROMPT_TMPL)
+DEFAULT_RESYNTHESIS_PROMPT = PromptTemplate(DEFAULT_RESYNTHESIS_PROMPT_TMPL)
 
 
 class FeedbackQueryTransformation(BaseQueryTransform):
@@ -32,7 +31,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         eval(Evaluation): An evaluation object.
         llm_predictor(BaseLLMPredictor): An LLM predictor.
         resynthesize_query(bool): Whether to resynthesize the query.
-        resynthesis_prompt(Prompt): A prompt for resynthesizing the query.
+        resynthesis_prompt(BasePromptTemplate): A prompt for resynthesizing the query.
 
     """
 
@@ -40,7 +39,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         self,
         llm_predictor: Optional[BaseLLMPredictor] = None,
         resynthesize_query: bool = False,
-        resynthesis_prompt: Optional[Prompt] = None,
+        resynthesis_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         super().__init__()
         self.llm_predictor = llm_predictor or LLMPredictor()
@@ -55,11 +54,14 @@ class FeedbackQueryTransformation(BaseQueryTransform):
             self.evaluation = metadata.get("evaluation")
         if self.evaluation is None or not isinstance(self.evaluation, Evaluation):
             raise ValueError("Evaluation is not set.")
+        if self.evaluation.response is None or self.evaluation.feedback is None:
+            raise ValueError("Evaluation result must contain response and feedback.")
+
         if self.evaluation.feedback == "YES" or self.evaluation.feedback == "NO":
             new_query = (
                 orig_query_str
                 + "\n----------------\n"
-                + self._construct_feedback(response=self.evaluation.response.response)
+                + self._construct_feedback(response=self.evaluation.response)
             )
         else:
             if self.should_resynthesize_query:
@@ -69,7 +71,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
             else:
                 new_query_str = orig_query_str
             new_query = (
-                self._construct_feedback(response=self.evaluation.response.response)
+                self._construct_feedback(response=self.evaluation.response)
                 + "\n"
                 + "Here is some feedback from the evaluator about the response given.\n"
                 + self.evaluation.feedback
@@ -88,7 +90,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
             return "Here is a previous bad answer.\n" + response
 
     def _resynthesize_query(
-        self, query_str: str, response: Response, feedback: Optional[str]
+        self, query_str: str, response: str, feedback: Optional[str]
     ) -> str:
         """Resynthesize query given feedback."""
         if feedback is None:
@@ -97,7 +99,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
             new_query_str = self.llm_predictor.predict(
                 self.resynthesis_prompt,
                 query_str=query_str,
-                response=response.response,
+                response=response,
                 feedback=feedback,
             )
             logger.debug("Resynthesized query: %s", new_query_str)

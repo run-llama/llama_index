@@ -1,9 +1,12 @@
 import logging
-from typing import Any, Callable, Dict, List, Sequence, Type, Union
+import os
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import openai
 from openai import ChatCompletion, Completion
-from pydantic import BaseModel
+
+from llama_index.bridge.pydantic import BaseModel
+
 from tenacity import (
     before_sleep_log,
     retry,
@@ -13,6 +16,13 @@ from tenacity import (
 )
 
 from llama_index.llms.base import ChatMessage
+from llama_index.llms.generic_utils import get_from_param_or_env
+
+
+DEFAULT_OPENAI_API_TYPE = "open_ai"
+DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
+DEFAULT_OPENAI_API_VERSION = ""
+
 
 GPT4_MODELS = {
     # stable model names:
@@ -52,6 +62,8 @@ TURBO_MODELS = {
 GPT3_5_MODELS = {
     "text-davinci-003": 4097,
     "text-davinci-002": 4097,
+    # instruct models
+    "gpt-3.5-turbo-instruct": 4096,
 }
 
 GPT3_MODELS = {
@@ -69,6 +81,7 @@ ALL_AVAILABLE_MODELS = {
     **TURBO_MODELS,
     **GPT3_5_MODELS,
     **GPT3_MODELS,
+    **AZURE_TURBO_MODELS,
 }
 
 CHAT_MODELS = {
@@ -85,6 +98,12 @@ DISCONTINUED_MODELS = {
     "code-cushman-001": 2048,
 }
 
+MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
+Please set either the OPENAI_API_KEY environment variable or \
+openai.api_key prior to initialization.
+API keys can be found or created at \
+https://platform.openai.com/account/api-keys
+"""
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +175,9 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         https://github.com/hwchase17/langchain/blob/master/langchain/llms/openai.py
     """
     # handling finetuned models
-    if "ft-" in modelname:
+    if modelname.startswith("ft:"):
+        modelname = modelname.split(":")[1]
+    elif ":ft-" in modelname:  # legacy fine-tuning
         modelname = modelname.split(":")[0]
 
     if modelname in DISCONTINUED_MODELS:
@@ -178,6 +199,12 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
 
 def is_chat_model(model: str) -> bool:
     return model in CHAT_MODELS
+
+
+def is_function_calling_model(model: str) -> bool:
+    is_chat_model_ = is_chat_model(model)
+    is_old = "0314" in model or "0301" in model
+    return is_chat_model_ and not is_old
 
 
 def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
@@ -210,11 +237,12 @@ def to_openai_message_dicts(messages: Sequence[ChatMessage]) -> List[dict]:
 def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
-    content = message_dict["content"]
+    # NOTE: Azure OpenAI returns function calling messages without a content key
+    content = message_dict.get("content", None)
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
-    additional_kwargs.pop("content")
+    additional_kwargs.pop("content", None)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
@@ -232,3 +260,45 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
         "description": schema["description"],
         "parameters": pydantic_class.schema(),
     }
+
+
+def resolve_openai_credentials(
+    api_key: Optional[str] = None,
+    api_type: Optional[str] = None,
+    api_base: Optional[str] = None,
+    api_version: Optional[str] = None,
+) -> Tuple[str, str, str, str]:
+    """ "Resolve OpenAI credentials.
+
+    The order of precedence is:
+    1. param
+    2. env
+    3. openai module
+    4. default
+    """
+
+    # resolve from param or env
+    api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY", "")
+    api_type = get_from_param_or_env("api_type", api_type, "OPENAI_API_TYPE", "")
+    api_base = get_from_param_or_env("api_base", api_base, "OPENAI_API_BASE", "")
+    api_version = get_from_param_or_env(
+        "api_version", api_version, "OPENAI_API_VERSION", ""
+    )
+
+    # resolve from openai module or default
+    api_key = api_key or openai.api_key
+    api_type = api_type or openai.api_type or DEFAULT_OPENAI_API_TYPE
+    api_base = api_base or openai.api_base or DEFAULT_OPENAI_API_BASE
+    api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
+
+    if not api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+
+    return api_key, api_type, api_base, api_version
+
+
+def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
+
+    if not openai_api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)

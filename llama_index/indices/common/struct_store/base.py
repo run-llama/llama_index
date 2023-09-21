@@ -8,8 +8,8 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.table import StructDatapoint
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-from llama_index.langchain_helpers.text_splitter import TextSplitter
 from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
 )
@@ -18,15 +18,9 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_TABLE_CONTEXT_QUERY,
 )
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    RefineTableContextPrompt,
-    SchemaExtractPrompt,
-    TableContextPrompt,
-)
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode
+from llama_index.text_splitter import TextSplitter
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -40,9 +34,9 @@ class SQLDocumentContextBuilder:
         llm_predictor (Optional[BaseLLMPredictor]): LLM Predictor to use.
         prompt_helper (Optional[PromptHelper]): Prompt Helper to use.
         text_splitter (Optional[TextSplitter]): Text Splitter to use.
-        table_context_prompt (Optional[TableContextPrompt]): A
+        table_context_prompt (Optional[BasePromptTemplate]): A
             Table Context Prompt (see :ref:`Prompt-Templates`).
-        refine_table_context_prompt (Optional[RefineTableContextPrompt]):
+        refine_table_context_prompt (Optional[BasePromptTemplate]):
             A Refine Table Context Prompt (see :ref:`Prompt-Templates`).
         table_context_task (Optional[str]): The query to perform
             on the table context. A default query string is used
@@ -54,8 +48,8 @@ class SQLDocumentContextBuilder:
         sql_database: SQLDatabase,
         service_context: Optional[ServiceContext] = None,
         text_splitter: Optional[TextSplitter] = None,
-        table_context_prompt: Optional[TableContextPrompt] = None,
-        refine_table_context_prompt: Optional[RefineTableContextPrompt] = None,
+        table_context_prompt: Optional[BasePromptTemplate] = None,
+        refine_table_context_prompt: Optional[BasePromptTemplate] = None,
         table_context_task: Optional[str] = None,
     ) -> None:
         """Initialize params."""
@@ -92,14 +86,13 @@ class SQLDocumentContextBuilder:
     ) -> str:
         """Build context from documents for a single table."""
         schema = self._sql_database.get_single_table_info(table_name)
-        prompt_with_schema = QuestionAnswerPrompt.from_prompt(
-            self._table_context_prompt.partial_format(schema=schema),
-            prompt_type=PromptType.QUESTION_ANSWER,
+        prompt_with_schema = self._table_context_prompt.partial_format(schema=schema)
+        prompt_with_schema.metadata["prompt_type"] = PromptType.QUESTION_ANSWER
+        refine_prompt_with_schema = self._refine_table_context_prompt.partial_format(
+            schema=schema
         )
-        refine_prompt_with_schema = RefinePrompt.from_prompt(
-            self._refine_table_context_prompt.partial_format(schema=schema),
-            prompt_type=PromptType.REFINE,
-        )
+        refine_prompt_with_schema.metadata["prompt_type"] = PromptType.REFINE
+
         text_splitter = (
             self._text_splitter
             or self._service_context.prompt_helper.get_text_splitter_given_prompt(
@@ -112,20 +105,20 @@ class SQLDocumentContextBuilder:
             text_qa_template=prompt_with_schema,
             refine_template=refine_prompt_with_schema,
         )
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={EventPayload.DOCUMENTS: documents}
-        )
-        text_chunks = []
-        for doc in documents:
-            chunks = text_splitter.split_text(
-                doc.get_content(metadata_mode=MetadataMode.LLM)
-            )
-            text_chunks.extend(chunks)
-        self._service_context.callback_manager.on_event_end(
+        with self._service_context.callback_manager.event(
             CBEventType.CHUNKING,
-            payload={EventPayload.CHUNKS: text_chunks},
-            event_id=event_id,
-        )
+            payload={EventPayload.DOCUMENTS: documents},
+        ) as event:
+            text_chunks = []
+            for doc in documents:
+                chunks = text_splitter.split_text(
+                    doc.get_content(metadata_mode=MetadataMode.LLM)
+                )
+                text_chunks.extend(chunks)
+
+            event.on_end(
+                payload={EventPayload.CHUNKS: text_chunks},
+            )
 
         # feed in the "query_str" or the task
         table_context = response_builder.get_response(
@@ -143,7 +136,7 @@ class BaseStructDatapointExtractor:
     def __init__(
         self,
         llm_predictor: BaseLLMPredictor,
-        schema_extract_prompt: SchemaExtractPrompt,
+        schema_extract_prompt: BasePromptTemplate,
         output_parser: OUTPUT_PARSER_TYPE,
     ) -> None:
         """Initialize params."""

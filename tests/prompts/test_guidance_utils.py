@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.prompts.guidance_utils import (
     convert_to_handlebars,

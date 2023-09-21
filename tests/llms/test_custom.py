@@ -10,7 +10,7 @@ from llama_index.llms.custom import CustomLLM
 
 class TestLLM(CustomLLM):
     def __init__(self) -> None:
-        pass
+        super().__init__(callback_manager=None)
 
     @property
     def metadata(self) -> LLMMetadata:

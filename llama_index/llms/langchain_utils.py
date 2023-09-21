@@ -8,6 +8,7 @@ from llama_index.bridge.langchain import (
 )
 from llama_index.bridge.langchain import BaseMessage as LCMessage
 from llama_index.bridge.langchain import (
+    ChatAnyscale,
     ChatOpenAI,
     Cohere,
     FunctionMessage,
@@ -16,6 +17,7 @@ from llama_index.bridge.langchain import (
     SystemMessage,
 )
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
+from llama_index.llms.anyscale_utils import anyscale_modelname_to_contextsize
 from llama_index.llms.base import ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
 
@@ -114,12 +116,21 @@ def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
             context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
             is_chat_model=is_chat_model_,
+            model_name=llm.model_name,
+        )
+    elif isinstance(llm, ChatAnyscale):
+        return LLMMetadata(
+            context_window=anyscale_modelname_to_contextsize(llm.model_name),
+            num_output=llm.max_tokens or -1,
+            is_chat_model=is_chat_model_,
+            model_name=llm.model_name,
         )
     elif isinstance(llm, ChatOpenAI):
         return LLMMetadata(
             context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens or -1,
             is_chat_model=is_chat_model_,
+            model_name=llm.model_name,
         )
     elif isinstance(llm, Cohere):
         # June 2023: Cohere's supported max input size for Generation models is 2048
@@ -128,6 +139,7 @@ def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
             context_window=COHERE_CONTEXT_WINDOW,
             num_output=llm.max_tokens,
             is_chat_model=is_chat_model_,
+            model_name=llm.model,
         )
     elif isinstance(llm, AI21):
         # June 2023:
@@ -138,6 +150,7 @@ def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
             context_window=AI21_J2_CONTEXT_WINDOW,
             num_output=llm.maxTokens,
             is_chat_model=is_chat_model_,
+            model_name=llm.model,
         )
     else:
         return LLMMetadata(is_chat_model=is_chat_model_)

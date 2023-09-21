@@ -1,6 +1,7 @@
 """Set up the package."""
-from pathlib import Path
 import os
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 DEFAULT_PACKAGE_NAME = "llama_index"
@@ -15,7 +16,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 install_requires = [
     "tiktoken",
     "dataclasses_json",
-    "langchain>=0.0.218",
+    "langchain>=0.0.293",
     "sqlalchemy>=2.0.15",
     "numpy",
     "tenacity>=8.2.0,<9.0.0",
@@ -23,10 +24,11 @@ install_requires = [
     "pandas",
     "urllib3<2",
     "fsspec>=2023.5.0",
-    "typing-inspect==0.8.0",
-    "typing_extensions==4.5.0",
+    "typing-inspect>=0.8.0",
+    "typing_extensions>=4.5.0",
     "beautifulsoup4",  # hotfix for langchain 0.0.212 bug
     "nest_asyncio",
+    "nltk",
 ]
 
 setup(

@@ -1,26 +1,16 @@
-from typing import Optional, Type, Callable
+from typing import Optional, Callable
 from unittest import mock
 
 import pytest
 
-from llama_index import Prompt
 from llama_index.callbacks import CallbackManager
 from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
-from llama_index.prompts.prompt_type import PromptType
+from llama_index.prompts.base import PromptTemplate
 
 
 @pytest.fixture
-def dummy_prompt_class() -> Type[Prompt]:
-    class DummyPrompt(Prompt):
-        prompt_type = PromptType.CUSTOM
-        input_variables = ["thing"]
-
-    return DummyPrompt
-
-
-@pytest.fixture
-def dummy_prompt(dummy_prompt_class: Type[Prompt]) -> Prompt:
-    return dummy_prompt_class(template="What's your favorite {thing}?")
+def dummy_prompt() -> PromptTemplate:
+    return PromptTemplate(template="What's your favorite {thing}?")
 
 
 @pytest.fixture

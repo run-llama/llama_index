@@ -2,15 +2,11 @@
 
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.langchain import (
-    BaseChatMemory,
-    AIMessage,
-    BaseMemory as Memory,
-    BaseMessage,
-    HumanMessage,
-)
-from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
+from llama_index.bridge.langchain import AIMessage, BaseChatMemory
+from llama_index.bridge.langchain import BaseMemory as Memory
+from llama_index.bridge.langchain import BaseMessage, HumanMessage
 from llama_index.indices.base import BaseIndex
 from llama_index.schema import Document
 from llama_index.utils import get_new_id

@@ -1,14 +1,21 @@
 from typing import List, cast
 
+import pytest
+
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import Document
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import Document, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import SimpleVectorStore
 
+try:
+    import faiss
+except ImportError:
+    faiss = None  # type: ignore
 
+
+@pytest.mark.skipif(faiss is None, reason="faiss not installed")
 def test_faiss_query(
     documents: List[Document],
     faiss_storage_context: StorageContext,
@@ -95,6 +102,7 @@ def test_simple_check_ids(
     assert "node3" in vector_store._data.text_id_to_ref_doc_id
 
 
+@pytest.mark.skipif(faiss is None, reason="faiss not installed")
 def test_faiss_check_ids(
     mock_service_context: ServiceContext,
     faiss_storage_context: StorageContext,

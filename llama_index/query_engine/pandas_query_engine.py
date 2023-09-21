@@ -1,17 +1,25 @@
-"""Default query for PandasIndex."""
+"""Default query for PandasIndex.
+
+WARNING: This tool provides the Agent access to the `eval` function.
+Arbitrary code execution is possible on the machine running this tool.
+This tool is not recommended to be used in a production setting, and would
+require heavy sandboxing or virtual machines
+
+"""
 
 import logging
 from typing import Any, Callable, Optional
 
+import numpy as np
 import pandas as pd
-from llama_index.bridge.langchain import print_text
 
+from llama_index.bridge.langchain import print_text
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.pandas import PandasIndex
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
-from llama_index.prompts.prompts import PandasPrompt
 from llama_index.response.schema import Response
 
 logger = logging.getLogger(__name__)
@@ -54,7 +62,7 @@ def default_output_processor(
         module_end_str = ast.unparse(module_end)  # type: ignore
         print(module_end_str)
         try:
-            return str(eval(module_end_str, {}, local_vars))
+            return str(eval(module_end_str, {"np": np}, local_vars))
         except Exception as e:
             raise e
     except Exception as e:
@@ -71,13 +79,19 @@ class PandasQueryEngine(BaseQueryEngine):
 
     Convert natural language to Pandas python code.
 
+    WARNING: This tool provides the Agent access to the `eval` function.
+    Arbitrary code execution is possible on the machine running this tool.
+    This tool is not recommended to be used in a production setting, and would
+    require heavy sandboxing or virtual machines
+
+
     Args:
         df (pd.DataFrame): Pandas dataframe to use.
         instruction_str (Optional[str]): Instruction string to use.
         output_processor (Optional[Callable[[str], str]]): Output processor.
             A callable that takes in the output string, pandas DataFrame,
             and any output kwargs and returns a string.
-        pandas_prompt (Optional[PandasPrompt]): Pandas prompt to use.
+        pandas_prompt (Optional[BasePromptTemplate]): Pandas prompt to use.
         head (int): Number of rows to show in the table context.
 
     """
@@ -87,7 +101,7 @@ class PandasQueryEngine(BaseQueryEngine):
         df: pd.DataFrame,
         instruction_str: Optional[str] = None,
         output_processor: Optional[Callable] = None,
-        pandas_prompt: Optional[PandasPrompt] = None,
+        pandas_prompt: Optional[BasePromptTemplate] = None,
         output_kwargs: Optional[dict] = None,
         head: int = 5,
         verbose: bool = False,

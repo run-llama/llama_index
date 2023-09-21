@@ -1,6 +1,6 @@
 from typing import Any, List, Sequence
 
-from llama_index.prompts.utils import get_biggest_prompt
+from llama_index.prompts.prompt_utils import get_biggest_prompt
 from llama_index.response_synthesizers.refine import Refine
 from llama_index.types import RESPONSE_TEXT_TYPE
 

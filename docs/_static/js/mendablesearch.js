@@ -42,7 +42,9 @@ document.addEventListener("DOMContentLoaded", () => {
       anon_key: "d0fb5ab6-ae6c-49dc-8d38-5115fe8e4755", // Public ANON key, ok to be public
       messageSettings: {
         openSourcesInNewTab: false,
+        prettySources: true,
       },
+      showSimpleSearch: true,
       icon: icon,
     });
 
@@ -54,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "https://unpkg.com/react-dom@17/umd/react-dom.production.min.js",
       () => {
         loadScript(
-          "https://unpkg.com/@mendable/search@0.0.93/dist/umd/mendable.min.js",
+          "https://unpkg.com/@mendable/search@0.0.150/dist/umd/mendable.min.js",
           initializeMendable
         );
       }

@@ -26,7 +26,7 @@ class KVDocumentStore(BaseDocumentStore):
         docstore.add_documents(nodes)
         storage_context = StorageContext.from_defaults(docstore=docstore)
 
-        list_index = ListIndex(nodes, storage_context=storage_context)
+        summary_index = SummaryIndex(nodes, storage_context=storage_context)
         vector_index = VectorStoreIndex(nodes, storage_context=storage_context)
         keyword_table_index = SimpleKeywordTableIndex(
             nodes,

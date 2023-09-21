@@ -11,7 +11,7 @@ from llama_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
 )
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
@@ -27,8 +27,8 @@ class TreeIndexInserter:
         index_graph: IndexGraph,
         service_context: ServiceContext,
         num_children: int = 10,
-        insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
-        summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
+        insert_prompt: BasePromptTemplate = DEFAULT_INSERT_PROMPT,
+        summary_prompt: BasePromptTemplate = DEFAULT_SUMMARY_PROMPT,
         docstore: Optional[BaseDocumentStore] = None,
     ) -> None:
         """Initialize with params."""

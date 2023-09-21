@@ -1,5 +1,7 @@
 """General utils functions."""
 
+import asyncio
+import os
 import random
 import sys
 import time
@@ -7,20 +9,21 @@ import traceback
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import partial, wraps
 from itertools import islice
+from pathlib import Path
 from typing import (
     Any,
     Callable,
     Generator,
+    Iterable,
     List,
     Optional,
     Set,
     Type,
-    cast,
     Union,
-    Iterable,
+    cast,
 )
-import os
 
 
 class GlobalsHelper:
@@ -47,7 +50,8 @@ class GlobalsHelper:
                 raise ImportError(tiktoken_import_err)
             enc = tiktoken.get_encoding("gpt2")
             self._tokenizer = cast(Callable[[str], List], enc.encode)
-        return self._tokenizer
+            self._tokenizer = partial(self._tokenizer, allowed_special="all")
+        return self._tokenizer  # type: ignore
 
     @property
     def stopwords(self) -> List[str]:
@@ -60,10 +64,19 @@ class GlobalsHelper:
                 raise ImportError(
                     "`nltk` package not found, please run `pip install nltk`"
                 )
+
+            from llama_index.utils import get_cache_dir
+
+            cache_dir = get_cache_dir()
+            nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
+
+            # update nltk path for nltk so that it finds the data
+            if nltk_data_dir not in nltk.data.path:
+                nltk.data.path.append(nltk_data_dir)
+
             try:
                 nltk.data.find("corpora/stopwords")
             except LookupError:
-                nltk_data_dir = os.environ.get("NLTK_DATA", None)
                 nltk.download("stopwords", download_dir=nltk_data_dir)
             self._stopwords = stopwords.words("english")
         return self._stopwords
@@ -173,6 +186,8 @@ def retry_on_exceptions_with_backoff(
 
 def truncate_text(text: str, max_length: int) -> str:
     """Truncate text to a maximum length."""
+    if len(text) <= max_length:
+        return text
     return text[: max_length - 3] + "..."
 
 
@@ -234,3 +249,78 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
         )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     return tokenizer.tokenize
+
+
+def get_cache_dir() -> str:
+    """Locate a platform-appropriate cache directory for llama_index,
+    and create it if it doesn't yet exist
+    """
+    # User override
+    if "LLAMA_INDEX_CACHE_DIR" in os.environ:
+        path = Path(os.environ["LLAMA_INDEX_CACHE_DIR"])
+
+    # Linux, Unix, AIX, etc.
+    elif os.name == "posix" and sys.platform != "darwin":
+        path = Path("/tmp/llama_index")
+
+    # Mac OS
+    elif sys.platform == "darwin":
+        path = Path(os.path.expanduser("~"), "Library/Caches/llama_index")
+
+    # Windows (hopefully)
+    else:
+        local = os.environ.get("LOCALAPPDATA", None) or os.path.expanduser(
+            "~\\AppData\\Local"
+        )
+        path = Path(local, "llama_index")
+
+    if not os.path.exists(path):
+        os.makedirs(
+            path, exist_ok=True
+        )  # prevents https://github.com/jerryjliu/llama_index/issues/7362
+    return str(path)
+
+
+def add_sync_version(func: Any) -> Any:
+    """Decorator for adding sync version of an async function. The sync version
+    is added as a function attribute to the original function, func.
+
+    Args:
+        func(Any): the async function for which a sync variant will be built.
+    """
+    assert asyncio.iscoroutinefunction(func)
+
+    @wraps(func)
+    def _wrapper(*args: Any, **kwds: Any) -> Any:
+        return asyncio.get_event_loop().run_until_complete(func(*args, **kwds))
+
+    func.sync = _wrapper
+    return func
+
+
+# Sample text from llama_index's readme
+SAMPLE_TEXT = """
+Context
+LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. 
+They are pre-trained on large amounts of publicly available data.
+How do we best augment LLMs with our own private data?
+We need a comprehensive toolkit to help perform this data augmentation for LLMs.
+
+Proposed Solution
+That's where LlamaIndex comes in. LlamaIndex is a "data framework" to help 
+you build LLM  apps. It provides the following tools:
+
+Offers data connectors to ingest your existing data sources and data formats 
+(APIs, PDFs, docs, SQL, etc.)
+Provides ways to structure your data (indices, graphs) so that this data can be 
+easily used with LLMs.
+Provides an advanced retrieval/query interface over your data: 
+Feed in any LLM input prompt, get back retrieved context and knowledge-augmented output.
+Allows easy integrations with your outer application framework 
+(e.g. with LangChain, Flask, Docker, ChatGPT, anything else).
+LlamaIndex provides tools for both beginner users and advanced users. 
+Our high-level API allows beginner users to use LlamaIndex to ingest and 
+query their data in 5 lines of code. Our lower-level APIs allow advanced users to 
+customize and extend any module (data connectors, indices, retrievers, query engines, 
+reranking modules), to fit their needs.
+"""
