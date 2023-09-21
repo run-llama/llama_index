@@ -147,4 +147,4 @@ class DatasetGenerator:
         """Generate questions for each document synchronously."""
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(self.generate_questions_from_nodes())
-}
+
