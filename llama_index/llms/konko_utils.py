@@ -128,6 +128,7 @@ def is_function_calling_model(model: str) -> bool:
 
 def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
     import konko
+
     if is_chat_model:
         return konko.ChatCompletion
     else:
