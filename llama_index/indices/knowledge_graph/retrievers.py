@@ -437,10 +437,16 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 "graph_query_synthesis_prompt",
                 None,
             )
+            if graph_query_synthesis_prompt is not None:
+                del kwargs["graph_query_synthesis_prompt"]
+
             graph_response_answer_prompt = kwargs.get(
                 "graph_response_answer_prompt",
                 None,
             )
+            if graph_query_synthesis_prompt is not None:
+                del kwargs["graph_response_answer_prompt"]
+
             refresh_schema = kwargs.get("refresh_schema", False)
             response_synthesizer = kwargs.get("response_synthesizer", None)
             self._kg_query_engine = KnowledgeGraphQueryEngine(
