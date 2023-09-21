@@ -15,6 +15,8 @@ from llama_index.indices.base_retriever import BaseRetriever
 class RetrieverEvaluator(BaseRetrievalEvaluator):
     """Retriever evaluator.
 
+    This module will evaluate a retriever using a set of metrics.
+
     Args:
         metrics (List[BaseRetrievalMetric]): Sequence of metrics to evaluate
         retriever: Retriever to evaluate.
