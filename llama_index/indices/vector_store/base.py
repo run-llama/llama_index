@@ -304,20 +304,23 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Delete a document and it's nodes by using ref_doc_id."""
-        ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
-        if ref_doc_info is None:
-            logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
-            return
+        self._vector_store.delete(ref_doc_id)
 
-        for node_id in ref_doc_info.node_ids:
-            self._vector_store.delete(node_id, **delete_kwargs)
-            if delete_from_docstore:
-                self.docstore.delete_document(node_id, raise_error=False)
+        # delete from index_struct only if needed
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
+            if ref_doc_info is not None:
+                for node_id in ref_doc_info.node_ids:
+                    self._index_struct.delete(node_id)
+                    self._vector_store.delete(node_id)
+
+        # delete from docstore only if needed
+        if (
+            not self._vector_store.stores_text or self._store_nodes_override
+        ) and delete_from_docstore:
+            self._docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
-        
-        if delete_from_docstore:
-            self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
