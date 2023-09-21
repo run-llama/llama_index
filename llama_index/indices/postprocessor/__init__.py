@@ -6,6 +6,7 @@ from llama_index.indices.postprocessor.node import (
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
     AutoPrevNextNodePostprocessor,
+    LongContextReorder,
 )
 from llama_index.indices.postprocessor.node_recency import (
     FixedRecencyPostprocessor,
@@ -39,4 +40,5 @@ __all__ = [
     "SentenceEmbeddingOptimizer",
     "SentenceTransformerRerank",
     "MetadataReplacementPostProcessor",
+    "LongContextReorder",
 ]
