@@ -4,7 +4,7 @@ LlamaIndex serves as a bridge between your data and Language Learning Models (LL
 
 In this tutorial, we'll walk you through building a context-augmented chatbot using a [Data Agent](https://gpt-index.readthedocs.io/en/stable/core_modules/agent_modules/agents/root.html). This agent, powered by LLMs, is capable of intelligently executing tasks over your data. The end result is a chatbot agent equipped with a robust set of data interface tools provided by LlamaIndex to answer queries about your data.
 
-**Note**: TThis tutorial builds upon initial work on creating a query interface over SEC 10-K filings - [check it out here](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d).
+**Note**: This tutorial builds upon initial work on creating a query interface over SEC 10-K filings - [check it out here](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d).
 
 ### Context
 
@@ -26,11 +26,11 @@ nest_asyncio.apply()
 
 ### Ingest Data
 
-Initially, download the raw 10-K files for the years 2019-2022.
+Let's first download the raw 10-k files, from 2019-2022.
 
-```python
+```sh
 # NOTE: the code examples assume you're operating within a Jupyter notebook.
-# Create a data directory and download files
+# download files
 !mkdir data
 !wget "https://www.dropbox.com/s/948jr9cfs7fgj99/UBER.zip?dl=1" -O data/UBER.zip
 !unzip data/UBER.zip -d data
@@ -38,12 +38,19 @@ Initially, download the raw 10-K files for the years 2019-2022.
 
 To parse the HTML files into formatted text, we use the [Unstructured](https://github.com/Unstructured-IO/unstructured) library. Thanks to [LlamaHub](https://llamahub.ai/), we can directly integrate with Unstructured, allowing conversion of any text into a Document format that LlamaIndex can ingest.
 
+First we install the necessary packages:
+
+```sh
+!pip install llama-hub unstructured
+```
+
+Then we can use the `UnstructuredReader` to parse the HTML files into a list of `Document` objects.
+
 ```python
-from llama_index import download_loader, VectorStoreIndex, ServiceContext, StorageContext, load_index_from_storage
+from llama_hub.file.unstructured.base import UnstructuredReader
 from pathlib import Path
 
 years = [2022, 2021, 2020, 2019]
-UnstructuredReader = download_loader("UnstructuredReader", refresh_cache=True)
 
 loader = UnstructuredReader()
 doc_set = {}
@@ -68,6 +75,8 @@ We build each index and save it to disk.
 
 ```python
 # initialize simple vector indices
+from llama_index import VectorStoreIndex, ServiceContext, StorageContext
+
 index_set = {}
 service_context = ServiceContext.from_defaults(chunk_size=512)
 for year in years:
@@ -85,10 +94,12 @@ To load an index from disk, do the following
 
 ```python
 # Load indices from disk
+from llama_index import load_index_from_storage
+
 index_set = {}
 for year in years:
     storage_context = StorageContext.from_defaults(persist_dir=f'./storage/{year}')
-    cur_index = load_index_from_storage(storage_context=storage_context)
+    cur_index = load_index_from_storage(service_context=service_context, storage_context=storage_context)
     index_set[year] = cur_index
 ```
 
@@ -98,14 +109,12 @@ Since we have access to documents of 4 years, we may not only want to ask questi
 
 To address this, we can use a [Sub Question Query Engine](https://gpt-index.readthedocs.io/en/stable/examples/query_engine/sub_question_query_engine.html). It decomposes a query into subqueries, each answered by an individual vector index, and synthesizes the results to answer the overall query.
 
+LlamaIndex provides some wrappers around indices (and query engines) so that they can be used by query engines and agents. First we define a `QueryEngineTool` for each vector index.
+Each tool has a name and a description; these are what the LLM agent sees to decide which tool to choose.
+
 ```python
 from llama_index.tools import QueryEngineTool, ToolMetadata
-from llama_index.query_engine import SubQuestionQueryEngine
-```
 
-LlamaIndex provides some wrappers around indices (and query engines) so that they can be used by query engines and agents. First we define a `QueryEngineTool` for each vector index.
-
-```python
 individual_query_engine_tools = [
     QueryEngineTool(
         query_engine=index_set[year].as_query_engine(),
@@ -119,6 +128,8 @@ individual_query_engine_tools = [
 Now we can create the Sub Question Query Engine, which will allow us to synthesize answers across the 10-K filings. We pass in the `individual_query_engine_tools` we defined above, as well as a `service_context` that will be used to run the subqueries.
 
 ```python
+from llama_index.query_engine import SubQuestionQueryEngine
+
 query_engine = SubQuestionQueryEngine.from_defaults(
     query_engine_tools=individual_query_engine_tools,
     service_context=service_context,
@@ -127,13 +138,7 @@ query_engine = SubQuestionQueryEngine.from_defaults(
 
 ### Setting up the Chatbot Agent
 
-We use a LlamaIndex Data Agent to setup the outer chatbot agent, which has access to a set of Tools. Specifically, we will use an OpenAIAgent, that takes advantage of OpenAI API function calling.
-
-```python
-from llama_index.agent import OpenAIAgent
-```
-
-We want to use the separate Tools we defined previously for each index (corresponding to a given year), as well as a tool for the sub question query engine we defined above.
+We use a LlamaIndex Data Agent to setup the outer chatbot agent, which has access to a set of Tools. Specifically, we will use an OpenAIAgent, that takes advantage of OpenAI API function calling. We want to use the separate Tools we defined previously for each index (corresponding to a given year), as well as a tool for the sub question query engine we defined above.
 
 First we define a `QueryEngineTool` for the sub question query engine:
 
@@ -155,6 +160,8 @@ tools = individual_query_engine_tools + [query_engine_tool]
 Finally, we call `OpenAIAgent.from_tools` to create the agent, passing in the list of tools we defined above.
 
 ```python
+from llama_index.agent import OpenAIAgent
+
 agent = OpenAIAgent.from_tools(tools, verbose=True)
 ```
 
@@ -320,6 +327,8 @@ agent = OpenAIAgent.from_tools(tools) # verbose=False by default
 
 while True:
     text_input = input("User: ")
+    if text_input == "exit":
+        break
     response = agent.chat(text_input)
     print(f"Agent: {response}")
 
