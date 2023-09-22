@@ -6,6 +6,7 @@
 - Allow users to set the embedding dimensions in azure cognitive  vector store (#7734)
 
 ### Bug Fixes / Nits
+- Update `LanceDBVectorStore` to handle score and distance (#7754)
 - Fixed response synthesizers with empty nodes (#7773)
 - Fix `NotImplementedError` in auto vector retriever (#7764)
 - Pass service context to index for dataset generator (#7748)
