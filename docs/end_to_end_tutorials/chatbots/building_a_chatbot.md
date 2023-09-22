@@ -28,7 +28,7 @@ nest_asyncio.apply()
 
 Let's first download the raw 10-k files, from 2019-2022.
 
-```sh
+```python
 # NOTE: the code examples assume you're operating within a Jupyter notebook.
 # download files
 !mkdir data
@@ -40,7 +40,7 @@ To parse the HTML files into formatted text, we use the [Unstructured](https://g
 
 First we install the necessary packages:
 
-```sh
+```python
 !pip install llama-hub unstructured
 ```
 
@@ -87,7 +87,7 @@ for year in years:
         storage_context=storage_context,
     )
     index_set[year] = cur_index
-    storage_context.persist(persist_dir=f'./storage/{year}')
+    storage_context.persist(persist_dir=f"./storage/{year}")
 ```
 
 To load an index from disk, do the following
@@ -98,8 +98,10 @@ from llama_index import load_index_from_storage
 
 index_set = {}
 for year in years:
-    storage_context = StorageContext.from_defaults(persist_dir=f'./storage/{year}')
-    cur_index = load_index_from_storage(service_context=service_context, storage_context=storage_context)
+    storage_context = StorageContext.from_defaults(persist_dir=f"./storage/{year}")
+    cur_index = load_index_from_storage(
+        service_context=service_context, storage_context=storage_context
+    )
     index_set[year] = cur_index
 ```
 
@@ -119,9 +121,11 @@ individual_query_engine_tools = [
     QueryEngineTool(
         query_engine=index_set[year].as_query_engine(),
         metadata=ToolMetadata(
-            name=f"vector_index_{year}", description=f"useful for when you want to answer queries about the {year} SEC 10-K for Uber"
+            name=f"vector_index_{year}",
+            description=f"useful for when you want to answer queries about the {year} SEC 10-K for Uber",
         ),
-    ) for year in years
+    )
+    for year in years
 ]
 ```
 
@@ -146,7 +150,8 @@ First we define a `QueryEngineTool` for the sub question query engine:
 query_engine_tool = QueryEngineTool(
     query_engine=query_engine,
     metadata=ToolMetadata(
-        name="sub_question_query_engine", description="useful for when you want to answer queries that require analyzing multiple SEC 10-K documents for Uber"
+        name="sub_question_query_engine",
+        description="useful for when you want to answer queries that require analyzing multiple SEC 10-K documents for Uber",
     ),
 )
 ```
@@ -323,7 +328,7 @@ These comparisons highlight both common and unique risk factors that Uber faced 
 Now that we have the chatbot setup, it only takes a few more steps to setup a basic interactive loop to chat with our SEC-augmented chatbot!
 
 ```python
-agent = OpenAIAgent.from_tools(tools) # verbose=False by default
+agent = OpenAIAgent.from_tools(tools)  # verbose=False by default
 
 while True:
     text_input = input("User: ")
@@ -331,7 +336,6 @@ while True:
         break
     response = agent.chat(text_input)
     print(f"Agent: {response}")
-
 ```
 
 Here's an example of the loop in action:
@@ -358,4 +362,4 @@ User:
 
 ### Notebook
 
-Take a look at our [corresponding notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatbot/Chatbot_SEC.ipynb).
+Take a look at our [corresponding notebook](../../examples/agent/Chatbot_SEC.ipynb).
