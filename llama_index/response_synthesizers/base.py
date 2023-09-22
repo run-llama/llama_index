@@ -116,6 +116,9 @@ class BaseSynthesizer(ABC):
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
+        if len(nodes) == 0:
+            return Response("Empty Response")
+
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
 
@@ -144,6 +147,9 @@ class BaseSynthesizer(ABC):
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
+        if len(nodes) == 0:
+            return Response("Empty Response")
+
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
 

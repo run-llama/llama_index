@@ -206,13 +206,19 @@ class SelectorPromptTemplate(BasePromptTemplate):
         )
 
     def _select(self, llm: Optional[LLM] = None) -> BasePromptTemplate:
+        # ensure output parser is up to date
+        self.default_template.output_parser = self.output_parser
+
         if llm is None:
             return self.default_template
 
         if self.conditionals is not None:
             for condition, prompt in self.conditionals:
                 if condition(llm):
+                    # ensure output parser is up to date
+                    prompt.output_parser = self.output_parser
                     return prompt
+
         return self.default_template
 
     def partial_format(self, **kwargs: Any) -> "SelectorPromptTemplate":
