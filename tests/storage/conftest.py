@@ -3,6 +3,7 @@ from llama_index.storage.kvstore.firestore_kvstore import FirestoreKVStore
 from llama_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
 from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
+from llama_index.storage.kvstore.simple_pickled_kvstore import SimplePickledKVStore
 from tests.storage.kvstore.mock_mongodb import MockMongoClient
 
 
@@ -24,6 +25,10 @@ def firestore_kvstore() -> FirestoreKVStore:
 @pytest.fixture()
 def simple_kvstore() -> SimpleKVStore:
     return SimpleKVStore()
+
+@pytest.fixture()
+def simple_pickled_kvstore() -> SimplePickledKVStore:
+    return SimplePickledKVStore()
 
 
 @pytest.fixture()
