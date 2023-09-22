@@ -244,7 +244,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             except OperationFailure as e:
                 # Check for unsupported operation errors
                 if "$vectorSearch" in str(e):
-                    logger.error(
+                    logger.debug(
                         f"$vectorSearch not supported for this Atlas version. "
                         f"Attempting to use $search. Original error:\n\t{e}"
                     )
