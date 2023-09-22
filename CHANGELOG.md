@@ -8,6 +8,7 @@
 ### Bug Fixes / Nits
 - Fix `NotImplementedError` in auto vector retriever (#7764)
 - Pass service context to index for dataset generator (#7748)
+- Expose debug option of `PgVectorStore` (#7776)
 
 ## [0.8.30] - 2023-09-21
 
