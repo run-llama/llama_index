@@ -10,8 +10,7 @@ from tree_sitter import Node
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.extractors.metadata_extractors import \
-    MetadataExtractor
+from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_node
 from llama_index.schema import BaseNode, Document, NodeRelationship, TextNode
