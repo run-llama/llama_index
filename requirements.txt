@@ -15,7 +15,7 @@ types-setuptools==67.1.0.0
 
 # linting
 black[jupyter]==23.7.0
-mypy==0.991
+mypy==1.5.1
 pre-commit==3.2.0
 pylint==2.15.10
 ruff==0.0.285
