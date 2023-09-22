@@ -31,7 +31,7 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
-| MyScale                  | cloud               |                    |               |        | ✓               |       |
+| MyScale                  | cloud               | ✓                  | ✓             |        | ✓               |       |
 | Tair                     | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Simple                   | in-memory           |                    |               | ✓      |                 |       |
 | FAISS                    | in-memory           |                    |               |        |                 |       |
