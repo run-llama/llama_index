@@ -337,7 +337,6 @@ class ServiceContext:
         if service_context_data.metadata_extractor:
             metadata_extractor = load_extractor(
                 service_context_data.metadata_extractor,
-                extractors=extractors,
             )
 
         text_splitter = None
