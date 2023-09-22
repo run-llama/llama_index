@@ -34,9 +34,7 @@ def _to_llama_similarities(results: DataFrame) -> List[float]:
     keys = results.keys()
     normalized_similarities: np.ndarray
     if "score" in keys:
-        normalized_similarities = np.exp(
-            results["score"] - np.max(results["score"])
-        )
+        normalized_similarities = np.exp(results["score"] - np.max(results["score"]))
     elif "_distance" in keys:
         normalized_similarities = np.exp(-results["_distance"])
     else:
@@ -181,5 +179,3 @@ class LanceDBVectorStore(VectorStore):
             similarities=_to_llama_similarities(results),
             ids=results["id"].tolist(),
         )
-
-
