@@ -11,6 +11,10 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
     comparing the similarity between embeddings of the generated answer
     and the reference answer.
 
+    Inspired by this paper:
+    - Semantic Answer Similarity for Evaluating Question Answering Models 
+        https://arxiv.org/pdf/2108.06130.pdf
+
     Args:
         service_context (Optional[ServiceContext]): Service context.
         similarity_threshold (float): Embedding similarity threshold for "passing".
