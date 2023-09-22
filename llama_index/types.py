@@ -1,20 +1,19 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import (
     Any,
     AsyncGenerator,
     Generator,
+    Generic,
     List,
     Protocol,
     TypeVar,
+    Type,
     Union,
     runtime_checkable,
 )
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage, MessageRole
-
-from abc import ABC, abstractmethod
-from typing import Any, Generic, Type
 
 
 Model = TypeVar("Model", bound=BaseModel)
