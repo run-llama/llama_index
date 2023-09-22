@@ -76,9 +76,9 @@ class ConfigurableDataSinks(Enum):
                 f"The enum value {self} is not compatible with component of "
                 f"type {type(component)}"
             )
-        return ConfiguredDataSink[component_type](
+        return ConfiguredDataSink[component_type](  # type: ignore
             component=component, name=self.value.name
-        )  # type: ignore
+        )
 
 
 T = TypeVar("T", bound=BasePydanticVectorStore)

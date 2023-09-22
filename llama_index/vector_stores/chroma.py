@@ -76,7 +76,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection
 
-        if isinstance(chroma_collection, None):
+        if chroma_collection is None:
             client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
             self._collection = client.get_or_create_collection(
                 name=collection_name, **collection_kwargs

@@ -30,12 +30,12 @@ logger = logging.getLogger(__name__)
 class BaseLLMPredictor(BaseComponent, ABC):
     """Base LLM Predictor."""
 
-    def dict(self, **kwargs: Any) -> dict:
-        data = super().dict(**kwargs)
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().to_dict(**kwargs)
         data["llm"] = self.llm.to_dict()
         return data
 
-    def to_dict(self, **kwargs: Any) -> dict:
+    def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = super().to_dict(**kwargs)
         data["llm"] = self.llm.to_dict()
         return data

@@ -292,7 +292,6 @@ class ServiceContext:
         from llama_index.llm_predictor.loading import load_predictor
         from llama_index.llms.loading import load_llm
         from llama_index.node_parser.loading import load_parser
-        from llama_index.node_parser.extractors.loading import load_extractor
 
         service_context_data = ServiceContextData.parse_obj(data)
 
@@ -302,12 +301,6 @@ class ServiceContext:
         embed_model = load_embed_model(service_context_data.embed_model)
 
         prompt_helper = PromptHelper.from_dict(service_context_data.prompt_helper)
-
-        extractors = None
-        if service_context_data.extractors:
-            extractors = []
-            for extractor_dict in service_context_data.extractors:
-                extractors.append(load_extractor(extractor_dict))
 
         node_parser = load_parser(
             service_context_data.node_parser,

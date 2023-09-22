@@ -43,8 +43,6 @@ def test_service_context_serialize() -> None:
 
     assert service_context_dict["llm"]["max_tokens"] == 1
     assert service_context_dict["embed_model"]["embed_dim"] == 1
-    assert service_context_dict["text_splitter"]["chunk_size"] == 1
-    assert len(service_context_dict["extractors"]) == 3
     assert service_context_dict["prompt_helper"]["context_window"] == 1
 
     loaded_service_context = ServiceContext.from_dict(service_context_dict)

@@ -155,9 +155,9 @@ class ConfigurableDataSources(Enum):
             return ConfiguredDataSource[ReaderConfig](
                 component=reader_config
             )  # type: ignore
-        return ConfiguredDataSource[component_type](
+        return ConfiguredDataSource[component_type](  # type: ignore
             component=component, name=self.value.name
-        )  # type: ignore
+        )
 
 
 T = TypeVar("T", bound=BaseComponent)

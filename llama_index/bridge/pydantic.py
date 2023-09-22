@@ -16,7 +16,7 @@ try:
     from pydantic.v1.error_wrappers import ValidationError
     from pydantic.v1.generics import GenericModel
 except ImportError:
-    import pydantic
+    import pydantic  # type: ignore
     from pydantic import (
         BaseModel,
         Field,

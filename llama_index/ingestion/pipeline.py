@@ -89,7 +89,9 @@ class IngestionPipeline(BaseModel):
             SimpleNodeParser.from_defaults(),
         ]
 
-    def run_remote(self, pipeline_name="pipeline", project_name="llamaindex") -> str:
+    def run_remote(
+        self, pipeline_name: str = "pipeline", project_name: str = "llamaindex"
+    ) -> str:
         client = PlatformApi(base_url="http://localhost:8000")
 
         configured_transformations: List[ConfiguredTransformationItem] = []
@@ -98,7 +100,9 @@ class IngestionPipeline(BaseModel):
                 item.configurable_transformation_type.name
             ]
             configured_transformations.append(
-                {"transformation_name": name, "component": item.component}
+                ConfiguredTransformationItem(
+                    transformation_name=name, component=item.component
+                )
             )
 
         data_sinks = []
@@ -153,6 +157,7 @@ class IngestionPipeline(BaseModel):
                 )
 
         project = client.project.create_project_api_project_post(name=project_name)
+        assert project.id is not None, "Project ID should not be None"
 
         # upload?
         pipeline = client.project.create_pipeline_for_project(
@@ -162,6 +167,7 @@ class IngestionPipeline(BaseModel):
             data_sinks=data_sinks,
             data_sources=data_sources,
         )
+        assert pipeline.id is not None, "Pipeline ID should not be None"
 
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
