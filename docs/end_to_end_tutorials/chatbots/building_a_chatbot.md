@@ -100,7 +100,7 @@ index_set = {}
 for year in years:
     storage_context = StorageContext.from_defaults(persist_dir=f"./storage/{year}")
     cur_index = load_index_from_storage(
-        service_context=service_context, storage_context=storage_context
+        storage_context, service_context=service_context
     )
     index_set[year] = cur_index
 ```
