@@ -4,6 +4,7 @@
 
 ### New Features
 - Allow users to set the embedding dimensions in azure cognitive  vector store (#7734)
+- Added a `CodeHierarchy` text splitter (#7450)
 
 ### Bug Fixes / Nits
 - Fix `NotImplementedError` in auto vector retriever (#7764)
