@@ -320,8 +320,8 @@ class ServiceContext:
 
         service_context_data = ServiceContextData.parse_obj(data)
 
-        llm = load_llm(service_context_data.llm)
-        llm_predictor = load_predictor(service_context_data.llm_predictor, llm=llm)
+        load_llm(service_context_data.llm)
+        llm_predictor = load_predictor(service_context_data.llm_predictor)
 
         embed_model = load_embed_model(service_context_data.embed_model)
 
@@ -331,7 +331,7 @@ class ServiceContext:
         if service_context_data.extractors:
             extractors = []
             for extractor_dict in service_context_data.extractors:
-                extractors.append(load_extractor(extractor_dict, llm=llm))
+                extractors.append(load_extractor(extractor_dict))
 
         metadata_extractor = None
         if service_context_data.metadata_extractor:
