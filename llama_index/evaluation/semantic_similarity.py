@@ -12,7 +12,7 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
     and the reference answer.
 
     Inspired by this paper:
-    - Semantic Answer Similarity for Evaluating Question Answering Models 
+    - Semantic Answer Similarity for Evaluating Question Answering Models
         https://arxiv.org/pdf/2108.06130.pdf
 
     Args:
