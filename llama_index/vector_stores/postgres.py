@@ -96,6 +96,7 @@ class PGVectorStore(BasePydanticVectorStore):
     embed_dim: int
     hybrid_search: bool
     text_search_config: str
+    debug: bool
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
@@ -112,6 +113,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        debug: bool = False,
     ) -> None:
         try:
             import sqlalchemy  # noqa: F401
@@ -152,6 +154,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            debug=debug,
         )
 
         self._connect()
@@ -182,6 +185,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        debug: bool = False,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = (
@@ -198,6 +202,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            debug=debug,
         )
 
     @property
@@ -210,7 +215,7 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.ext.asyncio import create_async_engine
         from sqlalchemy.ext.asyncio import async_sessionmaker
 
-        self._engine = create_engine(self.connection_string)
+        self._engine = create_engine(self.connection_string, echo=self.debug)
         self._session = sessionmaker(self._engine)
 
         self._async_engine = create_async_engine(self.async_connection_string)
