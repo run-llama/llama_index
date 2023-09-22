@@ -11,6 +11,7 @@ from typing_extensions import Self
 from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.utils import SAMPLE_TEXT, truncate_text
+from pydantic.fields import ModelField
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
@@ -22,10 +23,28 @@ WRAP_WIDTH = 70
 class BaseComponent(BaseModel):
     """Base component object to caputure class names."""
 
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], model: "BaseComponent") -> None:
+            """Add class name to schema."""
+            schema["properties"]["class_name"] = {
+                "title": "Class Name",
+                "type": "string",
+                "default": model.class_name(),
+            }
+
     @classmethod
-    @abstractmethod
     def class_name(cls) -> str:
         """Get class name."""
+        return "base_component"
+
+    def json(self, **kwargs: Any) -> str:
+        return self.to_json(**kwargs)
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().dict(**kwargs)
+        data["class_name"] = self.class_name()
+        return data
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)

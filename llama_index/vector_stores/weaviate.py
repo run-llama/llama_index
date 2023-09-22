@@ -141,6 +141,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
+        if isinstance(auth_config, dict):
+            auth_config = AuthApiKey(**auth_config)
+
         client_kwargs = client_kwargs or {}
         weaviate_client = Client(
             url=url, auth_client_secret=auth_config, **client_kwargs
@@ -154,6 +157,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             text_key=text_key,
             **kwargs,
         )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> "WeaviateVectorStore":
+        data.pop("class_name", None)
+        return cls.from_params(**data, **kwargs)
 
     @classmethod
     def class_name(cls) -> str:

@@ -10,6 +10,7 @@ try:
         StrictFloat,
         StrictInt,
         StrictStr,
+        BaseConfig,
     )
     from pydantic.v1.fields import FieldInfo
     from pydantic.v1.error_wrappers import ValidationError
@@ -26,6 +27,7 @@ except ImportError:
         StrictFloat,
         StrictInt,
         StrictStr,
+        BaseConfig,
     )
     from pydantic.fields import FieldInfo
     from pydantic.error_wrappers import ValidationError
@@ -45,4 +47,5 @@ __all__ = [
     "FieldInfo",
     "ValidationError",
     "GenericModel",
+    "BaseConfig",
 ]

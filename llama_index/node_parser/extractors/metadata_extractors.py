@@ -22,11 +22,11 @@ disambiguate the document or subsection from other similar documents or subsecti
 from abc import abstractmethod
 from functools import reduce
 from copy import deepcopy
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Self, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 
-from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
+from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM
 from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts import PromptTemplate
@@ -38,6 +38,22 @@ class MetadataFeatureExtractor(BaseExtractor):
     is_text_node_only: bool = True
     show_progress: bool = True
     metadata_mode: MetadataMode = MetadataMode.ALL
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:
+        if isinstance(kwargs, dict):
+            data.update(kwargs)
+
+        data.pop("class_name", None)
+
+        llm_predictor = data.get("llm_predictor", None)
+        if llm_predictor:
+            from llama_index.llm_predictor.loading import load_predictor
+
+            llm_predictor = load_predictor(llm_predictor)
+        data["llm_predictor"] = llm_predictor
+
+        return cls(**data)
 
     @abstractmethod
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -73,6 +89,54 @@ class MetadataExtractor(BaseExtractor):
     in_place: bool = Field(
         default=True, description="Whether to process nodes in place."
     )
+
+    def __init__(
+        self,
+        extractors: Optional[Sequence[MetadataFeatureExtractor]] = None,
+        node_text_template: str = DEFAULT_NODE_TEXT_TEMPLATE,
+        disable_template_rewrite: bool = False,
+        in_place: bool = True,
+    ):
+        from llama_index.node_parser.extractors.loading import load_extractor
+        from llama_index.llm_predictor.loading import load_predictor
+        from llama_index.llms.loading import load_llm
+
+        real_extractors = []
+        if isinstance(extractors, list):
+            for extractor in extractors:
+                if isinstance(extractor, dict):
+                    real_extractors.append(load_extractor(extractor))
+                else:
+                    real_extractors.append(extractor)
+
+        super().__init__(
+            extractors=real_extractors,
+            node_text_template=node_text_template,
+            disable_template_rewrite=disable_template_rewrite,
+            in_place=in_place,
+        )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:
+        if isinstance(kwargs, dict):
+            data.update(kwargs)
+
+        data.pop("class_name", None)
+
+        extractors = data.get("extractors", [])
+        real_extractors = []
+
+        if extractors:
+            from llama_index.node_parser.extractors.loading import load_extractor
+
+            for extractor in extractors:
+                if isinstance(extractor, dict):
+                    real_extractors.append(load_extractor(extractor))
+                else:
+                    real_extractors.append(extractor)
+
+        data["extractors"] = real_extractors
+        return cls(**data)
 
     @classmethod
     def class_name(cls) -> str:
@@ -145,7 +209,7 @@ class TitleExtractor(MetadataFeatureExtractor):
     """Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
     Args:
-        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
+        llm_predictor (Optional[LLMPredictor]): LLM predictor
         nodes (int): number of nodes from front to use for title extraction
         node_template (str): template for node-level title clues extraction
         combine_template (str): template for combining node-level clues into
@@ -153,7 +217,7 @@ class TitleExtractor(MetadataFeatureExtractor):
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
-    llm_predictor: BaseLLMPredictor = Field(
+    llm_predictor: LLMPredictor = Field(
         description="The LLMPredictor to use for generation."
     )
     nodes: int = Field(
@@ -172,7 +236,7 @@ class TitleExtractor(MetadataFeatureExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
         combine_template: str = DEFAULT_TITLE_COMBINE_TEMPLATE,
@@ -246,11 +310,11 @@ class KeywordExtractor(MetadataFeatureExtractor):
     """Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
     Args:
-        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
+        llm_predictor (Optional[LLMPredictor]): LLM predictor
         keywords (int): number of keywords to extract
     """
 
-    llm_predictor: BaseLLMPredictor = Field(
+    llm_predictor: LLMPredictor = Field(
         description="The LLMPredictor to use for generation."
     )
     keywords: int = Field(default=5, description="The number of keywords to extract.")
@@ -259,7 +323,7 @@ class KeywordExtractor(MetadataFeatureExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
         keywords: int = 5,
         **kwargs: Any,
     ) -> None:
@@ -324,13 +388,13 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
     Questions answered extractor. Node-level extractor.
     Extracts `questions_this_excerpt_can_answer` metadata field.
     Args:
-        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
+        llm_predictor (Optional[LLMPredictor]): LLM predictor
         questions (int): number of questions to extract
         prompt_template (str): template for question extraction,
         embedding_only (bool): whether to use embedding only
     """
 
-    llm_predictor: BaseLLMPredictor = Field(
+    llm_predictor: LLMPredictor = Field(
         description="The LLMPredictor to use for generation."
     )
     questions: int = Field(
@@ -348,7 +412,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
         questions: int = 5,
         prompt_template: str = DEFAULT_QUESTION_GEN_TMPL,
         embedding_only: bool = True,
@@ -415,11 +479,11 @@ class SummaryExtractor(MetadataFeatureExtractor):
     Extracts `section_summary`, `prev_section_summary`, `next_section_summary`
     metadata fields
     Args:
-        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
+        llm_predictor (Optional[LLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
         prompt_template (str): template for summary extraction"""
 
-    llm_predictor: BaseLLMPredictor = Field(
+    llm_predictor: LLMPredictor = Field(
         description="The LLMPredictor to use for generation."
     )
     summaries: List[str] = Field(
@@ -438,7 +502,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
         **kwargs: Any,

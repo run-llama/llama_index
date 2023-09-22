@@ -35,7 +35,7 @@ class ProjectClient:
         _response = self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/project"
+                f"{self._client_wrapper.get_base_url()}/", "api/project/"
             ),
             json=jsonable_encoder({"name": name}),
             headers=self._client_wrapper.get_headers(),

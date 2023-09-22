@@ -2,7 +2,7 @@
 
 import logging
 from abc import abstractmethod, ABC
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Self
 
 from llama_index.bridge.pydantic import PrivateAttr
 
@@ -28,6 +28,16 @@ logger = logging.getLogger(__name__)
 
 class BaseLLMPredictor(BaseComponent, ABC):
     """Base LLM Predictor."""
+
+    def dict(self, **kwargs: Any) -> dict:
+        data = super().dict(**kwargs)
+        data["llm"] = self.llm.to_dict()
+        return data
+
+    def to_dict(self, **kwargs: Any) -> dict:
+        data = super().to_dict(**kwargs)
+        data["llm"] = self.llm.to_dict()
+        return data
 
     @property
     @abstractmethod
@@ -97,6 +107,22 @@ class LLMPredictor(BaseLLMPredictor):
         super().__init__(
             system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt
         )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:
+        if isinstance(kwargs, dict):
+            data.update(kwargs)
+
+        data.pop("class_name", None)
+
+        llm = data.get("llm", "default")
+        if llm != "default":
+            from llama_index.llms.loading import load_llm
+
+            llm = load_llm(llm)
+
+        data["llm"] = llm
+        return cls(**data)
 
     @classmethod
     def class_name(cls) -> str:

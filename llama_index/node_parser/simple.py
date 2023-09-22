@@ -1,5 +1,5 @@
 """Simple node parser."""
-from typing import List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Self
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
@@ -70,6 +70,29 @@ class SimpleNodeParser(NodeParser):
     def class_name(cls) -> str:
         """Get class name."""
         return "SimpleNodeParser"
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        if isinstance(kwargs, dict):
+            data.update(kwargs)
+
+        data.pop("class_name", None)
+
+        metadata_extractor = data.get("metadata_extractor", None)
+        if metadata_extractor:
+            from llama_index.node_parser.extractors.loading import load_extractor
+
+            metadata_extractor = load_extractor(metadata_extractor)
+        data["metadata_extractor"] = metadata_extractor
+
+        text_splitter = data.get("text_splitter", None)
+        if text_splitter:
+            from llama_index.text_splitter.loading import load_text_splitter
+
+            text_splitter = load_text_splitter(text_splitter)
+        data["text_splitter"] = text_splitter
+
+        return cls(**data)
 
     def get_nodes_from_documents(
         self,
