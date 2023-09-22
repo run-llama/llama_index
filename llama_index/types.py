@@ -13,6 +13,10 @@ from typing import (
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage, MessageRole
 
+from abc import ABC, abstractmethod
+from typing import Any, Generic, Type
+
+
 Model = TypeVar("Model", bound=BaseModel)
 
 TokenGen = Generator[str, None, None]
@@ -45,3 +49,22 @@ class BaseOutputParser(Protocol):
                 messages[-1].content = self.format(messages[-1].content or "")
 
         return messages
+
+
+class BasePydanticProgram(ABC, Generic[Model]):
+    """A base class for LLM-powered function that return a pydantic model.
+
+    Note: this interface is not yet stable.
+    """
+
+    @property
+    @abstractmethod
+    def output_cls(self) -> Type[Model]:
+        pass
+
+    @abstractmethod
+    def __call__(self, *args: Any, **kwds: Any) -> Model:
+        pass
+
+    async def acall(self, *args: Any, **kwds: Any) -> Model:
+        return self(*args, **kwds)

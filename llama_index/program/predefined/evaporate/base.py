@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Type, Optional, Generic
 from abc import abstractmethod
 
 from llama_index.program.predefined.evaporate.extractor import EvaporateExtractor
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 from llama_index.program.predefined.df import (
     DataFrameRowsOnly,
     DataFrameRow,
