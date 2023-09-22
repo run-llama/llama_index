@@ -11,6 +11,7 @@
 - Pass service context to index for dataset generator (#7748)
 - Fix output parsers for selector templates (#7774)
 - Expose debug option of `PgVectorStore` (#7776)
+- Pass LLM to memory_cls in `CondenseQuestionChatEngine` (#7785)
 
 ## [0.8.30] - 2023-09-21
 
