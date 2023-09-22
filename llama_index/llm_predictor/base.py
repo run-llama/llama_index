@@ -31,7 +31,7 @@ class BaseLLMPredictor(BaseComponent, ABC):
     """Base LLM Predictor."""
 
     def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().to_dict(**kwargs)
+        data = super().dict(**kwargs)
         data["llm"] = self.llm.to_dict()
         return data
 
