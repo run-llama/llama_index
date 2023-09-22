@@ -12,7 +12,7 @@ from llama_index.prompts.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.response_synthesizers.accumulate import Accumulate
 from llama_index.response_synthesizers.base import BaseSynthesizer
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 from llama_index.response_synthesizers.compact_and_accumulate import (
     CompactAndAccumulate,
 )

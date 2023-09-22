@@ -4,7 +4,7 @@ import pandas as pd
 
 from llama_index.bridge.pydantic import BaseModel, Field
 
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
 
