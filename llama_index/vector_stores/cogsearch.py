@@ -149,7 +149,7 @@ class CognitiveSearchVectorStore(VectorStore):
                 filterable=False,
                 sortable=False,
                 facetable=False,
-                vector_search_dimensions=1536,
+                vector_search_dimensions=self.embedding_dimensionality,
                 vector_search_configuration="default",
             ),
             SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
@@ -236,6 +236,7 @@ class CognitiveSearchVectorStore(VectorStore):
             Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]]
         ] = None,
         index_management: IndexManagement = IndexManagement.NO_VALIDATION,
+        embedding_dimensionality: int = 1536,
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
@@ -298,6 +299,7 @@ class CognitiveSearchVectorStore(VectorStore):
 
         self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
         self._search_client: SearchClient = cast(SearchClient, None)
+        self.embedding_dimensionality = embedding_dimensionality
 
         # Validate search_or_index_client
         if search_or_index_client is not None:

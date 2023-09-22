@@ -226,7 +226,10 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) == 0 and response.get("prompt_annotations"):
+                if len(response["choices"]) == 0 and (
+                    response.get("prompt_annotations")
+                    or response.get("prompt_filter_results")
+                ):
                     # When asking a stream response from the Azure OpenAI API
                     # you first get an empty message with the content filtering
                     # results. Ignore this message
