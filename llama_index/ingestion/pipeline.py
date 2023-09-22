@@ -117,17 +117,26 @@ class IngestionPipeline(BaseModel):
 
         data_sources = []
         if self.reader is not None:
-            configured_data_source = ConfiguredDataSource.from_component(self.reader)
-            source_type = ConfigurableDataSourceNames[
-                configured_data_source.configurable_data_source_type.name
-            ]
-            data_sources.append(
-                DataSourceCreate(
-                    name=configured_data_source.name,
-                    source_type=source_type,
-                    component=configured_data_source.component,
+            if self.reader.reader.is_remote:
+                configured_data_source = ConfiguredDataSource.from_component(
+                    self.reader
                 )
-            )
+                source_type = ConfigurableDataSourceNames[
+                    configured_data_source.configurable_data_source_type.name
+                ]
+                data_sources.append(
+                    DataSourceCreate(
+                        name=configured_data_source.name,
+                        source_type=source_type,
+                        component=configured_data_source.component,
+                    )
+                )
+            else:
+                documents = self.reader.read()
+                if self.documents is not None:
+                    documents += self.documents
+                else:
+                    self.documents = documents
 
         if self.documents is not None:
             for document in self.documents:
