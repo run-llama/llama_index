@@ -122,7 +122,9 @@ class DashVectorStore(VectorStore):
     ) -> VectorStoreQueryResult:
         """Query vector store."""
 
-        query_embedding = [float(e) for e in query.query_embedding]
+        query_embedding = (
+            [float(e) for e in query.query_embedding] if query.query_embedding else []
+        )
         filter = _to_dashvector_filter(query.filters)
         rsp = self._collection.query(
             vector=query_embedding,
@@ -131,7 +133,7 @@ class DashVectorStore(VectorStore):
             include_vector=True,
         )
         if not rsp:
-            raise Exception(f"Failed to upsert docs, error: {rsp}")
+            raise Exception(f"Failed to query docs, error: {rsp}")
 
         top_k_ids = []
         top_k_nodes = []
