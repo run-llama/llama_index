@@ -50,6 +50,85 @@ PREFIX er:  <http://purl.org/stuff/er#>
 BASE <{sparql_base_uri}>
         """
 
+# From interface types.py ----------------------------------
+
+    def client(self) -> Any:
+        """Get client."""
+        logger.info('sparql client(self) called')
+        return SPARQLWrapper(self.sparql_endpoint)
+    # SPARQLWrapper objects are single-use, better to return a client factory?
+
+    def get(self, subj: str) -> List[List[str]]:
+        """Get triplets."""
+        # logger.info('#### sparql get called')
+        triplets = self.get_triplets(subj)
+        return triplets
+
+    def get_rel_map(
+        self, subjs: Optional[List[str]] = None, depth: int = 2
+    ) -> Dict[str, List[List[str]]]:
+        """Get depth-aware rel map."""
+        # logger.info('get_rel_map called')
+        return self.get_triplets(subjs[0])  # only the first for now
+        
+# DOES IT ONE-BY-ONE!!!!!!!!!!!!!!!!!!!!!!
+    def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
+        """Add triplet."""
+        logger.info('sparql upsert_triplet called')
+
+        # crude loop prevention, maybe add as an option?
+        # if obj in self.prior_subjs:
+        #    return
+        # self.prior_subjs.append(subj)
+
+        subj = self.escape_for_rdf(subj)
+        rel = self.escape_for_rdf(rel)
+        obj = self.escape_for_rdf(obj)
+
+        triplet_fragment = '#T'+self.make_id()
+        s_fragment = '#E_'+self.make_id()
+        p_fragment = '#R_'+self.make_id()
+        o_fragment = '#E_'+self.make_id()
+
+        triple = f"""
+            <{triplet_fragment}> a er:Triplet ;
+                        er:subject <{s_fragment}> ;
+                        er:property <{p_fragment}> ;
+                        er:object <{o_fragment}> .
+
+            <{s_fragment}> a er:Entity ;
+                        er:value "{subj}" .
+
+            <{p_fragment}> a er:Relationship ;
+                        er:value "{rel}" .
+
+            <{o_fragment}> a er:Entity ;
+                        er:value "{obj}" .
+                """
+        self.insert_data(triple)
+
+    def delete(self, subj: str, rel: str, obj: str) -> None:
+        """Delete triplet."""
+        logger.info('delete called')
+        ...
+
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> None:
+        """Persist the graph store to a file."""
+        logger.info('persist called')
+        return None
+
+    def get_schema(self, refresh: bool = False) -> str:
+        """Get the schema of the graph store."""
+        logger.info('get_schema called')
+        ...
+
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+        """Query the graph store with statement and parameters."""
+        logger.info('query called')
+        ...
+
 # SPARQL comms --------------------------------------------
 
     def create_graph(self, uri: str) -> None:
@@ -71,7 +150,6 @@ BASE <{sparql_base_uri}>
         return results
 
     def sparql_update(self, query_string: str) -> None:
-        # print(query_string)
         sparql_client = SPARQLWrapper(self.sparql_endpoint)
         sparql_client.setMethod(POST)
         sparql_client.setQuery(query_string)
@@ -86,63 +164,7 @@ BASE <{sparql_base_uri}>
         self.sparql_update(insert_query)
 
 
-# Helpers --------------------------------------------------
-    def make_id(self) -> str:
-        """
-        Generate a random 4-character string using only numeric characters and capital letters.
-        """
-        characters = string.ascii_uppercase + string.digits  # available characters
-        return ''.join(random.choice(characters) for _ in range(4))
-
-
-    def escape_for_rdf(self, str: str) -> str:
-        # control characters
-        str = str.encode("unicode_escape").decode(
-            "utf-8").replace('\\x', '\\u00')
-        # single and double quotes
-        str = re.sub(r'(["\'])', r'\\\1', str)
-        return str
-
-    def unescape_from_rdf(self, str: str) -> str:
-        # Unescape single and double quotes
-        str = re.sub(r'\\(["\'])', r'\1', str)
-        # Replace SPARQL's unicode escape sequences with the actual characters
-        str = bytes(str, "utf-8").decode("unicode_escape")
-        return str
-
-    def select_triplets(self, subj: str, limit: int = -1) -> List[Dict[str, Any]]:
-        # print('select triplets')
-        logger.info('sparql get_triplets called')
-        subj = self.escape_for_rdf(subj)
-        template = Template("""
-            $prefixes
-            SELECT DISTINCT ?rel ?obj WHERE {
-                GRAPH <http://purl.org/stuff/guardians> {
-                    ?triplet a er:Triplet ;
-                    er:subject ?subject ;
-                    er:property ?property ;
-                er:object ?object .
-
-                ?subject er:value "$subject" .
-                ?property er:value ?rel .
-                ?object er:value ?obj .
-                }
-            }
-            $limit_str
-        """)
-
-        limit_str = ''
-        if (limit > 0):
-            limit_str = '\nLIMIT ' + str(limit)
-
-        query_string = template.substitute(
-            {'prefixes': self.sparql_prefixes, 'subject': subj,  'limit_str': limit_str})
-
-        triplets = self.sparql_query(query_string)
-        return triplets
-
-    def rels(self, subj: str, limit: int = -1) -> List[Dict[str, Any]]:
-        logger.info('#### sparql get_triplets called')
+    def get_triplets(self, subj: str, limit: int = -1) -> List[Dict[str, Any]]:
         subj = self.escape_for_rdf(subj)
         template = Template("""
     $prefixes
@@ -176,17 +198,72 @@ BASE <{sparql_base_uri}>
 
         query_string = template.substitute(
             {'prefixes': self.sparql_prefixes, 'subject': subj,  'limit_str': limit_str})
-
+        print(query_string)
         triplets_json = self.sparql_query(query_string)
-
+        print(triplets_json)
         return self.to_arrows(subj, triplets_json)
 
-    def to_arrows(self, subj: str, rels: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+# minimal, not used, just for reference
+    def select_triplets(self, subj: str, limit: int = -1) -> List[Dict[str, Any]]:
+        subj = self.escape_for_rdf(subj)
+        template = Template("""
+            $prefixes
+            SELECT DISTINCT ?rel ?obj WHERE {
+                GRAPH <http://purl.org/stuff/guardians> {
+                    ?triplet a er:Triplet ;
+                    er:subject ?subject ;
+                    er:property ?property ;
+                er:object ?object .
+
+                ?subject er:value "$subject" .
+                ?property er:value ?rel .
+                ?object er:value ?obj .
+                }
+            }
+            $limit_str
+        """)
+
+        limit_str = ''
+        if (limit > 0):
+            limit_str = '\nLIMIT ' + str(limit)
+
+        query_string = template.substitute(
+            {'prefixes': self.sparql_prefixes, 'subject': subj,  'limit_str': limit_str})
+
+        triplets = self.sparql_query(query_string)
+        return triplets
+
+
+# Helpers --------------------------------------------------
+    def make_id(self) -> str:
+        """
+        Generate a random 4-character string using only numeric characters and capital letters.
+        """
+        characters = string.ascii_uppercase + string.digits  # available characters
+        return ''.join(random.choice(characters) for _ in range(4))
+
+
+    def escape_for_rdf(self, str: str) -> str:
+        # control characters
+        str = str.encode("unicode_escape").decode(
+            "utf-8").replace('\\x', '\\u00')
+        # single and double quotes
+        str = re.sub(r'(["\'])', r'\\\1', str)
+        return str
+
+    def unescape_from_rdf(self, str: str) -> str:
+        # Unescape single and double quotes
+        str = re.sub(r'\\(["\'])', r'\1', str)
+        # Replace SPARQL's unicode escape sequences with the actual characters
+        str = bytes(str, "utf-8").decode("unicode_escape")
+        return str
+
+    def to_arrows(self, subj: str, get_triplets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Convert subject and relations to a string in the desired format.
         """
         arrows = []
-        for r in rels:
+        for r in get_triplets:
             rel1 = r['rel1']['value']
             obj1 = r['obj1']['value']
             rel1 = self.unescape_from_rdf(rel1)  # probably unnecessary
@@ -203,82 +280,3 @@ BASE <{sparql_base_uri}>
                 arrows.append(f"""{subj}, -[{rel1}]->, {obj1}""")
         return {subj: arrows}
 
-# From interface types.py ----------------------------------
-
-# DOES IT ONE-BY-ONE!!!!!!!!!!!!!!!!!!!!!!
-    def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
-        """Add triplet."""
-        logger.info('sparql upsert_triplet called')
-
-        # crude loop prevention
-        # if obj in self.prior_subjs:
-        #    return
-        # self.prior_subjs.append(subj)
-
-        subj = self.escape_for_rdf(subj)
-        rel = self.escape_for_rdf(rel)
-        obj = self.escape_for_rdf(obj)
-
-        triplet_fragment = '#T'+self.make_id()
-        s_fragment = '#E_'+self.make_id()
-        p_fragment = '#R_'+self.make_id()
-        o_fragment = '#E_'+self.make_id()
-
-        triple = f"""
-            <{triplet_fragment}> a er:Triplet ;
-                        er:subject <{s_fragment}> ;
-                        er:property <{p_fragment}> ;
-                        er:object <{o_fragment}> .
-
-            <{s_fragment}> a er:Entity ;
-                        er:value "{subj}" .
-
-            <{p_fragment}> a er:Relationship ;
-                        er:value "{rel}" .
-
-            <{o_fragment}> a er:Entity ;
-                        er:value "{obj}" .
-                """
-        self.insert_data(triple)
-
-    def client(self) -> Any:
-        """Get client."""
-        logger.info('sparql client(self) called')
-        ...
-
-    def get(self, subj: str) -> List[List[str]]:
-        """Get triplets."""
-        logger.info('#### sparql get called')
-        triplets = self.get_triplets(str)
-        logger.info('triplets = ' + triplets)
-        return triplets
-
-    def get_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2
-    ) -> Dict[str, List[List[str]]]:
-        """Get depth-aware rel map."""
-        logger.info('get_rel_map called')
-        return self.rels(subjs[0])  # only the first for now
-        ...
-
-    def delete(self, subj: str, rel: str, obj: str) -> None:
-        """Delete triplet."""
-        logger.info('delete called')
-        ...
-
-    def persist(
-        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
-    ) -> None:
-        """Persist the graph store to a file."""
-        logger.info('persist called')
-        return None
-
-    def get_schema(self, refresh: bool = False) -> str:
-        """Get the schema of the graph store."""
-        logger.info('get_schema called')
-        ...
-
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        """Query the graph store with statement and parameters."""
-        logger.info('query called')
-        ...

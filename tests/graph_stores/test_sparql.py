@@ -2,10 +2,16 @@
 import pytest
 from llama_index.graph_stores.sparql import SparqlGraphStore
 
+ENDPOINT = 'https://fuseki.hyperdata.it/llama_index_sparql-test/'
+GRAPH = 'http://purl.org/stuff/llama_index_sparql-test/'
+BASE_URI = 'http://purl.org/stuff/data'
+
 # Fixture to initialize a SparqlGraphStore instance before each test
 @pytest.fixture
 def sparql_graph_store():
-    return SparqlGraphStore(sparql_endpoint="http://example.com/sparql", sparql_graph="http://example.com/graph", sparql_base_uri="http://example.com/base_uri")
+    store = SparqlGraphStore(sparql_endpoint=ENDPOINT, sparql_graph=GRAPH, sparql_base_uri=BASE_URI)
+    store.upsert_triplet(subj='subject', rel='relation', obj='object') # sample data
+    return store
 
 # Tests for SparqlGraphStore class methods
 
@@ -14,19 +20,23 @@ def test_init(sparql_graph_store):
 
 def test_create_graph(sparql_graph_store):
     # Assuming the create_graph method does not return anything
-    result = sparql_graph_store.create_graph(uri="http://example.com/new_graph")
-    assert result is None
+    result = sparql_graph_store.create_graph(uri=GRAPH)
+    assert result is None # TODO test existence
 
 def test_client(sparql_graph_store):
     # Assuming the client method returns an object (specific type will be determined later)
     result = sparql_graph_store.client()
-    assert result is not None
+    assert result is not None # TODO test type?
 
 def test_get(sparql_graph_store):
-    # Assuming the get method returns a list of lists of strings
-    result = sparql_graph_store.get(subj="http://example.com/subject")
-    assert isinstance(result, list)
-    assert all(isinstance(item, list) and all(isinstance(sub_item, str) for sub_item in item) for item in result)
+    # Assuming it doesn't get more than this...
+    result = sparql_graph_store.get(subj='subject')
+    result_str = result['subject'][0]
+    print('****')
+    print(result_str)
+
+    print('****')
+    assert result_str == 'subject, -[relation]->, object'
 
 def test_get_rel_map(sparql_graph_store):
     # Assuming the get_rel_map method returns a dictionary with string keys and list of lists of strings as values
