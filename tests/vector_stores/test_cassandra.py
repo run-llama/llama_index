@@ -10,17 +10,19 @@ from llama_index.vector_stores.types import VectorStoreQueryMode
 from llama_index.vector_stores.cassandra import CassandraVectorStore
 
 try:
-    import cassio
+    import cassio  # noqa: F401
+
+    has_cassio = True
 except ImportError:
-    cassio = None
+    has_cassio = False
 
 
 class TestCassandraVectorStore(unittest.TestCase):
-    @pytest.mark.skipif(cassio is None, reason="cassio not installed")
+    @pytest.mark.skipif(not has_cassio, reason="cassio not installed")
     def test_cassandra_create_and_crud(self) -> None:
         mock_db_session = MagicMock()
         try:
-            import cassio  # noqa: F401
+            import cassio  # noqa: F401, F811
         except ModuleNotFoundError:
             # mock `cassio` if not installed
             mock_cassio = MagicMock()
@@ -51,11 +53,11 @@ class TestCassandraVectorStore(unittest.TestCase):
 
         vector_store.client
 
-    @pytest.mark.skipif(cassio is None, reason="cassio not installed")
+    @pytest.mark.skipif(not has_cassio, reason="cassio not installed")
     def test_cassandra_queries(self) -> None:
         mock_db_session = MagicMock()
         try:
-            import cassio  # noqa: F401
+            import cassio  # noqa: F401, F811
         except ModuleNotFoundError:
             # mock `cassio` if not installed
             mock_cassio = MagicMock()
