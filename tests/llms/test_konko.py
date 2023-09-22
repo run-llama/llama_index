@@ -123,7 +123,7 @@ def test_chat_model_basic_openai_model(monkeypatch: MonkeyPatch) -> None:
 @pytest.mark.skipif(konko is None, reason="konko not installed")
 def test_chat_model_streaming(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.llms.openai.completion_with_retry", mock_chat_completion_stream
+        "llama_index.llms.konko.completion_with_retry", mock_chat_completion_stream
     )
     llm = Konko(model="meta-llama/Llama-2-13b-chat-hf")
     message = ChatMessage(role="user", content="test message")
