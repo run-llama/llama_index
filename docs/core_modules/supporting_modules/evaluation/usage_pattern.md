@@ -1,4 +1,4 @@
-# Usage Pattern
+# Usage Pattern (Response Evaluation)
 
 ## Using `BaseEvaluator`
 All of the evaluation modules in LlamaIndex implement the `BaseEvaluator` class, with two main methods:
