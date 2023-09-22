@@ -10,6 +10,10 @@ try:
 except ImportError:
     konko = None  # type: ignore
 
+def setup_module():
+    import os
+    os.environ["KONKO_API_KEY"] = "ko-" + "a" * 48
+
 
 def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
     return {
@@ -130,3 +134,8 @@ def test_chat_model_streaming(monkeypatch: MonkeyPatch) -> None:
     chat_response_gen = llm.stream_chat([message])
     chat_responses = list(chat_response_gen)
     assert chat_responses[-1].message.content is not None
+
+def teardown_module():
+    import os
+    del os.environ["KONKO_API_KEY"]
+
