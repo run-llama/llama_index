@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional, Sequence
 
-from llama_index.bridge.pydantic import BaseModel, Field, BaseConfig
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.ingestion.client import (
@@ -26,11 +26,6 @@ from llama_index.node_parser.extractors import (
 from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseComponent, BaseNode, Document, MetadataMode
 from llama_index.vector_stores.types import BasePydanticVectorStore, NodeWithEmbedding
-
-# BaseConfig.json_encoders = {
-#    **BaseConfig.json_encoders,
-#    BaseComponent: lambda v: v.to_json(),
-# }
 
 
 class IngestionPipeline(BaseModel):
@@ -161,11 +156,11 @@ class IngestionPipeline(BaseModel):
 
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
-        # pipeline_execution = client.pipeline.create_pipeline_execution(
-        #    pipeline_id=pipeline.id
-        # )
+        pipeline_execution = client.pipeline.create_pipeline_execution(
+            pipeline_id=pipeline.id
+        )
 
-        return f"Find your remote results here: pipeline_execution.id"
+        return f"Find your remote results here: {pipeline_execution.id}"
 
     def run_local(
         self, run_embeddings: bool = True, show_progress: bool = False

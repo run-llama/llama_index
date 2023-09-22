@@ -11,7 +11,6 @@ from typing_extensions import Self
 from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.utils import SAMPLE_TEXT, truncate_text
-from pydantic.fields import ModelField
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"

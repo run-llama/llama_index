@@ -218,11 +218,6 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     def client(self) -> Any:
         """Get client."""
 
-    @classmethod
-    @abstractmethod
-    def from_params(cls, **kwargs: Any) -> "BasePydanticVectorStore":
-        """Create vector store from params."""
-
     @abstractmethod
     def add(
         self,

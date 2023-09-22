@@ -1,10 +1,7 @@
-from typing import Optional
-
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.llm_predictor.structured import StructuredLLMPredictor
 from llama_index.llm_predictor.mock import MockLLMPredictor
 from llama_index.llm_predictor.vellum.predictor import VellumPredictor
-from llama_index.llms.base import LLM
 
 
 def load_predictor(data: dict) -> BaseLLMPredictor:

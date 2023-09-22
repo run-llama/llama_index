@@ -98,8 +98,6 @@ class MetadataExtractor(BaseExtractor):
         in_place: bool = True,
     ):
         from llama_index.node_parser.extractors.loading import load_extractor
-        from llama_index.llm_predictor.loading import load_predictor
-        from llama_index.llms.loading import load_llm
 
         real_extractors = []
         if isinstance(extractors, list):

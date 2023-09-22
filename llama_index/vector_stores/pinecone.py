@@ -186,42 +186,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
 
     @classmethod
-    def from_params(
-        cls,
-        api_key: Optional[str] = None,
-        index_name: Optional[str] = None,
-        environment: Optional[str] = None,
-        namespace: Optional[str] = None,
-        insert_kwargs: Optional[Dict] = None,
-        add_sparse_vector: bool = False,
-        tokenizer: Optional[Callable] = None,
-        text_key: str = DEFAULT_TEXT_KEY,
-        batch_size: int = DEFAULT_BATCH_SIZE,
-        **kwargs: Any,
-    ) -> "PineconeVectorStore":
-        try:
-            import pinecone  # noqa: F401
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        pinecone.init(api_key=api_key, environment=environment)
-        pinecone_index = pinecone.Index(index_name)
-
-        return cls(
-            pinecone_index=pinecone_index,
-            api_key=api_key,
-            index_name=index_name,
-            environment=environment,
-            namespace=namespace,
-            insert_kwargs=insert_kwargs,
-            add_sparse_vector=add_sparse_vector,
-            tokenizer=tokenizer,
-            text_key=text_key,
-            batch_size=batch_size,
-            **kwargs,
-        )
-
-    @classmethod
     def class_name(cls) -> str:
         return "PinconeVectorStore"
 

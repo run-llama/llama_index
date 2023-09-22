@@ -48,4 +48,4 @@ def load_vector_store(data: dict) -> BasePydanticVectorStore:
 
             data["auth_config"] = auth_config
 
-    return LOADABLE_VECTOR_STORES[class_name].from_params(**data)  # type: ignore
+    return LOADABLE_VECTOR_STORES[class_name](**data)  # type: ignore
