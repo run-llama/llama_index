@@ -6,8 +6,11 @@
 - Allow users to set the embedding dimensions in azure cognitive  vector store (#7734)
 
 ### Bug Fixes / Nits
+- Fixed response synthesizers with empty nodes (#7773)
 - Fix `NotImplementedError` in auto vector retriever (#7764)
 - Pass service context to index for dataset generator (#7748)
+- Fix output parsers for selector templates (#7774)
+- Expose debug option of `PgVectorStore` (#7776)
 
 ## [0.8.30] - 2023-09-21
 
