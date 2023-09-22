@@ -94,7 +94,7 @@ class MilvusVectorStore(VectorStore):
         similarity_metric: str = "IP",
         consistency_level: str = "Strong",
         overwrite: bool = False,
-        text_key: str = None,
+        text_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -284,7 +284,7 @@ class MilvusVectorStore(VectorStore):
                     text = hit["entity"].get(self.text_key)
                 except Exception as e:
                     print("The passed in text_key value does not exist in the retrieved entity.")
-                    print(e)
+                    raise ValueError()
                 node = TextNode(
                     text=text,
                 )
