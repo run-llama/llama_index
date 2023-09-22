@@ -2,7 +2,8 @@
 
 import logging
 from abc import abstractmethod, ABC
-from typing import Any, Dict, List, Optional, Self
+from typing import Any, Dict, List, Optional
+from typing_extensions import Self
 
 from llama_index.bridge.pydantic import PrivateAttr
 
@@ -109,7 +110,7 @@ class LLMPredictor(BaseLLMPredictor):
         )
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         if isinstance(kwargs, dict):
             data.update(kwargs)
 

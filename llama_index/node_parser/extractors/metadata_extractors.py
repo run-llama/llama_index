@@ -22,7 +22,8 @@ disambiguate the document or subsection from other similar documents or subsecti
 from abc import abstractmethod
 from functools import reduce
 from copy import deepcopy
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Self, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
+from typing_extensions import Self
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 
@@ -40,7 +41,7 @@ class MetadataFeatureExtractor(BaseExtractor):
     metadata_mode: MetadataMode = MetadataMode.ALL
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         if isinstance(kwargs, dict):
             data.update(kwargs)
 
@@ -115,7 +116,7 @@ class MetadataExtractor(BaseExtractor):
         )
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         if isinstance(kwargs, dict):
             data.update(kwargs)
 

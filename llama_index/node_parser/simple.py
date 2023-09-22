@@ -1,5 +1,6 @@
 """Simple node parser."""
-from typing import Any, Dict, List, Optional, Sequence, Self
+from typing import Any, Dict, List, Optional, Sequence
+from typing_extensions import Self
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
