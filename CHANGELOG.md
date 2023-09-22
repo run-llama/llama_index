@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Update `LanceDBVectorStore` to handle score and distance (#7754)
+- Pass LLM to memory_cls in `CondenseQuestionChatEngine` (#7785)
+
 ## [0.8.31] - 2023-09-22
 
 ### New Features
