@@ -13,7 +13,6 @@ from llama_index.schema import (
     NodeRelationship,
     TextNode,
 )
-from llama_index.text_splitter import TextSplitter
 from llama_index.text_splitter.types import MetadataAwareTextSplitter, SplitterType
 from llama_index.utils import truncate_text
 
