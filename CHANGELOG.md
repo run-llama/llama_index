@@ -1,16 +1,23 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.31] - 2023-09-22
 
 ### New Features
+- add pydantic metadata extractor (#7778)
 - Allow users to set the embedding dimensions in azure cognitive  vector store (#7734)
 
 ### Bug Fixes / Nits
+- 📝docs: Update Chatbot Tutorial and Notebook (#7767)
 - Fixed response synthesizers with empty nodes (#7773)
 - Fix `NotImplementedError` in auto vector retriever (#7764)
+- Multiple kwargs values in "KnowledgeGraphQueryEngine" bug-fix (#7763)
+- Allow setting azure cognitive search dimensionality (#7734)
 - Pass service context to index for dataset generator (#7748)
 - Fix output parsers for selector templates (#7774)
+- Update Chatbot_SEC.ipynb (#7711)
+- linter/typechecker-friendly improvements to cassandra test (#7771)
 - Expose debug option of `PgVectorStore` (#7776)
+- llms/openai: fix Azure OpenAI by considering `prompt_filter_results` field (#7755)
 
 ## [0.8.30] - 2023-09-21
 
