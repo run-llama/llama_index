@@ -13,6 +13,7 @@ maxdepth: 1
 /examples/evaluation/relevancy_eval.ipynb
 /examples/evaluation/guideline_eval.ipynb
 /examples/evaluation/correctness_eval.ipynb
+/examples/evaluation/semantic_similarity_eval.ipynb
 /examples/evaluation/Deepeval.ipynb
 /examples/evaluation/QuestionGeneration.ipynb
 /examples/evaluation/batch_eval.ipynb

@@ -4,6 +4,7 @@
 
 ### New Features
 - Allow users to set the embedding dimensions in azure cognitive  vector store (#7734)
+- Add semantic similarity evaluator (#7770)
 
 ### Bug Fixes / Nits
 - Update `LanceDBVectorStore` to handle score and distance (#7754)

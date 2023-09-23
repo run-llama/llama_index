@@ -11,6 +11,7 @@ from llama_index.embeddings.utils import (
     resolve_embed_model,
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
 )
+from llama_index.embeddings.base import SimilarityMode
 
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "AdapterEmbeddingModel",
     "resolve_embed_model",
     "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
+    "SimilarityMode",
 ]
