@@ -62,6 +62,34 @@ service_context = ServiceContext.from_defaults(
 )
 ```
 
+### HuggingFace Optimum ONNX Embeddings
+
+LlamaIndex also supports creating and using ONNX embeddings using the Optimum library from HuggingFace. Simple create and save the ONNX embeddings, and use them.
+
+Some prerequisites:
+
+```
+pip install transformers optimum[exporters]
+```
+
+Creation with specifying the model and output path:
+
+```python
+from llama_index.embeddings import OptimumEmbedding
+
+OptimumEmbedding.create_and_save_optimum_model("BAAI/bge-small-en-v1.5", "./bge_onnx")
+```
+
+And then usage:
+
+```python
+embed_model = OptimumEmbedding(folder_name="./bge_onnx")
+service_context = ServiceContext.from_defaults(
+  embed_model=embed_model
+)
+```
+
+
 ### Embedding Model Integrations
 
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/).

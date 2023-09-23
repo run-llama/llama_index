@@ -10,4 +10,5 @@ maxdepth: 1
 /examples/embeddings/Langchain.ipynb
 /examples/customization/llms/AzureOpenAI.ipynb
 /examples/embeddings/custom_embeddings.ipynb
+/examples/embeddings/huggingface.ipynb
 ```
