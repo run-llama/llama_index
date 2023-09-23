@@ -14,6 +14,7 @@ def get_retrieval_results_df(
     metric_keys: Optional[List[str]] = None
 ) -> pd.DataFrame:
     """Display retrieval results."""
+    metric_keys = metric_keys or DEFAULT_METRIC_KEYS
 
     avg_metrics_dict = defaultdict(list)
     for name, eval_results in zip(names, results_arr):
