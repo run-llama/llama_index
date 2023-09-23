@@ -295,7 +295,6 @@ class ServiceContext:
 
         service_context_data = ServiceContextData.parse_obj(data)
 
-        load_llm(service_context_data.llm)
         llm_predictor = load_predictor(service_context_data.llm_predictor)
 
         embed_model = load_embed_model(service_context_data.embed_model)
