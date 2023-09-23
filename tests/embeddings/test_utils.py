@@ -19,7 +19,7 @@ def mock_openai_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
 
 def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.bridge.langchain.HuggingFaceBgeEmbeddings.__init__",
+        "llama_index.embedding.huggingface.HuggingFaceEmbedding.__init__",
         mock_hf_embeddings,
     )
     monkeypatch.setattr(
