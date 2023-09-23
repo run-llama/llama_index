@@ -2,6 +2,7 @@ from typing import Dict, Type
 
 from llama_index.llms.base import LLM
 from llama_index.llms.custom import CustomLLM
+from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.llama_cpp import LlamaCPP
@@ -24,6 +25,8 @@ RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
     PaLM.class_name(): PaLM,
     PredibaseLLM.class_name(): PredibaseLLM,
     CustomLLM.class_name(): CustomLLM,
+    GradientBaseModelLLM.class_name(): GradientBaseModelLLM,
+    GradientModelAdapterLLM.class_name(): GradientModelAdapterLLM,
 }
 
 

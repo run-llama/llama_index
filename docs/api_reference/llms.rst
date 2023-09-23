@@ -19,6 +19,8 @@ LLM Implementations
    llms/huggingface.rst
    llms/langchain.rst
    llms/anthropic.rst
+   llms/gradient_base_model.rst
+   llms/gradient_model_adapter.rst
    llms/litellm.rst
    llms/llama_cpp.rst
    llms/palm.rst

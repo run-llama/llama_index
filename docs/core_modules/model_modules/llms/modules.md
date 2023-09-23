@@ -21,6 +21,17 @@ maxdepth: 1
 
 ```
 
+## Gradient
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/gradient_base_model.ipynb
+/examples/llm/gradient_model_adapter.ipynb
+
+```
+
 ## Hugging Face
 ```{toctree}
 ---

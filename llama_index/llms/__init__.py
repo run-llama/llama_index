@@ -12,6 +12,7 @@ from llama_index.llms.base import (
     MessageRole,
 )
 from llama_index.llms.custom import CustomLLM
+from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.llama_cpp import LlamaCPP
@@ -52,4 +53,6 @@ __all__ = [
     "MonsterLLM",
     "Anyscale",
     "LiteLLM",
+    "GradientBaseModelLLM",
+    "GradientModelAdapterLLM",
 ]
