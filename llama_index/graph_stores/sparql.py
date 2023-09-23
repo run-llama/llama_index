@@ -110,9 +110,30 @@ BASE <{sparql_base_uri}>
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
         logger.info('delete called')
-        ...
+        template = Template("""
+        $prefixes
+        DELETE WHERE {
+             GRAPH<$graph> {
+            ?t a er:Triplet ;
+                        er:subject ?s ;
+                        er:property ?p ;
+                        er:object ?o .
 
-    def persist(
+            ?s a er:Entity ;
+                        er:value "$subj" .
+
+            ?p a er:Relationship ;
+                        er:value "$rel" .
+
+            ?o a er:Entity ;
+                        er:value "$obj" .
+             }
+        }
+                """)
+        query = template.substitute({'prefixes': self.sparql_prefixes, 'graph':self.sparql_graph, 'subj': subj, 'rel':rel, 'obj':obj})
+        return self.sparql_update(query)
+     
+    def persist( # TODO
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
         """Persist the graph store to a file."""
@@ -121,15 +142,23 @@ BASE <{sparql_base_uri}>
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
-        logger.info('get_schema called')
-        ...
+        # logger.info('get_schema called')
+        return 'http://purl.org/stuff/er'
+
 
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         """Query the graph store with statement and parameters."""
-        logger.info('query called')
-        ...
+        # logger.info('query called')
+        sparql_client = SPARQLWrapper(self.sparql_endpoint)
+        sparql_client.setQuery(query)
+        response = sparql_client.query()
+        return response
+
 
 # SPARQL comms --------------------------------------------
+
+    def drop_graph(self, uri: str) -> None:
+        self.sparql_update('DROP GRAPH <'+uri+'>')
 
     def create_graph(self, uri: str) -> None:
         self.sparql_update('CREATE GRAPH <'+uri+'>')
@@ -157,12 +186,10 @@ BASE <{sparql_base_uri}>
         message = results.response.read().decode('utf-8')
         logger.info('Endpoint says : ' + message)
 
-
     def insert_data(self, data: str) -> None:  # data is 'floating' string, without prefixes
         insert_query = self.sparql_prefixes + \
             'INSERT DATA { GRAPH <'+self.sparql_graph+'> { '+data+' }}'
         self.sparql_update(insert_query)
-
 
     def get_triplets(self, subj: str, limit: int = -1) -> List[Dict[str, Any]]:
         subj = self.escape_for_rdf(subj)
@@ -198,7 +225,7 @@ BASE <{sparql_base_uri}>
 
         query_string = template.substitute(
             {'prefixes': self.sparql_prefixes, 'subject': subj,  'limit_str': limit_str})
-        print(query_string)
+        # print(query_string)
         triplets_json = self.sparql_query(query_string)
         print(triplets_json)
         return self.to_arrows(subj, triplets_json)
