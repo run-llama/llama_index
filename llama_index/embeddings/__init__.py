@@ -12,6 +12,7 @@ from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
 from llama_index.embeddings.huggingface_utils import DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
 from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.embeddings.base import SimilarityMode
 
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "OptimumEmbedding",
     "resolve_embed_model",
     "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
+    "SimilarityMode",
 ]

@@ -23,6 +23,7 @@ and combine these with LLM calls.
 
 These evaluation modules are in the following forms:
 - **Correctness**: Whether the generated answer matches that of the reference answer given the query (requires labels).
+- **Semantic Similarity** Whether the predicted answer is semantically similar to the reference answer (requires labels).
 - **Faithfulness**: Evaluates if the answer is faithful to the retrieved contexts (in other words, whether if there's hallucination).
 - **Context Relevancy**: Whether retrieved context and answer are relevant to the query.
 - **Guideline Adherence**: Whether the predicted answer adheres to specific guidelines.
