@@ -20,6 +20,7 @@ from llama_index.evaluation.retrieval.metrics import (
     MRR,
     RetrievalMetricResult,
 )
+from llama_index.evaluation.notebook_utils import get_retrieval_results_df
 
 # import dataset generation too
 from llama_index.finetuning.embeddings.common import (
@@ -55,4 +56,5 @@ __all__ = [
     "resolve_metrics",
     "HitRate",
     "MRR",
+    "get_retrieval_results_df"
 ]

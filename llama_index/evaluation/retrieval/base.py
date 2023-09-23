@@ -120,7 +120,11 @@ class BaseRetrievalEvaluator(BaseModel):
         )
 
     async def aevaluate_dataset(
-        self, dataset: EmbeddingQAFinetuneDataset, workers: int = 2, **kwargs: Any
+        self, 
+        dataset: EmbeddingQAFinetuneDataset, 
+        workers: int = 2, 
+        show_progress: bool = False,
+        **kwargs: Any
     ) -> List[RetrievalEvalResult]:
         """Run evaluation with dataset."""
 
@@ -137,6 +141,10 @@ class BaseRetrievalEvaluator(BaseModel):
         for query_id, query in dataset.queries.items():
             expected_ids = dataset.relevant_docs[query_id]
             response_jobs.append(eval_worker(query, expected_ids))
-        eval_results = await asyncio.gather(*response_jobs)
+        if show_progress:
+            from tqdm.asyncio import tqdm_asyncio
+            eval_results = await tqdm_asyncio.gather(*response_jobs)
+        else:
+            eval_results = await asyncio.gather(*response_jobs)
 
         return eval_results
