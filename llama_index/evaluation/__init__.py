@@ -56,5 +56,5 @@ __all__ = [
     "resolve_metrics",
     "HitRate",
     "MRR",
-    "get_retrieval_results_df"
+    "get_retrieval_results_df",
 ]

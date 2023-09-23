@@ -8,10 +8,11 @@ import pandas as pd
 
 DEFAULT_METRIC_KEYS = ["hit_rate", "mrr"]
 
+
 def get_retrieval_results_df(
-    names: List[str], 
+    names: List[str],
     results_arr: List[List[RetrievalEvalResult]],
-    metric_keys: Optional[List[str]] = None
+    metric_keys: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """Display retrieval results."""
     metric_keys = metric_keys or DEFAULT_METRIC_KEYS
