@@ -180,7 +180,9 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             if self._token_size(text_split_by_fns) <= chunk_size:
                 text_splits.append(_Split(text_split_by_fns, is_sentence=is_sentence))
             else:
-                recursive_text_splits = self._split(text_split_by_fns, chunk_size=chunk_size)
+                recursive_text_splits = self._split(
+                    text_split_by_fns, chunk_size=chunk_size
+                )
                 text_splits.extend(recursive_text_splits)
         return text_splits
 
