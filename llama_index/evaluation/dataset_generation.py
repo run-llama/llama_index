@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional
+from typing import List, Optional, Dict, Tuple
+import json
+
+from pydantic import BaseModel, Field
 
 from llama_index import Document, ServiceContext, SummaryIndex
 from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 from llama_index.llms.openai import OpenAI
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+import uuid
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
 Context information is below.
@@ -26,6 +31,55 @@ def _get_default_service_context() -> ServiceContext:
     llm = OpenAI(temperature=0, model="gpt-3.5-turbo")
     service_context = ServiceContext.from_defaults(llm=llm, chunk_size_limit=3000)
     return service_context
+
+
+class QueryResponseDataset(BaseModel):
+    """Query Response Dataset.
+
+    The response can be empty if the dataset is generated from documents.
+
+    Args:
+        queries (Dict[str, str]): Query id -> query.
+        responses (Dict[str, str]): Query id -> response.
+
+    """
+
+    queries: Dict[str, str] = Field(
+        default_factory=dict, description="Query id -> query"
+    )
+    responses: Dict[str, str] = Field(
+        default_factory=dict, description="Query id -> response"
+    )
+
+    @property
+    def qr_pairs(self) -> List[Tuple[str, str]]:
+        """Get pairs."""
+        # if query_id not in response, throw error
+        for query_id in self.queries.keys():
+            if query_id not in self.responses:
+                raise ValueError(f"Query id {query_id} not in responses")
+
+        return [
+            (self.queries[query_id], self.responses[query_id])
+            for query_id in self.queries.keys()
+        ]
+
+    @property
+    def questions(self) -> List[str]:
+        """Get questions."""
+        return list(self.queries.values())
+
+    def save_json(self, path: str) -> None:
+        """Save json."""
+        with open(path, "w") as f:
+            json.dump(self.dict(), f, indent=4)
+
+    @classmethod
+    def from_json(cls, path: str) -> "QueryResponseDataset":
+        """Load json."""
+        with open(path, "r") as f:
+            data = json.load(f)
+        return cls(**data)
 
 
 class DatasetGenerator:
@@ -50,6 +104,7 @@ class DatasetGenerator:
         service_context: Optional[ServiceContext] = None,
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[BasePromptTemplate] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
         question_gen_query: Optional[str] = None,
         metadata_mode: MetadataMode = MetadataMode.NONE,
     ) -> None:
@@ -60,6 +115,7 @@ class DatasetGenerator:
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
         )
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self.question_gen_query = (
             question_gen_query
             or f"You are a Teacher/Professor. Your task is to setup \
@@ -78,6 +134,7 @@ class DatasetGenerator:
         service_context: Optional[ServiceContext] = None,
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[BasePromptTemplate] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
         question_gen_query: Optional[str] = None,
         required_keywords: Optional[List[str]] = None,
         exclude_keywords: Optional[List[str]] = None,
@@ -104,17 +161,22 @@ class DatasetGenerator:
             service_context=service_context,
             num_questions_per_chunk=num_questions_per_chunk,
             text_question_template=text_question_template,
+            text_qa_template=text_qa_template,
             question_gen_query=question_gen_query,
         )
 
-    def _node_question_generator(
-        self, nodes: List[BaseNode], num: Optional[int] = None
-    ) -> List[str]:
+    def _generate_dataset(
+        self,
+        nodes: List[BaseNode],
+        num: Optional[int] = None,
+        generate_response: bool = False,
+    ) -> QueryResponseDataset:
         """Node question generator."""
-        questions: List[str] = []
+        queries: Dict[str, str] = {}
+        responses: Dict[str, str] = {}
 
         for node in nodes:
-            if num is not None and len(questions) >= num:
+            if num is not None and len(queries) >= num:
                 break
             index = SummaryIndex.from_documents(
                 [
@@ -139,14 +201,41 @@ class DatasetGenerator:
             cleaned_questions = [
                 re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
             ]
-            questions.extend(cleaned_questions)
+            cleaned_questions = [
+                question for question in cleaned_questions if len(question) > 0
+            ]
+            queries.update(
+                {str(uuid.uuid4()): question for question in cleaned_questions}
+            )
 
-        questions = [question for question in questions if question != ""]
+            if generate_response:
+                for query_id, query in queries.items():
+                    qa_query_engine = index.as_query_engine(
+                        service_context=self.service_context,
+                        text_qa_template=self.text_qa_template,
+                    )
+                    qa_response = qa_query_engine.query(query)
+                    responses[query_id] = str(qa_response)
+            else:
+                pass
 
+        query_ids = list(queries.keys())
         if num is not None:
-            questions = questions[:num]
-        return questions
+            query_ids = query_ids[:num]
+            # truncate queries, responses to the subset of query ids
+            queries = {query_id: queries[query_id] for query_id in query_ids}
+            responses = {query_id: responses[query_id] for query_id in query_ids}
+
+        return QueryResponseDataset(queries=queries, responses=responses)
 
     def generate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
         """Generates questions for each document."""
-        return self._node_question_generator(self.nodes, num)
+        dataset = self._generate_dataset(self.nodes, num=num, generate_response=False)
+        return dataset.questions
+
+    def generate_dataset_from_nodes(
+        self, num: Optional[int] = None
+    ) -> QueryResponseDataset:
+        """Generates questions for each document."""
+        dataset = self._generate_dataset(self.nodes, num=num, generate_response=True)
+        return dataset
