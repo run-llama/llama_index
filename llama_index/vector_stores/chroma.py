@@ -49,6 +49,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    collection_name: Optional[str]
     host: Optional[str]
     port: Optional[str]
     ssl: bool
@@ -59,7 +60,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        chroma_collection: Any,
+        chroma_collection: Optional[Any] = None,
+        collection_name: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[str] = None,
         ssl: bool = False,
@@ -74,45 +76,21 @@ class ChromaVectorStore(BasePydanticVectorStore):
             raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection
 
-        self._collection = cast(Collection, chroma_collection)
+        if chroma_collection is None:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            self._collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            self._collection = cast(Collection, chroma_collection)
 
         super().__init__(
             host=host,
             port=port,
             ssl=ssl,
             headers=headers,
+            collection_name=collection_name,
             collection_kwargs=collection_kwargs or {},
-        )
-
-    @classmethod
-    def from_params(
-        cls,
-        collection_name: str,
-        host: Optional[str] = None,
-        port: Optional[str] = None,
-        ssl: bool = False,
-        headers: Optional[Dict[str, str]] = None,
-        collection_kwargs: Optional[dict] = None,
-        **kwargs: Any,
-    ) -> "ChromaVectorStore":
-        try:
-            import chromadb  # noqa: F401
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-        collection = client.get_or_create_collection(
-            name=collection_name, **collection_kwargs
-        )
-
-        return cls(
-            chroma_collection=collection,
-            host=host,
-            port=port,
-            ssl=ssl,
-            headers=headers,
-            collection_kwargs=collection_kwargs,
-            **kwargs,
         )
 
     @classmethod

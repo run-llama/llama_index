@@ -1,4 +1,5 @@
 try:
+    import pydantic.v1 as pydantic
     from pydantic.v1 import (
         BaseModel,
         Field,
@@ -9,11 +10,13 @@ try:
         StrictFloat,
         StrictInt,
         StrictStr,
+        BaseConfig,
     )
     from pydantic.v1.fields import FieldInfo
     from pydantic.v1.error_wrappers import ValidationError
     from pydantic.v1.generics import GenericModel
 except ImportError:
+    import pydantic  # type: ignore
     from pydantic import (
         BaseModel,
         Field,
@@ -24,12 +27,14 @@ except ImportError:
         StrictFloat,
         StrictInt,
         StrictStr,
+        BaseConfig,
     )
     from pydantic.fields import FieldInfo
     from pydantic.error_wrappers import ValidationError
     from pydantic.generics import GenericModel
 
 __all__ = [
+    "pydantic",
     "BaseModel",
     "Field",
     "PrivateAttr",
@@ -42,4 +47,5 @@ __all__ = [
     "FieldInfo",
     "ValidationError",
     "GenericModel",
+    "BaseConfig",
 ]

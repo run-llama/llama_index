@@ -11,7 +11,7 @@ def test_build_pipeline() -> None:
     pipeline = IngestionPipeline(
         name="Test",
         reader=ReaderConfig(
-            loader=StringIterableReader(), loader_kwargs={"texts": ["This is a test."]}
+            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
         ),
         documents=[Document.example()],
         transformations=[
@@ -31,7 +31,7 @@ def test_run_local_pipeline() -> None:
     pipeline = IngestionPipeline(
         name="Test",
         reader=ReaderConfig(
-            loader=StringIterableReader(), loader_kwargs={"texts": ["This is a test."]}
+            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
         ),
         documents=[Document.example()],
         transformations=[

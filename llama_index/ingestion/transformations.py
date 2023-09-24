@@ -165,7 +165,7 @@ class ConfigurableTransformations(Enum):
                 f"type {type(component)}"
             )
         return ConfiguredTransformation[component_type](  # type: ignore
-            component=component
+            component=component, name=self.value.name
         )
 
 
@@ -177,6 +177,7 @@ class ConfiguredTransformation(GenericModel, Generic[T]):
     A class containing metdata & implementation for a transformation in a pipeline.
     """
 
+    name: str
     component: T = Field(description="Component that implements the transformation")
 
     @classmethod

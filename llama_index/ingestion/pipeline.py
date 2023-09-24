@@ -1,12 +1,20 @@
 from typing import Callable, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
-
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
-from llama_index.ingestion.transformations import (
-    ConfiguredTransformation,
+from llama_index.ingestion.client import (
+    ConfiguredTransformationItem,
+    DataSinkCreate,
+    DataSourceCreate,
+    ConfigurableDataSinkNames,
+    ConfigurableDataSourceNames,
+    ConfigurableTransformationNames,
 )
+from llama_index.ingestion.client.client import PlatformApi
+from llama_index.ingestion.data_sinks import ConfiguredDataSink
+from llama_index.ingestion.data_sources import ConfiguredDataSource
+from llama_index.ingestion.transformations import ConfiguredTransformation
 from llama_index.llms.base import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.node_parser import SimpleNodeParser
@@ -81,11 +89,93 @@ class IngestionPipeline(BaseModel):
             SimpleNodeParser.from_defaults(),
         ]
 
-    def run_remote(self) -> str:
-        print("Running ingestion pipeline remotely...")
-        print("DEBUG: Current transformations:")
-        print("\n----\n".join([t.to_json() for t in self.transformations]))
-        return "Find your remote results here: https://llamaindex.com/"
+    def run_remote(
+        self, pipeline_name: str = "pipeline", project_name: str = "llamaindex"
+    ) -> str:
+        client = PlatformApi(base_url="http://localhost:8000")
+
+        configured_transformations: List[ConfiguredTransformationItem] = []
+        for item in self.configured_transformations:
+            name = ConfigurableTransformationNames[
+                item.configurable_transformation_type.name
+            ]
+            configured_transformations.append(
+                ConfiguredTransformationItem(
+                    transformation_name=name, component=item.component
+                )
+            )
+
+        data_sinks = []
+        if self.vector_store is not None:
+            configured_data_sink = ConfiguredDataSink.from_component(self.vector_store)
+            sink_type = ConfigurableDataSinkNames[
+                configured_data_sink.configurable_data_sink_type.name
+            ]
+            data_sinks.append(
+                DataSinkCreate(
+                    name=configured_data_sink.name,
+                    sink_type=sink_type,
+                    component=configured_data_sink.component,
+                )
+            )
+
+        data_sources = []
+        if self.reader is not None:
+            if self.reader.reader.is_remote:
+                configured_data_source = ConfiguredDataSource.from_component(
+                    self.reader
+                )
+                source_type = ConfigurableDataSourceNames[
+                    configured_data_source.configurable_data_source_type.name
+                ]
+                data_sources.append(
+                    DataSourceCreate(
+                        name=configured_data_source.name,
+                        source_type=source_type,
+                        component=configured_data_source.component,
+                    )
+                )
+            else:
+                documents = self.reader.read()
+                if self.documents is not None:
+                    documents += self.documents
+                else:
+                    self.documents = documents
+
+        if self.documents is not None:
+            for document in self.documents:
+                configured_data_source = ConfiguredDataSource.from_component(document)
+                source_type = ConfigurableDataSourceNames[
+                    configured_data_source.configurable_data_source_type.name
+                ]
+                data_sources.append(
+                    DataSourceCreate(
+                        name=configured_data_source.name,
+                        source_type=source_type,
+                        component=document,
+                    )
+                )
+
+        project = client.project.create_project_api_project_post(name=project_name)
+        assert project.id is not None, "Project ID should not be None"
+
+        # upload?
+        pipeline = client.project.create_pipeline_for_project(
+            name=pipeline_name,
+            project_id=project.id,
+            configured_transformations=configured_transformations,
+            data_sinks=data_sinks,
+            data_sources=data_sources,
+        )
+        assert pipeline.id is not None, "Pipeline ID should not be None"
+
+        # start pipeline?
+        # the `PipeLineExecution` object should likely generate a URL at some point
+        pipeline_execution = client.pipeline.create_pipeline_execution(
+            pipeline_id=pipeline.id
+        )
+
+        return f"Find your remote results here: {pipeline_execution.id}"
 
     def run_local(
         self, run_embeddings: bool = True, show_progress: bool = False

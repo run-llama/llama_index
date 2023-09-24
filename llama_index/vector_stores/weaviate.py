@@ -92,14 +92,21 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         """Initialize params."""
         try:
             import weaviate  # noqa: F401
-            from weaviate import Client  # noqa: F401
+            from weaviate import Client, AuthApiKey  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
 
         if weaviate_client is None:
-            raise ValueError("Missing Weaviate client!")
+            if isinstance(auth_config, dict):
+                auth_config = AuthApiKey(**auth_config)
 
-        self._client = cast(Client, weaviate_client)
+            client_kwargs = client_kwargs or {}
+            self._client = Client(
+                url=url, auth_client_secret=auth_config, **client_kwargs
+            )
+        else:
+            self._client = cast(Client, weaviate_client)
+
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
             logger.warning("class_prefix is deprecated, please use index_name")
@@ -120,39 +127,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             url=url,
             index_name=index_name,
             text_key=text_key,
-            auth_config=auth_config or {},
+            auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
-        )
-
-    @classmethod
-    def from_params(
-        cls,
-        url: str,
-        auth_config: Any,
-        index_name: Optional[str] = None,
-        text_key: str = DEFAULT_TEXT_KEY,
-        client_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> "WeaviateVectorStore":
-        """Create WeaviateVectorStore from config."""
-        try:
-            import weaviate  # noqa: F401
-            from weaviate import Client, AuthApiKey  # noqa: F401
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        client_kwargs = client_kwargs or {}
-        weaviate_client = Client(
-            url=url, auth_client_secret=auth_config, **client_kwargs
-        )
-        return cls(
-            weaviate_client=weaviate_client,
-            url=url,
-            auth_config=auth_config.__dict__,
-            client_kwargs=client_kwargs,
-            index_name=index_name,
-            text_key=text_key,
-            **kwargs,
         )
 
     @classmethod

@@ -33,12 +33,12 @@ class BasePydanticReader(BaseReader, BaseComponent):
 
 
 class ReaderConfig(BaseComponent):
-    """Represents a loader and it's input arguments."""
+    """Represents a reader and it's input arguments."""
 
-    loader: BasePydanticReader = Field(..., description="Loader to use.")
-    loader_args: List[Any] = Field(default_factory=list, description="Loader args.")
-    loader_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Loader kwargs."
+    reader: BasePydanticReader = Field(..., description="Reader to use.")
+    reader_args: List[Any] = Field(default_factory=list, description="Reader args.")
+    reader_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Reader kwargs."
     )
 
     class Config:
@@ -47,8 +47,17 @@ class ReaderConfig(BaseComponent):
     @classmethod
     def class_name(cls) -> str:
         """Get the name identifier of the class."""
-        return "LoaderConfig"
+        return "ReaderConfig"
+
+    def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
+        """Convert the class to a dictionary."""
+        return {
+            "loader": self.reader.to_dict(**kwargs),
+            "reader_args": self.reader_args,
+            "reader_kwargs": self.reader_kwargs,
+            "class_name": self.class_name(),
+        }
 
     def read(self) -> List[Document]:
         """Call the loader with the given arguments."""
-        return self.loader.load_data(*self.loader_args, **self.loader_kwargs)
+        return self.reader.load_data(*self.reader_args, **self.reader_kwargs)

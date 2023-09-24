@@ -22,10 +22,28 @@ WRAP_WIDTH = 70
 class BaseComponent(BaseModel):
     """Base component object to caputure class names."""
 
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], model: "BaseComponent") -> None:
+            """Add class name to schema."""
+            schema["properties"]["class_name"] = {
+                "title": "Class Name",
+                "type": "string",
+                "default": model.class_name(),
+            }
+
     @classmethod
-    @abstractmethod
     def class_name(cls) -> str:
         """Get class name."""
+        return "base_component"
+
+    def json(self, **kwargs: Any) -> str:
+        return self.to_json(**kwargs)
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().dict(**kwargs)
+        data["class_name"] = self.class_name()
+        return data
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)
