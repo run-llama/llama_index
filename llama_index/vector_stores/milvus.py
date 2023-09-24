@@ -6,10 +6,7 @@ An index that is built within Milvus.
 import logging
 from typing import Any, List, Optional
 
-from llama_index.schema import (
-    BaseNode,
-    TextNode
-)
+from llama_index.schema import BaseNode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -282,8 +279,10 @@ class MilvusVectorStore(VectorStore):
             else:
                 try:
                     text = hit["entity"].get(self.text_key)
-                except Exception as e:
-                    print("The passed in text_key value does not exist in the retrieved entity.")
+                except Exception:
+                    print(
+                        "The passed in text_key value does not exist in the retrieved entity."
+                    )
                     raise ValueError()
                 node = TextNode(
                     text=text,
