@@ -15,6 +15,7 @@ from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 import uuid
+from tqdm import tqdm
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
 Context information is below.
@@ -108,6 +109,7 @@ class DatasetGenerator:
         text_qa_template: Optional[BasePromptTemplate] = None,
         question_gen_query: Optional[str] = None,
         metadata_mode: MetadataMode = MetadataMode.NONE,
+        show_progress: bool = False,
     ) -> None:
         """Init params."""
         if service_context is None:
@@ -127,6 +129,7 @@ class DatasetGenerator:
         )
         self.nodes = nodes
         self._metadata_mode = metadata_mode
+        self._show_progress = show_progress
 
     @classmethod
     def from_documents(
@@ -139,6 +142,7 @@ class DatasetGenerator:
         question_gen_query: Optional[str] = None,
         required_keywords: Optional[List[str]] = None,
         exclude_keywords: Optional[List[str]] = None,
+        show_progress: bool = False,
     ) -> "DatasetGenerator":
         """Generate dataset from documents."""
         if service_context is None:
@@ -164,6 +168,7 @@ class DatasetGenerator:
             text_question_template=text_question_template,
             text_qa_template=text_qa_template,
             question_gen_query=question_gen_query,
+            show_progress=show_progress,
         )
 
     async def _agenerate_dataset(
@@ -176,7 +181,13 @@ class DatasetGenerator:
 
         query_tasks = []
         queries: Dict[str, str] = {}
-        responses: Dict[str, str] = {}
+        responses_dict: Dict[str, str] = {}
+
+        if self._show_progress:
+            from tqdm.asyncio import tqdm_asyncio
+            async_module = tqdm_asyncio
+        else:
+            async_module = asyncio
 
         for node in nodes:
             if num is not None and len(queries) >= num:
@@ -201,7 +212,7 @@ class DatasetGenerator:
             )
             query_tasks.append(task)
 
-        responses = await asyncio.gather(*query_tasks)
+        responses = await async_module.gather(*query_tasks)
         for response in responses:
             result = str(response).strip().split("\n")
             cleaned_questions = [
@@ -224,9 +235,9 @@ class DatasetGenerator:
                     )
                     qr_task = qa_query_engine.aquery(query)
                     qr_tasks.append(qr_task)
-                qr_responses = await asyncio.gather(*qr_tasks)
+                qr_responses = await async_module.gather(*qr_tasks)
                 for query_id, qa_response in zip(cur_query_keys, qr_responses):
-                    responses[query_id] = str(qa_response)
+                    responses_dict[query_id] = str(qa_response)
             else:
                 pass
 
@@ -235,9 +246,9 @@ class DatasetGenerator:
             query_ids = query_ids[:num]
             # truncate queries, responses to the subset of query ids
             queries = {query_id: queries[query_id] for query_id in query_ids}
-            responses = {query_id: responses[query_id] for query_id in query_ids}
+            responses = {query_id: responses_dict[query_id] for query_id in query_ids}
 
-        return QueryResponseDataset(queries=queries, responses=responses)
+        return QueryResponseDataset(queries=queries, responses=responses_dict)
 
     async def agenerate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
         """Generates questions for each document."""
