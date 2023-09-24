@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+### New Features
+- Added native support for `HuggingFaceEmbedding`, `InstructorEmbedding`, and `OptimumEmbedding` (#7795)
+- Added metadata filtering and hybrid search to MyScale vector store (#7780)
+
 ### Bug Fixes / Nits
 - Update `LanceDBVectorStore` to handle score and distance (#7754)
-- Pass LLM to memory_cls in `CondenseQuestionChatEngine` (#7785)
+- Pass LLM to `memory_cls` in `CondenseQuestionChatEngine` (#7785)
 
 ## [0.8.31] - 2023-09-22
 
