@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 from typing import List, Optional, Dict, Tuple
 import json
+import asyncio
 
 from pydantic import BaseModel, Field
 
@@ -165,13 +166,15 @@ class DatasetGenerator:
             question_gen_query=question_gen_query,
         )
 
-    def _generate_dataset(
+    async def _agenerate_dataset(
         self,
         nodes: List[BaseNode],
         num: Optional[int] = None,
         generate_response: bool = False,
     ) -> QueryResponseDataset:
         """Node question generator."""
+
+        query_tasks = []
         queries: Dict[str, str] = {}
         responses: Dict[str, str] = {}
 
@@ -193,10 +196,13 @@ class DatasetGenerator:
                 text_qa_template=self.text_question_template,
                 use_async=True,
             )
-            response = query_engine.query(
+            task = query_engine.aquery(
                 self.question_gen_query,
             )
+            query_tasks.append(task)
 
+        responses = await asyncio.gather(*query_tasks)
+        for response in responses:
             result = str(response).strip().split("\n")
             cleaned_questions = [
                 re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
@@ -204,17 +210,22 @@ class DatasetGenerator:
             cleaned_questions = [
                 question for question in cleaned_questions if len(question) > 0
             ]
-            queries.update(
-                {str(uuid.uuid4()): question for question in cleaned_questions}
-            )
+            cur_queries = {str(uuid.uuid4()): question for question in cleaned_questions}
+            queries.update(cur_queries)
 
             if generate_response:
-                for query_id, query in queries.items():
+                qr_tasks = []
+                cur_query_items = list(cur_queries.items())
+                cur_query_keys = [query_id for query_id, _ in cur_query_items]
+                for query_id, query in cur_query_items:
                     qa_query_engine = index.as_query_engine(
                         service_context=self.service_context,
                         text_qa_template=self.text_qa_template,
                     )
-                    qa_response = qa_query_engine.query(query)
+                    qr_task = qa_query_engine.aquery(query)
+                    qr_tasks.append(qr_task)
+                qr_responses = await asyncio.gather(*qr_tasks)
+                for query_id, qa_response in zip(cur_query_keys, qr_responses):
                     responses[query_id] = str(qa_response)
             else:
                 pass
@@ -228,14 +239,29 @@ class DatasetGenerator:
 
         return QueryResponseDataset(queries=queries, responses=responses)
 
+    async def agenerate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
+        """Generates questions for each document."""
+        dataset = await self._agenerate_dataset(self.nodes, num=num, generate_response=False)
+        return dataset.questions
+
+    async def agenerate_dataset_from_nodes(
+        self, num: Optional[int] = None
+    ) -> QueryResponseDataset:
+        """Generates questions for each document."""
+        dataset = await self._agenerate_dataset(self.nodes, num=num, generate_response=True)
+        return dataset
+
+
     def generate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
         """Generates questions for each document."""
-        dataset = self._generate_dataset(self.nodes, num=num, generate_response=False)
-        return dataset.questions
+        return asyncio.run(
+            self.agenerate_questions_from_nodes(num=num)
+        )
 
     def generate_dataset_from_nodes(
         self, num: Optional[int] = None
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
-        dataset = self._generate_dataset(self.nodes, num=num, generate_response=True)
-        return dataset
+        return asyncio.run(
+            self.agenerate_dataset_from_nodes(num=num)
+        )

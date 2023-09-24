@@ -24,6 +24,7 @@ from llama_index.evaluation.retrieval.metrics import (
     RetrievalMetricResult,
 )
 from llama_index.evaluation.notebook_utils import get_retrieval_results_df
+from llama_index.evaluation.pairwise import PairwiseComparisonEvaluator
 
 # import dataset generation too
 from llama_index.finetuning.embeddings.common import (
@@ -45,6 +46,7 @@ __all__ = [
     "GuidelineEvaluator",
     "CorrectnessEvaluator",
     "SemanticSimilarityEvaluator",
+    "PairwiseComparisonEvaluator",
     "BatchEvalRunner",
     # legacy: kept for backward compatibility
     "QueryResponseEvaluator",
