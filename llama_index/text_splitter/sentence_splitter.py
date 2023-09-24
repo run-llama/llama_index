@@ -265,7 +265,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             new_chunks.append(stripped_chunk)
         return new_chunks
 
-    def _token_size(self, text: str):
+    def _token_size(self, text: str) -> int:
         return len(self.tokenizer(text))
 
     def _get_splits_by_fns(self, text: str) -> Tuple[List[str], bool]:
