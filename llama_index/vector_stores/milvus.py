@@ -280,10 +280,10 @@ class MilvusVectorStore(VectorStore):
                 try:
                     text = hit["entity"].get(self.text_key)
                 except Exception:
-                    print(
-                        "The passed in text_key value does not exist in the retrieved entity."
+                    raise ValueError(
+                        "The passed in text_key value does not exist "
+                        "in the retrieved entity."
                     )
-                    raise ValueError()
                 node = TextNode(
                     text=text,
                 )
