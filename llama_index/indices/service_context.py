@@ -290,7 +290,6 @@ class ServiceContext:
     def from_dict(cls, data: dict) -> "ServiceContext":
         from llama_index.embeddings.loading import load_embed_model
         from llama_index.llm_predictor.loading import load_predictor
-        from llama_index.llms.loading import load_llm
         from llama_index.node_parser.loading import load_parser
 
         service_context_data = ServiceContextData.parse_obj(data)
