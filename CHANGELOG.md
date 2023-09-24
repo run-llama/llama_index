@@ -5,6 +5,7 @@
 ### New Features
 - Added native support for `HuggingFaceEmbedding`, `InstructorEmbedding`, and `OptimumEmbedding` (#7795)
 - Added metadata filtering and hybrid search to MyScale vector store (#7780)
+- Allowing custom text field name for Milvus (#7790)
 - Add support for `vector_store_query_mode` to `VectorIndexAutoRetriever` (#7797)
 
 ### Bug Fixes / Nits
