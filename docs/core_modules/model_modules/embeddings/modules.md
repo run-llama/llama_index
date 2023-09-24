@@ -1,6 +1,6 @@
 # Modules
 
-We support integrations with OpenAI, Azure, and anything LangChain offers.
+We support integrations with OpenAI, Azure, HuggingFace, Instructor, Optimum, and anything LangChain offers.
 
 ```{toctree}
 ---

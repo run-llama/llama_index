@@ -41,8 +41,6 @@ By default, embeddings requests are sent to OpenAI in batches of 10. For some us
 embed_model = OpenAIEmbedding(embed_batch_size=42)
 ```
 
-(local-embedding-models)=
-
 ### Local Embedding Models
 
 The easiest way to use a local model is:
@@ -90,7 +88,7 @@ service_context = ServiceContext.from_defaults(
 ```
 
 
-### Embedding Model Integrations
+### LangChain Integrations
 
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/).
 
