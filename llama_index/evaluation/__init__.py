@@ -5,6 +5,7 @@ from llama_index.evaluation.batch_runner import BatchEvalRunner
 from llama_index.evaluation.correctness import CorrectnessEvaluator
 from llama_index.evaluation.dataset_generation import DatasetGenerator
 from llama_index.evaluation.faithfulness import FaithfulnessEvaluator, ResponseEvaluator
+from llama_index.evaluation.semantic_similarity import SemanticSimilarityEvaluator
 from llama_index.evaluation.guideline import GuidelineEvaluator
 from llama_index.evaluation.relevancy import QueryResponseEvaluator, RelevancyEvaluator
 
@@ -19,6 +20,7 @@ from llama_index.evaluation.retrieval.metrics import (
     MRR,
     RetrievalMetricResult,
 )
+from llama_index.evaluation.notebook_utils import get_retrieval_results_df
 
 # import dataset generation too
 from llama_index.finetuning.embeddings.common import (
@@ -38,6 +40,7 @@ __all__ = [
     "DatasetGenerator",
     "GuidelineEvaluator",
     "CorrectnessEvaluator",
+    "SemanticSimilarityEvaluator",
     "BatchEvalRunner",
     # legacy: kept for backward compatibility
     "QueryResponseEvaluator",
@@ -53,4 +56,5 @@ __all__ = [
     "resolve_metrics",
     "HitRate",
     "MRR",
+    "get_retrieval_results_df",
 ]
