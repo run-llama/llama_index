@@ -10,7 +10,7 @@ your system - both as a whole and for each component.
 This feature allows you to seamlessly integrate the LlamaIndex library with powerful observability/evaluation tools offered by our partners.
 Configure a variable once, and you'll be able to do things like the following:
 - View LLM/prompt inputs/outputs
-- That that the outputs of any component (LLMs, embeddings) are performing as expected
+- Ensure that the outputs of any component (LLMs, embeddings) are performing as expected
 - View call traces for both indexing and querying
 
 Each provider has similarities and differences. Take a look below for the full set of guides for each one! 
