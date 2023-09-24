@@ -3,12 +3,45 @@
 ## Unreleased
 
 ### New Features
-- Add support for `gpt-3.5-turbo-instruct` (#7729)
-- Add support for `TimescaleVectorStore` (#7727)
+- Added native support for `HuggingFaceEmbedding`, `InstructorEmbedding`, and `OptimumEmbedding` (#7795)
+- Added metadata filtering and hybrid search to MyScale vector store (#7780)
 - Add support for `vector_store_query_mode` to `VectorIndexAutoRetriever` (#7797)
 
 ### Bug Fixes / Nits
+- Update `LanceDBVectorStore` to handle score and distance (#7754)
+- Pass LLM to `memory_cls` in `CondenseQuestionChatEngine` (#7785)
+
+## [0.8.31] - 2023-09-22
+
+### New Features
+- add pydantic metadata extractor (#7778)
+- Allow users to set the embedding dimensions in azure cognitive  vector store (#7734)
+- Add semantic similarity evaluator (#7770)
+
+### Bug Fixes / Nits
+- 📝docs: Update Chatbot Tutorial and Notebook (#7767)
+- Fixed response synthesizers with empty nodes (#7773)
+- Fix `NotImplementedError` in auto vector retriever (#7764)
+- Multiple kwargs values in "KnowledgeGraphQueryEngine" bug-fix (#7763)
+- Allow setting azure cognitive search dimensionality (#7734)
+- Pass service context to index for dataset generator (#7748)
+- Fix output parsers for selector templates (#7774)
+- Update Chatbot_SEC.ipynb (#7711)
+- linter/typechecker-friendly improvements to cassandra test (#7771)
+- Expose debug option of `PgVectorStore` (#7776)
+- llms/openai: fix Azure OpenAI by considering `prompt_filter_results` field (#7755)
+
+## [0.8.30] - 2023-09-21
+
+### New Features
+- Add support for `gpt-3.5-turbo-instruct` (#7729)
+- Add support for `TimescaleVectorStore` (#7727)
+- Added `LongContextReorder` for lost-in-the-middle issues (#7719)
+- Add retrieval evals (#7738)
+
+### Bug Fixes / Nits
 - Added node post-processors to async context chat engine (#7731)
+- Added unique index name for postgres tsv column (#7741)
 
 ## [0.8.29.post1] - 2023-09-18
 

@@ -6,7 +6,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.output_parsers.pydantic import PydanticOutputParser
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 from llama_index.program.llm_program import LLMTextCompletionProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
