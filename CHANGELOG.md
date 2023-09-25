@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.32] - 2023-09-24
 
 ### New Features
 - Added native support for `HuggingFaceEmbedding`, `InstructorEmbedding`, and `OptimumEmbedding` (#7795)
