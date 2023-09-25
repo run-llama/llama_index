@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Normalize scores returned from ElasticSearch vector store (#7792)
+
 ## [0.8.33] - 2023-09-25
 
 ### New Features
