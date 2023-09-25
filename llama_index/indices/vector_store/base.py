@@ -3,7 +3,8 @@
 An index that that is built on top of an existing vector store.
 
 """
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+import logging
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import IndexDict
