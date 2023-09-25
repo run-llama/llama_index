@@ -15,7 +15,10 @@ from tenacity import (
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from llama_index.llms.openai_utils import resolve_from_aliases, resolve_openai_credentials
+from llama_index.llms.openai_utils import (
+    resolve_from_aliases,
+    resolve_openai_credentials,
+)
 
 
 class OpenAIEmbeddingMode(str, Enum):
@@ -272,10 +275,7 @@ class OpenAIEmbedding(BaseEmbedding):
         )
 
         deployment_name = resolve_from_aliases(
-            deployment_name,
-            deployment,
-            deployment_id,
-            engine
+            deployment_name, deployment, deployment_id, engine
         )
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
@@ -308,7 +308,7 @@ class OpenAIEmbedding(BaseEmbedding):
             "api_version": self.api_version,
         }
         return credential_kwargs
-    
+
     @property
     def _all_kwargs(self) -> Dict[str, Any]:
         return {

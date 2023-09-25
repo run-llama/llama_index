@@ -304,7 +304,7 @@ def validate_openai_api_key(api_key: Optional[str] = None) -> None:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
 
 
-def resolve_from_aliases(*args: List[Optional[str]]) -> Optional[str]:
+def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:
     for arg in args:
         if arg is not None:
             return arg
