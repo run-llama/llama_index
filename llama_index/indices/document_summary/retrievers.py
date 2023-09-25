@@ -5,29 +5,28 @@ This module contains retrievers for document summary indices.
 """
 
 import logging
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional
 
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
-from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
-    embed_nodes,
 )
 from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_CHOICE_SELECT_PROMPT,
 )
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.schema import NodeWithScore
+from llama_index.vector_stores.types import VectorStoreQuery
 
 logger = logging.getLogger(__name__)
 
 
-class DocumentSummaryIndexRetriever(BaseRetriever):
-    """Document Summary Index Retriever.
+class DocumentSummaryIndexLLMRetriever(BaseRetriever):
+    """Document Summary Index LLM Retriever.
 
     By default, select relevant summaries from index using LLM calls.
 
@@ -96,12 +95,9 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
 class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
     """Document Summary Index Embedding Retriever.
 
-    Generates embeddings on the fly, attaches to each summary node.
-
-    NOTE: implementation is similar to SummaryIndexEmbeddingRetriever.
-
     Args:
         index (DocumentSummaryIndex): The index to retrieve from.
+        similarity_top_k (int): The number of summary nodes to retrieve.
 
     """
 
@@ -110,6 +106,11 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
     ) -> None:
         """Init params."""
         self._index = index
+        self._vector_store = self._index.vector_store
+        self._service_context = self._index.service_context
+        self._docstore = self._index.docstore
+        self._index_struct = self._index.index_struct
+
         self._similarity_top_k = similarity_top_k
 
     def _retrieve(
@@ -117,37 +118,32 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         """Retrieve nodes."""
-        summary_ids = self._index.index_struct.summary_ids
-        summary_nodes = self._index.docstore.get_nodes(summary_ids)
-        query_embedding, node_embeddings = self._get_embeddings(
-            query_bundle, summary_nodes
-        )
-
-        _, top_idxs = get_top_k_embeddings(
-            query_embedding,
-            node_embeddings,
+        if self._vector_store.is_embedding_query:
+            if query_bundle.embedding is None:
+                query_bundle.embedding = (
+                    self._service_context.embed_model.get_agg_embedding_from_queries(
+                        query_bundle.embedding_strs
+                    )
+                )
+        
+        query = VectorStoreQuery(
+            query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
-            embedding_ids=list(range(len(summary_nodes))),
         )
+        query_result = self._vector_store.query(query)
 
-        top_k_summary_ids = [summary_ids[i] for i in top_idxs]
+        top_k_summary_ids: List[str]
+        if query_result.ids is not None:
+            top_k_summary_ids = query_result.ids
+        elif query_result.nodes is not None:
+            top_k_summary_ids = [n.node_id for n in query_result.nodes]
+        else:
+            raise ValueError("Vector store query result should return "
+                             "at least one of nodes or ids.")
+
         results = []
         for summary_id in top_k_summary_ids:
-            node_ids = self._index.index_struct.summary_id_to_node_ids[summary_id]
-            nodes = self._index.docstore.get_nodes(node_ids)
+            node_ids = self._index_struct.summary_id_to_node_ids[summary_id]
+            nodes = self._docstore.get_nodes(node_ids)
             results.extend([NodeWithScore(node=n) for n in nodes])
         return results
-
-    def _get_embeddings(
-        self, query_bundle: QueryBundle, nodes: List[BaseNode]
-    ) -> Tuple[List[float], List[List[float]]]:
-        """Get top nodes by similarity to the query."""
-        embed_model = self._index.service_context.embed_model
-        if query_bundle.embedding is None:
-            query_bundle.embedding = embed_model.get_agg_embedding_from_queries(
-                query_bundle.embedding_strs
-            )
-
-        id_to_embed_map = embed_nodes(nodes, embed_model)
-        node_embeddings = [id_to_embed_map[n.node_id] for n in nodes]
-        return query_bundle.embedding, node_embeddings

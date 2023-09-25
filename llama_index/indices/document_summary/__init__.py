@@ -6,13 +6,13 @@ from llama_index.indices.document_summary.base import (
     GPTDocumentSummaryIndex,
 )
 from llama_index.indices.document_summary.retrievers import (
-    DocumentSummaryIndexRetriever,
+    DocumentSummaryIndexLLMRetriever,
     DocumentSummaryIndexEmbeddingRetriever,
 )
 
 __all__ = [
     "DocumentSummaryIndex",
-    "DocumentSummaryIndexRetriever",
+    "DocumentSummaryIndexLLMRetriever",
     "DocumentSummaryIndexEmbeddingRetriever",
     # legacy
     "GPTDocumentSummaryIndex",

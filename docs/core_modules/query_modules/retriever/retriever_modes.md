@@ -31,5 +31,5 @@ Specifying `retriever_mode` has no effect (silently ignored).
 * `hybrid`: KGTableRetriever
 
 ## Document Summary Index
-* `default`: DocumentSummaryIndexRetriever
+* `llm`: DocumentSummaryIndexLLMRetriever
 * `embedding`: DocumentSummaryIndexEmbeddingRetrievers
