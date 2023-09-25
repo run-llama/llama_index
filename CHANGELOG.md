@@ -2,9 +2,33 @@
 
 ## Unreleased
 
+### New Features
+- Added `Konko` LLM support (#7775)
+
+### Bug Fixes / Nits
+- Normalize scores returned from ElasticSearch vector store (#7792)
+- Fixed `refresh_ref_docs()` bug with order of operations (#7664)
+
+## [0.8.33] - 2023-09-25
+
+### New Features
+- add pairwise evaluator + benchmark auto-merging retriever (#7810)
+
+### Bug Fixes / Nits
+- Minor cleanup in embedding class (#7813)
+- Misc updates to `OpenAIEmbedding` (#7811)
+
+## [0.8.32] - 2023-09-24
+
+### New Features
+- Added native support for `HuggingFaceEmbedding`, `InstructorEmbedding`, and `OptimumEmbedding` (#7795)
+- Added metadata filtering and hybrid search to MyScale vector store (#7780)
+- Allowing custom text field name for Milvus (#7790)
+- Add support for `vector_store_query_mode` to `VectorIndexAutoRetriever` (#7797)
+
 ### Bug Fixes / Nits
 - Update `LanceDBVectorStore` to handle score and distance (#7754)
-- Pass LLM to memory_cls in `CondenseQuestionChatEngine` (#7785)
+- Pass LLM to `memory_cls` in `CondenseQuestionChatEngine` (#7785)
 
 ## [0.8.31] - 2023-09-22
 
