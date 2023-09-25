@@ -110,7 +110,7 @@ class GradientBaseModelLLM(_BaseGradientLLM):
         access_token: Optional[str] = None,
         base_model_slug: str,
         host: Optional[str] = None,
-        max_tokens: int | None = None,
+        max_tokens: Optional[int] = None,
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -138,7 +138,7 @@ class GradientModelAdapterLLM(_BaseGradientLLM):
         *,
         access_token: Optional[str] = None,
         host: Optional[str] = None,
-        max_tokens: int | None = None,
+        max_tokens: Optional[int] = None,
         model_adapter_id: str,
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
