@@ -209,7 +209,7 @@ class BaseEmbedding(BaseComponent):
 
         return text_embedding
 
-    def get_text_embeddings(
+    def get_text_embedding_batch(
         self, texts: List[str], show_progress: bool = False
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
@@ -240,7 +240,7 @@ class BaseEmbedding(BaseComponent):
 
         return result_embeddings
 
-    async def aget_text_embeddings(
+    async def aget_text_embedding_batch(
         self, texts: List[str], show_progress: bool = False
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""

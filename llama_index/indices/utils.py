@@ -133,7 +133,7 @@ def embed_nodes(
         else:
             id_to_embed_map[node.node_id] = node.embedding
 
-    new_embeddings = embed_model.get_text_embeddings(
+    new_embeddings = embed_model.get_text_embedding_batch(
         texts_to_embed, show_progress=show_progress
     )
 

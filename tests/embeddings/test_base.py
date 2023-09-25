@@ -60,7 +60,7 @@ def test_get_text_embeddings(
     for i in range(4):
         texts_to_embed.append("This is a test v2.")
 
-    result_embeddings = embed_model.get_text_embeddings(texts_to_embed)
+    result_embeddings = embed_model.get_text_embedding_batch(texts_to_embed)
     for i in range(8):
         assert result_embeddings[i] == [1, 0, 0, 0, 0]
     for i in range(8, 16):

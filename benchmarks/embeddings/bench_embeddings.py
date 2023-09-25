@@ -90,7 +90,7 @@ def bench_simple_vector_store(
 
                 for model in models:
                     time1 = time.time()
-                    _ = model[0].get_text_embeddings(strings, show_progress=True)
+                    _ = model[0].get_text_embedding_batch(strings, show_progress=True)
 
                     time2 = time.time()
                     print(
