@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [0.8.33] - 2023-09-25
+
+### New Features
+- add pairwise evaluator + benchmark auto-merging retriever (#7810)
+
+### Bug Fixes / Nits
+- Minor cleanup in embedding class (#7813)
+- Misc updates to `OpenAIEmbedding` (#7811)
+
 ## [0.8.32] - 2023-09-24
 
 ### New Features
