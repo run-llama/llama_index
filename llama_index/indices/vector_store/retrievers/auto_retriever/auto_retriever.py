@@ -19,6 +19,7 @@ from llama_index.schema import NodeWithScore
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreInfo,
+    VectorStoreQueryMode,
     VectorStoreQuerySpec,
 )
 
@@ -45,6 +46,8 @@ class VectorIndexAutoRetriever(BaseRetriever):
         max_top_k (int):
             the maximum top_k allowed. The top_k set by LLM or similarity_top_k will
             be clamped to this value.
+        vector_store_query_mode (str): vector store query mode
+            See reference for VectorStoreQueryMode for full list of supported modes.
     """
 
     def __init__(
@@ -55,6 +58,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         service_context: Optional[ServiceContext] = None,
         max_top_k: int = 10,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
     ) -> None:
         self._index = index
         self._vector_store_info = vector_store_info
@@ -73,6 +77,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         # additional config
         self._max_top_k = max_top_k
         self._similarity_top_k = similarity_top_k
+        self._vector_store_query_mode = vector_store_query_mode
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
@@ -119,5 +124,6 @@ class VectorIndexAutoRetriever(BaseRetriever):
             self._index,
             filters=MetadataFilters(filters=query_spec.filters),
             similarity_top_k=similarity_top_k,
+            vector_store_query_mode=self._vector_store_query_mode,
         )
         return retriever.retrieve(query_spec.query)

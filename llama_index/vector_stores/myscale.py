@@ -25,6 +25,7 @@ from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    VectorStoreQueryMode,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ class MyScaleVectorStore(VectorStore):
 
     stores_text: bool = True
     _index_existed: bool = False
+    metadata_column: str = "metadata"
 
     def __init__(
         self,
@@ -82,7 +84,7 @@ class MyScaleVectorStore(VectorStore):
             please run `pip install clickhouse-connect`
         """
         try:
-            from clickhouse_connect.driver.httpclient import HttpClient  # noqa: F401
+            from clickhouse_connect.driver.httpclient import HttpClient
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -178,6 +180,36 @@ class MyScaleVectorStore(VectorStore):
                 """
         return insert_statement
 
+    def _build_hybrid_search_statement(
+        self, stage_one_sql: str, query_str: str, similarity_top_k: int
+    ) -> str:
+        terms_pattern = [f"(?i){x}" for x in query_str.split(" ")]
+        column_keys = self.column_config.keys()
+        query_statement = (
+            f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, "
+            f"dist FROM ({stage_one_sql}) tempt "
+            f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
+            f"AS distance1 DESC, "
+            f"log(1 + countMatches(text, '(?i)({query_str.replace(' ', '|')})')) "
+            f"AS distance2 DESC limit {similarity_top_k}"
+        )
+        return query_statement
+
+    def _append_meta_filter_condition(
+        self, where_str: Optional[str], exact_match_filter: list
+    ) -> str:
+        filter_str = " AND ".join(
+            f"JSONExtractString(toJSONString("
+            f"{self.metadata_column}), '{filter_item.key}') "
+            f"= '{filter_item.value}'"
+            for filter_item in exact_match_filter
+        )
+        if where_str is None:
+            where_str = filter_str
+        else:
+            where_str = " AND " + filter_str
+        return where_str
+
     def add(
         self,
         nodes: List[BaseNode],
@@ -224,33 +256,44 @@ class MyScaleVectorStore(VectorStore):
             query (VectorStoreQuery): query
 
         """
-        if query.filters is not None:
-            raise ValueError(
-                "Metadata filters not implemented for SimpleVectorStore yet."
-            )
-
         query_embedding = cast(List[float], query.query_embedding)
         where_str = (
             f"doc_id in {format_list_to_string(query.doc_ids)}"
             if query.doc_ids
             else None
         )
+        if query.filters is not None:
+            where_str = self._append_meta_filter_condition(
+                where_str, query.filters.filters
+            )
+
+        # build query sql
         query_statement = self.config.build_query_statement(
             query_embed=query_embedding,
             where_str=where_str,
             limit=query.similarity_top_k,
         )
-
+        if query.mode == VectorStoreQueryMode.HYBRID and query.query_str is not None:
+            query_statement = self._build_hybrid_search_statement(
+                self.config.build_query_statement(
+                    query_embed=query_embedding,
+                    where_str=where_str,
+                    limit=query.similarity_top_k * 100,
+                ),
+                query.query_str,
+                query.similarity_top_k,
+            )
+            logger.debug(f"hybrid query_statement={query_statement}")
         nodes = []
         ids = []
         similarities = []
         for r in self._client.query(query_statement).named_results():
             start_char_idx = None
             end_char_idx = None
+
             if isinstance(r["node_info"], dict):
                 start_char_idx = r["node_info"].get("start", None)
                 end_char_idx = r["node_info"].get("end", None)
-
             node = TextNode(
                 id_=r["doc_id"],
                 text=r["text"],
