@@ -125,7 +125,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
                         query_bundle.embedding_strs
                     )
                 )
-        
+
         query = VectorStoreQuery(
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
@@ -138,8 +138,10 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         elif query_result.nodes is not None:
             top_k_summary_ids = [n.node_id for n in query_result.nodes]
         else:
-            raise ValueError("Vector store query result should return "
-                             "at least one of nodes or ids.")
+            raise ValueError(
+                "Vector store query result should return "
+                "at least one of nodes or ids."
+            )
 
         results = []
         for summary_id in top_k_summary_ids:

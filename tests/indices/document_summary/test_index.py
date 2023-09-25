@@ -7,6 +7,7 @@ from llama_index.schema import Document
 from llama_index.response_synthesizers import get_response_synthesizer
 from tests.mock_utils.mock_prompts import MOCK_TEXT_QA_PROMPT, MOCK_REFINE_PROMPT
 
+
 @pytest.fixture
 def docs() -> List[Document]:
     return [
@@ -18,7 +19,9 @@ def docs() -> List[Document]:
 
 
 @pytest.fixture
-def index(docs: List[Document], mock_service_context: ServiceContext) -> DocumentSummaryIndex:
+def index(
+    docs: List[Document], mock_service_context: ServiceContext
+) -> DocumentSummaryIndex:
     response_synthesizer = get_response_synthesizer(
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,

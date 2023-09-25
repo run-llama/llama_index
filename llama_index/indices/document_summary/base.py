@@ -57,9 +57,9 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         response_synthesizer (BaseSynthesizer): A response synthesizer for generating
             summaries.
         summary_query (str): The query to use to generate the summary for each document.
-        show_progress (bool): Whether to show tqdm progress bars. 
+        show_progress (bool): Whether to show tqdm progress bars.
             Defaults to False.
-        embed_summaries (bool): Whether to embed the summaries. 
+        embed_summaries (bool): Whether to embed the summaries.
             This is required for running the default embedding-based retriever.
             Defaults to True.
 
@@ -94,6 +94,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             show_progress=show_progress,
             **kwargs,
         )
+
     @property
     def vector_store(self) -> VectorStore:
         return self._vector_store
@@ -186,11 +187,13 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
         for doc_id, nodes in doc_id_to_nodes.items():
             index_struct.add_summary_and_nodes(summary_node_dict[doc_id], nodes)
-        
+
         if self._embed_summaries:
             embed_model = self._service_context.embed_model
             summary_nodes = [node for node in summary_node_dict.values()]
-            id_to_embed_map = embed_nodes(summary_nodes, embed_model, show_progress=show_progress)
+            id_to_embed_map = embed_nodes(
+                summary_nodes, embed_model, show_progress=show_progress
+            )
 
             summary_nodes_with_embedding = []
             for node in summary_nodes:
