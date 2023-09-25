@@ -11,7 +11,7 @@ except ImportError:
     konko = None  # type: ignore
 
 
-def setup_module():
+def setup_module() -> None:
     import os
 
     os.environ["KONKO_API_KEY"] = "ko-" + "a" * 48
@@ -138,7 +138,7 @@ def test_chat_model_streaming(monkeypatch: MonkeyPatch) -> None:
     assert chat_responses[-1].message.content is not None
 
 
-def teardown_module():
+def teardown_module() -> None:
     import os
 
     del os.environ["KONKO_API_KEY"]
