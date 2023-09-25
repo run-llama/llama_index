@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fixed `refresh_ref_docs()` bug with order of operations (#7664)
+
 ## [0.8.33] - 2023-09-25
 
 ### New Features
