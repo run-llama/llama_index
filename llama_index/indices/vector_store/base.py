@@ -3,7 +3,7 @@
 An index that that is built on top of an existing vector store.
 
 """
-
+import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
@@ -16,6 +16,8 @@ from llama_index.schema import BaseNode, ImageNode, IndexNode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.types import VectorStore
+
+logger = logging.getLogger(__name__)
 
 
 class VectorStoreIndex(BaseIndex[IndexDict]):
@@ -281,6 +283,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             if ref_doc_info is not None:
                 for node_id in ref_doc_info.node_ids:
                     self._index_struct.delete(node_id)
+                    self._vector_store.delete(node_id)
 
         # delete from docstore only if needed
         if (

@@ -2,8 +2,12 @@
 
 ## Unreleased
 
+### New Features
+- Added `Konko` LLM support (#7775)
+
 ### Bug Fixes / Nits
 - Normalize scores returned from ElasticSearch vector store (#7792)
+- Fixed `refresh_ref_docs()` bug with order of operations (#7664)
 
 ## [0.8.33] - 2023-09-25
 
