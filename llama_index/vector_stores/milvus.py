@@ -6,9 +6,7 @@ An index that is built within Milvus.
 import logging
 from typing import Any, List, Optional
 
-from llama_index.schema import (
-    BaseNode,
-)
+from llama_index.schema import BaseNode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -67,6 +65,8 @@ class MilvusVectorStore(VectorStore):
             created collection. Defaults to "Session".
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
+        text_key (str, optional): What key text is stored in in the passed collection.
+            Used when bringing your own collection. Defaults to None.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
@@ -91,6 +91,7 @@ class MilvusVectorStore(VectorStore):
         similarity_metric: str = "IP",
         consistency_level: str = "Strong",
         overwrite: bool = False,
+        text_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -110,6 +111,7 @@ class MilvusVectorStore(VectorStore):
         self.doc_id_field = doc_id_field
         self.consistency_level = consistency_level
         self.overwrite = overwrite
+        self.text_key = text_key
 
         # Select the similarity metric
         if similarity_metric.lower() in ("ip"):
@@ -270,9 +272,21 @@ class MilvusVectorStore(VectorStore):
 
         # Parse the results
         for hit in res[0]:
-            node = metadata_dict_to_node(
-                {"_node_content": hit["entity"].get("_node_content", None)}
-            )
+            if not self.text_key:
+                node = metadata_dict_to_node(
+                    {"_node_content": hit["entity"].get("_node_content", None)}
+                )
+            else:
+                try:
+                    text = hit["entity"].get(self.text_key)
+                except Exception:
+                    raise ValueError(
+                        "The passed in text_key value does not exist "
+                        "in the retrieved entity."
+                    )
+                node = TextNode(
+                    text=text,
+                )
             nodes.append(node)
             similarities.append(hit["distance"])
             ids.append(hit["id"])

@@ -138,7 +138,7 @@ def test_recursive_query_table_list(
     query_str = "World?"
     query_engine = graph.as_query_engine()
     response = query_engine.query(query_str)
-    assert str(response) == ("World?:World?:Hello world.:None")
+    assert str(response) == ("World?:World?:Hello world.:Empty Response")
 
     query_str = "Test?"
     response = query_engine.query(query_str)

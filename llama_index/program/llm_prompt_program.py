@@ -4,7 +4,7 @@ from typing import Any, Generic, Optional, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel
 
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 from llama_index.prompts.base import PromptTemplate
 from llama_index.types import Model
 

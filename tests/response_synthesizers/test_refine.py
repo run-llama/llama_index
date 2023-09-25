@@ -8,7 +8,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.callbacks import CallbackManager
 from llama_index.response_synthesizers import Refine
 from llama_index.response_synthesizers.refine import StructuredRefineResponse
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 
 
 class MockRefineProgram(BasePydanticProgram):
