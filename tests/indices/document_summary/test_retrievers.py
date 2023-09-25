@@ -5,7 +5,6 @@ from llama_index.indices.document_summary.base import (
 )
 
 
-
 def test_embedding_retriever(
     index: DocumentSummaryIndex,
 ) -> None:
