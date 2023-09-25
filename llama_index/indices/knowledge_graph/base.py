@@ -183,8 +183,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
                 embed_model = self._service_context.embed_model
                 embed_outputs = embed_model.get_text_embeddings(
-                    triplet_texts, 
-                    show_progress=self._show_progress
+                    triplet_texts, show_progress=self._show_progress
                 )
                 for rel_text, rel_embed in zip(triplet_texts, embed_outputs):
                     index_struct.add_to_embedding_dict(rel_text, rel_embed)

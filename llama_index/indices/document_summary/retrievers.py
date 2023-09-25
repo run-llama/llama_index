@@ -5,7 +5,7 @@ This module contains retrievers for document summary indices.
 """
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
@@ -21,7 +21,7 @@ from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_CHOICE_SELECT_PROMPT,
 )
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             query_bundle.embedding = embed_model.get_agg_embedding_from_queries(
                 query_bundle.embedding_strs
             )
-        
+
         id_to_embed_map = embed_nodes(nodes, embed_model)
         node_embeddings = [id_to_embed_map[n.node_id] for n in nodes]
         return query_bundle.embedding, node_embeddings

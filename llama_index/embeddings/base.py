@@ -14,7 +14,7 @@ from llama_index.schema import BaseComponent
 from llama_index.utils import get_tqdm_iterable
 
 # TODO: change to numpy array
-EMB_TYPE = List
+Embedding = List[float]
 
 DEFAULT_EMBED_BATCH_SIZE = 10
 
@@ -33,8 +33,8 @@ def mean_agg(embeddings: List[List[float]]) -> List[float]:
 
 
 def similarity(
-    embedding1: EMB_TYPE,
-    embedding2: EMB_TYPE,
+    embedding1: Embedding,
+    embedding2: Embedding,
     mode: SimilarityMode = SimilarityMode.DEFAULT,
 ) -> float:
     """Get embedding similarity."""
@@ -76,20 +76,20 @@ class BaseEmbedding(BaseComponent):
         return v
 
     @abstractmethod
-    def _get_query_embedding(self, query: str) -> List[float]:
+    def _get_query_embedding(self, query: str) -> Embedding:
         """Get query embedding impl.
-        
+
         Sub-classes should implement this method.
         """
 
     @abstractmethod
-    async def _aget_query_embedding(self, query: str) -> List[float]:
+    async def _aget_query_embedding(self, query: str) -> Embedding:
         """Async get query embedding impl.
-        
+
         Sub-classes should implement this method.
         """
 
-    def get_query_embedding(self, query: str) -> List[float]:
+    def get_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
@@ -104,7 +104,7 @@ class BaseEmbedding(BaseComponent):
             )
         return query_embedding
 
-    async def aget_query_embedding(self, query: str) -> List[float]:
+    async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
@@ -123,7 +123,7 @@ class BaseEmbedding(BaseComponent):
         self,
         queries: List[str],
         agg_fn: Optional[Callable[..., List[float]]] = None,
-    ) -> List[float]:
+    ) -> Embedding:
         """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
         agg_fn = agg_fn or mean_agg
@@ -133,20 +133,20 @@ class BaseEmbedding(BaseComponent):
         self,
         queries: List[str],
         agg_fn: Optional[Callable[..., List[float]]] = None,
-    ) -> List[float]:
+    ) -> Embedding:
         """Async get aggregated embedding from multiple queries."""
         query_embeddings = [await self.aget_query_embedding(query) for query in queries]
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
     @abstractmethod
-    def _get_text_embedding(self, text: str) -> List[float]:
+    def _get_text_embedding(self, text: str) -> Embedding:
         """Get text embedding impl.
-        
+
         Sub-classes should implement this method.
         """
 
-    async def _aget_text_embedding(self, text: str) -> List[float]:
+    async def _aget_text_embedding(self, text: str) -> Embedding:
         """Asynchronously get text embedding.
 
         By default, this falls back to _get_text_embedding.
@@ -155,7 +155,7 @@ class BaseEmbedding(BaseComponent):
         """
         return self._get_text_embedding(text)
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         """Get a list of text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
@@ -165,7 +165,7 @@ class BaseEmbedding(BaseComponent):
         result = [self._get_text_embedding(text) for text in texts]
         return result
 
-    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         """Async get a list of text embeddings.
 
         By default, this is a wrapper around _aget_text_embedding.
@@ -177,7 +177,7 @@ class BaseEmbedding(BaseComponent):
         )
         return result
 
-    def get_text_embedding(self, text: str) -> List[float]:
+    def get_text_embedding(self, text: str) -> Embedding:
         """Get text embedding."""
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
@@ -193,7 +193,7 @@ class BaseEmbedding(BaseComponent):
 
         return text_embedding
 
-    async def aget_text_embedding(self, text: str) -> List[float]:
+    async def aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
@@ -210,8 +210,8 @@ class BaseEmbedding(BaseComponent):
         return text_embedding
 
     def get_text_embeddings(
-        self, texts : List[str], show_progress: bool = False
-    ) -> Tuple[List[str], List[List[float]]]:
+        self, texts: List[str], show_progress: bool = False
+    ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
         cur_batch: List[str] = []
         result_embeddings: List[List[float]] = []
@@ -242,7 +242,7 @@ class BaseEmbedding(BaseComponent):
 
     async def aget_text_embeddings(
         self, texts: List[str], show_progress: bool = False
-    ) -> Tuple[List[str], List[List[float]]]:
+    ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
         cur_batch: List[str] = []
         callback_payloads: List[Tuple[str, List[str]]] = []
@@ -257,9 +257,7 @@ class BaseEmbedding(BaseComponent):
                     payload={EventPayload.SERIALIZED: self.to_dict()},
                 )
                 callback_payloads.append((event_id, cur_batch))
-                embeddings_coroutines.append(
-                    self._aget_text_embeddings(cur_batch)
-                )
+                embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
@@ -301,8 +299,8 @@ class BaseEmbedding(BaseComponent):
 
     def similarity(
         self,
-        embedding1: EMB_TYPE,
-        embedding2: EMB_TYPE,
+        embedding1: Embedding,
+        embedding2: Embedding,
         mode: SimilarityMode = SimilarityMode.DEFAULT,
     ) -> float:
         """Get embedding similarity."""

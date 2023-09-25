@@ -96,9 +96,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         """
         id_to_embed_map = embed_nodes(
-            nodes, 
-            self._service_context.embed_model, 
-            show_progress=show_progress
+            nodes, self._service_context.embed_model, show_progress=show_progress
         )
 
         results = []
