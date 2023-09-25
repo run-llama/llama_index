@@ -33,6 +33,7 @@ def get_leaf_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
             leaf_nodes.append(node)
     return leaf_nodes
 
+
 def get_root_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
     """Get root nodes."""
     root_nodes = []
@@ -40,7 +41,6 @@ def get_root_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
         if NodeRelationship.PARENT not in node.relationships:
             root_nodes.append(node)
     return root_nodes
-
 
 
 class HierarchicalNodeParser(NodeParser):

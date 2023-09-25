@@ -2,9 +2,7 @@
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index import ServiceContext
-from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from typing import Optional, Union, Sequence, Any
-from pydantic import BaseModel
 from llama_index.prompts import (
     BasePromptTemplate,
     ChatMessage,
@@ -22,8 +20,9 @@ You are given the following information:
 - a reference answer, and
 - a candidate answer.
 
-Your job is to output whether the candidate answer is better than the reference answer in
-answer the user query. 'YES' means the candidate answer is better, 'NO' means the
+Your job is to output whether the candidate answer is better than the reference \
+answer in answering the user query. \
+'YES' means the candidate answer is better, 'NO' means the \
 reference answer is better, and 'TIE' means they are equally good.
 
 Please output two lines: 
@@ -57,7 +56,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
     having an LLM judge which response is better.
 
     Outputs whether the `response` given is better than the `reference` response.
-    
+
     """
 
     def __init__(
@@ -115,5 +114,3 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             score=score,
             feedback=eval_reason.strip(),
         )
-
-

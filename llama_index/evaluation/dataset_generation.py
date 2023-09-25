@@ -15,7 +15,6 @@ from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 import uuid
-from tqdm import tqdm
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
 Context information is below.
@@ -185,6 +184,7 @@ class DatasetGenerator:
 
         if self._show_progress:
             from tqdm.asyncio import tqdm_asyncio
+
             async_module = tqdm_asyncio
         else:
             async_module = asyncio
@@ -221,7 +221,9 @@ class DatasetGenerator:
             cleaned_questions = [
                 question for question in cleaned_questions if len(question) > 0
             ]
-            cur_queries = {str(uuid.uuid4()): question for question in cleaned_questions}
+            cur_queries = {
+                str(uuid.uuid4()): question for question in cleaned_questions
+            }
             queries.update(cur_queries)
 
             if generate_response:
@@ -250,29 +252,30 @@ class DatasetGenerator:
 
         return QueryResponseDataset(queries=queries, responses=responses_dict)
 
-    async def agenerate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
+    async def agenerate_questions_from_nodes(
+        self, num: Optional[int] = None
+    ) -> List[str]:
         """Generates questions for each document."""
-        dataset = await self._agenerate_dataset(self.nodes, num=num, generate_response=False)
+        dataset = await self._agenerate_dataset(
+            self.nodes, num=num, generate_response=False
+        )
         return dataset.questions
 
     async def agenerate_dataset_from_nodes(
         self, num: Optional[int] = None
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
-        dataset = await self._agenerate_dataset(self.nodes, num=num, generate_response=True)
+        dataset = await self._agenerate_dataset(
+            self.nodes, num=num, generate_response=True
+        )
         return dataset
-
 
     def generate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
         """Generates questions for each document."""
-        return asyncio.run(
-            self.agenerate_questions_from_nodes(num=num)
-        )
+        return asyncio.run(self.agenerate_questions_from_nodes(num=num))
 
     def generate_dataset_from_nodes(
         self, num: Optional[int] = None
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
-        return asyncio.run(
-            self.agenerate_dataset_from_nodes(num=num)
-        )
+        return asyncio.run(self.agenerate_dataset_from_nodes(num=num))
