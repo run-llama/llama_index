@@ -248,7 +248,9 @@ class DatasetGenerator:
             query_ids = query_ids[:num]
             # truncate queries, responses to the subset of query ids
             queries = {query_id: queries[query_id] for query_id in query_ids}
-            responses_dict = {query_id: responses_dict[query_id] for query_id in query_ids}
+            responses_dict = {
+                query_id: responses_dict[query_id] for query_id in query_ids
+            }
 
         return QueryResponseDataset(queries=queries, responses=responses_dict)
 
