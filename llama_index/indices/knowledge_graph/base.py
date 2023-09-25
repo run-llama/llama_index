@@ -182,7 +182,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 triplet_texts = [str(t) for t in triplets]
 
                 embed_model = self._service_context.embed_model
-                embed_outputs = embed_model.get_text_embeddings(
+                embed_outputs = embed_model.get_text_embedding_batch(
                     triplet_texts, show_progress=self._show_progress
                 )
                 for rel_text, rel_embed in zip(triplet_texts, embed_outputs):
