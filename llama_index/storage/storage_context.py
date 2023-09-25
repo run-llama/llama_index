@@ -102,11 +102,18 @@ class StorageContext:
         Args:
             persist_dir (str): directory to persist the storage context
         """
-        persist_dir = str(persist_dir)
-        docstore_path = concat_dirs(persist_dir, docstore_fname)
-        index_store_path = concat_dirs(persist_dir, index_store_fname)
-        vector_store_path = concat_dirs(persist_dir, vector_store_fname)
-        graph_store_path = concat_dirs(persist_dir, graph_store_fname)
+        if fs is not None:
+            persist_dir = str(persist_dir)  # NOTE: doesn't support Windows here
+            docstore_path = concat_dirs(persist_dir, docstore_fname)
+            index_store_path = concat_dirs(persist_dir, index_store_fname)
+            vector_store_path = concat_dirs(persist_dir, vector_store_fname)
+            graph_store_path = concat_dirs(persist_dir, graph_store_fname)
+        else:
+            persist_dir = Path(persist_dir)
+            docstore_path = str(persist_dir / docstore_fname)
+            index_store_path = str(persist_dir / index_store_fname)
+            vector_store_path = str(persist_dir / vector_store_fname)
+            graph_store_path = str(persist_dir / graph_store_fname)
 
         self.docstore.persist(persist_path=docstore_path, fs=fs)
         self.index_store.persist(persist_path=index_store_path, fs=fs)
