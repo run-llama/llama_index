@@ -15,6 +15,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
+    embed_nodes,
 )
 from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import (
@@ -146,22 +147,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             query_bundle.embedding = embed_model.get_agg_embedding_from_queries(
                 query_bundle.embedding_strs
             )
-
-        id_to_embed_map: Dict[str, List[float]] = {}
-        for node in nodes:
-            if node.embedding is None:
-                embed_model.queue_text_for_embedding(
-                    node.node_id,
-                    node.get_content(metadata_mode=MetadataMode.EMBED),
-                )
-            else:
-                id_to_embed_map[node.node_id] = node.embedding
-
-        (
-            result_ids,
-            result_embeddings,
-        ) = embed_model.get_queued_text_embeddings()
-        for new_id, text_embedding in zip(result_ids, result_embeddings):
-            id_to_embed_map[new_id] = text_embedding
+        
+        id_to_embed_map = embed_nodes(nodes, embed_model)
         node_embeddings = [id_to_embed_map[n.node_id] for n in nodes]
         return query_bundle.embedding, node_embeddings

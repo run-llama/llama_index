@@ -11,6 +11,7 @@ from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.utils import embed_nodes
 from llama_index.schema import BaseNode, ImageNode, IndexNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
@@ -94,23 +95,11 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        id_to_embed_map: Dict[str, List[float]] = {}
-
-        for n in nodes:
-            if n.embedding is None:
-                self._service_context.embed_model.queue_text_for_embedding(
-                    n.node_id, n.get_content(metadata_mode=MetadataMode.EMBED)
-                )
-            else:
-                id_to_embed_map[n.node_id] = n.embedding
-
-        # call embedding model to get embeddings
-        (
-            result_ids,
-            result_embeddings,
-        ) = self._service_context.embed_model.get_queued_text_embeddings(show_progress)
-        for new_id, text_embedding in zip(result_ids, result_embeddings):
-            id_to_embed_map[new_id] = text_embedding
+        id_to_embed_map = embed_nodes(
+            nodes, 
+            self._service_context.embed_model, 
+            show_progress=show_progress
+        )
 
         results = []
         for node in nodes:

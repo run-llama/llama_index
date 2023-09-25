@@ -137,13 +137,9 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
 
         # get embeddings for each node
         embed_model = self.service_context.embed_model
-        for node in sorted_nodes:
-            embed_model.queue_text_for_embedding(
-                node.node.node_id,
-                node.node.get_content(metadata_mode=MetadataMode.EMBED),
-            )
+        texts = [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes]
+        text_embeddings = embed_model.get_text_embeddings(texts=texts)
 
-        _, text_embeddings = embed_model.get_queued_text_embeddings()
         node_ids_to_skip: Set[str] = set()
         for idx, node in enumerate(sorted_nodes):
             if node.node.node_id in node_ids_to_skip:

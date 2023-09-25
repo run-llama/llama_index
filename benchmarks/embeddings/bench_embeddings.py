@@ -89,11 +89,8 @@ def bench_simple_vector_store(
                     models.append(create_model(batch_size=batch_size))  # type: ignore
 
                 for model in models:
-                    for i, string in enumerate(strings):
-                        model[0].queue_text_for_embedding(str(i), string)
-
                     time1 = time.time()
-                    _ = model[0].get_queued_text_embeddings(show_progress=True)
+                    _ = model[0].get_text_embeddings(strings, show_progress=True)
 
                     time2 = time.time()
                     print(

@@ -2,6 +2,7 @@
 import logging
 import re
 from typing import Dict, List, Optional, Set, Tuple
+from llama_index.embeddings.base import BaseEmbedding
 
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
@@ -106,3 +107,33 @@ def default_parse_choice_select_answer_fn(
         answer_nums.append(answer_num)
         answer_relevances.append(float(line_tokens[1].split(":")[1].strip()))
     return answer_nums, answer_relevances
+
+
+def embed_nodes(nodes: List[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False) -> Dict[str, List[float]]:
+    """Get embeddings of the given nodes, run embedding model if necessary.
+
+    Args:
+        nodes (List[BaseNode]): The nodes to embed.
+        embed_model (BaseEmbedding): The embedding model to use.
+        show_progress (bool): Whether to show progress bar.
+    
+    Returns:
+        Dict[str, List[float]]: A map from node id to embedding.
+    """
+    id_to_embed_map: Dict[str, List[float]] = {}
+
+    texts_to_embed = []
+    ids_to_embed = []
+    for node in nodes:
+        if node.embedding is None:
+            ids_to_embed.append(node.node_id)
+            texts_to_embed.append(node.get_content(metadata_mode=MetadataMode.EMBED))
+        else:
+            id_to_embed_map[node.node_id] = node.embedding
+
+    new_embeddings = embed_model.get_text_embeddings(texts_to_embed, show_progress=show_progress)
+
+    for new_id, text_embedding in zip(ids_to_embed, new_embeddings):
+        id_to_embed_map[new_id] = text_embedding
+    
+    return id_to_embed_map
