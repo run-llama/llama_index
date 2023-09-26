@@ -8,8 +8,8 @@ def arize_phoenix_callback_handler(**kwargs: Any) -> BaseCallbackHandler:
         from phoenix.trace.llama_index import OpenInferenceTraceCallbackHandler
     except ImportError:
         raise ImportError(
-            "To use the OpenInference Tracer you need to "
-            "have the latest `phoenix` python package installed. "
+            "To use the Arize Phoenix Tracer you need to "
+            "have the latest `arize-phoenix` python package installed. "
             "Please install it with `pip install -q arize-phoenix`"
         )
     if "exporter" not in kwargs:
