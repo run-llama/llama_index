@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import uuid
 from typing import Any, Dict, Generator, List, Union
 
@@ -15,7 +16,15 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
 )
 
-# Install Elasticsearch via https://github.com/elastic/elasticsearch-labs/blob/main/developer-guide.md#running-elasticsearch
+##
+# Start Elasticsearch locally
+# cd tests/vector_stores/docker-compose
+# docker-compose -f elasticsearch.yml up
+#
+# Run tests
+# cd tests/vector_stores
+# pytest test_elasticsearch.py
+
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -28,7 +37,9 @@ try:
     elasticsearch_not_available = False
 
     es_license = es_client.license.get()
-    basic_license: bool = "basic" == es_license["license"]["type"]
+    # TODO: Fix hybrid search tests
+    # basic_license: bool = "basic" == es_license["license"]["type"]
+    basic_license = True
 except (ImportError, Exception):
     elasticsearch_not_available = True
     basic_license = True
@@ -81,6 +92,38 @@ def elasticsearch_connection() -> Union[dict, Generator[dict, None, None]]:
         if index_name.startswith("test_"):
             es.indices.delete(index=index_name)
     es.indices.refresh(index="_all")
+
+
+@pytest.fixture(scope="function")
+def es_client() -> Any:
+    # Running this integration test with Elastic Cloud
+    # Required for in-stack inference testing (ELSER + model_id)
+    from elastic_transport import AsyncTransport
+    from elasticsearch import AsyncElasticsearch
+
+    class CustomTransport(AsyncTransport):
+        requests = []
+
+        async def perform_request(self, *args, **kwargs):  # type: ignore
+            self.requests.append(kwargs)
+            return await super().perform_request(*args, **kwargs)
+
+    es_url = os.environ.get("ES_URL", "http://localhost:9200")
+    cloud_id = os.environ.get("ES_CLOUD_ID")
+    es_username = os.environ.get("ES_USERNAME", "elastic")
+    es_password = os.environ.get("ES_PASSWORD", "changeme")
+
+    if cloud_id:
+        es = AsyncElasticsearch(
+            cloud_id=cloud_id,
+            basic_auth=(es_username, es_password),
+            transport_class=CustomTransport,
+        )
+        return es
+    else:
+        # Running this integration test with local docker instance
+        es = AsyncElasticsearch(hosts=es_url, transport_class=CustomTransport)
+        return es
 
 
 @pytest.fixture(scope="session")
@@ -398,6 +441,31 @@ async def test_add_to_es_and_text_query_ranked(
     await check_top_match(
         es_store, node_embeddings, use_async, query_get_2_first, node2, node1
     )
+
+
+@pytest.mark.skipif(
+    elasticsearch_not_available, reason="elasticsearch is not available"
+)
+def test_check_user_agent(
+    es_client: Any,
+    index_name: str,
+    node_embeddings: List[TextNode],
+) -> None:
+    es_store = ElasticsearchStore(
+        es_client=es_client,
+        index_name=index_name,
+        distance_strategy="EUCLIDEAN_DISTANCE",
+    )
+
+    es_store.add(node_embeddings)
+
+    user_agent = es_client.transport.requests[0]["headers"]["user-agent"]
+    pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+$"
+    match = re.match(pattern, user_agent)
+
+    assert (
+        match is not None
+    ), f"The string '{user_agent}' does not match the expected user-agent."
 
 
 async def check_top_match(

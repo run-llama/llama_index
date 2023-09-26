@@ -1,10 +1,10 @@
 """Elasticsearch vector store."""
 import asyncio
-import nest_asyncio
 import uuid
 from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
 
+import nest_asyncio
 import numpy as np
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
@@ -82,7 +82,9 @@ def _get_elasticsearch_client(
     elif username and password:
         connection_params["basic_auth"] = (username, password)
 
-    sync_es_client = elasticsearch.Elasticsearch(**connection_params)
+    sync_es_client = elasticsearch.Elasticsearch(
+        **connection_params, headers={"user-agent": ElasticsearchStore.get_user_agent()}
+    )
     async_es_client = elasticsearch.AsyncElasticsearch(**connection_params)
     try:
         sync_es_client.info()  # so don't have to 'await' to just get info
@@ -180,7 +182,9 @@ class ElasticsearchStore(VectorStore):
         self.distance_strategy = distance_strategy
 
         if es_client is not None:
-            self._client = es_client
+            self._client = es_client.options(
+                headers={"user-agent": self.get_user_agent()}
+            )
         elif es_url is not None or es_cloud_id is not None:
             self._client = _get_elasticsearch_client(
                 es_url=es_url,
@@ -199,6 +203,13 @@ class ElasticsearchStore(VectorStore):
     def client(self) -> Any:
         """Get async elasticsearch client"""
         return self._client
+
+    @staticmethod
+    def get_user_agent() -> str:
+        """Get user agent for elasticsearch client"""
+        import llama_index
+
+        return f"llama_index-py-vs/{llama_index.__version__}"
 
     async def _create_index_if_not_exists(
         self, index_name: str, dims_length: Optional[int] = None
