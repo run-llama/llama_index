@@ -156,8 +156,11 @@ class SimpleVectorStore(VectorStore):
 
         for text_id in text_ids_to_delete:
             del self._data.embedding_dict[text_id]
-            del self._data.metadata_dict[text_id]
             del self._data.text_id_to_ref_doc_id[text_id]
+            # Handle metadata_dict not being present in stores that were persisted without metadata.
+            # Or not being present for nodes stored prior to metadata functionality.
+            if self._data.metadata_dict is not None:
+                self._data.metadata_dict.pop(text_id, None)
 
     def query(
         self,
