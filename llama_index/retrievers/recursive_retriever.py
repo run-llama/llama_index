@@ -84,7 +84,7 @@ class RecursiveRetriever(BaseRetriever):
                     new_nodes_with_score.append(node_with_score)
             else:
                 new_nodes_with_score.append(node_with_score)
-            
+
         nodes_with_score = new_nodes_with_score
 
         # recursively retrieve
