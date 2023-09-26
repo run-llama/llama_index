@@ -23,9 +23,7 @@ from llama_index.llms.generic_utils import stream_completion_response_to_chat_re
 
 
 class Ollama(CustomLLM):
-    base_url: str = "http://localhost:11434"
-    """Base url the model is hosted under."""
-
+    base_url: str = Field(description="Base url the model is hosted under.")
     model: str = Field(description="The Ollama model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     context_window: int = Field(
@@ -42,6 +40,7 @@ class Ollama(CustomLLM):
     def __init__(
         self,
         model: str,
+        base_url: str = "http://localhost:11434",
         temperature: float = 0.75,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -56,6 +55,7 @@ class Ollama(CustomLLM):
         super().__init__(
             model=model,
             temperature=temperature,
+            base_url=base_url,
             additional_kwargs=additional_kwargs or {},
             context_window=context_window,
             prompt_key=prompt_key,
