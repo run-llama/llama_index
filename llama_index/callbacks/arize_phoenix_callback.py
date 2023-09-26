@@ -8,9 +8,7 @@ def arize_phoenix_callback_handler(**kwargs: Any) -> BaseCallbackHandler:
         from phoenix.trace.exporter import HttpExporter
     except ImportError:
         raise ImportError(
-            "To use the Arize Phoenix tracer you need to "
-            "have the latest `arize-phoenix` Python package installed. "
-            "Please install it with `pip install -q arize-phoenix`"
+            "Please install Arize Phoenix with `pip install -q arize-phoenix`"
         )
     if "exporter" not in kwargs:
         kwargs = {"exporter": HttpExporter(), **kwargs}
