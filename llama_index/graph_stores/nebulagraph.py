@@ -5,7 +5,6 @@ from string import Template
 from typing import Any, Dict, List, Optional
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-from nebula3.gclient.net.SessionPool import SessionPool
 from llama_index.graph_stores.types import GraphStore
 
 QUOTE = '"'
@@ -107,7 +106,7 @@ class NebulaGraphStore(GraphStore):
 
     def __init__(
         self,
-        session_pool: Optional[SessionPool] = None,
+        session_pool: Optional[Any] = None,
         space_name: Optional[str] = None,
         edge_types: Optional[List[str]] = ["relationship"],
         rel_prop_names: Optional[List[str]] = ["relationship,"],
@@ -140,7 +139,7 @@ class NebulaGraphStore(GraphStore):
         self._space_name = space_name
         self._session_pool_kwargs = session_pool_kwargs
 
-        self._session_pool = session_pool
+        self._session_pool:Any = session_pool
         if self._session_pool is None:
             self.init_session_pool()
 
