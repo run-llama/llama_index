@@ -1,8 +1,10 @@
+import contextlib
 import json
 import re
 from typing import Any
 
-import yaml
+with contextlib.suppress(ImportError):
+    import yaml
 
 from llama_index.output_parsers.base import OutputParserException
 
@@ -54,6 +56,8 @@ def parse_json_markdown(text: str) -> Any:
                 f"Got invalid JSON object. Error: {e_json} {e_yaml}. "
                 f"Got JSON string: {json_string}"
             )
+        except NameError as exc:
+            raise ImportError("Please pip install PyYAML.") from exc
 
     return json_obj
 
