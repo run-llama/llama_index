@@ -9,6 +9,7 @@
 - Normalize scores returned from ElasticSearch vector store (#7792)
 - Fixed `refresh_ref_docs()` bug with order of operations (#7664)
 - Delay postgresql connection for `PGVectorStore` until actually needed (#7793)
+- Fix KeyError in delete method of `SimpleVectorStore` related to metadata filters (#7829)
 
 ## [0.8.33] - 2023-09-25
 
