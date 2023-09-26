@@ -22,7 +22,7 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler: BaseCallbackHandler = WandbCallbackHandler(**eval_params)
     elif eval_mode == "openinference":
         handler = OpenInferenceCallbackHandler(**eval_params)
-    elif eval_mode == "openinferencetracer":
+    elif eval_mode == "arize_phoenix":
         try:
             from phoenix.trace.llama_index import OpenInferenceTraceCallbackHandler
         except ImportError:
