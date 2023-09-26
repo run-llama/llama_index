@@ -317,7 +317,11 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
 
 class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
-    """NL SQL Table query engine."""
+    """
+    Natural language SQL Table query engine.
+
+    Read NLStructStoreQueryEngine's docstring for more info on NL SQL.
+    """
 
     def __init__(
         self,
