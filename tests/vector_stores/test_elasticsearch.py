@@ -94,38 +94,6 @@ def elasticsearch_connection() -> Union[dict, Generator[dict, None, None]]:
     es.indices.refresh(index="_all")
 
 
-@pytest.fixture(scope="function")
-def es_client() -> Any:
-    # Running this integration test with Elastic Cloud
-    # Required for in-stack inference testing (ELSER + model_id)
-    from elastic_transport import AsyncTransport
-    from elasticsearch import AsyncElasticsearch
-
-    class CustomTransport(AsyncTransport):
-        requests = []
-
-        async def perform_request(self, *args, **kwargs):  # type: ignore
-            self.requests.append(kwargs)
-            return await super().perform_request(*args, **kwargs)
-
-    es_url = os.environ.get("ES_URL", "http://localhost:9200")
-    cloud_id = os.environ.get("ES_CLOUD_ID")
-    es_username = os.environ.get("ES_USERNAME", "elastic")
-    es_password = os.environ.get("ES_PASSWORD", "changeme")
-
-    if cloud_id:
-        es = AsyncElasticsearch(
-            cloud_id=cloud_id,
-            basic_auth=(es_username, es_password),
-            transport_class=CustomTransport,
-        )
-        return es
-    else:
-        # Running this integration test with local docker instance
-        es = AsyncElasticsearch(hosts=es_url, transport_class=CustomTransport)
-        return es
-
-
 @pytest.fixture(scope="session")
 def node_embeddings() -> List[TextNode]:
     return [
@@ -447,19 +415,33 @@ async def test_add_to_es_and_text_query_ranked(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
 def test_check_user_agent(
-    es_client: Any,
     index_name: str,
     node_embeddings: List[TextNode],
 ) -> None:
+    from elastic_transport import AsyncTransport
+    from elasticsearch import AsyncElasticsearch
+
+    class CustomTransport(AsyncTransport):
+        requests = []
+
+        async def perform_request(self, *args, **kwargs):  # type: ignore
+            self.requests.append(kwargs)
+            return await super().perform_request(*args, **kwargs)
+
+    es_client_instance = AsyncElasticsearch(
+        "http://localhost:9200",
+        transport_class=CustomTransport,
+    )
+
     es_store = ElasticsearchStore(
-        es_client=es_client,
+        es_client=es_client_instance,
         index_name=index_name,
         distance_strategy="EUCLIDEAN_DISTANCE",
     )
 
     es_store.add(node_embeddings)
 
-    user_agent = es_client.transport.requests[0]["headers"]["user-agent"]
+    user_agent = es_client_instance.transport.requests[0]["headers"]["user-agent"]
     pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+$"
     match = re.match(pattern, user_agent)
 
