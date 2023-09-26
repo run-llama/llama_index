@@ -1,4 +1,4 @@
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 from llama_index.program.guidance_program import GuidancePydanticProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.program.predefined.df import (

@@ -158,3 +158,12 @@ maxdepth: 1
 ---
 /examples/llm/ollama.ipynb
 ```
+
+## Konko
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/konko.ipynb
+
+```

@@ -5,6 +5,8 @@ import uuid
 from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
 
+import numpy as np
+
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -122,6 +124,11 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
                 }
             )
         return {"bool": {"must": operands}}
+
+
+def _to_llama_similarities(scores: List[float]) -> List[float]:
+    scores_to_norm: np.ndarray = np.array(scores)
+    return np.exp(scores_to_norm - np.max(scores_to_norm)).tolist()
 
 
 class ElasticsearchStore(VectorStore):
@@ -546,5 +553,7 @@ class ElasticsearchStore(VectorStore):
             top_k_ids.append(node_id)
             top_k_scores.append(hit["_score"])
         return VectorStoreQueryResult(
-            nodes=top_k_nodes, ids=top_k_ids, similarities=top_k_scores
+            nodes=top_k_nodes,
+            ids=top_k_ids,
+            similarities=_to_llama_similarities(top_k_scores),
         )
