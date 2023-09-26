@@ -39,8 +39,8 @@ class Ollama(CustomLLM):
 
     def __init__(
         self,
-        base_url: str = "http://localhost:11434",
         model: str,
+        base_url: str = "http://localhost:11434",
         temperature: float = 0.75,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
