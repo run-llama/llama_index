@@ -139,7 +139,7 @@ class NebulaGraphStore(GraphStore):
         self._space_name = space_name
         self._session_pool_kwargs = session_pool_kwargs
 
-        self._session_pool:Any = session_pool
+        self._session_pool: Any = session_pool
         if self._session_pool is None:
             self.init_session_pool()
 
