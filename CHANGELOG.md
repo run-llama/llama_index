@@ -4,6 +4,7 @@
 
 ### New Features
 - Added `Konko` LLM support (#7775)
+- Add before/after context sentence (#7821)
 
 ### Bug Fixes / Nits
 - Normalize scores returned from ElasticSearch vector store (#7792)
