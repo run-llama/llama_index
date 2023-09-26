@@ -8,7 +8,6 @@ from llama_index.schema import TextNode, IndexNode, NodeWithScore, BaseNode
 from llama_index.bridge.langchain import print_text
 from llama_index.indices.base_retriever import BaseRetriever
 
-
 DEFAULT_QUERY_RESPONSE_TMPL = "Query: {query_str}\nResponse: {response}"
 
 
@@ -83,6 +82,9 @@ class RecursiveRetriever(BaseRetriever):
                 if node.index_id not in visited_ids:
                     visited_ids.add(node.index_id)
                     new_nodes_with_score.append(node_with_score)
+            else:
+                new_nodes_with_score.append(node_with_score)
+
         nodes_with_score = new_nodes_with_score
 
         # recursively retrieve
