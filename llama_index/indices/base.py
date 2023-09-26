@@ -275,7 +275,9 @@ class BaseIndex(Generic[IS], ABC):
         """
         with self._service_context.callback_manager.as_trace("update"):
             self.delete_ref_doc(
-                document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {})
+                document.get_doc_id(),
+                delete_from_docstore=True,
+                **update_kwargs.pop("delete_kwargs", {}),
             )
             self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
@@ -309,13 +311,13 @@ class BaseIndex(Generic[IS], ABC):
                 existing_doc_hash = self._docstore.get_document_hash(
                     document.get_doc_id()
                 )
-                if existing_doc_hash != document.hash:
+                if existing_doc_hash is None:
+                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+                    refreshed_documents[i] = True
+                elif existing_doc_hash != document.hash:
                     self.update_ref_doc(
                         document, **update_kwargs.pop("update_kwargs", {})
                     )
-                    refreshed_documents[i] = True
-                elif existing_doc_hash is None:
-                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
                     refreshed_documents[i] = True
 
             return refreshed_documents
