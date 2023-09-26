@@ -55,6 +55,7 @@ class Ollama(CustomLLM):
         super().__init__(
             model=model,
             temperature=temperature,
+            base_url=base_url,
             additional_kwargs=additional_kwargs or {},
             context_window=context_window,
             prompt_key=prompt_key,
