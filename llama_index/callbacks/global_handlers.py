@@ -22,6 +22,23 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler: BaseCallbackHandler = WandbCallbackHandler(**eval_params)
     elif eval_mode == "openinference":
         handler = OpenInferenceCallbackHandler(**eval_params)
+    elif eval_mode == "openinferencetracer":
+        try:
+            from phoenix.trace.llama_index import OpenInferenceTraceCallbackHandler
+        except ImportError:
+            raise ImportError(
+                "To use the OpenInference Tracer you need to "
+                "have the latest `phoenix` python package installed. "
+                "Please install it with `pip install -q arize-phoenix`"
+            )
+        if "exporter" not in eval_params:
+            from phoenix.trace.exporter import HttpExporter
+
+            eval_params = {
+                "exporter": HttpExporter(),
+                **eval_params,
+            }
+        handler = OpenInferenceTraceCallbackHandler(**eval_params)
     elif eval_mode == "simple":
         handler = SimpleLLMHandler(**eval_params)
     else:
