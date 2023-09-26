@@ -15,6 +15,8 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict
+from pandas import DataFrame
+import numpy as np
 
 
 def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
@@ -26,6 +28,18 @@ def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
         else:
             filters.append(filter.key + " = " + str(filter.value))
     return " AND ".join(filters)
+
+
+def _to_llama_similarities(results: DataFrame) -> List[float]:
+    keys = results.keys()
+    normalized_similarities: np.ndarray
+    if "score" in keys:
+        normalized_similarities = np.exp(results["score"] - np.max(results["score"]))
+    elif "_distance" in keys:
+        normalized_similarities = np.exp(-results["_distance"])
+    else:
+        normalized_similarities = np.linspace(1, 0, len(results))
+    return normalized_similarities.tolist()
 
 
 class LanceDBVectorStore(VectorStore):
@@ -162,6 +176,6 @@ class LanceDBVectorStore(VectorStore):
 
         return VectorStoreQueryResult(
             nodes=nodes,
-            similarities=results["score"].tolist(),
+            similarities=_to_llama_similarities(results),
             ids=results["id"].tolist(),
         )

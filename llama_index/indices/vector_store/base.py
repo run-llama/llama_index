@@ -3,18 +3,21 @@
 An index that that is built on top of an existing vector store.
 
 """
-
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+import logging
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import BaseNode, ImageNode, IndexNode, MetadataMode
+from llama_index.indices.utils import async_embed_nodes, embed_nodes
+from llama_index.schema import BaseNode, ImageNode, IndexNode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.types import VectorStore
+
+logger = logging.getLogger(__name__)
 
 
 class VectorStoreIndex(BaseIndex[IndexDict]):
@@ -94,23 +97,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        id_to_embed_map: Dict[str, List[float]] = {}
-
-        for n in nodes:
-            if n.embedding is None:
-                self._service_context.embed_model.queue_text_for_embedding(
-                    n.node_id, n.get_content(metadata_mode=MetadataMode.EMBED)
-                )
-            else:
-                id_to_embed_map[n.node_id] = n.embedding
-
-        # call embedding model to get embeddings
-        (
-            result_ids,
-            result_embeddings,
-        ) = self._service_context.embed_model.get_queued_text_embeddings(show_progress)
-        for new_id, text_embedding in zip(result_ids, result_embeddings):
-            id_to_embed_map[new_id] = text_embedding
+        id_to_embed_map = embed_nodes(
+            nodes, self._service_context.embed_model, show_progress=show_progress
+        )
 
         results = []
         for node in nodes:
@@ -131,27 +120,11 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        id_to_embed_map: Dict[str, List[float]] = {}
-
-        text_queue: List[Tuple[str, str]] = []
-        for n in nodes:
-            if n.embedding is None:
-                text_queue.append(
-                    (n.node_id, n.get_content(metadata_mode=MetadataMode.EMBED))
-                )
-            else:
-                id_to_embed_map[n.node_id] = n.embedding
-
-        # call embedding model to get embeddings
-        (
-            result_ids,
-            result_embeddings,
-        ) = await self._service_context.embed_model.aget_queued_text_embeddings(
-            text_queue, show_progress
+        id_to_embed_map = await async_embed_nodes(
+            nodes=nodes,
+            embed_model=self._service_context.embed_model,
+            show_progress=show_progress,
         )
-
-        for new_id, text_embedding in zip(result_ids, result_embeddings):
-            id_to_embed_map[new_id] = text_embedding
 
         results = []
         for node in nodes:
@@ -310,6 +283,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             if ref_doc_info is not None:
                 for node_id in ref_doc_info.node_ids:
                     self._index_struct.delete(node_id)
+                    self._vector_store.delete(node_id)
 
         # delete from docstore only if needed
         if (

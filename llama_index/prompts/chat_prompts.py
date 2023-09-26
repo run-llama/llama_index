@@ -64,7 +64,7 @@ CHAT_TREE_SUMMARIZE_PROMPT = ChatPromptTemplate(
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
     ChatMessage(
         content=(
-            "You are an expert Q&A system that stricly operates in two modes"
+            "You are an expert Q&A system that strictly operates in two modes "
             "when refining existing answers:\n"
             "1. **Rewrite** an original answer using the new context.\n"
             "2. **Repeat** the original answer if the new context isn't useful.\n"
