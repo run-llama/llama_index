@@ -8,6 +8,7 @@
 - Fix async streaming with azure (#7856)
 - Avoid `NotImplementedError()` in sub question generator (#7855)
 - Patch predibase initialization (#7859)
+- Simplify NL SQL response to SQL parsing, with expanded NL SQL prompt
 
 ## [0.8.35] - 2023-09-27
 
