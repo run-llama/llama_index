@@ -6,6 +6,7 @@
 - Fix elasticsearch hybrid scoring (#7852)
 - Replace `get_color_mapping` and `print_text` Langchain dependency with internal implementation (#7845)
 - Fix async streaming with azure (#7856)
+- Avoid `NotImplementedError()` in sub question generator (#7855)
 
 ## [0.8.35] - 2023-09-27
 
