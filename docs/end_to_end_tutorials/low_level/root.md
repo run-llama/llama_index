@@ -30,6 +30,19 @@ maxdepth: 1
 /examples/low_level/retrieval.ipynb
 ```
 
+## Building Ingestion/Retrieval from Scratch (Open-Source/Local Components)
+
+This tutoral shows you how to build an ingestion/retrieval pipeline using only
+open-source components.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/oss_ingestion_retrieval.ipynb
+```
+
+
 ## Building a (Very Simple) Vector Store from Scratch
 
 If you want to learn more about how vector stores work, here's a tutorial showing you how to build a very simple vector store capable of dense search + metadata filtering.
