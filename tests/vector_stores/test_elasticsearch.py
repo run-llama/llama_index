@@ -37,9 +37,7 @@ try:
     elasticsearch_not_available = False
 
     es_license = es_client.license.get()
-    # TODO: Fix hybrid search tests
     basic_license: bool = "basic" == es_license["license"]["type"]
-    # basic_license = True
 except (ImportError, Exception):
     elasticsearch_not_available = True
     basic_license = True
