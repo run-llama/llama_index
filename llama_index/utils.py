@@ -391,7 +391,7 @@ def _get_colored_text(text: str, color: str) -> str:
     return f"\033[1;3;{color}m{text}\033[0m"
 
 
-def print_text(text: str, color: str = "", end: str = "") -> None:
+def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
     """
     Print the text with the specified color.
 
@@ -405,5 +405,5 @@ def print_text(text: str, color: str = "", end: str = "") -> None:
     Returns:
         None
     """
-    text_to_print = _get_colored_text(text, color) if color else text
+    text_to_print = _get_colored_text(text, color) if color is not None else text
     print(text_to_print, end=end)
