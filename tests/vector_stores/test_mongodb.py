@@ -13,7 +13,7 @@ try:
     NAMESPACE = "llamaindex_test_db.llamaindex_test_collection"
     CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
     DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
-    test_client = MongoClient(CONNECTION_STRING) # type: ignore
+    test_client = MongoClient(CONNECTION_STRING)  # type: ignore
     collection = test_client[DB_NAME][COLLECTION_NAME]
 
     pymongo_available = True
