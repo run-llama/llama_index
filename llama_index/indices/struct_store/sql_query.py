@@ -39,7 +39,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 class SQLStructStoreQueryEngine(BaseQueryEngine):
     """GPT SQL query engine over a structured database.
 
-    NOTE: deprecated, kept for backward compatibility
+    NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made here.
     NOTE: this query cannot work with composed indices - if the index
@@ -75,11 +75,12 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
 class NLStructStoreQueryEngine(BaseQueryEngine):
     """GPT natural language query engine over a structured database.
 
-    NOTE: deprecated, kept for backward compatibility
+    NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
     Given a natural language query, we will extract the query to SQL.
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made during
     the SQL execution.
+
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
 
@@ -317,7 +318,11 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
 
 class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
-    """NL SQL Table query engine."""
+    """
+    Natural language SQL Table query engine.
+
+    Read NLStructStoreQueryEngine's docstring for more info on NL SQL.
+    """
 
     def __init__(
         self,
