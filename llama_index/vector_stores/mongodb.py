@@ -153,7 +153,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         params: dict[str, Any] = {
             "queryVector": query.query_embedding,
             "path": self._embedding_key,
-            "numCandidates": query.similarity_top_k,
+            "numCandidates": query.similarity_top_k * 10,
             "limit": query.similarity_top_k,
             "index": self._index_name,
         }
