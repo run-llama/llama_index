@@ -2,11 +2,16 @@
 
 ## Unreleased
 
-### New Features
+### Bug Fixes / Nits
+- Replace `get_color_mapping` and `print_text` Langchain dependency with internal implementation (#7845)
+
+## [0.8.35] - 2023-09-27
 
 ### Bug Fixes / Nits
+- Fix dropping textnodes in recursive retriever (#7840)
+- share callback_manager between agent and its llm when callback_manager is None (#7844)
+- fix pandas query engine  (#7847)
 
-- Replace `get_color_mapping` and `print_text` Langchain dependency with internal implementation (#7845)
 
 ## [0.8.34] - 2023-09-26
 
