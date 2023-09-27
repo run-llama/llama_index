@@ -1,13 +1,24 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.34] - 2023-09-26
 
 ### New Features
 - Added `Konko` LLM support (#7775)
+- Add before/after context sentence (#7821)
+- EverlyAI integration with LlamaIndex through OpenAI library (#7820)
+-  add Arize Phoenix tracer to global handlers (#7835)
 
 ### Bug Fixes / Nits
 - Normalize scores returned from ElasticSearch vector store (#7792)
 - Fixed `refresh_ref_docs()` bug with order of operations (#7664)
+- Delay postgresql connection for `PGVectorStore` until actually needed (#7793)
+- Fix KeyError in delete method of `SimpleVectorStore` related to metadata filters (#7829)
+- Fix KeyError in delete method of `SimpleVectorStore` related to metadata filters (#7831)
+- Addressing PyYAML import error (#7784)
+- ElasticsearchStore: Update User-Agent + Add example docker compose (#7832)
+- `StorageContext.persist` supporting `Path` (#7783)
+- Update ollama.py (#7839)
+- fix bug for self._session_pool (#7834)
 
 ## [0.8.33] - 2023-09-25
 

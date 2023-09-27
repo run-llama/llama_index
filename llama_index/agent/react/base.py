@@ -60,7 +60,7 @@ class ReActAgent(BaseAgent):
             tools=tools
         )
         self._output_parser = output_parser or ReActOutputParser()
-        self.callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or self._llm.callback_manager
         self._verbose = verbose
 
     @classmethod

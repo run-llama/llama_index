@@ -122,7 +122,7 @@ class BaseOpenAIAgent(BaseAgent):
         self._max_function_calls = max_function_calls
         self.prefix_messages = prefix_messages
         self.memory = memory
-        self.callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or self._llm.callback_manager
         self.sources: List[ToolOutput] = []
 
     @property

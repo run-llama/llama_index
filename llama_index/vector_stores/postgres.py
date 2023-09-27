@@ -160,7 +160,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
     async def close(self) -> None:
         if not self._is_initialized:
-            return
+            return None
 
         self._session.close_all()
         self._engine.dispose()
