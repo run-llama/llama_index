@@ -688,15 +688,17 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             "kg_rel_map": rel_map,
             "kg_rel_text": knowledge_sequence,
         }
+        metadata_keys = ["kg_rel_map", "kg_rel_text"]
         if self._graph_schema != "":
             rel_node_info["kg_schema"] = {"schema": self._graph_schema}
+            metadata_keys.append("kg_schema")
         node = NodeWithScore(
             node=TextNode(
                 text=context_string,
                 score=1.0,
                 metadata=rel_node_info,
-                excluded_embed_metadata_keys=["kg_rel_map", "kg_rel_text"],
-                excluded_llm_metadata_keys=["kg_rel_map", "kg_rel_text"],
+                excluded_embed_metadata_keys=metadata_keys,
+                excluded_llm_metadata_keys=metadata_keys,
             )
         )
         return [node]
