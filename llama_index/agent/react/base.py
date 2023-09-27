@@ -13,7 +13,6 @@ from llama_index.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.agent.types import BaseAgent
-from llama_index.bridge.langchain import print_text
 from llama_index.callbacks import (
     CallbackManager,
     trace_method,
@@ -26,6 +25,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.tools import BaseTool, adapt_to_async_tool
+from llama_index.utils import print_text
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
