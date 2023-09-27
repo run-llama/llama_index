@@ -530,7 +530,8 @@ class ElasticsearchStore(VectorStore):
         top_k_nodes = []
         top_k_ids = []
         top_k_scores = []
-        for hit in response["hits"]["hits"]:
+        hits = response["hits"]["hits"]
+        for hit in hits:
             source = hit["_source"]
             metadata = source.get("metadata", None)
             text = source.get(self.text_field, None)
@@ -562,7 +563,12 @@ class ElasticsearchStore(VectorStore):
                 )
             top_k_nodes.append(node)
             top_k_ids.append(node_id)
-            top_k_scores.append(hit["_score"])
+            top_k_scores.append(hit.get("_rank", hit["_score"]))
+
+        if query.mode == VectorStoreQueryMode.HYBRID:
+            total_rank = sum(top_k_scores)
+            top_k_scores = [total_rank - rank / total_rank for rank in top_k_scores]
+
         return VectorStoreQueryResult(
             nodes=top_k_nodes,
             ids=top_k_ids,
