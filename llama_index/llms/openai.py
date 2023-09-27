@@ -458,7 +458,7 @@ class OpenAI(LLM):
                 **all_kwargs,
             ):
                 if len(response["choices"]) == 0 and response.get("prompt_annotations"):
-                    #open ai sends empty response first while streaming ignore it 
+                    # open ai sends empty response first while streaming ignore it
                     continue
                 if len(response["choices"]) > 0:
                     delta = response["choices"][0]["delta"]
