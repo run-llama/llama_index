@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix elasticsearch hybrid scoring (#7852)
+
 ## [0.8.35] - 2023-09-27
 
 ### Bug Fixes / Nits
