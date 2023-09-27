@@ -1,7 +1,7 @@
 import langchain
 
 # prompts
-from langchain import BasePromptTemplate, PromptTemplate
+from langchain.prompts import BasePromptTemplate, PromptTemplate
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 
 # agents and tools
