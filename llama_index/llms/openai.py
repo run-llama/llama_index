@@ -457,6 +457,9 @@ class OpenAI(LLM):
                 stream=True,
                 **all_kwargs,
             ):
+                if len(response["choices"]) == 0 and response.get("prompt_annotations"):
+                    #open ai sends empty response first while streaming ignore it 
+                    continue
                 if len(response["choices"]) > 0:
                     delta = response["choices"][0]["delta"]
                 else:
@@ -474,7 +477,10 @@ class OpenAI(LLM):
                         if function_call.get("function_name", "") is None:
                             del function_call["function_name"]
                     else:
-                        function_call["arguments"] += function_call_delta["arguments"]
+                        function_call["arguments"] = (
+                            function_call.get("arguments", "")
+                            + function_call_delta["arguments"]
+                        )
 
                 additional_kwargs = {}
                 if function_call is not None:
