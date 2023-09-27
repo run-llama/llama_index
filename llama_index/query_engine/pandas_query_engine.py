@@ -61,7 +61,7 @@ def default_output_processor(
         exec(ast.unparse(module), {}, local_vars)  # type: ignore
         module_end = ast.Module(tree.body[-1:], type_ignores=[])
         module_end_str = ast.unparse(module_end)  # type: ignore
-        if module_end_str.strip('\'"') != module_end_str:
+        if module_end_str.strip("'\"") != module_end_str:
             # if there's leading/trailing quotes, then we need to eval
             # string to get the actual expression
             module_end_str = eval(module_end_str, {"np": np}, local_vars)
