@@ -23,8 +23,6 @@ from llama_index.vector_stores.utils import (
     legacy_metadata_dict_to_node,
 )
 
-from pymongo.errors import OperationFailure
-
 logger = logging.getLogger(__name__)
 
 
@@ -100,7 +98,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._text_key = text_key
         self._metadata_key = metadata_key
         self._insert_kwargs = insert_kwargs or {}
-        self._use_vectorsearch = True
 
     def add(
         self,
@@ -155,7 +152,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """Return MongoDB client."""
         return self._mongodb_client
 
-    def _query_vectorsearch(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def _query(
+        self, query: VectorStoreQuery
+    ) -> VectorStoreQueryResult:
         params: Dict[str, Any] = {
             "queryVector": query.query_embedding,
             "path": self._embedding_key,
@@ -167,35 +166,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
             params["filter"] = _to_mongodb_filter(query.filters)
 
         query_field = {"$vectorSearch": params}
-        search_field = "vectorSearchScore"
 
-        return self._query(query_field, search_field)
-
-    def _query_search(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-        knn_beta: Dict[str, Any] = {
-            "vector": query.query_embedding,
-            "path": self._embedding_key,
-            "k": query.similarity_top_k,
-        }
-        if query.filters:
-            knn_beta["filter"] = _to_mongodb_filter(query.filters)
-
-        query_field = {
-            "$search": {
-                "index": self._index_name,
-                "knnBeta": knn_beta,
-            }
-        }
-        search_field = "searchScore"
-
-        return self._query(query_field, search_field)
-
-    def _query(
-        self, query: Dict[str, Any], search_field: str
-    ) -> VectorStoreQueryResult:
         pipeline = [
-            query,
-            {"$project": {"score": {"$meta": search_field}, self._embedding_key: 0}},
+            query_field,
+            {"$project": {"score": {"$meta": "vectorSearchScore"}, self._embedding_key: 0}},
         ]
         logger.debug("Running query pipeline: %s", pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore
@@ -244,20 +218,4 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             A VectorStoreQueryResult containing the results of the query.
         """
-        if self._use_vectorsearch:
-            try:
-                result = self._query_vectorsearch(query)
-            except OperationFailure as e:
-                # Check for unsupported operation errors
-                if "$vectorSearch" in str(e):
-                    logger.error(
-                        f"$vectorSearch not supported for this Atlas version. "
-                        f"Attempting to use $search. Original error:\n\t{e}"
-                    )
-                    self._use_vectorsearch = False
-                    result = self._query_search(query)
-                else:
-                    raise
-        else:
-            result = self._query_search(query)
-        return result
+        return self._query(query)
