@@ -6,14 +6,8 @@ ignore_missing_imports = true
 
 [tool.ruff]
 exclude = [
-    ".venv",
-    "__pycache__",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".ruff_cache",
     "examples",
     "notebooks",
-    ".git"
 ]
 
 [tool.codespell]
