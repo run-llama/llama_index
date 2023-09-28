@@ -17,6 +17,69 @@ exclude = [
     "examples",
     "notebooks",
 ]
+ignore = [
+    "COM812",
+]
+# Feel free to add more here
+select = [
+    "C408",
+    "C411",
+    "C414",
+    "C416",
+    "C419",
+    "D202",
+    "D209",
+    "D213",
+    "D403",
+    "D405",
+    "D416",
+    "I",
+    "PERF102",
+    "PIE790",
+    "PIE808",
+    "PLR1711",
+    "PT001",
+    "PT003",
+    "PT006",
+    "PT023",
+    "PT027",
+    "RET501",
+    "RET504",
+    "RSE102",
+    "RUF005",
+    "RUF010",
+    "RUF015",
+    "RUF100",
+    "SIM101",
+    "SIM103",
+    "SIM118",
+    "SIM300",
+    "TID252",
+    "TRY201",
+    "UP007",
+    "UP008",
+    "UP010",
+    "UP015",
+    "UP018",
+    "UP028",
+    "UP031",
+    "UP032",
+    "UP034",
+    "UP037",
+    "W291",
+    "W292",
+    "W293",
+]
+target-version = "py38"
+unfixable = [
+    "ERA001",
+]
+
+[tool.ruff.flake8-annotations]
+mypy-init-return = true
+
+[tool.ruff.pydocstyle]
+convention = "google"
 
 [tool.tomlsort]
 all = true
