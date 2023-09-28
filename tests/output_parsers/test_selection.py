@@ -35,7 +35,11 @@ def test_format(output_parser: SelectionOutputParser) -> None:
             id="double_curly",
         ),
         pytest.param(
-            """{{
+            """ Based on the given choices, the <shortened> question "<redacted>?" is:
+(1) Useful for <redacted>
+The reason for this choice is <redacted>. Therefore, option (1) is the most <shortened>
+Here is the output in JSON format:
+{{
   "type": "array",
   "items": {{
     "type": "object",
