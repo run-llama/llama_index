@@ -71,7 +71,7 @@ class SelectionOutputParser(BaseOutputParser):
 
         return output_dict
 
-    def _validate_output(self, output: List[dict]) -> List[dict]:
+    def _format_output(self, output: List[dict]) -> List[dict]:
         output_json = []
         for json_dict in output:
             valid = True
@@ -93,7 +93,7 @@ class SelectionOutputParser(BaseOutputParser):
         if isinstance(json_output, dict):
             json_output = [json_output]
 
-        json_output = self._validate_output(json_output)
+        json_output = self._format_output(json_output)
         answers = [Answer.from_dict(json_dict) for json_dict in json_output]
         return StructuredOutput(raw_output=output, parsed_output=answers)
 
