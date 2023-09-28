@@ -1,5 +1,5 @@
 """Simple file node parser."""
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Dict, Type
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
@@ -8,8 +8,12 @@ from llama_index.node_parser.interface import NodeParser
 from llama_index.schema import BaseNode, Document
 from llama_index.utils import get_tqdm_iterable
 from llama_index.node_parser.file.markdown import MarkdownNodeParser
+from llama_index.node_parser.file.html import HTMLNodeParser
 
-FILE_NODE_PARSERS = {".md": MarkdownNodeParser}
+FILE_NODE_PARSERS: Dict[str, Type[NodeParser]] = {
+    ".md": MarkdownNodeParser,
+    ".html": HTMLNodeParser,
+}
 
 
 class SimpleFileNodeParser(NodeParser):
