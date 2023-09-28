@@ -12,25 +12,6 @@ from llama_index.prompts import (
 )
 
 
-# DEFAULT_SYSTEM_TEMPLATE = """
-# You are an expert evaluation system for a question answering chatbot.
-
-# You are given the following information:
-# - a user query, 
-# - a reference answer, and
-# - a candidate answer.
-
-# Your job is to output whether the candidate answer is better than the reference \
-# answer in answering the user query. \
-# 'YES' means the candidate answer is better, 'NO' means the \
-# reference answer is better, and 'TIE' means they are equally good.
-
-# Please output two lines: 
-# - first line: the word YES, NO, or TIE
-# - second line: a short explanation for your decision.
-# """
-
-
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
 
@@ -43,7 +24,8 @@ You are given the following information:
 Your job is to output whether Answer 1 is better, or Answer 2 is better, or 
 they are equally good at answering the user query.
 
-Output "1" if Answer 1 is better, "2" if Answer 2 is better, and "TIE" if they are equally good.
+Output "1" if Answer 1 is better, "2" if Answer 2 is better, and \
+    "TIE" if they are equally good.
 
 Please output two lines: 
 - first line: "1", "2", or "TIE"
@@ -91,7 +73,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         self,
         service_context: Optional[ServiceContext] = None,
         eval_template: Optional[Union[BasePromptTemplate, str]] = None,
-        enforce_consensus: bool = True
+        enforce_consensus: bool = True,
     ) -> None:
         self._service_context = service_context or ServiceContext.from_defaults()
 
@@ -110,7 +92,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         reference: str,
     ) -> EvaluationResult:
         """Get evaluation result."""
-        
+
         eval_response = await self._service_context.llm_predictor.apredict(
             prompt=self._eval_template,
             query=query,
@@ -185,10 +167,9 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             # Flip the order of the answers and see if the answer is consistent
             # (which means that the score should flip from 0 to 1 and vice-versa)
             # if not, then we return a tie
-            flipped_eval_result = await self._get_eval_result(query, reference, response)
+            flipped_eval_result = await self._get_eval_result(
+                query, reference, response
+            )
             eval_result = await self._resolve_results(eval_result, flipped_eval_result)
 
         return eval_result
-
-        
-
