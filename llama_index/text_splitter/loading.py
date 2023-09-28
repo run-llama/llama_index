@@ -15,6 +15,8 @@ RECOGNIZED_TEXT_SPLITTERS: Dict[str, Type[TextSplitter]] = {
 
 
 def load_text_splitter(data: dict) -> TextSplitter:
+    if isinstance(data, TextSplitter):
+        return data
     text_splitter_name = data.get("class_name", None)
     if text_splitter_name is None:
         raise ValueError("TextSplitter loading requires a class_name")

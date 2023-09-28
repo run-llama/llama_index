@@ -11,6 +11,8 @@ from llama_index.node_parser.extractors.metadata_extractors import (
 def load_extractor(
     data: dict,
 ) -> MetadataExtractor:
+    if isinstance(data, MetadataExtractor):
+        return data
     extractor_name = data.get("class_name", None)
     if extractor_name is None:
         raise ValueError("Extractor loading requires a class_name")

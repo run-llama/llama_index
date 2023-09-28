@@ -18,6 +18,8 @@ LOADABLE_VECTOR_STORES: Dict[str, Type[BasePydanticVectorStore]] = {
 
 
 def load_vector_store(data: dict) -> BasePydanticVectorStore:
+    if isinstance(data, BasePydanticVectorStore):
+        return data
     class_name = data.pop("class_name", None)
     if class_name is None:
         raise ValueError("class_name is required to load a vector store")

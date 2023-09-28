@@ -32,6 +32,8 @@ RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
 
 def load_llm(data: dict) -> LLM:
     """Load LLM by name."""
+    if isinstance(data, LLM):
+        return data
     llm_name = data.get("class_name", None)
     if llm_name is None:
         raise ValueError("LLM loading requires a class_name")

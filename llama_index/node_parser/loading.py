@@ -6,6 +6,8 @@ from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
 def load_parser(
     data: dict,
 ) -> NodeParser:
+    if isinstance(data, NodeParser):
+        return data
     parser_name = data.get("class_name", None)
     if parser_name is None:
         raise ValueError("Parser loading requires a class_name")
