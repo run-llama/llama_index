@@ -11,3 +11,7 @@ repos:
     rev: 23.9.1
     hooks:
       - id: black-jupyter
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.23.1
+    hooks:
+      - id: toml-sort-fix

@@ -1,3 +1,12 @@
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+ignore-words-list = "ot"
+# Remove .git and venv skips when integrated with pre-commit
+# Feel free to un-skip docs, examples, and experimental, you will just need to
+# work through many typos (--write-changes and --interactive will help)
+skip = "./.git,./*venv,./docs,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -10,11 +19,9 @@ exclude = [
     "notebooks",
 ]
 
-[tool.codespell]
-check-filenames = true
-check-hidden = true
-ignore-words-list = "ot"
-# Remove .git and venv skips when integrated with pre-commit
-# Feel free to un-skip docs, examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
-skip = "./.git,./*venv,./docs,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt"
+[tool.tomlsort]
+all = true
+in_place = true
+spaces_before_inline_comment = 2  # Match Python PEP 8
+spaces_indent_inline_array = 4  # Match Python PEP 8
+trailing_comma_inline_array = true
