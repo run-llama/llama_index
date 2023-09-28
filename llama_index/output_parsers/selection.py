@@ -48,7 +48,7 @@ class Answer(DataClassJsonMixin):
 
 
 class SelectionOutputParser(BaseOutputParser):
-    REQUIRED_KEYS = {"choice", "reason"}
+    REQUIRED_KEYS = frozenset(Answer.__annotations__)
 
     def _filter_dict(self, json_dict: dict) -> dict:
         output_dict = json_dict
