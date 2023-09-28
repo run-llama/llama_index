@@ -152,3 +152,52 @@ def test_chat_model_basic(monkeypatch: MonkeyPatch) -> None:
 def test_metadata() -> None:
     llm = LiteLLM(model="gpt-3.5-turbo")
     assert isinstance(llm.metadata.context_window, int)
+
+# Extra local LiteLLM Tests
+
+# from llama_index.llms import LiteLLM, ChatMessage
+
+# message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
+
+# # # deep infra call
+# os.environ["DEEPINFRA_API_KEY"] = "60UsYw6vmDkYMLVLIZ9vRzHhqOmibo0b" # api key
+# os.environ["OPENAI_API_KEY"] = "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"
+
+# llm = LiteLLM(model="gpt-3.5-turbo")
+# chat_response = llm.chat([message])
+# print("gpt-3.5-turbo Chat response\n")
+# print(chat_response)
+# ## streaming requests:
+# # resp = llm.stream_chat([message])
+# # print("\ngpt-3.5-turbo Streaming response\n")
+# # for r in resp:
+# #     print(r.delta, end="")
+
+
+# ####### Deep infra  ######
+# llm = LiteLLM(model="deepinfra/meta-llama/Llama-2-70b-chat-hf")
+# message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
+# chat_response = llm.chat([message])
+# print("\ndeepinfra Chat response\n")
+# print(chat_response)
+
+# print(message)
+# # resp = llm.stream_chat([message])
+# # print("\ndeepinfra Streaming response\n")
+# # for r in resp:
+# #     print(r.delta, end="")
+
+# os.environ["HUGGINGFACE_API_KEY"] = "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" # api key
+# llm = LiteLLM(
+#     model="huggingface/glaiveai/glaive-coder-7b", 
+#     api_base="https://wjiegasee9bmqke2.us-east-1.aws.endpoints.huggingface.cloud"
+# )
+# message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
+# chat_response = llm.chat([message])
+# print("\nHF Chat response\n")
+# print(chat_response)
+
+# # resp = llm.stream_chat([message])
+# # print("\nHF Streaming response\n")
+# # for r in resp:
+# #     print(r.delta, end="")
