@@ -93,7 +93,7 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
             evaluation_steps=self.evaluation_steps,
         )
 
-    def get_finetuned_model(self, **model_kwargs: Any) -> CrossEncoder:
+    def get_finetuned_model(self, **model_kwargs: Any):
         """Gets finetuned model."""
 
         from sentence_transformers.cross_encoder import CrossEncoder
