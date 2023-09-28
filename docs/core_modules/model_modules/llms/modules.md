@@ -43,6 +43,15 @@ maxdepth: 1
 
 ```
 
+## EverlyAI
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/everlyai.ipynb
+```
+
+
 ## LiteLLM
 ```{toctree}
 ---

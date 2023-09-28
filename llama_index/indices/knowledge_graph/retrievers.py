@@ -4,7 +4,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-from llama_index.bridge.langchain import print_text
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
@@ -15,7 +14,7 @@ from llama_index.prompts import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TextNode
 from llama_index.storage.storage_context import StorageContext
-from llama_index.utils import truncate_text
+from llama_index.utils import truncate_text, print_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 DEFAULT_NODE_SCORE = 1000.0
@@ -689,15 +688,17 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             "kg_rel_map": rel_map,
             "kg_rel_text": knowledge_sequence,
         }
+        metadata_keys = ["kg_rel_map", "kg_rel_text"]
         if self._graph_schema != "":
             rel_node_info["kg_schema"] = {"schema": self._graph_schema}
+            metadata_keys.append("kg_schema")
         node = NodeWithScore(
             node=TextNode(
                 text=context_string,
                 score=1.0,
                 metadata=rel_node_info,
-                excluded_embed_metadata_keys=["kg_rel_map", "kg_rel_text"],
-                excluded_llm_metadata_keys=["kg_rel_map", "kg_rel_text"],
+                excluded_embed_metadata_keys=metadata_keys,
+                excluded_llm_metadata_keys=metadata_keys,
             )
         )
         return [node]
