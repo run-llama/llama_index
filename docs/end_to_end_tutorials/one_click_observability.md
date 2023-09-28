@@ -94,6 +94,42 @@ maxdepth: 1
 /examples/callbacks/WandbCallbackHandler.ipynb
 ```
 
+### Arize Phoenix
+
+Arize [Phoenix](https://github.com/Arize-ai/phoenix) provides MLOps and LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
+
+- LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
+- LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
+
+#### Usage Pattern
+
+```python
+# Phoenix can display in real time the traces automatically 
+# collected from your LlamaIndex application.
+import phoenix as px
+# Look for a URL in the output to open the App in a browser.
+px.launch_app()
+# The App is initially empty, but as you proceed with the steps below,
+# traces will appear automatically as your LlamaIndex application runs.
+
+import llama_index
+llama_index.set_global_handler("arize_phoenix")
+
+# Run all of your LlamaIndex applications as usual and traces
+# will be collected and displayed in Phoenix.
+...
+```
+
+![](/_static/integrations/arize_phoenix.png)
+
+#### Guides
+```{toctree}
+---
+maxdepth: 1
+---
+LlamaIndex Tracing Tutorial <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb>
+```
+
 ### OpenInference
 
 [OpenInference](https://github.com/Arize-ai/open-inference-spec) is an open standard for capturing and storing AI model inferences. It enables experimentation, visualization, and evaluation of LLM applications using LLM observability solutions such as [Phoenix](https://github.com/Arize-ai/phoenix).
