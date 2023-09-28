@@ -86,12 +86,14 @@ class MarkdownNodeParser(NodeParser):
         markdown_nodes = []
         lines = text.split("\n")
         metadata: dict[str, str] = {}
-
+        code_block = False
         current_section = ""
 
         for line in lines:
+            if line.startswith("```"):
+                code_block = not code_block
             header_match = re.match(r"^(#+)\s(.*)", line)
-            if header_match:
+            if header_match and not code_block:
                 if current_section != "":
                     markdown_nodes.append(
                         self._build_node_from_split(
@@ -112,7 +114,7 @@ class MarkdownNodeParser(NodeParser):
         return markdown_nodes
 
     def _update_metadata(
-        self, headers: dict, new_header: str, new_header_level: int
+        self, headers_metadata: dict, new_header: str, new_header_level: int
     ) -> dict:
         """Update the markdown headers for metadata
 
@@ -123,8 +125,8 @@ class MarkdownNodeParser(NodeParser):
 
         for i in range(1, new_header_level):
             key = f"Header {i}"
-            if key in headers:
-                updated_headers[key] = headers[key]
+            if key in headers_metadata:
+                updated_headers[key] = headers_metadata[key]
 
         updated_headers[f"Header {new_header_level}"] = new_header
         return updated_headers
