@@ -1,7 +1,7 @@
-from typing import Any, Dict, Generator, Optional, Tuple, Type, Union, cast
+from typing import (Any, Dict, Generator, List, Optional, Tuple, Type, Union,
+                    cast)
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import to_openai_function
@@ -81,9 +81,9 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             )
 
         if prompt is None and prompt_template_str is None:
-            raise ValueError("Must provide either prompt or prompt_template_str.")
+            raise ValueError("Must provide either prompt or prompt_template_str or messages.")
         if prompt is not None and prompt_template_str is not None:
-            raise ValueError("Must provide either prompt or prompt_template_str.")
+            raise ValueError("Must provide either prompt or prompt_template_str or messages.")
         if prompt_template_str is not None:
             prompt = PromptTemplate(prompt_template_str)
         function_call = function_call or _default_function_call(output_cls)
@@ -101,22 +101,23 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
     def __call__(
         self,
+        messages: List[ChatMessage] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        formatted_prompt = self._prompt.format(**kwargs)
+        messages = [ChatMessage(role=MessageRole.USER, content=self._prompt.format(**kwargs))] if messages is None else messages
 
         openai_fn_spec = to_openai_function(self._output_cls)
 
         chat_response = self._llm.chat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=self._function_call,
         )
         message = chat_response.message
         if "function_call" not in message.additional_kwargs:
             raise ValueError(
-                "Expected function call in ai_message.additional_kwargs, "
+                "Expected function call in message.additional_kwargs, "
                 "but none found."
             )
 

@@ -1,7 +1,6 @@
 from typing import Any, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.output_parsers.pydantic import PydanticOutputParser
@@ -28,7 +27,6 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
-
         self._prompt.output_parser = output_parser
 
     @classmethod

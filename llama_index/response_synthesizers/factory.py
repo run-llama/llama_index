@@ -1,28 +1,27 @@
-from typing import Optional, Callable
+from typing import Callable, Optional, Type
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.service_context import ServiceContext
+from llama_index.program.base_program import BasePydanticProgram
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_REFINE_PROMPT_SEL,
-    DEFAULT_TEXT_QA_PROMPT_SEL,
-    DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
-)
-from llama_index.prompts.prompts import PromptTemplate
+    DEFAULT_REFINE_PROMPT_SEL, DEFAULT_TEXT_QA_PROMPT_SEL,
+    DEFAULT_TREE_SUMMARIZE_PROMPT_SEL)
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
+from llama_index.prompts.prompts import PromptTemplate
 from llama_index.response_synthesizers.accumulate import Accumulate
 from llama_index.response_synthesizers.base import BaseSynthesizer
-from llama_index.types import BasePydanticProgram
-from llama_index.response_synthesizers.compact_and_accumulate import (
-    CompactAndAccumulate,
-)
-from llama_index.response_synthesizers.compact_and_refine import CompactAndRefine
+from llama_index.response_synthesizers.compact_and_accumulate import \
+    CompactAndAccumulate
+from llama_index.response_synthesizers.compact_and_refine import \
+    CompactAndRefine
 from llama_index.response_synthesizers.generation import Generation
 from llama_index.response_synthesizers.no_text import NoText
 from llama_index.response_synthesizers.refine import Refine
 from llama_index.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.response_synthesizers.tree_summarize import TreeSummarize
 from llama_index.response_synthesizers.type import ResponseMode
+from llama_index.types import BaseModel, BasePydanticProgram
 
 
 def get_response_synthesizer(
@@ -38,6 +37,7 @@ def get_response_synthesizer(
     structured_answer_filtering: bool = False,
     program_factory: Optional[Callable[[PromptTemplate], BasePydanticProgram]] = None,
     verbose: bool = False,
+    output_cls: Type[BaseModel] = None,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
 
@@ -77,6 +77,7 @@ def get_response_synthesizer(
             streaming=streaming,
             use_async=use_async,
             verbose=verbose,
+            output_cls=output_cls
         )
     elif response_mode == ResponseMode.SIMPLE_SUMMARIZE:
         return SimpleSummarize(

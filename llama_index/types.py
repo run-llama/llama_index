@@ -1,26 +1,15 @@
-from abc import abstractmethod, ABC
-from typing import (
-    Any,
-    AsyncGenerator,
-    Generator,
-    Generic,
-    List,
-    Protocol,
-    TypeVar,
-    Type,
-    Union,
-    runtime_checkable,
-)
+from abc import ABC, abstractmethod
+from typing import (Any, AsyncGenerator, Generator, Generic, List, Protocol,
+                    Type, TypeVar, Union, runtime_checkable)
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage, MessageRole
-
 
 Model = TypeVar("Model", bound=BaseModel)
 
 TokenGen = Generator[str, None, None]
 TokenAsyncGen = AsyncGenerator[str, None]
-RESPONSE_TEXT_TYPE = Union[str, TokenGen]
+RESPONSE_TEXT_TYPE = Union[Type[BaseModel], str, TokenGen]
 
 
 # TODO: move into a `core` folder

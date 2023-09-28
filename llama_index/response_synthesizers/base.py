@@ -9,12 +9,14 @@ Will support different modes, from 1) stuffing chunks into prompt,
 """
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Type, Union
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+from llama_index.response.schema import (RESPONSE_TYPE, PydanticResponse,
+                                         Response, StreamingResponse)
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -99,16 +101,17 @@ class BaseSynthesizer(ABC):
                 source_nodes=source_nodes,
                 metadata=response_metadata,
             )
-        elif response_str is None or isinstance(response_str, Generator):
+        if response_str is None or isinstance(response_str, Generator):
             return StreamingResponse(
                 response_str,
                 source_nodes=source_nodes,
                 metadata=response_metadata,
             )
-        else:
-            raise ValueError(
-                f"Response must be a string or a generator. Found {type(response_str)}"
-            )
+        if response_str is not None and response_str.__class__.__name__ != 'str':
+            return PydanticResponse(response_str, source_nodes=source_nodes, metadata=response_metadata)
+        raise ValueError(
+            f"Response must be a string or a generator. Found {type(response_str)}"
+        )
 
     def synthesize(
         self,

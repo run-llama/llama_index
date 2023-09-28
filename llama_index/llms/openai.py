@@ -1,41 +1,26 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
-)
+from llama_index.llms.base import (LLM, ChatMessage, ChatResponse,
+                                   ChatResponseAsyncGen, ChatResponseGen,
+                                   CompletionResponse,
+                                   CompletionResponseAsyncGen,
+                                   CompletionResponseGen, LLMMetadata,
+                                   llm_chat_callback, llm_completion_callback)
 from llama_index.llms.generic_utils import (
-    achat_to_completion_decorator,
-    acompletion_to_chat_decorator,
-    astream_chat_to_completion_decorator,
-    astream_completion_to_chat_decorator,
-    chat_to_completion_decorator,
-    completion_to_chat_decorator,
-    stream_chat_to_completion_decorator,
-    stream_completion_to_chat_decorator,
-)
-from llama_index.llms.openai_utils import (
-    acompletion_with_retry,
-    completion_with_retry,
-    from_openai_message_dict,
-    is_chat_model,
-    is_function_calling_model,
-    openai_modelname_to_contextsize,
-    resolve_openai_credentials,
-    to_openai_message_dicts,
-)
+    achat_to_completion_decorator, acompletion_to_chat_decorator,
+    astream_chat_to_completion_decorator, astream_completion_to_chat_decorator,
+    chat_to_completion_decorator, completion_to_chat_decorator,
+    stream_chat_to_completion_decorator, stream_completion_to_chat_decorator)
+from llama_index.llms.openai_utils import (acompletion_with_retry,
+                                           completion_with_retry,
+                                           from_openai_message_dict,
+                                           is_chat_model,
+                                           is_function_calling_model,
+                                           openai_modelname_to_contextsize,
+                                           resolve_openai_credentials,
+                                           to_openai_message_dicts)
 
 
 class OpenAI(LLM):

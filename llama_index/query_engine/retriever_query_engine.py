@@ -9,11 +9,8 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
 from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response_synthesizers import (
-    BaseSynthesizer,
-    ResponseMode,
-    get_response_synthesizer,
-)
+from llama_index.response_synthesizers import (BaseSynthesizer, ResponseMode,
+                                               get_response_synthesizer)
 from llama_index.schema import NodeWithScore
 
 
@@ -174,7 +171,6 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-
             response = self._response_synthesizer.synthesize(
                 query=query_bundle,
                 nodes=nodes,

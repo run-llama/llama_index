@@ -1,30 +1,27 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
-from abc import abstractmethod, ABC
-from typing import Any, List, Optional
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Type
 
 from llama_index.bridge.pydantic import PrivateAttr
-
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import EventPayload, CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.utils import (
-    astream_chat_response_to_tokens,
-    astream_completion_response_to_tokens,
-    stream_chat_response_to_tokens,
-    stream_completion_response_to_tokens,
-)
+    astream_chat_response_to_tokens, astream_completion_response_to_tokens,
+    stream_chat_response_to_tokens, stream_completion_response_to_tokens)
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.generic_utils import messages_to_prompt
+from llama_index.llms.openai import OpenAI
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.prompts.base import (
-    BasePromptTemplate,
-)
+from llama_index.output_parsers.pydantic import PydanticOutputParser
+from llama_index.output_parsers.selection import _escape_curly_braces
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.schema import BaseComponent
-from llama_index.types import TokenAsyncGen, TokenGen
+from llama_index.types import BaseModel, TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
-
 
 class BaseLLMPredictor(BaseComponent, ABC):
     """Base LLM Predictor."""
@@ -132,22 +129,39 @@ class LLMPredictor(BaseLLMPredictor):
         ):
             pass
 
-    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate,
+        output_cls: Type[BaseModel] = None,
+                 **prompt_args: Any) -> str:
         """Predict."""
         self._log_template_data(prompt, **prompt_args)
-
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-            chat_response = self._llm.chat(messages)
-            output = chat_response.message.content or ""
+            if output_cls is not None:
+              if isinstance(self._llm, OpenAI):
+                  from llama_index.program.openai_program import \
+                      OpenAIPydanticProgram
+                  program = OpenAIPydanticProgram.from_defaults(output_cls=output_cls, llm=self._llm, prompt=prompt)
+                  print('template', messages)
+                  chat_response = program(messages=messages)
+                  output = chat_response.json()
+            else:
+              chat_response = self._llm.chat(messages)
+              output = chat_response.message.content or ""
             # NOTE: this is an approximation, only for token counting
             formatted_prompt = messages_to_prompt(messages)
         else:
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-            formatted_prompt = self._extend_prompt(formatted_prompt)
-            response = self._llm.complete(formatted_prompt)
-            output = response.text
+            formatted_prompt = _escape_curly_braces(self._extend_prompt(formatted_prompt))
+            if output_cls is not None:
+                from llama_index.program.llm_program import \
+                    LLMTextCompletionProgram
+                program = LLMTextCompletionProgram.from_defaults(output_parser=PydanticOutputParser(output_cls=output_cls), llm=self._llm, prompt=PromptTemplate(template=formatted_prompt, prompt_type=PromptType.SUMMARY))
+                chat_response = program()
+                output = chat_response.json()
+            else:
+              response = self._llm.complete(formatted_prompt)
+              output = response.text
 
         logger.debug(output)
 
