@@ -14,6 +14,7 @@ from llama_index.llms.base import (
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.everlyai import EverlyAI
+from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.konko import Konko
 from llama_index.llms.langchain import LangChainLLM
@@ -54,6 +55,8 @@ __all__ = [
     "MonsterLLM",
     "Anyscale",
     "LiteLLM",
+    "GradientBaseModelLLM",
+    "GradientModelAdapterLLM",
     "Konko",
     "EverlyAI",
 ]
