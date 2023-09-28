@@ -192,18 +192,15 @@ class IngestionPipeline(BaseModel):
         nodes = pipeline(inputs)
 
         if run_embeddings:
-            node_id_to_node = {node.node_id: node for node in nodes}
-            for node in nodes:
-                self.embed_model.queue_text_for_embedding(
-                    node.node_id,
-                    node.get_content(metadata_mode=MetadataMode.EMBED),
-                )
-            ids, embeddings = self.embed_model.get_queued_text_embeddings(
-                show_progress=show_progress
+            texts = [
+                node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
+            ]
+            embeddings = self.embed_model.get_text_embedding_batch(
+                texts, show_progress=show_progress
             )
 
-            for node_id, embedding in zip(ids, embeddings):
-                node_id_to_node[node_id].embedding = embedding
+            for node, embedding in zip(nodes, embeddings):
+                node.embedding = embedding
 
         if self.vector_store is not None:
             self.vector_store.add(
@@ -214,7 +211,7 @@ class IngestionPipeline(BaseModel):
                 ]
             )
 
-        return list(node_id_to_node.values())
+        return nodes
 
     def _build_pipeline(
         self, show_progress: bool = False
