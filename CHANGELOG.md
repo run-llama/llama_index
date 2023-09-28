@@ -17,6 +17,7 @@
 - Fix async streaming with azure (#7856)
 - Avoid `NotImplementedError()` in sub question generator (#7855)
 - Patch predibase initialization (#7859)
+- Bumped min langchain version and changed prompt imports from langchain (#7862)
 
 ## [0.8.35] - 2023-09-27
 
