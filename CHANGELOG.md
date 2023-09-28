@@ -1,6 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.36] - 2023-09-27
+
+### New Features
+- add "build RAG from scratch notebook" - OSS/local  (#7864)
 
 ### Bug Fixes / Nits
 - Fix elasticsearch hybrid scoring (#7852)
