@@ -29,6 +29,7 @@ install_requires = [
     "beautifulsoup4",  # hotfix for langchain 0.0.212 bug
     "nest_asyncio",
     "nltk",
+    "tree_sitter_languages",
 ]
 
 setup(

@@ -83,11 +83,13 @@ class StreamingResponse:
         else:
             print(self.response_txt)
 
-    def get_formatted_sources(self, length: int = 100) -> str:
+    def get_formatted_sources(self, length: int = 100, trim_text: int = True) -> str:
         """Get formatted sources text."""
         texts = []
         for source_node in self.source_nodes:
-            fmt_text_chunk = truncate_text(source_node.node.get_content(), length)
+            fmt_text_chunk = source_node.node.get_content()
+            if trim_text:
+                fmt_text_chunk = truncate_text(fmt_text_chunk, length)
             node_id = source_node.node.node_id or "None"
             source_text = f"> Source (Node id: {node_id}): {fmt_text_chunk}"
             texts.append(source_text)
