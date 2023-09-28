@@ -64,6 +64,7 @@ class LiteLLM(LLM):
         max_retries: int = 10,
         api_key: Optional[str] = None,
         api_type: Optional[str] = None,
+        api_base: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -81,6 +82,8 @@ class LiteLLM(LLM):
             additional_kwargs["api_key"] = api_key
         if api_type is not None:
             additional_kwargs["api_type"] = api_type
+        if api_base is not None:
+            additional_kwargs["api_base"] = api_base
 
         super().__init__(
             model=model,
@@ -118,10 +121,7 @@ class LiteLLM(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        if self._is_chat_model:
-            chat_fn = self._chat
-        else:
-            chat_fn = completion_to_chat_decorator(self._complete)
+        chat_fn = self._chat # default to chat for all, litellm expects all llms to be chat
         return chat_fn(messages, **kwargs)
 
     @llm_chat_callback()
@@ -136,10 +136,9 @@ class LiteLLM(LLM):
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        if self._is_chat_model:
-            complete_fn = chat_to_completion_decorator(self._chat)
-        else:
-            complete_fn = self._complete
+        # litellm assumes all llms are chat llms
+        complete_fn = chat_to_completion_decorator(self._chat)
+
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
@@ -174,11 +173,11 @@ class LiteLLM(LLM):
         }
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        if not self._is_chat_model:
-            raise ValueError("This model is not a chat model.")
-
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if "max_tokens" in all_kwargs and all_kwargs["max_tokens"] == None:
+            all_kwargs.pop("max_tokens") # don't send max_tokens == None, this throws errors for Non OpenAI providers
+
         response = completion_with_retry(
             is_chat_model=self._is_chat_model,
             max_retries=self.max_retries,
@@ -203,6 +202,8 @@ class LiteLLM(LLM):
 
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if "max_tokens" in all_kwargs and all_kwargs["max_tokens"] == None:
+            all_kwargs.pop("max_tokens") # don't send max_tokens == None, this throws errors for Non OpenAI providers
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -248,28 +249,19 @@ class LiteLLM(LLM):
         return gen()
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        if self._is_chat_model:
-            raise ValueError("This model is a chat model.")
-
         all_kwargs = self._get_all_kwargs(**kwargs)
         if self.max_tokens is None:
             # NOTE: non-chat completion endpoint requires max_tokens to be set
             max_tokens = self._get_max_token_for_prompt(prompt)
             all_kwargs["max_tokens"] = max_tokens
-
-        response = completion_with_retry(
-            is_chat_model=self._is_chat_model,
-            max_retries=self.max_retries,
-            prompt=prompt,
-            stream=False,
-            **all_kwargs,
-        )
-        text = response["choices"][0]["text"]
-        return CompletionResponse(
-            text=text,
-            raw=response,
-            additional_kwargs=self._get_response_token_counts(response),
-        )
+        
+        messages = [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+        return self._chat(messages, **all_kwargs)
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         if self._is_chat_model:
@@ -309,7 +301,10 @@ class LiteLLM(LLM):
                 "Please install tiktoken to use the max_tokens=None feature."
             )
         context_window = self.metadata.context_window
-        encoding = tiktoken.encoding_for_model(self._get_model_name())
+        try:
+            encoding = tiktoken.encoding_for_model(self._get_model_name())
+        except:
+            encoding = encoding = tiktoken.get_encoding("cl100k_base") # default to using cl10k_base
         tokens = encoding.encode(prompt)
         max_token = context_window - len(tokens)
         if max_token <= 0:
