@@ -1,16 +1,18 @@
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
-help: ## Show all Makefile targets
+
+help:	## Show all Makefile targets.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: format lint
-format: ## Run code formatter: black
+format:	## Run code autoformatters (black).
 	black .
+
 lint: ## Run linters: mypy, black, codespell, ruff
 	mypy .
-	black . --check
+	pre-commit run --all-files
 	codespell .
-	ruff check .
-test: ## Run tests
+
+test:	## Run tests via pytest.
 	pytest tests
-watch-docs: ## Build and watch documentation
+
+watch-docs:	## Build and watch documentation.
 	sphinx-autobuild docs/ docs/_build/html --open-browser --watch $(GIT_ROOT)/llama_index/
