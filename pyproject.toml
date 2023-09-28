@@ -8,10 +8,9 @@ ignore-words-list = "ot"
 skip = "./.git,./*venv,./docs,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt"
 
 [tool.mypy]
-disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
-exclude = ["build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
+disallow_untyped_defs = true
+exclude = ["notebooks", "build", "examples"]
 
 [tool.ruff]
 exclude = [
