@@ -51,19 +51,13 @@ class SelectionOutputParser(BaseOutputParser):
     REQUIRED_KEYS = frozenset(Answer.__annotations__)
 
     def _filter_dict(self, json_dict: dict) -> dict:
+        """Filter recursively until a dictionary matches all REQUIRED_KEYS."""
         output_dict = json_dict
         for key, val in json_dict.items():
             if key in self.REQUIRED_KEYS:
                 continue
             elif isinstance(val, dict):
-                found = True
-                for key in self.REQUIRED_KEYS:
-                    if key not in val:
-                        found = False
-                        break
-                if found:
-                    output_dict = val
-                    break
+                output_dict = self._filter_dict(val)
             elif isinstance(val, list):
                 for item in val:
                     if isinstance(item, dict):
