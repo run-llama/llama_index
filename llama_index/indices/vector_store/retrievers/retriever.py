@@ -139,7 +139,7 @@ class VectorIndexRetriever(BaseRetriever):
                     source_node is not None and source_node.node_type != ObjectType.TEXT
                 ):
                     node_id = query_result.nodes[i].node_id
-                    if node_id in self._docstore.docs:
+                    if self._docstore.document_exists(node_id):
                         query_result.nodes[
                             i
                         ] = self._docstore.get_node(  # type: ignore[index]
