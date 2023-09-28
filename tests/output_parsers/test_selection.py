@@ -15,12 +15,26 @@ def test_format(output_parser: SelectionOutputParser) -> None:
     new_test_template.format(field="field")
 
 
-def test_parse(output_parser: SelectionOutputParser) -> None:
-    output = """[
-        {"choice": 1, "reason": "just because"},
-        {"choice": 2, "reason": "why not"}
-    ]
-    """
+@pytest.mark.parametrize(
+    "output",
+    [
+        pytest.param(
+            """[
+    {"choice": 1, "reason": "just because"},
+    {"choice": 2, "reason": "why not"}
+]""",
+            id="single_curly",
+        ),
+        pytest.param(
+            """[
+    {{"choice": 1, "reason": "just because"}},
+    {{"choice": 2, "reason": "why not"}}
+]""",
+            id="double_curly",
+        ),
+    ],
+)
+def test_parse(output_parser: SelectionOutputParser, output: str) -> None:
     parsed = output_parser.parse(output=output)
     assert isinstance(parsed, StructuredOutput)
     assert isinstance(parsed.parsed_output, list)
