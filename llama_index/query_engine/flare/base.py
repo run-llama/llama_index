@@ -4,7 +4,6 @@ Active Retrieval Augmented Generation.
 
 """
 
-from llama_index.bridge.langchain import print_text
 from typing import Optional
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
@@ -20,6 +19,7 @@ from llama_index.query_engine.flare.answer_inserter import (
     BaseLookaheadAnswerInserter,
     LLMLookaheadAnswerInserter,
 )
+from llama_index.utils import print_text
 
 
 # These prompts are taken from the FLARE repo:
