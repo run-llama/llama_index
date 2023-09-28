@@ -1,7 +1,8 @@
 import langchain
 
 # prompts
-from langchain import BasePromptTemplate, PromptTemplate
+from langchain.prompts import PromptTemplate
+from langchain.schema.prompt_template import BasePromptTemplate
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 
 # agents and tools
@@ -50,7 +51,6 @@ from langchain.schema import (
 
 # misc
 from langchain.sql_database import SQLDatabase
-from langchain.input import get_color_mapping, print_text
 
 # input & output
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
@@ -90,8 +90,6 @@ __all__ = [
     "Tool",
     "BaseTool",
     "ResponseSchema",
-    "print_text",
-    "get_color_mapping",
     "BaseCallbackHandler",
     "BaseCallbackManager",
     "AIMessage",

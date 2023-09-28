@@ -1,6 +1,7 @@
 """Test utils."""
 
 from typing import Optional, Type, Union
+from _pytest.capture import CaptureFixture
 
 import pytest
 
@@ -9,6 +10,11 @@ from llama_index.utils import (
     globals_helper,
     retry_on_exceptions_with_backoff,
     iter_batch,
+    get_color_mapping,
+    _get_colored_text,
+    print_text,
+    _LLAMA_INDEX_COLORS,
+    _ANSI_COLORS,
 )
 
 
@@ -109,3 +115,64 @@ def test_iter_batch() -> None:
     assert list(iter_batch(gen, 3)) == [[0, 1, 2], [3, 4]]
 
     assert list(iter_batch([], 3)) == []
+
+
+def test_get_color_mapping() -> None:
+    """Test get_color_mapping function."""
+    items = ["item1", "item2", "item3", "item4"]
+    color_mapping = get_color_mapping(items)
+    assert len(color_mapping) == len(items)
+    assert set(color_mapping.keys()) == set(items)
+    assert all(color in _LLAMA_INDEX_COLORS for color in color_mapping.values())
+
+    color_mapping_ansi = get_color_mapping(items, use_llama_index_colors=False)
+    assert len(color_mapping_ansi) == len(items)
+    assert set(color_mapping_ansi.keys()) == set(items)
+    assert all(color in _ANSI_COLORS for color in color_mapping_ansi.values())
+
+
+def test_get_colored_text() -> None:
+    """Test _get_colored_text function."""
+    text = "Hello, world!"
+    for color in _LLAMA_INDEX_COLORS:
+        colored_text = _get_colored_text(text, color)
+        assert colored_text.startswith("\033[1;3;")
+        assert colored_text.endswith("m" + text + "\033[0m")
+
+    for color in _ANSI_COLORS:
+        colored_text = _get_colored_text(text, color)
+        assert colored_text.startswith("\033[1;3;")
+        assert colored_text.endswith("m" + text + "\033[0m")
+
+    # Test with an unsupported color
+    colored_text = _get_colored_text(text, "unsupported_color")
+    assert colored_text == f"\033[1;3m{text}\033[0m"  # just bolded and italicized
+
+
+def test_print_text(capsys: CaptureFixture) -> None:
+    """Test print_text function."""
+    text = "Hello, world!"
+    for color in _LLAMA_INDEX_COLORS:
+        print_text(text, color)
+        captured = capsys.readouterr()
+        assert captured.out == f"\033[1;3;{_LLAMA_INDEX_COLORS[color]}m{text}\033[0m"
+
+    for color in _ANSI_COLORS:
+        print_text(text, color)
+        captured = capsys.readouterr()
+        assert captured.out == f"\033[1;3;{_ANSI_COLORS[color]}m{text}\033[0m"
+
+    # Test with an unsupported color
+    print_text(text, "unsupported_color")
+    captured = capsys.readouterr()
+    assert captured.out == f"\033[1;3m{text}\033[0m"
+
+    # Test without color
+    print_text(text)
+    captured = capsys.readouterr()
+    assert captured.out == f"{text}"
+
+    # Test with end
+    print_text(text, end=" ")
+    captured = capsys.readouterr()
+    assert captured.out == f"{text} "

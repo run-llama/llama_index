@@ -34,6 +34,8 @@ class QueryBundle(DataClassJsonMixin):
     def embedding_strs(self) -> List[str]:
         """Use custom embedding strs if specified, otherwise use query str."""
         if self.custom_embedding_strs is None:
+            if len(self.query_str) == 0:
+                return []
             return [self.query_str]
         else:
             return self.custom_embedding_strs

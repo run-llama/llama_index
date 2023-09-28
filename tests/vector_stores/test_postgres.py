@@ -159,6 +159,8 @@ async def test_instance_creation(db: None) -> None:
         table_name=TEST_TABLE_NAME,
     )
     assert isinstance(pg, PGVectorStore)
+    assert not hasattr(pg, "_engine")
+    assert pg.client is None
     await pg.close()
 
 
@@ -173,6 +175,7 @@ async def test_add_to_db_and_query(
     else:
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
     q = VectorStoreQuery(query_embedding=_get_sample_vector(1.0), similarity_top_k=1)
     if use_async:
         res = await pg.aquery(q)
@@ -194,6 +197,7 @@ async def test_add_to_db_and_query_with_metadata_filters(
     else:
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
     filters = MetadataFilters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
     )
@@ -220,6 +224,7 @@ async def test_add_to_db_query_and_delete(
     else:
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
 
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.1), similarity_top_k=1)
 
@@ -243,6 +248,7 @@ async def test_save_load(
     else:
         pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
 
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.1), similarity_top_k=1)
 
@@ -258,6 +264,7 @@ async def test_save_load(
     await pg.close()
 
     loaded_pg = cast(PGVectorStore, load_vector_store(pg_dict))
+    assert not hasattr(loaded_pg, "_engine")
     loaded_pg_dict = loaded_pg.to_dict()
     for key, val in pg.to_dict().items():
         assert loaded_pg_dict[key] == val
@@ -266,6 +273,7 @@ async def test_save_load(
         res = await loaded_pg.aquery(q)
     else:
         res = loaded_pg.query(q)
+    assert hasattr(loaded_pg, "_engine")
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "bbb"
@@ -286,6 +294,7 @@ async def test_sparse_query(
     else:
         pg_hybrid.add(hybrid_node_embeddings)
     assert isinstance(pg_hybrid, PGVectorStore)
+    assert hasattr(pg_hybrid, "_engine")
 
     # text search should work when query is a sentence and not just a single word
     q = VectorStoreQuery(
@@ -318,6 +327,7 @@ async def test_hybrid_query(
     else:
         pg_hybrid.add(hybrid_node_embeddings)
     assert isinstance(pg_hybrid, PGVectorStore)
+    assert hasattr(pg_hybrid, "_engine")
 
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
@@ -389,6 +399,7 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
     else:
         pg_hybrid.add(hybrid_node_embeddings)
     assert isinstance(pg_hybrid, PGVectorStore)
+    assert hasattr(pg_hybrid, "_engine")
     filters = MetadataFilters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
     )

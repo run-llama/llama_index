@@ -27,12 +27,22 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
     _embed_model: BaseEmbedding = PrivateAttr()
     _tokenizer_fn: Callable[[str], List[str]] = PrivateAttr()
 
+    context_before: Optional[int] = Field(
+        description="Number of sentences before retrieved sentence for further context"
+    )
+
+    context_after: Optional[int] = Field(
+        description="Number of sentences after retrieved sentence for further context"
+    )
+
     def __init__(
         self,
         embed_model: Optional[BaseEmbedding] = None,
         percentile_cutoff: Optional[float] = None,
         threshold_cutoff: Optional[float] = None,
         tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
+        context_before: Optional[int] = None,
+        context_after: Optional[int] = None,
     ):
         """Optimizer class that is passed into BaseGPTIndexQuery.
 
@@ -81,6 +91,8 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         super().__init__(
             percentile_cutoff=percentile_cutoff,
             threshold_cutoff=threshold_cutoff,
+            context_after=context_after,
+            context_before=context_before,
         )
 
     @classmethod
@@ -129,7 +141,23 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             if len(top_idxs) == 0:
                 raise ValueError("Optimizer returned zero sentences.")
 
-            top_sentences = [split_text[idx] for idx in top_idxs]
+            rangeMin, rangeMax = 0, len(split_text)
+
+            if self.context_before is None:
+                self.context_before = 1
+            if self.context_after is None:
+                self.context_after = 1
+
+            top_sentences = [
+                " ".join(
+                    split_text[
+                        max(idx - self.context_before, rangeMin) : min(
+                            idx + self.context_after + 1, rangeMax
+                        )
+                    ]
+                )
+                for idx in top_idxs
+            ]
 
             logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
             if logger.isEnabledFor(logging.DEBUG):

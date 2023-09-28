@@ -185,8 +185,7 @@ from typing import Optional, List, Mapping, Any
 
 from llama_index import (
     ServiceContext, 
-    SimpleDirectoryReader, 
-    LangchainEmbedding, 
+    SimpleDirectoryReader,
     SummaryIndex
 )
 from llama_index.callbacks import CallbackManager
@@ -237,6 +236,7 @@ llm = OurLLM()
 
 service_context = ServiceContext.from_defaults(
     llm=llm, 
+    embed_model="local:BAAI/bge-base-en-v1.5",
     context_window=context_window, 
     num_output=num_output
 )

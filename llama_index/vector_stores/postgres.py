@@ -96,6 +96,7 @@ class PGVectorStore(BasePydanticVectorStore):
     embed_dim: int
     hybrid_search: bool
     text_search_config: str
+    debug: bool
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
@@ -103,6 +104,7 @@ class PGVectorStore(BasePydanticVectorStore):
     _session: Any = PrivateAttr()
     _async_engine: Any = PrivateAttr()
     _async_session: Any = PrivateAttr()
+    _is_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -112,6 +114,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        debug: bool = False,
     ) -> None:
         try:
             import sqlalchemy  # noqa: F401
@@ -152,13 +155,13 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            debug=debug,
         )
 
-        self._connect()
-        self._create_extension()
-        self._create_tables_if_not_exists()
-
     async def close(self) -> None:
+        if not self._is_initialized:
+            return None
+
         self._session.close_all()
         self._engine.dispose()
 
@@ -182,6 +185,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        debug: bool = False,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = (
@@ -198,10 +202,13 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            debug=debug,
         )
 
     @property
     def client(self) -> Any:
+        if not self._is_initialized:
+            return None
         return self._engine
 
     def _connect(self) -> Any:
@@ -210,7 +217,7 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.ext.asyncio import create_async_engine
         from sqlalchemy.ext.asyncio import async_sessionmaker
 
-        self._engine = create_engine(self.connection_string)
+        self._engine = create_engine(self.connection_string, echo=self.debug)
         self._session = sessionmaker(self._engine)
 
         self._async_engine = create_async_engine(self.async_connection_string)
@@ -230,6 +237,13 @@ class PGVectorStore(BasePydanticVectorStore):
                 session.execute(statement)
                 session.commit()
 
+    def _initialize(self) -> None:
+        if not self._is_initialized:
+            self._connect()
+            self._create_extension()
+            self._create_tables_if_not_exists()
+            self._is_initialized = True
+
     def _node_to_table_row(self, node: BaseNode) -> Any:
         return self._table_class(
             node_id=node.node_id,
@@ -243,6 +257,7 @@ class PGVectorStore(BasePydanticVectorStore):
         )
 
     def add(self, nodes: List[BaseNode]) -> List[str]:
+        self._initialize()
         ids = []
         with self._session() as session:
             with session.begin():
@@ -254,6 +269,7 @@ class PGVectorStore(BasePydanticVectorStore):
         return ids
 
     async def async_add(self, nodes: List[BaseNode]) -> List[str]:
+        self._initialize()
         ids = []
         async with self._async_session() as session:
             async with session.begin():
@@ -475,6 +491,7 @@ class PGVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
+        self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
             results = await self._async_hybrid_query(query)
         elif query.mode in [
@@ -495,6 +512,7 @@ class PGVectorStore(BasePydanticVectorStore):
         return self._db_rows_to_query_result(results)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
             results = self._hybrid_query(query)
         elif query.mode in [
@@ -517,6 +535,7 @@ class PGVectorStore(BasePydanticVectorStore):
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         import sqlalchemy
 
+        self._initialize()
         with self._session() as session:
             with session.begin():
                 stmt = sqlalchemy.text(

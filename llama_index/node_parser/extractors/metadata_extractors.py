@@ -33,6 +33,7 @@ from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode, MetadataMode
 from llama_index.utils import get_tqdm_iterable
+from llama_index.types import BasePydanticProgram
 
 
 class MetadataFeatureExtractor(BaseExtractor):
@@ -709,5 +710,65 @@ class EntityExtractor(MetadataFeatureExtractor):
         for metadata in metadata_list:
             for key, val in metadata.items():
                 metadata[key] = list(val)
+
+        return metadata_list
+
+
+DEFAULT_EXTRACT_TEMPLATE_STR = """\
+Here is the content of the section:
+----------------
+{context_str}
+----------------
+Given the contextual information, extract out a {class_name} object.\
+"""
+
+
+class PydanticProgramExtractor(MetadataFeatureExtractor):
+    """Pydantic program extractor.
+
+    Uses an LLM to extract out a Pydantic object. Return attributes of that object
+    in a dictionary.
+
+    """
+
+    program: BasePydanticProgram = Field(
+        ..., description="Pydantic program to extract."
+    )
+    input_key: str = Field(
+        default="input",
+        description=(
+            "Key to use as input to the program (the program "
+            "template string must expose this key).",
+        ),
+    )
+    extract_template_str: str = Field(
+        default=DEFAULT_EXTRACT_TEMPLATE_STR,
+        description="Template to use for extraction.",
+    )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "PydanticModelExtractor"
+
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        """Extract pydantic program."""
+
+        metadata_list: List[Dict] = []
+        nodes_queue = get_tqdm_iterable(
+            nodes, self.show_progress, "Extracting Pydantic object"
+        )
+        for node in nodes_queue:
+            if self.is_text_node_only and not isinstance(node, TextNode):
+                metadata_list.append({})
+                continue
+            extract_str = self.extract_template_str.format(
+                context_str=node.get_content(metadata_mode=self.metadata_mode),
+                class_name=self.program.output_cls.__name__,
+            )
+
+            object = self.program(**{self.input_key: extract_str})
+            fields_and_values = object.dict()
+            metadata_list.append(fields_and_values)
 
         return metadata_list

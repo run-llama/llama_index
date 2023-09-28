@@ -8,7 +8,7 @@ from torch.optim import Optimizer
 import transformers
 from tqdm.autonotebook import trange
 from llama_index.embeddings.adapter_utils import BaseAdapter
-from llama_index.bridge.langchain import print_text
+from llama_index.utils import print_text
 
 from sentence_transformers.util import cos_sim
 

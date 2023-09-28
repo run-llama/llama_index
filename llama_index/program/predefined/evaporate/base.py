@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Type, Optional, Generic
 from abc import abstractmethod
 
 from llama_index.program.predefined.evaporate.extractor import EvaporateExtractor
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 from llama_index.program.predefined.df import (
     DataFrameRowsOnly,
     DataFrameRow,
@@ -19,7 +19,7 @@ from llama_index.program.predefined.evaporate.prompts import (
 )
 import pandas as pd
 from llama_index.types import Model
-from llama_index.bridge.langchain import print_text
+from llama_index.utils import print_text
 
 
 logger = logging.getLogger(__name__)
