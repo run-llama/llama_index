@@ -8,6 +8,8 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
+from pymongo import MongoClient
+
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -49,7 +51,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def __init__(
         self,
-        mongodb_client: Optional[Any] = None,
+        mongodb_client: Optional[MongoClient] = None,
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         index_name: str = "default",
@@ -68,9 +70,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
             collection_name: A MongoDB collection name.
             index_name: A MongoDB Atlas Vector Search index name.
             id_key: The data field to use as the id.
-            embedding_key: A MongoDB field that will contain the embedding for each document.
+            embedding_key: A MongoDB field that will contain
+            the embedding for each document.
             text_key: A MongoDB field that will contain the text for each document.
-            metadata_key: A MongoDB field that will contain the metadata for each document.
+            metadata_key: A MongoDB field that will contain
+            the metadata for each document.
             insert_kwargs: The kwargs used during `insert`.
         """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
@@ -152,7 +156,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return self._mongodb_client
 
     def _query_vectorsearch(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-        params: dict[str, Any] = {
+        params: Dict[str, Any] = {
             "queryVector": query.query_embedding,
             "path": self._embedding_key,
             "numCandidates": query.similarity_top_k * 10,
@@ -168,7 +172,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return self._query(query_field, search_field)
 
     def _query_search(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-        knn_beta: dict[str, Any] = {
+        knn_beta: Dict[str, Any] = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
             "k": query.similarity_top_k,
@@ -187,7 +191,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return self._query(query_field, search_field)
 
     def _query(
-        self, query: dict[str, Any], search_field: str
+        self, query: Dict[str, Any], search_field: str
     ) -> VectorStoreQueryResult:
         pipeline = [
             query,
