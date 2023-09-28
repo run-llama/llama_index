@@ -16,13 +16,14 @@ def test_format(output_parser: SelectionOutputParser) -> None:
 
 
 @pytest.mark.parametrize(
-    "output",
+    ("output", "num_match"),
     [
         pytest.param(
             """[
     {"choice": 1, "reason": "just because"},
     {"choice": 2, "reason": "why not"}
 ]""",
+            2,
             id="single_curly",
         ),
         pytest.param(
@@ -30,15 +31,37 @@ def test_format(output_parser: SelectionOutputParser) -> None:
     {{"choice": 1, "reason": "just because"}},
     {{"choice": 2, "reason": "why not"}}
 ]""",
+            2,
             id="double_curly",
+        ),
+        pytest.param(
+            """{{
+  "type": "array",
+  "items": {{
+    "type": "object",
+    "properties": {{
+      "choice": 1,
+      "reason": "just because"
+    }},
+    "required": [
+      "choice",
+      "reason"
+    ],
+    "additionalProperties": false
+  }}
+}}""",
+            1,
+            id="boss_fight",
         ),
     ],
 )
-def test_parse(output_parser: SelectionOutputParser, output: str) -> None:
+def test_parse(
+    output_parser: SelectionOutputParser, output: str, num_match: int
+) -> None:
     parsed = output_parser.parse(output=output)
     assert isinstance(parsed, StructuredOutput)
     assert isinstance(parsed.parsed_output, list)
-    assert len(parsed.parsed_output) == 2
+    assert len(parsed.parsed_output) == num_match
     assert parsed.parsed_output[0].choice == 1
     assert parsed.parsed_output[0].reason == "just because"
 
