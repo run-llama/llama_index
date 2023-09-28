@@ -243,17 +243,13 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
-        # Find and remove SQLResult part
-        sql_result_start = response.find("SQLResult:")
         sql_query_start = response.find("SQLQuery:")
-        if sql_result_start != -1 and sql_query_start != -1:
-            response = response[sql_query_start + 1 : sql_result_start].lstrip(
-                "SQLQuery:"
-            )
-        elif sql_result_start != -1:
+        if sql_query_start != -1:
+            response = response[sql_query_start:].removeprefix("SQLQuery:")
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
             response = response[:sql_result_start]
-        result_response = response.strip()
-        return result_response
+        return response.strip()
 
     @abstractmethod
     def _get_table_context(self, query_bundle: QueryBundle) -> str:

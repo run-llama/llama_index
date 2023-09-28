@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Simplify NL SQL response to SQL parsing, with expanded NL SQL prompt (#7868)
+
 ## [0.8.36] - 2023-09-27
 
 ### New Features
