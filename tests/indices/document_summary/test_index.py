@@ -1,4 +1,5 @@
-"""Test document summary index.""" ""
+"""Test document summary index."""
+
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.schema import Document
