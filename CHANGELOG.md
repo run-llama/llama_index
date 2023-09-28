@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Simplify NL SQL response to SQL parsing, with expanded NL SQL prompt (#7868)
+- Improve vector store retrieval speed for vectordb integrations (#7876)
 
 ## [0.8.36] - 2023-09-27
 
