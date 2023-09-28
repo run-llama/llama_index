@@ -78,7 +78,7 @@ class VectorIndexRetriever(BaseRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None:
+            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
                 query_bundle.embedding = (
                     self._service_context.embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
@@ -88,7 +88,7 @@ class VectorIndexRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None:
+            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
                 embed_model = self._service_context.embed_model
                 query_bundle.embedding = (
                     await embed_model.aget_agg_embedding_from_queries(
