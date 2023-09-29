@@ -82,9 +82,8 @@ class SelectionOutputParser(BaseOutputParser):
         return output_json
 
     def parse(self, output: str) -> Any:
-        json_output = _marshal_llm_to_json(output)
         try:
-            json_output = json.loads(json_output)
+            json_output = json.loads(s=_marshal_llm_to_json(output))
         except json.decoder.JSONDecodeError as exc:
             raise ValueError(
                 f"Failed to convert LLM output {output!r} to JSON."
