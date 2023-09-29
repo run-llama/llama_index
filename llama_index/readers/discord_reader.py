@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 async def read_channel(
-    discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool
+    discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool, complete_metadata: bool = False,
 ) -> str:
     """Async read channel.
 
@@ -45,11 +45,12 @@ async def read_channel(
                 thread_dict = {}
                 for thread in channel.threads:
                     thread_dict[thread.id] = thread
-
+                # print(f"channel: {channel}")
                 async for msg in channel.history(
                     limit=limit, oldest_first=oldest_first
                 ):
                     messages.append(msg)
+                    # print(f"message: {msg}")
                     if msg.id in thread_dict:
                         thread = thread_dict[msg.id]
                         async for thread_msg in thread.history(
@@ -66,7 +67,8 @@ async def read_channel(
     client = CustomClient(intents=intents)
     await client.start(discord_token)
 
-    msg_txt_list = [m.content for m in messages]
+    msg_txt_list = [
+        str(m) if complete_metadata else m.content for m in messages]
 
     return "\n\n".join(msg_txt_list)
 
@@ -109,12 +111,13 @@ class DiscordReader(BasePydanticReader):
         return "DiscordReader"
 
     def _read_channel(
-        self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
+        self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True, complete_metadata: bool = False
+
     ) -> str:
         """Read channel."""
         result = asyncio.get_event_loop().run_until_complete(
             read_channel(
-                self.discord_token, channel_id, limit=limit, oldest_first=oldest_first
+                self.discord_token, channel_id, limit=limit, oldest_first=oldest_first, complete_metadata=complete_metadata
             )
         )
         return result
@@ -124,6 +127,7 @@ class DiscordReader(BasePydanticReader):
         channel_ids: List[int],
         limit: Optional[int] = None,
         oldest_first: bool = True,
+        complete_metadata: bool = False
     ) -> List[Document]:
         """Load data from the input directory.
 
@@ -145,8 +149,7 @@ class DiscordReader(BasePydanticReader):
                     f"not {type(channel_id)}."
                 )
             channel_content = self._read_channel(
-                channel_id, limit=limit, oldest_first=oldest_first
-            )
+                channel_id, limit=limit, oldest_first=oldest_first, complete_metadata=complete_metadata)
             results.append(
                 Document(text=channel_content, metadata={"channel": channel_id})
             )
