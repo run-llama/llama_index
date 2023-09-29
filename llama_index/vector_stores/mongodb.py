@@ -152,9 +152,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """Return MongoDB client."""
         return self._mongodb_client
 
-    def _query(
-        self, query: VectorStoreQuery
-    ) -> VectorStoreQueryResult:
+    def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         params: Dict[str, Any] = {
             "queryVector": query.query_embedding,
             "path": self._embedding_key,
@@ -169,7 +167,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         pipeline = [
             query_field,
-            {"$project": {"score": {"$meta": "vectorSearchScore"}, self._embedding_key: 0}},
+            {
+                "$project": {
+                    "score": {"$meta": "vectorSearchScore"},
+                    self._embedding_key: 0,
+                }
+            },
         ]
         logger.debug("Running query pipeline: %s", pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore
