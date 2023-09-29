@@ -1,5 +1,7 @@
 """Test tree index."""
 
+import pytest
+
 from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
@@ -89,6 +91,7 @@ OUTPUTS = [
 ]
 
 
+@pytest.mark.filterwarnings("ignore:coroutine .* was never awaited")
 @patch("llama_index.indices.common_tree.base.run_async_tasks", side_effect=[OUTPUTS])
 def test_build_tree_async(
     _mock_run_async_tasks: Any,

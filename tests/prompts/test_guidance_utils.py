@@ -16,6 +16,7 @@ def test_convert_to_handlebars() -> None:
 
 
 class TestSimpleModel(BaseModel):
+    __test__ = False
     attr0: str
     attr1: str
 
@@ -29,6 +30,7 @@ EXPECTED_SIMPLE_STR = """\
 
 
 class TestNestedModel(BaseModel):
+    __test__ = False
     attr2: List[TestSimpleModel]
 
 
