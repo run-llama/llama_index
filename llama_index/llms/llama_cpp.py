@@ -131,12 +131,14 @@ class LlamaCPP(CustomLLM):
             model_path=model_path,
             model_url=model_url,
             temperature=temperature,
+            context_window=context_window,
             max_new_tokens=max_new_tokens,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             callback_manager=callback_manager,
             generate_kwargs=generate_kwargs,
             model_kwargs=model_kwargs,
+            verbose=verbose,
         )
 
     @classmethod
