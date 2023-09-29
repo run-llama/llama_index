@@ -136,6 +136,7 @@ class DiscordReader(BasePydanticReader):
             limit (Optional[int]): Maximum number of messages to read.
             oldest_first (bool): Whether to read oldest messages first.
                 Defaults to `True`.
+            complete_metadata (bool): Whether to return the complete message metadata in the List.
 
         Returns:
             List[Document]: List of documents.
