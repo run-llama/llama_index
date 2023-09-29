@@ -1,5 +1,4 @@
-from typing import (Any, Dict, Generator, List, Optional, Tuple, Type, Union,
-                    cast)
+from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
@@ -105,7 +104,11 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        messages = [ChatMessage(role=MessageRole.USER, content=self._prompt.format(**kwargs))] if messages is None else messages
+        messages = (
+            [ChatMessage(role=MessageRole.USER, content=self._prompt.format(**kwargs))]
+            if messages is None
+            else messages
+        )
         openai_fn_spec = to_openai_function(self._output_cls)
 
         chat_response = self._llm.chat(

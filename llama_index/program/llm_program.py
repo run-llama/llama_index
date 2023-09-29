@@ -45,9 +45,17 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     ) -> "LLMTextCompletionProgram":
         llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
         if prompt is None and prompt_template_str is None and messages is None:
-            raise ValueError("Must provide either prompt or prompt_template_str or messages.")
-        if prompt is not None and prompt_template_str is not None and messages is not None:
-            raise ValueError("Must provide either prompt or prompt_template_str or messages.")
+            raise ValueError(
+                "Must provide either prompt or prompt_template_str or messages."
+            )
+        if (
+            prompt is not None
+            and prompt_template_str is not None
+            and messages is not None
+        ):
+            raise ValueError(
+                "Must provide either prompt or prompt_template_str or messages."
+            )
         if prompt_template_str is not None:
             prompt = PromptTemplate(prompt_template_str)
 
@@ -67,10 +75,12 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        response_fn = (self._llm.chat
-                      if self._llm.metadata.is_chat_model
-                      else self._llm.complete)
-        formatted_arg = self._prompt.format(**kwargs) if self._messages is None else self._messages
+        response_fn = (
+            self._llm.chat if self._llm.metadata.is_chat_model else self._llm.complete
+        )
+        formatted_arg = (
+            self._prompt.format(**kwargs) if self._messages is None else self._messages
+        )
         response = response_fn(formatted_arg)
         raw_output = response.text
         model_output = self._output_parser.parse(raw_output)

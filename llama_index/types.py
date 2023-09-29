@@ -1,6 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import (Any, AsyncGenerator, Generator, Generic, List, Protocol,
-                    Type, TypeVar, Union, runtime_checkable)
+from typing import (
+    Any,
+    AsyncGenerator,
+    Generator,
+    Generic,
+    List,
+    Protocol,
+    Type,
+    TypeVar,
+    Union,
+    runtime_checkable,
+)
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage, MessageRole

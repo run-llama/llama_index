@@ -37,6 +37,7 @@ class Response:
             texts.append(source_text)
         return "\n\n".join(texts)
 
+
 @dataclass
 class PydanticResponse:
     """PydanticResponse object.

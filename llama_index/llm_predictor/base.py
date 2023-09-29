@@ -8,10 +8,12 @@ from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.utils import (
-    astream_chat_response_to_tokens, astream_completion_response_to_tokens,
-    stream_chat_response_to_tokens, stream_completion_response_to_tokens)
+    astream_chat_response_to_tokens,
+    astream_completion_response_to_tokens,
+    stream_chat_response_to_tokens,
+    stream_completion_response_to_tokens,
+)
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
-from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.output_parsers.selection import _escape_curly_braces
@@ -129,41 +131,82 @@ class LLMPredictor(BaseLLMPredictor):
         ):
             pass
 
-    def _handle_predict_chat_model(self, prompt: BasePromptTemplate, chat_fn: Callable, output_cls: Type[BaseModel]=None, **prompt_args: Any) -> str:
+    def _handle_predict_chat_model(
+        self,
+        prompt: BasePromptTemplate,
+        chat_fn: Callable,
+        output_cls: Type[BaseModel] = None,
+        **prompt_args: Any
+    ) -> str:
         messages = prompt.format_messages(llm=self._llm, **prompt_args)
         messages = self._extend_messages(messages)
         if output_cls is None:
-          chat_response = chat_fn(messages)
-          return chat_response.message.content or ""
+            chat_response = chat_fn(messages)
+            return chat_response.message.content or ""
 
         try:
-          from llama_index.program.openai_program import OpenAIPydanticProgram
-          program = OpenAIPydanticProgram.from_defaults(output_cls=output_cls, llm=self._llm, prompt=prompt)
+            from llama_index.program.openai_program import OpenAIPydanticProgram
+
+            program = OpenAIPydanticProgram.from_defaults(
+                output_cls=output_cls, llm=self._llm, prompt=prompt
+            )
         except ValueError:
-          from llama_index.program.llm_program import LLMTextCompletionProgram
-          program = LLMTextCompletionProgram.from_defaults(output_parser=PydanticOutputParser(output_cls=output_cls), messages=messages, llm=self._llm)
+            from llama_index.program.llm_program import LLMTextCompletionProgram
+
+            program = LLMTextCompletionProgram.from_defaults(
+                output_parser=PydanticOutputParser(output_cls=output_cls),
+                messages=messages,
+                llm=self._llm,
+            )
         chat_response = program(messages=messages)
         return chat_response.json()
 
-    def _handle_predict_complete(self, prompt: BasePromptTemplate, complete_fn: Callable, output_cls: Type[BaseModel]=None, **prompt_args: Any) -> str:
+    def _handle_predict_complete(
+        self,
+        prompt: BasePromptTemplate,
+        complete_fn: Callable,
+        output_cls: Type[BaseModel] = None,
+        **prompt_args: Any
+    ) -> str:
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         formatted_prompt = _escape_curly_braces(self._extend_prompt(formatted_prompt))
         if output_cls is not None:
-            from llama_index.program.llm_program import \
-                LLMTextCompletionProgram
-            program = LLMTextCompletionProgram.from_defaults(output_parser=PydanticOutputParser(output_cls=output_cls), llm=self._llm, prompt=PromptTemplate(template=formatted_prompt, prompt_type=PromptType.SUMMARY))
+            from llama_index.program.llm_program import LLMTextCompletionProgram
+
+            program = LLMTextCompletionProgram.from_defaults(
+                output_parser=PydanticOutputParser(output_cls=output_cls),
+                llm=self._llm,
+                prompt=PromptTemplate(
+                    template=formatted_prompt, prompt_type=PromptType.SUMMARY
+                ),
+            )
             chat_response = program()
             return chat_response.json()
         response = complete_fn(formatted_prompt)
         return response.text
 
-    def predict(self, prompt: BasePromptTemplate, output_cls: Type[BaseModel] = None, **prompt_args: Any) -> str:
+    def predict(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Type[BaseModel] = None,
+        **prompt_args: Any
+    ) -> str:
         """Predict."""
         self._log_template_data(prompt, **prompt_args)
         if self._llm.metadata.is_chat_model:
-            output = self._handle_predict_chat_model(prompt=prompt, chat_fn=self._llm.chat, output_cls=output_cls, **prompt_args)
+            output = self._handle_predict_chat_model(
+                prompt=prompt,
+                chat_fn=self._llm.chat,
+                output_cls=output_cls,
+                **prompt_args
+            )
         else:
-            output = self._handle_predict_complete(prompt=prompt, complete_fn=self._llm.complete, output_cls=output_cls, **prompt_args)
+            output = self._handle_predict_complete(
+                prompt=prompt,
+                complete_fn=self._llm.complete,
+                output_cls=output_cls,
+                **prompt_args
+            )
 
         logger.debug(output)
 
@@ -185,14 +228,26 @@ class LLMPredictor(BaseLLMPredictor):
             stream_tokens = stream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
-    async def apredict(self, prompt: BasePromptTemplate, output_cls: Type[BaseModel]=None, **prompt_args: Any) -> str:
+    async def apredict(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Type[BaseModel] = None,
+        **prompt_args: Any
+    ) -> str:
         """Async predict."""
         self._log_template_data(prompt, **prompt_args)
 
         if self._llm.metadata.is_chat_model:
-            output = self._handle_predict_chat_model(prompt=prompt, chat_fn=self._llm.achat, output_cls=output_cls, **prompt_args)
+            output = self._handle_predict_chat_model(
+                prompt=prompt,
+                chat_fn=self._llm.achat,
+                output_cls=output_cls,
+                **prompt_args
+            )
         else:
-            output = self._handle_predict_complete(prompt=prompt, complete_fn=self._llm.acomplete, **prompt_args)
+            output = self._handle_predict_complete(
+                prompt=prompt, complete_fn=self._llm.acomplete, **prompt_args
+            )
 
         logger.debug(output)
 

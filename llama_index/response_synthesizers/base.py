@@ -14,8 +14,12 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Type, Union
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.response.schema import (RESPONSE_TYPE, PydanticResponse,
-                                         Response, StreamingResponse)
+from llama_index.response.schema import (
+    RESPONSE_TYPE,
+    PydanticResponse,
+    Response,
+    StreamingResponse,
+)
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.types import RESPONSE_TEXT_TYPE, BaseModel
 
@@ -111,9 +115,7 @@ class BaseSynthesizer(ABC):
             )
         if isinstance(response_str, self._output_cls):
             return PydanticResponse(
-                response_str,
-                source_nodes=source_nodes,
-                metadata=response_metadata
+                response_str, source_nodes=source_nodes, metadata=response_metadata
             )
 
         raise ValueError(
