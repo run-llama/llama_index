@@ -16,13 +16,11 @@ if TYPE_CHECKING:
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.schema import BaseNode, TextNode
 
-from llama_index.node_parser.extractors.metadata_extractors import (
-    MetadataFeatureExtractor,
-)
+from llama_index.extractors.metadata_extractors import BaseExtractor
 from llama_index.utils import get_tqdm_iterable
 
 
-class MarvinMetadataExtractor(MetadataFeatureExtractor):
+class MarvinMetadataExtractor(BaseExtractor):
     # Forward reference to handle circular imports
     marvin_model: Type["AIModel"] = Field(
         description="The Marvin model to use for extracting custom metadata"

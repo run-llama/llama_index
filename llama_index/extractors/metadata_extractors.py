@@ -19,180 +19,19 @@ The prompts used to generate the metadata are specifically aimed to help
 disambiguate the document or subsection from other similar documents or subsections.
 (similar with contrastive learning)
 """
-from abc import abstractmethod
 from functools import reduce
-from copy import deepcopy
+
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
-from typing_extensions import Self
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM
-from llama_index.node_parser.interface import BaseExtractor
+from llama_index.extractors.interface import BaseExtractor
 from llama_index.prompts import PromptTemplate
-from llama_index.schema import BaseNode, TextNode, MetadataMode
+from llama_index.schema import BaseNode, TextNode
 from llama_index.utils import get_tqdm_iterable
 from llama_index.types import BasePydanticProgram
-
-
-class MetadataFeatureExtractor(BaseExtractor):
-    is_text_node_only: bool = True
-    show_progress: bool = True
-    metadata_mode: MetadataMode = MetadataMode.ALL
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
-        if isinstance(kwargs, dict):
-            data.update(kwargs)
-
-        data.pop("class_name", None)
-
-        llm_predictor = data.get("llm_predictor", None)
-        if llm_predictor:
-            from llama_index.llm_predictor.loading import load_predictor
-
-            llm_predictor = load_predictor(llm_predictor)
-        data["llm_predictor"] = llm_predictor
-
-        return cls(**data)
-
-    @abstractmethod
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        """Extracts metadata for a sequence of nodes, returning a list of
-        metadata dictionaries corresponding to each node.
-
-        Args:
-            nodes (Sequence[Document]): nodes to extract metadata from
-
-        """
-
-
-DEFAULT_NODE_TEXT_TEMPLATE = """\
-[Excerpt from document]\n{metadata_str}\n\
-Excerpt:\n-----\n{content}\n-----\n"""
-
-
-class MetadataExtractor(BaseExtractor):
-    """Metadata extractor."""
-
-    extractors: Sequence[MetadataFeatureExtractor] = Field(
-        default_factory=list,
-        description="Metadta feature extractors to apply to each node.",
-    )
-    node_text_template: str = Field(
-        default=DEFAULT_NODE_TEXT_TEMPLATE,
-        description="Template to represent how node text is mixed with metadata text.",
-    )
-    disable_template_rewrite: bool = Field(
-        default=False, description="Disable the node template rewrite."
-    )
-
-    in_place: bool = Field(
-        default=True, description="Whether to process nodes in place."
-    )
-
-    def __init__(
-        self,
-        extractors: Optional[Sequence[MetadataFeatureExtractor]] = None,
-        node_text_template: str = DEFAULT_NODE_TEXT_TEMPLATE,
-        disable_template_rewrite: bool = False,
-        in_place: bool = True,
-    ):
-        from llama_index.node_parser.extractors.loading import load_extractor
-
-        real_extractors = []
-        if isinstance(extractors, list):
-            for extractor in extractors:
-                if isinstance(extractor, dict):
-                    real_extractors.append(load_extractor(extractor))
-                else:
-                    real_extractors.append(extractor)
-
-        super().__init__(
-            extractors=real_extractors,
-            node_text_template=node_text_template,
-            disable_template_rewrite=disable_template_rewrite,
-            in_place=in_place,
-        )
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
-        if isinstance(kwargs, dict):
-            data.update(kwargs)
-
-        data.pop("class_name", None)
-
-        extractors = data.get("extractors", [])
-        real_extractors = []
-
-        if extractors:
-            from llama_index.node_parser.extractors.loading import load_extractor
-
-            for extractor in extractors:
-                if isinstance(extractor, dict):
-                    real_extractors.append(load_extractor(extractor))
-                else:
-                    real_extractors.append(extractor)
-
-        data["extractors"] = real_extractors
-        return cls(**data)
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "MetadataExtractor"
-
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        """Extract metadata from a document.
-
-        Args:
-            nodes (Sequence[BaseNode]): nodes to extract metadata from
-
-        """
-        metadata_list: List[Dict] = [{} for _ in nodes]
-        for extractor in self.extractors:
-            cur_metadata_list = extractor.extract(nodes)
-            for i, metadata in enumerate(metadata_list):
-                metadata.update(cur_metadata_list[i])
-
-        return metadata_list
-
-    def process_nodes(
-        self,
-        nodes: List[BaseNode],
-        excluded_embed_metadata_keys: Optional[List[str]] = None,
-        excluded_llm_metadata_keys: Optional[List[str]] = None,
-    ) -> List[BaseNode]:
-        """Post process nodes parsed from documents.
-
-        Allows extractors to be chained.
-
-        Args:
-            nodes (List[BaseNode]): nodes to post-process
-            excluded_embed_metadata_keys (Optional[List[str]]):
-                keys to exclude from embed metadata
-            excluded_llm_metadata_keys (Optional[List[str]]):
-                keys to exclude from llm metadata
-        """
-        if self.in_place:
-            new_nodes = nodes
-        else:
-            new_nodes = [deepcopy(node) for node in nodes]
-        for extractor in self.extractors:
-            cur_metadata_list = extractor.extract(new_nodes)
-            for idx, node in enumerate(new_nodes):
-                node.metadata.update(cur_metadata_list[idx])
-
-        for idx, node in enumerate(new_nodes):
-            if excluded_embed_metadata_keys is not None:
-                node.excluded_embed_metadata_keys.extend(excluded_embed_metadata_keys)
-            if excluded_llm_metadata_keys is not None:
-                node.excluded_llm_metadata_keys.extend(excluded_llm_metadata_keys)
-            if not self.disable_template_rewrite:
-                if isinstance(node, TextNode):
-                    cast(TextNode, node).text_template = self.node_text_template
-        return new_nodes
 
 
 DEFAULT_TITLE_NODE_TEMPLATE = """\
@@ -205,7 +44,7 @@ DEFAULT_TITLE_COMBINE_TEMPLATE = """\
 what is the comprehensive title for this document? Title: """
 
 
-class TitleExtractor(MetadataFeatureExtractor):
+class TitleExtractor(BaseExtractor):
     """Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
     Args:
@@ -306,7 +145,7 @@ class TitleExtractor(MetadataFeatureExtractor):
         return metadata_list
 
 
-class KeywordExtractor(MetadataFeatureExtractor):
+class KeywordExtractor(BaseExtractor):
     """Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
     Args:
@@ -383,7 +222,7 @@ that this context can answer.
 """
 
 
-class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
+class QuestionsAnsweredExtractor(BaseExtractor):
     """
     Questions answered extractor. Node-level extractor.
     Extracts `questions_this_excerpt_can_answer` metadata field.
@@ -473,7 +312,7 @@ Summarize the key topics and entities of the section. \
 Summary: """
 
 
-class SummaryExtractor(MetadataFeatureExtractor):
+class SummaryExtractor(BaseExtractor):
     """
     Summary extractor. Node-level extractor with adjacent sharing.
     Extracts `section_summary`, `prev_section_summary`, `next_section_summary`
@@ -582,7 +421,7 @@ DEFAULT_ENTITY_MAP = {
 DEFAULT_ENTITY_MODEL = "tomaarsen/span-marker-mbert-base-multinerd"
 
 
-class EntityExtractor(MetadataFeatureExtractor):
+class EntityExtractor(BaseExtractor):
     """
     Entity extractor. Extracts `entities` into a metadata field using a default model
     `tomaarsen/span-marker-mbert-base-multinerd` and the SpanMarker library.
@@ -723,7 +562,7 @@ Given the contextual information, extract out a {class_name} object.\
 """
 
 
-class PydanticProgramExtractor(MetadataFeatureExtractor):
+class PydanticProgramExtractor(BaseExtractor):
     """Pydantic program extractor.
 
     Uses an LLM to extract out a Pydantic object. Return attributes of that object

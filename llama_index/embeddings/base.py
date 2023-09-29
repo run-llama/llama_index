@@ -3,14 +3,14 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Callable, Coroutine, List, Optional, Tuple
+from typing import Any, Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
 from llama_index.bridge.pydantic import Field, validator
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.schema import BaseComponent
+from llama_index.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.utils import get_tqdm_iterable
 
 # TODO: change to numpy array
@@ -50,7 +50,7 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding(BaseComponent):
+class BaseEmbedding(TransformComponent):
     """Base class for embeddings."""
 
     model_name: str = Field(
@@ -210,7 +210,10 @@ class BaseEmbedding(BaseComponent):
         return text_embedding
 
     def get_text_embedding_batch(
-        self, texts: List[str], show_progress: bool = False
+        self,
+        texts: List[str],
+        show_progress: bool = False,
+        **kwargs: Any,
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
         cur_batch: List[str] = []
@@ -305,3 +308,14 @@ class BaseEmbedding(BaseComponent):
     ) -> float:
         """Get embedding similarity."""
         return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
+
+    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        embeddings = self.get_text_embedding_batch(
+            [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
+            **kwargs,
+        )
+
+        for node, embedding in zip(nodes, embeddings):
+            node.embedding = embedding
+
+        return nodes

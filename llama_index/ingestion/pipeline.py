@@ -1,8 +1,7 @@
-from typing import Callable, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.ingestion.client import (
     ConfiguredTransformationItem,
     DataSinkCreate,
@@ -15,17 +14,13 @@ from llama_index.ingestion.client.client import PlatformApi
 from llama_index.ingestion.data_sinks import ConfiguredDataSink
 from llama_index.ingestion.data_sources import ConfiguredDataSource
 from llama_index.ingestion.transformations import ConfiguredTransformation
-from llama_index.llms.base import LLM
-from llama_index.llms.utils import LLMType, resolve_llm
+from llama_index.indices.service_context import ServiceContext
 from llama_index.node_parser import SimpleNodeParser
-from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.extractors import (
-    MetadataExtractor,
-    MetadataFeatureExtractor,
-)
 from llama_index.readers.base import ReaderConfig
-from llama_index.schema import BaseComponent, BaseNode, Document, MetadataMode
-from llama_index.vector_stores.types import BasePydanticVectorStore, NodeWithEmbedding
+from llama_index.schema import TransformComponent, BaseNode, Document
+from llama_index.vector_stores.types import BasePydanticVectorStore
+
+DEFAULT_PIPELINE_NAME = "llamaindex_pipeline"
 
 
 class IngestionPipeline(BaseModel):
@@ -36,12 +31,7 @@ class IngestionPipeline(BaseModel):
         description="Serialized schemas of transformations to apply to the data"
     )
 
-    llm: LLM = Field(description="LLM to use to process the data")
-    embed_model: BaseEmbedding = Field(
-        description="Embedding model to use to embed the data"
-    )
-
-    transformations: List[BaseComponent] = Field(
+    transformations: List[TransformComponent] = Field(
         description="Transformations to apply to the data"
     )
 
@@ -53,13 +43,11 @@ class IngestionPipeline(BaseModel):
 
     def __init__(
         self,
-        name: Optional[str] = "llamaindex_pipeline",
-        transformations: Optional[List[BaseComponent]] = None,
+        name: Optional[str] = DEFAULT_PIPELINE_NAME,
+        transformations: Optional[List[TransformComponent]] = None,
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
-        llm: Optional[LLMType] = "default",
-        embed_model: Optional[EmbedType] = "default",
     ) -> None:
         if documents is None and reader is None:
             raise ValueError("Must provide either documents or a reader")
@@ -80,13 +68,35 @@ class IngestionPipeline(BaseModel):
             reader=reader,
             documents=documents,
             vector_store=vector_store,
-            llm=resolve_llm(llm),
-            embed_model=resolve_embed_model(embed_model),
         )
 
-    def _get_default_transformations(self) -> List[BaseComponent]:
+    @classmethod
+    def from_service_context(
+        cls,
+        service_context: ServiceContext,
+        name: str = DEFAULT_PIPELINE_NAME,
+        reader: Optional[ReaderConfig] = None,
+        documents: Optional[Sequence[Document]] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
+    ):
+        transformations = [
+            service_context.node_parser,
+            service_context.embed_model,
+        ]
+
+        return cls(
+            name=name,
+            transformations=transformations,
+            llm=service_context.llm_predictor.llm,
+            reader=reader,
+            documents=documents,
+            vector_store=vector_store,
+        )
+
+    def _get_default_transformations(self) -> List[TransformComponent]:
         return [
             SimpleNodeParser.from_defaults(),
+            resolve_embed_model("default"),
         ]
 
     def run_remote(
@@ -178,66 +188,19 @@ class IngestionPipeline(BaseModel):
         return f"Find your remote results here: {pipeline_execution.id}"
 
     def run_local(
-        self, run_embeddings: bool = True, show_progress: bool = False
+        self, show_progress: bool = False, **kwargs: Any
     ) -> Sequence[BaseNode]:
-        inputs: List[Document] = []
+        nodes: List[BaseNode] = []
         if self.documents is not None:
-            inputs += self.documents
+            nodes += self.documents
 
         if self.reader is not None:
-            inputs += self.reader.read()
+            nodes += self.reader.read()
 
-        pipeline = self._build_pipeline(show_progress=show_progress)
-
-        nodes = pipeline(inputs)
-
-        if run_embeddings:
-            texts = [
-                node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
-            ]
-            embeddings = self.embed_model.get_text_embedding_batch(
-                texts, show_progress=show_progress
-            )
-
-            for node, embedding in zip(nodes, embeddings):
-                node.embedding = embedding
+        for transform in self.transformations:
+            nodes = transform(nodes, show_progress=show_progress, **kwargs)
 
         if self.vector_store is not None:
-            self.vector_store.add(
-                [
-                    NodeWithEmbedding(node=n, embedding=n.embedding)
-                    for n in nodes
-                    if n.embedding is not None
-                ]
-            )
+            self.vector_store.add([n for n in nodes if n.embedding is not None])
 
         return nodes
-
-    def _build_pipeline(
-        self, show_progress: bool = False
-    ) -> Callable[[Sequence[Document]], Sequence[BaseNode]]:
-        metadata_extractor = None
-        extractors: List[MetadataFeatureExtractor] = []
-        node_parser = SimpleNodeParser.from_defaults()
-
-        for transformation in self.transformations:
-            if isinstance(transformation, NodeParser):
-                node_parser = transformation
-            elif isinstance(transformation, MetadataExtractor):
-                metadata_extractor = transformation
-            elif isinstance(transformation, MetadataFeatureExtractor):
-                extractors.append(transformation)
-                extractors[-1].show_progress = show_progress
-
-        if metadata_extractor is None:
-            metadata_extractor = MetadataExtractor(extractors=extractors)
-
-        node_parser.metadata_extractor = metadata_extractor
-
-        # right now, local ingestion pipelines are just node parsers
-        def pipeline_fn(documents: Sequence[Document]) -> Sequence[BaseNode]:
-            return node_parser.get_nodes_from_documents(
-                documents, show_progress=show_progress
-            )
-
-        return pipeline_fn

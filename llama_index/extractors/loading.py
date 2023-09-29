@@ -1,5 +1,5 @@
-from llama_index.node_parser.extractors.metadata_extractors import (
-    MetadataExtractor,
+from llama_index.extractors.metadata_extractors import (
+    BaseExtractor,
     SummaryExtractor,
     QuestionsAnsweredExtractor,
     EntityExtractor,
@@ -10,16 +10,15 @@ from llama_index.node_parser.extractors.metadata_extractors import (
 
 def load_extractor(
     data: dict,
-) -> MetadataExtractor:
-    if isinstance(data, MetadataExtractor):
+) -> BaseExtractor:
+    if isinstance(data, BaseExtractor):
         return data
+
     extractor_name = data.get("class_name", None)
     if extractor_name is None:
         raise ValueError("Extractor loading requires a class_name")
 
-    if extractor_name == MetadataExtractor.class_name():
-        return MetadataExtractor.from_dict(data)
-    elif extractor_name == SummaryExtractor.class_name():
+    if extractor_name == SummaryExtractor.class_name():
         return SummaryExtractor.from_dict(data)
     elif extractor_name == QuestionsAnsweredExtractor.class_name():
         return QuestionsAnsweredExtractor.from_dict(data)

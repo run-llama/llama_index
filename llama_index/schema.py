@@ -69,6 +69,17 @@ class BaseComponent(BaseModel):
         return cls.from_dict(data, **kwargs)
 
 
+class TransformComponent(BaseComponent):
+    """Base class for transform components."""
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @abstractmethod
+    def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+        """Transform nodes."""
+
+
 class NodeRelationship(str, Enum):
     """Node relationships used in `BaseNode` class.
 

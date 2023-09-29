@@ -6,7 +6,6 @@ from llama_index.bridge.pydantic import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.schema import BaseNode, Document, NodeRelationship
@@ -88,9 +87,6 @@ class HierarchicalNodeParser(NodeParser):
     include_prev_next_rel: bool = Field(
         default=True, description="Include prev/next node relationships."
     )
-    metadata_extractor: Optional[MetadataExtractor] = Field(
-        default=None, description="Metadata extraction pipeline to apply to nodes."
-    )
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
@@ -104,7 +100,6 @@ class HierarchicalNodeParser(NodeParser):
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
-        metadata_extractor: Optional[MetadataExtractor] = None,
     ) -> "HierarchicalNodeParser":
         callback_manager = callback_manager or CallbackManager([])
 
@@ -138,7 +133,6 @@ class HierarchicalNodeParser(NodeParser):
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
             callback_manager=callback_manager,
-            metadata_extractor=metadata_extractor,
         )
 
     @classmethod
@@ -220,9 +214,6 @@ class HierarchicalNodeParser(NodeParser):
             for doc in documents_with_progress:
                 nodes_from_doc = self._recursively_get_nodes_from_nodes([doc], 0)
                 all_nodes.extend(nodes_from_doc)
-
-            if self.metadata_extractor is not None:
-                all_nodes = self.metadata_extractor.process_nodes(all_nodes)
 
             event.on_end(payload={EventPayload.NODES: all_nodes})
 
