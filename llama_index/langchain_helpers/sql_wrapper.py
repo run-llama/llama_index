@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple, Optional
 from llama_index.bridge.langchain import SQLDatabase as LangchainSQLDatabase
 from sqlalchemy import MetaData, create_engine, insert, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import ProgrammingError, OperationalError
 
 
 class SQLDatabase(LangchainSQLDatabase):
@@ -88,7 +89,12 @@ class SQLDatabase(LangchainSQLDatabase):
         If the statement returns no rows, an empty string is returned.
         """
         with self._engine.connect() as connection:
-            cursor = connection.execute(text(command))
+            try:
+                cursor = connection.execute(text(command))
+            except (ProgrammingError, OperationalError) as exc:
+                raise NotImplementedError(
+                    f"Statement {command!r} is invalid SQL."
+                ) from exc
             if cursor.returns_rows:
                 result = cursor.fetchall()
                 return str(result), {"result": result}

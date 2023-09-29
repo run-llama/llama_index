@@ -5,6 +5,9 @@
 ### Bug Fixes / Nits
 - Simplify NL SQL response to SQL parsing, with expanded NL SQL prompt (#7868)
 - Improve vector store retrieval speed for vectordb integrations (#7876)
+- Added replacing {{ and }}, and fixed JSON parsing recursion (#7888)
+- Nice-ified JSON decoding error (#7891)
+- Nice-ified SQL error from LLM not providing SQL (#7900)
 
 ## [0.8.36] - 2023-09-27
 
@@ -17,6 +20,7 @@
 - Fix async streaming with azure (#7856)
 - Avoid `NotImplementedError()` in sub question generator (#7855)
 - Patch predibase initialization (#7859)
+- Bumped min langchain version and changed prompt imports from langchain (#7862)
 
 ## [0.8.35] - 2023-09-27
 
