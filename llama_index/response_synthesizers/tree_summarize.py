@@ -1,14 +1,13 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Type
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
-from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
-)
+from llama_index.prompts.default_prompt_selectors import \
+    DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
 from llama_index.response_synthesizers.base import BaseSynthesizer
-from llama_index.types import RESPONSE_TEXT_TYPE
+from llama_index.types import RESPONSE_TEXT_TYPE, BaseModel
 
 
 class TreeSummarize(BaseSynthesizer):
@@ -31,8 +30,9 @@ class TreeSummarize(BaseSynthesizer):
         streaming: bool = False,
         use_async: bool = False,
         verbose: bool = False,
+        output_cls: Type[BaseModel] = None,
     ) -> None:
-        super().__init__(service_context=service_context, streaming=streaming)
+        super().__init__(service_context=service_context, streaming=streaming, output_cls=output_cls)
         self._summary_template = summary_template or DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
         self._use_async = use_async
         self._verbose = verbose
@@ -113,9 +113,10 @@ class TreeSummarize(BaseSynthesizer):
             else:
                 response = self._service_context.llm_predictor.predict(
                     summary_template,
+                    output_cls=self._output_cls,
                     context_str=text_chunks[0],
                 )
-            return response
+            return response if self._output_cls is None else self._output_cls.parse_raw(response)
 
         else:
             # summarize each chunk
@@ -133,6 +134,7 @@ class TreeSummarize(BaseSynthesizer):
                 summaries = [
                     self._service_context.llm_predictor.predict(
                         summary_template,
+                        output_cls=self._output_cls,
                         context_str=text_chunk,
                     )
                     for text_chunk in text_chunks

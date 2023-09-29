@@ -1,12 +1,11 @@
-from typing import Any, Optional, Type, cast
+from typing import Any, List, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
-
-from llama_index.llms.base import LLM
+from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.output_parsers.pydantic import PydanticOutputParser
-from llama_index.types import BasePydanticProgram
 from llama_index.prompts.base import PromptTemplate
+from llama_index.types import BasePydanticProgram
 
 
 class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
@@ -20,14 +19,16 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def __init__(
         self,
         output_parser: PydanticOutputParser,
-        prompt: PromptTemplate,
         llm: LLM,
+        prompt: PromptTemplate = None,
+        messages: List[ChatMessage] = None,
         verbose: bool = False,
     ) -> None:
         self._output_parser = output_parser
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
+        self._messages = messages
 
         self._prompt.output_parser = output_parser
 
@@ -36,18 +37,20 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         cls,
         output_parser: PydanticOutputParser,
         prompt_template_str: Optional[str] = None,
+        messages: List[ChatMessage] = None,
         prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
         llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
-        if prompt is None and prompt_template_str is None:
-            raise ValueError("Must provide either prompt or prompt_template_str.")
-        if prompt is not None and prompt_template_str is not None:
-            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt is None and prompt_template_str is None and messages is None:
+            raise ValueError("Must provide either prompt or prompt_template_str or messages.")
+        if prompt is not None and prompt_template_str is not None and messages is not None:
+            raise ValueError("Must provide either prompt or prompt_template_str or messages.")
         if prompt_template_str is not None:
             prompt = PromptTemplate(prompt_template_str)
+
         return cls(
             output_parser,
             prompt=cast(PromptTemplate, prompt),
@@ -64,8 +67,11 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        formatted_prompt = self._prompt.format(**kwargs)
-        response = self._llm.complete(formatted_prompt)
+        response_fn = (self._llm.chat
+                      if self._llm.metadata.is_chat_model
+                      else self._llm.complete)
+        formatted_arg = self._prompt.format(**kwargs) if self._messages is None else self._messages
+        response = response_fn(formatted_arg)
         raw_output = response.text
         model_output = self._output_parser.parse(raw_output)
         return model_output
