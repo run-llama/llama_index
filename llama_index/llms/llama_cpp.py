@@ -37,6 +37,8 @@ DEFAULT_LLAMA_CPP_GGUF_MODEL = (
 
 
 class LlamaCPP(CustomLLM):
+    DEFAULT_VERBOSITY = True
+
     model_url: Optional[str] = Field(
         description="The URL llama-cpp model to download and use."
     )
@@ -46,7 +48,8 @@ class LlamaCPP(CustomLLM):
     temperature: float = Field(description="The temperature to use for sampling.")
     max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
     context_window: int = Field(
-        description="The maximum number of context tokens for the model."
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of context tokens for the model.",
     )
     messages_to_prompt: Callable = Field(
         description="The function to convert messages to a prompt.", exclude=True
@@ -60,7 +63,9 @@ class LlamaCPP(CustomLLM):
     model_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Kwargs used for model initialization."
     )
-    verbose: bool = Field(description="Whether to print verbose output.")
+    verbose: bool = Field(
+        default=DEFAULT_VERBOSITY, description="Whether to print verbose output."
+    )
 
     _model: Any = PrivateAttr()
 
@@ -76,7 +81,7 @@ class LlamaCPP(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
         generate_kwargs: Optional[Dict[str, Any]] = None,
         model_kwargs: Optional[Dict[str, Any]] = None,
-        verbose: bool = True,
+        verbose: bool = DEFAULT_VERBOSITY,
     ) -> None:
         try:
             from llama_cpp import Llama
@@ -88,8 +93,10 @@ class LlamaCPP(CustomLLM):
                 "`https://github.com/abetlen/llama-cpp-python`"
             )
 
-        model_kwargs = model_kwargs or {}
-        model_kwargs.update({"n_ctx": context_window, "verbose": verbose})
+        model_kwargs = {
+            **{"n_ctx": context_window, "verbose": verbose},
+            **(model_kwargs or {}),  # Override defaults via model_kwargs
+        }
 
         # check if model is cached
         if model_path is not None:
@@ -125,14 +132,12 @@ class LlamaCPP(CustomLLM):
             model_path=model_path,
             model_url=model_url,
             temperature=temperature,
-            context_window=context_window,
             max_new_tokens=max_new_tokens,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             callback_manager=callback_manager,
             generate_kwargs=generate_kwargs,
             model_kwargs=model_kwargs,
-            verbose=verbose,
         )
 
     @classmethod
@@ -144,7 +149,7 @@ class LlamaCPP(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=self._model.params.n_ctx,
             num_output=self.max_new_tokens,
             model_name=self.model_path,
         )
