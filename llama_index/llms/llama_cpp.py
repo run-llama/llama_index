@@ -29,16 +29,14 @@ DEFAULT_LLAMA_CPP_GGML_MODEL = (
     "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGML/resolve"
     "/main/llama-2-13b-chat.ggmlv3.q4_0.bin"
 )
-
 DEFAULT_LLAMA_CPP_GGUF_MODEL = (
     "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGUF/resolve"
     "/main/llama-2-13b-chat.Q4_0.gguf"
 )
+DEFAULT_LLAMA_CPP_MODEL_VERBOSITY = True
 
 
 class LlamaCPP(CustomLLM):
-    DEFAULT_VERBOSITY = True
-
     model_url: Optional[str] = Field(
         description="The URL llama-cpp model to download and use."
     )
@@ -64,7 +62,8 @@ class LlamaCPP(CustomLLM):
         default_factory=dict, description="Kwargs used for model initialization."
     )
     verbose: bool = Field(
-        default=DEFAULT_VERBOSITY, description="Whether to print verbose output."
+        default=DEFAULT_LLAMA_CPP_MODEL_VERBOSITY,
+        description="Whether to print verbose output.",
     )
 
     _model: Any = PrivateAttr()
@@ -81,7 +80,7 @@ class LlamaCPP(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
         generate_kwargs: Optional[Dict[str, Any]] = None,
         model_kwargs: Optional[Dict[str, Any]] = None,
-        verbose: bool = DEFAULT_VERBOSITY,
+        verbose: bool = DEFAULT_LLAMA_CPP_MODEL_VERBOSITY,
     ) -> None:
         try:
             from llama_cpp import Llama
