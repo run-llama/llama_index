@@ -1,5 +1,6 @@
 """Node postprocessor tests."""
 
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Dict, cast
 
@@ -24,6 +25,8 @@ from llama_index.schema import (
     TextNode,
 )
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
+
+spacy_installed = True if find_spec("spacy") else False
 
 
 def test_forward_back_processor(tmp_path: Path) -> None:
@@ -298,6 +301,7 @@ def test_time_weighted_postprocessor() -> None:
     assert cast(Dict, nodes[3].metadata)[key] == 3
 
 
+@pytest.mark.skipif(not spacy_installed, reason="spacy not installed")
 def test_keyword_postprocessor() -> None:
     """Test keyword processor."""
 
@@ -335,6 +339,7 @@ def test_keyword_postprocessor() -> None:
     assert len(new_nodes) == 3
 
 
+@pytest.mark.skipif(not spacy_installed, reason="spacy not installed")
 def test_keyword_postprocessor_for_non_english() -> None:
     """Test keyword processor for non English."""
 

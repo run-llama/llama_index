@@ -3,9 +3,6 @@
 import logging
 from typing import Dict, List, Optional, cast
 
-import spacy
-from spacy.matcher import PhraseMatcher
-
 from llama_index.bridge.pydantic import Field, validator
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
@@ -35,6 +32,14 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
+        try:
+            import spacy
+        except ImportError:
+            raise ImportError(
+                "Spacy is not installed, please install it with `pip install spacy`."
+            )
+        from spacy.matcher import PhraseMatcher
+
         nlp = spacy.blank(self.lang)
         required_matcher = PhraseMatcher(nlp.vocab)
         exclude_matcher = PhraseMatcher(nlp.vocab)
