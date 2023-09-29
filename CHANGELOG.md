@@ -7,6 +7,7 @@
 - Improve vector store retrieval speed for vectordb integrations (#7876)
 - Added replacing {{ and }}, and fixed JSON parsing recursion (#7888)
 - Nice-ified JSON decoding error (#7891)
+- Nice-ified SQL error from LLM not providing SQL (#7900)
 
 ## [0.8.36] - 2023-09-27
 
