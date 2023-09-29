@@ -9,10 +9,12 @@ from llama_index.schema import BaseNode, Document
 from llama_index.utils import get_tqdm_iterable
 from llama_index.node_parser.file.markdown import MarkdownNodeParser
 from llama_index.node_parser.file.html import HTMLNodeParser
+from llama_index.node_parser.file.json import JSONNodeParser
 
 FILE_NODE_PARSERS: Dict[str, Type[NodeParser]] = {
     ".md": MarkdownNodeParser,
     ".html": HTMLNodeParser,
+    ".json": JSONNodeParser,
 }
 
 
