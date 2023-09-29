@@ -30,6 +30,7 @@ install_requires = [
     "nest_asyncio",
     "nltk",
     "tree_sitter_languages",
+    "spacy",
 ]
 
 setup(
