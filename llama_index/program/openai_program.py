@@ -100,8 +100,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
     def __call__(
         self,
-        messages: List[ChatMessage] = None,
         *args: Any,
+        messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> BaseModel:
         messages = (

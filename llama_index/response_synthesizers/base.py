@@ -9,8 +9,9 @@ Will support different modes, from 1) stuffing chunks into prompt,
 """
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -21,7 +22,7 @@ from llama_index.response.schema import (
     StreamingResponse,
 )
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
-from llama_index.types import RESPONSE_TEXT_TYPE, BaseModel
+from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class BaseSynthesizer(ABC):
         self,
         service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
-        output_cls: Type[BaseModel] = None,
+        output_cls: BaseModel = None,
     ) -> None:
         """Init params."""
         self._service_context = service_context or ServiceContext.from_defaults()
@@ -100,7 +101,6 @@ class BaseSynthesizer(ABC):
             [node_with_score.node for node_with_score in source_nodes]
         )
 
-        print(isinstance(response_str, self._output_cls))
         if isinstance(response_str, str):
             return Response(
                 response_str,

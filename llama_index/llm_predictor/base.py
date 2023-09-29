@@ -2,9 +2,9 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Optional, Type
+from typing import Any, Callable, List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.utils import (
@@ -20,7 +20,7 @@ from llama_index.output_parsers.selection import _escape_curly_braces
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.schema import BaseComponent
-from llama_index.types import BaseModel, TokenAsyncGen, TokenGen
+from llama_index.types import TokenAsyncGen, TokenGen, BasePydanticProgram
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         prompt: BasePromptTemplate,
         chat_fn: Callable,
-        output_cls: Type[BaseModel] = None,
+        output_cls: Optional[BaseModel] = None,
         **prompt_args: Any
     ) -> str:
         messages = prompt.format_messages(llm=self._llm, **prompt_args)
@@ -144,6 +144,7 @@ class LLMPredictor(BaseLLMPredictor):
             chat_response = chat_fn(messages)
             return chat_response.message.content or ""
 
+        program: BasePydanticProgram
         try:
             from llama_index.program.openai_program import OpenAIPydanticProgram
 
@@ -165,7 +166,7 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         prompt: BasePromptTemplate,
         complete_fn: Callable,
-        output_cls: Type[BaseModel] = None,
+        output_cls: Optional[BaseModel] = None,
         **prompt_args: Any
     ) -> str:
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
@@ -188,7 +189,7 @@ class LLMPredictor(BaseLLMPredictor):
     def predict(
         self,
         prompt: BasePromptTemplate,
-        output_cls: Type[BaseModel] = None,
+        output_cls: Optional[BaseModel] = None,
         **prompt_args: Any
     ) -> str:
         """Predict."""
@@ -231,7 +232,7 @@ class LLMPredictor(BaseLLMPredictor):
     async def apredict(
         self,
         prompt: BasePromptTemplate,
-        output_cls: Type[BaseModel] = None,
+        output_cls: Optional[BaseModel] = None,
         **prompt_args: Any
     ) -> str:
         """Async predict."""

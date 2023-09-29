@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 from llama_index.bridge.pydantic import BaseModel
 
-from llama_index.llms.base import CompletionResponse
+from llama_index.llms.base import CompletionResponse, LLMMetadata
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.program.llm_program import LLMTextCompletionProgram
 
@@ -15,6 +15,10 @@ class MockLLM(MagicMock):
         test_object = {"hello": "world"}
         text = json.dumps(test_object)
         return CompletionResponse(text=text)
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata()
 
 
 class TestModel(BaseModel):

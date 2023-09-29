@@ -1,5 +1,6 @@
-from typing import Callable, Optional, Type
+from typing import Callable, Optional
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
@@ -22,7 +23,7 @@ from llama_index.response_synthesizers.refine import Refine
 from llama_index.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.response_synthesizers.tree_summarize import TreeSummarize
 from llama_index.response_synthesizers.type import ResponseMode
-from llama_index.types import BaseModel, BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 
 
 def get_response_synthesizer(
@@ -36,7 +37,7 @@ def get_response_synthesizer(
     use_async: bool = False,
     streaming: bool = False,
     structured_answer_filtering: bool = False,
-    output_cls: Type[BaseModel] = None,
+    output_cls: Optional[BaseModel] = None,
     program_factory: Optional[Callable[[PromptTemplate], BasePydanticProgram]] = None,
     verbose: bool = False,
 ) -> BaseSynthesizer:

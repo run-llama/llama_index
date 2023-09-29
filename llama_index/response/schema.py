@@ -1,10 +1,11 @@
 """Response schema."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Union
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.schema import NodeWithScore
-from llama_index.types import BaseModel, TokenGen
+from llama_index.types import TokenGen
 from llama_index.utils import truncate_text
 
 
@@ -49,13 +50,13 @@ class PydanticResponse:
 
     """
 
-    response: Optional[Type[BaseModel]]
+    response: Optional[BaseModel]
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
 
     def __str__(self) -> str:
         """Convert to string representation."""
-        return self.response.json() or "None"
+        return self.response.json() if self.response else "None"
 
     def get_formatted_sources(self, length: int = 100) -> str:
         """Get formatted sources text."""
@@ -66,6 +67,11 @@ class PydanticResponse:
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)
+
+    def get_response(self) -> Response:
+        """Get a standard response object."""
+        response_txt = self.response.json() if self.response else "None"
+        return Response(response_txt, self.source_nodes, self.metadata)
 
 
 @dataclass
@@ -126,4 +132,4 @@ class StreamingResponse:
         return "\n\n".join(texts)
 
 
-RESPONSE_TYPE = Union[Response, StreamingResponse]
+RESPONSE_TYPE = Union[Response, StreamingResponse, PydanticResponse]

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Sequence, Type
+from typing import Any, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
@@ -31,7 +31,7 @@ class TreeSummarize(BaseSynthesizer):
         streaming: bool = False,
         use_async: bool = False,
         verbose: bool = False,
-        output_cls: Type[BaseModel] = None,
+        output_cls: Optional[BaseModel] = None,
     ) -> None:
         super().__init__(
             service_context=service_context, streaming=streaming, output_cls=output_cls

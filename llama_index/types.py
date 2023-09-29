@@ -19,7 +19,7 @@ Model = TypeVar("Model", bound=BaseModel)
 
 TokenGen = Generator[str, None, None]
 TokenAsyncGen = AsyncGenerator[str, None]
-RESPONSE_TEXT_TYPE = Union[Type[BaseModel], str, TokenGen]
+RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen]
 
 
 # TODO: move into a `core` folder

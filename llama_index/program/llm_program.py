@@ -20,24 +20,28 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         self,
         output_parser: PydanticOutputParser,
         llm: LLM,
-        prompt: PromptTemplate = None,
-        messages: List[ChatMessage] = None,
+        prompt: Optional[PromptTemplate] = None,
+        messages: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
     ) -> None:
+        if prompt is None and messages is None:
+            raise ValueError("Must provide either prompt or messages.")
+
         self._output_parser = output_parser
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
         self._messages = messages
 
-        self._prompt.output_parser = output_parser
+        if self._prompt is not None:
+            self._prompt.output_parser = output_parser
 
     @classmethod
     def from_defaults(
         cls,
         output_parser: PydanticOutputParser,
         prompt_template_str: Optional[str] = None,
-        messages: List[ChatMessage] = None,
+        messages: Optional[List[ChatMessage]] = None,
         prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
@@ -79,9 +83,12 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
             self._llm.chat if self._llm.metadata.is_chat_model else self._llm.complete
         )
         formatted_arg = (
-            self._prompt.format(**kwargs) if self._messages is None else self._messages
+            self._prompt.format(**kwargs)
+            if self._prompt is not None
+            else self._messages
         )
-        response = response_fn(formatted_arg)
+
+        response = response_fn(formatted_arg)  # type: ignore
         raw_output = response.text
         model_output = self._output_parser.parse(raw_output)
         return model_output
