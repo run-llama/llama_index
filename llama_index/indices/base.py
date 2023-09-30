@@ -96,9 +96,9 @@ class BaseIndex(Generic[IS], ABC):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
 
-            nodes = service_context.node_parser.get_nodes_from_documents(
-                documents, show_progress=show_progress
-            )
+            nodes: List[BaseNode] = documents  # type: ignore
+            for transformation in service_context.transformations:
+                nodes = transformation(nodes, show_progress=show_progress)
 
             return cls(
                 nodes=nodes,
@@ -185,9 +185,11 @@ class BaseIndex(Generic[IS], ABC):
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         with self._service_context.callback_manager.as_trace("insert"):
-            nodes = self.service_context.node_parser.get_nodes_from_documents(
-                [document]
-            )
+            nodes: List[BaseNode] = [document]
+
+            for transformation in self._service_context.transformations:
+                nodes = transformation(nodes, show_progress=self._show_progress)
+
             self.insert_nodes(nodes, **insert_kwargs)
             self.docstore.set_document_hash(document.get_doc_id(), document.hash)
 

@@ -146,7 +146,10 @@ class DatasetGenerator:
         """Generate dataset from documents."""
         if service_context is None:
             service_context = _get_default_service_context()
-        nodes = service_context.node_parser.get_nodes_from_documents(documents)
+
+        nodes: List[BaseNode] = documents
+        for transformation in service_context.transformations:
+            nodes = transformation(nodes, show_progress=show_progress)
 
         # use node postprocessor to filter nodes
         required_keywords = required_keywords or []

@@ -79,16 +79,15 @@ class IngestionPipeline(BaseModel):
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
-    ):
+    ) -> "IngestionPipeline":
         transformations = [
-            service_context.node_parser,
+            *service_context.transformations,
             service_context.embed_model,
         ]
 
         return cls(
             name=name,
             transformations=transformations,
-            llm=service_context.llm_predictor.llm,
             reader=reader,
             documents=documents,
             vector_store=vector_store,

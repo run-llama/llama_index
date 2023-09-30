@@ -86,6 +86,7 @@ class SimpleNodeParser(NodeParser):
         self,
         documents: Sequence[Document],
         show_progress: bool = False,
+        **kwargs: Any,
     ) -> List[BaseNode]:
         """Parse document into nodes.
 

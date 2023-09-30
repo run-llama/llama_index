@@ -113,4 +113,4 @@ class BaseExtractor(TransformComponent):
         Args:
             nodes (List[BaseNode]): nodes to post-process
         """
-        return self.process_nodes(nodes, **kwargs)
+        return self.process_nodes(nodes, **kwargs)  # type: ignore

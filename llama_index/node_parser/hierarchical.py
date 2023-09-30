@@ -1,6 +1,6 @@
 """Hierarchical node parser."""
 
-from typing import List, Optional, Sequence, Dict
+from typing import Any, List, Optional, Sequence, Dict
 
 from llama_index.bridge.pydantic import Field
 
@@ -194,6 +194,7 @@ class HierarchicalNodeParser(NodeParser):
         self,
         documents: Sequence[Document],
         show_progress: bool = False,
+        **kwargs: Any,
     ) -> List[BaseNode]:
         """Parse document into nodes.
 

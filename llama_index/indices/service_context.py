@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 from llama_index.bridge.pydantic import BaseModel
 
@@ -17,6 +17,7 @@ from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.prompts.base import BasePromptTemplate
+from llama_index.schema import TransformComponent
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class ServiceContextData(BaseModel):
     llm_predictor: dict
     prompt_helper: dict
     embed_model: dict
-    node_parser: dict
+    transformations: List[dict]
 
 
 @dataclass
@@ -73,7 +74,7 @@ class ServiceContext:
     llm_predictor: BaseLLMPredictor
     prompt_helper: PromptHelper
     embed_model: BaseEmbedding
-    node_parser: NodeParser
+    transformations: List[TransformComponent]
     llama_logger: LlamaLogger
     callback_manager: CallbackManager
 
@@ -85,6 +86,7 @@ class ServiceContext:
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
+        transformations: Optional[List[TransformComponent]] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -156,6 +158,8 @@ class ServiceContext:
                 llm_predictor.query_wrapper_prompt = query_wrapper_prompt
 
         # NOTE: the embed_model isn't used in all indices
+        # NOTE: embed model should be a transformation, but the way the service
+        # context works, we can't put in there yet.
         embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
@@ -171,13 +175,15 @@ class ServiceContext:
             callback_manager=callback_manager,
         )
 
+        transformations = transformations or [node_parser]
+
         llama_logger = llama_logger or LlamaLogger()
 
         return cls(
             llm_predictor=llm_predictor,
             embed_model=embed_model,
             prompt_helper=prompt_helper,
-            node_parser=node_parser,
+            transformations=transformations,
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
         )
@@ -191,6 +197,7 @@ class ServiceContext:
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
+        transformations: Optional[List[TransformComponent]] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -242,13 +249,20 @@ class ServiceContext:
                 num_output=num_output,
             )
 
-        node_parser = node_parser or service_context.node_parser
-        if chunk_size is not None or chunk_overlap is not None:
-            node_parser = _get_default_node_parser(
+        transformations = transformations or []
+        node_parser_found = False
+        for transform in service_context.transformations:
+            if isinstance(transform, NodeParser):
+                node_parser_found = True
+                break
+
+        if not node_parser_found:
+            node_parser = node_parser or _get_default_node_parser(
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
                 callback_manager=callback_manager,
             )
+            transformations = [node_parser] + transformations
 
         llama_logger = llama_logger or service_context.llama_logger
 
@@ -256,7 +270,7 @@ class ServiceContext:
             llm_predictor=llm_predictor,
             embed_model=embed_model,
             prompt_helper=prompt_helper,
-            node_parser=node_parser,
+            transformations=transformations,
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
         )
@@ -276,19 +290,20 @@ class ServiceContext:
 
         prompt_helper_dict = self.prompt_helper.to_dict()
 
-        node_parser_dict = self.node_parser.to_dict()
+        tranform_list_dict = [x.to_dict() for x in self.transformations]
 
         return ServiceContextData(
             llm=llm_dict,
             llm_predictor=llm_predictor_dict,
             prompt_helper=prompt_helper_dict,
             embed_model=embed_model_dict,
-            node_parser=node_parser_dict,
+            transformations=tranform_list_dict,
         ).dict()
 
     @classmethod
     def from_dict(cls, data: dict) -> "ServiceContext":
         from llama_index.embeddings.loading import load_embed_model
+        from llama_index.extractors.loading import load_extractor
         from llama_index.llm_predictor.loading import load_predictor
         from llama_index.node_parser.loading import load_parser
 
@@ -300,15 +315,18 @@ class ServiceContext:
 
         prompt_helper = PromptHelper.from_dict(service_context_data.prompt_helper)
 
-        node_parser = load_parser(
-            service_context_data.node_parser,
-        )
+        transformations: List[TransformComponent] = []
+        for transform in service_context_data.transformations:
+            try:
+                transformations.append(load_parser(transform))
+            except ValueError:
+                transformations.append(load_extractor(transform))
 
         return cls.from_defaults(
             llm_predictor=llm_predictor,
             prompt_helper=prompt_helper,
             embed_model=embed_model,
-            node_parser=node_parser,
+            transformations=transformations,
         )
 
 

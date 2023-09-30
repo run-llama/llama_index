@@ -1,5 +1,5 @@
 """Simple node parser."""
-from typing import Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 
@@ -117,6 +117,7 @@ class SentenceWindowNodeParser(NodeParser):
         self,
         documents: Sequence[Document],
         show_progress: bool = False,
+        **kwargs: Any,
     ) -> List[BaseNode]:
         """Parse document into nodes.
 
