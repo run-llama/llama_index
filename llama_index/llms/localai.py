@@ -29,9 +29,10 @@ class LocalAI(OpenAI):
     globally_use_chat_completions: Optional[bool] = Field(
         default=None,
         description=(
-            "Set None to per-invocation decide on /chat/completions vs /completions,"
-            " set False to universally use /completions,"
-            " set True to universally use /chat/completions."
+            "Set None (default) to per-invocation decide on using /chat/completions"
+            " vs /completions endpoints with query keyword arguments,"
+            " set False to universally use /completions endpoint,"
+            " set True to universally use /chat/completions endpoint."
         ),
     )
 
@@ -44,7 +45,7 @@ class LocalAI(OpenAI):
         **openai_kwargs: Any,
     ) -> None:
         super().__init__(api_key=api_key, api_base=api_base, **openai_kwargs)
-        # Below sets the pydantic Fields
+        # Below sets the pydantic Fields specific to this class
         self.context_window = context_window
         self.globally_use_chat_completions = globally_use_chat_completions
 
