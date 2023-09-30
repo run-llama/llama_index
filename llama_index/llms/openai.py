@@ -182,13 +182,12 @@ class OpenAI(LLM):
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
         response = completion_with_retry(
             is_chat_model=self._is_chat_model,
             max_retries=self.max_retries,
             messages=message_dicts,
             stream=False,
-            **all_kwargs,
+            **self._get_all_kwargs(**kwargs),
         )
         message_dict = response["choices"][0]["message"]
         message = from_openai_message_dict(message_dict)
@@ -206,7 +205,6 @@ class OpenAI(LLM):
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -216,7 +214,7 @@ class OpenAI(LLM):
                 max_retries=self.max_retries,
                 messages=message_dicts,
                 stream=True,
-                **all_kwargs,
+                **self._get_all_kwargs(**kwargs),
             ):
                 if len(response["choices"]) == 0 and (
                     response.get("prompt_annotations")
@@ -413,13 +411,12 @@ class OpenAI(LLM):
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
         response = await acompletion_with_retry(
             is_chat_model=self._is_chat_model,
             max_retries=self.max_retries,
             messages=message_dicts,
             stream=False,
-            **all_kwargs,
+            **self._get_all_kwargs(**kwargs),
         )
         message_dict = response["choices"][0]["message"]
         message = from_openai_message_dict(message_dict)
@@ -437,7 +434,6 @@ class OpenAI(LLM):
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
@@ -447,7 +443,7 @@ class OpenAI(LLM):
                 max_retries=self.max_retries,
                 messages=message_dicts,
                 stream=True,
-                **all_kwargs,
+                **self._get_all_kwargs(**kwargs),
             ):
                 if len(response["choices"]) == 0 and response.get("prompt_annotations"):
                     # open ai sends empty response first while streaming ignore it
