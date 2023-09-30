@@ -16,11 +16,6 @@ class BaseNodePostprocessor(BaseComponent, ABC):
     class Config:
         arbitrary_types_allowed = True
 
-    # implement class_name so users don't have to worry about it when extending
-    @classmethod
-    def class_name(cls) -> str:
-        return "BaseNodePostprocessor"
-
     @abstractmethod
     def postprocess_nodes(
         self,

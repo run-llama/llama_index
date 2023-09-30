@@ -44,11 +44,6 @@ class LangchainEmbedding(BaseEmbedding):
             model_name=model_name,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "LangchainEmbedding"
-
     def _async_not_implemented_warn_once(self) -> None:
         if not self._async_not_implemented_warned:
             print("Async embedding not available, falling back to sync method.")

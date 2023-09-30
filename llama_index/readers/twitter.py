@@ -37,11 +37,6 @@ class TwitterTweetReader(BasePydanticReader):
             bearer_token=bearer_token,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "TwitterTweetReader"
-
     def load_data(
         self,
         twitterhandles: List[str],

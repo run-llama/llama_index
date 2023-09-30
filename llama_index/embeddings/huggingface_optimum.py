@@ -70,11 +70,6 @@ class OptimumEmbedding(BaseEmbedding):
         )
 
     @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "OptimumEmbedding"
-
-    @classmethod
     def create_and_save_optimum_model(
         cls,
         model_name_or_path: str,

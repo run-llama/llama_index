@@ -34,10 +34,6 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         )
         super().__init__(top_n=top_n, model=model)
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "SentenceTransformerRerank"
-
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],

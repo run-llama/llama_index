@@ -48,11 +48,6 @@ class ElasticsearchReader(BasePydanticReader):
             endpoint=endpoint, index=index, httpx_client_args=httpx_client_args
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "ElasticsearchReader"
-
     def load_data(
         self,
         field: str,

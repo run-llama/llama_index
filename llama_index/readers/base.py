@@ -43,8 +43,3 @@ class ReaderConfig(BaseComponent):
 
     class Config:
         arbitrary_types_allowed = True
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "LoaderConfig"

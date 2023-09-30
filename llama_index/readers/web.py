@@ -43,11 +43,6 @@ class SimpleWebPageReader(BasePydanticReader):
         self._metadata_fn = metadata_fn
         super().__init__(html_to_text=html_to_text)
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "SimpleWebPageReader"
-
     def load_data(self, urls: List[str]) -> List[Document]:
         """Load data from the input directory.
 
@@ -102,11 +97,6 @@ class TrafilaturaWebReader(BasePydanticReader):
                 "`trafilatura` package not found, please run `pip install trafilatura`"
             )
         super().__init__(error_on_missing=error_on_missing)
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "TrafilaturaWebReader"
 
     def load_data(self, urls: List[str]) -> List[Document]:
         """Load data from the urls.
@@ -189,11 +179,6 @@ class BeautifulSoupWebReader(BasePydanticReader):
         self._website_extractor = website_extractor or DEFAULT_WEBSITE_EXTRACTOR
         super().__init__()
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "BeautifulSoupWebReader"
-
     def load_data(
         self, urls: List[str], custom_hostname: Optional[str] = None
     ) -> List[Document]:
@@ -270,11 +255,6 @@ class RssReader(BasePydanticReader):
                     "`html2text` package not found, please run `pip install html2text`"
                 )
         super().__init__(html_to_text=html_to_text)
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "RssReader"
 
     def load_data(self, urls: List[str]) -> List[Document]:
         """Load data from RSS feeds.

@@ -23,9 +23,9 @@ class BaseComponent(BaseModel):
     """Base component object to caputure class names."""
 
     @classmethod
-    @abstractmethod
     def class_name(cls) -> str:
         """Get class name."""
+        return cls.__name__
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)
@@ -89,11 +89,6 @@ class RelatedNodeInfo(BaseComponent):
     node_type: Optional[ObjectType] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "RelatedNodeInfo"
 
 
 RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
@@ -293,11 +288,6 @@ class TextNode(BaseNode):
         description="Seperator between metadata fields when converting to string.",
     )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "TextNode"
-
     @root_validator
     def _check_hash(cls, values: dict) -> dict:
         """Generate a hash to represent the node."""
@@ -379,11 +369,6 @@ class ImageNode(TextNode):
     def get_type(cls) -> str:
         return ObjectType.IMAGE
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "ImageNode"
-
 
 class IndexNode(TextNode):
     """Node with reference to any object.
@@ -414,11 +399,6 @@ class IndexNode(TextNode):
     def get_type(cls) -> str:
         return ObjectType.INDEX
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "IndexNode"
-
 
 class NodeWithScore(BaseComponent):
     node: BaseNode
@@ -436,11 +416,6 @@ class NodeWithScore(BaseComponent):
                 return 0.0
         else:
             return self.score
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "NodeWithScore"
 
     ##### pass through methods to BaseNode #####
     @property
@@ -544,19 +519,9 @@ class Document(TextNode):
         )
         return document
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "Document"
-
 
 class ImageDocument(Document):
     """Data document containing an image."""
 
     # base64 encoded image str
     image: Optional[str] = None
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "ImageDocument"

@@ -221,10 +221,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
             **kwargs,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "PinconeVectorStore"
-
     def add(
         self,
         nodes: List[BaseNode],

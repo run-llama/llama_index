@@ -58,10 +58,6 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
     # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "FixedRecencyPostprocessor"
-
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -113,10 +109,6 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     date_key: str = "date"
     similarity_cutoff: float = Field(default=0.7)
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "EmbeddingRecencyPostprocessor"
 
     def postprocess_nodes(
         self,
@@ -181,10 +173,6 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
     # optionally set now (makes it easier to test)
     now: Optional[float] = None
     top_k: int = 1
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "TimeWeightedPostprocessor"
 
     def postprocess_nodes(
         self,

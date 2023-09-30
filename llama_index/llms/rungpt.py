@@ -64,10 +64,6 @@ class RunGptLLM(LLM):
             base_url=base_url,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "RunGptLLM"
-
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""

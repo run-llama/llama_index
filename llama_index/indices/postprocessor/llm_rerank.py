@@ -56,10 +56,6 @@ class LLMRerank(BaseNodePostprocessor):
             top_n=top_n,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "LLMRerank"
-
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],

@@ -24,11 +24,6 @@ class MarkdownSplitter(TextSplitter):
             callback_manager=callback_manager,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "MarkdownSplitter"
-
     def split_text(self, text: str) -> List[str]:
         if text == "":
             return []

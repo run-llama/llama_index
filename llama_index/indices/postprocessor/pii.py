@@ -54,10 +54,6 @@ class PIINodePostprocessor(BaseNodePostprocessor):
     pii_str_tmpl: str = DEFAULT_PII_TMPL
     pii_node_info_key: str = "__pii_node_info__"
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "PIINodePostprocessor"
-
     def mask_pii(self, text: str) -> Tuple[str, Dict]:
         """Mask PII in text."""
         pii_prompt = PromptTemplate(self.pii_str_tmpl)
@@ -107,10 +103,6 @@ class NERPIINodePostprocessor(BaseNodePostprocessor):
     """
 
     pii_node_info_key: str = "__pii_node_info__"
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "NERPIINodePostprocessor"
 
     def mask_pii(self, ner: Callable, text: str) -> Tuple[str, Dict]:
         """Mask PII in text."""

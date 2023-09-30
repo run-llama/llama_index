@@ -38,10 +38,6 @@ class CohereRerank(BaseNodePostprocessor):
         self._client = Client(api_key=api_key)
         super().__init__(top_n=top_n, model=model)
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "CohereRerank"
-
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],

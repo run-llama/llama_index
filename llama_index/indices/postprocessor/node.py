@@ -22,10 +22,6 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
     required_keywords: List[str] = Field(default_factory=list)
     exclude_keywords: List[str] = Field(default_factory=list)
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "KeywordNodePostprocessor"
-
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -60,10 +56,6 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
     """Similarity-based Node processor."""
 
     similarity_cutoff: float = Field(default=None)
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "SimilarityPostprocessor"
 
     def postprocess_nodes(
         self,
@@ -161,10 +153,6 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
         if v not in ["next", "previous", "both"]:
             raise ValueError(f"Invalid mode: {v}")
         return v
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "PrevNextNodePostprocessor"
 
     def postprocess_nodes(
         self,
@@ -285,10 +273,6 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
         arbitrary_types_allowed = True
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "AutoPrevNextNodePostprocessor"
-
     def _parse_prediction(self, raw_pred: str) -> str:
         """Parse prediction."""
         pred = raw_pred.strip().lower()
@@ -361,10 +345,6 @@ class LongContextReorder(BaseNodePostprocessor):
     as the input context lengthens, performance drops notably, even
     in models designed for long contexts."
     """
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "LongContextReorder"
 
     def postprocess_nodes(
         self,

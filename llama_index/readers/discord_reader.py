@@ -103,11 +103,6 @@ class DiscordReader(BasePydanticReader):
 
         super().__init__(discord_token=discord_token)
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "DiscordReader"
-
     def _read_channel(
         self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
     ) -> str:

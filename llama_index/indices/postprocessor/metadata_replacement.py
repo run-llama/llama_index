@@ -15,10 +15,6 @@ class MetadataReplacementPostProcessor(BaseNodePostprocessor):
     def __init__(self, target_metadata_key: str) -> None:
         super().__init__(target_metadata_key=target_metadata_key)
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "MetadataReplacementPostProcessor"
-
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],

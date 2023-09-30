@@ -168,10 +168,6 @@ class PGVectorStore(BasePydanticVectorStore):
         await self._async_engine.dispose()
 
     @classmethod
-    def class_name(cls) -> str:
-        return "PGVectorStore"
-
-    @classmethod
     def from_params(
         cls,
         host: Optional[str] = None,

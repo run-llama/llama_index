@@ -106,11 +106,6 @@ class Konko(LLM):
         model_name = self.model
         return model_name
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "Konko_LLM"
-
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(

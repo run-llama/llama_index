@@ -37,11 +37,6 @@ class EverlyAI(OpenAI):
             callback_manager=callback_manager,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "EverlyAI_LLM"
-
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(

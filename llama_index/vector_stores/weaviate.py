@@ -155,10 +155,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             **kwargs,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "WeaviateVectorStore"
-
     @property
     def client(self) -> Any:
         """Get client."""

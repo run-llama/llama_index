@@ -76,11 +76,6 @@ class AdapterEmbeddingModel(BaseEmbedding):
             model_name=f"Adapter for {base_embed_model.model_name}",
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "AdapterEmbeddingModel"
-
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         import torch

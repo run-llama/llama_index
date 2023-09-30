@@ -95,10 +95,6 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             context_before=context_before,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "SentenceEmbeddingOptimizer"
-
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],

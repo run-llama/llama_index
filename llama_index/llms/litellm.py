@@ -101,11 +101,6 @@ class LiteLLM(LLM):
 
         return model_name
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "litellm_llm"
-
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(

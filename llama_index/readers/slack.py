@@ -84,11 +84,6 @@ class SlackReader(BasePydanticReader):
             latest_date_timestamp=latest_date_timestamp,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "SlackReader"
-
     def _read_message(self, channel_id: str, message_ts: str) -> str:
         from slack_sdk.errors import SlackApiError
 

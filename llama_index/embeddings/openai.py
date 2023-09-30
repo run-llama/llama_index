@@ -294,11 +294,6 @@ class OpenAIEmbedding(BaseEmbedding):
             **kwargs,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "OpenAIEmbedding"
-
     @property
     def _credential_kwargs(self) -> Dict[str, Any]:
         credential_kwargs = {

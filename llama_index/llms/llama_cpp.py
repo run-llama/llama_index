@@ -135,11 +135,6 @@ class LlamaCPP(CustomLLM):
             verbose=verbose,
         )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "LlamaCPP_llm"
-
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""

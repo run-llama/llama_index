@@ -93,11 +93,6 @@ class MockLLMPredictor(BaseLLMPredictor):
 
     _callback_manager: CallbackManager = PrivateAttr(default_factory=CallbackManager)
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "MockLLMPredictor"
-
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata()

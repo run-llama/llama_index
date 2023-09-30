@@ -23,11 +23,6 @@ class WikipediaReader(BasePydanticReader):
                 "`wikipedia` package not found, please run `pip install wikipedia`"
             )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "WikipediaReader"
-
     def load_data(self, pages: List[str], **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.
 

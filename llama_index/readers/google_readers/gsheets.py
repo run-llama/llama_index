@@ -49,11 +49,6 @@ class GoogleSheetsReader(BasePydanticReader):
                 "google-auth-httplib2 google-auth-oauthlib`."
             )
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name identifier of the class."""
-        return "GoogleSheetsReader"
-
     def load_data(self, spreadsheet_ids: List[str]) -> List[Document]:
         """Load data from the input directory.
 
