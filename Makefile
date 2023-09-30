@@ -7,8 +7,8 @@ format:	## Run code autoformatters (black).
 	black .
 
 lint: ## Run linters: mypy, black, codespell, ruff
+	pre-commit install && pre-commit run --all-files
 	mypy .
-	pre-commit run --all-files
 	codespell .
 
 test:	## Run tests via pytest.
