@@ -185,16 +185,12 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
             f"OpenAI model {modelname} has been discontinued. "
             "Please choose another model."
         )
-
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
-
-    if context_size is None:
+    if modelname not in ALL_AVAILABLE_MODELS:
         raise ValueError(
-            f"Unknown model: {modelname}. Please provide a valid OpenAI model name."
-            "Known models are: " + ", ".join(ALL_AVAILABLE_MODELS.keys())
+            f"Unknown model {modelname!r}. Please provide a valid OpenAI model name in:"
+            f" {', '.join(ALL_AVAILABLE_MODELS.keys())}"
         )
-
-    return context_size
+    return ALL_AVAILABLE_MODELS[modelname]
 
 
 def is_chat_model(model: str) -> bool:

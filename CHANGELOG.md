@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Supporting `LocalAI` LLMs (#7913)
+
 ### Bug Fixes / Nits
 - Simplify NL SQL response to SQL parsing, with expanded NL SQL prompt (#7868)
 - Improve vector store retrieval speed for vectordb integrations (#7876)
