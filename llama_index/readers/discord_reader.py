@@ -8,6 +8,8 @@ discord.py module.
 import asyncio
 import logging
 import os
+from functools import reduce
+
 from typing import List, Optional
 
 from llama_index.readers.base import BasePydanticReader
@@ -15,10 +17,44 @@ from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
+discord_message_metadata_properties = [
+    "activity_id",
+    "attachments",
+    "author",
+    "channel",
+    "channel_mentions",
+    "clean_content",
+    "components",
+    "created_at",
+    "edited_at",
+    "embeds",
+    "flags",
+    "guild",
+    "id",
+    "interaction",
+    "jump_url",
+    "mention_everyone",
+    "mentions",
+    "nonce",
+    "pinned",
+    "position",
+    "raw_channel_mentions",
+    "raw_mentions",
+    "raw_role_mentions",
+    "reactions",
+    "reference",
+    "role_mentions",
+    "role_subscription",
+    "stickers",
+    "system_content",
+    "tts",
+    "type",
+    "webhook_id"
+]
 
 async def read_channel(
     discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool, complete_metadata: bool = False,
-) -> str:
+) -> List[Document]:
     """Async read channel.
 
     Note: This is our hack to create a synchronous interface to the
@@ -65,10 +101,11 @@ async def read_channel(
     client = CustomClient(intents=intents)
     await client.start(discord_token)
 
-    msg_txt_list = [
-        str(m) if complete_metadata else m.content for m in messages]
+    def clone_object_properties(obj, properties):
+        return {prop: obj[prop] for prop in properties if prop in obj}
 
-    return "\n\n".join(msg_txt_list)
+    # return a list of documents per message and include message metadata on a per-document basis
+    return list(map(lambda msg: Document(text=msg.content, metadata=clone_object_properties(msg, discord_message_metadata_properties)), messages))
 
 
 class DiscordReader(BasePydanticReader):
@@ -109,13 +146,13 @@ class DiscordReader(BasePydanticReader):
         return "DiscordReader"
 
     def _read_channel(
-        self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True, complete_metadata: bool = False
+        self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
 
-    ) -> str:
+    ) -> List[Document]:
         """Read channel."""
         result = asyncio.get_event_loop().run_until_complete(
             read_channel(
-                self.discord_token, channel_id, limit=limit, oldest_first=oldest_first, complete_metadata=complete_metadata
+                self.discord_token, channel_id, limit=limit, oldest_first=oldest_first
             )
         )
         return result
@@ -125,7 +162,6 @@ class DiscordReader(BasePydanticReader):
         channel_ids: List[int],
         limit: Optional[int] = None,
         oldest_first: bool = True,
-        complete_metadata: bool = False
     ) -> List[Document]:
         """Load data from the input directory.
 
@@ -147,11 +183,9 @@ class DiscordReader(BasePydanticReader):
                     f"Channel id {channel_id} must be an integer, "
                     f"not {type(channel_id)}."
                 )
-            channel_content = self._read_channel(
-                channel_id, limit=limit, oldest_first=oldest_first, complete_metadata=complete_metadata)
-            results.append(
-                Document(text=channel_content, metadata={"channel": channel_id})
-            )
+            channel_documents = self._read_channel(
+                channel_id, limit=limit, oldest_first=oldest_first)
+            results.append(channel_documents)
         return results
 
 
