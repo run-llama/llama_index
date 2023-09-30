@@ -115,7 +115,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "SentenceSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:

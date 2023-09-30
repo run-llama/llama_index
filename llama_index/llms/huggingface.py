@@ -177,7 +177,6 @@ class HuggingFaceLLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "HuggingFace_LLM"
 
     @property

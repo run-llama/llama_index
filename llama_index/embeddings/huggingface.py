@@ -103,7 +103,6 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "HuggingFaceEmbedding"
 
     def _format_query_text(self, query_text: str) -> str:

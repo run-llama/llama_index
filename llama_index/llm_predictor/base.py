@@ -100,7 +100,6 @@ class LLMPredictor(BaseLLMPredictor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "LLMPredictor"
 
     @property

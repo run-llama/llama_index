@@ -51,7 +51,6 @@ class GoogleSheetsReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "GoogleSheetsReader"
 
     def load_data(self, spreadsheet_ids: List[str]) -> List[Document]:

@@ -52,7 +52,6 @@ class NotionPageReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "NotionPageReader"
 
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
