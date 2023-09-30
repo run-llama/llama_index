@@ -26,16 +26,27 @@ class LocalAI(OpenAI):
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
     )
+    globally_use_chat_completions: Optional[bool] = Field(
+        default=None,
+        description=(
+            "Set None to per-invocation decide on /chat/completions vs /completions,"
+            " set False to universally use /completions,"
+            " set True to universally use /chat/completions."
+        ),
+    )
 
     def __init__(
         self,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         api_key: Optional[str] = DEFAULT_KEY,
         api_base: Optional[str] = DEFAULT_API_BASE,
+        globally_use_chat_completions: Optional[bool] = None,
         **openai_kwargs: Any,
     ) -> None:
         super().__init__(api_key=api_key, api_base=api_base, **openai_kwargs)
-        self.context_window = context_window  # Set in pydantic
+        # Below sets the pydantic Fields
+        self.context_window = context_window
+        self.globally_use_chat_completions = globally_use_chat_completions
 
     def _get_context_window(self) -> int:
         return self.context_window
@@ -45,3 +56,13 @@ class LocalAI(OpenAI):
         if self.max_tokens is not None:
             return
         all_kwargs.pop("max_tokens", None)
+
+    @property
+    def _is_chat_model(self) -> bool:
+        if self.globally_use_chat_completions is not None:
+            return self.globally_use_chat_completions
+        raise NotImplementedError(
+            f"Inferring of /chat/completions is not supported by {type(self).__name__}."
+            f" Please use the kwarg 'use_chat_completions' in your query, setting"
+            f" True to use /chat/completions or False to use /completions."
+        )
