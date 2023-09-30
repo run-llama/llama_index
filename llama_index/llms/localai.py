@@ -32,7 +32,7 @@ class LocalAI(OpenAI):
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         api_key: Optional[str] = DEFAULT_KEY,
         api_base: Optional[str] = DEFAULT_API_BASE,
-        **openai_kwargs,
+        **openai_kwargs: Any,
     ) -> None:
         super().__init__(api_key=api_key, api_base=api_base, **openai_kwargs)
         self.context_window = context_window  # Set in pydantic
