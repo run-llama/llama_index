@@ -107,10 +107,13 @@ class OpenAI(LLM):
         """Get class name."""
         return "openai_llm"
 
+    def _get_context_window(self) -> int:
+        return openai_modelname_to_contextsize(self._get_model_name())
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=openai_modelname_to_contextsize(self._get_model_name()),
+            context_window=self._get_context_window(),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
             is_function_calling_model=is_function_calling_model(self._get_model_name()),
@@ -322,7 +325,7 @@ class OpenAI(LLM):
 
         return gen()
 
-    def _get_max_token_for_prompt(self, prompt: str) -> int:
+    def _get_max_token_for_prompt(self, prompt: str) -> Optional[int]:
         try:
             import tiktoken
         except ImportError as exc:
