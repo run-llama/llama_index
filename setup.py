@@ -30,7 +30,7 @@ install_requires = [
     "nest_asyncio",
     "nltk",
     "tree_sitter_languages",
-    "llamaindex-py-client @ git+https://github.com/run-llama/llamaindex-py-client.git@main",
+    "llamaindex-py-client @ git+ssh://git@github.com/run-llama/llamaindex-py-client.git@main",
 ]
 
 setup(
