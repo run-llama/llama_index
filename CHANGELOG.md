@@ -4,6 +4,7 @@
 
 ### New Features
 - Supporting `LocalAI` LLMs (#7913)
+- Validations protecting against misconfigured chunk sizes (#7917)
 
 ### Bug Fixes / Nits
 - Simplify NL SQL response to SQL parsing, with expanded NL SQL prompt (#7868)
