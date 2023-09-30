@@ -8,8 +8,6 @@ discord.py module.
 import asyncio
 import logging
 import os
-from functools import reduce
-
 from typing import List, Optional
 
 from llama_index.readers.base import BasePydanticReader
@@ -18,7 +16,7 @@ from llama_index.schema import Document
 logger = logging.getLogger(__name__)
 
 async def read_channel(
-    discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool, complete_metadata: bool = False,
+    discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool,
 ) -> List[Document]:
     """Async read channel.
 
@@ -66,13 +64,12 @@ async def read_channel(
     client = CustomClient(intents=intents)
     await client.start(discord_token)
 
-    # return a list of documents per message and include message metadata on a per-document basis
+    # Wraps each message in a Document containing the text as well as some useful metadata properties.
     return list(map(lambda msg: Document(text=msg.content, metadata={
         "message_id": msg.id,
         "username": msg.author.name,
         "created_at": msg.created_at,
         "edited_at": msg.edited_at,
-        "reactions": reduce(lambda reaction: f"{reaction.emoji} {reaction.count}; ", msg.reactions)
     }), messages))
 
 
@@ -138,7 +135,6 @@ class DiscordReader(BasePydanticReader):
             limit (Optional[int]): Maximum number of messages to read.
             oldest_first (bool): Whether to read oldest messages first.
                 Defaults to `True`.
-            complete_metadata (bool): Whether to return the complete message metadata in the List.
 
         Returns:
             List[Document]: List of documents.
