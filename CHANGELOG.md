@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.37] - 2023-09-30
 
 ### New Features
 - Supporting `LocalAI` LLMs (#7913)
@@ -12,6 +12,7 @@
 - Nice-ified JSON decoding error (#7891)
 - Nice-ified SQL error from LLM not providing SQL (#7900)
 - Nice-ified `ImportError` for `HuggingFaceLLM` (#7904)
+- eval fixes: fix dataset response generation, add score to evaluators (#7915)
 
 ## [0.8.36] - 2023-09-27
 
