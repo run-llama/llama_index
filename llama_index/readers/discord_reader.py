@@ -45,12 +45,10 @@ async def read_channel(
                 thread_dict = {}
                 for thread in channel.threads:
                     thread_dict[thread.id] = thread
-                # print(f"channel: {channel}")
                 async for msg in channel.history(
                     limit=limit, oldest_first=oldest_first
                 ):
                     messages.append(msg)
-                    # print(f"message: {msg}")
                     if msg.id in thread_dict:
                         thread = thread_dict[msg.id]
                         async for thread_msg in thread.history(
