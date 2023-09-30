@@ -1,8 +1,8 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from llama_index.llms.openai import OpenAI
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
+from llama_index.llms.openai import OpenAI
 
 DEFAULT_KEY = "fake"
 DEFAULT_HOST = "localhost"
