@@ -175,6 +175,7 @@ class OpenAI(LLM):
         return {**base_kwargs, **self.additional_kwargs}
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        """Get all data for the request as a dictionary."""
         return {**self._credential_kwargs, **self._model_kwargs, **kwargs}
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
