@@ -273,10 +273,7 @@ class OpenAI(LLM):
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
+        self._update_max_tokens(all_kwargs, prompt)
 
         response = completion_with_retry(
             is_chat_model=self._is_chat_model,
@@ -297,10 +294,7 @@ class OpenAI(LLM):
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
+        self._update_max_tokens(all_kwargs, prompt)
 
         def gen() -> CompletionResponseGen:
             text = ""
@@ -325,7 +319,10 @@ class OpenAI(LLM):
 
         return gen()
 
-    def _get_max_token_for_prompt(self, prompt: str) -> Optional[int]:
+    def _update_max_tokens(self, all_kwargs: Dict[str, Any], prompt: str) -> None:
+        if self.max_tokens is not None:
+            return
+        # NOTE: non-chat completion endpoint requires max_tokens to be set
         try:
             import tiktoken
         except ImportError as exc:
@@ -335,13 +332,13 @@ class OpenAI(LLM):
         context_window = self.metadata.context_window
         encoding = tiktoken.encoding_for_model(self._get_model_name())
         tokens = encoding.encode(prompt)
-        max_token = context_window - len(tokens)
-        if max_token <= 0:
+        max_tokens = context_window - len(tokens)
+        if max_tokens <= 0:
             raise ValueError(
                 f"The prompt is too long for the model. "
                 f"Please use a prompt that is less than {context_window} tokens."
             )
-        return max_token
+        all_kwargs["max_tokens"] = max_tokens
 
     def _get_response_token_counts(self, raw_response: Any) -> dict:
         """Get the token usage reported by the response."""
@@ -496,10 +493,7 @@ class OpenAI(LLM):
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
+        self._update_max_tokens(all_kwargs, prompt)
 
         response = await acompletion_with_retry(
             is_chat_model=self._is_chat_model,
@@ -522,10 +516,7 @@ class OpenAI(LLM):
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
+        self._update_max_tokens(all_kwargs, prompt)
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""

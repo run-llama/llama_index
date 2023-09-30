@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from llama_index.llms.openai import OpenAI
 from llama_index.bridge.pydantic import Field
@@ -40,5 +40,8 @@ class LocalAI(OpenAI):
     def _get_context_window(self) -> int:
         return self.context_window
 
-    def _get_max_token_for_prompt(self, prompt: str) -> Optional[int]:
-        return None
+    def _update_max_tokens(self, all_kwargs: Dict[str, Any], prompt: str) -> None:
+        # This subclass only supports max_tokens via LocalAI(..., max_tokens=123)
+        if self.max_tokens is not None:
+            return
+        all_kwargs.pop("max_tokens", None)
