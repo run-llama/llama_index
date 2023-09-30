@@ -61,7 +61,6 @@ class Replicate(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Replicate_llm"
 
     @property

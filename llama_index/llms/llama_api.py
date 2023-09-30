@@ -61,7 +61,6 @@ class LlamaAPI(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "llama_api_llm"
 
     @property

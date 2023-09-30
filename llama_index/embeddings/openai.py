@@ -296,7 +296,6 @@ class OpenAIEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "OpenAIEmbedding"
 
     @property

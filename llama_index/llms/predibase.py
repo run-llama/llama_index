@@ -71,7 +71,6 @@ class PredibaseLLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "PredibaseLLM"
 
     @property

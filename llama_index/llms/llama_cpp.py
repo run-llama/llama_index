@@ -137,7 +137,6 @@ class LlamaCPP(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "LlamaCPP_llm"
 
     @property

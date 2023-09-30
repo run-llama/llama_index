@@ -143,7 +143,6 @@ class HierarchicalNodeParser(NodeParser):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "HierarchicalNodeParser"
 
     def _recursively_get_nodes_from_nodes(

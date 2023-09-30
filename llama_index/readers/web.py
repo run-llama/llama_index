@@ -45,7 +45,6 @@ class SimpleWebPageReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "SimpleWebPageReader"
 
     def load_data(self, urls: List[str]) -> List[Document]:
@@ -105,7 +104,6 @@ class TrafilaturaWebReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "TrafilaturaWebReader"
 
     def load_data(self, urls: List[str]) -> List[Document]:
@@ -191,7 +189,6 @@ class BeautifulSoupWebReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "BeautifulSoupWebReader"
 
     def load_data(
@@ -273,7 +270,6 @@ class RssReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "RssReader"
 
     def load_data(self, urls: List[str]) -> List[Document]:

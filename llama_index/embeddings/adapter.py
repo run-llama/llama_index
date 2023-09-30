@@ -78,7 +78,6 @@ class AdapterEmbeddingModel(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "AdapterEmbeddingModel"
 
     def _get_query_embedding(self, query: str) -> List[float]:

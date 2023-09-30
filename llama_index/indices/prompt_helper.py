@@ -130,7 +130,6 @@ class PromptHelper(BaseComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "PromptHelper"
 
     def _get_available_context_size(self, prompt: BasePromptTemplate) -> int:

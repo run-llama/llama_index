@@ -12,7 +12,6 @@ class YoutubeTranscriptReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "YoutubeTranscriptReader"
 
     def load_data(self, ytlinks: List[str], **load_kwargs: Any) -> List[Document]:

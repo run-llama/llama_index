@@ -105,7 +105,6 @@ class DiscordReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "DiscordReader"
 
     def _read_channel(
