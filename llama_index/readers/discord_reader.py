@@ -17,41 +17,6 @@ from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
-discord_message_metadata_properties = [
-    "activity_id",
-    "attachments",
-    "author",
-    "channel",
-    "channel_mentions",
-    "clean_content",
-    "components",
-    "created_at",
-    "edited_at",
-    "embeds",
-    "flags",
-    "guild",
-    "id",
-    "interaction",
-    "jump_url",
-    "mention_everyone",
-    "mentions",
-    "nonce",
-    "pinned",
-    "position",
-    "raw_channel_mentions",
-    "raw_mentions",
-    "raw_role_mentions",
-    "reactions",
-    "reference",
-    "role_mentions",
-    "role_subscription",
-    "stickers",
-    "system_content",
-    "tts",
-    "type",
-    "webhook_id"
-]
-
 async def read_channel(
     discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool, complete_metadata: bool = False,
 ) -> List[Document]:
@@ -101,11 +66,14 @@ async def read_channel(
     client = CustomClient(intents=intents)
     await client.start(discord_token)
 
-    def clone_object_properties(obj, properties):
-        return {prop: obj[prop] for prop in properties if prop in obj}
-
     # return a list of documents per message and include message metadata on a per-document basis
-    return list(map(lambda msg: Document(text=msg.content, metadata=clone_object_properties(msg, discord_message_metadata_properties)), messages))
+    return list(map(lambda msg: Document(text=msg.content, metadata={
+        "message_id": msg.id,
+        "username": msg.author.name,
+        "created_at": msg.created_at,
+        "edited_at": msg.edited_at,
+        "reactions": reduce(lambda reaction: f"{reaction.emoji} {reaction.count}; ", msg.reactions)
+    }), messages))
 
 
 class DiscordReader(BasePydanticReader):
@@ -185,7 +153,7 @@ class DiscordReader(BasePydanticReader):
                 )
             channel_documents = self._read_channel(
                 channel_id, limit=limit, oldest_first=oldest_first)
-            results.append(channel_documents)
+            results += channel_documents
         return results
 
 
