@@ -1,5 +1,4 @@
 import pytest
-
 from llama_index.embeddings.elasticsearch import ElasticsearchEmbeddings
 
 

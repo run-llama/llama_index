@@ -1,8 +1,6 @@
 from typing import List, Any
 from llama_index.embeddings.base import BaseEmbedding
-
-from elasticsearch import Elasticsearch
-from elasticsearch.client import MlClient
+from llama_index.bridge.pydantic import PrivateAttr
 
 
 class ElasticsearchEmbeddings(BaseEmbedding):
@@ -13,33 +11,35 @@ class ElasticsearchEmbeddings(BaseEmbedding):
     and the model_id of the model deployed in the cluster.
 
     In Elasticsearch you need to have an embedding model loaded and deployed.
-    - https://www.elastic.co/guide/en/elasticsearch/reference/current/infer-trained-model.html
-    - https://www.elastic.co/guide/en/machine-learning/current/ml-nlp-deploy-models.html
+    - https://www.elastic.co
+        /guide/en/elasticsearch/reference/current/infer-trained-model.html
+    - https://www.elastic.co
+        /guide/en/machine-learning/current/ml-nlp-deploy-models.html
     """  #
 
-    client: MlClient
+    _client: Any = PrivateAttr()
     model_id: str
     input_field: str
 
-    def class_name(self):
+    @classmethod
+    def class_name(self) -> str:
         return "ElasticsearchEmbeddings"
 
     def __init__(
         self,
-        client: MlClient,
+        client: Any,
         model_id: str,
         input_field: str = "text_field",
         **kwargs: Any,
     ):
-        super().__init__(
-            client=client, model_id=model_id, input_field=input_field, **kwargs
-        )
+        self._client = client
+        super().__init__(model_id=model_id, input_field=input_field, **kwargs)
 
     @classmethod
     def from_es_connection(
         cls,
         model_id: str,
-        es_connection: Elasticsearch,
+        es_connection: Any,
         input_field: str = "text_field",
     ) -> BaseEmbedding:
         """
@@ -85,6 +85,14 @@ class ElasticsearchEmbeddings(BaseEmbedding):
                 )
         """
 
+        try:
+            from elasticsearch.client import MlClient
+        except ImportError:
+            raise ImportError(
+                "elasticsearch package not found, install with"
+                "'pip install elasticsearch'"
+            )
+
         client = MlClient(es_connection)
         return cls(client, model_id, input_field=input_field)
 
@@ -126,6 +134,16 @@ class ElasticsearchEmbeddings(BaseEmbedding):
                     es_password="baz",
                 )
         """
+
+        try:
+            from elasticsearch import Elasticsearch
+            from elasticsearch.client import MlClient
+        except ImportError:
+            raise ImportError(
+                "elasticsearch package not found, install with"
+                "'pip install elasticsearch'"
+            )
+
         es_connection = Elasticsearch(
             hosts=[es_url],
             basic_auth=(es_username, es_password),
@@ -145,7 +163,7 @@ class ElasticsearchEmbeddings(BaseEmbedding):
             List[float]: The embedding for the input query text.
         """
 
-        response = self.client.infer_trained_model(
+        response = self._client.infer_trained_model(
             model_id=self.model_id,
             docs=[{self.input_field: text}],
         )
