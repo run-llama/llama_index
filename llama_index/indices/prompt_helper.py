@@ -145,7 +145,15 @@ class PromptHelper(BaseComponent):
         """
         empty_prompt_txt = get_empty_prompt_txt(prompt)
         num_empty_prompt_tokens = len(self._tokenizer(empty_prompt_txt))
-        return max(self.context_window - num_empty_prompt_tokens - self.num_output, 0)
+        context_size_tokens = (
+            self.context_window - num_empty_prompt_tokens - self.num_output
+        )
+        if context_size_tokens < 0:
+            raise ValueError(
+                f"Calculated available context size {context_size_tokens} was"
+                " not non-negative."
+            )
+        return context_size_tokens
 
     def _get_available_chunk_size(
         self, prompt: BasePromptTemplate, num_chunks: int = 1, padding: int = 5

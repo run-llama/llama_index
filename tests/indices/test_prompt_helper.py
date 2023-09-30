@@ -1,5 +1,6 @@
 """Test PromptHelper."""
-from typing import Optional
+
+from typing import Optional, Union, Type
 
 import pytest
 
@@ -13,7 +14,7 @@ from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 @pytest.mark.parametrize(
-    ("prompt", "chunk_size_limit", "num_chunks", "padding", "expected_size"),
+    ("prompt", "chunk_size_limit", "num_chunks", "padding", "expected"),
     [
         pytest.param("This is the prompt", None, 1, 6, 0, id="one_chunk"),
         pytest.param("This is the prompt", None, 2, 3, 0, id="two_chunks_no_limit"),
@@ -27,8 +28,8 @@ from tests.mock_utils.mock_utils import mock_tokenizer
             None,
             2,
             0,
-            0,
-            id="misconfigured_chunks_truncated_to_zero",
+            ValueError,
+            id="misconfigured_chunks_denied",
         ),
     ],
 )
@@ -37,7 +38,7 @@ def test_get_chunk_size(
     chunk_size_limit: Optional[int],
     num_chunks: int,
     padding: int,
-    expected_size: int,
+    expected: Union[int, Type[Exception]],
 ) -> None:
     """Test get chunk size given prompt."""
     prompt_helper = PromptHelper(
@@ -47,10 +48,16 @@ def test_get_chunk_size(
         tokenizer=mock_tokenizer,
         chunk_size_limit=chunk_size_limit,
     )
-    chunk_size = prompt_helper._get_available_chunk_size(
-        PromptTemplate(prompt), num_chunks, padding=padding
-    )
-    assert chunk_size == expected_size
+    if isinstance(expected, int):
+        chunk_size = prompt_helper._get_available_chunk_size(
+            PromptTemplate(prompt), num_chunks, padding=padding
+        )
+        assert chunk_size == expected
+    else:
+        with pytest.raises(expected):
+            prompt_helper._get_available_chunk_size(
+                PromptTemplate(prompt), num_chunks, padding=padding
+            )
 
 
 def test_get_text_splitter() -> None:
