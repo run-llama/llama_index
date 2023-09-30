@@ -66,6 +66,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         return cls(
             output_parser,
             prompt=cast(PromptTemplate, prompt),
+            messages=messages,
             llm=llm,
             verbose=verbose,
         )

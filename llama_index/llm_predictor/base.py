@@ -159,7 +159,7 @@ class LLMPredictor(BaseLLMPredictor):
                 messages=messages,
                 llm=self._llm,
             )
-        chat_response = program(messages=messages)
+        chat_response = program()
         return chat_response.json()
 
     def _handle_predict_complete(

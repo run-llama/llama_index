@@ -67,6 +67,7 @@ class TreeSummarize(BaseSynthesizer):
             else:
                 response = await self._service_context.llm_predictor.apredict(
                     summary_template,
+                    output_cls=self._output_cls,
                     context_str=text_chunks[0],
                 )
             return response
@@ -76,6 +77,7 @@ class TreeSummarize(BaseSynthesizer):
             tasks = [
                 self._service_context.llm_predictor.apredict(
                     summary_template,
+                    output_cls=self._output_cls,
                     context_str=text_chunk,
                 )
                 for text_chunk in text_chunks
@@ -131,6 +133,7 @@ class TreeSummarize(BaseSynthesizer):
                 tasks = [
                     self._service_context.llm_predictor.apredict(
                         summary_template,
+                        output_cls=self._output_cls,
                         context_str=text_chunk,
                     )
                     for text_chunk in text_chunks
