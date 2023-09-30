@@ -26,7 +26,6 @@ class MarkdownSplitter(TextSplitter):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "MarkdownSplitter"
 
     def split_text(self, text: str) -> List[str]:

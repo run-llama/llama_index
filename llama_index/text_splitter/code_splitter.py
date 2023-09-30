@@ -56,7 +56,6 @@ class CodeSplitter(TextSplitter):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "CodeSplitter"
 
     def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:

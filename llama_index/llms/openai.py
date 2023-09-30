@@ -104,13 +104,15 @@ class OpenAI(LLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "openai_llm"
+
+    def _get_context_window(self) -> int:
+        return openai_modelname_to_contextsize(self._get_model_name())
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=openai_modelname_to_contextsize(self._get_model_name()),
+            context_window=self._get_context_window(),
             num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model,
             is_function_calling_model=is_function_calling_model(self._get_model_name()),
@@ -172,31 +174,23 @@ class OpenAI(LLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        model_kwargs = {
-            **base_kwargs,
-            **self.additional_kwargs,
-        }
-        return model_kwargs
+        return {**base_kwargs, **self.additional_kwargs}
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        return {
-            **self._credential_kwargs,
-            **self._model_kwargs,
-            **kwargs,
-        }
+        """Get all data for the request as a dictionary."""
+        return {**self._credential_kwargs, **self._model_kwargs, **kwargs}
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         if not self._is_chat_model:
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
         response = completion_with_retry(
             is_chat_model=self._is_chat_model,
             max_retries=self.max_retries,
             messages=message_dicts,
             stream=False,
-            **all_kwargs,
+            **self._get_all_kwargs(**kwargs),
         )
         message_dict = response["choices"][0]["message"]
         message = from_openai_message_dict(message_dict)
@@ -214,7 +208,6 @@ class OpenAI(LLM):
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -224,7 +217,7 @@ class OpenAI(LLM):
                 max_retries=self.max_retries,
                 messages=message_dicts,
                 stream=True,
-                **all_kwargs,
+                **self._get_all_kwargs(**kwargs),
             ):
                 if len(response["choices"]) == 0 and (
                     response.get("prompt_annotations")
@@ -279,10 +272,7 @@ class OpenAI(LLM):
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
+        self._update_max_tokens(all_kwargs, prompt)
 
         response = completion_with_retry(
             is_chat_model=self._is_chat_model,
@@ -303,10 +293,7 @@ class OpenAI(LLM):
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
+        self._update_max_tokens(all_kwargs, prompt)
 
         def gen() -> CompletionResponseGen:
             text = ""
@@ -331,23 +318,26 @@ class OpenAI(LLM):
 
         return gen()
 
-    def _get_max_token_for_prompt(self, prompt: str) -> int:
+    def _update_max_tokens(self, all_kwargs: Dict[str, Any], prompt: str) -> None:
+        if self.max_tokens is not None:
+            return
+        # NOTE: non-chat completion endpoint requires max_tokens to be set
         try:
             import tiktoken
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "Please install tiktoken to use the max_tokens=None feature."
-            )
+            ) from exc
         context_window = self.metadata.context_window
         encoding = tiktoken.encoding_for_model(self._get_model_name())
         tokens = encoding.encode(prompt)
-        max_token = context_window - len(tokens)
-        if max_token <= 0:
+        max_tokens = context_window - len(tokens)
+        if max_tokens <= 0:
             raise ValueError(
                 f"The prompt is too long for the model. "
                 f"Please use a prompt that is less than {context_window} tokens."
             )
-        return max_token
+        all_kwargs["max_tokens"] = max_tokens
 
     def _get_response_token_counts(self, raw_response: Any) -> dict:
         """Get the token usage reported by the response."""
@@ -421,13 +411,12 @@ class OpenAI(LLM):
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
         response = await acompletion_with_retry(
             is_chat_model=self._is_chat_model,
             max_retries=self.max_retries,
             messages=message_dicts,
             stream=False,
-            **all_kwargs,
+            **self._get_all_kwargs(**kwargs),
         )
         message_dict = response["choices"][0]["message"]
         message = from_openai_message_dict(message_dict)
@@ -445,7 +434,6 @@ class OpenAI(LLM):
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
@@ -455,7 +443,7 @@ class OpenAI(LLM):
                 max_retries=self.max_retries,
                 messages=message_dicts,
                 stream=True,
-                **all_kwargs,
+                **self._get_all_kwargs(**kwargs),
             ):
                 if len(response["choices"]) == 0 and response.get("prompt_annotations"):
                     # open ai sends empty response first while streaming ignore it
@@ -504,10 +492,7 @@ class OpenAI(LLM):
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
+        self._update_max_tokens(all_kwargs, prompt)
 
         response = await acompletion_with_retry(
             is_chat_model=self._is_chat_model,
@@ -530,10 +515,7 @@ class OpenAI(LLM):
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
+        self._update_max_tokens(all_kwargs, prompt)
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""

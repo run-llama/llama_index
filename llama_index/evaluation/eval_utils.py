@@ -5,8 +5,12 @@ NOTE: These are beta functions, might change.
 """
 
 from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.evaluation.base import EvaluationResult
+import pandas as pd
+import numpy as np
 from typing import List, Any
 import asyncio
+from collections import defaultdict
 
 
 def asyncio_module(show_progress: bool = False) -> Any:
@@ -43,3 +47,26 @@ def get_responses(
     """
     responses = asyncio.run(aget_responses(*args, **kwargs))
     return responses
+
+
+def get_results_df(
+    eval_results_list: List[EvaluationResult], names: List[str], metric_keys: List[str]
+) -> pd.DataFrame:
+    """Get results df.
+
+    Args:
+        eval_results_list (List[EvaluationResult]):
+            List of evaluation results.
+        names (List[str]):
+            Names of the evaluation results.
+        metric_keys (List[str]):
+            List of metric keys to get.
+
+    """
+    metric_dict = defaultdict(list)
+    metric_dict["names"] = names
+    for metric_key in metric_keys:
+        for eval_results in eval_results_list:
+            mean_score = np.array([r.score for r in eval_results[metric_key]]).mean()
+            metric_dict[metric_key].append(mean_score)
+    return pd.DataFrame(metric_dict)

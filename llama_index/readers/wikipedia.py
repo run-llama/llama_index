@@ -25,7 +25,6 @@ class WikipediaReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "WikipediaReader"
 
     def load_data(self, pages: List[str], **load_kwargs: Any) -> List[Document]:
