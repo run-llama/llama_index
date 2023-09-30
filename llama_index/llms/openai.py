@@ -172,18 +172,10 @@ class OpenAI(LLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        model_kwargs = {
-            **base_kwargs,
-            **self.additional_kwargs,
-        }
-        return model_kwargs
+        return {**base_kwargs, **self.additional_kwargs}
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        return {
-            **self._credential_kwargs,
-            **self._model_kwargs,
-            **kwargs,
-        }
+        return {**self._credential_kwargs, **self._model_kwargs, **kwargs}
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         if not self._is_chat_model:
@@ -334,10 +326,10 @@ class OpenAI(LLM):
     def _get_max_token_for_prompt(self, prompt: str) -> int:
         try:
             import tiktoken
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "Please install tiktoken to use the max_tokens=None feature."
-            )
+            ) from exc
         context_window = self.metadata.context_window
         encoding = tiktoken.encoding_for_model(self._get_model_name())
         tokens = encoding.encode(prompt)
