@@ -30,7 +30,9 @@ install_requires = [
     "nest_asyncio",
     "nltk",
     "tree_sitter_languages",
+    "llamaindex-py-client @ file://localhost" + os.path.join(os.getcwd(), 'llama_index_client') 
 ]
+
 
 setup(
     author="Jerry Liu",
