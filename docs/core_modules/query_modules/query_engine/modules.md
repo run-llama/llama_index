@@ -58,7 +58,7 @@ maxdepth: 1
 ---
 /examples/query_engine/sub_question_query_engine.ipynb
 /examples/query_engine/recursive_retriever_agents.ipynb
-/examples/agent/multi_document_agent.ipynb
+/examples/agent/multi_document_agents.ipynb
 ```
 
 
