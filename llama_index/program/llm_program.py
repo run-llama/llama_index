@@ -93,3 +93,22 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         raw_output = response.text
         model_output = self._output_parser.parse(raw_output)
         return model_output
+
+    async def acall(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> BaseModel:
+        response_fn = (
+            self._llm.achat if self._llm.metadata.is_chat_model else self._llm.acomplete
+        )
+        formatted_arg = (
+            self._prompt.format(**kwargs)
+            if self._prompt is not None
+            else self._messages
+        )
+
+        response = await response_fn(formatted_arg)  # type: ignore
+        raw_output = response.text
+        model_output = self._output_parser.parse(raw_output)
+        return model_output

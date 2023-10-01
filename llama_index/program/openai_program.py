@@ -46,6 +46,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         llm: LLM,
         prompt: BasePromptTemplate,
         function_call: Union[str, Dict[str, Any]],
+        messages: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
     ) -> None:
         """Init params."""
@@ -53,6 +54,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
+        self._messages = messages
         self._function_call = function_call
 
     @classmethod
@@ -61,6 +63,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         output_cls: Type[Model],
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
+        messages: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
@@ -79,8 +82,10 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
                 "function calling API. "
             )
 
-        if prompt is None and prompt_template_str is None:
-            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt is None and prompt_template_str is None and messages is None:
+            raise ValueError(
+                "Must provide either prompt or prompt_template_str messages."
+            )
         if prompt is not None and prompt_template_str is not None:
             raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt_template_str is not None:
@@ -91,6 +96,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             llm=llm,
             prompt=cast(PromptTemplate, prompt),
             function_call=function_call,
+            messages=messages,
             verbose=verbose,
         )
 
@@ -101,13 +107,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     def __call__(
         self,
         *args: Any,
-        messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> BaseModel:
         messages = (
             [ChatMessage(role=MessageRole.USER, content=self._prompt.format(**kwargs))]
-            if messages is None
-            else messages
+            if self._messages is None
+            else self._messages
         )
         openai_fn_spec = to_openai_function(self._output_cls)
 
@@ -140,12 +145,15 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        formatted_prompt = self._prompt.format(**kwargs)
-
+        messages = (
+            [ChatMessage(role=MessageRole.USER, content=self._prompt.format(**kwargs))]
+            if self._messages is None
+            else self._messages
+        )
         openai_fn_spec = to_openai_function(self._output_cls)
 
         chat_response = await self._llm.achat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=self._function_call,
         )
