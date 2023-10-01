@@ -63,7 +63,7 @@ class PydanticResponse:
         if self.response is not None and name in self.response.dict():
             return getattr(self.response, name)
         else:
-            return super().__getattr__(name)
+            return None
 
     def get_formatted_sources(self, length: int = 100) -> str:
         """Get formatted sources text."""

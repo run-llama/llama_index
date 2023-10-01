@@ -133,9 +133,9 @@ class LLMPredictor(BaseLLMPredictor):
 
     def _run_program(
         self,
+        output_cls: BaseModel,
         prompt: Optional[str] = None,
         messages: Optional[List[ChatMessage]] = None,
-        output_cls: Optional[BaseModel] = None,
     ) -> str:
         program: BasePydanticProgram
         if not self._llm.metadata.is_chat_model and prompt:
@@ -168,12 +168,13 @@ class LLMPredictor(BaseLLMPredictor):
                 )
             chat_response = program()
             return chat_response.json()
+        return "Empty Response"
 
     async def _arun_program(
         self,
+        output_cls: BaseModel,
         prompt: Optional[str] = None,
         messages: Optional[List[ChatMessage]] = None,
-        output_cls: Optional[BaseModel] = None,
     ) -> str:
         program: BasePydanticProgram
         if not self._llm.metadata.is_chat_model and prompt:
@@ -206,6 +207,7 @@ class LLMPredictor(BaseLLMPredictor):
                 )
             chat_response = await program.acall()
             return chat_response.json()
+        return "Empty Response"
 
     def predict(
         self,
@@ -221,7 +223,7 @@ class LLMPredictor(BaseLLMPredictor):
             messages = self._extend_messages(messages)
 
             if output_cls is not None:
-                output = self._run_program(output_cls=output_cls, messages=messages)
+                output = self._run_program(output_cls, messages=messages)
             else:
                 chat_response = self._llm.chat(messages)
                 output = chat_response.message.content or ""
@@ -232,9 +234,7 @@ class LLMPredictor(BaseLLMPredictor):
             )
 
             if output_cls is not None:
-                output = self._run_program(
-                    output_cls=output_cls, prompt=formatted_prompt
-                )
+                output = self._run_program(output_cls, prompt=formatted_prompt)
             else:
                 response = self._llm.complete(formatted_prompt)
                 output = response.text
@@ -281,9 +281,7 @@ class LLMPredictor(BaseLLMPredictor):
             messages = self._extend_messages(messages)
 
             if output_cls is not None:
-                output = await self._arun_program(
-                    output_cls=output_cls, messages=messages
-                )
+                output = await self._arun_program(output_cls, messages=messages)
             else:
                 chat_response = self._llm.chat(messages)
                 output = chat_response.message.content or ""
@@ -294,9 +292,7 @@ class LLMPredictor(BaseLLMPredictor):
             )
 
             if output_cls is not None:
-                output = await self._arun_program(
-                    output_cls=output_cls, prompt=formatted_prompt
-                )
+                output = await self._arun_program(output_cls, prompt=formatted_prompt)
             else:
                 response = await self._llm.acomplete(formatted_prompt)
                 output = response.text

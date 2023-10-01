@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Type, cast
+from typing import Any, List, Optional, Type, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse
@@ -75,6 +75,14 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def output_cls(self) -> Type[BaseModel]:
         return self._output_parser.output_cls
 
+    def _get_formatted_arg(self, **kwargs: Any) -> Union[str, List[ChatMessage]]:
+        if self._prompt is not None:
+            return self._prompt.format(**kwargs)
+        elif self._messages is not None:
+            return self._output_parser.format_messages(self._messages)
+        else:
+            raise ValueError("Must provide either prompt or messages.")
+
     def __call__(
         self,
         *args: Any,
@@ -84,16 +92,12 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
             self._llm.chat if self._llm.metadata.is_chat_model else self._llm.complete
         )
 
-        formatted_arg = (
-            self._prompt.format(**kwargs)
-            if self._prompt is not None
-            else self._output_parser.format_messages(self._messages)
-        )
+        formatted_arg = self._get_formatted_arg(**kwargs)
 
         response = response_fn(formatted_arg)  # type: ignore
 
         if isinstance(response, ChatResponse):
-            raw_output = response.message.content
+            raw_output = response.message.content or ""
         else:
             raw_output = response.text
 
@@ -108,16 +112,13 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         response_fn = (
             self._llm.achat if self._llm.metadata.is_chat_model else self._llm.acomplete
         )
-        formatted_arg = (
-            self._prompt.format(**kwargs)
-            if self._prompt is not None
-            else self._output_parser.format_messages(self._messages)
-        )
+
+        formatted_arg = self._get_formatted_arg(**kwargs)
 
         response = await response_fn(formatted_arg)  # type: ignore
 
         if isinstance(response, ChatResponse):
-            raw_output = response.message.content
+            raw_output = response.message.content or ""
         else:
             raw_output = response.text
 

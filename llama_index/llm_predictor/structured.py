@@ -50,7 +50,12 @@ class StructuredLLMPredictor(LLMPredictor):
 
         return parsed_llm_prediction
 
-    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
+    def stream(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[Any] = None,
+        **prompt_args: Any
+    ) -> TokenGen:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use
