@@ -26,23 +26,15 @@ def es_password() -> str:
     return "bar"
 
 
-def test_elasticsearch_embedding_query(
+def test_elasticsearch_embedding_constructor(
     model_id: str, es_url: str, es_username: str, es_password: str
 ) -> None:
     """Test Elasticsearch embedding query."""
 
-    document = "foo bar"
 
-    embedding = ElasticsearchEmbeddings.from_credentials(
+    ElasticsearchEmbeddings.from_credentials(
         model_id=model_id,
         es_url=es_url,
         es_username=es_username,
         es_password=es_password,
     )
-
-    try:
-        output = embedding._get_query_embedding(document)
-        assert len(output) == 768  # Change 768 to the expected embedding size
-    except ConnectionError:
-        # Will fail on CI
-        pass
