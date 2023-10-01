@@ -31,7 +31,9 @@ def test_completion() -> None:
             "usage": {"prompt_tokens": 13, "completion_tokens": 16, "total_tokens": 29},
         },
     ) as mock_completion:
-        response = llm.complete("A long time ago in a galaxy far, far away")
+        response = llm.complete(
+            "A long time ago in a galaxy far, far away", use_chat_completions=False
+        )
     assert response.text == text
     mock_completion.assert_called_once()
     # Check we remove the max_tokens if unspecified

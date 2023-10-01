@@ -3,7 +3,15 @@
 ## Unreleased
 
 ### New Features
+- Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
+- `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
+- Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
+
+## [0.8.37] - 2023-09-30
+
+### New Features
 - Supporting `LocalAI` LLMs (#7913)
+- Validations protecting against misconfigured chunk sizes (#7917)
 
 ### Bug Fixes / Nits
 - Simplify NL SQL response to SQL parsing, with expanded NL SQL prompt (#7868)
@@ -12,6 +20,7 @@
 - Nice-ified JSON decoding error (#7891)
 - Nice-ified SQL error from LLM not providing SQL (#7900)
 - Nice-ified `ImportError` for `HuggingFaceLLM` (#7904)
+- eval fixes: fix dataset response generation, add score to evaluators (#7915)
 
 ## [0.8.36] - 2023-09-27
 
