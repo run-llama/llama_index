@@ -3,10 +3,7 @@
 from abc import ABC, abstractmethod
 from llama_index.llms.base import LLM
 from llama_index.embeddings.base import BaseEmbedding
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from sentence_transformers import CrossEncoder
+from typing import Any
 
 
 class BaseLLMFinetuneEngine(ABC):
@@ -41,5 +38,5 @@ class BaseCrossEncoderFinetuningEngine(ABC):
         """Goes off and does stuff."""
 
     @abstractmethod
-    def get_finetuned_model(self, **model_kwargs: Any) -> "CrossEncoder":
-        """Gets finetuned model."""
+    def push_to_hub(self, repo_id: Any):
+        """Pushes the Cross Encoder model to HuggingFace Hub"""

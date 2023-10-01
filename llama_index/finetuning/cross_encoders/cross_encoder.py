@@ -1,12 +1,9 @@
 """Cross Encoder Finetuning Engine."""
-
-
 from typing import Any, Optional, List, Union
 from llama_index.finetuning.cross_encoders.dataset_gen import (
     CrossEncoderFinetuningDatasetSample,
 )
 from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
-
 
 class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
     """Cross-Encoders Finetune Engine."""
@@ -92,12 +89,28 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
             evaluator=self.evaluator,
             evaluation_steps=self.evaluation_steps,
         )
+        # CrossEncoder library's fit function does not save model when evaluator is None
+        # https://github.com/UKPLab/sentence-transformers/issues/2324
+        if self.evaluator is None:
+            self.model.save(self.model_output_path)
+        else:
+            pass
 
-    def get_finetuned_model(self, **model_kwargs: Any):
-        """Gets finetuned model."""
+    def push_to_hub(self, repo_id: Any = None):
+        """
+        Saves the model and tokenizer to HuggingFace hub
+        """
+        if repo_id is not None:
+            try:
+                self.model.model.push_to_hub(repo_id=repo_id)
+                self.model.tokenizer.push_to_hub(repo_id=repo_id)
 
-        from sentence_transformers.cross_encoder import CrossEncoder
+            except ValueError as e:
+                raise ValueError("HuggingFace CLI/Hub login not "
+                                 "completed provide token to login using"
+                                 "huggingface_hub.login() see this "
+                                 "https://huggingface.co/docs/transformers/model_sharing#share-a-model")
+        else:
+            raise ValueError("No value provided for repo_id")
 
-        finetuned_model = CrossEncoder(self.model_output_path)
 
-        return finetuned_model
