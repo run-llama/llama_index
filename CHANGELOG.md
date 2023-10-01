@@ -5,6 +5,7 @@
 ### New Features
 - Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
 - `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
+- Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
 
 ## [0.8.37] - 2023-09-30
 
