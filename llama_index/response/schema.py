@@ -58,6 +58,13 @@ class PydanticResponse:
         """Convert to string representation."""
         return self.response.json() if self.response else "None"
 
+    def __getattr__(self, name: str) -> Any:
+        """Get attribute, but prioritize the pydantic  response object."""
+        if self.response is not None and name in self.response.dict():
+            return getattr(self.response, name)
+        else:
+            return super().__getattr__(name)
+
     def get_formatted_sources(self, length: int = 100) -> str:
         """Get formatted sources text."""
         texts = []

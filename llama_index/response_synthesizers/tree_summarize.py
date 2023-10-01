@@ -28,10 +28,10 @@ class TreeSummarize(BaseSynthesizer):
         self,
         summary_template: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
+        output_cls: Optional[BaseModel] = None,
         streaming: bool = False,
         use_async: bool = False,
         verbose: bool = False,
-        output_cls: Optional[BaseModel] = None,
     ) -> None:
         super().__init__(
             service_context=service_context, streaming=streaming, output_cls=output_cls
@@ -70,7 +70,13 @@ class TreeSummarize(BaseSynthesizer):
                     output_cls=self._output_cls,
                     context_str=text_chunks[0],
                 )
-            return response
+
+            # return pydantic object if output_cls is specified
+            return (
+                response
+                if self._output_cls is None
+                else self._output_cls.parse_raw(response)
+            )
 
         else:
             # summarize each chunk
@@ -121,6 +127,8 @@ class TreeSummarize(BaseSynthesizer):
                     output_cls=self._output_cls,
                     context_str=text_chunks[0],
                 )
+
+            # return pydantic object if output_cls is specified
             return (
                 response
                 if self._output_cls is None

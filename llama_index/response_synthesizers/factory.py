@@ -57,6 +57,7 @@ def get_response_synthesizer(
             service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
+            output_cls=output_cls,
             streaming=streaming,
             structured_answer_filtering=structured_answer_filtering,
             program_factory=program_factory,
@@ -67,6 +68,7 @@ def get_response_synthesizer(
             service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
+            output_cls=output_cls,
             streaming=streaming,
             structured_answer_filtering=structured_answer_filtering,
             program_factory=program_factory,
@@ -76,10 +78,10 @@ def get_response_synthesizer(
         return TreeSummarize(
             service_context=service_context,
             summary_template=summary_template,
+            output_cls=output_cls,
             streaming=streaming,
             use_async=use_async,
             verbose=verbose,
-            output_cls=output_cls,
         )
     elif response_mode == ResponseMode.SIMPLE_SUMMARIZE:
         return SimpleSummarize(
@@ -97,6 +99,7 @@ def get_response_synthesizer(
         return Accumulate(
             service_context=service_context,
             text_qa_template=text_qa_template,
+            output_cls=output_cls,
             streaming=streaming,
             use_async=use_async,
         )
@@ -104,6 +107,7 @@ def get_response_synthesizer(
         return CompactAndAccumulate(
             service_context=service_context,
             text_qa_template=text_qa_template,
+            output_cls=output_cls,
             streaming=streaming,
             use_async=use_async,
         )

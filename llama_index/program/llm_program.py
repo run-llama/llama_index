@@ -1,7 +1,7 @@
 from typing import Any, List, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import LLM, ChatMessage
+from llama_index.llms.base import LLM, ChatMessage, ChatResponse
 from llama_index.llms.openai import OpenAI
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.prompts.base import PromptTemplate
@@ -83,14 +83,20 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         response_fn = (
             self._llm.chat if self._llm.metadata.is_chat_model else self._llm.complete
         )
+
         formatted_arg = (
             self._prompt.format(**kwargs)
             if self._prompt is not None
-            else self._messages
+            else self._output_parser.format_messages(self._messages)
         )
 
         response = response_fn(formatted_arg)  # type: ignore
-        raw_output = response.text
+
+        if isinstance(response, ChatResponse):
+            raw_output = response.message.content
+        else:
+            raw_output = response.text
+
         model_output = self._output_parser.parse(raw_output)
         return model_output
 
@@ -105,10 +111,15 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         formatted_arg = (
             self._prompt.format(**kwargs)
             if self._prompt is not None
-            else self._messages
+            else self._output_parser.format_messages(self._messages)
         )
 
         response = await response_fn(formatted_arg)  # type: ignore
-        raw_output = response.text
+
+        if isinstance(response, ChatResponse):
+            raw_output = response.message.content
+        else:
+            raw_output = response.text
+
         model_output = self._output_parser.parse(raw_output)
         return model_output

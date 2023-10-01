@@ -131,18 +131,12 @@ class LLMPredictor(BaseLLMPredictor):
         ):
             pass
 
-    def _get_program(
+    def _run_program(
         self,
         prompt: Optional[str] = None,
         messages: Optional[List[ChatMessage]] = None,
         output_cls: Optional[BaseModel] = None,
-    ) -> Optional[str]:
-        if prompt is None and messages is None:
-            return None
-
-        if output_cls is None:
-            return None
-
+    ) -> str:
         program: BasePydanticProgram
         if not self._llm.metadata.is_chat_model and prompt:
             from llama_index.program.llm_program import LLMTextCompletionProgram
@@ -174,20 +168,13 @@ class LLMPredictor(BaseLLMPredictor):
                 )
             chat_response = program()
             return chat_response.json()
-        return None
 
-    async def _aget_program(
+    async def _arun_program(
         self,
         prompt: Optional[str] = None,
         messages: Optional[List[ChatMessage]] = None,
         output_cls: Optional[BaseModel] = None,
-    ) -> Optional[str]:
-        if prompt is None and messages is None:
-            return None
-
-        if output_cls is None:
-            return None
-
+    ) -> str:
         program: BasePydanticProgram
         if not self._llm.metadata.is_chat_model and prompt:
             from llama_index.program.llm_program import LLMTextCompletionProgram
@@ -219,7 +206,6 @@ class LLMPredictor(BaseLLMPredictor):
                 )
             chat_response = await program.acall()
             return chat_response.json()
-        return None
 
     def predict(
         self,
@@ -233,9 +219,9 @@ class LLMPredictor(BaseLLMPredictor):
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-            program_output = self._get_program(output_cls=output_cls, messages=messages)
-            if program_output:
-                output = program_output
+
+            if output_cls is not None:
+                output = self._run_program(output_cls=output_cls, messages=messages)
             else:
                 chat_response = self._llm.chat(messages)
                 output = chat_response.message.content or ""
@@ -244,11 +230,11 @@ class LLMPredictor(BaseLLMPredictor):
             formatted_prompt = _escape_curly_braces(
                 self._extend_prompt(formatted_prompt)
             )
-            program_output = self._get_program(
-                output_cls=output_cls, prompt=formatted_prompt
-            )
-            if program_output:
-                output = program_output
+
+            if output_cls is not None:
+                output = self._run_program(
+                    output_cls=output_cls, prompt=formatted_prompt
+                )
             else:
                 response = self._llm.complete(formatted_prompt)
                 output = response.text
@@ -257,8 +243,16 @@ class LLMPredictor(BaseLLMPredictor):
 
         return output
 
-    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
+    def stream(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[BaseModel] = None,
+        **prompt_args: Any
+    ) -> TokenGen:
         """Stream."""
+        if output_cls is not None:
+            raise NotImplementedError("Streaming with output_cls not supported.")
+
         self._log_template_data(prompt, **prompt_args)
 
         if self._llm.metadata.is_chat_model:
@@ -285,24 +279,24 @@ class LLMPredictor(BaseLLMPredictor):
         if self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-            program_output = await self._aget_program(
-                output_cls=output_cls, messages=messages, **prompt_args
-            )
-            if program_output:
-                output = program_output
+
+            if output_cls is not None:
+                output = await self._arun_program(
+                    output_cls=output_cls, messages=messages
+                )
             else:
-                chat_response = await self._llm.achat(messages)
+                chat_response = self._llm.chat(messages)
                 output = chat_response.message.content or ""
         else:
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             formatted_prompt = _escape_curly_braces(
                 self._extend_prompt(formatted_prompt)
             )
-            program_output = await self._aget_program(
-                output_cls=output_cls, prompt=formatted_prompt, **prompt_args
-            )
-            if program_output:
-                output = program_output
+
+            if output_cls is not None:
+                output = await self._arun_program(
+                    output_cls=output_cls, prompt=formatted_prompt
+                )
             else:
                 response = await self._llm.acomplete(formatted_prompt)
                 output = response.text
@@ -312,9 +306,15 @@ class LLMPredictor(BaseLLMPredictor):
         return output
 
     async def astream(
-        self, prompt: BasePromptTemplate, **prompt_args: Any
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[BaseModel] = None,
+        **prompt_args: Any
     ) -> TokenAsyncGen:
         """Async stream."""
+        if output_cls is not None:
+            raise NotImplementedError("Streaming with output_cls not supported.")
+
         self._log_template_data(prompt, **prompt_args)
 
         if self._llm.metadata.is_chat_model:
