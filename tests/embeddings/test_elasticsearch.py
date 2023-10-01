@@ -31,7 +31,6 @@ def test_elasticsearch_embedding_constructor(
 ) -> None:
     """Test Elasticsearch embedding query."""
 
-
     ElasticsearchEmbeddings.from_credentials(
         model_id=model_id,
         es_url=es_url,
