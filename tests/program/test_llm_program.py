@@ -5,10 +5,15 @@ from unittest.mock import MagicMock
 
 from llama_index.bridge.pydantic import BaseModel
 
-from llama_index.llms.base import CompletionResponse, LLMMetadata
+from llama_index.llms.base import (
+    CompletionResponse,
+    ChatMessage,
+    ChatResponse,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.program.llm_program import LLMTextCompletionProgram
-from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.prompts import ChatPromptTemplate
 
 
@@ -24,10 +29,12 @@ class MockLLM(MagicMock):
 
 
 class MockChatLLM(MagicMock):
-    def chat(self, prompt: str) -> CompletionResponse:
+    def chat(self, prompt: str) -> ChatResponse:
         test_object = {"hello": "chat"}
         text = json.dumps(test_object)
-        return CompletionResponse(text=text)
+        return ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=text)
+        )
 
     @property
     def metadata(self) -> LLMMetadata:
