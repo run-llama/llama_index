@@ -60,7 +60,12 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         if prompt is not None:
             prompt_template_str = prompt.template
         prompt_template_str = cast(str, prompt_template_str)
-        return cls(output_cls, prompt_template_str, guidance_llm=llm, **kwargs)
+        return cls(
+            output_cls,
+            prompt_template_str,
+            guidance_llm=llm,
+            **kwargs,
+        )
 
     @property
     def output_cls(self) -> Type[BaseModel]:

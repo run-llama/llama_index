@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added support for pydantic object outputs with query engines (#7893)
+
 ## [0.8.38] - 2023-10-02
 
 ### New Features
