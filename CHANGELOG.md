@@ -8,6 +8,7 @@
 
 ### Bug Fixes / Nits
 - Fix `LocalAI` chat capability without `max_tokens` (#7942)
+- Added `codespell` for automated checking (#7941)
 
 ## [0.8.38] - 2023-10-02
 
