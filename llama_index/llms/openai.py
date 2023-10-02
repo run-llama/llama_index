@@ -177,8 +177,12 @@ class OpenAI(LLM):
         base_kwargs = {
             "model": self.model,
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
         }
+        if self.max_tokens is not None:
+            # If max_tokens is None, don't include in the payload:
+            # https://platform.openai.com/docs/api-reference/chat
+            # https://platform.openai.com/docs/api-reference/completions
+            base_kwargs["max_tokens"] = self.max_tokens
         return {**base_kwargs, **self.additional_kwargs}
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:

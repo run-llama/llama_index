@@ -56,7 +56,6 @@ class LocalAI(OpenAI):
         # This subclass only supports max_tokens via LocalAI(..., max_tokens=123)
         if self.max_tokens is not None:
             return
-        all_kwargs.pop("max_tokens", None)
 
     @property
     def _is_chat_model(self) -> bool:
