@@ -7,16 +7,24 @@ from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 logger = logging.getLogger(__name__)
 
+EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
+
 
 class ClarifaiEmbedding(BaseEmbedding):
     """Clarifai embeddings class.
+
+    Clarifai uses Personal Access Tokens(PAT) to validate requests.
+    You can create and manage PATs under your Clarifai account security settings.
+    Export your PAT as an environment variable by running `export CLARIFAI_PAT={PAT}`
     """
-    model_url: Optional[str] = Field(description="Full URL of the model. e.g. `https://clarifai.com/anthropic/completion/models/claude-v2`")
+
+    model_url: Optional[str] = Field(
+        description=f"Full URL of the model. e.g. `{EXAMPLE_URL}`"
+    )
     model_id: Optional[str] = Field(description="Model ID.")
     model_version_id: Optional[str] = Field(description="Model Version ID.")
     app_id: Optional[str] = Field(description="Clarifai application ID of the model.")
     user_id: Optional[str] = Field(description="Clarifai user ID of the model.")
-    pat: Optional[str] = Field(description="Clarifai personal access token of the caller.")
 
     _model: Any = PrivateAttr()
 
@@ -33,7 +41,7 @@ class ClarifaiEmbedding(BaseEmbedding):
         try:
             from clarifai.client.model import Model
         except ImportError:
-            raise ImportError("ClarifaiEmbedding requires the Clarifai package to be installed.\nPlease install the package with `pip install clarifai`.")
+            raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
 
         if model_url != "" and model_name != "":
             raise ValueError("You can only specify one of model_url or model_name.")
@@ -42,12 +50,19 @@ class ClarifaiEmbedding(BaseEmbedding):
 
         if model_url != "":
             self._model = Model(model_url)
-        
+
         if model_name != "":
             if app_id == "" or user_id == "":
-                raise ValueError(f"App ID and user ID of the model must be filled in when model_name is used: {app_id=}, {user_id=}")
+                raise ValueError(
+                    f"Missing one app ID or user ID of the model: {app_id=}, {user_id=}"
+                )
             else:
-                self._model = Model(user_id=user_id, app_id=app_id, model_id=model_name, model_version={"id": model_version_id})
+                self._model = Model(
+                    user_id=user_id,
+                    app_id=app_id,
+                    model_id=model_name,
+                    model_version={"id": model_version_id},
+                )
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -64,16 +79,17 @@ class ClarifaiEmbedding(BaseEmbedding):
         try:
             from clarifai_grpc.grpc.api import resources_pb2
             from clarifai_grpc.grpc.api.status import status_code_pb2
-        except:
-            raise ImportError("ClarifaiEmbedding requires the Clarifai package to be installed.\nPlease install the package with `pip install clarifai`.")
-        
+        except ImportError:
+            raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
+
         embeddings = []
         for i in range(0, len(sentences), self.embed_batch_size):
             batch = sentences[i : i + self.embed_batch_size]
             inputs = [
                 resources_pb2.Input(
                     data=resources_pb2.Data(text=resources_pb2.Text(raw=t))
-                ) for t in batch
+                )
+                for t in batch
             ]
             post_model_outputs_response = self._model.predict(inputs)
 
