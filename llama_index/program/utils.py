@@ -2,15 +2,11 @@
 
 from typing import Any, List, Type
 
-from llama_index.bridge.pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel, Field, create_model
 from llama_index.llms.base import LLM
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.prompts.base import PromptTemplate
 from llama_index.types import BasePydanticProgram
-
-
-from llama_index.bridge.pydantic import BaseModel, Field, create_model
-from llama_index.program import BasePydanticProgram
 
 
 def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
