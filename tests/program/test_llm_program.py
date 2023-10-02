@@ -9,6 +9,7 @@ from llama_index.llms.base import CompletionResponse, LLMMetadata
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.program.llm_program import LLMTextCompletionProgram
 from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.prompts import ChatPromptTemplate
 
 
 class MockLLM(MagicMock):
@@ -57,10 +58,11 @@ def test_llm_program() -> None:
 def test_llm_program_with_messages() -> None:
     """Test LLM program."""
     messages = [ChatMessage(role=MessageRole.USER, content="Test")]
+    prompt = ChatPromptTemplate(messages=messages)
     output_parser = PydanticOutputParser(output_cls=TestModel)
     llm_program = LLMTextCompletionProgram.from_defaults(
         output_parser=output_parser,
-        messages=messages,
+        prompt=prompt,
         llm=MockLLM(),
     )
     # mock llm
@@ -72,10 +74,11 @@ def test_llm_program_with_messages() -> None:
 def test_llm_program_with_messages_and_chat() -> None:
     """Test LLM program."""
     messages = [ChatMessage(role=MessageRole.USER, content="Test")]
+    prompt = ChatPromptTemplate(messages=messages)
     output_parser = PydanticOutputParser(output_cls=TestModel)
     llm_program = LLMTextCompletionProgram.from_defaults(
         output_parser=output_parser,
-        messages=messages,
+        prompt=prompt,
         llm=MockChatLLM(),
     )
     # mock llm
