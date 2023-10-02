@@ -450,8 +450,11 @@ class OpenAIAgent(BaseOpenAIAgent):
             raise ValueError("Cannot specify both tools and tool_retriever")
         elif len(tools) > 0:
             self._get_tools = lambda _: tools
-        else:
+        elif tool_retriever is not None:
             self._get_tools = lambda message: tool_retriever.retrieve(message)
+        else:
+            # no tools
+            self._get_tools = lambda _: []
 
     @classmethod
     def from_tools(

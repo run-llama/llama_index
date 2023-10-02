@@ -65,8 +65,10 @@ class ReActAgent(BaseAgent):
             raise ValueError("Cannot specify both tools and tool_retriever")
         elif len(tools) > 0:
             self._get_tools = lambda _: tools
-        else:
+        elif tool_retriever is not None:
             self._get_tools = lambda message: tool_retriever.retrieve(message)
+        else:
+            self._get_tools = lambda _: []
 
     @classmethod
     def from_tools(
@@ -279,6 +281,7 @@ class ReActAgent(BaseAgent):
             chat_response = await self._llm.achat(input_chat)
             # given react prompt outputs, call tools or return response
             reasoning_steps, is_done = await self._aprocess_actions(
+                tools,
                 output=chat_response
             )
             current_reasoning.extend(reasoning_steps)
