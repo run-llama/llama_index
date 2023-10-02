@@ -76,7 +76,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: Optional[str] = None,
-        parent_id: str = "",
+        parent_id: Optional[str] = None,
         **kwargs: Any,
     ) -> str:
         """Run handlers when an event starts and return id of event."""
