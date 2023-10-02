@@ -77,7 +77,6 @@ class MetadataExtractor(BaseExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "MetadataExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -198,7 +197,6 @@ class TitleExtractor(MetadataFeatureExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "TitleExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -273,7 +271,6 @@ class KeywordExtractor(MetadataFeatureExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "KeywordExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -366,7 +363,6 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "QuestionsAnsweredExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -457,7 +453,6 @@ class SummaryExtractor(MetadataFeatureExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "SummaryExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -610,7 +605,6 @@ class EntityExtractor(MetadataFeatureExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "EntityExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -672,7 +666,6 @@ class PydanticProgramExtractor(MetadataFeatureExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "PydanticModelExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:

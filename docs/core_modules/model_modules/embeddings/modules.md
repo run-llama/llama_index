@@ -11,4 +11,5 @@ maxdepth: 1
 /examples/customization/llms/AzureOpenAI.ipynb
 /examples/embeddings/custom_embeddings.ipynb
 /examples/embeddings/huggingface.ipynb
+/embeddings/elasticsearch.ipynb
 ```

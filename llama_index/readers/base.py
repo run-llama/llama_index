@@ -46,5 +46,4 @@ class ReaderConfig(BaseComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "LoaderConfig"

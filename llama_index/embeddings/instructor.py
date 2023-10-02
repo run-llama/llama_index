@@ -53,7 +53,6 @@ class InstructorEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "InstructorEmbedding"
 
     def _format_query_text(self, query_text: str) -> List[str]:

@@ -25,7 +25,12 @@ class BaseComponent(BaseModel):
     @classmethod
     @abstractmethod
     def class_name(cls) -> str:
-        """Get class name."""
+        """
+        Get the class name, used as a unique ID in serialization.
+
+        This provides a key that makes serialization robust against actual class
+        name changes.
+        """
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)
@@ -92,7 +97,6 @@ class RelatedNodeInfo(BaseComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "RelatedNodeInfo"
 
 
@@ -295,7 +299,6 @@ class TextNode(BaseNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "TextNode"
 
     @root_validator
@@ -381,7 +384,6 @@ class ImageNode(TextNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "ImageNode"
 
 
@@ -416,7 +418,6 @@ class IndexNode(TextNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "IndexNode"
 
 
@@ -439,7 +440,6 @@ class NodeWithScore(BaseComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "NodeWithScore"
 
     ##### pass through methods to BaseNode #####
@@ -546,7 +546,6 @@ class Document(TextNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Document"
 
 
@@ -558,5 +557,4 @@ class ImageDocument(Document):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "ImageDocument"

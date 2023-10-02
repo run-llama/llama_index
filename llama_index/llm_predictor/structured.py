@@ -21,7 +21,6 @@ class StructuredLLMPredictor(LLMPredictor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "StructuredLLMPredictor"
 
     def predict(

@@ -67,7 +67,6 @@ class PaLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "PaLM_llm"
 
     @property

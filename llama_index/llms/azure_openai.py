@@ -107,5 +107,4 @@ class AzureOpenAI(OpenAI):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "azure_openai_llm"

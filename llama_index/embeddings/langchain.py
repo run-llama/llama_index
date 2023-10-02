@@ -46,7 +46,6 @@ class LangchainEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "LangchainEmbedding"
 
     def _async_not_implemented_warn_once(self) -> None:

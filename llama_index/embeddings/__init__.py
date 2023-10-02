@@ -13,7 +13,7 @@ from llama_index.embeddings.huggingface_utils import DEFAULT_HUGGINGFACE_EMBEDDI
 from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.embeddings.base import SimilarityMode
-
+from llama_index.embeddings.elasticsearch import ElasticsearchEmbeddings
 
 __all__ = [
     "GoogleUnivSentEncoderEmbedding",
@@ -27,4 +27,5 @@ __all__ = [
     "resolve_embed_model",
     "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
     "SimilarityMode",
+    "ElasticsearchEmbeddings",
 ]

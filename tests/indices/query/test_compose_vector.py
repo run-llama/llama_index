@@ -19,7 +19,6 @@ from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 class MockEmbedding(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "MockEmbedding"
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
