@@ -22,9 +22,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
     text_instruction: Optional[str] = Field(
         description="Instruction to prepend to text."
     )
-    cache_folder: Optional[str] = Field(
-        description="Cache folder for huggingface files."
-    )
+    cache_dir: Optional[str] = Field(description="Cache folder for huggingface files.")
 
     _model: Any = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
@@ -34,21 +32,21 @@ class HuggingFaceEmbedding(BaseEmbedding):
         self,
         model_name_or_path: Optional[str] = None,
         tokenizer_name_or_path: Optional[str] = None,
-        pooling: str = "cls",
+        pooling: str = "mean",
         max_length: Optional[int] = None,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-        cache_folder: Optional[str] = None,
+        cache_dir: Optional[str] = None,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         model_args: dict = {},
         tokenizer_args: dict = {},
     ):
         try:
-            from transformers import AutoTokenizer, AutoModel, AutoConfig
+            from transformers import AutoTokenizer, AutoConfig
         except ImportError:
             raise ImportError(
                 "HuggingFaceEmbedding requires transformers to be installed.\n"
@@ -64,24 +62,32 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 device = "cpu"
         self._device = device
 
-        config = AutoConfig.from_pretrained(
-            model_name_or_path or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL, **model_args
-        )
-
-        if model is None and model_name_or_path is None:
-            model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
-            self._model = AutoModel.from_pretrained(
-                model_name, cache_dir=cache_folder, **model_args
+        if model is None:
+            config = AutoConfig.from_pretrained(
+                model_name_or_path or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
+                cache_dir=cache_dir,
+                **model_args,
+            )
+            model_name_or_path = (
+                model_name_or_path or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+            )
+            self._model = self._load_model(
+                model_name_or_path,
+                config,
+                cache_dir,
+                **model_args,
             ).to(device)
         else:
             self._model = model
 
         if tokenizer is None:
-            tokenizer_name = (
-                model_name or tokenizer_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+            tokenizer_name_or_path = (
+                model_name_or_path
+                or tokenizer_name_or_path
+                or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
             self._tokenizer = AutoTokenizer.from_pretrained(
-                tokenizer_name, cache_dir=cache_folder, **tokenizer_args
+                tokenizer_name_or_path, cache_dir=cache_dir, **tokenizer_args
             )
         else:
             self._tokenizer = tokenizer
@@ -92,15 +98,15 @@ class HuggingFaceEmbedding(BaseEmbedding):
             max_length = min(max_position_embeddings, tokenizer_max_length)
             if max_length == 0:
                 raise ValueError(
-                    "Unable to find `max_position_embeddings` from the model config or `model_max_length` from the tokenizer config. "
+                    "Unable to infer `max_position_embeddings` from the model config or `model_max_length` from the tokenizer config. "
                     "Please provide `max_length` to initialise the `HuggingFaceEmbedding` class."
                 )
 
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
-            model_name=model_name,
-            tokenizer_name=tokenizer_name,
+            model_name=model_name_or_path,
+            tokenizer_name=tokenizer_name_or_path,
             max_length=max_length,
             pooling=pooling,
             query_instruction=query_instruction,
@@ -110,6 +116,59 @@ class HuggingFaceEmbedding(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
+
+    def _load_model(
+        self,
+        model_name_or_path: str,
+        config: Any,
+        cache_dir: Optional[str] = None,
+        **model_args,
+    ):
+        """Loads the transformer model"""
+        from transformers import AutoModel, T5Config, MT5Config
+
+        if isinstance(config, T5Config):
+            self._model = self._load_t5_model(
+                model_name_or_path, config, cache_dir, **model_args
+            )
+        elif isinstance(config, MT5Config):
+            self._model = self._load_mt5_model(
+                model_name_or_path, config, cache_dir, **model_args
+            )
+        else:
+            self._model = AutoModel.from_pretrained(
+                model_name_or_path, config=config, cache_dir=cache_dir, **model_args
+            )
+
+    def _load_t5_model(
+        self,
+        model_name_or_path: str,
+        config: Any,
+        cache_dir: Optional[str] = None,
+        **model_args,
+    ):
+        """Loads the encoder model from T5"""
+        from transformers import T5EncoderModel
+
+        T5EncoderModel._keys_to_ignore_on_load_unexpected = ["decoder.*"]
+        return T5EncoderModel.from_pretrained(
+            model_name_or_path, config=config, cache_dir=cache_dir, **model_args
+        )
+
+    def _load_mt5_model(
+        self,
+        model_name_or_path: str,
+        config: Any,
+        cache_dir: Optional[str] = None,
+        **model_args,
+    ):
+        """Loads the encoder model from T5"""
+        from transformers import MT5EncoderModel
+
+        MT5EncoderModel._keys_to_ignore_on_load_unexpected = ["decoder.*"]
+        return MT5EncoderModel.from_pretrained(
+            model_name_or_path, config=config, cache_dir=cache_dir, **model_args
+        )
 
     def _format_query_text(self, query_text: str) -> str:
         """Format query text."""
