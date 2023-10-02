@@ -1,5 +1,5 @@
 """
-    Portkey intergation with Llama_index for enchanced monitoring
+    Portkey integration with Llama_index for enhanced monitoring
 """
 from typing import Any, Optional, Sequence, Union, List, TYPE_CHECKING, cast
 

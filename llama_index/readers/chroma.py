@@ -12,7 +12,7 @@ class ChromaReader(BaseReader):
     Retrieve documents from existing persisted Chroma collections.
 
     Args:
-        collection_name: Name of the peristed collection.
+        collection_name: Name of the persisted collection.
         persist_directory: Directory where the collection is persisted.
 
     """

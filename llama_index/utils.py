@@ -303,7 +303,7 @@ def add_sync_version(func: Any) -> Any:
 # Sample text from llama_index's readme
 SAMPLE_TEXT = """
 Context
-LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. 
+LLMs are a phenomenal piece of technology for knowledge generation and reasoning. 
 They are pre-trained on large amounts of publicly available data.
 How do we best augment LLMs with our own private data?
 We need a comprehensive toolkit to help perform this data augmentation for LLMs.

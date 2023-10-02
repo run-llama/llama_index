@@ -21,7 +21,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         description="Percentile cutoff for the top k sentences to use."
     )
     threshold_cutoff: Optional[float] = Field(
-        description="Threshold cutoff for similiarity for each sentence to use."
+        description="Threshold cutoff for similarity for each sentence to use."
     )
 
     _embed_model: BaseEmbedding = PrivateAttr()

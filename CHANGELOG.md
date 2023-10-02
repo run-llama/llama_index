@@ -441,7 +441,7 @@
 
 ### Bug Fixes / Nits
 
-- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+- Fix infinite looping with forced function call in `OpenAIAgent` (#7363)
 
 ## [0.8.6] - 2023-08-22
 
@@ -1045,7 +1045,7 @@
 ### Breaking/Deprecated API Changes
 
 - `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
-- `TextNode` and `Document` must be instansiated with kwargs: `Document(text=text)` (#6586)
+- `TextNode` and `Document` must be instantiated with kwargs: `Document(text=text)` (#6586)
 - `TextNode` (fka `Node`) has a `id_` or `node_id` property, rather than `doc_id` (#6586)
 - `TextNode` and `Document` have a metadata property, which replaces the extra_info property (#6586)
 - `TextNode` no longer has a `node_info` property (start/end indexes are accessed directly with `start/end_char_idx` attributes) (#6586)

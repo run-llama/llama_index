@@ -282,7 +282,7 @@ class NebulaGraphStore(GraphStore):
             logger.error(
                 f"Connection issue, try to recreate session pool. Query: {query}, "
                 f"Param: {param_map}"
-                f"Erorr: {e}"
+                f"Error: {e}"
             )
             self.init_session_pool()
             logger.info(

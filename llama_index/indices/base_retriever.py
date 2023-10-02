@@ -39,7 +39,7 @@ class BaseRetriever(ABC):
     # TODO: make this abstract
     # @abstractmethod
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Asyncronously retrieve nodes given query.
+        """Asynchronously retrieve nodes given query.
 
         Implemented by the user.
 

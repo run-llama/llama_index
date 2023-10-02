@@ -33,7 +33,7 @@ class RunGptLLM(LLM):
         description="The maximum number of context tokens for the model."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the Replicate API."
+        default_factory=dict, description="Additional kwargs for the Replicate API."
     )
     base_url: str = Field(
         description="The address of your target model served by rungpt."

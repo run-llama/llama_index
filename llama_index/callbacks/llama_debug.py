@@ -134,7 +134,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
     def get_event_pairs(
         self, event_type: Optional[CBEventType] = None
     ) -> List[List[CBEvent]]:
-        """Pair events by ID, either all events or a sepcific type."""
+        """Pair events by ID, either all events or a specific type."""
         if event_type is not None:
             return self._get_event_pairs(self._event_pairs_by_type[event_type])
 

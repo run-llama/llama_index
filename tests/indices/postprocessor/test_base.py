@@ -280,7 +280,7 @@ def test_time_weighted_postprocessor() -> None:
     assert cast(Dict, nodes[3].metadata)[key] != 3
 
     # low time decay
-    # artifically make earlier nodes more relevant
+    # artificially make earlier nodes more relevant
     # therefore postprocessor should still rank earlier nodes higher
     nodes = [
         TextNode(text="Hello world.", id_="1", metadata={key: 0}),
