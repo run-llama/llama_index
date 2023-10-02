@@ -29,7 +29,7 @@ A usage example is given below:
 
 ```python
 from llama_hub.wikipedia.base import WikipediaReader
-from llama_index.tools.on_demand_loader_tool import OnDemandLoaderTool
+from llama_index.tools.ondemand_loader_tool import OnDemandLoaderTool
 
 tool = OnDemandLoaderTool.from_defaults(
 	reader,

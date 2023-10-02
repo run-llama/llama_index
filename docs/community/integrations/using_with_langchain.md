@@ -33,33 +33,6 @@ tool = LlamaIndexTool.from_tool_config(tool_config)
 
 ```
 
-You can also choose to provide a `LlamaToolkit`:
-
-```python
-toolkit = LlamaToolkit(
-    index_configs=index_configs,
-)
-```
-
-Such a toolkit can be used to create a downstream Langchain-based chat agent through
-our `create_llama_agent` and `create_llama_chat_agent` commands:
-
-```python
-from llama_index.langchain_helpers.agents import create_llama_chat_agent
-
-agent_chain = create_llama_chat_agent(
-    toolkit,
-    llm,
-    memory=memory,
-    verbose=True
-)
-
-agent_chain.run(input="Query about X")
-```
-
-You can take a look at [the full tutorial notebook here](https://github.com/jerryjliu/llama_index/blob/main/examples/chatbot/Chatbot_SEC.ipynb).
-
-
 ### Llama Demo Notebook: Tool + Memory module
 
 We provide another demo notebook showing how you can build a chat agent with the following components.

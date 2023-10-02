@@ -463,7 +463,9 @@ def test_check_user_agent(
 
     es_store.add(node_embeddings)
 
-    user_agent = es_client_instance.transport.requests[0]["headers"]["user-agent"]
+    user_agent = es_client_instance.transport.requests[0]["headers"][  # type: ignore
+        "user-agent"
+    ]
     pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+$"
     match = re.match(pattern, user_agent)
 

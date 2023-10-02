@@ -1,5 +1,6 @@
 """Node postprocessor tests."""
 
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Dict, cast
 
@@ -17,13 +18,15 @@ from llama_index.indices.postprocessor.node_recency import (
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import (
+    MetadataMode,
     NodeRelationship,
     NodeWithScore,
     RelatedNodeInfo,
     TextNode,
-    MetadataMode,
 )
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
+
+spacy_installed = True if find_spec("spacy") else False
 
 
 def test_forward_back_processor(tmp_path: Path) -> None:
@@ -298,6 +301,7 @@ def test_time_weighted_postprocessor() -> None:
     assert cast(Dict, nodes[3].metadata)[key] == 3
 
 
+@pytest.mark.skipif(not spacy_installed, reason="spacy not installed")
 def test_keyword_postprocessor() -> None:
     """Test keyword processor."""
 
@@ -333,3 +337,45 @@ def test_keyword_postprocessor() -> None:
     assert new_nodes[1].node.get_content() == "This is a test."
     assert new_nodes[2].node.get_content() == "This is a test v2."
     assert len(new_nodes) == 3
+
+
+@pytest.mark.skipif(not spacy_installed, reason="spacy not installed")
+def test_keyword_postprocessor_for_non_english() -> None:
+    """Test keyword processor for non English."""
+
+    key = "__last_accessed__"
+    # try in metadata
+    nodes = [
+        TextNode(text="こんにちは世界。", id_="1", metadata={key: 0}),
+        TextNode(text="これはテストです。", id_="2", metadata={key: 1}),
+        TextNode(text="これは別のテストです。", id_="3", metadata={key: 2}),
+        TextNode(text="これはテストv2です。", id_="4", metadata={key: 3}),
+    ]
+    node_with_scores = [NodeWithScore(node=node) for node in nodes]
+
+    postprocessor = KeywordNodePostprocessor(required_keywords=["これ"], lang="ja")
+    new_nodes = postprocessor.postprocess_nodes(node_with_scores)
+    assert new_nodes[0].node.get_content() == "これはテストです。"
+    assert new_nodes[1].node.get_content() == "これは別のテストです。"
+    assert new_nodes[2].node.get_content() == "これはテストv2です。"
+
+    postprocessor = KeywordNodePostprocessor(required_keywords=["別の"], lang="ja")
+    new_nodes = postprocessor.postprocess_nodes(node_with_scores)
+    assert new_nodes[0].node.get_content() == "これは別のテストです。"
+    assert len(new_nodes) == 1
+
+    # test exclude keywords
+    postprocessor = KeywordNodePostprocessor(exclude_keywords=["別の"], lang="ja")
+    new_nodes = postprocessor.postprocess_nodes(node_with_scores)
+    assert new_nodes[1].node.get_content() == "これはテストです。"
+    assert new_nodes[2].node.get_content() == "これはテストv2です。"
+    assert len(new_nodes) == 3
+
+    # test both required and exclude keywords
+    postprocessor = KeywordNodePostprocessor(
+        required_keywords=["テスト"], exclude_keywords=["v2"], lang="ja"
+    )
+    new_nodes = postprocessor.postprocess_nodes(node_with_scores)
+    assert new_nodes[0].node.get_content() == "これはテストです。"
+    assert new_nodes[1].node.get_content() == "これは別のテストです。"
+    assert len(new_nodes) == 2

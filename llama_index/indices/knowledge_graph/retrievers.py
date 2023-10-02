@@ -225,7 +225,7 @@ class KGTableRetriever(BaseRetriever):
                 for node_id in node_ids:
                     chunk_indices_count[node_id] += 1
         elif len(self._index_struct.embedding_dict) == 0:
-            logger.warn(
+            logger.warning(
                 "Index was not constructed with embeddings, skipping embedding usage..."
             )
 

@@ -49,6 +49,19 @@ Retry Guideline Query Engine </examples/evaluation/RetryQuery.ipynb>
 /examples/query_engine/ensemble_query_engine.ipynb
 ```
 
+### Advanced: Towards Multi-Document Querying/Analysis
+This specific subsection showcases modules that help with querying multiple documents.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/query_engine/sub_question_query_engine.ipynb
+/examples/query_engine/recursive_retriever_agents.ipynb
+/examples/agent/multi_document_agents.ipynb
+```
+
+
 ## Experimental
 ```{toctree}
 ---
