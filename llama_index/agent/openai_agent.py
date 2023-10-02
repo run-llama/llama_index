@@ -3,7 +3,7 @@ import json
 import logging
 from abc import abstractmethod
 from threading import Thread
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
@@ -18,12 +18,10 @@ from llama_index.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.objects.base import ObjectRetriever
 
@@ -421,7 +419,8 @@ class OpenAIAgent(BaseOpenAIAgent):
         verbose (Optional[bool]): Whether to print verbose output. Defaults to False.
         max_function_calls (Optional[int]): Maximum number of function calls.
             Defaults to DEFAULT_MAX_FUNCTION_CALLS.
-        callback_manager (Optional[CallbackManager]): Callback manager to use. Defaults to None.
+        callback_manager (Optional[CallbackManager]): Callback manager to use.
+            Defaults to None.
         tool_retriever (ObjectRetriever[BaseTool]): Object retriever to retrieve tools.
 
 
