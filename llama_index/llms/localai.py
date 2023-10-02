@@ -62,7 +62,8 @@ class LocalAI(OpenAI):
         if self.globally_use_chat_completions is not None:
             return self.globally_use_chat_completions
         raise NotImplementedError(
-            f"Inferring of /chat/completions is not supported by {type(self).__name__}."
-            f" Please use the kwarg 'use_chat_completions' in your query, setting"
-            f" True to use /chat/completions or False to use /completions."
+            "Inferring of when to use /chat/completions is unsupported by"
+            f" {type(self).__name__}. Please either set 'globally_use_chat_completions'"
+            " arg during construction, or pass the arg 'use_chat_completions' in your"
+            " query, setting True for /chat/completions or False for /completions."
         )
