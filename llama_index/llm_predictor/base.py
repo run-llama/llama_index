@@ -15,7 +15,6 @@ from llama_index.llm_predictor.utils import (
 )
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.program.utils import get_program_for_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
 from llama_index.types import TokenAsyncGen, TokenGen
@@ -134,6 +133,8 @@ class LLMPredictor(BaseLLMPredictor):
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> str:
+        from llama_index.program.utils import get_program_for_llm
+
         program = get_program_for_llm(output_cls, prompt, self._llm)
 
         chat_response = program(**prompt_args)
@@ -145,6 +146,8 @@ class LLMPredictor(BaseLLMPredictor):
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> str:
+        from llama_index.program.utils import get_program_for_llm
+
         program = get_program_for_llm(output_cls, prompt, self._llm)
 
         chat_response = await program.acall(**prompt_args)
