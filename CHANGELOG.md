@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.38] - 2023-10-02
 
 ### New Features
 - Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
