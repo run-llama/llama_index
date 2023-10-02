@@ -1,5 +1,8 @@
 from typing import Any, List, Optional, Sequence
-from llama_index_client import (
+
+from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.ingestion.client import (
     ConfiguredTransformationItem,
     DataSinkCreate,
     DataSourceCreate,
@@ -7,11 +10,7 @@ from llama_index_client import (
     ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
 )
-from llama_index_client.client import PlatformApi
-
-
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.ingestion.client.client import PlatformApi
 from llama_index.ingestion.data_sinks import ConfiguredDataSink
 from llama_index.ingestion.data_sources import ConfiguredDataSource
 from llama_index.ingestion.transformations import ConfiguredTransformation

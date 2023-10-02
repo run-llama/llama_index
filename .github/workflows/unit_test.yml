@@ -16,9 +16,6 @@ jobs:
         python-version: ["3.10", "3.9", "3.8"]
     steps:
       - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.CLIENT_TOKEN }}
-          submodules: 'true'
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
