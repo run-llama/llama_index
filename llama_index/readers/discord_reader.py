@@ -15,6 +15,7 @@ from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
+
 async def read_channel(
     discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool,
 ) -> List[Document]:
