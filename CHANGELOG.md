@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Added support for pydantic object outputs with query engines (#7893)
+
 ## [0.8.38] - 2023-10-02
 
 ### New Features
@@ -7,7 +12,6 @@
 - `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
 - Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
 - Added support for `ElasticsearchEmbeddings` (#7914)
-- Added support for pydantic object outputs with query engines (#7893)
 
 ## [0.8.37] - 2023-09-30
 
