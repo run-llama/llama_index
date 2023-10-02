@@ -14,3 +14,12 @@ exclude = [
     "notebooks",
     ".git"
 ]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+ignore-words-list = "ot"
+# Remove .git and venv skips when integrated with pre-commit
+# Feel free to un-skip docs, examples, and experimental, you will just need to
+# work through many typos (--write-changes and --interactive will help)
+skip = "./.git,./*venv,./docs,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt"
