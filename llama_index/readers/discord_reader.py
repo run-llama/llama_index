@@ -68,7 +68,8 @@ async def read_channel(
     client = CustomClient(intents=intents)
     await client.start(discord_token)
 
-    # Wraps each message in a Document containing the text as well as some useful metadata properties.
+    ### Wraps each message in a Document containing the text \
+    # as well as some useful metadata properties.
     return list(
         map(
             lambda msg: Document(
