@@ -30,8 +30,8 @@ class ClarifaiEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: Optional[str] = "",
-        model_url: Optional[str] = "",
+        model_name: Optional[str] = None,
+        model_url: Optional[str] = None,
         model_version_id: Optional[str] = "",
         app_id: Optional[str] = None,
         user_id: Optional[str] = None,
@@ -43,16 +43,16 @@ class ClarifaiEmbedding(BaseEmbedding):
         except ImportError:
             raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
 
-        if model_url != "" and model_name != "":
+        if model_url is not None and model_name is not None:
             raise ValueError("You can only specify one of model_url or model_name.")
-        if model_url == "" and model_name == "":
+        if model_url is None and model_name is None:
             raise ValueError("You must specify one of model_url or model_name.")
 
-        if model_url != "":
+        if model_url is not None:
             self._model = Model(model_url)
 
-        if model_name != "":
-            if app_id == "" or user_id == "":
+        if model_name is not None:
+            if app_id is None or user_id is None:
                 raise ValueError(
                     f"Missing one app ID or user ID of the model: {app_id=}, {user_id=}"
                 )
