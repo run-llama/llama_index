@@ -175,6 +175,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         """Store event start data by event type.
@@ -183,6 +184,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             event_type (CBEventType): event type to store.
             payload (Optional[Dict[str, Any]]): payload to store.
             event_id (str): event id to store.
+            parent_id (str): parent event id.
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
