@@ -17,7 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 async def read_channel(
-    discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool,
+    discord_token: str,
+    channel_id: int,
+    limit: Optional[int],
+    oldest_first: bool,
 ) -> List[Document]:
     """Async read channel.
 
@@ -66,12 +69,20 @@ async def read_channel(
     await client.start(discord_token)
 
     # Wraps each message in a Document containing the text as well as some useful metadata properties.
-    return list(map(lambda msg: Document(text=msg.content, metadata={
-        "message_id": msg.id,
-        "username": msg.author.name,
-        "created_at": msg.created_at,
-        "edited_at": msg.edited_at,
-    }), messages))
+    return list(
+        map(
+            lambda msg: Document(
+                text=msg.content,
+                metadata={
+                    "message_id": msg.id,
+                    "username": msg.author.name,
+                    "created_at": msg.created_at,
+                    "edited_at": msg.edited_at,
+                },
+            ),
+            messages,
+        )
+    )
 
 
 class DiscordReader(BasePydanticReader):
@@ -113,7 +124,6 @@ class DiscordReader(BasePydanticReader):
 
     def _read_channel(
         self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
-
     ) -> List[Document]:
         """Read channel."""
         result = asyncio.get_event_loop().run_until_complete(
@@ -149,7 +159,8 @@ class DiscordReader(BasePydanticReader):
                     f"not {type(channel_id)}."
                 )
             channel_documents = self._read_channel(
-                channel_id, limit=limit, oldest_first=oldest_first)
+                channel_id, limit=limit, oldest_first=oldest_first
+            )
             results += channel_documents
         return results
 
