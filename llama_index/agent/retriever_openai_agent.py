@@ -1,6 +1,6 @@
 """Retriever OpenAI agent."""
 
-from typing import List, Optional, Type, Any
+from typing import List, Optional, Type, Any, cast
 
 from llama_index.agent.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
@@ -34,4 +34,6 @@ class FnRetrieverOpenAIAgent(OpenAIAgent):
     def from_retriever(
         cls, retriever: ObjectRetriever[BaseTool], **kwargs: Any
     ) -> "FnRetrieverOpenAIAgent":
-        return cls.from_tools(tool_retriever=retriever, **kwargs)
+        return cast(
+            FnRetrieverOpenAIAgent, cls.from_tools(tool_retriever=retriever, **kwargs)
+        )

@@ -2,7 +2,7 @@
 
 import asyncio
 from threading import Thread
-from typing import Any, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, List, Optional, Sequence, Tuple, Type, cast, Dict
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
@@ -25,6 +25,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.tools import BaseTool, adapt_to_async_tool
+from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text
 from llama_index.objects.base import ObjectRetriever
 
@@ -66,7 +67,8 @@ class ReActAgent(BaseAgent):
         elif len(tools) > 0:
             self._get_tools = lambda _: tools
         elif tool_retriever is not None:
-            self._get_tools = lambda message: tool_retriever.retrieve(message)
+            tool_retriever_c = cast(ObjectRetriever[BaseTool], tool_retriever)
+            self._get_tools = lambda message: tool_retriever_c.retrieve(message)
         else:
             self._get_tools = lambda _: []
 
@@ -147,9 +149,11 @@ class ReActAgent(BaseAgent):
         return message_content, current_reasoning, False
 
     def _process_actions(
-        self, tools: Sequence[BaseTool], output: ChatResponse
+        self, tools: Sequence[AsyncBaseTool], output: ChatResponse
     ) -> Tuple[List[BaseReasoningStep], bool]:
-        tools_dict = {tool.metadata.name: tool for tool in tools}
+        tools_dict: Dict[str, AsyncBaseTool] = {
+            tool.metadata.get_name(): tool for tool in tools
+        }
         _, current_reasoning, is_done = self._extract_reasoning_step(output)
 
         if is_done:
@@ -175,7 +179,7 @@ class ReActAgent(BaseAgent):
         return current_reasoning, False
 
     async def _aprocess_actions(
-        self, tools: Sequence[BaseTool], output: ChatResponse
+        self, tools: Sequence[AsyncBaseTool], output: ChatResponse
     ) -> Tuple[List[BaseReasoningStep], bool]:
         tools_dict = {tool.metadata.name: tool for tool in tools}
         _, current_reasoning, is_done = self._extract_reasoning_step(output)
@@ -281,8 +285,7 @@ class ReActAgent(BaseAgent):
             chat_response = await self._llm.achat(input_chat)
             # given react prompt outputs, call tools or return response
             reasoning_steps, is_done = await self._aprocess_actions(
-                tools,
-                output=chat_response
+                tools, output=chat_response
             )
             current_reasoning.extend(reasoning_steps)
             if is_done:
@@ -399,6 +402,6 @@ class ReActAgent(BaseAgent):
         # thread.start()
         return chat_stream_response
 
-    def get_tools(self, message: str) -> List[BaseTool]:
+    def get_tools(self, message: str) -> List[AsyncBaseTool]:
         """Get tools."""
         return [adapt_to_async_tool(t) for t in self._get_tools(message)]

@@ -3,7 +3,7 @@ import json
 import logging
 from abc import abstractmethod
 from threading import Thread
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
@@ -451,7 +451,8 @@ class OpenAIAgent(BaseOpenAIAgent):
         elif len(tools) > 0:
             self._get_tools = lambda _: tools
         elif tool_retriever is not None:
-            self._get_tools = lambda message: tool_retriever.retrieve(message)
+            tool_retriever_c = cast(ObjectRetriever[BaseTool], tool_retriever)
+            self._get_tools = lambda message: tool_retriever_c.retrieve(message)
         else:
             # no tools
             self._get_tools = lambda _: []
