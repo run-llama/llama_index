@@ -15,10 +15,10 @@ from llama_index.llm_predictor.utils import (
 )
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.output_parsers.pydantic import PydanticOutputParser
+from llama_index.program.utils import get_program_for_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
-from llama_index.types import TokenAsyncGen, TokenGen, BasePydanticProgram
+from llama_index.types import TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
 
@@ -134,23 +134,8 @@ class LLMPredictor(BaseLLMPredictor):
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> str:
-        program: BasePydanticProgram
-        try:
-            from llama_index.program.openai_program import OpenAIPydanticProgram
+        program = get_program_for_llm(output_cls, prompt, self._llm)
 
-            program = OpenAIPydanticProgram.from_defaults(
-                output_cls=output_cls,
-                llm=self._llm,
-                prompt=prompt,
-            )
-        except ValueError:
-            from llama_index.program.llm_program import LLMTextCompletionProgram
-
-            program = LLMTextCompletionProgram.from_defaults(
-                output_parser=PydanticOutputParser(output_cls=output_cls),
-                llm=self._llm,
-                prompt=prompt,
-            )
         chat_response = program(**prompt_args)
         return chat_response.json()
 
@@ -160,23 +145,7 @@ class LLMPredictor(BaseLLMPredictor):
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> str:
-        program: BasePydanticProgram
-        try:
-            from llama_index.program.openai_program import OpenAIPydanticProgram
-
-            program = OpenAIPydanticProgram.from_defaults(
-                output_cls=output_cls,
-                llm=self._llm,
-                prompt=prompt,
-            )
-        except ValueError:
-            from llama_index.program.llm_program import LLMTextCompletionProgram
-
-            program = LLMTextCompletionProgram.from_defaults(
-                output_parser=PydanticOutputParser(output_cls=output_cls),
-                llm=self._llm,
-                prompt=prompt,
-            )
+        program = get_program_for_llm(output_cls, prompt, self._llm)
 
         chat_response = await program.acall(**prompt_args)
         return chat_response.json()

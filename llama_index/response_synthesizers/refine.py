@@ -5,10 +5,8 @@ from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.types import BasePydanticProgram
-from llama_index.program.llm_program import LLMTextCompletionProgram
-from llama_index.program.openai_program import OpenAIPydanticProgram
+from llama_index.program.utils import get_program_for_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
@@ -136,21 +134,12 @@ class Refine(BaseSynthesizer):
 
     def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
         if self._structured_answer_filtering:
-            try:
-                return OpenAIPydanticProgram.from_defaults(
-                    StructuredRefineResponse,
-                    prompt=prompt,
-                    llm=self._service_context.llm,
-                    verbose=self._verbose,
-                )
-            except ValueError:
-                output_parser = PydanticOutputParser(StructuredRefineResponse)
-                return LLMTextCompletionProgram.from_defaults(
-                    output_parser,
-                    prompt=prompt,
-                    llm=self._service_context.llm,
-                    verbose=self._verbose,
-                )
+            return get_program_for_llm(
+                StructuredRefineResponse,
+                prompt,
+                self._service_context.llm,
+                verbose=self._verbose,
+            )
         else:
             return DefaultRefineProgram(
                 prompt=prompt,
