@@ -16,9 +16,7 @@ from llama_index.llm_predictor.utils import (
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.output_parsers.pydantic import PydanticOutputParser
-from llama_index.output_parsers.selection import _escape_curly_braces
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.prompt_type import PromptType
 from llama_index.schema import BaseComponent
 from llama_index.types import TokenAsyncGen, TokenGen, BasePydanticProgram
 
@@ -133,110 +131,77 @@ class LLMPredictor(BaseLLMPredictor):
     def _run_program(
         self,
         output_cls: BaseModel,
-        prompt: Optional[str] = None,
-        messages: Optional[List[ChatMessage]] = None,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
     ) -> str:
         program: BasePydanticProgram
-        if not self._llm.metadata.is_chat_model and prompt:
+        try:
+            from llama_index.program.openai_program import OpenAIPydanticProgram
+
+            program = OpenAIPydanticProgram.from_defaults(
+                output_cls=output_cls,
+                llm=self._llm,
+                prompt=prompt,
+            )
+        except ValueError:
             from llama_index.program.llm_program import LLMTextCompletionProgram
 
             program = LLMTextCompletionProgram.from_defaults(
                 output_parser=PydanticOutputParser(output_cls=output_cls),
                 llm=self._llm,
-                prompt=PromptTemplate(template=prompt, prompt_type=PromptType.SUMMARY),
+                prompt=prompt,
             )
-            chat_response = program()
-            return chat_response.json()
-
-        if self._llm.metadata.is_chat_model and messages:
-            try:
-                from llama_index.program.openai_program import OpenAIPydanticProgram
-
-                program = OpenAIPydanticProgram.from_defaults(
-                    output_cls=output_cls,
-                    llm=self._llm,
-                    messages=messages,
-                )
-            except ValueError:
-                from llama_index.program.llm_program import LLMTextCompletionProgram
-
-                program = LLMTextCompletionProgram.from_defaults(
-                    output_parser=PydanticOutputParser(output_cls=output_cls),
-                    messages=messages,
-                    llm=self._llm,
-                )
-            chat_response = program()
-            return chat_response.json()
-        return "Empty Response"
+        chat_response = program(**prompt_args)
+        return chat_response.json()
 
     async def _arun_program(
         self,
         output_cls: BaseModel,
-        prompt: Optional[str] = None,
-        messages: Optional[List[ChatMessage]] = None,
+        prompt: BasePromptTemplate,
+        **prompt_args: Any,
     ) -> str:
         program: BasePydanticProgram
-        if not self._llm.metadata.is_chat_model and prompt:
+        try:
+            from llama_index.program.openai_program import OpenAIPydanticProgram
+
+            program = OpenAIPydanticProgram.from_defaults(
+                output_cls=output_cls,
+                llm=self._llm,
+                prompt=prompt,
+            )
+        except ValueError:
             from llama_index.program.llm_program import LLMTextCompletionProgram
 
             program = LLMTextCompletionProgram.from_defaults(
                 output_parser=PydanticOutputParser(output_cls=output_cls),
                 llm=self._llm,
-                prompt=PromptTemplate(template=prompt, prompt_type=PromptType.SUMMARY),
+                prompt=prompt,
             )
-            chat_response = await program.acall()
-            return chat_response.json()
 
-        if self._llm.metadata.is_chat_model and messages:
-            try:
-                from llama_index.program.openai_program import OpenAIPydanticProgram
-
-                program = OpenAIPydanticProgram.from_defaults(
-                    output_cls=output_cls,
-                    llm=self._llm,
-                    messages=messages,
-                )
-            except ValueError:
-                from llama_index.program.llm_program import LLMTextCompletionProgram
-
-                program = LLMTextCompletionProgram.from_defaults(
-                    output_parser=PydanticOutputParser(output_cls=output_cls),
-                    messages=messages,
-                    llm=self._llm,
-                )
-            chat_response = await program.acall()
-            return chat_response.json()
-        return "Empty Response"
+        chat_response = await program.acall(**prompt_args)
+        return chat_response.json()
 
     def predict(
         self,
         prompt: BasePromptTemplate,
         output_cls: Optional[BaseModel] = None,
-        **prompt_args: Any
+        **prompt_args: Any,
     ) -> str:
         """Predict."""
         self._log_template_data(prompt, **prompt_args)
 
-        if self._llm.metadata.is_chat_model:
+        if output_cls is not None:
+            output = self._run_program(output_cls, prompt, **prompt_args)
+        elif self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-
-            if output_cls is not None:
-                output = self._run_program(output_cls, messages=messages)
-            else:
-                chat_response = self._llm.chat(messages)
-                output = chat_response.message.content or ""
+            chat_response = self._llm.chat(messages)
+            output = chat_response.message.content or ""
         else:
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-            formatted_prompt = _escape_curly_braces(
-                self._extend_prompt(formatted_prompt)
-            )
-
-            if output_cls is not None:
-                output = self._run_program(output_cls, prompt=formatted_prompt)
-            else:
-                response = self._llm.complete(formatted_prompt)
-                output = response.text
+            formatted_prompt = self._extend_prompt(formatted_prompt)
+            response = self._llm.complete(formatted_prompt)
+            output = response.text
 
         logger.debug(output)
 
@@ -246,7 +211,7 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         prompt: BasePromptTemplate,
         output_cls: Optional[BaseModel] = None,
-        **prompt_args: Any
+        **prompt_args: Any,
     ) -> TokenGen:
         """Stream."""
         if output_cls is not None:
@@ -270,31 +235,23 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         prompt: BasePromptTemplate,
         output_cls: Optional[BaseModel] = None,
-        **prompt_args: Any
+        **prompt_args: Any,
     ) -> str:
         """Async predict."""
         self._log_template_data(prompt, **prompt_args)
 
-        if self._llm.metadata.is_chat_model:
+        if output_cls is not None:
+            output = await self._arun_program(output_cls, prompt, **prompt_args)
+        elif self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-
-            if output_cls is not None:
-                output = await self._arun_program(output_cls, messages=messages)
-            else:
-                chat_response = self._llm.chat(messages)
-                output = chat_response.message.content or ""
+            chat_response = await self._llm.achat(messages)
+            output = chat_response.message.content or ""
         else:
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-            formatted_prompt = _escape_curly_braces(
-                self._extend_prompt(formatted_prompt)
-            )
-
-            if output_cls is not None:
-                output = await self._arun_program(output_cls, prompt=formatted_prompt)
-            else:
-                response = await self._llm.acomplete(formatted_prompt)
-                output = response.text
+            formatted_prompt = self._extend_prompt(formatted_prompt)
+            response = await self._llm.acomplete(formatted_prompt)
+            output = response.text
 
         logger.debug(output)
 
@@ -304,7 +261,7 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         prompt: BasePromptTemplate,
         output_cls: Optional[BaseModel] = None,
-        **prompt_args: Any
+        **prompt_args: Any,
     ) -> TokenAsyncGen:
         """Async stream."""
         if output_cls is not None:

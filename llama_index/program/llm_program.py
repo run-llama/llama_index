@@ -1,10 +1,10 @@
-from typing import Any, List, Optional, Type, Union, cast
+from typing import Any, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse
+from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.output_parsers.pydantic import PydanticOutputParser
-from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.types import BasePydanticProgram
 
 
@@ -19,54 +19,37 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def __init__(
         self,
         output_parser: PydanticOutputParser,
+        prompt: BasePromptTemplate,
         llm: LLM,
-        prompt: Optional[PromptTemplate] = None,
-        messages: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
     ) -> None:
-        if prompt is None and messages is None:
-            raise ValueError("Must provide either prompt or messages.")
-
         self._output_parser = output_parser
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
-        self._messages = messages
 
-        if self._prompt is not None:
-            self._prompt.output_parser = output_parser
+        self._prompt.output_parser = output_parser
 
     @classmethod
     def from_defaults(
         cls,
         output_parser: PydanticOutputParser,
         prompt_template_str: Optional[str] = None,
-        messages: Optional[List[ChatMessage]] = None,
         prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
         llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
-        if prompt is None and prompt_template_str is None and messages is None:
-            raise ValueError(
-                "Must provide either prompt or prompt_template_str or messages."
-            )
-        if (
-            prompt is not None
-            and prompt_template_str is not None
-            and messages is not None
-        ):
-            raise ValueError(
-                "Must provide either prompt or prompt_template_str or messages."
-            )
+        if prompt is None and prompt_template_str is None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt is not None and prompt_template_str is not None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt_template_str is not None:
             prompt = PromptTemplate(prompt_template_str)
-
         return cls(
             output_parser,
             prompt=cast(PromptTemplate, prompt),
-            messages=messages,
             llm=llm,
             verbose=verbose,
         )
@@ -75,30 +58,22 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def output_cls(self) -> Type[BaseModel]:
         return self._output_parser.output_cls
 
-    def _get_formatted_arg(self, **kwargs: Any) -> Union[str, List[ChatMessage]]:
-        if self._prompt is not None:
-            return self._prompt.format(**kwargs)
-        elif self._messages is not None:
-            return self._output_parser.format_messages(self._messages)
-        else:
-            raise ValueError("Must provide either prompt or messages.")
-
     def __call__(
         self,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        response_fn = (
-            self._llm.chat if self._llm.metadata.is_chat_model else self._llm.complete
-        )
+        if self._llm.metadata.is_chat_model:
+            messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
-        formatted_arg = self._get_formatted_arg(**kwargs)
+            response = self._llm.chat(messages)
 
-        response = response_fn(formatted_arg)  # type: ignore
-
-        if isinstance(response, ChatResponse):
             raw_output = response.message.content or ""
         else:
+            formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
+
+            response = self._llm.complete(formatted_prompt)
+
             raw_output = response.text
 
         model_output = self._output_parser.parse(raw_output)
@@ -109,17 +84,17 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        response_fn = (
-            self._llm.achat if self._llm.metadata.is_chat_model else self._llm.acomplete
-        )
+        if self._llm.metadata.is_chat_model:
+            messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
-        formatted_arg = self._get_formatted_arg(**kwargs)
+            response = await self._llm.achat(messages)
 
-        response = await response_fn(formatted_arg)  # type: ignore
-
-        if isinstance(response, ChatResponse):
             raw_output = response.message.content or ""
         else:
+            formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
+
+            response = await self._llm.acomplete(formatted_prompt)
+
             raw_output = response.text
 
         model_output = self._output_parser.parse(raw_output)

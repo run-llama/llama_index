@@ -1,13 +1,12 @@
 """LLM Prompt Program."""
 from abc import abstractmethod
-from typing import Any, Generic, Optional, Type, TypeVar, List
+from typing import Any, Generic, Optional, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.types import BasePydanticProgram
 from llama_index.prompts.base import PromptTemplate
 from llama_index.types import Model
-from llama_index.llms.base import ChatMessage
 
 LM = TypeVar("LM")
 
@@ -30,7 +29,6 @@ class BaseLLMFunctionProgram(BasePydanticProgram[BaseModel], Generic[LM]):
         output_cls: Type[Model],
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
-        messages: Optional[List[ChatMessage]] = None,
         llm: Optional[LM] = None,
         **kwargs: Any,
     ) -> "BaseLLMFunctionProgram":

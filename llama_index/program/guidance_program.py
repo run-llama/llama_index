@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, Any, Optional, Type, cast, List
+from typing import TYPE_CHECKING, Any, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.prompts.base import PromptTemplate, ChatMessage
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
     pydantic_to_guidance_output_template_markdown,
@@ -24,7 +24,6 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         self,
         output_cls: Type[BaseModel],
         prompt_template_str: str,
-        messages: Optional[List[ChatMessage]] = None,
         guidance_llm: Optional["GuidanceLLM"] = None,
         verbose: bool = False,
     ):
@@ -43,7 +42,6 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         self._guidance_program = Program(full_str, llm=llm, silent=not verbose)
         self._output_cls = output_cls
         self._verbose = verbose
-        self._messages = messages
 
     @classmethod
     def from_defaults(
@@ -51,7 +49,6 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         output_cls: Type[BaseModel],
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
-        messages: Optional[List[ChatMessage]] = None,
         llm: Optional["GuidanceLLM"] = None,
         **kwargs: Any,
     ) -> "BaseLLMFunctionProgram":
@@ -67,7 +64,6 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
             output_cls,
             prompt_template_str,
             guidance_llm=llm,
-            messages=messages,
             **kwargs,
         )
 

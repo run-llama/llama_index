@@ -1,7 +1,7 @@
-from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, Generator, Optional, Tuple, Type, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import LLM, ChatMessage, MessageRole
+from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import to_openai_function
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
@@ -46,7 +46,6 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         llm: LLM,
         prompt: BasePromptTemplate,
         function_call: Union[str, Dict[str, Any]],
-        messages: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
     ) -> None:
         """Init params."""
@@ -54,7 +53,6 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
-        self._messages = messages
         self._function_call = function_call
 
     @classmethod
@@ -63,7 +61,6 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         output_cls: Type[Model],
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
-        messages: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
@@ -82,10 +79,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
                 "function calling API. "
             )
 
-        if prompt is None and prompt_template_str is None and messages is None:
-            raise ValueError(
-                "Must provide either prompt or prompt_template_str messages."
-            )
+        if prompt is None and prompt_template_str is None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt is not None and prompt_template_str is not None:
             raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt_template_str is not None:
@@ -96,7 +91,6 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             llm=llm,
             prompt=cast(PromptTemplate, prompt),
             function_call=function_call,
-            messages=messages,
             verbose=verbose,
         )
 
@@ -109,12 +103,9 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        messages = (
-            [ChatMessage(role=MessageRole.USER, content=self._prompt.format(**kwargs))]
-            if self._messages is None
-            else self._messages
-        )
         openai_fn_spec = to_openai_function(self._output_cls)
+
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         chat_response = self._llm.chat(
             messages=messages,
@@ -124,7 +115,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         message = chat_response.message
         if "function_call" not in message.additional_kwargs:
             raise ValueError(
-                "Expected function call in message.additional_kwargs, "
+                "Expected function call in ai_message.additional_kwargs, "
                 "but none found."
             )
 
@@ -145,12 +136,9 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        messages = (
-            [ChatMessage(role=MessageRole.USER, content=self._prompt.format(**kwargs))]
-            if self._messages is None
-            else self._messages
-        )
         openai_fn_spec = to_openai_function(self._output_cls)
+
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         chat_response = await self._llm.achat(
             messages=messages,
@@ -181,14 +169,14 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     ) -> Generator[BaseModel, None, None]:
         """Streams a list of objects."""
 
-        formatted_prompt = self._prompt.format(**kwargs)
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         # openai_fn_spec = to_openai_function(self._output_cls)
         list_output_cls = create_list_model(self._output_cls)
         openai_fn_spec = to_openai_function(list_output_cls)
 
         chat_response_gen = self._llm.stream_chat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=_default_function_call(list_output_cls),
         )
