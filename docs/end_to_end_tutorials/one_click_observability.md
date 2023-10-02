@@ -129,7 +129,7 @@ llama_index.set_global_handler("arize_phoenix")
 ---
 maxdepth: 1
 ---
-Arize-Phoenix Tracing Tutorial <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb>
+Arize Phoenix Tracing Tutorial <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb>
 ```
 
 ### OpenInference
