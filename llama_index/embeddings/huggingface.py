@@ -13,7 +13,9 @@ from llama_index.embeddings.huggingface_utils import (
 class HuggingFaceEmbedding(BaseEmbedding):
     tokenizer_name: str = Field(description="Tokenizer name from HuggingFace.")
     max_length: int = Field(description="Maximum length of input.")
-    pooling: Literal['mean', 'cls', 'weighted_mean'] = Field(description="Pooling strategy. One of ['mean', 'cls', 'weighted_mean'].")
+    pooling: Literal["mean", "cls", "weighted_mean"] = Field(
+        description="Pooling strategy. One of ['mean', 'cls', 'weighted_mean']."
+    )
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )
@@ -30,8 +32,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: Optional[str] = None,
-        tokenizer_name: Optional[str] = None,
+        model_name_or_path: Optional[str] = None,
+        tokenizer_name_or_path: Optional[str] = None,
         pooling: str = "cls",
         max_length: Optional[int] = None,
         query_instruction: Optional[str] = None,
@@ -46,7 +48,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         tokenizer_args: dict = {},
     ):
         try:
-            from transformers import AutoTokenizer, AutoModel
+            from transformers import AutoTokenizer, AutoModel, AutoConfig
         except ImportError:
             raise ImportError(
                 "HuggingFaceEmbedding requires transformers to be installed.\n"
@@ -62,7 +64,11 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 device = "cpu"
         self._device = device
 
-        if model is None:
+        config = AutoConfig.from_pretrained(
+            model_name_or_path or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL, **model_args
+        )
+
+        if model is None and model_name_or_path is None:
             model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             self._model = AutoModel.from_pretrained(
                 model_name, cache_dir=cache_folder, **model_args
@@ -135,11 +141,13 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(
             input_mask_expanded.sum(1), min=1e-9
         )
-    
-    def _weighted_mean_pooling(self, model_output: Any, attention_mask: Any, device: str) -> Any:
+
+    def _weighted_mean_pooling(
+        self, model_output: Any, attention_mask: Any, device: str
+    ) -> Any:
         """Weighted mean pooling assigns higher weighted to tokens attend later, such as SGPT."""
         import torch
-        
+
         token_embeddings = model_output[0]
         weights = (
             torch.arange(start=1, end=token_embeddings.shape[1] + 1, device=device)
@@ -151,9 +159,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
         input_mask_expanded = (
             attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         )
-        return torch.sum(token_embeddings * input_mask_expanded * weights, 1) / torch.clamp(
-            torch.sum(input_mask_expanded * weights, dim=1), min=1e-9
-        )
+        return torch.sum(
+            token_embeddings * input_mask_expanded * weights, 1
+        ) / torch.clamp(torch.sum(input_mask_expanded * weights, dim=1), min=1e-9)
 
     def _cls_pooling(self, model_output: list) -> Any:
         """Use the CLS token as the pooling token."""
