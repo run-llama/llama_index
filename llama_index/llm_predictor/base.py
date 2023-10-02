@@ -157,7 +157,7 @@ class LLMPredictor(BaseLLMPredictor):
     async def _arun_program(
         self,
         output_cls: BaseModel,
-        prompt: BasePromptTemplate,
+        prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> str:
         program: BasePydanticProgram
