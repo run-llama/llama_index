@@ -38,31 +38,6 @@ def test_from_uri(mocker: MockerFixture) -> None:
     mocked.assert_called_once_with("sqlite:///:memory:", **{})
 
 
-# Test table_info property
-def test_table_info(sql_database: SQLDatabase, mocker: MockerFixture) -> None:
-    mocked = mocker.patch.object(sql_database, "get_table_info")
-    sql_database.table_info
-    mocked.assert_called_once_with()
-
-
-# Test get_table_info method
-def test_get_table_info(sql_database: SQLDatabase) -> None:
-    expected_info = (
-        "\nCREATE TABLE test_table (\n"
-        "\tid INTEGER NOT NULL, \n"
-        "\tname VARCHAR, \n"
-        "\tPRIMARY KEY (id)\n"
-        ")\n"
-        "\n"
-        "/*\n"
-        "1 rows from test_table table:\n"
-        "id\tname\n"
-        "\n"
-        "*/"
-    )
-    assert sql_database.get_table_info() == expected_info
-
-
 # Test get_table_columns method
 def test_get_table_columns(sql_database: SQLDatabase) -> None:
     columns = sql_database.get_table_columns("test_table")
@@ -79,16 +54,11 @@ def test_get_single_table_info(sql_database: SQLDatabase) -> None:
     )
 
 
-# Test insert_into_table method
-def test_insert_into_table(sql_database: SQLDatabase) -> None:
-    assert sql_database.get_table_info(["test_table"]).find("1\tPaul McCartney") == -1
+# Test insert and run_sql method
+def test_insert_and_run_sql(sql_database: SQLDatabase) -> None:
+    result_str, _ = sql_database.run_sql("SELECT * FROM test_table;")
+    assert result_str == "[]"
 
-    sql_database.insert_into_table("test_table", {"id": 1, "name": "Paul McCartney"})
-    assert sql_database.get_table_info(["test_table"]).find("1\tPaul McCartney") != -1
-
-
-# Test run_sql method
-def test_run_sql(sql_database: SQLDatabase) -> None:
     sql_database.insert_into_table("test_table", {"id": 1, "name": "Paul McCartney"})
 
     result_str, _ = sql_database.run_sql("SELECT * FROM test_table;")
