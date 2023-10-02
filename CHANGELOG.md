@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix `LocalAI` chat capability without `max_tokens` (#7942)
+
 ## [0.8.38] - 2023-10-02
 
 ### New Features
