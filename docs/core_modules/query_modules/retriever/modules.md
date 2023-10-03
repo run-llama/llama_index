@@ -46,4 +46,5 @@ Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/retrievers/auto_merging_retriever.ipynb
 /examples/retrievers/recursive_retriever_nodes.ipynb
 /examples/retrievers/recurisve_retriever_nodes_braintrust.ipynb
+/examples/node_postprocessor/MetadataReplacementDemo.ipynb
 ```

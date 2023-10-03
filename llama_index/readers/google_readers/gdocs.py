@@ -51,7 +51,6 @@ class GoogleDocsReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "GoogleDocsReader"
 
     def load_data(self, document_ids: List[str]) -> List[Document]:

@@ -56,6 +56,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         """Store event start data by event type.
@@ -64,6 +65,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
             event_type (CBEventType): event type to store.
             payload (Optional[Dict[str, Any]]): payload to store.
             event_id (str): event id to store.
+            parent_id (str): parent event id.
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
@@ -132,7 +134,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
     def get_event_pairs(
         self, event_type: Optional[CBEventType] = None
     ) -> List[List[CBEvent]]:
-        """Pair events by ID, either all events or a sepcific type."""
+        """Pair events by ID, either all events or a specific type."""
         if event_type is not None:
             return self._get_event_pairs(self._event_pairs_by_type[event_type])
 

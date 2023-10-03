@@ -20,7 +20,7 @@ WRAP_WIDTH = 70
 
 
 class BaseComponent(BaseModel):
-    """Base component object to caputure class names."""
+    """Base component object to capture class names."""
 
     class Config:
         @staticmethod
@@ -34,7 +34,12 @@ class BaseComponent(BaseModel):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
+        """
+        Get the class name, used as a unique ID in serialization.
+
+        This provides a key that makes serialization robust against actual class
+        name changes.
+        """
         return "base_component"
 
     def json(self, **kwargs: Any) -> str:
@@ -125,7 +130,6 @@ class RelatedNodeInfo(BaseComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "RelatedNodeInfo"
 
 
@@ -164,11 +168,11 @@ class BaseNode(BaseComponent):
     )
     excluded_embed_metadata_keys: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are exluded from text for the embed model.",
+        description="Metadata keys that are excluded from text for the embed model.",
     )
     excluded_llm_metadata_keys: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are exluded from text for the LLM.",
+        description="Metadata keys that are excluded from text for the LLM.",
     )
     relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
         default_factory=dict,
@@ -323,12 +327,11 @@ class TextNode(BaseNode):
     )
     metadata_seperator: str = Field(
         default="\n",
-        description="Seperator between metadata fields when converting to string.",
+        description="Separator between metadata fields when converting to string.",
     )
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "TextNode"
 
     @root_validator
@@ -414,7 +417,6 @@ class ImageNode(TextNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "ImageNode"
 
 
@@ -449,7 +451,6 @@ class IndexNode(TextNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "IndexNode"
 
 
@@ -472,7 +473,6 @@ class NodeWithScore(BaseComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "NodeWithScore"
 
     ##### pass through methods to BaseNode #####
@@ -579,7 +579,6 @@ class Document(TextNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Document"
 
 
@@ -591,5 +590,4 @@ class ImageDocument(Document):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "ImageDocument"

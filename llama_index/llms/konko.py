@@ -41,12 +41,12 @@ class Konko(LLM):
     class_type = "konko"
 
     model: str = Field(description="The konko model to use.")
-    temperature: float = Field(description="The tempature to use during generation.")
+    temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the konko API."
+        default_factory=dict, description="Additional kwargs for the konko API."
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
@@ -108,7 +108,6 @@ class Konko(LLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Konko_LLM"
 
     @property

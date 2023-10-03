@@ -20,7 +20,7 @@ class CodeSplitter(TextSplitter):
     """
 
     language: str = Field(
-        description="The programming languge of the code being split."
+        description="The programming language of the code being split."
     )
     chunk_lines: int = Field(
         default=DEFAULT_CHUNK_LINES,
@@ -56,7 +56,6 @@ class CodeSplitter(TextSplitter):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "CodeSplitter"
 
     def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:

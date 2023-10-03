@@ -100,7 +100,6 @@ class TitleExtractor(BaseExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "TitleExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -179,7 +178,6 @@ class KeywordExtractor(BaseExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "KeywordExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -276,7 +274,6 @@ class QuestionsAnsweredExtractor(BaseExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "QuestionsAnsweredExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -367,7 +364,6 @@ class SummaryExtractor(BaseExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "SummaryExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -436,7 +432,7 @@ class EntityExtractor(BaseExtractor):
     prediction_threshold: float = Field(
         default=0.5, description="The confidence threshold for accepting predictions."
     )
-    span_joiner: str = Field(description="The seperator beween entity names.")
+    span_joiner: str = Field(description="The separator between entity names.")
     label_entities: bool = Field(
         default=False, description="Include entity class labels or not."
     )
@@ -520,7 +516,6 @@ class EntityExtractor(BaseExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "EntityExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
@@ -587,7 +582,6 @@ class PydanticProgramExtractor(BaseExtractor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "PydanticModelExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:

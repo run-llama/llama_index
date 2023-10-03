@@ -76,16 +76,23 @@ class CallbackManager(BaseCallbackHandler, ABC):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: Optional[str] = None,
+        parent_id: Optional[str] = None,
         **kwargs: Any,
     ) -> str:
         """Run handlers when an event starts and return id of event."""
         event_id = event_id or str(uuid.uuid4())
 
-        parent_id = global_stack_trace.get()[-1]
+        parent_id = parent_id or global_stack_trace.get()[-1]
         self._trace_map[parent_id].append(event_id)
         for handler in self.handlers:
             if event_type not in handler.event_starts_to_ignore:
-                handler.on_event_start(event_type, payload, event_id=event_id, **kwargs)
+                handler.on_event_start(
+                    event_type,
+                    payload,
+                    event_id=event_id,
+                    parent_id=parent_id,
+                    **kwargs,
+                )
 
         if event_type not in LEAF_EVENTS:
             # copy the stack trace to prevent conflicts with threads/coroutines

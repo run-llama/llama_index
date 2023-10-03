@@ -150,7 +150,7 @@ class BaseEmbedding(TransformComponent):
         """Asynchronously get text embedding.
 
         By default, this falls back to _get_text_embedding.
-        Meant to be overriden if there is a true async implementation.
+        Meant to be overridden if there is a true async implementation.
 
         """
         return self._get_text_embedding(text)
@@ -159,7 +159,7 @@ class BaseEmbedding(TransformComponent):
         """Get a list of text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
-        Meant to be overriden for batch queries.
+        Meant to be overridden for batch queries.
 
         """
         result = [self._get_text_embedding(text) for text in texts]
@@ -169,7 +169,7 @@ class BaseEmbedding(TransformComponent):
         """Async get a list of text embeddings.
 
         By default, this is a wrapper around _aget_text_embedding.
-        Meant to be overriden for batch queries.
+        Meant to be overridden for batch queries.
 
         """
         result = await asyncio.gather(
@@ -261,6 +261,7 @@ class BaseEmbedding(TransformComponent):
                 )
                 callback_payloads.append((event_id, cur_batch))
                 embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
+                cur_batch = []
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []

@@ -1,12 +1,11 @@
 from typing import Any, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.output_parsers.pydantic import PydanticOutputParser
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.types import BasePydanticProgram
-from llama_index.prompts.base import PromptTemplate
 
 
 class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
@@ -20,7 +19,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def __init__(
         self,
         output_parser: PydanticOutputParser,
-        prompt: PromptTemplate,
+        prompt: BasePromptTemplate,
         llm: LLM,
         verbose: bool = False,
     ) -> None:
@@ -64,8 +63,39 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        formatted_prompt = self._prompt.format(**kwargs)
-        response = self._llm.complete(formatted_prompt)
-        raw_output = response.text
+        if self._llm.metadata.is_chat_model:
+            messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
+            response = self._llm.chat(messages)
+
+            raw_output = response.message.content or ""
+        else:
+            formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
+
+            response = self._llm.complete(formatted_prompt)
+
+            raw_output = response.text
+
+        model_output = self._output_parser.parse(raw_output)
+        return model_output
+
+    async def acall(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> BaseModel:
+        if self._llm.metadata.is_chat_model:
+            messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
+            response = await self._llm.achat(messages)
+
+            raw_output = response.message.content or ""
+        else:
+            formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
+
+            response = await self._llm.acomplete(formatted_prompt)
+
+            raw_output = response.text
+
         model_output = self._output_parser.parse(raw_output)
         return model_output

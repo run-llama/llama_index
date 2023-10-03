@@ -251,7 +251,7 @@ class RocksetVectorStore(VectorStore):
                 collection will do no vector enforcement.
             collection (str): The name of the collection to be created
             client (Optional[Any]): Rockset client object
-            workspace (str): The workspace containing the colleciton to be
+            workspace (str): The workspace containing the collection to be
                 created (default: "commons")
             text_key (str): The key to the text of nodes
                 (default: llama_index.vector_stores.utils.DEFAULT_TEXT_KEY)

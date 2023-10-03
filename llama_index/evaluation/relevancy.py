@@ -113,6 +113,7 @@ class RelevancyEvaluator(BaseEvaluator):
             query=query,
             response=response,
             passing=passing,
+            score=1.0 if passing else 0.0,
             feedback=raw_response_txt,
         )
 

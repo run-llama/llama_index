@@ -5,10 +5,9 @@ from abc import abstractmethod, ABC
 from typing import Any, Dict, List, Optional
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import PrivateAttr
-
+from llama_index.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import EventPayload, CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.utils import (
     astream_chat_response_to_tokens,
     astream_completion_response_to_tokens,
@@ -16,11 +15,8 @@ from llama_index.llm_predictor.utils import (
     stream_completion_response_to_tokens,
 )
 from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
-from llama_index.llms.generic_utils import messages_to_prompt
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.prompts.base import (
-    BasePromptTemplate,
-)
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
 from llama_index.types import TokenAsyncGen, TokenGen
 
@@ -127,7 +123,6 @@ class LLMPredictor(BaseLLMPredictor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "LLMPredictor"
 
     @property
@@ -159,17 +154,48 @@ class LLMPredictor(BaseLLMPredictor):
         ):
             pass
 
-    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+    def _run_program(
+        self,
+        output_cls: BaseModel,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
+    ) -> str:
+        from llama_index.program.utils import get_program_for_llm
+
+        program = get_program_for_llm(output_cls, prompt, self._llm)
+
+        chat_response = program(**prompt_args)
+        return chat_response.json()
+
+    async def _arun_program(
+        self,
+        output_cls: BaseModel,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
+    ) -> str:
+        from llama_index.program.utils import get_program_for_llm
+
+        program = get_program_for_llm(output_cls, prompt, self._llm)
+
+        chat_response = await program.acall(**prompt_args)
+        return chat_response.json()
+
+    def predict(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[BaseModel] = None,
+        **prompt_args: Any,
+    ) -> str:
         """Predict."""
         self._log_template_data(prompt, **prompt_args)
 
-        if self._llm.metadata.is_chat_model:
+        if output_cls is not None:
+            output = self._run_program(output_cls, prompt, **prompt_args)
+        elif self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
             chat_response = self._llm.chat(messages)
             output = chat_response.message.content or ""
-            # NOTE: this is an approximation, only for token counting
-            formatted_prompt = messages_to_prompt(messages)
         else:
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             formatted_prompt = self._extend_prompt(formatted_prompt)
@@ -180,8 +206,16 @@ class LLMPredictor(BaseLLMPredictor):
 
         return output
 
-    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
+    def stream(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[BaseModel] = None,
+        **prompt_args: Any,
+    ) -> TokenGen:
         """Stream."""
+        if output_cls is not None:
+            raise NotImplementedError("Streaming with output_cls not supported.")
+
         self._log_template_data(prompt, **prompt_args)
 
         if self._llm.metadata.is_chat_model:
@@ -196,17 +230,22 @@ class LLMPredictor(BaseLLMPredictor):
             stream_tokens = stream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
-    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+    async def apredict(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[BaseModel] = None,
+        **prompt_args: Any,
+    ) -> str:
         """Async predict."""
         self._log_template_data(prompt, **prompt_args)
 
-        if self._llm.metadata.is_chat_model:
+        if output_cls is not None:
+            output = await self._arun_program(output_cls, prompt, **prompt_args)
+        elif self._llm.metadata.is_chat_model:
             messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
             chat_response = await self._llm.achat(messages)
             output = chat_response.message.content or ""
-            # NOTE: this is an approximation, only for token counting
-            formatted_prompt = messages_to_prompt(messages)
         else:
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             formatted_prompt = self._extend_prompt(formatted_prompt)
@@ -218,9 +257,15 @@ class LLMPredictor(BaseLLMPredictor):
         return output
 
     async def astream(
-        self, prompt: BasePromptTemplate, **prompt_args: Any
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[BaseModel] = None,
+        **prompt_args: Any,
     ) -> TokenAsyncGen:
         """Async stream."""
+        if output_cls is not None:
+            raise NotImplementedError("Streaming with output_cls not supported.")
+
         self._log_template_data(prompt, **prompt_args)
 
         if self._llm.metadata.is_chat_model:

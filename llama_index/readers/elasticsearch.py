@@ -50,7 +50,6 @@ class ElasticsearchReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "ElasticsearchReader"
 
     def load_data(

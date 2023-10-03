@@ -98,5 +98,6 @@ class GuidelineEvaluator(BaseEvaluator):
             query=query,
             response=response,
             passing=eval_data.passing,
+            score=1.0 if eval_data.passing else 0.0,
             feedback=eval_data.feedback,
         )

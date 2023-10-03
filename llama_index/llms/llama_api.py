@@ -27,7 +27,7 @@ class LlamaAPI(CustomLLM):
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the llama-api API."
+        default_factory=dict, description="Additional kwargs for the llama-api API."
     )
 
     _client: Any = PrivateAttr()
@@ -61,7 +61,6 @@ class LlamaAPI(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "llama_api_llm"
 
     @property

@@ -63,7 +63,6 @@ class SimpleNodeParser(NodeParser):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "SimpleNodeParser"
 
     @classmethod

@@ -49,9 +49,6 @@ from langchain.schema import (
     SystemMessage,
 )
 
-# misc
-from langchain.sql_database import SQLDatabase
-
 # input & output
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.tools import BaseTool, StructuredTool, Tool
@@ -103,7 +100,6 @@ __all__ = [
     "BaseMessage",
     "LLMResult",
     "ChatGeneration",
-    "SQLDatabase",
     "GPTCache",
     "BaseCache",
     "Document",

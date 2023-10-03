@@ -4,7 +4,7 @@ from typing import Any, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel
 
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
 from llama_index.schema import BaseNode, TextNode
 

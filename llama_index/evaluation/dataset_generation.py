@@ -193,6 +193,7 @@ class DatasetGenerator:
         else:
             async_module = asyncio
 
+        summary_indices: List[SummaryIndex] = []
         for node in nodes:
             if num is not None and len(queries) >= num:
                 break
@@ -215,9 +216,10 @@ class DatasetGenerator:
                 self.question_gen_query,
             )
             query_tasks.append(task)
+            summary_indices.append(index)
 
         responses = await async_module.gather(*query_tasks)
-        for response in responses:
+        for idx, response in enumerate(responses):
             result = str(response).strip().split("\n")
             cleaned_questions = [
                 re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
@@ -231,6 +233,7 @@ class DatasetGenerator:
             queries.update(cur_queries)
 
             if generate_response:
+                index = summary_indices[idx]
                 qr_tasks = []
                 cur_query_items = list(cur_queries.items())
                 cur_query_keys = [query_id for query_id, _ in cur_query_items]
@@ -252,9 +255,10 @@ class DatasetGenerator:
             query_ids = query_ids[:num]
             # truncate queries, responses to the subset of query ids
             queries = {query_id: queries[query_id] for query_id in query_ids}
-            responses_dict = {
-                query_id: responses_dict[query_id] for query_id in query_ids
-            }
+            if generate_response:
+                responses_dict = {
+                    query_id: responses_dict[query_id] for query_id in query_ids
+                }
 
         return QueryResponseDataset(queries=queries, responses=responses_dict)
 

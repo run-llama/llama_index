@@ -1,8 +1,7 @@
 from typing import Any, Dict, Generator, Optional, Tuple, Type, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel
-
-from llama_index.llms.base import LLM, ChatMessage, MessageRole
+from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import to_openai_function
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
@@ -104,12 +103,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        formatted_prompt = self._prompt.format(**kwargs)
-
         openai_fn_spec = to_openai_function(self._output_cls)
 
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
         chat_response = self._llm.chat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=self._function_call,
         )
@@ -137,12 +136,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        formatted_prompt = self._prompt.format(**kwargs)
-
         openai_fn_spec = to_openai_function(self._output_cls)
 
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
         chat_response = await self._llm.achat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=self._function_call,
         )
@@ -170,14 +169,14 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     ) -> Generator[BaseModel, None, None]:
         """Streams a list of objects."""
 
-        formatted_prompt = self._prompt.format(**kwargs)
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         # openai_fn_spec = to_openai_function(self._output_cls)
         list_output_cls = create_list_model(self._output_cls)
         openai_fn_spec = to_openai_function(list_output_cls)
 
         chat_response_gen = self._llm.stream_chat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=_default_function_call(list_output_cls),
         )
