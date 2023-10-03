@@ -57,6 +57,7 @@ class VectaraRetriever(BaseRetriever):
             "x-api-key": self._index._vectara_api_key,
             "customer-id": self._index._vectara_customer_id,
             "Content-Type": "application/json",
+            "X-Source": "llama_index",
         }
 
     def _retrieve(
