@@ -3,10 +3,7 @@ from typing import Any, Generator, Optional, Sequence
 
 from langchain.base_language import BaseLanguageModel
 
-try:
-    from pydantic.v1 import PrivateAttr
-except ImportError:
-    from pydantic import PrivateAttr
+from llama_index.bridge.pydantic import PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
@@ -40,6 +37,10 @@ class LangChainLLM(LLM):
     ) -> None:
         self._llm = llm
         super().__init__(callback_manager=callback_manager)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "LangChainLLM"
 
     @property
     def llm(self) -> BaseLanguageModel:

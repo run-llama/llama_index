@@ -2,10 +2,7 @@
 import os
 from typing import Any, Optional
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
@@ -67,6 +64,10 @@ class PaLM(CustomLLM):
             generate_kwargs=generate_kwargs,
             callback_manager=callback_manager,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PaLM_llm"
 
     @property
     def metadata(self) -> LLMMetadata:

@@ -21,6 +21,17 @@ maxdepth: 1
 
 ```
 
+## Gradient
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/gradient_base_model.ipynb
+/examples/llm/gradient_model_adapter.ipynb
+
+```
+
 ## Hugging Face
 ```{toctree}
 ---
@@ -32,6 +43,22 @@ maxdepth: 1
 
 ```
 
+## EverlyAI
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/everlyai.ipynb
+```
+
+
+## LiteLLM
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/litellm.ipynb
+```
 
 ## PaLM
 
@@ -107,5 +134,45 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/monsterapi.ipynb
+```
+
+## RunGPT
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/rungpt.ipynb
+```
+
+## Portkey
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/portkey.ipynb
+```
+
+## AnyScale
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/anyscale.ipynb
+```
+
+## Ollama
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/ollama.ipynb
+```
+
+## Konko
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/konko.ipynb
 
 ```

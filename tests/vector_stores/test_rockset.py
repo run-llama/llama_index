@@ -24,7 +24,6 @@ from llama_index.vector_stores import RocksetVectorStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStoreQuery,
 )
 from llama_index.schema import TextNode
@@ -48,25 +47,19 @@ def vector_store() -> Generator[RocksetVectorStore, None, None]:
     store = RocksetVectorStore(collection="test")
     store.add(
         [
-            NodeWithEmbedding(
-                node=TextNode(
-                    text="Apples are blue",
-                    metadata={"type": "fruit"},  # type: ignore[call-arg]
-                ),
+            TextNode(
+                text="Apples are blue",
+                metadata={"type": "fruit"},  # type: ignore[call-arg]
                 embedding=[0.9, 0.1],
             ),
-            NodeWithEmbedding(
-                node=TextNode(
-                    text="Tomatoes are black",
-                    metadata={"type": "veggie"},  # type: ignore[call-arg]
-                ),
+            TextNode(
+                text="Tomatoes are black",
+                metadata={"type": "veggie"},  # type: ignore[call-arg]
                 embedding=[0.5, 0.5],
             ),
-            NodeWithEmbedding(
-                node=TextNode(
-                    text="Brownies are orange",
-                    metadata={"type": "dessert"},  # type: ignore[call-arg]
-                ),
+            TextNode(
+                text="Brownies are orange",
+                metadata={"type": "dessert"},  # type: ignore[call-arg]
                 embedding=[0.1, 0.9],
             ),
         ]

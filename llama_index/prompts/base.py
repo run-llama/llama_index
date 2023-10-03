@@ -5,10 +5,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
@@ -44,6 +41,10 @@ class BasePromptTemplate(BaseModel, ABC):
     ) -> List[ChatMessage]:
         ...
 
+    @abstractmethod
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        ...
+
 
 class PromptTemplate(BasePromptTemplate):
     template: str
@@ -72,8 +73,15 @@ class PromptTemplate(BasePromptTemplate):
 
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
         """Partially format the prompt."""
+        # NOTE: this is a hack to get around deepcopy failing on output parser
+        output_parser = self.output_parser
+        self.output_parser = None
+
         prompt = deepcopy(self)
         prompt.kwargs.update(kwargs)
+
+        # NOTE: put the output parser back
+        prompt.output_parser = output_parser
         return prompt
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
@@ -83,7 +91,11 @@ class PromptTemplate(BasePromptTemplate):
             **self.kwargs,
             **kwargs,
         }
-        return self.template.format(**all_kwargs)
+
+        prompt = self.template.format(**all_kwargs)
+        if self.output_parser is not None:
+            prompt = self.output_parser.format(prompt)
+        return prompt
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
@@ -92,6 +104,9 @@ class PromptTemplate(BasePromptTemplate):
         del llm  # unused
         prompt = self.format(**kwargs)
         return prompt_to_messages(prompt)
+
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        return self.template
 
 
 class ChatPromptTemplate(BasePromptTemplate):
@@ -142,7 +157,7 @@ class ChatPromptTemplate(BasePromptTemplate):
             **kwargs,
         }
 
-        messages = []
+        messages: List[ChatMessage] = []
         for message_template in self.message_templates:
             template_vars = get_template_vars(message_template.content or "")
             relevant_kwargs = {
@@ -151,11 +166,17 @@ class ChatPromptTemplate(BasePromptTemplate):
             content_template = message_template.content or ""
             content = content_template.format(**relevant_kwargs)
 
-            message = message_template.copy()
+            message: ChatMessage = message_template.copy()
             message.content = content
             messages.append(message)
 
+        if self.output_parser is not None:
+            messages = self.output_parser.format_messages(messages)
+
         return messages
+
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        return messages_to_prompt(self.message_templates)
 
 
 class SelectorPromptTemplate(BasePromptTemplate):
@@ -185,13 +206,19 @@ class SelectorPromptTemplate(BasePromptTemplate):
         )
 
     def _select(self, llm: Optional[LLM] = None) -> BasePromptTemplate:
+        # ensure output parser is up to date
+        self.default_template.output_parser = self.output_parser
+
         if llm is None:
             return self.default_template
 
         if self.conditionals is not None:
             for condition, prompt in self.conditionals:
                 if condition(llm):
+                    # ensure output parser is up to date
+                    prompt.output_parser = self.output_parser
                     return prompt
+
         return self.default_template
 
     def partial_format(self, **kwargs: Any) -> "SelectorPromptTemplate":
@@ -218,6 +245,10 @@ class SelectorPromptTemplate(BasePromptTemplate):
         """Format the prompt into a list of chat messages."""
         prompt = self._select(llm=llm)
         return prompt.format_messages(**kwargs)
+
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        prompt = self._select(llm=llm)
+        return prompt.get_template(llm=llm)
 
 
 class LangchainPromptTemplate(BasePromptTemplate):
@@ -292,6 +323,19 @@ class LangchainPromptTemplate(BasePromptTemplate):
         lc_messages = lc_prompt_value.to_messages()
         messages = from_lc_messages(lc_messages)
         return messages
+
+    def get_template(self, llm: Optional[LLM] = None) -> str:
+        if llm is not None:
+            if not isinstance(llm, LangChainLLM):
+                raise ValueError("Must provide a LangChainLLM.")
+            lc_template = self.selector.get_prompt(llm=llm.llm)
+        else:
+            lc_template = self.selector.default_prompt
+
+        try:
+            return str(lc_template.template)  # type: ignore
+        except AttributeError:
+            return str(lc_template)
 
 
 # NOTE: only for backwards compatibility

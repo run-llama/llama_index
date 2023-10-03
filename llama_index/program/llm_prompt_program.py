@@ -2,12 +2,9 @@
 from abc import abstractmethod
 from typing import Any, Generic, Optional, Type, TypeVar
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 from llama_index.prompts.base import PromptTemplate
 from llama_index.types import Model
 

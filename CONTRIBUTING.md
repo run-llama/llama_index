@@ -112,7 +112,7 @@ See [Managed Index docs](https://gpt-index.readthedocs.io/en/stable/community/in
 
 #### Vector Stores
 
-Our vector store classes store embeddings and support lookup via similiarity search.
+Our vector store classes store embeddings and support lookup via similarity search.
 These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
@@ -157,7 +157,7 @@ data if you wish.
 
 **Ideas**:
 
-- Besides the "default" retrievers built on top of each index, what about fancier retrievers? E.g. retrievers that take in other retrivers as input? Or other
+- Besides the "default" retrievers built on top of each index, what about fancier retrievers? E.g. retrievers that take in other retrievers as input? Or other
   types of data?
 
 ---
@@ -201,7 +201,7 @@ See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transf
 
 A token usage optimizer refines the retrieved `Nodes` to reduce token usage during response synthesis.
 
-**Interface**: `optimize` takes in the `QueryBundle` and a text chunk `str`, and outputs a refined text chunk `str` that yeilds a more optimized response
+**Interface**: `optimize` takes in the `QueryBundle` and a text chunk `str`, and outputs a refined text chunk `str` that yields a more optimized response
 
 **Examples**:
 
@@ -219,7 +219,7 @@ A node postprocessor refines a list of retrieve nodes given configuration and co
 
 - [Keyword Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L32): filters nodes based on keyword match
 - [Similarity Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L62): filers nodes based on similarity threshold
-- [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L135): fetchs additional nodes to augment context based on node relationships.
+- [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L135): fetches additional nodes to augment context based on node relationships.
 
 ---
 
@@ -328,6 +328,7 @@ For bigger changes, you'll want to create a unit test. Our tests are in the `tes
 We use `pytest` for unit testing. To run all unit tests, run the following in the root dir:
 
 ```bash
+pip install -r data_requirements.txt
 pytest tests
 ```
 

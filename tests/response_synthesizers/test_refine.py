@@ -1,12 +1,14 @@
 from typing import Any, Dict, Optional, Type, cast
 from collections import OrderedDict
-from pydantic import BaseModel
+
+from llama_index.bridge.pydantic import BaseModel
+
 import pytest
 from llama_index.indices.service_context import ServiceContext
 from llama_index.callbacks import CallbackManager
 from llama_index.response_synthesizers import Refine
 from llama_index.response_synthesizers.refine import StructuredRefineResponse
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 
 
 class MockRefineProgram(BasePydanticProgram):
@@ -70,14 +72,14 @@ def refine_instance(mock_refine_service_context: ServiceContext) -> Refine:
 
 def test_constructor_args(mock_refine_service_context: ServiceContext) -> None:
     with pytest.raises(ValueError):
-        # cant construct refine with both streaming and answer filtering
+        # can't construct refine with both streaming and answer filtering
         Refine(
             service_context=mock_refine_service_context,
             streaming=True,
             structured_answer_filtering=True,
         )
     with pytest.raises(ValueError):
-        # cant construct refine with a program factory but not answer filtering
+        # can't construct refine with a program factory but not answer filtering
         Refine(
             service_context=mock_refine_service_context,
             program_factory=lambda _: MockRefineProgram({}),

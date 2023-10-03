@@ -35,7 +35,7 @@ if TYPE_CHECKING:
         GPTKeywordTableIndex,
         GPTSimpleKeywordTableIndex,
         GPTRAKEKeywordTableIndex,
-        GPTListIndex,
+        SummaryIndex,
         GPTEmptyIndex,
         GPTTreeIndex,
         GPTVectorStoreIndex,
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
         GPTKeywordTableIndex,
         GPTSimpleKeywordTableIndex,
         GPTRAKEKeywordTableIndex,
-        GPTListIndex,
+        SummaryIndex,
         GPTEmptyIndex,
         GPTTreeIndex,
         GPTVectorStoreIndex,
@@ -133,7 +133,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             GPTKeywordTableIndex,
             GPTSimpleKeywordTableIndex,
             GPTRAKEKeywordTableIndex,
-            GPTListIndex,
+            SummaryIndex,
             GPTEmptyIndex,
             GPTTreeIndex,
             GPTVectorStoreIndex,
@@ -145,7 +145,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             GPTKeywordTableIndex,
             GPTSimpleKeywordTableIndex,
             GPTRAKEKeywordTableIndex,
-            GPTListIndex,
+            SummaryIndex,
             GPTEmptyIndex,
             GPTTreeIndex,
             GPTVectorStoreIndex,
@@ -175,6 +175,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         """Store event start data by event type.
@@ -183,6 +184,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             event_type (CBEventType): event type to store.
             payload (Optional[Dict[str, Any]]): payload to store.
             event_id (str): event id to store.
+            parent_id (str): parent event id.
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
@@ -387,6 +389,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
             span_kind = self._trace_tree.SpanKind.LLM
         elif event_type == CBEventType.QUERY:
             span_kind = self._trace_tree.SpanKind.AGENT
+        elif event_type == CBEventType.AGENT_STEP:
+            span_kind = self._trace_tree.SpanKind.AGENT
         elif event_type == CBEventType.RETRIEVE:
             span_kind = self._trace_tree.SpanKind.TOOL
         elif event_type == CBEventType.SYNTHESIZE:
@@ -395,8 +399,12 @@ class WandbCallbackHandler(BaseCallbackHandler):
             span_kind = self._trace_tree.SpanKind.CHAIN
         elif event_type == CBEventType.SUB_QUESTION:
             span_kind = self._trace_tree.SpanKind.CHAIN
+        elif event_type == CBEventType.RERANKING:
+            span_kind = self._trace_tree.SpanKind.CHAIN
+        elif event_type == CBEventType.FUNCTION_CALL:
+            span_kind = self._trace_tree.SpanKind.TOOL
         else:
-            raise ValueError(f"Unknown event type: {event_type}")
+            span_kind = None
 
         return span_kind
 

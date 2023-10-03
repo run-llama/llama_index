@@ -7,17 +7,14 @@ from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
-try:
-    from pydantic.v1 import BaseModel, Field, PrivateAttr, validator
-except ImportError:
-    from pydantic import BaseModel, Field, PrivateAttr, validator
-
+from llama_index.bridge.pydantic import Field, validator
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.schema import BaseComponent
 from llama_index.utils import get_tqdm_iterable
 
 # TODO: change to numpy array
-EMB_TYPE = List
+Embedding = List[float]
 
 DEFAULT_EMBED_BATCH_SIZE = 10
 
@@ -36,8 +33,8 @@ def mean_agg(embeddings: List[List[float]]) -> List[float]:
 
 
 def similarity(
-    embedding1: EMB_TYPE,
-    embedding2: EMB_TYPE,
+    embedding1: Embedding,
+    embedding2: Embedding,
     mode: SimilarityMode = SimilarityMode.DEFAULT,
 ) -> float:
     """Get embedding similarity."""
@@ -53,7 +50,7 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding(BaseModel):
+class BaseEmbedding(BaseComponent):
     """Base class for embeddings."""
 
     model_name: str = Field(
@@ -66,7 +63,6 @@ class BaseEmbedding(BaseModel):
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
-    _text_queue: List[Tuple[str, str]] = PrivateAttr(default_factory=list)
 
     class Config:
         arbitrary_types_allowed = True
@@ -80,16 +76,24 @@ class BaseEmbedding(BaseModel):
         return v
 
     @abstractmethod
-    def _get_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding."""
+    def _get_query_embedding(self, query: str) -> Embedding:
+        """Get query embedding impl.
+
+        Sub-classes should implement this method.
+        """
 
     @abstractmethod
-    async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding asynchronously."""
+    async def _aget_query_embedding(self, query: str) -> Embedding:
+        """Async get query embedding impl.
 
-    def get_query_embedding(self, query: str) -> List[float]:
+        Sub-classes should implement this method.
+        """
+
+    def get_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             query_embedding = self._get_query_embedding(query)
 
             event.on_end(
@@ -100,9 +104,11 @@ class BaseEmbedding(BaseModel):
             )
         return query_embedding
 
-    async def aget_query_embedding(self, query: str) -> List[float]:
+    async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             query_embedding = await self._aget_query_embedding(query)
 
             event.on_end(
@@ -117,7 +123,7 @@ class BaseEmbedding(BaseModel):
         self,
         queries: List[str],
         agg_fn: Optional[Callable[..., List[float]]] = None,
-    ) -> List[float]:
+    ) -> Embedding:
         """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
         agg_fn = agg_fn or mean_agg
@@ -127,40 +133,43 @@ class BaseEmbedding(BaseModel):
         self,
         queries: List[str],
         agg_fn: Optional[Callable[..., List[float]]] = None,
-    ) -> List[float]:
-        """Get aggregated embedding from multiple queries."""
+    ) -> Embedding:
+        """Async get aggregated embedding from multiple queries."""
         query_embeddings = [await self.aget_query_embedding(query) for query in queries]
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
     @abstractmethod
-    def _get_text_embedding(self, text: str) -> List[float]:
-        """Get text embedding."""
+    def _get_text_embedding(self, text: str) -> Embedding:
+        """Get text embedding impl.
 
-    async def _aget_text_embedding(self, text: str) -> List[float]:
+        Sub-classes should implement this method.
+        """
+
+    async def _aget_text_embedding(self, text: str) -> Embedding:
         """Asynchronously get text embedding.
 
         By default, this falls back to _get_text_embedding.
-        Meant to be overriden if there is a true async implementation.
+        Meant to be overridden if there is a true async implementation.
 
         """
         return self._get_text_embedding(text)
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Get text embeddings.
+    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        """Get a list of text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
-        Meant to be overriden for batch queries.
+        Meant to be overridden for batch queries.
 
         """
         result = [self._get_text_embedding(text) for text in texts]
         return result
 
-    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronously get text embeddings.
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        """Async get a list of text embeddings.
 
         By default, this is a wrapper around _aget_text_embedding.
-        Meant to be overriden for batch queries.
+        Meant to be overridden for batch queries.
 
         """
         result = await asyncio.gather(
@@ -168,9 +177,11 @@ class BaseEmbedding(BaseModel):
         )
         return result
 
-    def get_text_embedding(self, text: str) -> List[float]:
+    def get_text_embedding(self, text: str) -> Embedding:
         """Get text embedding."""
-        with self.callback_manager.event(CBEventType.EMBEDDING) as event:
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
             text_embedding = self._get_text_embedding(text)
 
             event.on_end(
@@ -182,79 +193,72 @@ class BaseEmbedding(BaseModel):
 
         return text_embedding
 
-    def queue_text_for_embedding(self, text_id: str, text: str) -> None:
-        """Queue text for embedding.
+    async def aget_text_embedding(self, text: str) -> Embedding:
+        """Async get text embedding."""
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
+            text_embedding = await self._aget_text_embedding(text)
 
-        Used for batching texts during embedding calls.
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [text],
+                    EventPayload.EMBEDDINGS: [text_embedding],
+                }
+            )
 
-        """
-        self._text_queue.append((text_id, text))
+        return text_embedding
 
-    def get_queued_text_embeddings(
-        self, show_progress: bool = False
-    ) -> Tuple[List[str], List[List[float]]]:
-        """Get queued text embeddings.
-
-        Call embedding API to get embeddings for all queued texts.
-
-        """
-        text_queue = self._text_queue
-        cur_batch: List[Tuple[str, str]] = []
-        result_ids: List[str] = []
+    def get_text_embedding_batch(
+        self, texts: List[str], show_progress: bool = False
+    ) -> List[Embedding]:
+        """Get a list of text embeddings, with batching."""
+        cur_batch: List[str] = []
         result_embeddings: List[List[float]] = []
 
         queue_with_progress = enumerate(
-            get_tqdm_iterable(text_queue, show_progress, "Generating embeddings")
+            get_tqdm_iterable(texts, show_progress, "Generating embeddings")
         )
 
-        for idx, (text_id, text) in queue_with_progress:
-            cur_batch.append((text_id, text))
-            if idx == len(text_queue) - 1 or len(cur_batch) == self.embed_batch_size:
+        for idx, text in queue_with_progress:
+            cur_batch.append(text)
+            if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                with self.callback_manager.event(CBEventType.EMBEDDING) as event:
-                    cur_batch_ids = [text_id for text_id, _ in cur_batch]
-                    cur_batch_texts = [text for _, text in cur_batch]
-                    embeddings = self._get_text_embeddings(cur_batch_texts)
-                    result_ids.extend(cur_batch_ids)
+                with self.callback_manager.event(
+                    CBEventType.EMBEDDING,
+                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                ) as event:
+                    embeddings = self._get_text_embeddings(cur_batch)
                     result_embeddings.extend(embeddings)
                     event.on_end(
                         payload={
-                            EventPayload.CHUNKS: cur_batch_texts,
+                            EventPayload.CHUNKS: cur_batch,
                             EventPayload.EMBEDDINGS: embeddings,
                         },
                     )
                 cur_batch = []
 
-        # reset queue
-        self._text_queue = []
-        return result_ids, result_embeddings
+        return result_embeddings
 
-    async def aget_queued_text_embeddings(
-        self, text_queue: List[Tuple[str, str]], show_progress: bool = False
-    ) -> Tuple[List[str], List[List[float]]]:
-        """Asynchronously get a list of text embeddings.
-
-        Call async embedding API to get embeddings for all queued texts in parallel.
-        Argument `text_queue` must be passed in to avoid updating it async.
-
-        """
-        cur_batch: List[Tuple[str, str]] = []
+    async def aget_text_embedding_batch(
+        self, texts: List[str], show_progress: bool = False
+    ) -> List[Embedding]:
+        """Asynchronously get a list of text embeddings, with batching."""
+        cur_batch: List[str] = []
         callback_payloads: List[Tuple[str, List[str]]] = []
-        result_ids: List[str] = []
         result_embeddings: List[List[float]] = []
         embeddings_coroutines: List[Coroutine] = []
-        for idx, (text_id, text) in enumerate(text_queue):
-            cur_batch.append((text_id, text))
-            if idx == len(text_queue) - 1 or len(cur_batch) == self.embed_batch_size:
+        for idx, text in enumerate(texts):
+            cur_batch.append(text)
+            if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
-                cur_batch_ids = [text_id for text_id, _ in cur_batch]
-                cur_batch_texts = [text for _, text in cur_batch]
-                callback_payloads.append((event_id, cur_batch_texts))
-                embeddings_coroutines.append(
-                    self._aget_text_embeddings(cur_batch_texts)
+                event_id = self.callback_manager.on_event_start(
+                    CBEventType.EMBEDDING,
+                    payload={EventPayload.SERIALIZED: self.to_dict()},
                 )
-                result_ids.extend(cur_batch_ids)
+                callback_payloads.append((event_id, cur_batch))
+                embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
+                cur_batch = []
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
@@ -292,12 +296,12 @@ class BaseEmbedding(BaseModel):
                 event_id=event_id,
             )
 
-        return result_ids, result_embeddings
+        return result_embeddings
 
     def similarity(
         self,
-        embedding1: EMB_TYPE,
-        embedding2: EMB_TYPE,
+        embedding1: Embedding,
+        embedding2: Embedding,
         mode: SimilarityMode = SimilarityMode.DEFAULT,
     ) -> float:
         """Get embedding similarity."""

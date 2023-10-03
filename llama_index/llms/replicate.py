@@ -1,9 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -33,7 +30,7 @@ class Replicate(CustomLLM):
     )
     prompt_key: str = Field(description="The key to use for the prompt in API calls.")
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the Replicate API."
+        default_factory=dict, description="Additional kwargs for the Replicate API."
     )
 
     _messages_to_prompt: Callable = PrivateAttr()
@@ -61,6 +58,10 @@ class Replicate(CustomLLM):
             prompt_key=prompt_key,
             callback_manager=callback_manager,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "Replicate_llm"
 
     @property
     def metadata(self) -> LLMMetadata:

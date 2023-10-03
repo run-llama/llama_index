@@ -29,7 +29,7 @@ from llama_index.indices.knowledge_graph import (
     KnowledgeGraphIndex,
     GPTKnowledgeGraphIndex,
 )
-from llama_index.indices.list import ListIndex, GPTListIndex
+from llama_index.indices.list import ListIndex, GPTListIndex, SummaryIndex
 from llama_index.indices.tree import TreeIndex, GPTTreeIndex
 from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
 from llama_index.indices.document_summary import (
@@ -73,7 +73,9 @@ from llama_index.indices.service_context import (
 # langchain helper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+
+# sql wrapper
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 # prompts
 from llama_index.prompts import (
@@ -151,8 +153,8 @@ __all__ = [
     "ServiceContext",
     "ComposableGraph",
     # indices
+    "SummaryIndex",
     "VectorStoreIndex",
-    "ListIndex",
     "SimpleKeywordTableIndex",
     "KeywordTableIndex",
     "RAKEKeywordTableIndex",
@@ -168,6 +170,7 @@ __all__ = [
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "GPTListIndex",
+    "ListIndex",
     "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTVectorStoreIndex",

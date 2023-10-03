@@ -27,7 +27,7 @@ def vector_search(
         data_vectors: np.ndarray
         limit (int): number of nearest neighbors
         distance_metric: distance function 'L2' for Euclidean, 'L1' for Nuclear, 'Max'
-            l-infinity distnace, 'cos' for cosine similarity, 'dot' for dot product
+            l-infinity distance, 'cos' for cosine similarity, 'dot' for dot product
     returns:
         nearest_indices: List, indices of nearest neighbors
     """
@@ -81,7 +81,7 @@ class DeepLakeReader(BaseReader):
         """Load data from DeepLake.
 
         Args:
-            dataset_name (str): Name of the DeepLake dataet.
+            dataset_name (str): Name of the DeepLake dataset.
             query_vector (List[float]): Query vector.
             limit (int): Number of results to return.
 

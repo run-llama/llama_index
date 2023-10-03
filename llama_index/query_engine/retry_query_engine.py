@@ -3,7 +3,7 @@ from typing import Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.evaluation.base import BaseEvaluator
-from llama_index.evaluation.guideline_eval import GuidelineEvaluator
+from llama_index.evaluation.guideline import GuidelineEvaluator
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.feedback_transform import (
     FeedbackQueryTransformation,

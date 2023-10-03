@@ -24,10 +24,7 @@ from functools import reduce
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.llms.base import LLM
@@ -35,6 +32,7 @@ from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode, MetadataMode
 from llama_index.utils import get_tqdm_iterable
+from llama_index.types import BasePydanticProgram
 
 
 class MetadataFeatureExtractor(BaseExtractor):
@@ -76,6 +74,10 @@ class MetadataExtractor(BaseExtractor):
     in_place: bool = Field(
         default=True, description="Whether to process nodes in place."
     )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "MetadataExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract metadata from a document.
@@ -179,7 +181,11 @@ class TitleExtractor(MetadataFeatureExtractor):
         """Init params."""
         if nodes < 1:
             raise ValueError("num_nodes must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
 
         super().__init__(
             llm_predictor=llm_predictor,
@@ -188,6 +194,10 @@ class TitleExtractor(MetadataFeatureExtractor):
             combine_template=combine_template,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "TitleExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         nodes_to_extract_title: List[BaseNode] = []
@@ -251,8 +261,17 @@ class KeywordExtractor(MetadataFeatureExtractor):
         """Init params."""
         if keywords < 1:
             raise ValueError("num_keywords must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         super().__init__(llm_predictor=llm_predictor, keywords=keywords, **kwargs)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "KeywordExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
@@ -328,7 +347,12 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
         """Init params."""
         if questions < 1:
             raise ValueError("questions must be >= 1")
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         super().__init__(
             llm_predictor=llm_predictor,
             questions=questions,
@@ -336,6 +360,10 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
             embedding_only=embedding_only,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "QuestionsAnsweredExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         metadata_list: List[Dict] = []
@@ -404,7 +432,11 @@ class SummaryExtractor(MetadataFeatureExtractor):
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
         **kwargs: Any,
     ):
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+        if llm is not None:
+            llm_predictor = LLMPredictor(llm=llm)
+        elif llm_predictor is None and llm is None:
+            llm_predictor = LLMPredictor()
+
         # validation
         if not all([s in ["self", "prev", "next"] for s in summaries]):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
@@ -418,6 +450,10 @@ class SummaryExtractor(MetadataFeatureExtractor):
             prompt_template=prompt_template,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "SummaryExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         if not all([isinstance(node, TextNode) for node in nodes]):
@@ -485,7 +521,7 @@ class EntityExtractor(MetadataFeatureExtractor):
     prediction_threshold: float = Field(
         default=0.5, description="The confidence threshold for accepting predictions."
     )
-    span_joiner: str = Field(description="The seperator beween entity names.")
+    span_joiner: str = Field(description="The separator between entity names.")
     label_entities: bool = Field(
         default=False, description="Include entity class labels or not."
     )
@@ -567,6 +603,10 @@ class EntityExtractor(MetadataFeatureExtractor):
             **kwargs,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "EntityExtractor"
+
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         # Extract node-level entity metadata
         metadata_list: List[Dict] = [{} for _ in nodes]
@@ -588,5 +628,64 @@ class EntityExtractor(MetadataFeatureExtractor):
         for metadata in metadata_list:
             for key, val in metadata.items():
                 metadata[key] = list(val)
+
+        return metadata_list
+
+
+DEFAULT_EXTRACT_TEMPLATE_STR = """\
+Here is the content of the section:
+----------------
+{context_str}
+----------------
+Given the contextual information, extract out a {class_name} object.\
+"""
+
+
+class PydanticProgramExtractor(MetadataFeatureExtractor):
+    """Pydantic program extractor.
+
+    Uses an LLM to extract out a Pydantic object. Return attributes of that object
+    in a dictionary.
+
+    """
+
+    program: BasePydanticProgram = Field(
+        ..., description="Pydantic program to extract."
+    )
+    input_key: str = Field(
+        default="input",
+        description=(
+            "Key to use as input to the program (the program "
+            "template string must expose this key).",
+        ),
+    )
+    extract_template_str: str = Field(
+        default=DEFAULT_EXTRACT_TEMPLATE_STR,
+        description="Template to use for extraction.",
+    )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PydanticModelExtractor"
+
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        """Extract pydantic program."""
+
+        metadata_list: List[Dict] = []
+        nodes_queue = get_tqdm_iterable(
+            nodes, self.show_progress, "Extracting Pydantic object"
+        )
+        for node in nodes_queue:
+            if self.is_text_node_only and not isinstance(node, TextNode):
+                metadata_list.append({})
+                continue
+            extract_str = self.extract_template_str.format(
+                context_str=node.get_content(metadata_mode=self.metadata_mode),
+                class_name=self.program.output_cls.__name__,
+            )
+
+            object = self.program(**{self.input_key: extract_str})
+            fields_and_values = object.dict()
+            metadata_list.append(fields_and_values)
 
         return metadata_list

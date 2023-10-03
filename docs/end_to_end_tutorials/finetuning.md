@@ -40,13 +40,22 @@ Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can t
 ---
 maxdepth: 1
 ---
+Fine-tuning an Adapter </examples/finetuning/embeddings/finetune_embedding_adapter.ipynb>
+Embedding Fine-tuning Guide </examples/finetuning/embeddings/finetune_embedding.ipynb>
+```
+
+**Old**
+```{toctree}
+---
+maxdepth: 1
+---
 Embedding Fine-tuning Repo <https://github.com/run-llama/finetune-embedding>
 Embedding Fine-tuning Blog <https://medium.com/llamaindex-blog/fine-tuning-embeddings-for-rag-with-synthetic-data-e534409a3971>
 ```
 
 ### Finetuning GPT-3.5 to distill GPT-4
 
-We released a guide showing how to use OpenAI's finetuning endpoints to fine-tune gpt-3.5-turbo to output GPT-4 responses for a full RAG pipeline.
+We have multiple guides showing how to use OpenAI's finetuning endpoints to fine-tune gpt-3.5-turbo to output GPT-4 responses for RAG/agents.
 
 We use GPT-4 to automatically generate questions from any unstructured context, and use a GPT-4 query engine pipeline to generate "ground-truth" answers. Our `OpenAIFineTuningHandler` callback automatically logs questions/answers to a dataset. 
 
@@ -56,9 +65,33 @@ We then launch a finetuning job, and get back a distilled model. We can evaluate
 ---
 maxdepth: 1
 ---
+GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing>
+GPT-3.5 Fine-tuning Notebook (Notebook link) </examples/finetuning/openai_fine_tuning.ipynb>
+/examples/finetuning/react_agent/react_agent_finetune.ipynb
+```
+
+**Old**
+
+```{toctree}
+---
+maxdepth: 1
+---
 GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1vWeJBXdFEObuihO7Z8ui2CAYkdHQORqo?usp=sharing>
 GPT-3.5 Fine-tuning Notebook (in Repo) <https://github.com/jerryjliu/llama_index/blob/main/experimental/openai_fine_tuning/openai_fine_tuning.ipynb>
 ```
+
+### [WIP] Finetuning GPT-3.5 to Memorize Knowledge
+
+We have a guide experimenting with showing how to use OpenAI fine-tuning to memorize a body of text.
+Still WIP! Not quite as good as RAG yet.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/finetuning/knowledge/finetune_knowledge.ipynb
+```
+
 
 
 ### Finetuning Llama 2 for Better Text-to-SQL 

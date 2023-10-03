@@ -2,14 +2,9 @@ import os
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import requests
-
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
-
 from tqdm import tqdm
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -30,21 +25,29 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 from llama_index.utils import get_cache_dir
 
-DEFAULT_LLAMA_CPP_MODEL = (
+DEFAULT_LLAMA_CPP_GGML_MODEL = (
     "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGML/resolve"
     "/main/llama-2-13b-chat.ggmlv3.q4_0.bin"
 )
+DEFAULT_LLAMA_CPP_GGUF_MODEL = (
+    "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGUF/resolve"
+    "/main/llama-2-13b-chat.Q4_0.gguf"
+)
+DEFAULT_LLAMA_CPP_MODEL_VERBOSITY = True
 
 
 class LlamaCPP(CustomLLM):
-    model_url: str = Field(description="The URL llama-cpp model to download and use.")
+    model_url: Optional[str] = Field(
+        description="The URL llama-cpp model to download and use."
+    )
     model_path: Optional[str] = Field(
         description="The path to the llama-cpp model to use."
     )
     temperature: float = Field(description="The temperature to use for sampling.")
     max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
     context_window: int = Field(
-        description="The maximum number of context tokens for the model."
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of context tokens for the model.",
     )
     messages_to_prompt: Callable = Field(
         description="The function to convert messages to a prompt.", exclude=True
@@ -58,13 +61,16 @@ class LlamaCPP(CustomLLM):
     model_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Kwargs used for model initialization."
     )
-    verbose: bool = Field(description="Whether to print verbose output.")
+    verbose: bool = Field(
+        default=DEFAULT_LLAMA_CPP_MODEL_VERBOSITY,
+        description="Whether to print verbose output.",
+    )
 
     _model: Any = PrivateAttr()
 
     def __init__(
         self,
-        model_url: str = DEFAULT_LLAMA_CPP_MODEL,
+        model_url: Optional[str] = None,
         model_path: Optional[str] = None,
         temperature: float = 0.1,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
@@ -74,7 +80,7 @@ class LlamaCPP(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
         generate_kwargs: Optional[Dict[str, Any]] = None,
         model_kwargs: Optional[Dict[str, Any]] = None,
-        verbose: bool = True,
+        verbose: bool = DEFAULT_LLAMA_CPP_MODEL_VERBOSITY,
     ) -> None:
         try:
             from llama_cpp import Llama
@@ -86,8 +92,10 @@ class LlamaCPP(CustomLLM):
                 "`https://github.com/abetlen/llama-cpp-python`"
             )
 
-        model_kwargs = model_kwargs or {}
-        model_kwargs.update({"n_ctx": context_window, "verbose": verbose})
+        model_kwargs = {
+            **{"n_ctx": context_window, "verbose": verbose},
+            **(model_kwargs or {}),  # Override defaults via model_kwargs
+        }
 
         # check if model is cached
         if model_path is not None:
@@ -100,6 +108,7 @@ class LlamaCPP(CustomLLM):
                 self._model = Llama(model_path=model_path, **model_kwargs)
         else:
             cache_dir = get_cache_dir()
+            model_url = model_url or self._get_model_path_for_version()
             model_name = os.path.basename(model_url)
             model_path = os.path.join(cache_dir, "models", model_name)
             if not os.path.exists(model_path):
@@ -132,14 +141,31 @@ class LlamaCPP(CustomLLM):
             verbose=verbose,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "LlamaCPP_llm"
+
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=self._model.context_params.n_ctx,
             num_output=self.max_new_tokens,
             model_name=self.model_path,
         )
+
+    def _get_model_path_for_version(self) -> str:
+        """Get model path for the current llama-cpp version."""
+        import pkg_resources
+
+        version = pkg_resources.get_distribution("llama-cpp-python").version
+        major, minor, patch = version.split(".")
+
+        # NOTE: llama-cpp-python<=0.1.78 supports GGML, newer support GGUF
+        if int(major) <= 0 and int(minor) <= 1 and int(patch) <= 78:
+            return DEFAULT_LLAMA_CPP_GGML_MODEL
+        else:
+            return DEFAULT_LLAMA_CPP_GGUF_MODEL
 
     def _download_url(self, model_url: str, model_path: str) -> None:
         completed = False

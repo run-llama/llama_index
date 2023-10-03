@@ -11,7 +11,7 @@ from llama_index import ServiceContext, VectorStoreIndex, SimpleDirectoryReader
 from llama_index.embeddings import OpenAIEmbedding
 
 embed_model = OpenAIEmbedding()
-service_context = serviceContext.from_defaults(embed_model=embed_model)
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # optionally set a global service context to avoid passing it into other objects every time
 from llama_index import set_global_service_context
@@ -41,8 +41,6 @@ By default, embeddings requests are sent to OpenAI in batches of 10. For some us
 embed_model = OpenAIEmbedding(embed_batch_size=42)
 ```
 
-(local-embedding-models)=
-
 ### Local Embedding Models
 
 The easiest way to use a local model is:
@@ -62,7 +60,35 @@ service_context = ServiceContext.from_defaults(
 )
 ```
 
-### Embedding Model Integrations
+### HuggingFace Optimum ONNX Embeddings
+
+LlamaIndex also supports creating and using ONNX embeddings using the Optimum library from HuggingFace. Simple create and save the ONNX embeddings, and use them.
+
+Some prerequisites:
+
+```
+pip install transformers optimum[exporters]
+```
+
+Creation with specifying the model and output path:
+
+```python
+from llama_index.embeddings import OptimumEmbedding
+
+OptimumEmbedding.create_and_save_optimum_model("BAAI/bge-small-en-v1.5", "./bge_onnx")
+```
+
+And then usage:
+
+```python
+embed_model = OptimumEmbedding(folder_name="./bge_onnx")
+service_context = ServiceContext.from_defaults(
+  embed_model=embed_model
+)
+```
+
+
+### LangChain Integrations
 
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/).
 

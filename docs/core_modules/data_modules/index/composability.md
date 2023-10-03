@@ -3,7 +3,7 @@
 
 LlamaIndex offers **composability** of your indices, meaning that you can build indices on top of other indices. This allows you to more effectively index your entire document tree in order to feed custom knowledge to GPT.
 
-Composability allows you to to define lower-level indices for each document, and higher-order indices over a collection of documents. To see how this works, imagine defining 1) a tree index for the text within each document, and 2) a list index over each tree index (one document) within your collection.
+Composability allows you to to define lower-level indices for each document, and higher-order indices over a collection of documents. To see how this works, imagine defining 1) a tree index for the text within each document, and 2) a summary index over each tree index (one document) within your collection.
 
 ### Defining Subindices
 To see how this works, imagine you have 3 documents: `doc1`, `doc2`, and `doc3`.
@@ -59,14 +59,14 @@ index1_summary = str(summary)
 
 ### Creating a Graph with a Top-Level Index
 
-We can then create a graph with a list index on top of these 3 tree indices:
+We can then create a graph with a summary index on top of these 3 tree indices:
 We can query, save, and load the graph to/from disk as any other index.
 
 ```python
 from llama_index.indices.composability import ComposableGraph
 
 graph = ComposableGraph.from_indices(
-    ListIndex,
+    SummaryIndex,
     [index1, index2, index3],
     index_summaries=[index1_summary, index2_summary, index3_summary],
     storage_context=storage_context,
@@ -79,7 +79,7 @@ graph = ComposableGraph.from_indices(
 
 ### Querying the Graph
 
-During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
+During a query, we would start with the top-level summary index. Each node in the list corresponds to an underlying tree index. 
 The query will be executed recursively, starting from the root index, then the sub-indices.
 The default query engine for each index is called under the hood (i.e. `index.as_query_engine()`), unless otherwise configured by passing `custom_query_engines` to the `ComposableGraphQueryEngine`.
 Below we show an example that configure the tree index retrievers to use `child_branch_factor=2` (instead of the default `child_branch_factor=1`).

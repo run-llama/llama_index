@@ -1,7 +1,8 @@
 import langchain
 
 # prompts
-from langchain import BasePromptTemplate, PromptTemplate
+from langchain.prompts import PromptTemplate
+from langchain.schema.prompt_template import BasePromptTemplate
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 
 # agents and tools
@@ -12,13 +13,13 @@ from langchain.cache import BaseCache, GPTCache
 # callback
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatAnyscale, ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.document import Document
 
 # embeddings
-from langchain.embeddings.base import Embeddings
-from langchain.embeddings import HuggingFaceEmbeddings, HuggingFaceBgeEmbeddings
+from langchain.schema.embeddings import Embeddings
+from langchain.embeddings import HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings
 
 # LLMs
 from langchain.llms import AI21, BaseLLM, Cohere, FakeListLLM, OpenAI
@@ -26,7 +27,7 @@ from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 
 # chat and memory
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.output_parsers import PydanticOutputParser, ResponseSchema
+from langchain.output_parsers import ResponseSchema
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
@@ -48,12 +49,8 @@ from langchain.schema import (
     SystemMessage,
 )
 
-# misc
-from langchain.sql_database import SQLDatabase
-from langchain.input import get_color_mapping, print_text
-
 # input & output
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.tools import BaseTool, StructuredTool, Tool
 
 __all__ = [
@@ -64,6 +61,7 @@ __all__ = [
     "AI21",
     "Cohere",
     "BaseChatModel",
+    "ChatAnyscale",
     "ChatOpenAI",
     "BaseLanguageModel",
     "Embeddings",
@@ -89,9 +87,6 @@ __all__ = [
     "Tool",
     "BaseTool",
     "ResponseSchema",
-    "PydanticOutputParser",
-    "print_text",
-    "get_color_mapping",
     "BaseCallbackHandler",
     "BaseCallbackManager",
     "AIMessage",
@@ -105,9 +100,9 @@ __all__ = [
     "BaseMessage",
     "LLMResult",
     "ChatGeneration",
-    "SQLDatabase",
     "GPTCache",
     "BaseCache",
     "Document",
     "RecursiveCharacterTextSplitter",
+    "TextSplitter",
 ]

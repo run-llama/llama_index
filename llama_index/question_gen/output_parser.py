@@ -13,5 +13,4 @@ class SubQuestionOutputParser(BaseOutputParser):
         return StructuredOutput(raw_output=output, parsed_output=sub_questions)
 
     def format(self, prompt_template: str) -> str:
-        del prompt_template
-        raise NotImplementedError()
+        return prompt_template

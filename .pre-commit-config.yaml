@@ -1,5 +1,13 @@
+---
+default_language_version:
+    python: python3
+
 repos:
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.243
     hooks:
       - id: ruff
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 23.9.1
+    hooks:
+      - id: black-jupyter

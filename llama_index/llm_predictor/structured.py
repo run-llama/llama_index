@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts.base import BasePromptTemplate
@@ -19,7 +19,16 @@ class StructuredLLMPredictor(LLMPredictor):
 
     """
 
-    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+    @classmethod
+    def class_name(cls) -> str:
+        return "StructuredLLMPredictor"
+
+    def predict(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[Any] = None,
+        **prompt_args: Any
+    ) -> str:
         """Predict the answer to a query.
 
         Args:
@@ -40,7 +49,12 @@ class StructuredLLMPredictor(LLMPredictor):
 
         return parsed_llm_prediction
 
-    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
+    def stream(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[Any] = None,
+        **prompt_args: Any
+    ) -> TokenGen:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use
@@ -57,7 +71,12 @@ class StructuredLLMPredictor(LLMPredictor):
             "Streaming is not supported for structured LLM predictor."
         )
 
-    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+    async def apredict(
+        self,
+        prompt: BasePromptTemplate,
+        output_cls: Optional[Any] = None,
+        **prompt_args: Any
+    ) -> str:
         """Async predict the answer to a query.
 
         Args:

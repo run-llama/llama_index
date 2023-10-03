@@ -27,22 +27,22 @@ def node_to_metadata_dict(
     remove_text: bool = False,
     text_field: str = DEFAULT_TEXT_KEY,
     flat_metadata: bool = False,
-) -> dict:
+) -> Dict[str, Any]:
     """Common logic for saving Node data into metadata dict."""
-    metadata: Dict[str, Any] = node.metadata
+    node_dict = node.dict()
+    metadata: Dict[str, Any] = node_dict.get("metadata", {})
 
     if flat_metadata:
         _validate_is_flat_dict(metadata)
 
     # store entire node as json string - some minor text duplication
-    node_dict = node.dict()
     if remove_text:
         node_dict[text_field] = ""
 
     # remove embedding from node_dict
     node_dict["embedding"] = None
 
-    # dump remainer of node_dict to json string
+    # dump remainder of node_dict to json string
     metadata["_node_content"] = json.dumps(node_dict)
 
     # store ref doc id at top level to allow metadata filtering

@@ -45,7 +45,7 @@ from llama_index.selectors.pydantic_selectors import PydanticSingleSelector, Pyd
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index import (
     VectorStoreIndex,
-    ListIndex,
+    SummaryIndex,
 )
 
 # define query engines

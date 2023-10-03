@@ -1,10 +1,7 @@
 """Simple node parser."""
 from typing import Callable, List, Optional, Sequence
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -86,6 +83,15 @@ class SentenceWindowNodeParser(NodeParser):
             callback_manager=callback_manager,
             metadata_extractor=metadata_extractor,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "SentenceWindowNodeParser"
+
+    @property
+    def text_splitter(self) -> Callable[[str], List[str]]:
+        """Get text splitter."""
+        return self.sentence_splitter
 
     @classmethod
     def from_defaults(

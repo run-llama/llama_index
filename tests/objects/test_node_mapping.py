@@ -1,9 +1,6 @@
 """Test node mapping."""
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
@@ -12,6 +9,8 @@ from llama_index.tools.function_tool import FunctionTool
 
 class TestObject(BaseModel):
     """Test object for node mapping."""
+
+    __test__ = False
 
     name: str
 

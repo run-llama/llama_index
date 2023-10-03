@@ -2,10 +2,7 @@
 
 import pytest
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 
@@ -16,6 +13,7 @@ class AttrDict(BaseModel):
 
 
 class TestModel(BaseModel):
+    __test__ = False
     title: str
     attr_dict: AttrDict
 

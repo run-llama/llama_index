@@ -1,10 +1,7 @@
 """Code splitter."""
 from typing import Any, List, Optional
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -23,7 +20,7 @@ class CodeSplitter(TextSplitter):
     """
 
     language: str = Field(
-        description="The programming languge of the code being split."
+        description="The programming language of the code being split."
     )
     chunk_lines: int = Field(
         default=DEFAULT_CHUNK_LINES,
@@ -56,6 +53,10 @@ class CodeSplitter(TextSplitter):
             max_chars=max_chars,
             callback_manager=callback_manager,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "CodeSplitter"
 
     def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
         new_chunks = []

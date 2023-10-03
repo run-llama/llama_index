@@ -57,7 +57,7 @@ class FalkorDBGraphStore(GraphStore):
         return result.result_set
 
     def get_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2
+        self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> Dict[str, List[List[str]]]:
         """Get flat rel map."""
         # The flat means for multi-hop relation path, we could get
@@ -81,7 +81,7 @@ class FalkorDBGraphStore(GraphStore):
             WHERE n1.id IN $subjs
             WITH n1
             MATCH p=(n1)-[e*1..{depth}]->(z)
-            RETURN p
+            RETURN p LIMIT {limit}
         """
 
         data = self.query(query, params={"subjs": subjs})

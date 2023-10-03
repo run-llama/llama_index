@@ -1,10 +1,7 @@
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Type
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.bridge.langchain import StructuredTool, Tool
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
@@ -50,16 +47,20 @@ class FunctionTool(AsyncBaseTool):
         description: Optional[str] = None,
         fn_schema: Optional[Type[BaseModel]] = None,
         async_fn: Optional[AsyncCallable] = None,
+        tool_metadata: Optional[ToolMetadata] = None,
     ) -> "FunctionTool":
-        name = name or fn.__name__
-        docstring = fn.__doc__
-        description = description or f"{name}{signature(fn)}\n{docstring}"
-        if fn_schema is None:
-            fn_schema = create_schema_from_function(
-                f"{name}", fn, additional_fields=None
+        if tool_metadata is None:
+            name = name or fn.__name__
+            docstring = fn.__doc__
+            description = description or f"{name}{signature(fn)}\n{docstring}"
+            if fn_schema is None:
+                fn_schema = create_schema_from_function(
+                    f"{name}", fn, additional_fields=None
+                )
+            tool_metadata = ToolMetadata(
+                name=name, description=description, fn_schema=fn_schema
             )
-        metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
-        return cls(fn=fn, metadata=metadata, async_fn=async_fn)
+        return cls(fn=fn, metadata=tool_metadata, async_fn=async_fn)
 
     @property
     def metadata(self) -> ToolMetadata:

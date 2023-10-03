@@ -10,6 +10,7 @@ from llama_index.agent.react.types import (
     ActionReasoningStep,
 )
 import ast
+import json
 
 import re
 
@@ -77,10 +78,11 @@ class ReActOutputParser(BaseOutputParser):
             thought, action, action_input = extract_tool_use(output)
             json_str = extract_json_str(action_input)
 
-            # NOTE: we found that json.loads does not reliably parse
-            # json with single quotes, so we use ast instead
-            # action_input_dict = json.loads(json_str)
-            action_input_dict = ast.literal_eval(json_str)
+            # First we try json, if this fails we use ast
+            try:
+                action_input_dict = json.loads(json_str)
+            except json.JSONDecodeError:
+                action_input_dict = ast.literal_eval(json_str)
 
             return ActionReasoningStep(
                 thought=thought, action=action, action_input=action_input_dict

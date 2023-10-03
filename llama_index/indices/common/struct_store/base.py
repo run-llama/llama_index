@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.table import StructDatapoint
 from llama_index.indices.service_context import ServiceContext
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (

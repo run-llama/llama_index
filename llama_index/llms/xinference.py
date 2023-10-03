@@ -1,10 +1,7 @@
 import warnings
 from typing import Any, Dict, Optional, Sequence, Tuple
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
@@ -117,6 +114,10 @@ class Xinference(CustomLLM):
             context_window = xinference_modelname_to_contextsize(model)
 
         return generator, context_window, model_description
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "Xinference_llm"
 
     @property
     def metadata(self) -> LLMMetadata:

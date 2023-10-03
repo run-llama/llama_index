@@ -16,6 +16,7 @@ class Accumulate(BaseSynthesizer):
         self,
         text_qa_template: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
+        output_cls: Optional[Any] = None,
         streaming: bool = False,
         use_async: bool = False,
     ) -> None:
@@ -25,6 +26,7 @@ class Accumulate(BaseSynthesizer):
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
+        self._output_cls = output_cls
 
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
         return list(item for sublist in md_array for item in sublist)
@@ -104,6 +106,7 @@ class Accumulate(BaseSynthesizer):
             predictor(
                 text_qa_template,
                 context_str=cur_text_chunk,
+                output_cls=self._output_cls,
             )
             for cur_text_chunk in text_chunks
         ]

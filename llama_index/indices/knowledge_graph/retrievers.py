@@ -4,7 +4,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-from llama_index.bridge.langchain import print_text
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
@@ -15,7 +14,7 @@ from llama_index.prompts import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TextNode
 from llama_index.storage.storage_context import StorageContext
-from llama_index.utils import truncate_text
+from llama_index.utils import truncate_text, print_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 DEFAULT_NODE_SCORE = 1000.0
@@ -60,7 +59,7 @@ class KGTableRetriever(BaseRetriever):
         num_chunks_per_query (int): Maximum number of text chunks to query.
         include_text (bool): Use the document text source from each relevant triplet
             during queries.
-        retriever_mode (KGRetrieverMode): Specifies whether to use keyowrds,
+        retriever_mode (KGRetrieverMode): Specifies whether to use keywords,
             embeddings, or both to find relevant triplets. Should be one of "keyword",
             "embedding", or "hybrid".
         similarity_top_k (int): The number of top embeddings to use
@@ -107,6 +106,14 @@ class KGTableRetriever(BaseRetriever):
         self.use_global_node_triplets = use_global_node_triplets
         self.max_knowledge_sequence = max_knowledge_sequence
         self._verbose = kwargs.get("verbose", False)
+        refresh_schema = kwargs.get("refresh_schema", False)
+        try:
+            self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
+        except NotImplementedError:
+            self._graph_schema = ""
+        except Exception as e:
+            logger.warn(f"Failed to get graph schema: {e}")
+            self._graph_schema = ""
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -137,7 +144,7 @@ class KGTableRetriever(BaseRetriever):
         node_visited = set()
         keywords = self._get_keywords(query_bundle.query_str)
         if self._verbose:
-            print_text(f"Extraced keywords: {keywords}\n", color="green")
+            print_text(f"Extracted keywords: {keywords}\n", color="green")
         rel_texts = []
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
@@ -218,7 +225,7 @@ class KGTableRetriever(BaseRetriever):
                 for node_id in node_ids:
                     chunk_indices_count[node_id] += 1
         elif len(self._index_struct.embedding_dict) == 0:
-            logger.warn(
+            logger.warning(
                 "Index was not constructed with embeddings, skipping embedding usage..."
             )
 
@@ -234,7 +241,7 @@ class KGTableRetriever(BaseRetriever):
                         rel_texts[j] = ""
             rel_texts = [rel_text for rel_text in rel_texts if rel_text != ""]
 
-            # tuncate rel_texts
+            # truncate rel_texts
             rel_texts = rel_texts[: self.max_knowledge_sequence]
 
         sorted_chunk_indices = sorted(
@@ -268,7 +275,9 @@ class KGTableRetriever(BaseRetriever):
             logger.info("> No relationships found, returning nodes found by keywords.")
             if len(sorted_nodes_with_scores) == 0:
                 logger.info("> No nodes found by keywords, returning empty response.")
-            return sorted_nodes_with_scores
+            return [
+                NodeWithScore(node=TextNode(text="No relationships found."), score=1.0)
+            ]
 
         # add relationships as Node
         # TODO: make initial text customizable
@@ -284,6 +293,8 @@ class KGTableRetriever(BaseRetriever):
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
         }
+        if self._graph_schema != "":
+            rel_node_info["kg_schema"] = {"schema": self._graph_schema}
         rel_info_text = "\n".join(
             [
                 str(item)
@@ -385,7 +396,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         retriever_mode: Optional[str] = "keyword",
         with_nl2graphquery: bool = False,
         graph_traversal_depth: int = 2,
-        max_knowledge_sequence: int = 30,
+        max_knowledge_sequence: int = REL_TEXT_LIMIT,
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -425,10 +436,16 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 "graph_query_synthesis_prompt",
                 None,
             )
+            if graph_query_synthesis_prompt is not None:
+                del kwargs["graph_query_synthesis_prompt"]
+
             graph_response_answer_prompt = kwargs.get(
                 "graph_response_answer_prompt",
                 None,
             )
+            if graph_response_answer_prompt is not None:
+                del kwargs["graph_response_answer_prompt"]
+
             refresh_schema = kwargs.get("refresh_schema", False)
             response_synthesizer = kwargs.get("response_synthesizer", None)
             self._kg_query_engine = KnowledgeGraphQueryEngine(
@@ -445,6 +462,14 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self._graph_traversal_depth = graph_traversal_depth
         self._max_knowledge_sequence = max_knowledge_sequence
         self._verbose = verbose
+        refresh_schema = kwargs.get("refresh_schema", False)
+        try:
+            self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
+        except NotImplementedError:
+            self._graph_schema = ""
+        except Exception as e:
+            logger.warn(f"Failed to get graph schema: {e}")
+            self._graph_schema = ""
 
     def _process_entities(
         self,
@@ -600,7 +625,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         """Get knowledge sequence from entities."""
         # Get SubGraph from Graph Store as Knowledge Sequence
         rel_map: Optional[Dict] = self._graph_store.get_rel_map(
-            entities, self._graph_traversal_depth
+            entities, self._graph_traversal_depth, limit=self._max_knowledge_sequence
         )
         logger.debug(f"rel_map: {rel_map}")
 
@@ -608,14 +633,11 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         knowledge_sequence = []
         if rel_map:
             knowledge_sequence.extend(
-                [rel_obj for rel_objs in rel_map.values() for rel_obj in rel_objs]
+                [str(rel_obj) for rel_objs in rel_map.values() for rel_obj in rel_objs]
             )
         else:
             logger.info("> No knowledge sequence extracted from entities.")
             return [], None
-        # truncate knowledge sequence
-        if len(knowledge_sequence) > self._max_knowledge_sequence:
-            knowledge_sequence = knowledge_sequence[: self._max_knowledge_sequence]
 
         return knowledge_sequence, rel_map
 
@@ -626,22 +648,19 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         # Get SubGraph from Graph Store as Knowledge Sequence
         # TBD: async in graph store
         rel_map: Optional[Dict] = self._graph_store.get_rel_map(
-            entities, self._graph_traversal_depth
+            entities, self._graph_traversal_depth, limit=self._max_knowledge_sequence
         )
-        logger.debug(f"rel_map: {rel_map}")
+        logger.debug(f"rel_map from GraphStore:\n{rel_map}")
 
         # Build Knowledge Sequence
         knowledge_sequence = []
         if rel_map:
             knowledge_sequence.extend(
-                [rel_obj for rel_objs in rel_map.values() for rel_obj in rel_objs]
+                [str(rel_obj) for rel_objs in rel_map.values() for rel_obj in rel_objs]
             )
         else:
             logger.info("> No knowledge sequence extracted from entities.")
             return [], None
-        # truncate knowledge sequence
-        if len(knowledge_sequence) > self._max_knowledge_sequence:
-            knowledge_sequence = knowledge_sequence[: self._max_knowledge_sequence]
 
         return knowledge_sequence, rel_map
 
@@ -665,14 +684,21 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if self._verbose:
             print_text(f"Graph RAG context:\n{context_string}\n", color="blue")
 
+        rel_node_info = {
+            "kg_rel_map": rel_map,
+            "kg_rel_text": knowledge_sequence,
+        }
+        metadata_keys = ["kg_rel_map", "kg_rel_text"]
+        if self._graph_schema != "":
+            rel_node_info["kg_schema"] = {"schema": self._graph_schema}
+            metadata_keys.append("kg_schema")
         node = NodeWithScore(
             node=TextNode(
                 text=context_string,
                 score=1.0,
-                metadata={
-                    "kg_rel_text": knowledge_sequence,
-                    "kg_rel_map": rel_map,
-                },
+                metadata=rel_node_info,
+                excluded_embed_metadata_keys=metadata_keys,
+                excluded_llm_metadata_keys=metadata_keys,
             )
         )
         return [node]
@@ -683,7 +709,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             return []
         # Get entities
         entities = self._get_entities(query_bundle.query_str)
-        # Before we enable embedding/symantic search, we need to make sure
+        # Before we enable embedding/semantic search, we need to make sure
         # we don't miss any entities that's synoynm of the entities we extracted
         # in string matching based retrieval in following steps, thus we expand
         # synonyms here.
@@ -704,7 +730,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             return []
         # Get entities
         entities = await self._aget_entities(query_bundle.query_str)
-        # Before we enable embedding/symantic search, we need to make sure
+        # Before we enable embedding/semantic search, we need to make sure
         # we don't miss any entities that's synoynm of the entities we extracted
         # in string matching based retrieval in following steps, thus we expand
         # synonyms here.

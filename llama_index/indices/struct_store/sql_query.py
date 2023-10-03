@@ -12,7 +12,7 @@ from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
@@ -39,7 +39,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 class SQLStructStoreQueryEngine(BaseQueryEngine):
     """GPT SQL query engine over a structured database.
 
-    NOTE: deprecated, kept for backward compatibility
+    NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made here.
     NOTE: this query cannot work with composed indices - if the index
@@ -75,11 +75,12 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
 class NLStructStoreQueryEngine(BaseQueryEngine):
     """GPT natural language query engine over a structured database.
 
-    NOTE: deprecated, kept for backward compatibility
+    NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
     Given a natural language query, we will extract the query to SQL.
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made during
     the SQL execution.
+
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
 
@@ -242,17 +243,13 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
-        # Find and remove SQLResult part
-        sql_result_start = response.find("SQLResult:")
         sql_query_start = response.find("SQLQuery:")
-        if sql_result_start != -1 and sql_query_start != -1:
-            response = response[sql_query_start + 1 : sql_result_start].lstrip(
-                "SQLQuery:"
-            )
-        elif sql_result_start != -1:
+        if sql_query_start != -1:
+            response = response[sql_query_start:].removeprefix("SQLQuery:")
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
             response = response[:sql_result_start]
-        result_response = response.strip()
-        return result_response
+        return response.strip()
 
     @abstractmethod
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
@@ -317,7 +314,11 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
 
 class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
-    """NL SQL Table query engine."""
+    """
+    Natural language SQL Table query engine.
+
+    Read NLStructStoreQueryEngine's docstring for more info on NL SQL.
+    """
 
     def __init__(
         self,

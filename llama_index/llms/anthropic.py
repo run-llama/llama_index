@@ -1,9 +1,6 @@
 from typing import Any, Dict, Optional, Sequence
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.anthropic_utils import (
@@ -45,7 +42,7 @@ class Anthropic(LLM):
         default=10, description="The maximum number of API retries."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the anthropic API."
+        default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
     _client: Any = PrivateAttr()
@@ -91,6 +88,10 @@ class Anthropic(LLM):
             model=model,
             callback_manager=callback_manager,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "Anthropic_LLM"
 
     @property
     def metadata(self) -> LLMMetadata:

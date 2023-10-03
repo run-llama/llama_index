@@ -1,15 +1,22 @@
 """LanceDB vector store."""
 from typing import Any, List, Optional
 
-from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict
+from pandas import DataFrame
+import numpy as np
 
 
 def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
@@ -21,6 +28,18 @@ def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
         else:
             filters.append(filter.key + " = " + str(filter.value))
     return " AND ".join(filters)
+
+
+def _to_llama_similarities(results: DataFrame) -> List[float]:
+    keys = results.keys()
+    normalized_similarities: np.ndarray
+    if "score" in keys:
+        normalized_similarities = np.exp(results["score"] - np.max(results["score"]))
+    elif "_distance" in keys:
+        normalized_similarities = np.exp(-results["_distance"])
+    else:
+        normalized_similarities = np.linspace(1, 0, len(results))
+    return normalized_similarities.tolist()
 
 
 class LanceDBVectorStore(VectorStore):
@@ -79,23 +98,23 @@ class LanceDBVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
         data = []
         ids = []
-        for result in embedding_results:
+        for node in nodes:
             metadata = node_to_metadata_dict(
-                result.node, remove_text=True, flat_metadata=self.flat_metadata
+                node, remove_text=True, flat_metadata=self.flat_metadata
             )
             append_data = {
-                "id": result.id,
-                "doc_id": result.ref_doc_id,
-                "vector": result.embedding,
-                "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
+                "id": node.node_id,
+                "doc_id": node.ref_doc_id,
+                "vector": node.get_embedding(),
+                "text": node.get_content(metadata_mode=MetadataMode.NONE),
             }
             append_data.update(metadata)
             data.append(append_data)
-            ids.append(result.id)
+            ids.append(node.node_id)
 
         if self.table_name in self.connection.table_names():
             tbl = self.connection.open_table(self.table_name)
@@ -157,6 +176,6 @@ class LanceDBVectorStore(VectorStore):
 
         return VectorStoreQueryResult(
             nodes=nodes,
-            similarities=results["score"].tolist(),
+            similarities=_to_llama_similarities(results),
             ids=results["id"].tolist(),
         )

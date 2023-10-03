@@ -1,5 +1,9 @@
 """Test PromptHelper."""
 
+from typing import Optional, Union, Type
+
+import pytest
+
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.prompts.base import PromptTemplate
@@ -9,40 +13,51 @@ from llama_index.text_splitter.utils import truncate_text
 from tests.mock_utils.mock_utils import mock_tokenizer
 
 
-def test_get_chunk_size() -> None:
+@pytest.mark.parametrize(
+    ("prompt", "chunk_size_limit", "num_chunks", "padding", "expected"),
+    [
+        pytest.param("This is the prompt", None, 1, 6, 0, id="one_chunk"),
+        pytest.param("This is the prompt", None, 2, 3, 0, id="two_chunks_no_limit"),
+        pytest.param("This is the prompt", 2, 2, 0, 2, id="two_chunks_with_limit"),
+        pytest.param("This is the prompt", None, 2, 2, 1, id="two_chunks_with_padding"),
+        pytest.param(
+            (
+                "A really really really really really really really really"
+                " really really really really long prompt"
+            ),
+            None,
+            2,
+            0,
+            ValueError,
+            id="misconfigured_chunks_denied",
+        ),
+    ],
+)
+def test_get_chunk_size(
+    prompt: str,
+    chunk_size_limit: Optional[int],
+    num_chunks: int,
+    padding: int,
+    expected: Union[int, Type[Exception]],
+) -> None:
     """Test get chunk size given prompt."""
-    # test with 1 chunk
-    prompt = PromptTemplate("This is the prompt")
-    prompt_helper = PromptHelper(
-        context_window=11, num_output=1, chunk_overlap_ratio=0, tokenizer=mock_tokenizer
-    )
-    chunk_size = prompt_helper._get_available_chunk_size(prompt, 1, padding=0)
-    assert chunk_size == 6
-
-    # test having 2 chunks
-    prompt_helper = PromptHelper(
-        context_window=11, num_output=1, chunk_overlap_ratio=0, tokenizer=mock_tokenizer
-    )
-    chunk_size = prompt_helper._get_available_chunk_size(prompt, 2, padding=0)
-    assert chunk_size == 3
-
-    # test with 2 chunks, and with chunk_size_limit
     prompt_helper = PromptHelper(
         context_window=11,
         num_output=1,
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
-        chunk_size_limit=2,
+        chunk_size_limit=chunk_size_limit,
     )
-    chunk_size = prompt_helper._get_available_chunk_size(prompt, 2, padding=0)
-    assert chunk_size == 2
-
-    # test padding
-    prompt_helper = PromptHelper(
-        context_window=11, num_output=1, chunk_overlap_ratio=0, tokenizer=mock_tokenizer
-    )
-    chunk_size = prompt_helper._get_available_chunk_size(prompt, 2, padding=1)
-    assert chunk_size == 2
+    if isinstance(expected, int):
+        chunk_size = prompt_helper._get_available_chunk_size(
+            PromptTemplate(prompt), num_chunks, padding=padding
+        )
+        assert chunk_size == expected
+    else:
+        with pytest.raises(expected):
+            prompt_helper._get_available_chunk_size(
+                PromptTemplate(prompt), num_chunks, padding=padding
+            )
 
 
 def test_get_text_splitter() -> None:

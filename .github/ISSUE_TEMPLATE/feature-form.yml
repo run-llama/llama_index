@@ -12,14 +12,14 @@ body:
     id: feature-description
     attributes:
       label: Feature Description
-      description: Describe the feature you are requesting. Try to reference existing implemenations/papers/examples when possible.
+      description: Describe the feature you are requesting. Try to reference existing implementations/papers/examples when possible.
     validations:
       required: true
   - type: textarea
     id: why-feature
     attributes:
       label: Reason
-      description: What is stopping LlamaIndex from supporting this feature today? What existing apporaches have not worked for you?
+      description: What is stopping LlamaIndex from supporting this feature today? What existing approaches have not worked for you?
     validations:
       required: false
   - type: textarea

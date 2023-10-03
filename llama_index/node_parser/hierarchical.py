@@ -2,10 +2,7 @@
 
 from typing import List, Optional, Sequence, Dict
 
-try:
-    from pydantic.v1 import Field
-except ImportError:
-    from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -35,6 +32,15 @@ def get_leaf_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
         if NodeRelationship.CHILD not in node.relationships:
             leaf_nodes.append(node)
     return leaf_nodes
+
+
+def get_root_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
+    """Get root nodes."""
+    root_nodes = []
+    for node in nodes:
+        if NodeRelationship.PARENT not in node.relationships:
+            root_nodes.append(node)
+    return root_nodes
 
 
 class HierarchicalNodeParser(NodeParser):
@@ -106,7 +112,9 @@ class HierarchicalNodeParser(NodeParser):
             if chunk_sizes is None:
                 chunk_sizes = [2048, 512, 128]
 
-            text_splitter_ids = ["2048", "512", "128"]
+            text_splitter_ids = [
+                f"chunk_size_{chunk_size}" for chunk_size in chunk_sizes
+            ]
             text_splitter_map = {}
             for chunk_size, text_splitter_id in zip(chunk_sizes, text_splitter_ids):
                 text_splitter_map[text_splitter_id] = get_default_text_splitter(
@@ -132,6 +140,10 @@ class HierarchicalNodeParser(NodeParser):
             callback_manager=callback_manager,
             metadata_extractor=metadata_extractor,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "HierarchicalNodeParser"
 
     def _recursively_get_nodes_from_nodes(
         self,
@@ -160,11 +172,14 @@ class HierarchicalNodeParser(NodeParser):
             )
             # add parent relationship from sub node to parent node
             # add child relationship from parent node to sub node
-            for sub_node in cur_sub_nodes:
-                _add_parent_child_relationship(
-                    parent_node=node,
-                    child_node=sub_node,
-                )
+            # NOTE: Only add relationships if level > 0, since we don't want to add
+            # relationships for the top-level document objects that we are splitting
+            if level > 0:
+                for sub_node in cur_sub_nodes:
+                    _add_parent_child_relationship(
+                        parent_node=node,
+                        child_node=sub_node,
+                    )
 
             sub_nodes.extend(cur_sub_nodes)
 

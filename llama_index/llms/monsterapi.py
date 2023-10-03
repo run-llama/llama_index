@@ -1,9 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-try:
-    from pydantic.v1 import Field, PrivateAttr
-except ImportError:
-    from pydantic import Field, PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 
 
 from llama_index.callbacks import CallbackManager
@@ -91,6 +88,10 @@ class MonsterLLM(CustomLLM):
         llm_models_enabled = [i for i, j in MODEL_TYPES.items() if j == "LLM"]
 
         return MonsterClient(monster_api_key), llm_models_enabled
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "MonsterLLM"
 
     @property
     def metadata(self) -> LLMMetadata:

@@ -7,10 +7,7 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 from typing import Any, Dict, List, Optional, Type
 
-try:
-    from pydantic.v1 import BaseModel
-except ImportError:
-    from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex

@@ -36,7 +36,7 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
             ef_construction (int, optional): defines a construction time/accuracy
                 trade-off. Default is 200.
             ef (int, optional): The size of the dynamic candidate list. Default is 10.
-            M (int, optional): defines tha maximum number of outgoing connections
+            M (int, optional): defines the maximum number of outgoing connections
                 in the graph. Default is 16.
             allow_replace_deleted (bool, optional): Whether to allow replacing
                 deleted elements. Default is True.
