@@ -6,24 +6,13 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .configurable_transformation_names import ConfigurableTransformationNames
-from .transformation_categories import TransformationCategories
 
 
-class TransformationDefinition(pydantic.BaseModel):
-    """
-    Schema for a transformation definition.
-    """
-
-    name: ConfigurableTransformationNames = pydantic.Field(
-        description="The name field will act as the unique identifier of TransformationDefinition objects"
-    )
-    label: str = pydantic.Field(
-        description="The label field will be used to display the name of the transformation in the UI"
-    )
-    transformation_category: TransformationCategories = pydantic.Field(
-        description="The transformation_category field will be used to group transformations in the UI"
-    )
+class BasePromptTemplate(pydantic.BaseModel):
+    metadata: typing.Dict[str, typing.Any]
+    template_vars: typing.List[str]
+    kwargs: typing.Dict[str, str]
+    output_parser: typing.Optional[typing.Dict[str, typing.Any]]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

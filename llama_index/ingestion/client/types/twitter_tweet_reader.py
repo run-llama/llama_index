@@ -24,6 +24,7 @@ class TwitterTweetReader(pydantic.BaseModel):
     is_remote: typing.Optional[bool]
     bearer_token: str
     num_tweets: typing.Optional[int]
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

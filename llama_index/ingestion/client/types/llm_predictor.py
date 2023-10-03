@@ -6,12 +6,24 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
+from .base_prompt_template import BasePromptTemplate
 
 
-class BaseLlmPredictor(pydantic.BaseModel):
+class LlmPredictor(pydantic.BaseModel):
     """
-    Base LLM Predictor.
+    LLM predictor class.
+
+    A lightweight wrapper on top of LLMs that handles:
+    - conversion of prompts to the string input format expected by LLMs
+    - logging of prompts and responses to a callback manager
+
+    NOTE: Mostly keeping around for legacy reasons. A potential future path is to
+    deprecate this class and move all functionality into the LLM class.
     """
+
+    system_prompt: typing.Optional[str]
+    query_wrapper_prompt: typing.Optional[BasePromptTemplate]
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

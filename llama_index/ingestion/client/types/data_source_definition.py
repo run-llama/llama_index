@@ -6,25 +6,22 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .metadata_feature_extractor import MetadataFeatureExtractor
+from .configurable_data_source_names import ConfigurableDataSourceNames
 
 
-class MetadataExtractor(pydantic.BaseModel):
+class DataSourceDefinition(pydantic.BaseModel):
     """
-    Metadata extractor.
+    Schema for a data source definition.
     """
 
-    extractors: typing.Optional[typing.List[MetadataFeatureExtractor]] = pydantic.Field(
-        description="Metadta feature extractors to apply to each node."
+    label: str = pydantic.Field(
+        description="The label field will be used to display the name of the component in the UI"
     )
-    node_text_template: typing.Optional[str] = pydantic.Field(
-        description="Template to represent how node text is mixed with metadata text."
+    json_schema: typing.Dict[str, typing.Any] = pydantic.Field(
+        description="The json_schema field can be used by clients to determine how to construct the component"
     )
-    disable_template_rewrite: typing.Optional[bool] = pydantic.Field(
-        description="Disable the node template rewrite."
-    )
-    in_place: typing.Optional[bool] = pydantic.Field(
-        description="Whether to process nodes in place."
+    source_type: ConfigurableDataSourceNames = pydantic.Field(
+        description="The name field will act as the unique identifier of DataSourceDefinition objects"
     )
 
     def json(self, **kwargs: typing.Any) -> str:

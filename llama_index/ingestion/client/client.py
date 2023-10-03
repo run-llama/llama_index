@@ -5,15 +5,15 @@ import typing
 import httpx
 
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
+from .resources.component_definition.client import (
+    AsyncComponentDefinitionClient,
+    ComponentDefinitionClient,
+)
 from .resources.data_sink.client import AsyncDataSinkClient, DataSinkClient
 from .resources.data_source.client import AsyncDataSourceClient, DataSourceClient
 from .resources.health.client import AsyncHealthClient, HealthClient
 from .resources.pipeline.client import AsyncPipelineClient, PipelineClient
 from .resources.project.client import AsyncProjectClient, ProjectClient
-from .resources.transformation.client import (
-    AsyncTransformationClient,
-    TransformationClient,
-)
 
 
 class PlatformApi:
@@ -26,7 +26,9 @@ class PlatformApi:
         self.data_source = DataSourceClient(client_wrapper=self._client_wrapper)
         self.project = ProjectClient(client_wrapper=self._client_wrapper)
         self.pipeline = PipelineClient(client_wrapper=self._client_wrapper)
-        self.transformation = TransformationClient(client_wrapper=self._client_wrapper)
+        self.component_definition = ComponentDefinitionClient(
+            client_wrapper=self._client_wrapper
+        )
 
 
 class AsyncPlatformApi:
@@ -39,6 +41,6 @@ class AsyncPlatformApi:
         self.data_source = AsyncDataSourceClient(client_wrapper=self._client_wrapper)
         self.project = AsyncProjectClient(client_wrapper=self._client_wrapper)
         self.pipeline = AsyncPipelineClient(client_wrapper=self._client_wrapper)
-        self.transformation = AsyncTransformationClient(
+        self.component_definition = AsyncComponentDefinitionClient(
             client_wrapper=self._client_wrapper
         )

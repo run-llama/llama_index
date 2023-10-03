@@ -21,7 +21,9 @@ class PgVectorStore(pydantic.BaseModel):
     embed_dim: int
     hybrid_search: bool
     text_search_config: str
+    debug: bool
     flat_metadata: typing.Optional[bool]
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

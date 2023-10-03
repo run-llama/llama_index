@@ -14,6 +14,7 @@ class RawFile(pydantic.BaseModel):
     """
 
     file_bytes: str = pydantic.Field(description="The raw file bytes.")
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

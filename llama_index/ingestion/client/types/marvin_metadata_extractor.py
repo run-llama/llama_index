@@ -11,16 +11,30 @@ from .metadata_mode import MetadataMode
 
 class MarvinMetadataExtractor(pydantic.BaseModel):
     """
-    Base interface for feature extractor.
+    Metadata extractor.
     """
 
     is_text_node_only: typing.Optional[bool]
-    show_progress: typing.Optional[bool]
-    metadata_mode: typing.Optional[MetadataMode]
+    show_progress: typing.Optional[bool] = pydantic.Field(
+        description="Whether to show progress."
+    )
+    metadata_mode: typing.Optional[MetadataMode] = pydantic.Field(
+        description="Metadata mode to use when reading nodes."
+    )
+    node_text_template: typing.Optional[str] = pydantic.Field(
+        description="Template to represent how node text is mixed with metadata text."
+    )
+    disable_template_rewrite: typing.Optional[bool] = pydantic.Field(
+        description="Disable the node template rewrite."
+    )
+    in_place: typing.Optional[bool] = pydantic.Field(
+        description="Whether to process nodes in place."
+    )
     marvin_model: typing.Any
     llm_model_string: typing.Optional[str] = pydantic.Field(
         description="The LLM model string to use for extracting custom metadata"
     )
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

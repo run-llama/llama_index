@@ -24,6 +24,7 @@ class ElasticsearchReader(pydantic.BaseModel):
     endpoint: str
     index: str
     httpx_client_args: typing.Optional[typing.Dict[str, typing.Any]]
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

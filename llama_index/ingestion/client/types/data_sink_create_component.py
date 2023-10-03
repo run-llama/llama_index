@@ -2,16 +2,8 @@
 
 import typing
 
-from .chroma_vector_store import ChromaVectorStore
-from .pg_vector_store import PgVectorStore
-from .pinecone_vector_store import PineconeVectorStore
-from .qdrant_vector_store import QdrantVectorStore
-from .weaviate_vector_store import WeaviateVectorStore
+from .data_sink_create_component_one import DataSinkCreateComponentOne
 
 DataSinkCreateComponent = typing.Union[
-    ChromaVectorStore,
-    PineconeVectorStore,
-    PgVectorStore,
-    QdrantVectorStore,
-    WeaviateVectorStore,
+    typing.Dict[str, typing.Any], DataSinkCreateComponentOne
 ]

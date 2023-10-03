@@ -6,7 +6,6 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .metadata_extractor import MetadataExtractor
 from .simple_node_parser_text_splitter import SimpleNodeParserTextSplitter
 
 
@@ -31,10 +30,8 @@ class SimpleNodeParser(pydantic.BaseModel):
     include_prev_next_rel: typing.Optional[bool] = pydantic.Field(
         description="Include prev/next node relationships."
     )
-    metadata_extractor: typing.Optional[MetadataExtractor] = pydantic.Field(
-        description="Metadata extraction pipeline to apply to nodes."
-    )
     callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

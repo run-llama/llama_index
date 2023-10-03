@@ -25,11 +25,13 @@ class ChromaVectorStore(pydantic.BaseModel):
     stores_text: typing.Optional[bool]
     is_embedding_query: typing.Optional[bool]
     flat_metadata: typing.Optional[bool]
+    collection_name: typing.Optional[str]
     host: typing.Optional[str]
     port: typing.Optional[str]
     ssl: bool
     headers: typing.Optional[typing.Dict[str, str]]
     collection_kwargs: typing.Optional[typing.Dict[str, typing.Any]]
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

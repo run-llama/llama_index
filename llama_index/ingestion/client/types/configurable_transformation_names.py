@@ -11,7 +11,6 @@ class ConfigurableTransformationNames(str, enum.Enum):
     An enumeration.
     """
 
-    METADATA_EXTRACTOR = "METADATA_EXTRACTOR"
     KEYWORD_EXTRACTOR = "KEYWORD_EXTRACTOR"
     TITLE_EXTRACTOR = "TITLE_EXTRACTOR"
     ENTITY_EXTRACTOR = "ENTITY_EXTRACTOR"
@@ -21,10 +20,11 @@ class ConfigurableTransformationNames(str, enum.Enum):
     SIMPLE_NODE_PARSER = "SIMPLE_NODE_PARSER"
     SENTENCE_WINDOW_NODE_PARSER = "SENTENCE_WINDOW_NODE_PARSER"
     HIERARCHICAL_NODE_PARSER = "HIERARCHICAL_NODE_PARSER"
+    OPENAI_EMBEDDING = "OPENAI_EMBEDDING"
+    HUGGINGFACE_EMBEDDING = "HUGGINGFACE_EMBEDDING"
 
     def visit(
         self,
-        metadata_extractor: typing.Callable[[], T_Result],
         keyword_extractor: typing.Callable[[], T_Result],
         title_extractor: typing.Callable[[], T_Result],
         entity_extractor: typing.Callable[[], T_Result],
@@ -34,9 +34,9 @@ class ConfigurableTransformationNames(str, enum.Enum):
         simple_node_parser: typing.Callable[[], T_Result],
         sentence_window_node_parser: typing.Callable[[], T_Result],
         hierarchical_node_parser: typing.Callable[[], T_Result],
+        openai_embedding: typing.Callable[[], T_Result],
+        huggingface_embedding: typing.Callable[[], T_Result],
     ) -> T_Result:
-        if self is ConfigurableTransformationNames.METADATA_EXTRACTOR:
-            return metadata_extractor()
         if self is ConfigurableTransformationNames.KEYWORD_EXTRACTOR:
             return keyword_extractor()
         if self is ConfigurableTransformationNames.TITLE_EXTRACTOR:
@@ -55,3 +55,7 @@ class ConfigurableTransformationNames(str, enum.Enum):
             return sentence_window_node_parser()
         if self is ConfigurableTransformationNames.HIERARCHICAL_NODE_PARSER:
             return hierarchical_node_parser()
+        if self is ConfigurableTransformationNames.OPENAI_EMBEDDING:
+            return openai_embedding()
+        if self is ConfigurableTransformationNames.HUGGINGFACE_EMBEDDING:
+            return huggingface_embedding()

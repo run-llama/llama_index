@@ -21,6 +21,7 @@ class ReaderConfig(pydantic.BaseModel):
     reader_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = pydantic.Field(
         description="Reader kwargs."
     )
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

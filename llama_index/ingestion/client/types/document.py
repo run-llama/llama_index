@@ -51,6 +51,7 @@ class Document(pydantic.BaseModel):
     metadata_seperator: typing.Optional[str] = pydantic.Field(
         description="Seperator between metadata fields when converting to string."
     )
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

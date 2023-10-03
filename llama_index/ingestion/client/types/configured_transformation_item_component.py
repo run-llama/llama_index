@@ -2,26 +2,10 @@
 
 import typing
 
-from .entity_extractor import EntityExtractor
-from .hierarchical_node_parser import HierarchicalNodeParser
-from .keyword_extractor import KeywordExtractor
-from .marvin_metadata_extractor import MarvinMetadataExtractor
-from .metadata_extractor import MetadataExtractor
-from .questions_answered_extractor import QuestionsAnsweredExtractor
-from .sentence_window_node_parser import SentenceWindowNodeParser
-from .simple_node_parser import SimpleNodeParser
-from .summary_extractor import SummaryExtractor
-from .title_extractor import TitleExtractor
+from .configured_transformation_item_component_one import (
+    ConfiguredTransformationItemComponentOne,
+)
 
 ConfiguredTransformationItemComponent = typing.Union[
-    MetadataExtractor,
-    KeywordExtractor,
-    TitleExtractor,
-    EntityExtractor,
-    MarvinMetadataExtractor,
-    SummaryExtractor,
-    QuestionsAnsweredExtractor,
-    SimpleNodeParser,
-    SentenceWindowNodeParser,
-    HierarchicalNodeParser,
+    typing.Dict[str, typing.Any], ConfiguredTransformationItemComponentOne
 ]

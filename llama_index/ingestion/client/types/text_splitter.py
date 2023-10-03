@@ -14,6 +14,8 @@ class TextSplitter(pydantic.BaseModel):
     inheritance.
     """
 
+    class_name: typing.Optional[str]
+
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
             "by_alias": True,

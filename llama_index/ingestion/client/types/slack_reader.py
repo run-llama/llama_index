@@ -32,6 +32,7 @@ class SlackReader(pydantic.BaseModel):
     slack_token: str
     earliest_date_timestamp: typing.Optional[float]
     latest_date_timestamp: float
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

@@ -24,6 +24,7 @@ class SimpleWebPageReader(pydantic.BaseModel):
 
     is_remote: typing.Optional[bool]
     html_to_text: bool
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

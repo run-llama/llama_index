@@ -16,13 +16,11 @@ if TYPE_CHECKING:
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.schema import BaseNode, TextNode
 
-from llama_index.node_parser.extractors.metadata_extractors import (
-    MetadataFeatureExtractor,
-)
+from llama_index.extractors.metadata_extractors import BaseExtractor
 from llama_index.utils import get_tqdm_iterable
 
 
-class MarvinMetadataExtractor(MetadataFeatureExtractor):
+class MarvinMetadataExtractor(BaseExtractor):
     # Forward reference to handle circular imports
     marvin_model: Type["AIModel"] = Field(
         description="The Marvin model to use for extracting custom metadata"
@@ -38,22 +36,20 @@ class MarvinMetadataExtractor(MetadataFeatureExtractor):
         marvin_model: Marvin model to use for extracting metadata
         llm_model_string: (optional) LLM model string to use for extracting metadata
     Usage:
-        #create metadata extractor
-        metadata_extractor = MetadataExtractor(
-            extractors=[
-                TitleExtractor(nodes=1, llm=llm),
-                MarvinMetadataExtractor(marvin_model=YourMarvinMetadataModel),
-            ],
-        )
+        #create extractor list
+        extractors = [
+            TitleExtractor(nodes=1, llm=llm),
+            MarvinMetadataExtractor(marvin_model=YourMarvinMetadataModel),
+        ]
 
         #create node parser to parse nodes from document
         node_parser = SimpleNodeParser(
-            text_splitter=text_splitter,
-            metadata_extractor=metadata_extractor,
+            text_splitter=text_splitter
         )
 
         #use node_parser to get nodes from documents
-        nodes = node_parser.get_nodes_from_documents([Document(text=text)])
+        from llama_index.ingestion import run_transformations
+        nodes = run_transformations(documents, [node_parser] + extractors)
         print(nodes)
     """
 

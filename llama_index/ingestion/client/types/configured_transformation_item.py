@@ -21,7 +21,7 @@ class ConfiguredTransformationItem(pydantic.BaseModel):
     """
 
     id: typing.Optional[str]
-    transformation_name: ConfigurableTransformationNames = pydantic.Field(
+    configurable_transformation_type: ConfigurableTransformationNames = pydantic.Field(
         description="Name for the type of transformation this is (e.g. SIMPLE_NODE_PARSER)"
     )
     component: ConfiguredTransformationItemComponent = pydantic.Field(

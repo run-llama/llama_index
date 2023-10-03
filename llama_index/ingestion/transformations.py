@@ -6,9 +6,8 @@ from typing import Sequence, Type, TypeVar, Generic
 from enum import Enum
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.schema import Document, BaseNode, BaseComponent
-from llama_index.node_parser.extractors import (
-    MetadataExtractor,
+from llama_index.embeddings import OpenAIEmbedding, HuggingFaceEmbedding
+from llama_index.extractors import (
     KeywordExtractor,
     TitleExtractor,
     EntityExtractor,
@@ -21,6 +20,7 @@ from llama_index.node_parser import (
     SentenceWindowNodeParser,
     HierarchicalNodeParser,
 )
+from llama_index.schema import Document, BaseNode, BaseComponent
 
 
 # Transform Input/Output Types
@@ -71,6 +71,12 @@ class TransformationCategories(Enum):
         input_type=TransformationIOTypes.DOCUMENTS.value,
         output_type=TransformationIOTypes.NODES.value,
     )
+    EMBEDDING = TransformationCategory(
+        name="Embedding",
+        description="Applies a function to embed nodes",
+        input_type=TransformationIOTypes.NODES.value,
+        output_type=TransformationIOTypes.NODES.value,
+    )
 
 
 class ConfigurableTransformation(BaseModel):
@@ -94,11 +100,6 @@ class ConfigurableTransformations(Enum):
     Enumeration of all supported ConfigurableTransformation instances.
     """
 
-    METADATA_EXTRACTOR = ConfigurableTransformation(
-        name="Metadata Extractor",
-        transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-        component_type=MetadataExtractor,
-    )
     KEYWORD_EXTRACTOR = ConfigurableTransformation(
         name="Keyword Extractor",
         transformation_category=TransformationCategories.METADATA_EXTRACTOR,
@@ -143,6 +144,16 @@ class ConfigurableTransformations(Enum):
         name="Hierarchical Node Parser",
         transformation_category=TransformationCategories.NODE_PARSER,
         component_type=HierarchicalNodeParser,
+    )
+    OPENAI_EMBEDDING = ConfigurableTransformation(
+        name="OpenAI Embedding",
+        transformation_category=TransformationCategories.EMBEDDING,
+        component_type=OpenAIEmbedding,
+    )
+    HUGGINGFACE_EMBEDDING = ConfigurableTransformation(
+        name="HuggingFace Embedding",
+        transformation_category=TransformationCategories.EMBEDDING,
+        component_type=HuggingFaceEmbedding,
     )
 
     @classmethod

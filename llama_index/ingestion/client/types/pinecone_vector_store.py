@@ -36,6 +36,7 @@ class PineconeVectorStore(pydantic.BaseModel):
     add_sparse_vector: bool
     text_key: str
     batch_size: int
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

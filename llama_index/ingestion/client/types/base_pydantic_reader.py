@@ -16,6 +16,7 @@ class BasePydanticReader(pydantic.BaseModel):
     is_remote: typing.Optional[bool] = pydantic.Field(
         description="Whether the data is loaded from a remote API or a local file."
     )
+    class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

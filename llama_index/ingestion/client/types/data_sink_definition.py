@@ -6,17 +6,23 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .metadata_mode import MetadataMode
+from .configurable_data_sink_names import ConfigurableDataSinkNames
 
 
-class MetadataFeatureExtractor(pydantic.BaseModel):
+class DataSinkDefinition(pydantic.BaseModel):
     """
-    Base interface for feature extractor.
+    Schema for a data sink definition.
     """
 
-    is_text_node_only: typing.Optional[bool]
-    show_progress: typing.Optional[bool]
-    metadata_mode: typing.Optional[MetadataMode]
+    label: str = pydantic.Field(
+        description="The label field will be used to display the name of the component in the UI"
+    )
+    json_schema: typing.Dict[str, typing.Any] = pydantic.Field(
+        description="The json_schema field can be used by clients to determine how to construct the component"
+    )
+    sink_type: ConfigurableDataSinkNames = pydantic.Field(
+        description="The name field will act as the unique identifier of DataSinkDefinition objects"
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
