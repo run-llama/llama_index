@@ -1,4 +1,4 @@
-from llama_index.token_counter.mock_embed_model import MockEmbedding
+from llama_index.embeddings import OpenAIEmbedding
 from llama_index.ingestion.pipeline import IngestionPipeline
 from llama_index.llms import MockLLM
 from llama_index.node_parser import SimpleNodeParser
@@ -17,7 +17,7 @@ def test_build_pipeline() -> None:
         transformations=[
             SimpleNodeParser.from_defaults(),
             KeywordExtractor(llm=MockLLM()),
-            MockEmbedding(embed_dim=10),
+            OpenAIEmbedding(api_key="fake"),
         ],
     )
 
@@ -36,7 +36,7 @@ def test_run_local_pipeline() -> None:
         transformations=[
             SimpleNodeParser.from_defaults(),
             KeywordExtractor(llm=MockLLM()),
-            MockEmbedding(embed_dim=10),
+            OpenAIEmbedding(api_key="fake"),
         ],
     )
 

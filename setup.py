@@ -32,7 +32,7 @@ install_requires = [
     "tree_sitter_languages",
     # TEMP for client
     "httpx>=0.20.0,<0.25.0",
-    "pydantic<=1.10.12"
+    "pydantic<=1.10.12",
 ]
 
 

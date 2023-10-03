@@ -58,9 +58,8 @@ class QASummaryQueryEngineBuilder:
 
         # parse nodes
         nodes = run_transformations(
-            documents,   # type: ignore
-            self._service_context.transformations
-        ) 
+            documents, self._service_context.transformations  # type: ignore
+        )
 
         # ingest nodes
         self._storage_context.docstore.add_documents(nodes, allow_update=True)
