@@ -258,6 +258,7 @@ class BaseEmbedding(BaseComponent):
                 )
                 callback_payloads.append((event_id, cur_batch))
                 embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
+                cur_batch = []
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
