@@ -12,7 +12,7 @@ from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate, PromptTemplate

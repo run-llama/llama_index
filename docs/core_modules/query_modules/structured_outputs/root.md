@@ -7,7 +7,7 @@ LlamaIndex itself also relies on structured output in the following ways.
 
 LlamaIndex provides a variety of modules enabling LLMs to produce outputs in a structured format. We provide modules at different levels of abstraction:
 - **Output Parsers**: These are modules that operate before and after an LLM text completion endpoint. They are not used with LLM function calling endpoints (since those contain structured outputs out of the box).
-- **Pydantic Programs**: These are generic modules that map an input prompt to a structured output, represented by a Pydantic object. They may use function calling APIs or text completion APIs + output parsers.
+- **Pydantic Programs**: These are generic modules that map an input prompt to a structured output, represented by a Pydantic object. They may use function calling APIs or text completion APIs + output parsers. These can also be integrated with query engines.
 - **Pre-defined Pydantic Program**: We have pre-defined Pydantic programs that map inputs to specific output types (like dataframes).
 
 See the sections below for an overview of output parsers and Pydantic programs.
@@ -22,6 +22,14 @@ With generic completion APIs, the inputs and outputs are handled by text prompts
 append format instructions to the prompt. After the LLM call, the output parser can parse the output to the specified instructions.
 
 With function calling APIs, the output is inherently in a structured format, and the input can take in the signature of the desired object. The structured output just needs to be cast in the right object format (e.g. Pydantic).
+
+## Query Engine Modules
+```{toctree}
+---
+maxdepth: 2
+---
+query_engine.md
+```
 
 ## Output Parser Modules
 

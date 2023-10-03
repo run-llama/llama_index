@@ -5,10 +5,7 @@ from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.types import BasePydanticProgram
-from llama_index.program.llm_program import LLMTextCompletionProgram
-from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
@@ -75,6 +72,7 @@ class Refine(BaseSynthesizer):
         service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         refine_template: Optional[BasePromptTemplate] = None,
+        output_cls: Optional[BaseModel] = None,
         streaming: bool = False,
         verbose: bool = False,
         structured_answer_filtering: bool = False,
@@ -87,6 +85,7 @@ class Refine(BaseSynthesizer):
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._verbose = verbose
         self._structured_answer_filtering = structured_answer_filtering
+        self._output_cls = output_cls
 
         if self._streaming and self._structured_answer_filtering:
             raise ValueError(
@@ -124,28 +123,24 @@ class Refine(BaseSynthesizer):
                 )
             prev_response_obj = response
         if isinstance(response, str):
-            response = response or "Empty Response"
+            if self._output_cls is not None:
+                response = self._output_cls.parse_raw(response)
+            else:
+                response = response or "Empty Response"
         else:
             response = cast(Generator, response)
         return response
 
     def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
         if self._structured_answer_filtering:
-            try:
-                return OpenAIPydanticProgram.from_defaults(
-                    StructuredRefineResponse,
-                    prompt=prompt,
-                    llm=self._service_context.llm,
-                    verbose=self._verbose,
-                )
-            except ValueError:
-                output_parser = PydanticOutputParser(StructuredRefineResponse)
-                return LLMTextCompletionProgram.from_defaults(
-                    output_parser,
-                    prompt=prompt,
-                    llm=self._service_context.llm,
-                    verbose=self._verbose,
-                )
+            from llama_index.program.utils import get_program_for_llm
+
+            return get_program_for_llm(
+                StructuredRefineResponse,
+                prompt,
+                self._service_context.llm,
+                verbose=self._verbose,
+            )
         else:
             return DefaultRefineProgram(
                 prompt=prompt,
@@ -172,7 +167,10 @@ class Refine(BaseSynthesizer):
             if response is None and not self._streaming:
                 try:
                     structured_response = cast(
-                        StructuredRefineResponse, program(context_str=cur_text_chunk)
+                        StructuredRefineResponse,
+                        program(
+                            context_str=cur_text_chunk, output_cls=self._output_cls
+                        ),
                     )
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
@@ -185,6 +183,7 @@ class Refine(BaseSynthesizer):
                 response = self._service_context.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
+                    output_cls=self._output_cls,
                 )
                 query_satisfied = True
             else:
@@ -248,7 +247,10 @@ class Refine(BaseSynthesizer):
             if not self._streaming:
                 try:
                     structured_response = cast(
-                        StructuredRefineResponse, program(context_msg=cur_text_chunk)
+                        StructuredRefineResponse,
+                        program(
+                            context_msg=cur_text_chunk, output_cls=self._output_cls
+                        ),
                     )
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
@@ -269,6 +271,7 @@ class Refine(BaseSynthesizer):
                 response = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
+                    output_cls=self._output_cls,
                 )
 
         return response
@@ -299,7 +302,10 @@ class Refine(BaseSynthesizer):
         if response is None:
             response = "Empty Response"
         if isinstance(response, str):
-            response = response or "Empty Response"
+            if self._output_cls is not None:
+                response = self._output_cls.parse_raw(response)
+            else:
+                response = response or "Empty Response"
         else:
             response = cast(Generator, response)
         return response
