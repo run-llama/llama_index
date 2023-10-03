@@ -23,6 +23,30 @@ from llama_index.vector_stores.types import BasePydanticVectorStore
 DEFAULT_PIPELINE_NAME = "llamaindex_pipeline"
 
 
+def run_transformations(
+    nodes: List[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    **kwargs: Any,
+) -> List[BaseNode]:
+    """Run a series of transformations on a set of nodes.
+
+    Args:
+        nodes: The nodes to transform.
+        transformations: The transformations to apply to the nodes.
+
+    Returns:
+        The transformed nodes.
+    """
+    if not in_place:
+        nodes = list(nodes)
+
+    for transform in transformations:
+        nodes = transform(nodes, **kwargs)
+
+    return nodes
+
+
 class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
@@ -189,15 +213,19 @@ class IngestionPipeline(BaseModel):
     def run_local(
         self, show_progress: bool = False, **kwargs: Any
     ) -> Sequence[BaseNode]:
-        nodes: List[BaseNode] = []
+        input_nodes: List[BaseNode] = []
         if self.documents is not None:
-            nodes += self.documents
+            input_nodes += self.documents
 
         if self.reader is not None:
-            nodes += self.reader.read()
+            input_nodes += self.reader.read()
 
-        for transform in self.transformations:
-            nodes = transform(nodes, show_progress=show_progress, **kwargs)
+        nodes = run_transformations(
+            input_nodes,
+            self.transformations,
+            show_progress=show_progress,
+            **kwargs,
+        )
 
         if self.vector_store is not None:
             self.vector_store.add([n for n in nodes if n.embedding is not None])

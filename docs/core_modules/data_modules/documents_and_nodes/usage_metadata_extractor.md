@@ -1,6 +1,6 @@
 # Automated Metadata Extraction for Nodes
 
-You can use LLMs to automate metadata extraction with our `MetadataExtractor` modules.
+You can use LLMs to automate metadata extraction with our `Metadata Extractor` modules.
 
 Our metadata extractor modules include the following "feature extractors":
 - `SummaryExtractor` - automatically extracts a summary over a set of Nodes
@@ -8,30 +8,49 @@ Our metadata extractor modules include the following "feature extractors":
 - `TitleExtractor` - extracts a title over the context of each Node
 - `EntityExtractor` - extracts entities (i.e. names of places, people, things) mentioned in the content of each Node
 
-You can use these feature extractors within our overall `MetadataExtractor` class. Then you can plug in the `MetadataExtractor` into our node parser:
+Then you can chain the `Metadata Extractor`s with our node parser:
 
 ```python
-from llama_index.node_parser.extractors import (
-    MetadataExtractor,
+from llama_index.extractors import (
     TitleExtractor,
     QuestionsAnsweredExtractor
 )
 from llama_index.text_splitter import TokenTextSplitter
 
-text_splitter = TokenTextSplitter(separator=" ", chunk_size=512, chunk_overlap=128)
-metadata_extractor = MetadataExtractor(
-    extractors=[
-        TitleExtractor(nodes=5),
-        QuestionsAnsweredExtractor(questions=3),
-    ],
+text_splitter = TokenTextSplitter(
+    separator=" ", chunk_size=512, chunk_overlap=128
 )
 
 node_parser = SimpleNodeParser.from_defaults(
-    text_splitter=text_splitter,
-    metadata_extractor=metadata_extractor,
+    text_splitter=text_splitter
 )
+
+title_extractor = TitleExtractor(nodes=5)
+qa_extractor = QuestionsAnsweredExtractor(questions=3)
+
 # assume documents are defined -> extract nodes
-nodes = node_parser.get_nodes_from_documents(documents)
+from llama_index.ingestion import run_transformations
+
+nodes = run_transformations(
+    documents,
+    [node_parser, title_extractor, qa_extractor],
+    in_place=True,
+    show_progress=True,
+)
+```
+
+or insert into the service context:
+
+```python
+from llama_index import ServiceContext
+
+service_context = ServiceContext.from_defaults(
+    transformations=[
+        node_parser,
+        title_extractor,
+        qa_extractor
+    ]
+)
 ```
 
 

@@ -32,8 +32,6 @@ from .hierarchical_node_parser import HierarchicalNodeParser
 from .http_validation_error import HttpValidationError
 from .keyword_extractor import KeywordExtractor
 from .marvin_metadata_extractor import MarvinMetadataExtractor
-from .metadata_extractor import MetadataExtractor
-from .metadata_feature_extractor import MetadataFeatureExtractor
 from .metadata_mode import MetadataMode
 from .notion_page_reader import NotionPageReader
 from .object_type import ObjectType
@@ -98,8 +96,6 @@ __all__ = [
     "HttpValidationError",
     "KeywordExtractor",
     "MarvinMetadataExtractor",
-    "MetadataExtractor",
-    "MetadataFeatureExtractor",
     "MetadataMode",
     "NotionPageReader",
     "ObjectType",

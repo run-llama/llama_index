@@ -1,13 +1,14 @@
 """Joint QA Summary graph."""
 
 
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store import VectorStoreIndex
+from llama_index.ingestion import run_transformations
 from llama_index.query_engine.router_query_engine import RouterQueryEngine
-from llama_index.schema import BaseNode, Document
+from llama_index.schema import Document
 from llama_index.storage.storage_context import StorageContext
 from llama_index.tools.query_engine import QueryEngineTool
 
@@ -56,9 +57,7 @@ class QASummaryQueryEngineBuilder:
         """Build query engine."""
 
         # parse nodes
-        nodes: List[BaseNode] = documents  # type: ignore
-        for transformation in self._service_context.transformations:
-            nodes = transformation(nodes)
+        nodes = run_transformations(documents, self._service_context.transformations)  # type: ignore
 
         # ingest nodes
         self._storage_context.docstore.add_documents(nodes, allow_update=True)

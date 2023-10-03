@@ -36,22 +36,20 @@ class MarvinMetadataExtractor(BaseExtractor):
         marvin_model: Marvin model to use for extracting metadata
         llm_model_string: (optional) LLM model string to use for extracting metadata
     Usage:
-        #create metadata extractor
-        metadata_extractor = MetadataExtractor(
-            extractors=[
-                TitleExtractor(nodes=1, llm=llm),
-                MarvinMetadataExtractor(marvin_model=YourMarvinMetadataModel),
-            ],
-        )
+        #create extractor list
+        extractors = [
+            TitleExtractor(nodes=1, llm=llm),
+            MarvinMetadataExtractor(marvin_model=YourMarvinMetadataModel),
+        ]
 
         #create node parser to parse nodes from document
         node_parser = SimpleNodeParser(
-            text_splitter=text_splitter,
-            metadata_extractor=metadata_extractor,
+            text_splitter=text_splitter
         )
 
         #use node_parser to get nodes from documents
-        nodes = node_parser.get_nodes_from_documents([Document(text=text)])
+        from llama_index.ingestion import run_transformations
+        nodes = run_transformations(documents, [node_parser] + extractors)
         print(nodes)
     """
 

@@ -2,7 +2,7 @@ from llama_index.token_counter.mock_embed_model import MockEmbedding
 from llama_index.ingestion.pipeline import IngestionPipeline
 from llama_index.llms import MockLLM
 from llama_index.node_parser import SimpleNodeParser
-from llama_index.node_parser.extractors import KeywordExtractor
+from llama_index.extractors import KeywordExtractor
 from llama_index.readers import StringIterableReader, ReaderConfig
 from llama_index.schema import Document
 
@@ -17,9 +17,8 @@ def test_build_pipeline() -> None:
         transformations=[
             SimpleNodeParser.from_defaults(),
             KeywordExtractor(llm=MockLLM()),
+            MockEmbedding(embed_dim=10),
         ],
-        llm=MockLLM(),
-        embed_model=MockEmbedding(embed_dim=10),
     )
 
     assert len(pipeline.transformations) == 2
@@ -37,9 +36,8 @@ def test_run_local_pipeline() -> None:
         transformations=[
             SimpleNodeParser.from_defaults(),
             KeywordExtractor(llm=MockLLM()),
+            MockEmbedding(embed_dim=10),
         ],
-        llm=MockLLM(),
-        embed_model=MockEmbedding(embed_dim=10),
     )
 
     nodes = pipeline.run_local()

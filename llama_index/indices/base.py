@@ -8,6 +8,7 @@ from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
+from llama_index.ingestion import run_transformations
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.schema import BaseNode, Document
@@ -96,9 +97,12 @@ class BaseIndex(Generic[IS], ABC):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
 
-            nodes: List[BaseNode] = documents  # type: ignore
-            for transformation in service_context.transformations:
-                nodes = transformation(nodes, show_progress=show_progress)
+            nodes = run_transformations(
+                documents,  # type: ignore
+                service_context.transformations,
+                show_progress=show_progress,
+                **kwargs,
+            )
 
             return cls(
                 nodes=nodes,
@@ -185,10 +189,11 @@ class BaseIndex(Generic[IS], ABC):
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         with self._service_context.callback_manager.as_trace("insert"):
-            nodes: List[BaseNode] = [document]
-
-            for transformation in self._service_context.transformations:
-                nodes = transformation(nodes, show_progress=self._show_progress)
+            nodes = run_transformations(
+                [document],
+                self._service_context.transformations,
+                show_progress=self._show_progress,
+            )
 
             self.insert_nodes(nodes, **insert_kwargs)
             self.docstore.set_document_hash(document.get_doc_id(), document.hash)

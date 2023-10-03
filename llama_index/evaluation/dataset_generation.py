@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from llama_index import Document, ServiceContext, SummaryIndex
 from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
+from llama_index.ingestion import run_transformations
 from llama_index.llms.openai import OpenAI
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
@@ -147,9 +148,9 @@ class DatasetGenerator:
         if service_context is None:
             service_context = _get_default_service_context()
 
-        nodes: List[BaseNode] = documents
-        for transformation in service_context.transformations:
-            nodes = transformation(nodes, show_progress=show_progress)
+        nodes = run_transformations(
+            documents, service_context.transformations, show_progress=show_progress
+        )
 
         # use node postprocessor to filter nodes
         required_keywords = required_keywords or []
