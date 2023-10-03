@@ -13,7 +13,7 @@ from llama_index.indices.struct_store.sql_query import (
     NLStructStoreQueryEngine,
     SQLStructStoreQueryEngine,
 )
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.schema import Document
 
 

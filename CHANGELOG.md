@@ -4,6 +4,7 @@
 
 ### New Features
 - Added support for pydantic object outputs with query engines (#7893)
+- `ClarifaiEmbedding` class added for embedding support (#7940)
 
 ## [0.8.38] - 2023-10-02
 
