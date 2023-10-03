@@ -30,9 +30,8 @@ from tests.mock_utils.mock_prompts import MOCK_TABLE_CONTEXT_PROMPT
 def _delete_table_items(engine: Any, table: Table) -> None:
     """Delete items from a table."""
     delete_stmt = delete(table)
-    with engine.connect() as connection:
+    with engine.begin() as connection:
         connection.execute(delete_stmt)
-        connection.commit()
 
 
 def test_sql_index(
@@ -64,7 +63,7 @@ def test_sql_index(
     assert isinstance(index, SQLStructStoreIndex)
 
     # test that the document is inserted
-    stmt = select(test_table.c["user_id", "foo"])
+    stmt = select(test_table.c.user_id, test_table.c.foo)
     engine = index.sql_database.engine
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
@@ -81,9 +80,8 @@ def test_sql_index(
     # test that the document is inserted
     stmt = select(test_table.c["user_id", "foo"])
     engine = index.sql_database.engine
-    with engine.connect() as connection:
+    with engine.begin() as connection:
         results = connection.execute(stmt).fetchall()
-        connection.commit()
         assert results == [(8, "hello")]
 
 
