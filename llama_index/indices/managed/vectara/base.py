@@ -113,6 +113,7 @@ class VectaraIndex(BaseManagedIndex):
             "x-api-key": self._vectara_api_key,
             "customer-id": self._vectara_customer_id,
             "Content-Type": "application/json",
+            "X-Source": "llama_index",
         }
 
     def _delete_doc(self, doc_id: str) -> bool:

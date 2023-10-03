@@ -99,6 +99,17 @@ See [Storage guide](https://gpt-index.readthedocs.io/en/latest/how_to/storage.ht
 
 ---
 
+#### Managed Index
+
+A managed index is used to represent an index that's managed via an API, exposing API calls to index documents and query documents.
+
+Currently we support the [VectaraIndex](https://github.com/run-llama/llama_index/tree/ca09272af000307762d301c99da46ddc70d3bfd2/llama_index/indices/managed/vectara). 
+Open to contributions!
+
+See [Managed Index docs](https://gpt-index.readthedocs.io/en/stable/community/integrations/managed_indices.html) for details.
+
+---
+
 #### Vector Stores
 
 Our vector store classes store embeddings and support lookup via similiarity search.
