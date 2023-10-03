@@ -6,7 +6,7 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .base_llm_predictor import BaseLlmPredictor
+from .llm_predictor import LlmPredictor
 from .metadata_mode import MetadataMode
 
 
@@ -15,14 +15,27 @@ class KeywordExtractor(pydantic.BaseModel):
     Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
     Args:
-        llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
+        llm_predictor (Optional[LLMPredictor]): LLM predictor
         keywords (int): number of keywords to extract
     """
 
     is_text_node_only: typing.Optional[bool]
-    show_progress: typing.Optional[bool]
-    metadata_mode: typing.Optional[MetadataMode]
-    llm_predictor: BaseLlmPredictor = pydantic.Field(
+    show_progress: typing.Optional[bool] = pydantic.Field(
+        description="Whether to show progress."
+    )
+    metadata_mode: typing.Optional[MetadataMode] = pydantic.Field(
+        description="Metadata mode to use when reading nodes."
+    )
+    node_text_template: typing.Optional[str] = pydantic.Field(
+        description="Template to represent how node text is mixed with metadata text."
+    )
+    disable_template_rewrite: typing.Optional[bool] = pydantic.Field(
+        description="Disable the node template rewrite."
+    )
+    in_place: typing.Optional[bool] = pydantic.Field(
+        description="Whether to process nodes in place."
+    )
+    llm_predictor: LlmPredictor = pydantic.Field(
         description="The LLMPredictor to use for generation."
     )
     keywords: typing.Optional[int] = pydantic.Field(

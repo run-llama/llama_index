@@ -6,18 +6,13 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .metadata_mode import MetadataMode
 
 
-class MetadataFeatureExtractor(pydantic.BaseModel):
-    """
-    Base interface for feature extractor.
-    """
-
-    is_text_node_only: typing.Optional[bool]
-    show_progress: typing.Optional[bool]
-    metadata_mode: typing.Optional[MetadataMode]
-    class_name: typing.Optional[str]
+class BasePromptTemplate(pydantic.BaseModel):
+    metadata: typing.Dict[str, typing.Any]
+    template_vars: typing.List[str]
+    kwargs: typing.Dict[str, str]
+    output_parser: typing.Optional[typing.Dict[str, typing.Any]]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

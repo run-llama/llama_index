@@ -18,8 +18,21 @@ class EntityExtractor(pydantic.BaseModel):
     """
 
     is_text_node_only: typing.Optional[bool]
-    show_progress: typing.Optional[bool]
-    metadata_mode: typing.Optional[MetadataMode]
+    show_progress: typing.Optional[bool] = pydantic.Field(
+        description="Whether to show progress."
+    )
+    metadata_mode: typing.Optional[MetadataMode] = pydantic.Field(
+        description="Metadata mode to use when reading nodes."
+    )
+    node_text_template: typing.Optional[str] = pydantic.Field(
+        description="Template to represent how node text is mixed with metadata text."
+    )
+    disable_template_rewrite: typing.Optional[bool] = pydantic.Field(
+        description="Disable the node template rewrite."
+    )
+    in_place: typing.Optional[bool] = pydantic.Field(
+        description="Whether to process nodes in place."
+    )
     model_name: typing.Optional[str] = pydantic.Field(
         description="The model name of the SpanMarker model to use."
     )

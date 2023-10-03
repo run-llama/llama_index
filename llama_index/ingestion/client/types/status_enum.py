@@ -14,6 +14,7 @@ class StatusEnum(str, enum.Enum):
     PENDING = "PENDING"
     SUCCESS = "SUCCESS"
     ERROR = "ERROR"
+    CANCELED = "CANCELED"
     FINISHED = "FINISHED"
 
     def visit(
@@ -21,6 +22,7 @@ class StatusEnum(str, enum.Enum):
         pending: typing.Callable[[], T_Result],
         success: typing.Callable[[], T_Result],
         error: typing.Callable[[], T_Result],
+        canceled: typing.Callable[[], T_Result],
         finished: typing.Callable[[], T_Result],
     ) -> T_Result:
         if self is StatusEnum.PENDING:
@@ -29,5 +31,7 @@ class StatusEnum(str, enum.Enum):
             return success()
         if self is StatusEnum.ERROR:
             return error()
+        if self is StatusEnum.CANCELED:
+            return canceled()
         if self is StatusEnum.FINISHED:
             return finished()

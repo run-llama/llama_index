@@ -6,26 +6,23 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .metadata_feature_extractor import MetadataFeatureExtractor
+from .base_prompt_template import BasePromptTemplate
 
 
-class MetadataExtractor(pydantic.BaseModel):
+class LlmPredictor(pydantic.BaseModel):
     """
-    Metadata extractor.
+    LLM predictor class.
+
+    A lightweight wrapper on top of LLMs that handles:
+    - conversion of prompts to the string input format expected by LLMs
+    - logging of prompts and responses to a callback manager
+
+    NOTE: Mostly keeping around for legacy reasons. A potential future path is to
+    deprecate this class and move all functionality into the LLM class.
     """
 
-    extractors: typing.Optional[typing.List[MetadataFeatureExtractor]] = pydantic.Field(
-        description="Metadta feature extractors to apply to each node."
-    )
-    node_text_template: typing.Optional[str] = pydantic.Field(
-        description="Template to represent how node text is mixed with metadata text."
-    )
-    disable_template_rewrite: typing.Optional[bool] = pydantic.Field(
-        description="Disable the node template rewrite."
-    )
-    in_place: typing.Optional[bool] = pydantic.Field(
-        description="Whether to process nodes in place."
-    )
+    system_prompt: typing.Optional[str]
+    query_wrapper_prompt: typing.Optional[BasePromptTemplate]
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:

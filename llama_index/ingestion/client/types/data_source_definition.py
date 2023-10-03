@@ -6,14 +6,23 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
+from .configurable_data_source_names import ConfigurableDataSourceNames
 
 
-class BaseLlmPredictor(pydantic.BaseModel):
+class DataSourceDefinition(pydantic.BaseModel):
     """
-    Base LLM Predictor.
+    Schema for a data source definition.
     """
 
-    class_name: typing.Optional[str]
+    label: str = pydantic.Field(
+        description="The label field will be used to display the name of the component in the UI"
+    )
+    json_schema: typing.Dict[str, typing.Any] = pydantic.Field(
+        description="The json_schema field can be used by clients to determine how to construct the component"
+    )
+    source_type: ConfigurableDataSourceNames = pydantic.Field(
+        description="The name field will act as the unique identifier of DataSourceDefinition objects"
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

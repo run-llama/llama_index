@@ -7,21 +7,24 @@ import pydantic
 
 from ..core.datetime_utils import serialize_datetime
 from .configurable_transformation_names import ConfigurableTransformationNames
-from .transformation_categories import TransformationCategories
+from .transformation_category_names import TransformationCategoryNames
 
 
-class TransformationDefinition(pydantic.BaseModel):
+class ConfigurableTransformationDefinition(pydantic.BaseModel):
     """
     Schema for a transformation definition.
     """
 
-    name: ConfigurableTransformationNames = pydantic.Field(
+    label: str = pydantic.Field(
+        description="The label field will be used to display the name of the component in the UI"
+    )
+    json_schema: typing.Dict[str, typing.Any] = pydantic.Field(
+        description="The json_schema field can be used by clients to determine how to construct the component"
+    )
+    configurable_transformation_type: ConfigurableTransformationNames = pydantic.Field(
         description="The name field will act as the unique identifier of TransformationDefinition objects"
     )
-    label: str = pydantic.Field(
-        description="The label field will be used to display the name of the transformation in the UI"
-    )
-    transformation_category: TransformationCategories = pydantic.Field(
+    transformation_category: TransformationCategoryNames = pydantic.Field(
         description="The transformation_category field will be used to group transformations in the UI"
     )
 

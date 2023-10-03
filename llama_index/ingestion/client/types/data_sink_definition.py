@@ -6,24 +6,23 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
+from .configurable_data_sink_names import ConfigurableDataSinkNames
 
 
-class PgVectorStore(pydantic.BaseModel):
+class DataSinkDefinition(pydantic.BaseModel):
     """
-    Abstract vector store protocol.
+    Schema for a data sink definition.
     """
 
-    stores_text: typing.Optional[bool]
-    is_embedding_query: typing.Optional[bool]
-    connection_string: str
-    async_connection_string: str
-    table_name: str
-    embed_dim: int
-    hybrid_search: bool
-    text_search_config: str
-    debug: bool
-    flat_metadata: typing.Optional[bool]
-    class_name: typing.Optional[str]
+    label: str = pydantic.Field(
+        description="The label field will be used to display the name of the component in the UI"
+    )
+    json_schema: typing.Dict[str, typing.Any] = pydantic.Field(
+        description="The json_schema field can be used by clients to determine how to construct the component"
+    )
+    sink_type: ConfigurableDataSinkNames = pydantic.Field(
+        description="The name field will act as the unique identifier of DataSinkDefinition objects"
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
