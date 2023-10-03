@@ -79,6 +79,10 @@ class TransformComponent(BaseComponent):
     def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
         """Transform nodes."""
 
+    async def acall(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+        """Async transform nodes."""
+        return self.__call__(nodes, **kwargs)
+
 
 class NodeRelationship(str, Enum):
     """Node relationships used in `BaseNode` class.

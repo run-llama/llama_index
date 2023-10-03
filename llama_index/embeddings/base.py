@@ -319,3 +319,14 @@ class BaseEmbedding(TransformComponent):
             node.embedding = embedding
 
         return nodes
+
+    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        embeddings = await self.aget_text_embedding_batch(
+            [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
+            **kwargs,
+        )
+
+        for node, embedding in zip(nodes, embeddings):
+            node.embedding = embedding
+
+        return nodes

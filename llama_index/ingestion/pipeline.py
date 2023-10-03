@@ -47,6 +47,30 @@ def run_transformations(
     return nodes
 
 
+async def arun_transformations(
+    nodes: List[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    **kwargs: Any,
+) -> List[BaseNode]:
+    """Run a series of transformations on a set of nodes.
+
+    Args:
+        nodes: The nodes to transform.
+        transformations: The transformations to apply to the nodes.
+
+    Returns:
+        The transformed nodes.
+    """
+    if not in_place:
+        nodes = list(nodes)
+
+    for transform in transformations:
+        nodes = await transform.acall(nodes, **kwargs)
+
+    return nodes
+
+
 class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
