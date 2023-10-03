@@ -26,6 +26,7 @@ def get_data_model(
     index_name: str,
     hybrid_search: bool,
     text_search_config: str,
+    set_cache_ok: bool,
     embed_dim: int = 1536,
 ) -> Any:
     """
@@ -41,6 +42,7 @@ def get_data_model(
 
     class TSVector(TypeDecorator):
         impl = TSVECTOR
+        cache_ok = set_cache_ok 
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
@@ -96,6 +98,7 @@ class PGVectorStore(BasePydanticVectorStore):
     embed_dim: int
     hybrid_search: bool
     text_search_config: str
+    cache_ok: bool
     debug: bool
 
     _base: Any = PrivateAttr()
@@ -114,6 +117,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        cache_ok: bool = False,
         debug: bool = False,
     ) -> None:
         try:
@@ -145,6 +149,7 @@ class PGVectorStore(BasePydanticVectorStore):
             table_name,
             hybrid_search,
             text_search_config,
+            cache_ok,
             embed_dim=embed_dim,
         )
 
@@ -155,6 +160,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            cache_ok=cache_ok,
             debug=debug,
         )
 
@@ -185,6 +191,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        cache_ok: bool = False,
         debug: bool = False,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
@@ -202,6 +209,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            cache_ok=cache_ok,
             debug=debug,
         )
 
