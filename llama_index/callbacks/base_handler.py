@@ -27,6 +27,7 @@ class BaseCallbackHandler(ABC):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         """Run when an event starts and return id of event."""

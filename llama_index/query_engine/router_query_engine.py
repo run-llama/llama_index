@@ -2,6 +2,7 @@ import logging
 from typing import Callable, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base_retriever import BaseRetriever
@@ -11,7 +12,12 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
-from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+from llama_index.response.schema import (
+    RESPONSE_TYPE,
+    Response,
+    StreamingResponse,
+    PydanticResponse,
+)
 from llama_index.response_synthesizers import TreeSummarize
 from llama_index.selectors.utils import get_selector_from_context
 from llama_index.selectors.types import BaseSelector
@@ -32,7 +38,7 @@ def combine_responses(
     response_strs = []
     source_nodes = []
     for response in responses:
-        if isinstance(response, StreamingResponse):
+        if isinstance(response, (StreamingResponse, PydanticResponse)):
             response_obj = response.get_response()
         else:
             response_obj = response
@@ -43,6 +49,8 @@ def combine_responses(
 
     if isinstance(summary, str):
         return Response(response=summary, source_nodes=source_nodes)
+    elif isinstance(summary, BaseModel):
+        return PydanticResponse(response=summary, source_nodes=source_nodes)
     else:
         return StreamingResponse(response_gen=summary, source_nodes=source_nodes)
 
@@ -56,7 +64,7 @@ async def acombine_responses(
     response_strs = []
     source_nodes = []
     for response in responses:
-        if isinstance(response, StreamingResponse):
+        if isinstance(response, (StreamingResponse, PydanticResponse)):
             response_obj = response.get_response()
         else:
             response_obj = response
@@ -67,6 +75,8 @@ async def acombine_responses(
 
     if isinstance(summary, str):
         return Response(response=summary, source_nodes=source_nodes)
+    elif isinstance(summary, BaseModel):
+        return PydanticResponse(response=summary, source_nodes=source_nodes)
     else:
         return StreamingResponse(response_gen=summary, source_nodes=source_nodes)
 
