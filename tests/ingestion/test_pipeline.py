@@ -21,8 +21,8 @@ def test_build_pipeline() -> None:
         ],
     )
 
-    assert len(pipeline.transformations) == 2
-    assert len(pipeline.configured_transformations) == 2
+    assert len(pipeline.transformations) == 3
+    assert len(pipeline.configured_transformations) == 3
     assert pipeline.name == "Test"
 
 
@@ -36,7 +36,6 @@ def test_run_local_pipeline() -> None:
         transformations=[
             SimpleNodeParser.from_defaults(),
             KeywordExtractor(llm=MockLLM()),
-            OpenAIEmbedding(api_key="fake"),
         ],
     )
 
