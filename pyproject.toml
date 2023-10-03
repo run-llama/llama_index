@@ -1,7 +1,8 @@
 [tool.mypy]
-ignore_missing_imports = "True"
-disallow_untyped_defs = "True"
-exclude = ["notebooks", "build", "examples"]
+disallow_untyped_defs = true
+# Remove venv skip when integrated with pre-commit
+exclude = ["build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
 
 [tool.ruff]
 exclude = [
