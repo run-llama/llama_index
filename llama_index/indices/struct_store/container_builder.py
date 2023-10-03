@@ -7,7 +7,7 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.query.schema import QueryType
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.readers.base import Document
 from llama_index.schema import BaseNode
 

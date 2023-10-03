@@ -21,7 +21,7 @@ from llama_index.indices.struct_store.sql import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.schema import Document
 from llama_index.schema import BaseNode, NodeRelationship, TextNode, RelatedNodeInfo
 from tests.mock_utils.mock_prompts import MOCK_TABLE_CONTEXT_PROMPT
