@@ -158,7 +158,7 @@ class EpsillaVectorStore(VectorStore):
         Returns:
             List[str]: List of ids inserted.
         """
-        # If the collection doesnt exist yet, create the collection
+        # If the collection doesn't exist yet, create the collection
         if not self._collection_created and len(nodes) > 0:
             dimension = len(nodes[0].get_embedding())
             self._create_collection(dimension)

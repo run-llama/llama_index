@@ -521,7 +521,7 @@ class EntityExtractor(MetadataFeatureExtractor):
     prediction_threshold: float = Field(
         default=0.5, description="The confidence threshold for accepting predictions."
     )
-    span_joiner: str = Field(description="The seperator beween entity names.")
+    span_joiner: str = Field(description="The separator between entity names.")
     label_entities: bool = Field(
         default=False, description="Include entity class labels or not."
     )

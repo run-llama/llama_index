@@ -59,7 +59,7 @@ class KGTableRetriever(BaseRetriever):
         num_chunks_per_query (int): Maximum number of text chunks to query.
         include_text (bool): Use the document text source from each relevant triplet
             during queries.
-        retriever_mode (KGRetrieverMode): Specifies whether to use keyowrds,
+        retriever_mode (KGRetrieverMode): Specifies whether to use keywords,
             embeddings, or both to find relevant triplets. Should be one of "keyword",
             "embedding", or "hybrid".
         similarity_top_k (int): The number of top embeddings to use
@@ -144,7 +144,7 @@ class KGTableRetriever(BaseRetriever):
         node_visited = set()
         keywords = self._get_keywords(query_bundle.query_str)
         if self._verbose:
-            print_text(f"Extraced keywords: {keywords}\n", color="green")
+            print_text(f"Extracted keywords: {keywords}\n", color="green")
         rel_texts = []
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
@@ -241,7 +241,7 @@ class KGTableRetriever(BaseRetriever):
                         rel_texts[j] = ""
             rel_texts = [rel_text for rel_text in rel_texts if rel_text != ""]
 
-            # tuncate rel_texts
+            # truncate rel_texts
             rel_texts = rel_texts[: self.max_knowledge_sequence]
 
         sorted_chunk_indices = sorted(
@@ -709,7 +709,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             return []
         # Get entities
         entities = self._get_entities(query_bundle.query_str)
-        # Before we enable embedding/symantic search, we need to make sure
+        # Before we enable embedding/semantic search, we need to make sure
         # we don't miss any entities that's synoynm of the entities we extracted
         # in string matching based retrieval in following steps, thus we expand
         # synonyms here.
@@ -730,7 +730,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             return []
         # Get entities
         entities = await self._aget_entities(query_bundle.query_str)
-        # Before we enable embedding/symantic search, we need to make sure
+        # Before we enable embedding/semantic search, we need to make sure
         # we don't miss any entities that's synoynm of the entities we extracted
         # in string matching based retrieval in following steps, thus we expand
         # synonyms here.

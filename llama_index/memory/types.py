@@ -19,7 +19,7 @@ class BaseMemory(BaseModel):
         chat_history: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
     ) -> "BaseMemory":
-        """Create a chat memory from defualts."""
+        """Create a chat memory from defaults."""
         pass
 
     @abstractmethod

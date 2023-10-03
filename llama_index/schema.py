@@ -20,7 +20,7 @@ WRAP_WIDTH = 70
 
 
 class BaseComponent(BaseModel):
-    """Base component object to caputure class names."""
+    """Base component object to capture class names."""
 
     @classmethod
     @abstractmethod
@@ -135,11 +135,11 @@ class BaseNode(BaseComponent):
     )
     excluded_embed_metadata_keys: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are exluded from text for the embed model.",
+        description="Metadata keys that are excluded from text for the embed model.",
     )
     excluded_llm_metadata_keys: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are exluded from text for the LLM.",
+        description="Metadata keys that are excluded from text for the LLM.",
     )
     relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
         default_factory=dict,
@@ -294,7 +294,7 @@ class TextNode(BaseNode):
     )
     metadata_seperator: str = Field(
         default="\n",
-        description="Seperator between metadata fields when converting to string.",
+        description="Separator between metadata fields when converting to string.",
     )
 
     @classmethod

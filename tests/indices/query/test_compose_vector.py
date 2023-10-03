@@ -165,7 +165,7 @@ def test_recursive_query_vector_table_query_configs(
     """
     vector_kwargs = index_kwargs["vector"]
     table_kwargs = index_kwargs["table"]
-    # try building a tre for a group of 4, then a list
+    # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
     vector1 = VectorStoreIndex.from_documents(

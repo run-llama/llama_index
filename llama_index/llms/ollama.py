@@ -31,7 +31,7 @@ class Ollama(CustomLLM):
     )
     prompt_key: str = Field(description="The key to use for the prompt in API calls.")
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the Ollama API."
+        default_factory=dict, description="Additional kwargs for the Ollama API."
     )
 
     _messages_to_prompt: Callable = PrivateAttr()
