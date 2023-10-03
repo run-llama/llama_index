@@ -6,6 +6,9 @@
 - Added support for pydantic object outputs with query engines (#7893)
 - `ClarifaiEmbedding` class added for embedding support (#7940)
 
+### Bug Fixes / Nits
+- Fix `LocalAI` chat capability without `max_tokens` (#7942)
+
 ## [0.8.38] - 2023-10-02
 
 ### New Features
