@@ -1,6 +1,7 @@
-from typing import List, Any
-from llama_index.embeddings.base import BaseEmbedding
+from typing import Any, List
+
 from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.embeddings.base import BaseEmbedding
 
 
 class ElasticsearchEmbeddings(BaseEmbedding):
@@ -84,7 +85,6 @@ class ElasticsearchEmbeddings(BaseEmbedding):
                     input_field=input_field,
                 )
         """
-
         try:
             from elasticsearch.client import MlClient
         except ImportError:
@@ -134,7 +134,6 @@ class ElasticsearchEmbeddings(BaseEmbedding):
                     es_password="baz",
                 )
         """
-
         try:
             from elasticsearch import Elasticsearch
             from elasticsearch.client import MlClient
@@ -162,14 +161,12 @@ class ElasticsearchEmbeddings(BaseEmbedding):
         Returns:
             List[float]: The embedding for the input query text.
         """
-
         response = self._client.infer_trained_model(
             model_id=self.model_id,
             docs=[{self.input_field: text}],
         )
 
-        embedding = response["inference_results"][0]["predicted_value"]
-        return embedding
+        return response["inference_results"][0]["predicted_value"]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         return self._get_embedding(text)

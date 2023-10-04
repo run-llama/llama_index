@@ -1,10 +1,10 @@
 import asyncio
-from typing import Any, Dict, List, Optional, Tuple, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.response.schema import Response, RESPONSE_TYPE
 from llama_index.evaluation.eval_utils import asyncio_module
+from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.response.schema import RESPONSE_TYPE, Response
 
 
 async def eval_response_worker(
@@ -85,7 +85,7 @@ class BatchEvalRunner:
         """Format results."""
         # Format results
         results_dict: Dict[str, List[EvaluationResult]] = {
-            name: [] for name in self.evaluators.keys()
+            name: [] for name in self.evaluators
         }
         for name, result in results:
             results_dict[name].append(result)
@@ -159,7 +159,7 @@ class BatchEvalRunner:
         queries, response_strs, contexts_list = self._validate_and_clean_inputs(
             queries, response_strs, contexts_list
         )
-        for k in eval_kwargs_lists.keys():
+        for k in eval_kwargs_lists:
             v = eval_kwargs_lists[k]
             if not isinstance(v, list):
                 raise ValueError(
@@ -209,7 +209,7 @@ class BatchEvalRunner:
 
         """
         queries, responses = self._validate_and_clean_inputs(queries, responses)
-        for k in eval_kwargs_lists.keys():
+        for k in eval_kwargs_lists:
             v = eval_kwargs_lists[k]
             if not isinstance(v, list):
                 raise ValueError(

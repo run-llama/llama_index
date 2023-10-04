@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-
 from llama_index.llms import LocalAI
 from llama_index.llms.base import ChatMessage
 

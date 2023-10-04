@@ -7,7 +7,7 @@ For LlamaIndex, it's the core foundation for retrieval-augmented generation (RAG
 
 At a high-level, `Indices` are built from [Documents](/core_modules/data_modules/documents_and_nodes/root.md).
 They are used to build [Query Engines](/core_modules/query_modules/query_engine/root.md) and [Chat Engines](/core_modules/query_modules/chat_engines/root.md)
-which enables question & answer and chat over your data.  
+which enables question & answer and chat over your data.
 
 Under the hood, `Indices` store data in `Node` objects (which represent chunks of the original documents), and expose a [Retriever](/core_modules/query_modules/retriever/root.md) interface that supports additional configuration and automation.
 

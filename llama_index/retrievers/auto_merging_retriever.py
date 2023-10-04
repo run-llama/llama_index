@@ -1,16 +1,15 @@
 # Auto Merging Retriever
 
-from llama_index.indices.base_retriever import BaseRetriever
-from typing import Tuple, cast
-
-from llama_index.schema import NodeWithScore, BaseNode
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
-from typing import List, Dict
-from collections import defaultdict
-from llama_index.storage.storage_context import StorageContext
-from llama_index.indices.utils import truncate_text
 import logging
+from collections import defaultdict
+from typing import Dict, List, Tuple, cast
+
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.utils import truncate_text
+from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
+from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.storage.storage_context import StorageContext
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 class AutoMergingRetriever(BaseRetriever):
     """This retriever will try to merge context into parent context.
 
-    The retreiver first retrieves chunks from a vector store.
+    The retriever first retrieves chunks from a vector store.
     Then, it will try to merge the chunks into a single context.
 
     """

@@ -63,4 +63,3 @@ GoogleUnivSentEncoderEmbedding
 .. .. automodule:: llama_index.embeddings.langchain
 ..    :members:
 ..    :inherited-members:
-

@@ -168,7 +168,6 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self, *args: Any, **kwargs: Any
     ) -> Generator[BaseModel, None, None]:
         """Streams a list of objects."""
-
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         # openai_fn_spec = to_openai_function(self._output_cls)

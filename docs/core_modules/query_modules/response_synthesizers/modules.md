@@ -1,6 +1,6 @@
 # Module Guide
 
-Detailed inputs/outputs for each response synthesizer are found below. 
+Detailed inputs/outputs for each response synthesizer are found below.
 
 ## API Example
 
@@ -30,16 +30,16 @@ response_synthesizer = get_response_synthesizer(
 
 # synchronous
 response = response_synthesizer.synthesize(
-  "query string", 
+  "query string",
   nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
-  additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..], 
+  additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
 )
 
 # asynchronous
 response = await response_synthesizer.asynthesize(
-  "query string", 
+  "query string",
   nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
-  additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..], 
+  additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
 )
 ```
 
@@ -47,7 +47,7 @@ You can also directly return a string, using the lower-level `get_response` and 
 
 ```python
 response_str = response_synthesizer.get_response(
-  "query string", 
+  "query string",
   text_chunks=["text1", "text2", ...]
 )
 ```

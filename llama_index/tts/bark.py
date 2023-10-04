@@ -1,11 +1,12 @@
 """Bark TTS module."""
 
-from typing import Optional, Any
-import tempfile
 import os
-import numpy as np
-from llama_index.tts.base import BaseTTS
+import tempfile
+from typing import Any, Optional
 
+import numpy as np
+
+from llama_index.tts.base import BaseTTS
 
 # text to be chunked into chunks of 10 words
 # to avoid hallicunation for bark
@@ -21,7 +22,7 @@ class BarkTTS(BaseTTS):
         waveform_temp: generation temperature (1.0 more diverse, \
             0.0 more conservative)
         lang_speaker_voice: language speaker voice for audio cloning.
-    
+
     """
 
     def __init__(
@@ -31,7 +32,6 @@ class BarkTTS(BaseTTS):
         lang_speaker_voice: Optional[str] = None,
     ) -> None:
         """Init params."""
-
         super().__init__()
 
         self.text_temp = text_temp
@@ -48,7 +48,6 @@ class BarkTTS(BaseTTS):
         Args:
             text: text to be turned into audio.
         """
-
         import_err_msg = "`bark` package not found, \
             please run `pip install git+https://github.com/suno-ai/bark.git`"
         try:
@@ -82,6 +81,4 @@ class BarkTTS(BaseTTS):
                 )
                 audio_chunks.append(audio_array)
 
-        audio_array = np.concatenate(audio_chunks)
-
-        return audio_array
+        return np.concatenate(audio_chunks)

@@ -2,15 +2,14 @@
 
 from typing import List, Sequence
 from unittest.mock import Mock
-from pydantic import BaseModel
 
 import pytest
-
 from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.response_synthesizers import TreeSummarize
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
+from llama_index.response_synthesizers import TreeSummarize
+from pydantic import BaseModel
 
 
 @pytest.fixture()
@@ -114,7 +113,7 @@ def test_tree_summarize_use_async(
     assert str(response) == "Text chunk 1\nText chunk 2\nText chunk 3\nText chunk 4"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_tree_summarize_async(
     mock_service_context_merge_chunks: ServiceContext,
 ) -> None:

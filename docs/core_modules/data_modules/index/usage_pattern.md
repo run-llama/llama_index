@@ -48,7 +48,7 @@ index = VectorStoreIndex.from_documents(
 
 You can use the low-level composition API if you need more granular control.
 
-Here we show an example where you want to both modify the text chunk size, disable injecting metadata, and disable creating `Node` relationships.  
+Here we show an example where you want to both modify the text chunk size, disable injecting metadata, and disable creating `Node` relationships.
 The steps are:
 
 1. Configure a node parser

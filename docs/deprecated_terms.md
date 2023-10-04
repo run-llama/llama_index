@@ -6,7 +6,7 @@ The following is a list of previously popular terms that have been deprecated, w
 
 ## GPTSimpleVectorIndex
 
-This has been renamed to `VectorStoreIndex`, as well as unifying all vector indexes to a single unified interface. You can integrate with various vector databases by modifying the underlying `vector_store`. 
+This has been renamed to `VectorStoreIndex`, as well as unifying all vector indexes to a single unified interface. You can integrate with various vector databases by modifying the underlying `vector_store`.
 
 Please see the following links for more details on usage.
 

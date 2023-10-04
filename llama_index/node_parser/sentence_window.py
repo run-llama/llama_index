@@ -2,7 +2,6 @@
 from typing import Callable, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor

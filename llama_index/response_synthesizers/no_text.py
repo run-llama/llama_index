@@ -1,4 +1,5 @@
 from typing import Any, Sequence
+
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 

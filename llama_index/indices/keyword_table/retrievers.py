@@ -89,7 +89,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
             for node_id in self._index_struct.table[k]:
                 chunk_indices_count[node_id] += 1
         sorted_chunk_indices = sorted(
-            list(chunk_indices_count.keys()),
+            chunk_indices_count.keys(),
             key=lambda x: chunk_indices_count[x],
             reverse=True,
         )
@@ -102,9 +102,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
                     f"> Querying with idx: {chunk_idx}: "
                     f"{truncate_text(node.get_content(), 50)}"
                 )
-        sorted_nodes_with_scores = [NodeWithScore(node=node) for node in sorted_nodes]
-
-        return sorted_nodes_with_scores
+        return [NodeWithScore(node=node) for node in sorted_nodes]
 
 
 class KeywordTableGPTRetriever(BaseKeywordTableRetriever):

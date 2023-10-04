@@ -2,9 +2,8 @@ import asyncio
 import logging
 from typing import List, Optional, Sequence, cast
 
-from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.async_utils import run_async_tasks
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.base import BaseQueryEngine
