@@ -4,7 +4,6 @@ from langchain.agents import AgentExecutor, AgentType, initialize_agent
 # agents and tools
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.base_language import BaseLanguageModel
-from langchain.cache import BaseCache, GPTCache
 
 # callback
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
@@ -100,8 +99,6 @@ __all__ = [
     "BaseMessage",
     "LLMResult",
     "ChatGeneration",
-    "GPTCache",
-    "BaseCache",
     "Document",
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
