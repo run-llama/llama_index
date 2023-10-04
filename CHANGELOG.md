@@ -1,6 +1,14 @@
 # ChangeLog
 
+## Unreleased
+
+
 ## [0.8.39] - 2023-10-03
+
+### Breaking Changes
+- Update document summary index (#7815)
+  - change default retrieval mode to embedding
+  - embed summaries into vector store by default at indexing time (instead of calculating embedding on the fly)
 
 ### New Features
 - Added support for pydantic object outputs with query engines (#7893)
