@@ -30,7 +30,7 @@ class Replicate(CustomLLM):
     )
     prompt_key: str = Field(description="The key to use for the prompt in API calls.")
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the Replicate API."
+        default_factory=dict, description="Additional kwargs for the Replicate API."
     )
 
     _messages_to_prompt: Callable = PrivateAttr()

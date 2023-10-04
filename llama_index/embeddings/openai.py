@@ -355,7 +355,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """Get text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
-        Can be overriden for batch queries.
+        Can be overridden for batch queries.
 
         """
         return get_embeddings(

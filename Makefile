@@ -5,9 +5,10 @@ help: ## Show all Makefile targets
 .PHONY: format lint
 format: ## Run code formatter: black
 	black .
-lint: ## Run linters: mypy, black, ruff
+lint: ## Run linters: mypy, black, codespell, ruff
 	mypy .
 	black . --check
+	codespell .
 	ruff check .
 test: ## Run tests
 	pytest tests

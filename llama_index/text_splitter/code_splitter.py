@@ -20,7 +20,7 @@ class CodeSplitter(TextSplitter):
     """
 
     language: str = Field(
-        description="The programming languge of the code being split."
+        description="The programming language of the code being split."
     )
     chunk_lines: int = Field(
         default=DEFAULT_CHUNK_LINES,

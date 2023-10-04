@@ -68,7 +68,7 @@ class TimescaleVectorStore(VectorStore):
     def _create_clients(self) -> None:
         from timescale_vector import client
 
-        # in the normal case doen't restrict the id type to even uuid.
+        # in the normal case doesn't restrict the id type to even uuid.
         # Allow arbitrary text
         id_type = "TEXT"
         if self.time_partition_interval is not None:

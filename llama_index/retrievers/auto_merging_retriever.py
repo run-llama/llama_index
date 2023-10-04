@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class AutoMergingRetriever(BaseRetriever):
     """This retriever will try to merge context into parent context.
 
-    The retreiver first retrieves chunks from a vector store.
+    The retriever first retrieves chunks from a vector store.
     Then, it will try to merge the chunks into a single context.
 
     """

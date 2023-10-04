@@ -40,7 +40,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     """Base Keyword Table Index.
 
     This index extracts keywords from the text, and maps each
-    keyword to the node(s) that it corresponds to. In this sense it mimicks a
+    keyword to the node(s) that it corresponds to. In this sense it mimics a
     "hash table". During index construction, the keyword table is constructed
     by extracting keywords from each node and creating an internal mapping.
 

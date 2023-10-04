@@ -43,7 +43,7 @@ class MilvusVectorStore(VectorStore):
     In this vector store we store the text, its embedding and
     a its metadata in a Milvus collection. This implementation
     allows the use of an already existing collection.
-    It also supports creating a new one if the collection doesnt
+    It also supports creating a new one if the collection doesn't
     exist or if `overwrite` is set to True.
 
     Args:
@@ -54,7 +54,7 @@ class MilvusVectorStore(VectorStore):
         collection_name (str, optional): The name of the collection where data will be
             stored. Defaults to "llamalection".
         dim (int, optional): The dimension of the embedding vectors for the collection.
-            Required if creating a new colletion.
+            Required if creating a new collection.
         embedding_field (str, optional): The name of the embedding field for the
             collection, defaults to DEFAULT_EMBEDDING_KEY.
         doc_id_field (str, optional): The name of the doc_id field for the collection,
@@ -252,7 +252,7 @@ class MilvusVectorStore(VectorStore):
         if len(expr) != 0:
             string_expr = " and ".join(expr)
 
-        # Perfom the search
+        # Perform the search
         res = self.milvusclient.search(
             collection_name=self.collection_name,
             data=[query.query_embedding],
