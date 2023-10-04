@@ -206,11 +206,7 @@ class EvaporateExtractor:
         fn_str = "\n".join(fn_str.split("\n")[: return_idx + 1])
         fn_str = "\n".join([s for s in fn_str.split("\n") if "print(" not in s])
         return "\n".join(
-            [
-                s
-                for s in fn_str.split("\n")
-                if s.startswith(" ") or s.startswith("\t") or s.startswith("def")
-            ]
+            [s for s in fn_str.split("\n") if s.startswith((" ", "\t", "def"))]
         )
 
     def run_fn_on_nodes(

@@ -16,7 +16,7 @@ types-requests==2.28.11.8
 types-setuptools==67.1.0.0
 
 # linting
-black[jupyter]==23.7.0
+black[jupyter]==23.9.1
 codespell[toml]>=v2.2.6
 mypy==0.991
 pre-commit==3.2.0

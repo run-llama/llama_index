@@ -1,5 +1,5 @@
 """
-    Portkey integration with Llama_index for enhanced monitoring
+Portkey integration with Llama_index for enhanced monitoring
 """
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
 
@@ -124,6 +124,7 @@ class Portkey(CustomLLM):
                     LLMOptions in portkey-ai
 
             NOTE: User may choose to pass additional params as well.
+
         Returns:
             self
         """

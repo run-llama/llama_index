@@ -105,3 +105,4 @@ class JSONReader(BaseReader):
                     )
                 ]
                 return [Document(text="\n".join(lines))]
+            return None

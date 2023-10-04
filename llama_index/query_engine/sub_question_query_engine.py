@@ -226,7 +226,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             return qa_pair
         except ValueError:
-            logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
+            logger.warning(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
 
     def _query_subq(
@@ -257,5 +257,5 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             return qa_pair
         except ValueError:
-            logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
+            logger.warning(f"[{sub_q.tool_name}] Failed to run {question}")
             return None

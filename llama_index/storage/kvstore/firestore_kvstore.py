@@ -61,6 +61,7 @@ class FirestoreKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
         """Put a key-value pair into the Firestore collection.
+
         Args:
             key (str): key
             val (dict): value
@@ -73,6 +74,7 @@ class FirestoreKVStore(BaseKVStore):
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a key-value pair from the Firestore.
+
         Args:
             key (str): key
             collection (str): collection name
@@ -86,6 +88,7 @@ class FirestoreKVStore(BaseKVStore):
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the Firestore collection.
+
         Args:
             collection (str): collection name
         """
@@ -100,6 +103,7 @@ class FirestoreKVStore(BaseKVStore):
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the Firestore.
+
         Args:
             key (str): key
             collection (str): collection name
