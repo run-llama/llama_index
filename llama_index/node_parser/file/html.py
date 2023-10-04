@@ -5,9 +5,9 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.interface import NodeParser
-from llama_index.schema import BaseNode, TextNode, MetadataMode
-from llama_index.utils import get_tqdm_iterable
 from llama_index.node_parser.node_utils import build_nodes_from_splits
+from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.utils import get_tqdm_iterable
 
 DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "b", "i", "u", "section"]
 
@@ -89,7 +89,6 @@ class HTMLNodeParser(NodeParser):
 
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
         """Get nodes from document"""
-
         try:
             from bs4 import BeautifulSoup
         except ImportError:

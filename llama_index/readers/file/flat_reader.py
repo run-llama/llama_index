@@ -24,7 +24,7 @@ class FlatReader(BaseReader):
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Parse file into string."""
-        with open(file, "r", encoding="utf-8") as f:
+        with open(file, encoding="utf-8") as f:
             content = f.read()
         metadata = {"filename": file.name, "extension": file.suffix}
         if extra_info:

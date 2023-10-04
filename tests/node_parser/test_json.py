@@ -16,8 +16,8 @@ def test_split_valid_json() -> None:
     )
     result = json_splitter.get_nodes_from_documents([input_text])
     assert len(result) == 2
-    assert "name John\nage 30" == result[0].text
-    assert "name Alice\nage 25" == result[1].text
+    assert result[0].text == "name John\nage 30"
+    assert result[1].text == "name Alice\nage 25"
 
 
 def test_split_valid_json_defaults() -> None:
@@ -25,7 +25,7 @@ def test_split_valid_json_defaults() -> None:
     input_text = Document(text='[{"name": "John", "age": 30}]')
     result = json_splitter.get_nodes_from_documents([input_text])
     assert len(result) == 1
-    assert "name John\nage 30" == result[0].text
+    assert result[0].text == "name John\nage 30"
 
 
 def test_split_valid_dict_json() -> None:
@@ -33,7 +33,7 @@ def test_split_valid_dict_json() -> None:
     input_text = Document(text='{"name": "John", "age": 30}')
     result = json_splitter.get_nodes_from_documents([input_text])
     assert len(result) == 1
-    assert "name John\nage 30" == result[0].text
+    assert result[0].text == "name John\nage 30"
 
 
 def test_split_invalid_json() -> None:
