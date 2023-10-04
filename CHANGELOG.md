@@ -21,6 +21,7 @@
 - Vectara - minor update (#7954)
 - Avoiding `pydantic` reinstalls in CI (#7956)
 - move tree_sitter_languages into data_requirements.txt (#7955)
+- Add `cache_okay` param to `PGVectorStore` to help suppress TSVector warnings (#7950)
 
 ## [0.8.38] - 2023-10-02
 
