@@ -15,7 +15,7 @@ The Tool will 1) load data using the data loader, 2) index the data, and 3) quer
 
 
 ### Use a query engine as a Langchain Tool
-LlamaIndex provides Tool abstractions so that you can use a LlamaIndex query engine along with a Langchain agent. 
+LlamaIndex provides Tool abstractions so that you can use a LlamaIndex query engine along with a Langchain agent.
 
 For instance, you can choose to create a "Tool" from an `QueryEngine` directly as follows:
 
@@ -23,7 +23,7 @@ For instance, you can choose to create a "Tool" from an `QueryEngine` directly a
 from llama_index.langchain_helpers.agents import IndexToolConfig, LlamaIndexTool
 
 tool_config = IndexToolConfig(
-    query_engine=query_engine, 
+    query_engine=query_engine,
     name=f"Vector Index",
     description=f"useful for when you want to answer queries about X",
     tool_kwargs={"return_direct": True}
@@ -32,33 +32,6 @@ tool_config = IndexToolConfig(
 tool = LlamaIndexTool.from_tool_config(tool_config)
 
 ```
-
-You can also choose to provide a `LlamaToolkit`:
-
-```python
-toolkit = LlamaToolkit(
-    index_configs=index_configs,
-)
-```
-
-Such a toolkit can be used to create a downstream Langchain-based chat agent through
-our `create_llama_agent` and `create_llama_chat_agent` commands:
-
-```python
-from llama_index.langchain_helpers.agents import create_llama_chat_agent
-
-agent_chain = create_llama_chat_agent(
-    toolkit,
-    llm,
-    memory=memory,
-    verbose=True
-)
-
-agent_chain.run(input="Query about X")
-```
-
-You can take a look at [the full tutorial notebook here](https://github.com/jerryjliu/llama_index/blob/main/examples/chatbot/Chatbot_SEC.ipynb).
-
 
 ### Llama Demo Notebook: Tool + Memory module
 

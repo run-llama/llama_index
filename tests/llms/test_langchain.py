@@ -1,18 +1,17 @@
-import pytest
 from typing import List
 
+import pytest
 from llama_index.bridge.langchain import (
-    FakeListLLM,
-    SystemMessage,
-    HumanMessage,
     AIMessage,
-    FunctionMessage,
     BaseMessage,
-    Cohere,
     ChatOpenAI,
+    Cohere,
+    FakeListLLM,
+    FunctionMessage,
+    HumanMessage,
     OpenAI,
+    SystemMessage,
 )
-
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.langchain_utils import from_lc_messages, to_lc_messages
@@ -62,7 +61,7 @@ def test_from_lc_messages() -> None:
 
 
 try:
-    import cohere  # noqa: F401
+    import cohere
 except ImportError:
     cohere = None  # type: ignore
 

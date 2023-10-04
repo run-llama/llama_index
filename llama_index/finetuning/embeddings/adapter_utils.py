@@ -1,15 +1,17 @@
 """Adapter utils."""
 
-import torch
-from torch import nn, Tensor
-from typing import Optional, Dict, Type, Callable, Any, List
-from torch.optim import Optimizer
-import transformers
-from tqdm.autonotebook import trange
-from llama_index.embeddings.adapter_utils import LinearLayer
-from llama_index.bridge.langchain import print_text
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Type
 
+import torch
+import transformers
 from sentence_transformers.util import cos_sim
+from torch import Tensor, nn
+from torch.optim import Optimizer
+from tqdm.autonotebook import trange
+
+from llama_index.embeddings.adapter_utils import BaseAdapter
+from llama_index.utils import print_text
 
 
 class MyMultipleNegativesRankingLoss(nn.Module):
@@ -22,13 +24,12 @@ class MyMultipleNegativesRankingLoss(nn.Module):
 
     def __init__(
         self,
-        model: LinearLayer,
+        model: BaseAdapter,
         scale: float = 20.0,
         similarity_fct: Optional[Callable] = None,
     ):
         """Define ranking loss."""
-
-        super(MyMultipleNegativesRankingLoss, self).__init__()
+        super().__init__()
         self.model = model
         self.scale = scale
         self.similarity_fct = cos_sim if similarity_fct is None else similarity_fct
@@ -36,7 +37,6 @@ class MyMultipleNegativesRankingLoss(nn.Module):
 
     def forward(self, query_embeds: Tensor, context_embeds: Tensor) -> Tensor:
         """Forward pass."""
-
         # transform context embeds
         # context_embeds_2 = self.model.forward(context_embeds)
         query_embeds_2 = self.model.forward(query_embeds)
@@ -49,7 +49,7 @@ class MyMultipleNegativesRankingLoss(nn.Module):
 
 
 def train_model(
-    model: LinearLayer,
+    model: BaseAdapter,
     data_loader: torch.utils.data.DataLoader,
     device: torch.device,
     epochs: int = 1,
@@ -60,19 +60,18 @@ def train_model(
     output_path: str = "model_output",
     max_grad_norm: float = 1,
     show_progress_bar: bool = True,
-    verbose: bool = False
+    verbose: bool = False,
     # callback: Callable[[float, int, int], None] = None,
     # scheduler: str = "WarmupLinear",
     # weight_decay: float = 0.01,
     # evaluation_steps: int = 0,
     # save_best_model: bool = True,
     # use_amp: bool = False,  # disable this option for now
-    # checkpoint_path: str = None,
-    # checkpoint_save_steps: int = 500,
+    checkpoint_path: Optional[str] = None,
+    checkpoint_save_steps: int = 500,
     # checkpoint_save_total_limit: int = 0,
 ) -> None:
     """Train model."""
-
     model.to(device)
     # TODO: hardcode loss now, make customizable later
     loss_model = MyMultipleNegativesRankingLoss(model=model)
@@ -98,6 +97,10 @@ def train_model(
 
     global_step = 0
     data_iterator = iter(data_loader)
+
+    # if checkpoint_path is specified, create if doesn't exist
+    if checkpoint_path is not None:
+        Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
 
     for epoch in trange(epochs, desc="Epoch", disable=not show_progress_bar):
         training_steps = 0
@@ -136,8 +139,9 @@ def train_model(
             global_step += 1
 
             # TODO: skip eval for now
-
-            # TODO: skip saving checkpoint
+            if checkpoint_path is not None and global_step % checkpoint_save_steps == 0:
+                full_ck_path = Path(checkpoint_path) / f"step_{global_step}"
+                model.save(str(full_ck_path))
 
     if verbose:
         print_text(f"> Finished training, saving to {output_path}\n", color="blue")

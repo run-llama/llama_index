@@ -2,9 +2,8 @@
 
 from typing import List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr
-
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
@@ -18,6 +17,7 @@ class LangchainEmbedding(BaseEmbedding):
     """
 
     _langchain_embedding: LCEmbeddings = PrivateAttr()
+    _async_not_implemented_warned: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -45,19 +45,33 @@ class LangchainEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "LangchainEmbedding"
+
+    def _async_not_implemented_warn_once(self) -> None:
+        if not self._async_not_implemented_warned:
+            print("Async embedding not available, falling back to sync method.")
+            self._async_not_implemented_warned = True
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return self._langchain_embedding.embed_query(query)
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        return await self._langchain_embedding.aembed_query(query)
+        try:
+            return await self._langchain_embedding.aembed_query(query)
+        except NotImplementedError:
+            # Warn the user that sync is being used
+            self._async_not_implemented_warn_once()
+            return self._get_query_embedding(query)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        embeds = await self._langchain_embedding.aembed_documents([text])
-        return embeds[0]
+        try:
+            embeds = await self._langchain_embedding.aembed_documents([text])
+            return embeds[0]
+        except NotImplementedError:
+            # Warn the user that sync is being used
+            self._async_not_implemented_warn_once()
+            return self._get_text_embedding(text)
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""

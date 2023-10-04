@@ -1,6 +1,7 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import fsspec
 
@@ -21,10 +22,10 @@ from llama_index.storage.index_store.types import (
     DEFAULT_PERSIST_FNAME as INDEX_STORE_FNAME,
 )
 from llama_index.storage.index_store.types import BaseIndexStore
+from llama_index.utils import concat_dirs
 from llama_index.vector_stores.simple import DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
-from llama_index.utils import concat_dirs
 
 DEFAULT_PERSIST_DIR = "./storage"
 
@@ -89,7 +90,7 @@ class StorageContext:
 
     def persist(
         self,
-        persist_dir: str = DEFAULT_PERSIST_DIR,
+        persist_dir: Union[str, os.PathLike] = DEFAULT_PERSIST_DIR,
         docstore_fname: str = DOCSTORE_FNAME,
         index_store_fname: str = INDEX_STORE_FNAME,
         vector_store_fname: str = VECTOR_STORE_FNAME,
@@ -100,18 +101,19 @@ class StorageContext:
 
         Args:
             persist_dir (str): directory to persist the storage context
-
         """
         if fs is not None:
+            persist_dir = str(persist_dir)  # NOTE: doesn't support Windows here
             docstore_path = concat_dirs(persist_dir, docstore_fname)
             index_store_path = concat_dirs(persist_dir, index_store_fname)
             vector_store_path = concat_dirs(persist_dir, vector_store_fname)
             graph_store_path = concat_dirs(persist_dir, graph_store_fname)
         else:
-            docstore_path = str(Path(persist_dir) / docstore_fname)
-            index_store_path = str(Path(persist_dir) / index_store_fname)
-            vector_store_path = str(Path(persist_dir) / vector_store_fname)
-            graph_store_path = str(Path(persist_dir) / graph_store_fname)
+            persist_dir = Path(persist_dir)
+            docstore_path = str(persist_dir / docstore_fname)
+            index_store_path = str(persist_dir / index_store_fname)
+            vector_store_path = str(persist_dir / vector_store_fname)
+            graph_store_path = str(persist_dir / graph_store_fname)
 
         self.docstore.persist(persist_path=docstore_path, fs=fs)
         self.index_store.persist(persist_path=index_store_path, fs=fs)

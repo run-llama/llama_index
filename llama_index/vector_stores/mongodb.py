@@ -18,9 +18,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
         try:
-            import pymongo  # noqa: F401
+            import pymongo
         except ImportError:
             raise ImportError(import_err_msg)
 

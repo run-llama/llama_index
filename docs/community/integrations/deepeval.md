@@ -34,7 +34,7 @@ After running this, you will get a beautiful dashboard like so:
 
 ## Types of Tests
 
-DeepEval presents an opinionated framework for the types of tests that are being run. It breaks down LLM outputs into: 
+DeepEval presents an opinionated framework for the types of tests that are being run. It breaks down LLM outputs into:
 - Answer Relevancy - [Read more here](https://docs.confident-ai.com/docs/measuring_llm_performance/answer_relevancy)
 - Factual Consistency (to measure the extent of hallucinations) - [Read more here](https://docs.confident-ai.com/docs/measuring_llm_performance/factual_consistency)
 - Conceptual Similarity (to know if answers are in line with expectations) - [Read more here](https://docs.confident-ai.com/docs/measuring_llm_performance/conceptual_similarity)
@@ -45,7 +45,7 @@ You can more about the [DeepEval Framework](https://docs.confident-ai.com/docs/f
 
 ## Use With Your LlamaIndex
 
-DeepEval integrates nicely with LlamaIndex's `ResponseEvaluator` class. Below is an example of the factual consistency documentation.
+DeepEval integrates nicely with LlamaIndex's `BaseEvaluator` class. Below is an example of the factual consistency documentation.
 
 ```python
 
@@ -63,7 +63,7 @@ from llama_index import (
     Response,
 )
 from llama_index.llms import OpenAI
-from llama_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import FaithfulnessEvaluator
 
 import os
 import openai
@@ -73,11 +73,9 @@ openai.api_key = api_key
 
 gpt4 = OpenAI(temperature=0, model="gpt-4", api_key=api_key)
 service_context_gpt4 = ServiceContext.from_defaults(llm=gpt4)
-evaluator_gpt4 = ResponseEvaluator(service_context=service_context_gpt4)
-
 ```
 
-#### Getting a lLamaHub Loader 
+#### Getting a lLamaHub Loader
 
 ```python
 from llama_index import download_loader
@@ -97,37 +95,33 @@ We then build an evaluator based on the `BaseEvaluator` class that requires an `
 In this example, we show you how to write a factual consistency check.
 
 ```python
-class FactualConsistencyResponseEvaluator:
-  def get_context(self, response: Response) -> List[Document]:
-    """Get context information from given Response object using source nodes.
+from typing import Any, Optional, Sequence
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 
-    Args:
-        response (Response): Response object from an index based on the query.
 
-    Returns:
-        List of Documents of source nodes information as context information.
-    """
-    context = []
+class FactualConsistencyEvaluator(BaseEvaluator):
+    def evaluate(
+        self,
+        query: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
+        response: Optional[str] = None,
+        **kwargs: Any,
+    ) -> EvaluationResult:
+        """Evaluate factual consistency metrics"""
+        if response is None or contexts is None:
+            raise ValueError('Please provide "response" and "contexts".')
+        metric = FactualConsistencyMetric()
+        context = " ".join([d for d in contexts])
+        score = metric.measure(output=response, context=context)
+        return EvaluationResult(
+            response=response,
+            contexts=contexts,
+            passing=metric.is_successful(),
+            score=score,
+        )
 
-    for context_info in response.source_nodes:
-        context.append(Document(text=context_info.node.get_content()))
 
-    return context
-
-  def evaluate(self, response: Response) -> str:
-    """Evaluate factual consistency metrics
-    """
-    answer = str(response)
-    context = self.get_context(response)
-    metric = FactualConsistencyMetric()
-    context = " ".join([d.text for d in context])
-    score = metric.measure(output=answer, context=context)
-    if metric.is_successful():
-        return "YES"
-    else:
-        return "NO"
-
-evaluator = FactualConsistencyResponseEvaluator()
+evaluator = FactualConsistencyEvaluator()
 ```
 
 You can then evaluate as such:
@@ -135,12 +129,12 @@ You can then evaluate as such:
 ```python
 query_engine = tree_index.as_query_engine()
 response = query_engine.query("How did Tokyo get its name?")
-eval_result = evaluator.evaluate(response)
+eval_result = evaluator.evaluate_response(response=response)
 ```
 
 ### Useful Links
 
 * [Read About The DeepEval Framework](https://docs.confident-ai.com/docs/framework)
 * [Answer Relevancy](https://docs.confident-ai.com/docs/measuring_llm_performance/answer_relevancy)
-* [Conceptual Similarity](https://docs.confident-ai.com/docs/measuring_llm_performance/conceptual_similarity) . 
+* [Conceptual Similarity](https://docs.confident-ai.com/docs/measuring_llm_performance/conceptual_similarity) .
 * [Bias](https://docs.confident-ai.com/docs/measuring_llm_performance/debias)

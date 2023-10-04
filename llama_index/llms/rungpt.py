@@ -1,25 +1,23 @@
-from typing import Any, Optional, Sequence, Dict, List, Tuple, Union
 import json
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from llama_index.bridge.pydantic import Field
-
-
+from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.base import (
     LLM,
-    LLMMetadata,
     ChatMessage,
     ChatResponse,
-    ChatResponseGen,
-    MessageRole,
-    CompletionResponse,
     ChatResponseAsyncGen,
-    CompletionResponseGen,
+    ChatResponseGen,
+    CompletionResponse,
     CompletionResponseAsyncGen,
-    llm_completion_callback,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
     llm_chat_callback,
+    llm_completion_callback,
 )
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.callbacks import CallbackManager
 
 
 class RunGptLLM(LLM):
@@ -33,7 +31,7 @@ class RunGptLLM(LLM):
         description="The maximum number of context tokens for the model."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the Replicate API."
+        default_factory=dict, description="Additional kwargs for the Replicate API."
     )
     base_url: str = Field(
         description="The address of your target model served by rungpt."
@@ -92,12 +90,11 @@ class RunGptLLM(LLM):
             stream=False,
         ).json()
 
-        response_gpt = CompletionResponse(
+        return CompletionResponse(
             text=response_gpt["choices"][0]["text"],
             additional_kwargs=response_gpt["usage"],
             raw=response_gpt,
         )
-        return response_gpt
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
@@ -155,8 +152,7 @@ class RunGptLLM(LLM):
             stream=False,
         ).json()
         chat_message, _ = self._message_unpacker(response_gpt)
-        response_gpt = ChatResponse(message=chat_message, raw=response_gpt)
-        return response_gpt
+        return ChatResponse(message=chat_message, raw=response_gpt)
 
     @llm_chat_callback()
     def stream_chat(
@@ -232,7 +228,7 @@ class RunGptLLM(LLM):
         return gen()
 
     def _message_wrapper(self, messages: Sequence[ChatMessage]) -> List[Dict[str, Any]]:
-        message_list = list()
+        message_list = []
         for message in messages:
             role = message.role.value
             content = message.content

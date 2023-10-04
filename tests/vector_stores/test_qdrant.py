@@ -10,13 +10,13 @@ except ImportError:
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import QdrantVectorStore
 from llama_index.vector_stores.types import (
-    VectorStoreQuery,
-    MetadataFilters,
     ExactMatchFilter,
+    MetadataFilters,
+    VectorStoreQuery,
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def node_embeddings() -> List[TextNode]:
     return [
         TextNode(

@@ -1,8 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
-
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -77,8 +75,8 @@ class MonsterLLM(CustomLLM):
 
     def initialize_client(self, monster_api_key: Optional[str]) -> Any:
         try:
-            from monsterapi.InputDataModels import MODEL_TYPES
             from monsterapi import client as MonsterClient
+            from monsterapi.InputDataModels import MODEL_TYPES
         except ImportError:
             raise ImportError(
                 "Could not import Monster API client library."
@@ -91,7 +89,6 @@ class MonsterLLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "MonsterLLM"
 
     @property
@@ -114,8 +111,7 @@ class MonsterLLM(CustomLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, formatted=True, **kwargs)
-        return completion_response
+        return self.complete(prompt, formatted=True, **kwargs)
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
@@ -137,4 +133,4 @@ class MonsterLLM(CustomLLM):
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        raise NotImplementedError()
+        raise NotImplementedError

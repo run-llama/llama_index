@@ -2,45 +2,45 @@
 # Evaluation
 
 ## Concept
-Evaluation in generative AI and retrieval is a difficult task. Due to the unpredictable nature of text, and a general lack of "expected" outcomes to compare against, there are many blockers to getting started with evaluation.
+Evaluation and benchmarking are crucial concepts in LLM development. To improve the performance of an LLM app (RAG, agents), you must have a way to measure it.
 
-However, LlamaIndex offers a few key modules for evaluating the quality of both Document retrieval and response synthesis.
-Here are some key questions for each component:
+LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality.
 
-- **Document retrieval**: Are the sources relevant to the query?
-- **Response synthesis**: Does the response match the retrieved context? Does it also match the query? 
+- **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelnes?
+- **Retrieval Evaluation**: Are the retrieved sources relevant to the query?
 
-This guide describes how the evaluation components within LlamaIndex work. Note that our current evaluation modules
+This section describes how the evaluation components within LlamaIndex work.
+
+### Response Evaluation
+
+Evaluation of generated results can be difficult, since unlike traditional machine learning the predicted result isn't a single number, and it can be hard to define quantitative metrics for this problem.
+
+LlamaIndex offers **LLM-based** evaluation modules to measure the quality of results. This uses a "gold" LLM (e.g. GPT-4) to decide whether the predicted answer is correct in a variety of ways.
+
+Note that many of these current evaluoation modules
 do *not* require ground-truth labels. Evaluation can be done with some combination of the query, context, response,
 and combine these with LLM calls.
 
-### Evaluation of the Response + Context
+These evaluation modules are in the following forms:
+- **Correctness**: Whether the generated answer matches that of the reference answer given the query (requires labels).
+- **Semantic Similarity** Whether the predicted answer is semantically similar to the reference answer (requires labels).
+- **Faithfulness**: Evaluates if the answer is faithful to the retrieved contexts (in other words, whether if there's hallucination).
+- **Context Relevancy**: Whether retrieved context and answer are relevant to the query.
+- **Guideline Adherence**: Whether the predicted answer adheres to specific guidelines.
 
-Each response from a `query_engine.query` calls returns both the synthesized response as well as source documents.
-
-We can evaluate the response against the retrieved sources - without taking into account the query!
-
-This allows you to measure hallucination - if the response does not match the retrieved sources, this means that the model may be "hallucinating" an answer since it is not rooting the answer in the context provided to it in the prompt.
-
-There are two sub-modes of evaluation here. We can either get a binary response "YES"/"NO" on whether response matches *any* source context,
-and also get a response list across sources to see which sources match.
-
-The `ResponseEvaluator` handles both modes for evaluating in this context.
-
-### Evaluation of the Query + Response + Source Context
-
-This is similar to the above section, except now we also take into account the query. The goal is to determine if
-the response + source context answers the query.
-
-As with the above, there are two submodes of evaluation. 
-- We can either get a binary response "YES"/"NO" on whether
-the response matches the query, and whether any source node also matches the query.
-- We can also ignore the synthesized response, and check every source node to see
-if it matches the query.
-
-### Question Generation
+#### Question Generation
 
 In addition to evaluating queries, LlamaIndex can also use your data to generate questions to evaluate on. This means that you can automatically generate questions, and then run an evaluation pipeline to test if the LLM can actually answer questions accurately using your data.
+
+### Retrieval Evaluation
+
+We also provide modules to help evaluate retrieval independently.
+
+The concept of retrieval evaluation is not new; given a dataset of questions and ground-truth rankings, we can evaluate retrievers using ranking metrics like mean-reciprocal rank (MRR), hit-rate, precision, and more.
+
+The core retrieval evaluation steps revolve around the following:
+- **Dataset generation**: Given an unstructured text corpus, synthetically generate (question, context) pairs.
+- **Retrieval Evaluation**: Given a retriever and a set of questions, evaluate retrieved results using ranking metrics.
 
 ## Integrations
 
@@ -58,6 +58,7 @@ For full usage details, see the usage pattern below.
 maxdepth: 1
 ---
 usage_pattern.md
+usage_pattern_retrieval.md
 ```
 
 ## Modules

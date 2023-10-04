@@ -1,9 +1,9 @@
 from typing import Any, Dict, Optional
 
 from llama_index.bridge.pydantic import Field, root_validator
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import resolve_from_aliases
 
 AZURE_OPENAI_API_TYPE = "azure"
 
@@ -48,8 +48,19 @@ class AzureOpenAI(OpenAI):
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        # aliases for engine
+        deployment_name: Optional[str] = None,
+        deployment_id: Optional[str] = None,
+        deployment: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
+        engine = resolve_from_aliases(
+            engine,
+            deployment_name,
+            deployment_id,
+            deployment,
+        )
+
         if engine is None:
             raise ValueError("You must specify an `engine` parameter.")
 
@@ -95,5 +106,4 @@ class AzureOpenAI(OpenAI):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "azure_openai_llm"

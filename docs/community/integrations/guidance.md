@@ -10,7 +10,7 @@ One particularly exciting aspect of guidance is the ability to output structured
 
 This is particularly powerful for weaker LLMs which be smaller in parameter count, and not trained on sufficient source code data to be able to reliably produce well-formed, hierarchical structured output.
 
-### Creating a guidance program to generate pydantic objects 
+### Creating a guidance program to generate pydantic objects
 In LlamaIndex, we provide an initial integration with guidance, to make it super easy for generating structured output (more specifically pydantic objects).
 
 For example, if we want to generate an album of songs, with the following schema:
@@ -19,24 +19,24 @@ For example, if we want to generate an album of songs, with the following schema
 class Song(BaseModel):
     title: str
     length_seconds: int
-    
+
 class Album(BaseModel):
     name: str
     artist: str
     songs: List[Song]
 ```
 
-It's as simple as creating a `GuidancePydanticProgram`, specifying our desired pydantic class `Album`, 
+It's as simple as creating a `GuidancePydanticProgram`, specifying our desired pydantic class `Album`,
 and supplying a suitable prompt template.
 
-> Note: guidance uses handlebars-style templates, which uses double braces for variable substitution, and single braces for literal braces. This is the opposite convention of Python format strings. 
+> Note: guidance uses handlebars-style templates, which uses double braces for variable substitution, and single braces for literal braces. This is the opposite convention of Python format strings.
 
 > Note: We provide an utility function `from llama_index.prompts.guidance_utils import convert_to_handlebars` that can convert from the Python format string style template to guidance handlebars-style template.
 
 
 ```python
 program = GuidancePydanticProgram(
-    output_cls=Album, 
+    output_cls=Album,
     prompt_template_str="Generate an example album, with an artist and a list of songs. Using the movie {{movie_name}} as inspiration",
     guidance_llm=OpenAI('text-davinci-003'),
     verbose=True,
@@ -44,7 +44,7 @@ program = GuidancePydanticProgram(
 
 ```
 
-Now we can run the program by calling it with additional user input. 
+Now we can run the program by calling it with additional user input.
 Here let's go for something spooky and create an album inspired by the Shining.
 ```python
 output = program(movie_name='The Shining')
@@ -77,14 +77,8 @@ query_engine_tools = ...
 # construct sub-question query engine
 s_engine = SubQuestionQueryEngine.from_defaults(
     question_gen=question_gen  # use guidance based question_gen defined above
-    query_engine_tools=query_engine_tools, 
+    query_engine_tools=query_engine_tools,
 )
 ```
 
 See [this notebook](/examples/output_parsing/guidance_sub_question.ipynb) for more details.
-
-
-
-
-
-

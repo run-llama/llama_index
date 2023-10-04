@@ -27,17 +27,15 @@ class Generation(BaseSynthesizer):
         del text_chunks
 
         if not self._streaming:
-            response = await self._service_context.llm_predictor.apredict(
+            return await self._service_context.llm_predictor.apredict(
                 self._input_prompt,
                 query_str=query_str,
             )
-            return response
         else:
-            stream_response = self._service_context.llm_predictor.stream(
+            return self._service_context.llm_predictor.stream(
                 self._input_prompt,
                 query_str=query_str,
             )
-            return stream_response
 
     def get_response(
         self,
@@ -49,14 +47,12 @@ class Generation(BaseSynthesizer):
         del text_chunks
 
         if not self._streaming:
-            response = self._service_context.llm_predictor.predict(
+            return self._service_context.llm_predictor.predict(
                 self._input_prompt,
                 query_str=query_str,
             )
-            return response
         else:
-            stream_response = self._service_context.llm_predictor.stream(
+            return self._service_context.llm_predictor.stream(
                 self._input_prompt,
                 query_str=query_str,
             )
-            return stream_response

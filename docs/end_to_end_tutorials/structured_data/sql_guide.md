@@ -72,6 +72,8 @@ If we don't the query engine will pull all the schema context, which could
 overflow the context window of the LLM.
 
 ```python
+from llama_index.indices.struct_store import NLSQLTableQueryEngine
+
 query_engine = NLSQLTableQueryEngine(
     sql_database=sql_database,
     tables=["city_stats"],
@@ -88,14 +90,16 @@ the prompt fits your context window.
 
 ## Building our Table Index
 If we don't know ahead of time which table we would like to use, and the total size of
-the table schema overflows your context window size, we should store the table schema 
+the table schema overflows your context window size, we should store the table schema
 in an index so that during query time we can retrieve the right schema.
 
-The way we can do this is using the SQLTableNodeMapping object, which takes in a 
-SQLDatabase and produces a Node object for each SQLTableSchema object passed 
+The way we can do this is using the SQLTableNodeMapping object, which takes in a
+SQLDatabase and produces a Node object for each SQLTableSchema object passed
 into the ObjectIndex constructor.
 
 ```python
+from llama_index.objects import SQLTableNodeMapping, ObjectIndex, SQLTableSchema
+
 table_node_mapping = SQLTableNodeMapping(sql_database)
 table_schema_objs = [(SQLTableSchema(table_name="city_stats")), ...] # one SQLTableSchema for each table
 
@@ -129,6 +133,8 @@ Once we have defined our table schema index obj_index, we can construct a SQLTab
 by passing in our SQLDatabase, and a retriever constructed from our object index.
 
 ```python
+from llama_index.indices.struct_store import SQLTableRetrieverQueryEngine
+
 query_engine = SQLTableRetrieverQueryEngine(
     sql_database, obj_index.as_retriever(similarity_top_k=1)
 )
@@ -142,5 +148,3 @@ and synthesize a SQL query and a response from the results of that query.
 
 This is it for now! We're constantly looking for ways to improve our structured data support.
 If you have any questions let us know in [our Discord](https://discord.gg/dGcwcsnxhU).
-
-

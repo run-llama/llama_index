@@ -117,7 +117,7 @@ class EpsillaVectorStore(VectorStore):
     def _handle_error(self, msg: str) -> None:
         """Handle error."""
         logger.error(f"Failed to get records: {msg}")
-        raise Exception("Error: {}.".format(msg))
+        raise Exception(f"Error: {msg}.")
 
     def _create_collection(self, dimension: int) -> None:
         """
@@ -152,13 +152,13 @@ class EpsillaVectorStore(VectorStore):
         """
         Add nodes to Epsilla vector store.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         Returns:
             List[str]: List of ids inserted.
         """
-        # If the collection doesnt exist yet, create the collection
+        # If the collection doesn't exist yet, create the collection
         if not self._collection_created and len(nodes) > 0:
             dimension = len(nodes[0].get_embedding())
             self._create_collection(dimension)

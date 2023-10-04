@@ -5,10 +5,9 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
 from llama_index.llms.langchain import LangChainLLM
@@ -92,7 +91,10 @@ class PromptTemplate(BasePromptTemplate):
             **kwargs,
         }
 
-        return self.template.format(**all_kwargs)
+        prompt = self.template.format(**all_kwargs)
+        if self.output_parser is not None:
+            prompt = self.output_parser.format(prompt)
+        return prompt
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
@@ -141,8 +143,7 @@ class ChatPromptTemplate(BasePromptTemplate):
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         del llm  # unused
         messages = self.format_messages(**kwargs)
-        prompt = messages_to_prompt(messages)
-        return prompt
+        return messages_to_prompt(messages)
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
@@ -154,7 +155,7 @@ class ChatPromptTemplate(BasePromptTemplate):
             **kwargs,
         }
 
-        messages = []
+        messages: List[ChatMessage] = []
         for message_template in self.message_templates:
             template_vars = get_template_vars(message_template.content or "")
             relevant_kwargs = {
@@ -163,9 +164,12 @@ class ChatPromptTemplate(BasePromptTemplate):
             content_template = message_template.content or ""
             content = content_template.format(**relevant_kwargs)
 
-            message = message_template.copy()
+            message: ChatMessage = message_template.copy()
             message.content = content
             messages.append(message)
+
+        if self.output_parser is not None:
+            messages = self.output_parser.format_messages(messages)
 
         return messages
 
@@ -200,13 +204,19 @@ class SelectorPromptTemplate(BasePromptTemplate):
         )
 
     def _select(self, llm: Optional[LLM] = None) -> BasePromptTemplate:
+        # ensure output parser is up to date
+        self.default_template.output_parser = self.output_parser
+
         if llm is None:
             return self.default_template
 
         if self.conditionals is not None:
             for condition, prompt in self.conditionals:
                 if condition(llm):
+                    # ensure output parser is up to date
+                    prompt.output_parser = self.output_parser
                     return prompt
+
         return self.default_template
 
     def partial_format(self, **kwargs: Any) -> "SelectorPromptTemplate":
@@ -309,8 +319,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
             lc_template = self.selector.default_prompt
         lc_prompt_value = lc_template.format_prompt(**kwargs)
         lc_messages = lc_prompt_value.to_messages()
-        messages = from_lc_messages(lc_messages)
-        return messages
+        return from_lc_messages(lc_messages)
 
     def get_template(self, llm: Optional[LLM] = None) -> str:
         if llm is not None:

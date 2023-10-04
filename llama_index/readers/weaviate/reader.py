@@ -26,9 +26,9 @@ class WeaviateReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            import weaviate  # noqa: F401
-            from weaviate import Client  # noqa: F401
-            from weaviate.auth import AuthCredentials  # noqa: F401
+            import weaviate
+            from weaviate import Client
+            from weaviate.auth import AuthCredentials
         except ImportError:
             raise ImportError(
                 "`weaviate` package not found, please run `pip install weaviate-client`"
@@ -89,7 +89,7 @@ class WeaviateReader(BaseReader):
 
         if class_name is None:
             # infer class_name if only graphql_query was provided
-            class_name = list(data_response["Get"].keys())[0]
+            class_name = next(iter(data_response["Get"].keys()))
         entries = data_response["Get"][class_name]
         documents = []
         for entry in entries:

@@ -12,7 +12,3 @@ maxdepth: 1
 LlamaIndex Workshop: Building RAG with Knowledge Graphs <https://colab.research.google.com/drive/1tLjOg2ZQuIClfuWrAC2LdiZHCov8oUbs>
 REBEL + Knowledge Graph Index <https://colab.research.google.com/drive/1G6pcR0pXvSkdMQlAK_P-IrYgo-_staxd?usp=sharing>
 ```
-
-
-
-

@@ -1,15 +1,16 @@
 """OpenAI Finetuning."""
 
-from llama_index.finetuning.types import BaseLLMFinetuneEngine
+import logging
+import os
+import time
+from typing import Any, Optional
+
+import openai
+
 from llama_index.callbacks import OpenAIFineTuningHandler
 from llama_index.finetuning.openai.validate_json import validate_json
-from typing import Any, Optional
-import os
-import openai
+from llama_index.finetuning.types import BaseLLMFinetuneEngine
 from llama_index.llms import OpenAI
-import time
-import logging
-
 from llama_index.llms.base import LLM
 
 logger = logging.getLogger(__name__)
@@ -94,8 +95,7 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
 
         # try getting id, make sure that run succeeded
         job_id = self._start_job["id"]
-        current_job = openai.FineTuningJob.retrieve(job_id)
-        return current_job
+        return openai.FineTuningJob.retrieve(job_id)
 
     def get_finetuned_model(self, **model_kwargs: Any) -> LLM:
         """Gets finetuned model."""
@@ -112,5 +112,4 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         if status != "succeeded":
             raise ValueError(f"Job {job_id} has status {status}, cannot get model")
 
-        llm = OpenAI(model=model_id, **model_kwargs)
-        return llm
+        return OpenAI(model=model_id, **model_kwargs)

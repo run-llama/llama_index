@@ -10,10 +10,10 @@ from llama_index.readers.slack import SlackReader
 from llama_index.readers.string_iterable import StringIterableReader
 from llama_index.readers.twitter import TwitterTweetReader
 from llama_index.readers.web import (
+    BeautifulSoupWebReader,
+    RssReader,
     SimpleWebPageReader,
     TrafilaturaWebReader,
-    RssReader,
-    BeautifulSoupWebReader,
 )
 from llama_index.readers.wikipedia import WikipediaReader
 from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
@@ -47,6 +47,4 @@ def load_reader(data: Dict[str, Any]) -> BasePydanticReader:
     # remove static attribute
     data.pop("is_remote", None)
 
-    reader = ALL_READERS[class_name].from_dict(data)
-
-    return reader
+    return ALL_READERS[class_name].from_dict(data)

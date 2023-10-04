@@ -192,16 +192,11 @@ class CitationQueryEngine(BaseQueryEngine):
             for text_chunk in text_chunks:
                 text = f"Source {len(new_nodes)+1}:\n{text_chunk}\n"
 
-                new_nodes.append(
-                    NodeWithScore(
-                        node=TextNode(
-                            text=text,
-                            metadata=node.node.metadata or {},
-                            relationships=node.node.relationships or {},
-                        ),
-                        score=node.score,
-                    )
+                new_node = NodeWithScore(
+                    node=TextNode.parse_obj(node.node), score=node.score
                 )
+                new_node.node.text = text
+                new_nodes.append(new_node)
         return new_nodes
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
@@ -224,12 +219,11 @@ class CitationQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         nodes = self._create_citation_nodes(nodes)
-        response = self._response_synthesizer.synthesize(
+        return self._response_synthesizer.synthesize(
             query=query_bundle,
             nodes=nodes,
             additional_source_nodes=additional_source_nodes,
         )
-        return response
 
     async def asynthesize(
         self,

@@ -7,8 +7,8 @@ https://gpt-index.readthedocs.io/ to read the full documentation.
 
 This guide is made for anyone who's interested in running LlamaIndex documentation locally,
 making changes to it and make contributions. LlamaIndex is made by the thriving community
-behind it, and you're always welcome to make contributions to the project and the 
-documentation. 
+behind it, and you're always welcome to make contributions to the project and the
+documentation.
 
 ## Build Docs
 
@@ -43,12 +43,12 @@ And open your browser at http://0.0.0.0:8000/ to view the generated docs.
 
 ##### Watch Docs
 
-We recommend using sphinx-autobuild during development, which provides a live-reloading 
-server, that rebuilds the documentation and refreshes any open pages automatically when 
-changes are saved. This enables a much shorter feedback loop which can help boost 
+We recommend using sphinx-autobuild during development, which provides a live-reloading
+server, that rebuilds the documentation and refreshes any open pages automatically when
+changes are saved. This enables a much shorter feedback loop which can help boost
 productivity when writing documentation.
 
-Simply run the following command from LlamaIndex project's root directory: 
+Simply run the following command from LlamaIndex project's root directory:
 ```bash
 make watch-docs
 ```

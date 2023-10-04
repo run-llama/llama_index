@@ -13,7 +13,7 @@ Under the hood, LlamaIndex also supports swappable **storage components** that a
 
 The Document/Index stores rely on a common Key-Value store abstraction, which is also detailed below.
 
-LlamaIndex supports persisting data to any storage backend supported by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/index.html). 
+LlamaIndex supports persisting data to any storage backend supported by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/index.html).
 We have confirmed support for the following storage backends:
 
 - Local filesystem

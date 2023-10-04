@@ -1,14 +1,13 @@
-from typing import Any, Dict, Optional, Type, cast
 from collections import OrderedDict
-
-from llama_index.bridge.pydantic import BaseModel
+from typing import Any, Dict, Optional, Type, cast
 
 import pytest
-from llama_index.indices.service_context import ServiceContext
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks import CallbackManager
+from llama_index.indices.service_context import ServiceContext
 from llama_index.response_synthesizers import Refine
 from llama_index.response_synthesizers.refine import StructuredRefineResponse
-from llama_index.program.base_program import BasePydanticProgram
+from llama_index.types import BasePydanticProgram
 
 
 class MockRefineProgram(BasePydanticProgram):
@@ -51,7 +50,7 @@ class MockRefineProgram(BasePydanticProgram):
         )
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_refine_service_context(patch_llm_predictor: Any) -> ServiceContext:
     cb_manager = CallbackManager([])
     return ServiceContext.from_defaults(
@@ -60,7 +59,7 @@ def mock_refine_service_context(patch_llm_predictor: Any) -> ServiceContext:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def refine_instance(mock_refine_service_context: ServiceContext) -> Refine:
     return Refine(
         service_context=mock_refine_service_context,
@@ -72,14 +71,14 @@ def refine_instance(mock_refine_service_context: ServiceContext) -> Refine:
 
 def test_constructor_args(mock_refine_service_context: ServiceContext) -> None:
     with pytest.raises(ValueError):
-        # cant construct refine with both streaming and answer filtering
+        # can't construct refine with both streaming and answer filtering
         Refine(
             service_context=mock_refine_service_context,
             streaming=True,
             structured_answer_filtering=True,
         )
     with pytest.raises(ValueError):
-        # cant construct refine with a program factory but not answer filtering
+        # can't construct refine with a program factory but not answer filtering
         Refine(
             service_context=mock_refine_service_context,
             program_factory=lambda _: MockRefineProgram({}),
@@ -87,7 +86,7 @@ def test_constructor_args(mock_refine_service_context: ServiceContext) -> None:
         )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_answer_filtering_one_answer(
     mock_refine_service_context: ServiceContext,
 ) -> None:
@@ -113,7 +112,7 @@ async def test_answer_filtering_one_answer(
     assert res == "input2"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_answer_filtering_no_answers(
     mock_refine_service_context: ServiceContext,
 ) -> None:

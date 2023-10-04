@@ -2,10 +2,10 @@
 
 
 LlamaIndex allows you to perform *query transformations* over your index structures.
-Query transformations are modules that will convert a query into another query. They can be **single-step**, as in the transformation is run once before the query is executed against an index. 
+Query transformations are modules that will convert a query into another query. They can be **single-step**, as in the transformation is run once before the query is executed against an index.
 
-They can also be **multi-step**, as in: 
-1. The query is transformed, executed against an index, 
+They can also be **multi-step**, as in:
+1. The query is transformed, executed against an index,
 2. The response is retrieved.
 3. Subsequent queries are transformed/executed in a sequential fashion.
 
@@ -43,12 +43,12 @@ print(response)
 
 ```
 
-Check out our [example notebook](../../../examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
+Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
 
 
 ### Single-Step Query Decomposition
 
-Some recent approaches (e.g. [self-ask](https://ofir.io/self-ask.pdf), [ReAct](https://arxiv.org/abs/2210.03629)) have suggested that LLM's 
+Some recent approaches (e.g. [self-ask](https://ofir.io/self-ask.pdf), [ReAct](https://arxiv.org/abs/2210.03629)) have suggested that LLM's
 perform better at answering complex questions when they break the question into smaller steps. We have found that this is true for queries that require knowledge augmentation as well.
 
 If your query is complex, different parts of your knowledge base may answer different "subqueries" around the overall query.
@@ -80,13 +80,13 @@ decompose_transform = DecomposeQueryTransform(
 # configure retrievers
 vector_query_engine = vector_index.as_query_engine()
 vector_query_engine = TransformQueryEngine(
-    vector_query_engine, 
+    vector_query_engine,
     query_transform=decompose_transform
     transform_extra_info={'index_summary': vector_index.index_struct.summary}
 )
 custom_query_engines = {
     vector_index.index_id: vector_query_engine
-} 
+}
 
 # query
 query_str = (
@@ -104,7 +104,7 @@ Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/m
 
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
 
-Given an initial, complex query, the query is transformed and executed against an index. The response is retrieved from the query. 
+Given an initial, complex query, the query is transformed and executed against an index. The response is retrieved from the query.
 Given the response (along with prior responses) and the query, followup questions may be asked against the index as well. This technique allows a query to be run against a single knowledge source until that query has satisfied all questions.
 
 An example image is shown below.

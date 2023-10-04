@@ -1,6 +1,6 @@
 # Modules
 
-We support integrations with OpenAI, Azure, and anything LangChain offers.
+We support integrations with OpenAI, Azure, HuggingFace, Instructor, Optimum, and anything LangChain offers.
 
 ```{toctree}
 ---
@@ -10,4 +10,7 @@ maxdepth: 1
 /examples/embeddings/Langchain.ipynb
 /examples/customization/llms/AzureOpenAI.ipynb
 /examples/embeddings/custom_embeddings.ipynb
+/examples/embeddings/huggingface.ipynb
+/examples/embeddings/elasticsearch.ipynb
+/examples/embeddings/clarifai.ipynb
 ```

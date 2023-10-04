@@ -74,5 +74,4 @@ class CustomLLM(LLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "custom_llm"

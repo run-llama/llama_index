@@ -1,5 +1,6 @@
 from typing import Any, List, Optional, Sequence
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base_retriever import BaseRetriever
@@ -60,6 +61,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         refine_template: Optional[BasePromptTemplate] = None,
         summary_template: Optional[BasePromptTemplate] = None,
         simple_template: Optional[BasePromptTemplate] = None,
+        output_cls: Optional[BaseModel] = None,
         use_async: bool = False,
         streaming: bool = False,
         # class-specific args
@@ -92,6 +94,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             summary_template=summary_template,
             simple_template=simple_template,
             response_mode=response_mode,
+            output_cls=output_cls,
             use_async=use_async,
             streaming=streaming,
         )
@@ -118,15 +121,11 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = self._retriever.retrieve(query_bundle)
-        nodes = self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
-
-        return nodes
+        return self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
 
     async def aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = await self._retriever.aretrieve(query_bundle)
-        nodes = self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
-
-        return nodes
+        return self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
 
     def with_retriever(self, retriever: BaseRetriever) -> "RetrieverQueryEngine":
         return RetrieverQueryEngine(

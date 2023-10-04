@@ -2,10 +2,16 @@
 
 
 ## Basic
+
+First, check out our [module guide on Indexes](/core_modules/data_modules/index/modules.md) for in-depth guides for each index (vector index, summary index, knowledge graph index). Each index corresponds to a default query engine for that index.
+
+Then check out the rest of the sections below.
+
 ```{toctree}
 ---
 maxdepth: 1
 ---
+Custom Query Engine </examples/query_engine/custom_query_engine.ipynb>
 Retriever Query Engine </examples/query_engine/CustomRetrievers.ipynb>
 ```
 
@@ -39,9 +45,23 @@ Retry Source Query Engine </examples/evaluation/RetryQuery.ipynb>
 Retry Guideline Query Engine </examples/evaluation/RetryQuery.ipynb>
 /examples/query_engine/citation_query_engine.ipynb
 /examples/query_engine/pdf_tables/recursive_retriever.ipynb
+/examples/query_engine/sec_tables/tesla_10q_table.ipynb
 /examples/query_engine/recursive_retriever_agents.ipynb
 /examples/query_engine/ensemble_query_engine.ipynb
 ```
+
+### Advanced: Towards Multi-Document Querying/Analysis
+This specific subsection showcases modules that help with querying multiple documents.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/query_engine/sub_question_query_engine.ipynb
+/examples/query_engine/recursive_retriever_agents.ipynb
+/examples/agent/multi_document_agents.ipynb
+```
+
 
 ## Experimental
 ```{toctree}

@@ -1,17 +1,18 @@
 """ReAct output parser."""
 
 
-from llama_index.output_parsers.utils import extract_json_str
-from llama_index.types import BaseOutputParser
+import ast
+import json
+import re
 from typing import Tuple
+
 from llama_index.agent.react.types import (
+    ActionReasoningStep,
     BaseReasoningStep,
     ResponseReasoningStep,
-    ActionReasoningStep,
 )
-import ast
-
-import re
+from llama_index.output_parsers.utils import extract_json_str
+from llama_index.types import BaseOutputParser
 
 
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
@@ -19,9 +20,7 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
 
     match = re.search(pattern, input_text, re.DOTALL)
     if not match:
-        raise ValueError(
-            "Could not extract tool use from input text: {}".format(input_text)
-        )
+        raise ValueError(f"Could not extract tool use from input text: {input_text}")
 
     thought = match.group(1).strip()
     action = match.group(2).strip()
@@ -35,7 +34,7 @@ def extract_final_response(input_text: str) -> Tuple[str, str]:
     match = re.search(pattern, input_text, re.DOTALL)
     if not match:
         raise ValueError(
-            "Could not extract final answer from input text: {}".format(input_text)
+            f"Could not extract final answer from input text: {input_text}"
         )
 
     thought = match.group(1).strip()
@@ -77,16 +76,17 @@ class ReActOutputParser(BaseOutputParser):
             thought, action, action_input = extract_tool_use(output)
             json_str = extract_json_str(action_input)
 
-            # NOTE: we found that json.loads does not reliably parse
-            # json with single quotes, so we use ast instead
-            # action_input_dict = json.loads(json_str)
-            action_input_dict = ast.literal_eval(json_str)
+            # First we try json, if this fails we use ast
+            try:
+                action_input_dict = json.loads(json_str)
+            except json.JSONDecodeError:
+                action_input_dict = ast.literal_eval(json_str)
 
             return ActionReasoningStep(
                 thought=thought, action=action, action_input=action_input_dict
             )
 
-        raise ValueError("Could not parse output: {}".format(output))
+        raise ValueError(f"Could not parse output: {output}")
 
     def format(self, output: str) -> str:
         """Format a query with structured output formatting instructions."""

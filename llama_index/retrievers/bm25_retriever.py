@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional, cast, List
+from typing import Callable, List, Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
@@ -27,9 +27,7 @@ class BM25Retriever(BaseRetriever):
         self._docstore = docstore
         self._tokenizer = tokenizer
         self._similarity_top_k = similarity_top_k
-        self._documents = cast(
-            List[Document], [doc for doc in self._docstore.docs.values()]
-        )
+        self._documents = cast(List[Document], list(self._docstore.docs.values()))
         self._corpus = [self._tokenizer(doc.text) for doc in self._documents]
 
         self.bm25 = BM25Okapi(self._corpus)
@@ -66,6 +64,4 @@ class BM25Retriever(BaseRetriever):
 
         # Sort and get top_k nodes, score range => 0..1, closer to 1 means more relevant
         nodes = sorted(scored_nodes, key=lambda x: x.score or 0.0, reverse=True)
-        top_k_nodes = nodes[: self._similarity_top_k]
-
-        return top_k_nodes
+        return nodes[: self._similarity_top_k]

@@ -1,15 +1,48 @@
-# Usage Pattern
+# Usage Pattern (Response Evaluation)
 
-## Evaluating Response for Hallucination
+## Using `BaseEvaluator`
+All of the evaluation modules in LlamaIndex implement the `BaseEvaluator` class, with two main methods:
 
-### Binary Evaluation
+1. The `evaluate` method takes in `query`, `contexts`, `response`, and additional keyword arguments.
+```python
+    def evaluate(
+        self,
+        query: Optional[str] = None,
+        contexts: Optional[Sequence[str]] = None,
+        response: Optional[str] = None,
+        **kwargs: Any,
+    ) -> EvaluationResult:
+```
 
-This mode of evaluation will return "YES"/"NO" if the synthesized response matches any source context.
+2. The `evaluate_response` method provide an alternative interface that takes in a llamaindex `Response` object (which contains response string and source nodes) instead of separate `contexts` and `response`.
+```python
+def evaluate_response(
+    self,
+    query: Optional[str] = None,
+    response: Optional[Response] = None,
+    **kwargs: Any,
+) -> EvaluationResult:
+```
+It's functionally the same as `evaluate`, just simpler to use when working with llamaindex objects directly.
+
+## Using `EvaluationResult`
+Each evaluator outputs a `EvaluationResult` when executed:
+```python
+eval_result = evaluator.evaluate(query=..., contexts=..., response=...)
+eval_result.passing  # binary pass/fail
+eval_result.score  # numerical score
+eval_result.feedback  # string feedback
+```
+Different evaluators may populate a subset of the result fields.
+
+## Evaluating Response Faithfulness (i.e. Hallucination)
+
+The `FaithfulnessEvaluator` evaluates if the answer is faithful to the retrieved contexts (in other words, whether if there's hallucination).
 
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import FaithfulnessEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -19,28 +52,24 @@ service_context = ServiceContext.from_defaults(llm=llm)
 ...
 
 # define evaluator
-evaluator = ResponseEvaluator(service_context=service_context)
+evaluator = FaithfulnessEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
 response = query_engine.query("What battles took place in New York City in the American Revolution?")
-eval_result = evaluator.evaluate(response)
-print(str(eval_result))
-
+eval_result = evaluator.evaluate_response(response=response)
+print(str(eval_result.passing))
 ```
 
-You'll get back either a `YES` or `NO` response.
 
 ![](/_static/evaluation/eval_response_context.png)
 
-### Sources Evaluation
-
-This mode of evaluation will return "YES"/"NO" for every source node.
+You can also choose to evaluate each source context individually:
 
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import FaithfulnessEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -50,28 +79,30 @@ service_context = ServiceContext.from_defaults(llm=llm)
 ...
 
 # define evaluator
-evaluator = ResponseEvaluator(service_context=service_context)
+evaluator = FaithfulnessEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
 response = query_engine.query("What battles took place in New York City in the American Revolution?")
-eval_result = evaluator.evaluate_source_nodes(response)
-print(str(eval_result))
+response_str = response.response
+for source_node in response.source_nodes:
+    eval_result = evaluator.evaluate(response=response_str, contexts=[source_node.get_content()])
+    print(str(eval_result.passing))
 
 ```
 
-You'll get back a list of "YES"/"NO", corresponding to each source node in `response.source_nodes`.
+You'll get back a list of results, corresponding to each source node in `response.source_nodes`.
 
-## Evaluting Query + Response for Answer Quality
+## Evaluating Query + Response Relevancy
 
-### Binary Evaluation
+The `RelevancyEvaluator` evaluates if the retrieved context and the answer is relevant and consistent for the given query.
 
-This mode of evaluation will return "YES"/"NO" if the synthesized response matches the query + any source context.
+Note that this evaluator requires the `query` to be passed in, in addition to the `Response` object.
 
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import QueryResponseEvaluator
+from llama_index.evaluation import RelevancyEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -81,27 +112,26 @@ service_context = ServiceContext.from_defaults(llm=llm)
 ...
 
 # define evaluator
-evaluator = QueryResponseEvaluator(service_context=service_context)
+evaluator = RelevancyEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
 query = "What battles took place in New York City in the American Revolution?"
 response = query_engine.query(query)
-eval_result = evaluator.evaluate(query, response)
+eval_result = evaluator.evaluate_response(query=query, response=response)
 print(str(eval_result))
 
 ```
 
 ![](/_static/evaluation/eval_query_response_context.png)
 
-### Sources Evaluation
 
-This mode of evaluation will look at each source node, and see if each source node contains an answer to the query.
+Similarly, you can also evaluate on a specific source node.
 
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import QueryResponseEvaluator
+from llama_index.evaluation import RelevancyEvaluator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -111,14 +141,16 @@ service_context = ServiceContext.from_defaults(llm=llm)
 ...
 
 # define evaluator
-evaluator = QueryResponseEvaluator(service_context=service_context)
+evaluator = RelevancyEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
 query = "What battles took place in New York City in the American Revolution?"
 response = query_engine.query(query)
-eval_result = evaluator.evaluate_source_nodes(query, response)
-print(str(eval_result))
+response_str = response.response
+for source_node in response.source_nodes:
+    eval_result = evaluator.evaluate(query=query, response=response_str, contexts=[source_node.get_content()])
+    print(str(eval_result.passing))
 ```
 
 ![](/_static/evaluation/eval_query_sources.png)
@@ -130,7 +162,7 @@ LlamaIndex can also generate questions to answer using your data. Using in combi
 ```python
 from llama_index import SimpleDirectoryReader, ServiceContext
 from llama_index.llms import OpenAI
-from llama_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import DatasetGenerator
 
 # build service context
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -143,6 +175,26 @@ documents = SimpleDirectoryReader("./data").load_data()
 data_generator = DatasetGenerator.from_documents(documents)
 
 eval_questions = data_generator.generate_questions_from_nodes()
+```
+
+## Batch Evaluation
+
+We also provide a batch evaluation runner for running a set of evaluators across many questions.
+
+```python
+from llama_index.evaluation import BatchEvalRunner
+
+runner = BatchEvalRunner(
+    {
+        "faithfulness": faithfulness_evaluator, "
+        "relevancy": relevancy_evaluator
+    },
+    workers=8,
+)
+
+eval_results = await runner.aevaluate_queries(
+    vector_index.as_query_engine(), queries=questions
+)
 ```
 
 ## Integrations
