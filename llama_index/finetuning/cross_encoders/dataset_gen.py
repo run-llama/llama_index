@@ -1,15 +1,17 @@
 """Dataset Generator for Cross Encoder Finetuning"""
-from typing import List, Optional
-from llama_index.llms import OpenAI, ChatMessage
-from llama_index.text_splitter import TokenTextSplitter
-from llama_index.node_parser import SimpleNodeParser
-import tiktoken
-from llama_index.llms.base import LLM
-from llama_index.schema import Document, MetadataMode
-from llama_index import VectorStoreIndex
-from tqdm.auto import tqdm
 import re
 from dataclasses import dataclass
+from typing import List, Optional
+
+import tiktoken
+from tqdm.auto import tqdm
+
+from llama_index import VectorStoreIndex
+from llama_index.llms import ChatMessage, OpenAI
+from llama_index.llms.base import LLM
+from llama_index.node_parser import SimpleNodeParser
+from llama_index.schema import Document, MetadataMode
+from llama_index.text_splitter import TokenTextSplitter
 
 
 @dataclass
@@ -21,8 +23,8 @@ class CrossEncoderFinetuningDatasetSample:
     score: int
 
 
-DEFAULT_QUERY_GEN_SYSTEM_PROMPT = """You are Albert a Professor proficient in {qa_topic}. 
-You are working on creating {num_questions_per_chunk} questions. 
+DEFAULT_QUERY_GEN_SYSTEM_PROMPT = """You are Albert a Professor proficient in {qa_topic}.
+You are working on creating {num_questions_per_chunk} questions.
 You provide the questions such that such that each separate is separated by a semicolon ';' so that different questions can be easily separated by the python split function"""
 
 

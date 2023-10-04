@@ -1,9 +1,11 @@
 """Cross Encoder Finetuning Engine."""
-from typing import Any, Optional, List, Union
+from typing import Any, List, Optional, Union
+
 from llama_index.finetuning.cross_encoders.dataset_gen import (
     CrossEncoderFinetuningDatasetSample,
 )
 from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
+
 
 class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
     """Cross-Encoders Finetune Engine."""
@@ -106,11 +108,11 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
                 self.model.tokenizer.push_to_hub(repo_id=repo_id)
 
             except ValueError as e:
-                raise ValueError("HuggingFace CLI/Hub login not "
-                                 "completed provide token to login using"
-                                 "huggingface_hub.login() see this "
-                                 "https://huggingface.co/docs/transformers/model_sharing#share-a-model")
+                raise ValueError(
+                    "HuggingFace CLI/Hub login not "
+                    "completed provide token to login using"
+                    "huggingface_hub.login() see this "
+                    "https://huggingface.co/docs/transformers/model_sharing#share-a-model"
+                )
         else:
             raise ValueError("No value provided for repo_id")
-
-
