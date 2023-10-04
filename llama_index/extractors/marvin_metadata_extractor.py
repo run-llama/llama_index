@@ -1,12 +1,12 @@
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterable,
     List,
     Optional,
     Sequence,
     Type,
-    Dict,
     cast,
 )
 
@@ -14,9 +14,8 @@ if TYPE_CHECKING:
     from marvin import AIModel
 
 from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.extractors.interface import BaseExtractor
 from llama_index.schema import BaseNode, TextNode
-
-from llama_index.extractors.metadata_extractors import BaseExtractor
 from llama_index.utils import get_tqdm_iterable
 
 
@@ -29,7 +28,7 @@ class MarvinMetadataExtractor(BaseExtractor):
         description="The LLM model string to use for extracting custom metadata"
     )
 
-    """Metadata extractor for custom metadata using Marvin. 
+    """Metadata extractor for custom metadata using Marvin.
     Node-level extractor. Extracts
     `marvin_metadata` metadata field.
     Args:

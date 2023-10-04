@@ -1,11 +1,10 @@
-from unittest.mock import MagicMock
 from typing import Any, List, Optional
+from unittest.mock import MagicMock
 
+import pytest
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-
 from llama_index.vector_stores import CognitiveSearchVectorStore
 from llama_index.vector_stores.cogsearch import IndexManagement
-import pytest
 
 try:
     from azure.search.documents import SearchClient
@@ -22,7 +21,7 @@ def create_mock_vector_store(
     index_name: Optional[str] = None,
     index_management: IndexManagement = IndexManagement.NO_VALIDATION,
 ) -> CognitiveSearchVectorStore:
-    vector_store = CognitiveSearchVectorStore(
+    return CognitiveSearchVectorStore(
         search_or_index_client=search_client,
         id_field_key="id",
         chunk_field_key="content",
@@ -32,7 +31,6 @@ def create_mock_vector_store(
         index_name=index_name,
         index_management=index_management,
     )
-    return vector_store
 
 
 def create_sample_documents(n: int) -> List[TextNode]:

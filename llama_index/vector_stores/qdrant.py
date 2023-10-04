@@ -15,9 +15,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         try:
-            import qdrant_client  # noqa: F401
+            import qdrant_client
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -92,7 +92,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """

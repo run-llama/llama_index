@@ -1,5 +1,5 @@
 """
-Metadata extractors for nodes. Applied as a post processor to node parsing.
+Metadata extractors for nodes.
 Currently, only `TextNode` is supported.
 
 Supported metadata:
@@ -20,19 +20,16 @@ disambiguate the document or subsection from other similar documents or subsecti
 (similar with contrastive learning)
 """
 from functools import reduce
-
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
+from llama_index.extractors.interface import BaseExtractor
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM
-from llama_index.extractors.interface import BaseExtractor
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode
-from llama_index.utils import get_tqdm_iterable
 from llama_index.types import BasePydanticProgram
-
+from llama_index.utils import get_tqdm_iterable
 
 DEFAULT_TITLE_NODE_TEMPLATE = """\
 Context: {context_str}. Give a title that summarizes all of \
@@ -47,6 +44,7 @@ what is the comprehensive title for this document? Title: """
 class TitleExtractor(BaseExtractor):
     """Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
+
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         nodes (int): number of nodes from front to use for title extraction
@@ -140,13 +138,13 @@ class TitleExtractor(BaseExtractor):
                 0
             ]  # if single node, just use the title from that node
 
-        metadata_list = [{"document_title": title.strip(' \t\n\r"')} for _ in nodes]
-        return metadata_list
+        return [{"document_title": title.strip(' \t\n\r"')} for _ in nodes]
 
 
 class KeywordExtractor(BaseExtractor):
     """Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
+
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         keywords (int): number of keywords to extract
@@ -224,6 +222,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
     """
     Questions answered extractor. Node-level extractor.
     Extracts `questions_this_excerpt_can_answer` metadata field.
+
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         questions (int): number of questions to extract
@@ -317,7 +316,8 @@ class SummaryExtractor(BaseExtractor):
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
-        prompt_template (str): template for summary extraction"""
+        prompt_template (str): template for summary extraction
+    """
 
     llm_predictor: LLMPredictor = Field(
         description="The LLMPredictor to use for generation."
@@ -349,7 +349,7 @@ class SummaryExtractor(BaseExtractor):
             llm_predictor = LLMPredictor()
 
         # validation
-        if not all([s in ["self", "prev", "next"] for s in summaries]):
+        if not all(s in ["self", "prev", "next"] for s in summaries):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
         self._self_summary = "self" in summaries
         self._prev_summary = "prev" in summaries
@@ -367,7 +367,7 @@ class SummaryExtractor(BaseExtractor):
         return "SummaryExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        if not all([isinstance(node, TextNode) for node in nodes]):
+        if not all(isinstance(node, TextNode) for node in nodes):
             raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
         nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
             nodes, self.show_progress, "Extracting summaries"
@@ -586,7 +586,6 @@ class PydanticProgramExtractor(BaseExtractor):
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract pydantic program."""
-
         metadata_list: List[Dict] = []
         nodes_queue = get_tqdm_iterable(
             nodes, self.show_progress, "Extracting Pydantic object"

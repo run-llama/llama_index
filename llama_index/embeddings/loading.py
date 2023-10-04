@@ -2,8 +2,8 @@ from typing import Dict, Type
 
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.google import GoogleUnivSentEncoderEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 

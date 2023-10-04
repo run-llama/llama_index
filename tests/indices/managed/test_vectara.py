@@ -1,7 +1,6 @@
 from typing import List, Tuple
 
 import pytest
-
 from llama_index.indices.managed.vectara.base import VectaraIndex
 from llama_index.schema import Document
 

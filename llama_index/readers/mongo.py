@@ -27,8 +27,8 @@ class SimpleMongoReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            import pymongo  # noqa: F401
-            from pymongo import MongoClient  # noqa: F401
+            import pymongo
+            from pymongo import MongoClient
         except ImportError:
             raise ImportError(
                 "`pymongo` package not found, please run `pip install pymongo`"

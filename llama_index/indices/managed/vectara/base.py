@@ -1,22 +1,22 @@
 """Managed index.
 
-A managed Index - where the index is accessible via some API that 
+A managed Index - where the index is accessible via some API that
 interfaces a managed service.
 
 """
 
-import os
-import logging
-import requests
 import json
-
+import logging
+import os
 from typing import Any, Optional, Sequence, Type
-from llama_index.indices.managed.base import BaseManagedIndex, IndexType
-from llama_index.schema import Document
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.service_context import ServiceContext
+
+import requests
+
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
-from llama_index.schema import BaseNode, TextNode, MetadataMode
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.managed.base import BaseManagedIndex, IndexType
+from llama_index.indices.service_context import ServiceContext
+from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
 from llama_index.storage.storage_context import StorageContext
 
 _logger = logging.getLogger(__name__)
@@ -246,8 +246,7 @@ class VectaraIndex(BaseManagedIndex):
             )
             return None
         elif response.status_code == 200:
-            doc_id = response.json()["document"]["documentId"]
-            return doc_id
+            return response.json()["document"]["documentId"]
         else:
             _logger.info(f"Error indexing file {file_path}: {response.json()}")
             return None

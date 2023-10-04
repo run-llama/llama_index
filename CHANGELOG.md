@@ -3,12 +3,37 @@
 ## Unreleased
 
 ### New Features
+- Added support for `Clarifai` LLM (#7967)
+
+### Breaking Changes
+- Update document summary index (#7815)
+  - change default retrieval mode to embedding
+  - embed summaries into vector store by default at indexing time (instead of calculating embedding on the fly)
+  - support configuring top k in llm retriever
+
+
+## [0.8.39] - 2023-10-03
+
+### New Features
 - Added support for pydantic object outputs with query engines (#7893)
 - `ClarifaiEmbedding` class added for embedding support (#7940)
+- Markdown node parser, flat file reader and simple file node parser (#7863)
+- Added support for mongdb atlas `$vectorSearch` (#7866)
 
 ### Bug Fixes / Nits
+- Adds support for using message metadata in discord reader (#7906)
 - Fix `LocalAI` chat capability without `max_tokens` (#7942)
 - Added `codespell` for automated checking (#7941)
+- `ruff` modernization and autofixes (#7889)
+- Implement own SQLDatabase class (#7929)
+- Update LlamaCPP context_params property (#7945)
+- fix duplicate embedding (#7949)
+- Adds `codespell` tool for enforcing good spelling (#7941)
+- Supporting `mypy` local usage with `venv` (#7952)
+- Vectara - minor update (#7954)
+- Avoiding `pydantic` reinstalls in CI (#7956)
+- move tree_sitter_languages into data_requirements.txt (#7955)
+- Add `cache_okay` param to `PGVectorStore` to help suppress TSVector warnings (#7950)
 
 ## [0.8.38] - 2023-10-02
 

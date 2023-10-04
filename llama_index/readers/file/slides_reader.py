@@ -22,9 +22,9 @@ class PptxReader(BaseReader):
     def __init__(self) -> None:
         """Init parser."""
         try:
-            import torch  # noqa: F401
-            from PIL import Image  # noqa: F401
-            from pptx import Presentation  # noqa: F401
+            import torch
+            from PIL import Image
+            from pptx import Presentation
             from transformers import (
                 AutoTokenizer,
                 VisionEncoderDecoderModel,

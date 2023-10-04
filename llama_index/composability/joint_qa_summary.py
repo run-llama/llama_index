@@ -55,7 +55,6 @@ class QASummaryQueryEngineBuilder:
         documents: Sequence[Document],
     ) -> RouterQueryEngine:
         """Build query engine."""
-
         # parse nodes
         nodes = run_transformations(
             documents, self._service_context.transformations  # type: ignore
@@ -85,7 +84,7 @@ class QASummaryQueryEngineBuilder:
         )
 
         # build query engine
-        query_engine = RouterQueryEngine.from_defaults(
+        return RouterQueryEngine.from_defaults(
             query_engine_tools=[
                 QueryEngineTool.from_defaults(
                     vector_query_engine, description=self._qa_text
@@ -97,4 +96,3 @@ class QASummaryQueryEngineBuilder:
             service_context=self._service_context,
             select_multi=False,
         )
-        return query_engine

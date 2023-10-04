@@ -13,7 +13,6 @@ from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
 from llama_index.llms.xinference import Xinference
 
-
 RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
     MockLLM.class_name(): MockLLM,
     Replicate.class_name(): Replicate,

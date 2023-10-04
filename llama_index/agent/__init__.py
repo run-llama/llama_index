@@ -1,7 +1,7 @@
-from llama_index.agent.openai_agent import OpenAIAgent, RetrieverOpenAIAgent
-from llama_index.agent.retriever_openai_agent import FnRetrieverOpenAIAgent
 from llama_index.agent.context_retriever_agent import ContextRetrieverOpenAIAgent
+from llama_index.agent.openai_agent import OpenAIAgent, RetrieverOpenAIAgent
 from llama_index.agent.react.base import ReActAgent
+from llama_index.agent.retriever_openai_agent import FnRetrieverOpenAIAgent
 
 __all__ = [
     "OpenAIAgent",

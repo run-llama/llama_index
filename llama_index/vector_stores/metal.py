@@ -9,9 +9,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 
@@ -39,10 +39,10 @@ class MetalVectorStore(VectorStore):
             "`metal_sdk` package not found, please run `pip install metal_sdk`"
         )
         try:
-            import metal_sdk  # noqa: F401
+            import metal_sdk
         except ImportError:
             raise ImportError(import_err_msg)
-        from metal_sdk.metal import Metal  # noqa: F401
+        from metal_sdk.metal import Metal
 
         self.api_key = api_key
         self.client_id = client_id
@@ -114,7 +114,7 @@ class MetalVectorStore(VectorStore):
     def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings.
 
         """

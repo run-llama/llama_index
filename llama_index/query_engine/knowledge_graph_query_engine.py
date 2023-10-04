@@ -90,7 +90,7 @@ Given the Graph Query response, synthesise a response to the original question.
 Original question: {query_str}
 Graph query: {kg_query_str}
 Graph response: {kg_response_str}
-Response: 
+Response:
 """
 
 DEFAULT_KG_RESPONSE_ANSWER_PROMPT = PromptTemplate(

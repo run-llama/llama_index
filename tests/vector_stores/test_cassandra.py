@@ -1,16 +1,14 @@
-import pytest
 import sys
 import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.vector_stores.types import VectorStoreQuery
-from llama_index.vector_stores.types import VectorStoreQueryMode
-
 from llama_index.vector_stores.cassandra import CassandraVectorStore
+from llama_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 
 try:
-    import cassio  # noqa: F401
+    import cassio
 
     has_cassio = True
 except ImportError:
@@ -22,7 +20,7 @@ class TestCassandraVectorStore(unittest.TestCase):
     def test_cassandra_create_and_crud(self) -> None:
         mock_db_session = MagicMock()
         try:
-            import cassio  # noqa: F401, F811
+            import cassio
         except ModuleNotFoundError:
             # mock `cassio` if not installed
             mock_cassio = MagicMock()
@@ -57,7 +55,7 @@ class TestCassandraVectorStore(unittest.TestCase):
     def test_cassandra_queries(self) -> None:
         mock_db_session = MagicMock()
         try:
-            import cassio  # noqa: F401, F811
+            import cassio
         except ModuleNotFoundError:
             # mock `cassio` if not installed
             mock_cassio = MagicMock()
@@ -116,7 +114,7 @@ class TestCassandraVectorStore(unittest.TestCase):
             similarity_top_k=3,
             mode=VectorStoreQueryMode.MMR,
         )
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             vector_store.query(
                 query,
                 mmr_prefetch_factor=7.7,

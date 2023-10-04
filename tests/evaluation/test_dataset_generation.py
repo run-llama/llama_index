@@ -11,7 +11,6 @@ def test_dataset_generation(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test dataset generation."""
-
     test_nodes = [TextNode(text="hello_world"), TextNode(text="foo_bar")]
 
     question_gen_prompt = PromptTemplate(

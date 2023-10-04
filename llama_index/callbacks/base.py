@@ -4,14 +4,14 @@ from abc import ABC
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, List, Optional, Generator
+from typing import Any, Dict, Generator, List, Optional
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import (
+    BASE_TRACE_EVENT,
+    LEAF_EVENTS,
     CBEventType,
     EventPayload,
-    LEAF_EVENTS,
-    BASE_TRACE_EVENT,
 )
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,6 @@ class CallbackManager(BaseCallbackHandler, ABC):
                 ...
                 event.on_end(payload={key, val})  # optional
         """
-
         # create event context wrapper
         event = EventContext(self, event_type, event_id=event_id)
         event.on_start(payload=payload)
@@ -164,7 +163,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
             self.on_event_start(
                 CBEventType.EXCEPTION, payload={EventPayload.EXCEPTION: e}
             )
-            raise e
+            raise
         finally:
             # ensure event is ended
             if not event.finished:
@@ -181,7 +180,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
             self.on_event_start(
                 CBEventType.EXCEPTION, payload={EventPayload.EXCEPTION: e}
             )
-            raise e
+            raise
         finally:
             # ensure trace is ended
             self.end_trace(trace_id=trace_id)
@@ -220,7 +219,6 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     def _reset_trace_events(self) -> None:
         """Helper function to reset the current trace."""
-
         self._trace_map = defaultdict(list)
         global_stack_trace.set([BASE_TRACE_EVENT])
 
@@ -255,7 +253,7 @@ class EventContext:
             )
         else:
             logger.warning(
-                f"Event {str(self._event_type)}: {self._event_id} already started!"
+                f"Event {self._event_type!s}: {self._event_id} already started!"
             )
 
     def on_end(self, payload: Optional[Dict[str, Any]] = None, **kwargs: Any) -> None:

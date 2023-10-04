@@ -4,7 +4,6 @@ from typing import Any, Generator, Optional, Sequence
 from langchain.base_language import BaseLanguageModel
 
 from llama_index.bridge.pydantic import PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.llms.base import (

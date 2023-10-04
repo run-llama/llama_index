@@ -8,7 +8,7 @@ It is most often (but not always) built on one or many [Indices](/core_modules/d
 You can compose multiple query engines to achieve more advanced capability.
 
 ```{tip}
-If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](/core_modules/query_modules/chat_engines/root.md)  
+If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](/core_modules/query_modules/chat_engines/root.md)
 ```
 
 ## Usage Pattern
@@ -22,7 +22,7 @@ To stream response:
 ```python
 query_engine = index.as_query_engine(streaming=True)
 streaming_response = query_engine.query("Who is Paul Graham.")
-streaming_response.print_response_stream() 
+streaming_response.print_response_stream()
 ```
 
 ```{toctree}

@@ -1,8 +1,9 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
+
 from typing_extensions import Self
 
 from llama_index.bridge.pydantic import BaseModel, PrivateAttr
@@ -300,6 +301,7 @@ class LLMPredictor(BaseLLMPredictor):
         """Add system prompt to chat message list"""
         if self.system_prompt:
             messages = [
-                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt)
-            ] + messages
+                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt),
+                *messages,
+            ]
         return messages

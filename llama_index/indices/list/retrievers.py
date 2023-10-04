@@ -15,7 +15,7 @@ from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_CHOICE_SELECT_PROMPT,
 )
-from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 logger = logging.getLogger(__name__)
 

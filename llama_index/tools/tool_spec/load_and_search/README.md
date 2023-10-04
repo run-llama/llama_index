@@ -30,4 +30,3 @@ agent.chat('who is ben affleck married to')
 `read`: Searches the index for the specified query
 
 This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
-

@@ -3,10 +3,9 @@
 from abc import abstractmethod
 from typing import List, Optional, Sequence
 
-from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.agent.react.prompts import REACT_CHAT_SYSTEM_HEADER
 from llama_index.agent.react.types import BaseReasoningStep, ObservationReasoningStep
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.tools import BaseTool
 
@@ -79,9 +78,8 @@ class ReActChatFormatter(BaseAgentChatFormatter):
                 )
             reasoning_history.append(message)
 
-        formatted_chat = [
+        return [
             ChatMessage(role=MessageRole.SYSTEM, content=fmt_sys_header),
             *chat_history,
             *reasoning_history,
         ]
-        return formatted_chat

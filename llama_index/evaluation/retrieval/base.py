@@ -2,13 +2,14 @@
 
 import asyncio
 from abc import abstractmethod
-from typing import Any, List, Dict
+from typing import Any, Dict, List
+
 from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.evaluation.retrieval.metrics import resolve_metrics
 from llama_index.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
     RetrievalMetricResult,
 )
-from llama_index.evaluation.retrieval.metrics import resolve_metrics
 from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
 
 
@@ -44,7 +45,7 @@ class RetrievalEvalResult(BaseModel):
 
     def __str__(self) -> str:
         """String representation."""
-        return f"Query: {self.query}\n" f"Metrics: {str(self.metric_vals_dict)}\n"
+        return f"Query: {self.query}\n" f"Metrics: {self.metric_vals_dict!s}\n"
 
 
 class BaseRetrievalEvaluator(BaseModel):
@@ -106,7 +107,6 @@ class BaseRetrievalEvaluator(BaseModel):
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
         """
-
         retrieved_ids = await self._aget_retrieved_ids(query)
         metric_dict = {}
         for metric in self.metrics:
@@ -127,7 +127,6 @@ class BaseRetrievalEvaluator(BaseModel):
         **kwargs: Any,
     ) -> List[RetrievalEvalResult]:
         """Run evaluation with dataset."""
-
         semaphore = asyncio.Semaphore(workers)
 
         async def eval_worker(

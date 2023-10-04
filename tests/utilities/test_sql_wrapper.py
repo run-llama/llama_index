@@ -1,13 +1,13 @@
-import pytest
-from pytest_mock import MockerFixture
-
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
-from llama_index.utilities.sql_wrapper import SQLDatabase
 from typing import Generator
+
+import pytest
+from llama_index.utilities.sql_wrapper import SQLDatabase
+from pytest_mock import MockerFixture
+from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 
 
 # Create a fixture for the database instance
-@pytest.fixture
+@pytest.fixture()
 def sql_database() -> Generator[SQLDatabase, None, None]:
     engine = create_engine("sqlite:///:memory:")
     metadata = MetaData()

@@ -9,7 +9,7 @@ LlamaIndex offers key modules to measure the quality of generated results. We al
 - **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelnes?
 - **Retrieval Evaluation**: Are the retrieved sources relevant to the query?
 
-This section describes how the evaluation components within LlamaIndex work. 
+This section describes how the evaluation components within LlamaIndex work.
 
 ### Response Evaluation
 

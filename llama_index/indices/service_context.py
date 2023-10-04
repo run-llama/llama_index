@@ -2,9 +2,8 @@ import logging
 from dataclasses import dataclass
 from typing import List, Optional
 
-from llama_index.bridge.pydantic import BaseModel
-
 import llama_index
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
@@ -262,7 +261,7 @@ class ServiceContext:
                 chunk_overlap=chunk_overlap,
                 callback_manager=callback_manager,
             )
-            transformations = [node_parser] + transformations
+            transformations = [node_parser, *transformations]
 
         llama_logger = llama_logger or service_context.llama_logger
 

@@ -1,8 +1,9 @@
 """Pairwise evaluation."""
 
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from typing import Any, Optional, Sequence, Union
+
 from llama_index import ServiceContext
-from typing import Optional, Union, Sequence, Any
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.prompts import (
     BasePromptTemplate,
     ChatMessage,
@@ -11,23 +12,22 @@ from llama_index.prompts import (
     PromptTemplate,
 )
 
-
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
 
 You are given the following information:
-- a user query, 
+- a user query,
 - Answer 1
 - Answer 2
 
 
-Your job is to output whether Answer 1 is better, or Answer 2 is better, or 
+Your job is to output whether Answer 1 is better, or Answer 2 is better, or
 they are equally good at answering the user query.
 
 Output "1" if Answer 1 is better, "2" if Answer 2 is better, and \
     "TIE" if they are equally good.
 
-Please output two lines: 
+Please output two lines:
 - first line: "1", "2", or "TIE"
 - second line: a short explanation for your decision.
 """
@@ -92,7 +92,6 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         reference: str,
     ) -> EvaluationResult:
         """Get evaluation result."""
-
         eval_response = await self._service_context.llm_predictor.apredict(
             prompt=self._eval_template,
             query=query,

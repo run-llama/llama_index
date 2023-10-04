@@ -10,7 +10,8 @@ Find your API server from https://rockset.com/docs/rest-api#introduction.
 Get your API key from https://console.rockset.com/apikeys.
 """
 
-from typing import Generator, Any
+from typing import Any, Generator
+
 import pytest
 
 try:
@@ -20,13 +21,14 @@ try:
 except ImportError:
     rockset_installed = False
 from time import sleep
+
+from llama_index.schema import TextNode
 from llama_index.vector_stores import RocksetVectorStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,
 )
-from llama_index.schema import TextNode
 
 
 def collection_is_empty(client: Any, collection_name: str = "test") -> bool:
@@ -41,7 +43,7 @@ def collection_exists(client: Any, collection_name: str = "test") -> bool:
     return True
 
 
-@pytest.fixture
+@pytest.fixture()
 def vector_store() -> Generator[RocksetVectorStore, None, None]:
     store = RocksetVectorStore.with_new_collection(collection="test", dimensions=2)
     store = RocksetVectorStore(collection="test")

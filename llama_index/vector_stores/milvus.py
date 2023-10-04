@@ -99,7 +99,7 @@ class MilvusVectorStore(VectorStore):
             "`pymilvus` package not found, please run `pip install pymilvus`"
         )
         try:
-            import pymilvus  # noqa: F401
+            import pymilvus
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -194,7 +194,6 @@ class MilvusVectorStore(VectorStore):
         Raises:
             MilvusException: Failed to delete the doc.
         """
-
         # Adds ability for multiple doc delete in future.
         doc_ids: List[str]
         if isinstance(ref_doc_id, list):

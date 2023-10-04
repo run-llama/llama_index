@@ -40,8 +40,8 @@ class FalkorDBGraphStore(GraphStore):
         self._database = database
 
         self.schema = ""
-        self.get_query = f""" 
-            MATCH (n1:`{self._node_label}`)-[r]->(n2:`{self._node_label}`) 
+        self.get_query = f"""
+            MATCH (n1:`{self._node_label}`)-[r]->(n2:`{self._node_label}`)
             WHERE n1.id = $subj RETURN type(r), n2.id
         """
 
@@ -108,7 +108,6 @@ class FalkorDBGraphStore(GraphStore):
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
-
         query = """
             MERGE (n1:`%s` {id:$subj})
             MERGE (n2:`%s` {id:$obj})
@@ -130,7 +129,7 @@ class FalkorDBGraphStore(GraphStore):
         def delete_rel(subj: str, obj: str, rel: str) -> None:
             rel = rel.replace(" ", "_").upper()
             query = f"""
-                MATCH (n1:`{self._node_label}`)-[r:`{rel}`]->(n2:`{self._node_label}`) 
+                MATCH (n1:`{self._node_label}`)-[r:`{rel}`]->(n2:`{self._node_label}`)
                 WHERE n1.id = $subj AND n2.id = $obj DELETE r
             """
 
@@ -145,7 +144,7 @@ class FalkorDBGraphStore(GraphStore):
 
         def check_edges(entity: str) -> bool:
             query = f"""
-                MATCH (n1:`{self._node_label}`)--() 
+                MATCH (n1:`{self._node_label}`)--()
                 WHERE n1.id = $entity RETURN count(*)
             """
 

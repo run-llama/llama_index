@@ -85,7 +85,7 @@ class _BaseGradientLLM(CustomLLM):
         prompt: str,
         **kwargs: Any,
     ) -> CompletionResponseGen:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     @override

@@ -14,7 +14,7 @@ from llama_index.prompts import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TextNode
 from llama_index.storage.storage_context import StorageContext
-from llama_index.utils import truncate_text, print_text
+from llama_index.utils import print_text, truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 DEFAULT_NODE_SCORE = 1000.0
@@ -87,7 +87,6 @@ class KGTableRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-
         assert isinstance(index, KnowledgeGraphIndex)
         self._index = index
         self._service_context = self._index.service_context
@@ -112,7 +111,7 @@ class KGTableRetriever(BaseRetriever):
         except NotImplementedError:
             self._graph_schema = ""
         except Exception as e:
-            logger.warn(f"Failed to get graph schema: {e}")
+            logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
 
     def _get_keywords(self, query_str: str) -> List[str]:
@@ -150,7 +149,7 @@ class KGTableRetriever(BaseRetriever):
         chunk_indices_count: Dict[str, int] = defaultdict(int)
         if self._retriever_mode != KGRetrieverMode.EMBEDDING:
             for keyword in keywords:
-                subjs = set((keyword,))
+                subjs = {keyword}
                 node_ids = self._index_struct.search_node_by_keyword(keyword)
                 for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
                     if node_id in node_visited:
@@ -211,9 +210,9 @@ class KGTableRetriever(BaseRetriever):
                 embedding_ids=all_rel_texts,
             )
             logger.debug(
-                f"Found the following rel_texts+query similarites: {str(similarities)}"
+                f"Found the following rel_texts+query similarites: {similarities!s}"
             )
-            logger.debug(f"Found the following top_k rel_texts: {str(rel_texts)}")
+            logger.debug(f"Found the following top_k rel_texts: {rel_texts!s}")
             rel_texts.extend(top_rel_texts)
             if self._include_text:
                 keywords = self._extract_rel_text_keywords(top_rel_texts)
@@ -245,7 +244,7 @@ class KGTableRetriever(BaseRetriever):
             rel_texts = rel_texts[: self.max_knowledge_sequence]
 
         sorted_chunk_indices = sorted(
-            list(chunk_indices_count.keys()),
+            chunk_indices_count.keys(),
             key=lambda x: chunk_indices_count[x],
             reverse=True,
         )
@@ -288,7 +287,7 @@ class KGTableRetriever(BaseRetriever):
             f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
             f" object_next_hop ...`"
         )
-        rel_info = [rel_initial_text] + rel_texts
+        rel_info = [rel_initial_text, *rel_texts]
         rel_node_info = {
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
@@ -468,7 +467,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         except NotImplementedError:
             self._graph_schema = ""
         except Exception as e:
-            logger.warn(f"Failed to get graph schema: {e}")
+            logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
 
     def _process_entities(
@@ -704,7 +703,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         return [node]
 
     def _retrieve_keyword(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """retrieve in keyword mode."""
+        """Retrieve in keyword mode."""
         if self._retriever_mode not in ["keyword", "keyword_embedding"]:
             return []
         # Get entities
@@ -725,7 +724,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
     async def _aretrieve_keyword(
         self, query_bundle: QueryBundle
     ) -> List[NodeWithScore]:
-        """retrieve in keyword mode."""
+        """Retrieve in keyword mode."""
         if self._retriever_mode not in ["keyword", "keyword_embedding"]:
             return []
         # Get entities
@@ -744,7 +743,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         return self._build_nodes(knowledge_sequence, rel_map)
 
     def _retrieve_embedding(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """retrieve in embedding mode."""
+        """Retrieve in embedding mode."""
         if self._retriever_mode not in ["embedding", "keyword_embedding"]:
             return []
         # TBD: will implement this later with vector store.
@@ -753,7 +752,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
     async def _aretrieve_embedding(
         self, query_bundle: QueryBundle
     ) -> List[NodeWithScore]:
-        """retrieve in embedding mode."""
+        """Retrieve in embedding mode."""
         if self._retriever_mode not in ["embedding", "keyword_embedding"]:
             return []
         # TBD: will implement this later with vector store.
@@ -767,7 +766,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 nodes_nl2graphquery = self._kg_query_engine._retrieve(query_bundle)
                 nodes.extend(nodes_nl2graphquery)
             except Exception as e:
-                logger.warn(f"Error in retrieving from nl2graphquery: {e}")
+                logger.warning(f"Error in retrieving from nl2graphquery: {e}")
 
         nodes.extend(self._retrieve_keyword(query_bundle))
         nodes.extend(self._retrieve_embedding(query_bundle))
@@ -784,7 +783,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 )
                 nodes.extend(nodes_nl2graphquery)
             except Exception as e:
-                logger.warn(f"Error in retrieving from nl2graphquery: {e}")
+                logger.warning(f"Error in retrieving from nl2graphquery: {e}")
 
         nodes.extend(await self._aretrieve_keyword(query_bundle))
         nodes.extend(await self._aretrieve_embedding(query_bundle))

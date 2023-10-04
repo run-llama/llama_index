@@ -1,14 +1,14 @@
 from typing import List
 
-from llama_index.ingestion import run_transformations
-from llama_index.node_parser import SimpleNodeParser
 from llama_index.extractors import (
-    SummaryExtractor,
-    QuestionsAnsweredExtractor,
-    TitleExtractor,
     KeywordExtractor,
+    QuestionsAnsweredExtractor,
+    SummaryExtractor,
+    TitleExtractor,
 )
 from llama_index.indices.service_context import ServiceContext
+from llama_index.ingestion import run_transformations
+from llama_index.node_parser import SimpleNodeParser
 from llama_index.schema import Document, TransformComponent
 
 

@@ -24,7 +24,7 @@ def _depth_first_yield(
       of characters, then we collapse it into one line.
 
     """
-    if isinstance(json_data, dict) or isinstance(json_data, list):
+    if isinstance(json_data, (dict, list)):
         # only try to collapse if we're not at a leaf node
         json_str = json.dumps(json_data, ensure_ascii=ensure_ascii)
         if collapse_length is not None and len(json_str) <= collapse_length:
@@ -81,7 +81,7 @@ class JSONReader(BaseReader):
 
     def load_data(self, input_file: str) -> List[Document]:
         """Load data from the input file."""
-        with open(input_file, "r", encoding="utf-8") as f:
+        with open(input_file, encoding="utf-8") as f:
             data = json.load(f)
             if self.levels_back is None:
                 # If levels_back isn't set, we just format and make each
@@ -105,3 +105,4 @@ class JSONReader(BaseReader):
                     )
                 ]
                 return [Document(text="\n".join(lines))]
+            return None
