@@ -1,6 +1,7 @@
 """LlamaIndex data structures."""
 
 # indices
+from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.indices.keyword_table.base import (
     GPTKeywordTableIndex,
     KeywordTableIndex,
@@ -24,6 +25,7 @@ __all__ = [
     "SummaryIndex",
     "TreeIndex",
     "VectaraIndex",
+    "DocumentSummaryIndex",
     # legacy
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",

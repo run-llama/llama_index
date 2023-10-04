@@ -85,7 +85,7 @@ def default_format_node_batch_fn(
 
 def default_parse_choice_select_answer_fn(
     answer: str, num_choices: int, raise_error: bool = False
-) -> Tuple[List[int], Optional[List[float]]]:
+) -> Tuple[List[int], List[float]]:
     """Default parse choice select answer function."""
     answer_lines = answer.split("\n")
     answer_nums = []
