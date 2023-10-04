@@ -174,5 +174,12 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/konko.ipynb
+```
 
+## Clarifai
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/clarifai.ipynb
 ```
