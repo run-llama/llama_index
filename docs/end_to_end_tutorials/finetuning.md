@@ -13,7 +13,7 @@ While finetuning can be also used to "augment" a model with external data, finet
 
 #### LLM Finetuning Benefits
 - Allow it to learn a style over a given dataset
-- Allow it to learn a DSL that might be less represented in the training data (e.g. SQL) 
+- Allow it to learn a DSL that might be less represented in the training data (e.g. SQL)
 - Allow it to correct hallucinations/errors that might be hard to fix through prompt engineering
 - Allow it to distill a better model (e.g. GPT-4) into a simpler/cheaper model (e.g. gpt-3.5, Llama 2)
 
@@ -34,7 +34,7 @@ We created a comprehensive repo/guide showing you how to finetune an open-source
 2. Finetuning the model
 3. Evaluating the model.
 
-Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can then plug this fine-tuned model into your RAG application with LlamaIndex. 
+Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can then plug this fine-tuned model into your RAG application with LlamaIndex.
 
 ```{toctree}
 ---
@@ -57,7 +57,7 @@ Embedding Fine-tuning Blog <https://medium.com/llamaindex-blog/fine-tuning-embed
 
 We have multiple guides showing how to use OpenAI's finetuning endpoints to fine-tune gpt-3.5-turbo to output GPT-4 responses for RAG/agents.
 
-We use GPT-4 to automatically generate questions from any unstructured context, and use a GPT-4 query engine pipeline to generate "ground-truth" answers. Our `OpenAIFineTuningHandler` callback automatically logs questions/answers to a dataset. 
+We use GPT-4 to automatically generate questions from any unstructured context, and use a GPT-4 query engine pipeline to generate "ground-truth" answers. Our `OpenAIFineTuningHandler` callback automatically logs questions/answers to a dataset.
 
 We then launch a finetuning job, and get back a distilled model. We can evaluate this model with [Ragas](https://github.com/explodinggradients/ragas) to benchmark against a naive GPT-3.5 pipeline.
 
@@ -94,7 +94,7 @@ maxdepth: 1
 
 
 
-### Finetuning Llama 2 for Better Text-to-SQL 
+### Finetuning Llama 2 for Better Text-to-SQL
 
 In this tutorial, we show you how you can finetune Llama 2 on a text-to-SQL dataset, and then use it for structured analytics against any SQL database using LlamaIndex abstractions.
 
@@ -107,4 +107,3 @@ maxdepth: 1
 Llama 2 Text-to-SQL Fine-tuning (Repo) <https://github.com/run-llama/modal_finetune_sql>
 Llama 2 Text-to-SQL Fine-tuning (Notebook) <https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb>
 ```
-

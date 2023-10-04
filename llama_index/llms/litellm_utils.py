@@ -1,9 +1,7 @@
 import logging
-from openai.openai_object import OpenAIObject
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
-from llama_index.bridge.pydantic import BaseModel
-
+from openai.openai_object import OpenAIObject
 from tenacity import (
     before_sleep_log,
     retry,
@@ -12,6 +10,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for LLM.

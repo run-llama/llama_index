@@ -72,7 +72,7 @@ agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ## Use other agents as Tools
 
 A nifty feature of our agents is that since they inherit from `BaseQueryEngine`, you can easily define other agents as tools
-through our `QueryEngineTool`. 
+through our `QueryEngineTool`.
 
 ```python
 from llama_index.tools import QueryEngineTool

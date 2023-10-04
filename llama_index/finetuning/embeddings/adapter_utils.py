@@ -1,16 +1,17 @@
 """Adapter utils."""
 
-import torch
 from pathlib import Path
-from torch import nn, Tensor
-from typing import Optional, Dict, Type, Callable, Any, List
-from torch.optim import Optimizer
-import transformers
-from tqdm.autonotebook import trange
-from llama_index.embeddings.adapter_utils import BaseAdapter
-from llama_index.bridge.langchain import print_text
+from typing import Any, Callable, Dict, List, Optional, Type
 
+import torch
+import transformers
 from sentence_transformers.util import cos_sim
+from torch import Tensor, nn
+from torch.optim import Optimizer
+from tqdm.autonotebook import trange
+
+from llama_index.embeddings.adapter_utils import BaseAdapter
+from llama_index.utils import print_text
 
 
 class MyMultipleNegativesRankingLoss(nn.Module):
@@ -28,8 +29,7 @@ class MyMultipleNegativesRankingLoss(nn.Module):
         similarity_fct: Optional[Callable] = None,
     ):
         """Define ranking loss."""
-
-        super(MyMultipleNegativesRankingLoss, self).__init__()
+        super().__init__()
         self.model = model
         self.scale = scale
         self.similarity_fct = cos_sim if similarity_fct is None else similarity_fct
@@ -37,7 +37,6 @@ class MyMultipleNegativesRankingLoss(nn.Module):
 
     def forward(self, query_embeds: Tensor, context_embeds: Tensor) -> Tensor:
         """Forward pass."""
-
         # transform context embeds
         # context_embeds_2 = self.model.forward(context_embeds)
         query_embeds_2 = self.model.forward(query_embeds)
@@ -73,7 +72,6 @@ def train_model(
     # checkpoint_save_total_limit: int = 0,
 ) -> None:
     """Train model."""
-
     model.to(device)
     # TODO: hardcode loss now, make customizable later
     loss_model = MyMultipleNegativesRankingLoss(model=model)

@@ -3,7 +3,7 @@
 Prompt Templates
 =================
 
-These are the reference prompt templates. 
+These are the reference prompt templates.
 
 We first show links to default prompts.
 

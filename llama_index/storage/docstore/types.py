@@ -1,12 +1,12 @@
 import os
-import fsspec
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from dataclasses_json import DataClassJsonMixin
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.schema import BaseNode
+import fsspec
+from dataclasses_json import DataClassJsonMixin
 
+from llama_index.schema import BaseNode
 
 DEFAULT_PERSIST_FNAME = "docstore.json"
 DEFAULT_PERSIST_DIR = "./storage"
@@ -29,7 +29,6 @@ class BaseDocumentStore(ABC):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the docstore to a file."""
-        pass
 
     # ===== Main interface =====
     @property

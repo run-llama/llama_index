@@ -14,8 +14,8 @@ from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
     get_top_k_mmr_embeddings,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
 from llama_index.schema import BaseNode
+from llama_index.utils import concat_dirs
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
@@ -25,7 +25,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.utils import concat_dirs
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ class SimpleVectorStore(VectorStore):
     @property
     def client(self) -> None:
         """Get client."""
-        return None
+        return
 
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""
@@ -156,8 +156,12 @@ class SimpleVectorStore(VectorStore):
 
         for text_id in text_ids_to_delete:
             del self._data.embedding_dict[text_id]
-            del self._data.metadata_dict[text_id]
             del self._data.text_id_to_ref_doc_id[text_id]
+            # Handle metadata_dict not being present in stores that were persisted
+            # without metadata, or, not being present for nodes stored
+            # prior to metadata functionality.
+            if self._data.metadata_dict is not None:
+                self._data.metadata_dict.pop(text_id, None)
 
     def query(
         self,

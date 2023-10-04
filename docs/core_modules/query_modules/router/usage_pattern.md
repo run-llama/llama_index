@@ -37,7 +37,7 @@ selector = LLMMultiSelector.from_defaults()
 
 ## Using as a Query Engine
 
-A `RouterQueryEngine` is composed on top of other query engines as tools. 
+A `RouterQueryEngine` is composed on top of other query engines as tools.
 
 ```python
 from llama_index.query_engine.router_query_engine import RouterQueryEngine

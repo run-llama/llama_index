@@ -52,7 +52,6 @@ class NotionPageReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "NotionPageReader"
 
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
@@ -99,8 +98,7 @@ class NotionPageReader(BasePydanticReader):
             else:
                 cur_block_id = data["next_cursor"]
 
-        result_lines = "\n".join(result_lines_arr)
-        return result_lines
+        return "\n".join(result_lines_arr)
 
     def read_page(self, page_id: str) -> str:
         """Read a page."""

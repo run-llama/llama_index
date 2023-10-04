@@ -39,7 +39,7 @@ class ElasticsearchReader(BasePydanticReader):
             `httpx` package not found. Install via `pip install httpx`
         """
         try:
-            import httpx  # noqa: F401
+            import httpx
         except ImportError:
             raise ImportError(import_err_msg)
         self._client = httpx.Client(base_url=endpoint, **(httpx_client_args or {}))
@@ -50,7 +50,6 @@ class ElasticsearchReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "ElasticsearchReader"
 
     def load_data(

@@ -1,9 +1,10 @@
 """Pydantic output parser."""
 
+import json
+from typing import Any, List, Optional, Type
+
 from llama_index.output_parsers.utils import extract_json_str
 from llama_index.types import BaseOutputParser, Model
-from typing import Type, Optional, List, Any
-import json
 
 PYDANTIC_FORMAT_TMPL = """
 Here's a JSON schema to follow:
@@ -43,8 +44,7 @@ class PydanticOutputParser(BaseOutputParser):
             del schema_dict[key]
 
         schema_str = json.dumps(schema_dict)
-        format_str = self._pydantic_format_tmpl.format(schema=schema_str)
-        return format_str
+        return self._pydantic_format_tmpl.format(schema=schema_str)
 
     def parse(self, text: str) -> Any:
         """Parse, validate, and correct errors programmatically."""

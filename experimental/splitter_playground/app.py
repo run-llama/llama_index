@@ -7,6 +7,8 @@ import tiktoken
 from langchain.text_splitter import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
+)
+from langchain.text_splitter import (
     TextSplitter as LCSplitter,
 )
 from langchain.text_splitter import TokenTextSplitter as LCTokenTextSplitter
@@ -29,7 +31,6 @@ assert isinstance(n_cols, int)
 @st.cache_resource(ttl="1h")
 def load_document(uploaded_files: List[UploadedFile]) -> List[Document]:
     # Read documents
-    docs = []
     temp_dir = tempfile.TemporaryDirectory()
     for file in uploaded_files:
         temp_filepath = os.path.join(temp_dir.name, file.name)
@@ -37,8 +38,7 @@ def load_document(uploaded_files: List[UploadedFile]) -> List[Document]:
             f.write(file.getvalue())
 
     reader = SimpleDirectoryReader(input_dir=temp_dir.name)
-    docs = reader.load_data()
-    return docs
+    return reader.load_data()
 
 
 if uploaded_files:

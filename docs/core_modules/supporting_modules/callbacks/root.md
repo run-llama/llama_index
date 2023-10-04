@@ -1,17 +1,17 @@
 # Callbacks
 
 ## Concept
-LlamaIndex provides callbacks to help debug, track, and trace the inner workings of the library. 
+LlamaIndex provides callbacks to help debug, track, and trace the inner workings of the library.
 Using the callback manager, as many callbacks as needed can be added.
 
 In addition to logging data related to events, you can also track the duration and number of occurances
-of each event. 
+of each event.
 
 Furthermore, a trace map of events is also recorded, and callbacks can use this data
 however they want. For example, the `LlamaDebugHandler` will, by default, print the trace of events
 after most operations.
 
-**Callback Event Types**  
+**Callback Event Types**
 While each callback may not leverage each event type, the following events are available to be tracked:
 
 - `CHUNKING` -> Logs for the before and after of text splitting.

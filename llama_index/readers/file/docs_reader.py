@@ -3,9 +3,8 @@
 Contains parsers for docx, pdf files.
 
 """
-import zlib
 import struct
-
+import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 

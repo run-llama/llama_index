@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import List, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.tools.types import ToolMetadata
 

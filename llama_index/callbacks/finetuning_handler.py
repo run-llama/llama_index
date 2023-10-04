@@ -29,6 +29,7 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         """Run when an event starts and return id of event."""
@@ -75,8 +76,6 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
 
             self._finetuning_events[event_id].append(response)
 
-        return None
-
     def get_finetuning_events(self) -> List[Dict[str, Any]]:
         events = []
         for event in self._finetuning_events.values():
@@ -113,7 +112,6 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         """Run when an overall trace is launched."""
-        pass
 
     def end_trace(
         self,
@@ -121,4 +119,3 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
         """Run when an overall trace is exited."""
-        pass

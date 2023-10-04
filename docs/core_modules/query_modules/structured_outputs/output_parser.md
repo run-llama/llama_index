@@ -70,11 +70,11 @@ query_engine = index.as_query_engine(
     service_context=ServiceContext.from_defaults(
         llm_predictor=llm_predictor
     ),
-    text_qa_template=qa_prompt, 
-    refine_template=refine_prompt, 
+    text_qa_template=qa_prompt,
+    refine_template=refine_prompt,
 )
 response = query_engine.query(
-    "What are the three items the author did growing up?", 
+    "What are the three items the author did growing up?",
 )
 print(response)
 
@@ -125,11 +125,11 @@ query_engine = index.as_query_engine(
     service_context=ServiceContext.from_defaults(
         llm_predictor=llm_predictor
     ),
-    text_qa_template=qa_prompt, 
-    refine_template=refine_prompt, 
+    text_qa_template=qa_prompt,
+    refine_template=refine_prompt,
 )
 response = query_engine.query(
-    "What are a few things the author did growing up?", 
+    "What are a few things the author did growing up?",
 )
 print(str(response))
 ```

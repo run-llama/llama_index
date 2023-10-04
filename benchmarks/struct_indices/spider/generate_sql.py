@@ -4,13 +4,12 @@ import json
 import logging
 import os
 import re
+from typing import Any, cast
 
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
-from llama_index import SQLStructStoreIndex, LLMPredictor, SQLDatabase
-from typing import Any, cast
-
+from llama_index import LLMPredictor, SQLDatabase, SQLStructStoreIndex
 from llama_index.llms.openai import OpenAI
 
 logging.getLogger("root").setLevel(logging.WARNING)
@@ -87,11 +86,11 @@ if __name__ == "__main__":
         os.makedirs(args.output)
 
     # Load the Spider dataset from the input directory.
-    with open(os.path.join(args.input, "train_spider.json"), "r") as f:
+    with open(os.path.join(args.input, "train_spider.json")) as f:
         train_spider = json.load(f)
-    with open(os.path.join(args.input, "train_others.json"), "r") as f:
+    with open(os.path.join(args.input, "train_others.json")) as f:
         train_others = json.load(f)
-    with open(os.path.join(args.input, "dev.json"), "r") as f:
+    with open(os.path.join(args.input, "dev.json")) as f:
         dev = json.load(f)
 
     # Create all necessary SQL database objects.

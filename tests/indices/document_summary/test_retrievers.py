@@ -1,8 +1,6 @@
 """Test document summary retrievers."""
 from llama_index.indices.document_summary.base import (
-    DocumentSummaryIndex,
-    DocumentSummaryRetrieverMode,
-)
+    DocumentSummaryIndex, DocumentSummaryRetrieverMode)
 
 
 def test_embedding_retriever(

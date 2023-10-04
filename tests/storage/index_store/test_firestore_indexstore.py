@@ -1,7 +1,6 @@
 import pytest
-
-from llama_index.storage.index_store.firestore_indexstore import FirestoreIndexStore
 from llama_index.data_structs.data_structs import IndexGraph
+from llama_index.storage.index_store.firestore_indexstore import FirestoreIndexStore
 from llama_index.storage.kvstore.firestore_kvstore import FirestoreKVStore
 
 try:

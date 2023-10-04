@@ -43,13 +43,12 @@ def get_dial_then_enter() -> Task:
     dial_digit_tool = FunctionTool.from_defaults(fn=phone.dial_digit)
     enter_tool = FunctionTool.from_defaults(fn=phone.enter)
 
-    task = Task(
+    return Task(
         message="Dial the number 4151 then hit enter.",
         expected_response="4151",
         tools=[dial_digit_tool, enter_tool],
         eval_fn=phone.evaluate,
     )
-    return task
 
 
 def get_search_then_dial() -> Task:
@@ -58,13 +57,12 @@ def get_search_then_dial() -> Task:
     dial_digit_tool = FunctionTool.from_defaults(fn=phone.dial_digit)
     enter_tool = FunctionTool.from_defaults(fn=phone.enter)
 
-    task = Task(
+    return Task(
         message="Dial the number for john smith, then hit enter.",
         expected_response="2135",
         tools=[dial_digit_tool, enter_tool, search_number_tool],
         eval_fn=phone.evaluate,
     )
-    return task
 
 
 TASKS: Dict[str, Callable[..., Task]] = {

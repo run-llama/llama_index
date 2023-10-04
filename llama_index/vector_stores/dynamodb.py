@@ -1,23 +1,21 @@
 """DynamoDB vector store index."""
 from __future__ import annotations
-from typing import Optional, List, Any, cast, Dict
-from llama_index.schema import BaseNode
 
-from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
+from logging import getLogger
+from typing import Any, Dict, List, Optional, cast
 
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
 )
-
+from llama_index.schema import BaseNode
+from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
 from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-
-from logging import getLogger
 
 logger = getLogger(__name__)
 
@@ -44,7 +42,7 @@ class DynamoDBVectorStore(VectorStore):
     stores_text: bool = False
 
     def __init__(
-        self, dynamodb_kvstore: DynamoDBKVStore, namespace: Optional[str] = None
+        self, dynamodb_kvstore: DynamoDBKVStore, namespace: str | None = None
     ) -> None:
         """Initialize params."""
         self._kvstore = dynamodb_kvstore
@@ -55,7 +53,7 @@ class DynamoDBVectorStore(VectorStore):
 
     @classmethod
     def from_table_name(
-        cls, table_name: str, namespace: Optional[str] = None
+        cls, table_name: str, namespace: str | None = None
     ) -> DynamoDBVectorStore:
         """Load from DynamoDB table name."""
         dynamodb_kvstore = DynamoDBKVStore.from_table_name(table_name=table_name)
@@ -64,7 +62,7 @@ class DynamoDBVectorStore(VectorStore):
     @property
     def client(self) -> None:
         """Get client."""
-        return None
+        return
 
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""

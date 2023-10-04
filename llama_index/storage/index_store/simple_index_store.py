@@ -1,14 +1,16 @@
 import os
 from typing import Optional
+
 import fsspec
+
 from llama_index.storage.index_store.keyval_index_store import KVIndexStore
-from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
-from llama_index.storage.kvstore.types import BaseInMemoryKVStore
 from llama_index.storage.index_store.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     DEFAULT_PERSIST_PATH,
 )
+from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
+from llama_index.storage.kvstore.types import BaseInMemoryKVStore
 from llama_index.utils import concat_dirs
 
 

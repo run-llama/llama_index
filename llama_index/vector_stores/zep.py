@@ -1,14 +1,14 @@
 import logging
-from typing import Any, List, Optional, TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
-from llama_index.schema import BaseNode, TextNode, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 
@@ -51,18 +51,17 @@ class ZepVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         import_err_msg = (
             "`zep-python` package not found, please run `pip install zep-python`"
         )
         try:
-            import zep_python  # noqa: F401
+            import zep_python
         except ImportError:
             raise ImportError(import_err_msg)
 
-        from zep_python import ZepClient  # noqa: F401
-        from zep_python.document import Document as ZepDocument  # noqa: F401
-        from zep_python.document import DocumentCollection  # noqa: F401
+        from zep_python import ZepClient
+        from zep_python.document import Document as ZepDocument
+        from zep_python.document import DocumentCollection
 
         self._client = ZepClient(base_url=api_url, api_key=api_key)
 
@@ -241,15 +240,12 @@ class ZepVectorStore(VectorStore):
 
     def _to_zep_filters(self, filters: MetadataFilters) -> Any:
         """Convert filters to Zep filters. Filters are ANDed together."""
-
         filter_conditions = []
 
         for f in filters.filters:
             filter_conditions.append({"jsonpath": f'$[*] ? (@.{f.key} == "{f.value}")'})
 
-        zep_filters = {"where": {"and": filter_conditions}}
-
-        return zep_filters
+        return {"where": {"and": filter_conditions}}
 
     def query(
         self,

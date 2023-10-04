@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, cast
+from typing import Any, List, Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
@@ -59,6 +59,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         max_top_k: int = 10,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
+        **kwargs: Any,
     ) -> None:
         self._index = index
         self._vector_store_info = vector_store_info
@@ -78,6 +79,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         self._max_top_k = max_top_k
         self._similarity_top_k = similarity_top_k
         self._vector_store_query_mode = vector_store_query_mode
+        self._kwargs = kwargs
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
@@ -125,5 +127,6 @@ class VectorIndexAutoRetriever(BaseRetriever):
             filters=MetadataFilters(filters=query_spec.filters),
             similarity_top_k=similarity_top_k,
             vector_store_query_mode=self._vector_store_query_mode,
+            **self._kwargs,
         )
         return retriever.retrieve(query_spec.query)

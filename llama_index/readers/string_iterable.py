@@ -28,7 +28,6 @@ class StringIterableReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "StringIterableReader"
 
     def load_data(self, texts: List[str]) -> List[Document]:

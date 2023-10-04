@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr, Field
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
@@ -35,8 +35,8 @@ class OptimumEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
     ):
         try:
-            from transformers import AutoTokenizer
             from optimum.onnxruntime import ORTModelForFeatureExtraction
+            from transformers import AutoTokenizer
         except ImportError:
             raise ImportError(
                 "OptimumEmbedding requires transformers to be installed.\n"
@@ -71,7 +71,6 @@ class OptimumEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "OptimumEmbedding"
 
     @classmethod
@@ -82,8 +81,8 @@ class OptimumEmbedding(BaseEmbedding):
         export_kwargs: Optional[dict] = None,
     ) -> None:
         try:
-            from transformers import AutoTokenizer
             from optimum.onnxruntime import ORTModelForFeatureExtraction
+            from transformers import AutoTokenizer
         except ImportError:
             raise ImportError(
                 "OptimumEmbedding requires transformers to be installed.\n"

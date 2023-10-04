@@ -11,4 +11,3 @@ twine upload dist/*
 
 # cleanup
 rm -rf build dist *.egg-info
-
