@@ -11,7 +11,7 @@
 - Fix `LocalAI` chat capability without `max_tokens` (#7942)
 - Added `codespell` for automated checking (#7941)
 - `ruff` modernization and autofixes (#7889)
-- Add `cache_okay` param to `PGVectorStore` to help supress TSVector warnings (#7950)
+- Add `cache_okay` param to `PGVectorStore` to help suppress TSVector warnings (#7950)
 
 ## [0.8.38] - 2023-10-02
 
