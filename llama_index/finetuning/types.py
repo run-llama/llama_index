@@ -39,5 +39,5 @@ class BaseCrossEncoderFinetuningEngine(ABC):
         """Goes off and does stuff."""
 
     @abstractmethod
-    def push_to_hub(self, repo_id: Any):
+    def push_to_hub(self, repo_id: Any) -> None:
         """Pushes the Cross Encoder model to HuggingFace Hub"""
