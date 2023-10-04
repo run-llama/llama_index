@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added support for `Clarifai` LLM (#7967)
+
 ### Breaking Changes
 - Update document summary index (#7815)
   - change default retrieval mode to embedding
