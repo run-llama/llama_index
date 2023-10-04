@@ -300,13 +300,12 @@ class OpenAIEmbedding(BaseEmbedding):
 
     @property
     def _credential_kwargs(self) -> Dict[str, Any]:
-        credential_kwargs = {
+        return {
             "api_key": self.api_key,
             "api_type": self.api_type,
             "api_base": self.api_base,
             "api_version": self.api_version,
         }
-        return credential_kwargs
 
     @property
     def _all_kwargs(self) -> Dict[str, Any]:

@@ -34,13 +34,13 @@ Configuring a chat engine is very similar to configuring a query engine.
 You can directly build and configure a chat engine from an index in 1 line of code:
 ```python
 chat_engine = index.as_chat_engine(
-    chat_mode='condense_question', 
+    chat_mode='condense_question',
     verbose=True
 )
 ```
 > Note: you can access different chat engines by specifying the `chat_mode` as a kwarg. `condense_question` corresponds to `CondenseQuestionChatEngine`, `react` corresponds to `ReActChatEngine`, `context` corresponds to a `ContextChatEngine`.
 
-> Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.  
+> Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.
 
 #### Available Chat Modes
 
@@ -58,7 +58,7 @@ Concretely speaking, you would explicitly construct `ChatEngine` object instead 
 > Note: You may need to look at API references or example notebooks.
 
 Here's an example where we configure the following:
-* configure the condense question prompt, 
+* configure the condense question prompt,
 * initialize the conversation with some existing history,
 * print verbose debug message.
 
@@ -71,7 +71,7 @@ Given a conversation (between Human and Assistant) and a follow up message from 
 rewrite the message to be a standalone question that captures all relevant context \
 from the conversation.
 
-<Chat History> 
+<Chat History>
 {chat_history}
 
 <Follow Up Message>
@@ -83,18 +83,18 @@ from the conversation.
 # list of `ChatMessage` objects
 custom_chat_history = [
     ChatMessage(
-        role=MessageRole.USER, 
+        role=MessageRole.USER,
         content='Hello assistant, we are having a insightful discussion about Paul Graham today.'
-    ), 
+    ),
     ChatMessage(
-        role=MessageRole.ASSISTANT, 
+        role=MessageRole.ASSISTANT,
         content='Okay, sounds good.'
     )
 ]
 
 query_engine = index.as_query_engine()
 chat_engine = CondenseQuestionChatEngine.from_defaults(
-    query_engine=query_engine, 
+    query_engine=query_engine,
     condense_question_prompt=custom_prompt,
     chat_history=custom_chat_history,
     verbose=True
@@ -102,10 +102,10 @@ chat_engine = CondenseQuestionChatEngine.from_defaults(
 ```
 
 ### Streaming
-To enable streaming, you simply need to call the `stream_chat` endpoint instead of the `chat` endpoint. 
+To enable streaming, you simply need to call the `stream_chat` endpoint instead of the `chat` endpoint.
 
 ```{warning}
-This somewhat inconsistent with query engine (where you pass in a `streaming=True` flag). We are working on making the behavior more consistent! 
+This somewhat inconsistent with query engine (where you pass in a `streaming=True` flag). We are working on making the behavior more consistent!
 ```
 
 ```python
@@ -116,6 +116,3 @@ for token in streaming_response.response_gen:
 ```
 
 See an [end-to-end tutorial](/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb)
-
-
-

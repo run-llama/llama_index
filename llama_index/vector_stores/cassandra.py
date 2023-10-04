@@ -6,25 +6,23 @@ powered by the cassIO library
 """
 
 import logging
-from typing import Any, cast, Dict, Iterable, List, Optional, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
 
-
-from llama_index.schema import BaseNode, MetadataMode
-from llama_index.vector_stores.utils import (
-    metadata_dict_to_node,
-    node_to_metadata_dict,
-)
 from llama_index.indices.query.embedding_utils import (
     get_top_k_mmr_embeddings,
 )
-
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     ExactMatchFilter,
+    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
 )
 
 _logger = logging.getLogger(__name__)
@@ -81,7 +79,7 @@ class CassandraVectorStore(VectorStore):
     ) -> None:
         import_err_msg = "`cassio` package not found, please run `pip install cassio`"
         try:
-            from cassio.table import ClusteredMetadataVectorCassandraTable  # noqa: F401
+            from cassio.table import ClusteredMetadataVectorCassandraTable
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -110,7 +108,7 @@ class CassandraVectorStore(VectorStore):
     ) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of node with embeddings
 
         """

@@ -273,6 +273,7 @@ class LLMPredictor(BaseLLMPredictor):
         """Add system prompt to chat message list"""
         if self.system_prompt:
             messages = [
-                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt)
-            ] + messages
+                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt),
+                *messages,
+            ]
         return messages

@@ -1,7 +1,6 @@
 from typing import List, cast
 
 import pytest
-
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
@@ -108,7 +107,6 @@ def test_faiss_check_ids(
     faiss_storage_context: StorageContext,
 ) -> None:
     """Test embedding query."""
-
     ref_doc_id = "ref_doc_id_test"
     source_rel = {NodeRelationship.SOURCE: RelatedNodeInfo(node_id=ref_doc_id)}
     all_nodes = [

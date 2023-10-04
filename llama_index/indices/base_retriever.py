@@ -24,8 +24,7 @@ class BaseRetriever(ABC):
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         if isinstance(str_or_query_bundle, str):
             str_or_query_bundle = QueryBundle(str_or_query_bundle)
-        nodes = await self._aretrieve(str_or_query_bundle)
-        return nodes
+        return await self._aretrieve(str_or_query_bundle)
 
     @abstractmethod
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
@@ -34,7 +33,6 @@ class BaseRetriever(ABC):
         Implemented by the user.
 
         """
-        pass
 
     # TODO: make this abstract
     # @abstractmethod

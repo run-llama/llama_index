@@ -2,9 +2,8 @@
 
 from typing import List
 
-from llama_index.bridge.pydantic import Field
-
 from llama_index.bridge.langchain import BaseTool, BaseToolkit
+from llama_index.bridge.pydantic import Field
 from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool
 
 

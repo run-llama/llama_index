@@ -2,9 +2,9 @@
 from abc import abstractmethod
 from typing import Any, Dict, List
 
-from llama_index.bridge.pydantic import Field
 from llama_index.bridge.langchain import Document as LCDocument
-from llama_index.schema import Document, BaseComponent
+from llama_index.bridge.pydantic import Field
+from llama_index.schema import BaseComponent, Document
 
 
 class BaseReader:

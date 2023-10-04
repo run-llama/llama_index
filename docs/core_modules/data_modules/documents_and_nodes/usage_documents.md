@@ -44,9 +44,9 @@ There are a few ways to set up this dictionary:
 
 ```python
 document = Document(
-    text='text', 
+    text='text',
     metadata={
-        'filename': '<doc_file_name>', 
+        'filename': '<doc_file_name>',
         'category': '<category>'
     }
 )
@@ -93,7 +93,7 @@ A key detail mentioned above is that by default, any metadata you set is include
 
 #### Customizing LLM Metadata Text
 
-Typically, a document might have many metadata keys, but you might not want all of them visible to the LLM during response synthesis. In the above examples, we may not want the LLM to read the `file_name` of our document. However, the `file_name` might include information that will help generate better embeddings. A key advantage of doing this is to bias the embeddings for retrieval without changing what the LLM ends up reading. 
+Typically, a document might have many metadata keys, but you might not want all of them visible to the LLM during response synthesis. In the above examples, we may not want the LLM to read the `file_name` of our document. However, the `file_name` might include information that will help generate better embeddings. A key advantage of doing this is to bias the embeddings for retrieval without changing what the LLM ends up reading.
 
 We can exclude it like so:
 
@@ -152,7 +152,7 @@ document = Document(
     metadata={
         "file_name": "super_secret_document.txt",
         "category": "finance",
-        "author": "LlamaIndex"    
+        "author": "LlamaIndex"
     },
     excluded_llm_metadata_keys=['file_name'],
     metadata_seperator="::",
@@ -169,7 +169,7 @@ print("The Embedding model sees this: \n", document.get_content(metadata_mode=Me
 
 We have initial examples of using LLMs themselves to perform metadata extraction.
 
-Take a look here! 
+Take a look here!
 
 ```{toctree}
 ---

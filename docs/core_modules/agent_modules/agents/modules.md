@@ -26,4 +26,3 @@ maxdepth: 1
 ---
 /examples/agent/react_agent_with_query_engine.ipynb
 ```
-

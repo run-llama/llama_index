@@ -3,7 +3,6 @@
 from llama_index.callbacks.schema import CBEventType
 from llama_index.callbacks.token_counting import TokenCountingHandler
 
-
 TEST_PAYLOAD = {"chunks": ["one"], "formatted_prompt": "two", "response": "three"}
 TEST_ID = "my id"
 

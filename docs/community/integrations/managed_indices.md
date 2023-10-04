@@ -14,7 +14,7 @@ Below we show how to use it.
 
 **Vectara Index Construction/Querying**
 
-First, [sign up](https://vectara.com/integrations/llama_index) and use the Vectara Console to create a corpus (aka Index), and add an API key for access. 
+First, [sign up](https://vectara.com/integrations/llama_index) and use the Vectara Console to create a corpus (aka Index), and add an API key for access.
 Then put the customer id, corpus id, and API key in your environment.
 
 Then construct the Vectara Index and query it as follows:
@@ -43,7 +43,7 @@ from llama_index.managed import VectaraIndex
 
 # Load documents and build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = VectaraIndex.from_documents(documents) 
+index = VectaraIndex.from_documents(documents)
 
 # Query index
 query_engine = index.as_query_engine()

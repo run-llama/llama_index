@@ -3,7 +3,6 @@ from threading import Thread
 from typing import Any, List, Optional, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     CompletionResponse,
@@ -191,7 +190,6 @@ class HuggingFaceLLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
-
         full_prompt = prompt
         if self.query_wrapper_prompt:
             full_prompt = self.query_wrapper_prompt.format(query_str=prompt)

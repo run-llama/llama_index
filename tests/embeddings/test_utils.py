@@ -1,12 +1,12 @@
 from typing import Any, Dict
-from pytest import MonkeyPatch
 
 from llama_index.embeddings import (
-    OpenAIEmbedding,
     HuggingFaceEmbedding,
+    OpenAIEmbedding,
 )
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.token_counter.mock_embed_model import MockEmbedding
+from pytest import MonkeyPatch
 
 
 def mock_hf_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:

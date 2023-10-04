@@ -5,11 +5,10 @@ from unittest.mock import patch
 
 import openai
 import pytest
-
 from llama_index.embeddings.base import SimilarityMode, mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-from ..conftest import CachedOpenAIApiKeys
+from tests.conftest import CachedOpenAIApiKeys
 
 
 def mock_get_text_embedding(text: str) -> List[float]:

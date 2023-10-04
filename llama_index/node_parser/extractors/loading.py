@@ -2,12 +2,12 @@ from typing import List, Optional
 
 from llama_index.llms.base import LLM
 from llama_index.node_parser.extractors.metadata_extractors import (
-    MetadataExtractor,
-    SummaryExtractor,
-    QuestionsAnsweredExtractor,
     EntityExtractor,
-    TitleExtractor,
     KeywordExtractor,
+    MetadataExtractor,
+    QuestionsAnsweredExtractor,
+    SummaryExtractor,
+    TitleExtractor,
 )
 
 

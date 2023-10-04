@@ -17,7 +17,7 @@ from llama_index.vector_stores.types import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def node_embeddings() -> List[TextNode]:
     return [
         TextNode(

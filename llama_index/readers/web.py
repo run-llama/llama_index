@@ -1,7 +1,8 @@
 """Web scraper."""
 import logging
-import requests
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import requests
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.readers.base import BasePydanticReader
@@ -35,7 +36,7 @@ class SimpleWebPageReader(BasePydanticReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            import html2text  # noqa: F401
+            import html2text
         except ImportError:
             raise ImportError(
                 "`html2text` package not found, please run `pip install html2text`"
@@ -93,9 +94,8 @@ class TrafilaturaWebReader(BasePydanticReader):
         Args:
             error_on_missing (bool): Throw an error when data cannot be parsed
         """
-
         try:
-            import trafilatura  # noqa: F401
+            import trafilatura
         except ImportError:
             raise ImportError(
                 "`trafilatura` package not found, please run `pip install trafilatura`"
@@ -174,10 +174,10 @@ class BeautifulSoupWebReader(BasePydanticReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            from urllib.parse import urlparse  # noqa: F401
+            from urllib.parse import urlparse
 
-            import requests  # noqa: F401
-            from bs4 import BeautifulSoup  # noqa: F401
+            import requests
+            from bs4 import BeautifulSoup
         except ImportError:
             raise ImportError(
                 "`bs4`, `requests`, and `urllib` must be installed to scrape websites."
@@ -253,7 +253,7 @@ class RssReader(BasePydanticReader):
 
         """
         try:
-            import feedparser  # noqa: F401
+            import feedparser
         except ImportError:
             raise ImportError(
                 "`feedparser` package not found, please run `pip install feedparser`"
@@ -261,7 +261,7 @@ class RssReader(BasePydanticReader):
 
         if html_to_text:
             try:
-                import html2text  # noqa: F401
+                import html2text
             except ImportError:
                 raise ImportError(
                     "`html2text` package not found, please run `pip install html2text`"

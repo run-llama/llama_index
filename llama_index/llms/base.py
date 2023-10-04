@@ -350,29 +350,24 @@ class LLM(BaseComponent):
     @abstractmethod
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
-        pass
 
     @abstractmethod
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM."""
-        pass
 
     @abstractmethod
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint for LLM."""
-        pass
 
     @abstractmethod
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         """Streaming chat endpoint for LLM."""
-        pass
 
     @abstractmethod
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Streaming completion endpoint for LLM."""
-        pass
 
     # ===== Async Endpoints =====
     @abstractmethod
@@ -380,23 +375,19 @@ class LLM(BaseComponent):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         """Async chat endpoint for LLM."""
-        pass
 
     @abstractmethod
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Async completion endpoint for LLM."""
-        pass
 
     @abstractmethod
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         """Async streaming chat endpoint for LLM."""
-        pass
 
     @abstractmethod
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
-        pass

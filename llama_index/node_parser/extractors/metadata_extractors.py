@@ -20,19 +20,18 @@ disambiguate the document or subsection from other similar documents or subsecti
 (similar with contrastive learning)
 """
 from abc import abstractmethod
-from functools import reduce
 from copy import deepcopy
+from functools import reduce
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
 from llama_index.llms.base import LLM
 from llama_index.node_parser.interface import BaseExtractor
 from llama_index.prompts import PromptTemplate
-from llama_index.schema import BaseNode, TextNode, MetadataMode
-from llama_index.utils import get_tqdm_iterable
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.types import BasePydanticProgram
+from llama_index.utils import get_tqdm_iterable
 
 
 class MetadataFeatureExtractor(BaseExtractor):
@@ -233,8 +232,7 @@ class TitleExtractor(MetadataFeatureExtractor):
                 0
             ]  # if single node, just use the title from that node
 
-        metadata_list = [{"document_title": title.strip(' \t\n\r"')} for _ in nodes]
-        return metadata_list
+        return [{"document_title": title.strip(' \t\n\r"')} for _ in nodes]
 
 
 class KeywordExtractor(MetadataFeatureExtractor):
@@ -406,7 +404,8 @@ class SummaryExtractor(MetadataFeatureExtractor):
     Args:
         llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
-        prompt_template (str): template for summary extraction"""
+        prompt_template (str): template for summary extraction
+    """
 
     llm_predictor: BaseLLMPredictor = Field(
         description="The LLMPredictor to use for generation."
@@ -438,7 +437,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
             llm_predictor = LLMPredictor()
 
         # validation
-        if not all([s in ["self", "prev", "next"] for s in summaries]):
+        if not all(s in ["self", "prev", "next"] for s in summaries):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
         self._self_summary = "self" in summaries
         self._prev_summary = "prev" in summaries
@@ -456,7 +455,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
         return "SummaryExtractor"
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        if not all([isinstance(node, TextNode) for node in nodes]):
+        if not all(isinstance(node, TextNode) for node in nodes):
             raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
         nodes_queue = get_tqdm_iterable(
             nodes, self.show_progress, "Extracting summaries"
@@ -670,7 +669,6 @@ class PydanticProgramExtractor(MetadataFeatureExtractor):
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract pydantic program."""
-
         metadata_list: List[Dict] = []
         nodes_queue = get_tqdm_iterable(
             nodes, self.show_progress, "Extracting Pydantic object"

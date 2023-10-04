@@ -1,11 +1,11 @@
 """Markdown splitter."""
+import re
 from typing import List, Optional
-from llama_index.bridge.pydantic import Field
 
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.text_splitter.types import TextSplitter
-import re
 
 
 class MarkdownSplitter(TextSplitter):

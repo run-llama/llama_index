@@ -13,12 +13,12 @@ from llama_index.schema import (
     RelatedNodeInfo,
     TextNode,
 )
+from llama_index.utils import get_tqdm_iterable
 from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.utils import get_tqdm_iterable
 
 
 def convert_docs_to_json(nodes: List[BaseNode]) -> List[Dict]:
@@ -89,7 +89,7 @@ class ChatGPTRetrievalPluginClient(VectorStore):
     @property
     def client(self) -> None:
         """Get client."""
-        return None
+        return
 
     def add(
         self,

@@ -4,9 +4,6 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, U
 
 import openai
 from openai import ChatCompletion, Completion
-
-from llama_index.bridge.pydantic import BaseModel
-
 from tenacity import (
     before_sleep_log,
     retry,
@@ -15,9 +12,9 @@ from tenacity import (
     wait_exponential,
 )
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
-
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -272,7 +269,6 @@ def resolve_openai_credentials(
     3. openai module
     4. default
     """
-
     # resolve from param or env
     api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY", "")
     api_type = get_from_param_or_env("api_type", api_type, "OPENAI_API_TYPE", "")

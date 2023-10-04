@@ -1,7 +1,7 @@
 from inspect import signature
 from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast
 
-from llama_index.bridge.pydantic import BaseModel, create_model, FieldInfo
+from llama_index.bridge.pydantic import BaseModel, FieldInfo, create_model
 
 
 def create_schema_from_function(
@@ -14,7 +14,7 @@ def create_schema_from_function(
     """Create schema from function."""
     fields = {}
     params = signature(func).parameters
-    for param_name in params.keys():
+    for param_name in params:
         param_type = params[param_name].annotation
         param_default = params[param_name].default
 

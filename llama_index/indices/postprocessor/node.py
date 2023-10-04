@@ -193,7 +193,7 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
                 raise ValueError(f"Invalid mode: {self.mode}")
 
         all_nodes_values: List[NodeWithScore] = list(all_nodes.values())
-        sorted_nodes: List[NodeWithScore] = list()
+        sorted_nodes: List[NodeWithScore] = []
         for node in all_nodes_values:
             # variable to check if cand node is inserted
             node_inserted = False
