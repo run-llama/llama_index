@@ -6,8 +6,10 @@ from llama_index.llms.base import (
     LLM,
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
     llm_chat_callback,
@@ -140,16 +142,20 @@ class Clarifai(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        raise NotImplementedError("Clarifai does not currently support this function.")
+        raise NotImplementedError("Currently not supported.")
 
     @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         return self.complete(prompt, **kwargs)
 
     @llm_chat_callback()
-    async def astream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any):
-        raise NotImplementedError("Clarifai does not currently support this function.")
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError("Currently not supported.")
 
     @llm_completion_callback()
-    async def astream_complete(self, prompt: str, **kwargs: Any):
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
         raise NotImplementedError("Clarifai does not currently support this function.")
