@@ -1,6 +1,11 @@
 import pytest
 from llama_index.embeddings.elasticsearch import ElasticsearchEmbeddings
 
+try:
+    import elasticsearch
+except ImportError:
+    elasticsearch = None  # type: ignore
+
 
 @pytest.fixture()
 def model_id() -> str:
@@ -26,6 +31,7 @@ def es_password() -> str:
     return "bar"
 
 
+@pytest.mark.skipif(elasticsearch is None, reason="elasticsearch not installed")
 def test_elasticsearch_embedding_constructor(
     model_id: str, es_url: str, es_username: str, es_password: str
 ) -> None:
