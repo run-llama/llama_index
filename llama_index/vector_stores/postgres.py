@@ -40,7 +40,7 @@ def get_data_model(
 
     class TSVector(TypeDecorator):
         impl = TSVECTOR
-        cache_ok = cache_okay 
+        cache_ok = cache_okay
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
