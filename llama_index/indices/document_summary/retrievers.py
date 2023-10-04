@@ -70,8 +70,8 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
         """Retrieve nodes."""
         summary_ids = self._index.index_struct.summary_ids
 
-        all_summary_ids = []
-        all_relevances = []
+        all_summary_ids: List[str] = []
+        all_relevances: List[float] = []
         for idx in range(0, len(summary_ids), self._choice_batch_size):
             summary_ids_batch = summary_ids[idx : idx + self._choice_batch_size]
             summary_nodes = self._index.docstore.get_nodes(summary_ids_batch)
