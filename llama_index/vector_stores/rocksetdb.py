@@ -295,10 +295,10 @@ class RocksetVectorStore(VectorStore):
 
         client.Collections.create_s3_collection(**collection_args)  # create collection
         while (
-            not client.Collections.get(
+            client.Collections.get(
                 collection=rockset_vector_store_args.get("collection")
             ).data.status
-            == "READY"
+            != "READY"
         ):  # wait until collection is ready
             sleep(0.1)
             # TODO: add async, non-blocking method collection creation
