@@ -37,4 +37,3 @@ jobs:
         working-directory: ${{ vars.RUNNER_TEMP }}
         run: |
           python -c "import llama_index"
-        

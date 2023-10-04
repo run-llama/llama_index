@@ -43,7 +43,7 @@ class VideoAudioReader(BaseReader):
 
         if file.name.endswith("mp4"):
             try:
-                from pydub import AudioSegment  # noqa: F401
+                from pydub import AudioSegment
             except ImportError:
                 raise ImportError("Please install pydub 'pip install pydub' ")
             # open file

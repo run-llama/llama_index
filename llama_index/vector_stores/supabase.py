@@ -70,7 +70,7 @@ class SupabaseVectorStore(VectorStore):
     @property
     def client(self) -> None:
         """Get client."""
-        return None
+        return
 
     def _to_vecs_filters(self, filters: MetadataFilters) -> Any:
         """Convert llama filters to vecs filters. $eq is the only supported operator."""
@@ -82,7 +82,7 @@ class SupabaseVectorStore(VectorStore):
     def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
@@ -114,7 +114,7 @@ class SupabaseVectorStore(VectorStore):
         """
         filters = {"doc_id": {"$eq": doc_id}}
 
-        result = self._collection.query(
+        return self._collection.query(
             data=None,
             filters=filters,
             include_value=False,
@@ -122,7 +122,6 @@ class SupabaseVectorStore(VectorStore):
         )
 
         # NOTE: list of row ids
-        return result
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete doc.

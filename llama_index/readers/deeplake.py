@@ -2,6 +2,7 @@
 from typing import List, Optional, Union
 
 import numpy as np
+
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
 
@@ -61,12 +62,12 @@ class DeepLakeReader(BaseReader):
         self,
         token: Optional[str] = None,
     ):
-        """initializing the deepLake reader"""
+        """Initializing the deepLake reader"""
         import_err_msg = (
             "`deeplake` package not found, please run `pip install deeplake`"
         )
         try:
-            import deeplake  # noqa: F401
+            import deeplake
         except ImportError:
             raise ImportError(import_err_msg)
         self.token = token

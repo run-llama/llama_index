@@ -15,7 +15,7 @@ The Tool will 1) load data using the data loader, 2) index the data, and 3) quer
 
 
 ### Use a query engine as a Langchain Tool
-LlamaIndex provides Tool abstractions so that you can use a LlamaIndex query engine along with a Langchain agent. 
+LlamaIndex provides Tool abstractions so that you can use a LlamaIndex query engine along with a Langchain agent.
 
 For instance, you can choose to create a "Tool" from an `QueryEngine` directly as follows:
 
@@ -23,7 +23,7 @@ For instance, you can choose to create a "Tool" from an `QueryEngine` directly a
 from llama_index.langchain_helpers.agents import IndexToolConfig, LlamaIndexTool
 
 tool_config = IndexToolConfig(
-    query_engine=query_engine, 
+    query_engine=query_engine,
     name=f"Vector Index",
     description=f"useful for when you want to answer queries about X",
     tool_kwargs={"return_direct": True}

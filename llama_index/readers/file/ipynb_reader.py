@@ -22,10 +22,9 @@ class IPYNBReader(BaseReader):
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Parse file."""
-
         if file.name.endswith(".ipynb"):
             try:
-                import nbconvert  # noqa: F401
+                import nbconvert
             except ImportError:
                 raise ImportError("Please install nbconvert 'pip install nbconvert' ")
         string = nbconvert.exporters.ScriptExporter().from_file(file)[0]

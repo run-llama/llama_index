@@ -16,9 +16,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """Initialize params."""
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
         try:
-            import pymongo  # noqa: F401
+            import pymongo
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -96,7 +96,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
@@ -148,7 +148,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
-
         knn_beta: Dict[str, Any] = {
             "vector": query.query_embedding,
             "path": self._embedding_key,

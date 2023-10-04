@@ -76,8 +76,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
 
             raw_output = response.text
 
-        model_output = self._output_parser.parse(raw_output)
-        return model_output
+        return self._output_parser.parse(raw_output)
 
     async def acall(
         self,
@@ -97,5 +96,4 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
 
             raw_output = response.text
 
-        model_output = self._output_parser.parse(raw_output)
-        return model_output
+        return self._output_parser.parse(raw_output)

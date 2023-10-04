@@ -11,7 +11,6 @@ from llama_index.types import BasePydanticProgram
 
 def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
     """Create a list version of an existing Pydantic object."""
-
     # NOTE: this is directly taken from
     # https://github.com/jxnl/openai_function_call/blob/main/examples/streaming_multitask/streaming_multitask.py
     # all credits go to the openai_function_call repo

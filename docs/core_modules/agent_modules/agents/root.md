@@ -16,7 +16,7 @@ Building a data agent requires the following core components:
 A data agent is initialized with set of APIs, or Tools, to interact with; these APIs can be called by the agent to return information or modify state. Given an input task, the data agent uses a reasoning loop to decide which tools to use, in which sequence, and the parameters to call each tool.
 
 ### Reasoning Loop
-The reasoning loop depends on the type of agent. We have support for the following agents: 
+The reasoning loop depends on the type of agent. We have support for the following agents:
 - OpenAI Function agent (built on top of the OpenAI Function API)
 - a ReAct agent (which works across any chat/text completion endpoint).
 
@@ -66,4 +66,3 @@ maxdepth: 2
 ---
 modules.md
 ```
-

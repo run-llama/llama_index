@@ -1,17 +1,15 @@
 """Test object index."""
 
-from llama_index.objects.base import ObjectIndex
 from llama_index.indices.list.base import SummaryIndex
-
+from llama_index.indices.service_context import ServiceContext
+from llama_index.objects.base import ObjectIndex
 from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
 from llama_index.tools.function_tool import FunctionTool
-from llama_index.indices.service_context import ServiceContext
 
 
 def test_object_index(mock_service_context: ServiceContext) -> None:
     """Test object index."""
-
     object_mapping = SimpleObjectNodeMapping.from_objects(["a", "b", "c"])
     obj_index = ObjectIndex.from_objects(
         ["a", "b", "c"], object_mapping, index_cls=SummaryIndex
@@ -26,7 +24,6 @@ def test_object_index(mock_service_context: ServiceContext) -> None:
 
 def test_object_index_with_tools(mock_service_context: ServiceContext) -> None:
     """Test object index with tools."""
-
     tool1 = FunctionTool.from_defaults(fn=lambda x: x, name="test_tool")
     tool2 = FunctionTool.from_defaults(fn=lambda x, y: x + y, name="test_tool2")
 

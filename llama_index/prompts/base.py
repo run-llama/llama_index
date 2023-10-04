@@ -5,10 +5,9 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
 from llama_index.llms.langchain import LangChainLLM
@@ -144,8 +143,7 @@ class ChatPromptTemplate(BasePromptTemplate):
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         del llm  # unused
         messages = self.format_messages(**kwargs)
-        prompt = messages_to_prompt(messages)
-        return prompt
+        return messages_to_prompt(messages)
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
@@ -321,8 +319,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
             lc_template = self.selector.default_prompt
         lc_prompt_value = lc_template.format_prompt(**kwargs)
         lc_messages = lc_prompt_value.to_messages()
-        messages = from_lc_messages(lc_messages)
-        return messages
+        return from_lc_messages(lc_messages)
 
     def get_template(self, llm: Optional[LLM] = None) -> str:
         if llm is not None:

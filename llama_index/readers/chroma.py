@@ -31,7 +31,7 @@ class ChromaReader(BaseReader):
             "`chromadb` package not found, please run `pip install chromadb`"
         )
         try:
-            import chromadb  # noqa: F401
+            import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
 

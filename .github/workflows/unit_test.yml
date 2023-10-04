@@ -29,4 +29,3 @@ jobs:
         env:
           CI: true
         run: pytest tests
-        

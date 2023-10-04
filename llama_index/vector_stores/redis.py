@@ -27,7 +27,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -259,10 +259,10 @@ class RedisVectorStore(VectorStore):
             )
         except RedisTimeoutError as e:
             _logger.error(f"Query timed out on {self._index_name}: {e}")
-            raise e
+            raise
         except RedisError as e:
             _logger.error(f"Error querying {self._index_name}: {e}")
-            raise e
+            raise
 
         if len(results.docs) == 0:
             raise ValueError(
@@ -326,7 +326,7 @@ class RedisVectorStore(VectorStore):
 
         except RedisError as e:
             _logger.error(f"Error saving index to disk: {e}")
-            raise e
+            raise
 
     def _create_index(self) -> None:
         # should never be called outside class and hence should not raise importerror
@@ -342,8 +342,9 @@ class RedisVectorStore(VectorStore):
         # add vector field to list of index fields. Create lazily to allow user
         # to specify index and search attributes in creation.
 
-        fields = default_fields + [
-            self._create_vector_field(self._vector_field, **self._index_args)
+        fields = [
+            *default_fields,
+            self._create_vector_field(self._vector_field, **self._index_args),
         ]
 
         # add metadata fields to list of index fields or we won't be able to search them
@@ -398,7 +399,7 @@ class RedisVectorStore(VectorStore):
             ef_runtime (int): The umber of maximum top candidates to hold during the
                 KNN search
 
-        returns:
+        Returns:
             A RediSearch VectorField.
         """
         from redis import DataError
@@ -448,7 +449,7 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
     for filter in metadata_filters.filters:
         # adds quotes around the value to ensure that the filter is treated as an
         #   exact match
-        filter_string = "@%s:{%s}" % (filter.key, tokenizer.escape(str(filter.value)))
+        filter_string = f"@{filter.key}:{{{tokenizer.escape(str(filter.value))}}}"
         filter_strings.append(filter_string)
 
     joined_filter_strings = " & ".join(filter_strings)

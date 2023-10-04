@@ -68,7 +68,7 @@ def default_output_processor(
         try:
             return str(eval(module_end_str, {"np": np}, local_vars))
         except Exception as e:
-            raise e
+            raise
     except Exception as e:
         err_string = (
             "There was an error running the output as Python code. "

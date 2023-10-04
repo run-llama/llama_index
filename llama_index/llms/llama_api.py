@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -70,11 +69,10 @@ class LlamaAPI(CustomLLM):
             "temperature": self.temperature,
             "max_length": self.max_tokens,
         }
-        model_kwargs = {
+        return {
             **base_kwargs,
             **self.additional_kwargs,
         }
-        return model_kwargs
 
     @property
     def metadata(self) -> LLMMetadata:

@@ -7,7 +7,6 @@ from llama_index.data_structs.data_structs import (
     KeywordTable,
     Node,
 )
-
 from llama_index.data_structs.table import StructDatapoint
 
 __all__ = [

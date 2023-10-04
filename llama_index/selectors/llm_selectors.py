@@ -4,7 +4,6 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.output_parsers.base import StructuredOutput
-from llama_index.types import BaseOutputParser
 from llama_index.output_parsers.selection import Answer, SelectionOutputParser
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.selectors.prompts import (
@@ -15,6 +14,7 @@ from llama_index.selectors.prompts import (
 )
 from llama_index.selectors.types import BaseSelector, SelectorResult, SingleSelection
 from llama_index.tools.types import ToolMetadata
+from llama_index.types import BaseOutputParser
 
 
 def _build_choices_text(choices: Sequence[ToolMetadata]) -> str:

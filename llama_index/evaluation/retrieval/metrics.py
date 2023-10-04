@@ -1,8 +1,9 @@
+from typing import Any, Dict, List, Optional
+
 from llama_index.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
     RetrievalMetricResult,
 )
-from typing import List, Any, Dict, Optional
 
 
 class HitRate(BaseRetrievalMetric):
@@ -20,7 +21,7 @@ class HitRate(BaseRetrievalMetric):
         """Compute metric."""
         if retrieved_ids is None or expected_ids is None:
             raise ValueError("Retrieved ids and expected ids must be provided")
-        is_hit = any([id in expected_ids for id in retrieved_ids])
+        is_hit = any(id in expected_ids for id in retrieved_ids)
         return RetrievalMetricResult(
             score=1.0 if is_hit else 0.0,
         )

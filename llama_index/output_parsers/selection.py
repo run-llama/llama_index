@@ -11,12 +11,11 @@ from llama_index.types import BaseOutputParser
 
 def _escape_curly_braces(input_string: str) -> str:
     # Replace '{' with '{{' and '}' with '}}' to escape curly braces
-    escaped_string = input_string.replace("{", "{{").replace("}", "}}")
-    return escaped_string
+    return input_string.replace("{", "{{").replace("}", "}}")
 
 
-FORMAT_STR = """The output should be formatted as a JSON instance that conforms to 
-the JSON schema below. 
+FORMAT_STR = """The output should be formatted as a JSON instance that conforms to
+the JSON schema below.
 
 Here is the output schema:
 {
@@ -96,5 +95,4 @@ class SelectionOutputParser(BaseOutputParser):
         return StructuredOutput(raw_output=output, parsed_output=answers)
 
     def format(self, prompt_template: str) -> str:
-        fmt = prompt_template + "\n\n" + _escape_curly_braces(FORMAT_STR)
-        return fmt
+        return prompt_template + "\n\n" + _escape_curly_braces(FORMAT_STR)

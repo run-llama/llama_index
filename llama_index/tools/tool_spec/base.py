@@ -1,15 +1,14 @@
 """Base tool spec class."""
 
 
-from typing import List, Optional, Dict, Type, Union, Tuple, Callable, Awaitable, Any
-from llama_index.tools.types import ToolMetadata
-from llama_index.tools.function_tool import FunctionTool
+import asyncio
 from inspect import signature
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from llama_index.bridge.pydantic import BaseModel
-
+from llama_index.tools.function_tool import FunctionTool
+from llama_index.tools.types import ToolMetadata
 from llama_index.tools.utils import create_schema_from_function
-import asyncio
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 
@@ -48,8 +47,7 @@ class BaseToolSpec:
         docstring = func.__doc__ or ""
         description = f"{name}{signature(func)}\n{docstring}"
         fn_schema = self.get_fn_schema_from_fn_name(fn_name)
-        metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
-        return metadata
+        return ToolMetadata(name=name, description=description, fn_schema=fn_schema)
 
     def to_tool_list(
         self,

@@ -1,9 +1,9 @@
 from typing import Optional
 
-from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.simple import SimpleNodeParser
-from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
+from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
+from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.text_splitter.sentence_splitter import SentenceSplitter
 from llama_index.text_splitter.types import SplitterType
 

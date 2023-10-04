@@ -4,12 +4,11 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
-
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import Document
-from llama_index.schema import TextNode
+from llama_index.schema import Document, TextNode
+
 from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
@@ -58,7 +57,7 @@ class MockEmbedding(BaseEmbedding):
         return [0, 0, 1, 0, 0]
 
 
-@pytest.fixture
+@pytest.fixture()
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
     index_kwargs = {

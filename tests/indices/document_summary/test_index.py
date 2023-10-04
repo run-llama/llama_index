@@ -1,12 +1,13 @@
 """Test document summary index."""
 
-from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.document_summary.base import DocumentSummaryIndex
-from llama_index.schema import Document
-from llama_index.response_synthesizers import get_response_synthesizer
-from tests.mock_utils.mock_prompts import MOCK_TEXT_QA_PROMPT, MOCK_REFINE_PROMPT
-
 from typing import List
+
+from llama_index.indices.document_summary.base import DocumentSummaryIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.response_synthesizers import get_response_synthesizer
+from llama_index.schema import Document
+
+from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
 def test_build_index(

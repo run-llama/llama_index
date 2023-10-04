@@ -13,7 +13,7 @@ from llama_index.vector_stores import EpsillaVectorStore
 from llama_index.vector_stores.types import VectorStoreQuery
 
 
-@pytest.fixture
+@pytest.fixture()
 def node_embeddings() -> List[TextNode]:
     return [
         TextNode(

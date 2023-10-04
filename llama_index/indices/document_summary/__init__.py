@@ -6,8 +6,8 @@ from llama_index.indices.document_summary.base import (
     GPTDocumentSummaryIndex,
 )
 from llama_index.indices.document_summary.retrievers import (
-    DocumentSummaryIndexRetriever,
     DocumentSummaryIndexEmbeddingRetriever,
+    DocumentSummaryIndexRetriever,
 )
 
 __all__ = [

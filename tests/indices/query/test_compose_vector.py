@@ -4,7 +4,6 @@ import asyncio
 from typing import Any, Dict, List
 
 import pytest
-
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.composability.graph import ComposableGraph
@@ -12,6 +11,7 @@ from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableInde
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import Document
+
 from tests.indices.vector_store.utils import get_pinecone_storage_context
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 

@@ -1,7 +1,7 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
-import os
 
 import fsspec
 
@@ -22,10 +22,10 @@ from llama_index.storage.index_store.types import (
     DEFAULT_PERSIST_FNAME as INDEX_STORE_FNAME,
 )
 from llama_index.storage.index_store.types import BaseIndexStore
+from llama_index.utils import concat_dirs
 from llama_index.vector_stores.simple import DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
-from llama_index.utils import concat_dirs
 
 DEFAULT_PERSIST_DIR = "./storage"
 

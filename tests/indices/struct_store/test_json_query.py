@@ -6,7 +6,6 @@ from typing import Any, Dict, Generator, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.json_query import JSONQueryEngine, JSONType
@@ -22,7 +21,7 @@ TEST_PARAMS = [
 TEST_LLM_OUTPUT = "test_llm_output"
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_json_service_ctx(
     mock_service_context: ServiceContext,
 ) -> Generator[ServiceContext, None, None]:
@@ -32,7 +31,7 @@ def mock_json_service_ctx(
         yield mock_service_context
 
 
-@pytest.mark.parametrize("synthesize_response,call_apredict", TEST_PARAMS)
+@pytest.mark.parametrize(("synthesize_response", "call_apredict"), TEST_PARAMS)
 def test_json_query_engine(
     synthesize_response: bool,
     call_apredict: bool,

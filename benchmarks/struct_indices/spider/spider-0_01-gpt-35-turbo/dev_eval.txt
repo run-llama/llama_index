@@ -14,44 +14,44 @@ hard gold: select name from dogs where dog_id not in ( select dog_id from treatm
 extra pred: SELECT COUNT(DISTINCT professional_id) FROM Professionals WHERE professional_id NOT IN (SELECT DISTINCT professional_id FROM Treatments)
 extra gold: SELECT count(*) FROM Professionals WHERE professional_id NOT IN ( SELECT professional_id FROM Treatments )
 
-                     easy                 medium               hard                 extra                all                 
-count                3                    3                    3                    1                    10                  
+                     easy                 medium               hard                 extra                all
+count                3                    3                    3                    1                    10
 =====================   EXECUTION ACCURACY     =====================
-execution            1.000                1.000                0.333                0.000                0.700               
+execution            1.000                1.000                0.333                0.000                0.700
 
 ====================== EXACT MATCHING ACCURACY =====================
-exact match          0.667                1.000                0.000                0.000                0.500               
+exact match          0.667                1.000                0.000                0.000                0.500
 
 ---------------------PARTIAL MATCHING ACCURACY----------------------
-select               1.000                1.000                0.500                0.000                0.778               
-select(no AGG)       1.000                1.000                0.500                0.000                0.778               
-where                1.000                1.000                0.000                0.000                0.600               
-where(no OP)         1.000                1.000                0.000                1.000                0.800               
-group(no Having)     0.000                0.000                1.000                0.000                1.000               
-group                0.000                0.000                1.000                0.000                1.000               
-order                0.000                1.000                1.000                0.000                0.667               
-and/or               1.000                1.000                1.000                1.000                1.000               
-IUEN                 0.000                0.000                0.000                0.000                0.000               
-keywords             0.500                1.000                0.500                1.000                0.714               
+select               1.000                1.000                0.500                0.000                0.778
+select(no AGG)       1.000                1.000                0.500                0.000                0.778
+where                1.000                1.000                0.000                0.000                0.600
+where(no OP)         1.000                1.000                0.000                1.000                0.800
+group(no Having)     0.000                0.000                1.000                0.000                1.000
+group                0.000                0.000                1.000                0.000                1.000
+order                0.000                1.000                1.000                0.000                0.667
+and/or               1.000                1.000                1.000                1.000                1.000
+IUEN                 0.000                0.000                0.000                0.000                0.000
+keywords             0.500                1.000                0.500                1.000                0.714
 ---------------------- PARTIAL MATCHING RECALL ----------------------
-select               1.000                1.000                0.333                0.000                0.700               
-select(no AGG)       1.000                1.000                0.333                0.000                0.700               
-where                1.000                1.000                0.000                0.000                0.500               
-where(no OP)         1.000                1.000                0.000                1.000                0.667               
-group(no Having)     0.000                0.000                1.000                0.000                1.000               
-group                0.000                0.000                1.000                0.000                1.000               
-order                0.000                1.000                0.500                0.000                0.667               
-and/or               1.000                1.000                0.667                1.000                0.900               
-IUEN                 0.000                0.000                0.000                0.000                0.000               
-keywords             0.500                1.000                0.333                1.000                0.625               
+select               1.000                1.000                0.333                0.000                0.700
+select(no AGG)       1.000                1.000                0.333                0.000                0.700
+where                1.000                1.000                0.000                0.000                0.500
+where(no OP)         1.000                1.000                0.000                1.000                0.667
+group(no Having)     0.000                0.000                1.000                0.000                1.000
+group                0.000                0.000                1.000                0.000                1.000
+order                0.000                1.000                0.500                0.000                0.667
+and/or               1.000                1.000                0.667                1.000                0.900
+IUEN                 0.000                0.000                0.000                0.000                0.000
+keywords             0.500                1.000                0.333                1.000                0.625
 ---------------------- PARTIAL MATCHING F1 --------------------------
-select               1.000                1.000                0.400                1.000                0.737               
-select(no AGG)       1.000                1.000                0.400                1.000                0.737               
-where                1.000                1.000                1.000                1.000                0.545               
-where(no OP)         1.000                1.000                1.000                1.000                0.727               
-group(no Having)     1.000                1.000                1.000                1.000                1.000               
-group                1.000                1.000                1.000                1.000                1.000               
-order                1.000                1.000                0.667                1.000                0.667               
-and/or               1.000                1.000                0.800                1.000                0.947               
-IUEN                 1.000                1.000                1.000                1.000                1.000               
-keywords             0.500                1.000                0.400                1.000                0.667               
+select               1.000                1.000                0.400                1.000                0.737
+select(no AGG)       1.000                1.000                0.400                1.000                0.737
+where                1.000                1.000                1.000                1.000                0.545
+where(no OP)         1.000                1.000                1.000                1.000                0.727
+group(no Having)     1.000                1.000                1.000                1.000                1.000
+group                1.000                1.000                1.000                1.000                1.000
+order                1.000                1.000                0.667                1.000                0.667
+and/or               1.000                1.000                0.800                1.000                0.947
+IUEN                 1.000                1.000                1.000                1.000                1.000
+keywords             0.500                1.000                0.400                1.000                0.667

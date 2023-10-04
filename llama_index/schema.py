@@ -6,10 +6,11 @@ from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
 from typing import Any, Dict, List, Optional, Union
+
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.bridge.langchain import Document as LCDocument
+from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -328,7 +329,7 @@ class TextNode(BaseNode):
         ).strip()
 
     def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
-        """metadata info string."""
+        """Metadata info string."""
         if mode == MetadataMode.NONE:
             return ""
 
@@ -538,11 +539,10 @@ class Document(TextNode):
 
     @classmethod
     def example(cls) -> "Document":
-        document = Document(
+        return Document(
             text=SAMPLE_TEXT,
             metadata={"filename": "README.md", "category": "codebase"},
         )
-        return document
 
     @classmethod
     def class_name(cls) -> str:

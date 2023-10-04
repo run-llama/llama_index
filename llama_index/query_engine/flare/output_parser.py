@@ -1,6 +1,6 @@
 """FLARE output parsers."""
 
-from typing import Optional, Callable, Any
+from typing import Any, Callable, Optional
 
 from llama_index.query_engine.flare.schema import QueryTask
 from llama_index.types import BaseOutputParser

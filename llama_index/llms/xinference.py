@@ -2,7 +2,6 @@ import warnings
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     ChatMessage,
@@ -136,11 +135,10 @@ class Xinference(CustomLLM):
             "temperature": self.temperature,
             "max_length": self.context_window,
         }
-        model_kwargs = {
+        return {
             **base_kwargs,
             **self.model_description,
         }
-        return model_kwargs
 
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {"prompt": prompt, **self._model_kwargs, **kwargs}
@@ -159,14 +157,13 @@ class Xinference(CustomLLM):
                 "max_tokens": self.max_tokens,
             },
         )["choices"][0]["message"]["content"]
-        response = ChatResponse(
+        return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=response_text,
             ),
             delta=None,
         )
-        return response
 
     @llm_chat_callback()
     def stream_chat(
@@ -212,11 +209,10 @@ class Xinference(CustomLLM):
                 "max_tokens": self.max_tokens,
             },
         )["choices"][0]["message"]["content"]
-        response = CompletionResponse(
+        return CompletionResponse(
             delta=None,
             text=response_text,
         )
-        return response
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:

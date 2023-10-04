@@ -1,13 +1,13 @@
 """Test optimization."""
 
-import pytest
 from typing import Any, List
 from unittest.mock import patch
 
+import pytest
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.postprocessor.optimizer import SentenceEmbeddingOptimizer
-from llama_index.schema import TextNode, NodeWithScore
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.schema import NodeWithScore, TextNode
 from llama_index.utils import (
     get_transformer_tokenizer_fn,
 )

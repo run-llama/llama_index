@@ -6,7 +6,7 @@
 
 LlamaIndex (GPT Index) is a data framework for your LLM application.
 
-PyPI: 
+PyPI:
 - LlamaIndex: https://pypi.org/project/llama-index/.
 - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 
@@ -54,9 +54,9 @@ Interested in contributing? See our [Contribution Guide](CONTRIBUTING.md) for mo
 
 ## 📄 Documentation
 
-Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest/. 
+Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest/.
 
-Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources! 
+Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources!
 
 
 ## 💻 Example Usage
@@ -107,7 +107,7 @@ index = load_index_from_storage(storage_context)
 
 The main third-party package requirements are `tiktoken`, `openai`, and `langchain`.
 
-All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`. 
+All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`.
 
 
 ## 📖 Citation

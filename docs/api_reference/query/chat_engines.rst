@@ -3,7 +3,7 @@
 Chat Engines
 =================
 Chat engine is a high-level interface for having a conversation with your data
-(multiple back-and-forth instead of a single question & answer).  
+(multiple back-and-forth instead of a single question & answer).
 
 
 Chat Engine Implementations
