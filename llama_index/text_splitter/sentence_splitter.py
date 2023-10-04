@@ -248,9 +248,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             chunks.append(chunk)
 
         # run postprocessing to remove blank spaces
-        chunks = self._postprocess_chunks(chunks)
-
-        return chunks
+        return self._postprocess_chunks(chunks)
 
     def _postprocess_chunks(self, chunks: List[str]) -> List[str]:
         """Post-process chunks.

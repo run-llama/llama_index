@@ -3,9 +3,9 @@ import logging
 from typing import Any, Optional, Sequence, Union, cast
 
 from llama_index import ServiceContext
-from llama_index.output_parsers import PydanticOutputParser
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.output_parsers import PydanticOutputParser
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 
 logger = logging.getLogger(__name__)

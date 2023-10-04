@@ -1,13 +1,12 @@
 """Sentence Transformer Finetuning Engine."""
 
-from llama_index.embeddings.base import BaseEmbedding
-
-from typing import Any, List, Optional, Tuple, cast, Type
-
-from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
-from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
-from llama_index.embeddings.adapter import AdapterEmbeddingModel
 import logging
+from typing import Any, List, Optional, Tuple, Type, cast
+
+from llama_index.embeddings.adapter import AdapterEmbeddingModel
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
+from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +49,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
     ) -> None:
         """Init params."""
         import torch
+
         from llama_index.embeddings.adapter_utils import BaseAdapter, LinearLayer
 
         self.dataset = dataset
@@ -69,7 +69,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            logger.info("Use pytorch device: {}".format(device))
+            logger.info(f"Use pytorch device: {device}")
         self._target_device = torch.device(device)
 
         if adapter_model is not None:
@@ -113,8 +113,8 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
     def smart_batching_collate(self, batch: List) -> Tuple[Any, Any]:
         """Smart batching collate."""
-        from torch import Tensor
         import torch
+        from torch import Tensor
 
         query_embeddings: List[Tensor] = []
         text_embeddings: List[Tensor] = []
@@ -168,7 +168,6 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
     def get_finetuned_model(self, **model_kwargs: Any) -> BaseEmbedding:
         """Get finetuned model."""
-
         return AdapterEmbeddingModel(
             self.embed_model, self._model_output_path, **model_kwargs
         )

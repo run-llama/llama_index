@@ -35,7 +35,7 @@ Under the hood, `MongoIndexStore` connects to a fixed MongoDB database and initi
 > Note: You can configure the `db_name` and `namespace` when instantiating `MongoIndexStore`, otherwise they default to `db_name="db_docstore"` and `namespace="docstore"`.
 
 Note that it's not necessary to call `storage_context.persist()` (or `index_store.persist()`) when using an `MongoIndexStore`
-since data is persisted by default. 
+since data is persisted by default.
 
 You can easily reconnect to your MongoDB collection and reload the index by re-initializing a `MongoIndexStore` with an existing `db_name` and `collection_name`.
 
@@ -51,8 +51,8 @@ from llama_index import VectorStoreIndex
 
 # create (or load) docstore and add nodes
 index_store = RedisIndexStore.from_host_and_port(
-  host="127.0.0.1", 
-  port="6379", 
+  host="127.0.0.1",
+  port="6379",
   namespace='llama_index'
 )
 

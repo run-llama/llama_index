@@ -24,7 +24,7 @@ query_engine = index.as_query_engine(
     verbose=True,
 )
 ```
-> Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.  
+> Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.
 
 See [**Response Modes**](./response_modes.md) for a full list of response modes and what they do.
 
@@ -59,7 +59,7 @@ index = VectorStoreIndex.from_documents(documents)
 
 # configure retriever
 retriever = VectorIndexRetriever(
-    index=index, 
+    index=index,
     similarity_top_k=2,
 )
 
@@ -86,9 +86,9 @@ query_engine = index.as_query_engine(
     streaming=True,
 )
 streaming_response = query_engine.query(
-    "What did the author do growing up?", 
+    "What did the author do growing up?",
 )
-streaming_response.print_response_stream() 
+streaming_response.print_response_stream()
 ```
 
 * Read the full [streaming guide](/core_modules/query_modules/query_engine/streaming.md)

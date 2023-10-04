@@ -5,10 +5,12 @@
 ### New Features
 - Added support for pydantic object outputs with query engines (#7893)
 - `ClarifaiEmbedding` class added for embedding support (#7940)
+- Added support for mongdb atlas `$vectorSearch` (#7866)
 
 ### Bug Fixes / Nits
 - Fix `LocalAI` chat capability without `max_tokens` (#7942)
 - Added `codespell` for automated checking (#7941)
+- `ruff` modernization and autofixes (#7889)
 
 ## [0.8.38] - 2023-10-02
 

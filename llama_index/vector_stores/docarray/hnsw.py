@@ -43,20 +43,19 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
             num_threads (int, optional): Number of threads for index construction.
                 Default is 1.
         """
-
         import_err_msg = """
                 `docarray` package not found. Install the package via pip:
                 `pip install docarray[hnswlib]`
         """
         try:
-            import docarray  # noqa: F401
+            import docarray
         except ImportError:
             raise ImportError(import_err_msg)
 
         self._work_dir = work_dir
         ref_docs_path = os.path.join(self._work_dir, "ref_docs.json")
         if os.path.exists(ref_docs_path):
-            with open(ref_docs_path, "r") as f:
+            with open(ref_docs_path) as f:
                 self._ref_docs = json.load(f)
         else:
             self._ref_docs = {}

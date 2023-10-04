@@ -2,21 +2,21 @@
 
 # indices
 from llama_index.indices.keyword_table.base import (
-    KeywordTableIndex,
     GPTKeywordTableIndex,
+    KeywordTableIndex,
+)
+from llama_index.indices.keyword_table.rake_base import (
+    GPTRAKEKeywordTableIndex,
+    RAKEKeywordTableIndex,
 )
 from llama_index.indices.keyword_table.retrievers import (
     KeywordTableGPTRetriever,
     KeywordTableRAKERetriever,
     KeywordTableSimpleRetriever,
 )
-from llama_index.indices.keyword_table.rake_base import (
-    RAKEKeywordTableIndex,
-    GPTRAKEKeywordTableIndex,
-)
 from llama_index.indices.keyword_table.simple_base import (
-    SimpleKeywordTableIndex,
     GPTSimpleKeywordTableIndex,
+    SimpleKeywordTableIndex,
 )
 
 __all__ = [

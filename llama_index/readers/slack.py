@@ -132,7 +132,7 @@ class SlackReader(BasePydanticReader):
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logger.error("Error parsing conversation replies: {}".format(e))
+                    logger.error(f"Error parsing conversation replies: {e}")
 
         return "\n\n".join(messages_text)
 
@@ -164,9 +164,7 @@ class SlackReader(BasePydanticReader):
                 conversation_history = result["messages"]
                 # Print results
                 logger.info(
-                    "{} messages found in {}".format(
-                        len(conversation_history), channel_id
-                    )
+                    f"{len(conversation_history)} messages found in {channel_id}"
                 )
                 result_messages.extend(
                     self._read_message(channel_id, message["ts"])
@@ -185,7 +183,7 @@ class SlackReader(BasePydanticReader):
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logger.error("Error parsing conversation replies: {}".format(e))
+                    logger.error(f"Error parsing conversation replies: {e}")
 
         return (
             "\n\n".join(result_messages)

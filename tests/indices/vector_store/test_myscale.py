@@ -3,7 +3,6 @@
 from typing import List, cast
 
 import pytest
-
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.storage.storage_context import StorageContext
 
@@ -12,8 +11,7 @@ try:
 except ImportError:
     clickhouse_connect = None  # type: ignore
 
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, Document
 from llama_index.vector_stores import MyScaleVectorStore
 from llama_index.vector_stores.types import VectorStoreQuery
 
@@ -23,7 +21,7 @@ MYSCALE_USERNAME = None
 MYSCALE_CLUSTER_PASSWORD = None
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now
@@ -36,7 +34,7 @@ def documents() -> List[Document]:
     return [Document(id_="1", text=doc_text)]
 
 
-@pytest.fixture
+@pytest.fixture()
 def query() -> VectorStoreQuery:
     return VectorStoreQuery(query_str="What is?", doc_ids=["1"])
 

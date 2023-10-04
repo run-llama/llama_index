@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List
 
 import pytest
-
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import (
     DocArrayHnswVectorStore,
@@ -18,7 +17,7 @@ from llama_index.vector_stores.types import (
 docarray = pytest.importorskip("docarray")
 
 
-@pytest.fixture
+@pytest.fixture()
 def node_embeddings() -> List[TextNode]:
     return [
         TextNode(

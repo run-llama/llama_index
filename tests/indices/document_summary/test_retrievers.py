@@ -1,8 +1,8 @@
 """Test document summary retrievers."""
+from typing import List
+
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import Document
-
-from typing import List
 
 
 def test_retrieve_default(
@@ -11,4 +11,3 @@ def test_retrieve_default(
 ) -> None:
     """Test retrieve default."""
     # TODO: add retrieve tests
-    pass

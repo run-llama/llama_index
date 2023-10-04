@@ -39,8 +39,8 @@ SQL query: {sql_query_str}
 SQL response: {sql_response_str}
 Transformed vector store query: {query_engine_query_str}
 Vector store response: {query_engine_response_str}
-Response: 
-"""  # noqa
+Response:
+"""
 DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT = PromptTemplate(
     DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL
 )

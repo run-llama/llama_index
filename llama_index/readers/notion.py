@@ -98,8 +98,7 @@ class NotionPageReader(BasePydanticReader):
             else:
                 cur_block_id = data["next_cursor"]
 
-        result_lines = "\n".join(result_lines_arr)
-        return result_lines
+        return "\n".join(result_lines_arr)
 
     def read_page(self, page_id: str) -> str:
         """Read a page."""

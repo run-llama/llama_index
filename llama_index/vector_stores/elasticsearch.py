@@ -49,7 +49,6 @@ def _get_elasticsearch_client(
     Raises:
         ConnectionError: If Elasticsearch client cannot connect to Elasticsearch.
     """
-
     try:
         import elasticsearch
     except ImportError:
@@ -90,7 +89,7 @@ def _get_elasticsearch_client(
         sync_es_client.info()  # so don't have to 'await' to just get info
     except Exception as e:
         logger.error(f"Error connecting to Elasticsearch: {e}")
-        raise e
+        raise
 
     return async_es_client
 
@@ -220,7 +219,6 @@ class ElasticsearchStore(VectorStore):
             index_name: Name of the AsyncElasticsearch index to create.
             dims_length: Length of the embedding vectors.
         """
-
         if await self.client.indices.exists(index=index_name):
             logger.debug(f"Index {index_name} already exists. Skipping creation.")
 
@@ -264,7 +262,7 @@ class ElasticsearchStore(VectorStore):
             }
 
             logger.debug(
-                f"Creating index {index_name} with mappings {index_settings['mappings']}"  # noqa: E501
+                f"Creating index {index_name} with mappings {index_settings['mappings']}"
             )
             await self.client.indices.create(index=index_name, **index_settings)
 
@@ -375,7 +373,7 @@ class ElasticsearchStore(VectorStore):
             logger.error(f"Error adding texts: {e}")
             firstError = e.errors[0].get("index", {}).get("error", {})
             logger.error(f"First error reason: {firstError.get('reason')}")
-            raise e
+            raise
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete node from Elasticsearch index.
@@ -403,7 +401,6 @@ class ElasticsearchStore(VectorStore):
         Raises:
             Exception: If AsyncElasticsearch delete_by_query fails.
         """
-
         try:
             async with self.client as client:
                 res = await client.delete_by_query(
@@ -418,7 +415,7 @@ class ElasticsearchStore(VectorStore):
                 logger.debug(f"Deleted text {ref_doc_id} from index")
         except Exception as e:
             logger.error(f"Error deleting text: {ref_doc_id}")
-            raise e
+            raise
 
     def query(
         self,

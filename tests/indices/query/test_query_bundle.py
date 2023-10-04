@@ -3,7 +3,6 @@
 from typing import Dict, List
 
 import pytest
-
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.schema import QueryBundle
@@ -11,7 +10,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import Document
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now

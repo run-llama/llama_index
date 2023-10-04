@@ -1,10 +1,11 @@
 """Notebook utils."""
 
-from typing import List, Optional
-from llama_index.evaluation.retrieval.base import RetrievalEvalResult
 from collections import defaultdict
+from typing import List, Optional
+
 import pandas as pd
 
+from llama_index.evaluation.retrieval.base import RetrievalEvalResult
 
 DEFAULT_METRIC_KEYS = ["hit_rate", "mrr"]
 
@@ -30,5 +31,4 @@ def get_retrieval_results_df(
                 raise ValueError(f"Metric key {metric_key} not in results_df")
             avg_metrics_dict[metric_key].append(results_df[metric_key].mean())
 
-    final_df = pd.DataFrame({"retrievers": names, **avg_metrics_dict})
-    return final_df
+    return pd.DataFrame({"retrievers": names, **avg_metrics_dict})

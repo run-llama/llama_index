@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Dict, Type
 
-from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.docstore.mongo_docstore import MongoDocumentStore
+from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.docstore.types import BaseDocumentStore
 
 

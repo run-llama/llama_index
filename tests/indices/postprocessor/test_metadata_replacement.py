@@ -1,5 +1,5 @@
-from llama_index.schema import TextNode, NodeWithScore
 from llama_index.indices.postprocessor import MetadataReplacementPostProcessor
+from llama_index.schema import NodeWithScore, TextNode
 
 
 def test_metadata_replacement() -> None:

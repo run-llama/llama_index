@@ -1,7 +1,6 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
@@ -69,8 +68,8 @@ class LiteLLM(LLM):
     ) -> None:
         if "custom_llm_provider" in kwargs:
             if (
-                "ollama" != kwargs["custom_llm_provider"]
-                and "vllm" != kwargs["custom_llm_provider"]
+                kwargs["custom_llm_provider"] != "ollama"
+                and kwargs["custom_llm_provider"] != "vllm"
             ):  # don't check keys for local models
                 validate_litellm_api_key(api_key, api_type)
         else:  # by default assume it's a hosted endpoint
@@ -160,11 +159,10 @@ class LiteLLM(LLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        model_kwargs = {
+        return {
             **base_kwargs,
             **self.additional_kwargs,
         }
-        return model_kwargs
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
