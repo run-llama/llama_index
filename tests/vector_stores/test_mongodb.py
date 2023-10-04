@@ -1,10 +1,10 @@
 """Test MongoDB Atlas Vector Search functionality."""
 from __future__ import annotations
 
+import os
 from time import sleep
 
 import pytest
-import os
 
 try:
     from pymongo import MongoClient
@@ -20,7 +20,7 @@ try:
 except (ImportError, Exception):
     pymongo_available = False
 
-from llama_index.schema import TextNode, NodeRelationship, RelatedNodeInfo
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 from llama_index.vector_stores.types import VectorStoreQuery
 
@@ -66,7 +66,7 @@ class TestMongoDBAtlasVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
         # insure the test collection is empty
-        assert collection.count_documents({}) == 0  # type: ignore[index]  # noqa: E501
+        assert collection.count_documents({}) == 0  # type: ignore[index]
 
     @classmethod
     def teardown_class(cls) -> None:
