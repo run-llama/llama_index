@@ -16,9 +16,7 @@ from llama_index.indices.utils import (
     default_parse_choice_select_answer_fn,
 )
 from llama_index.prompts import PromptTemplate
-from llama_index.prompts.default_prompts import (
-    DEFAULT_CHOICE_SELECT_PROMPT,
-)
+from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.schema import NodeWithScore
 from llama_index.vector_stores.types import VectorStoreQuery
 
@@ -149,3 +147,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             nodes = self._docstore.get_nodes(node_ids)
             results.extend([NodeWithScore(node=n) for n in nodes])
         return results
+
+
+# legacy, backward compatibility
+DocumentSummaryIndexRetriever = DocumentSummaryIndexLLMRetriever

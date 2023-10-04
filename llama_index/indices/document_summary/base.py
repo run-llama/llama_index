@@ -190,7 +190,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
         if self._embed_summaries:
             embed_model = self._service_context.embed_model
-            summary_nodes = [node for node in summary_node_dict.values()]
+            summary_nodes = list(summary_node_dict.values())
             id_to_embed_map = embed_nodes(
                 summary_nodes, embed_model, show_progress=show_progress
             )

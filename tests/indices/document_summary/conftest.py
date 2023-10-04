@@ -1,13 +1,15 @@
 from typing import List
+
 import pytest
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
-from llama_index.schema import Document
+from llama_index.indices.service_context import ServiceContext
 from llama_index.response_synthesizers import get_response_synthesizer
-from tests.mock_utils.mock_prompts import MOCK_TEXT_QA_PROMPT, MOCK_REFINE_PROMPT
+from llama_index.schema import Document
+
+from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
-@pytest.fixture
+@pytest.fixture()
 def docs() -> List[Document]:
     return [
         Document(text="This is a test v2.", id_="doc_1"),
@@ -17,7 +19,7 @@ def docs() -> List[Document]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def index(
     docs: List[Document], mock_service_context: ServiceContext
 ) -> DocumentSummaryIndex:
@@ -26,10 +28,9 @@ def index(
         refine_template=MOCK_REFINE_PROMPT,
         callback_manager=mock_service_context.callback_manager,
     )
-    index = DocumentSummaryIndex.from_documents(
+    return DocumentSummaryIndex.from_documents(
         docs,
         service_context=mock_service_context,
         response_synthesizer=response_synthesizer,
         summary_query="summary_query",
     )
-    return index
