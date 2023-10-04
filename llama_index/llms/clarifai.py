@@ -10,6 +10,8 @@ from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    llm_chat_callback,
+    llm_completion_callback
 )
 
 EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
@@ -19,7 +21,6 @@ class Clarifai(LLM):
     model_url: Optional[str] = Field(
         description=f"Full URL of the model. e.g. `{EXAMPLE_URL}`"
     )
-    model_id: Optional[str] = Field(description="Model ID.")
     model_version_id: Optional[str] = Field(description="Model Version ID.")
     app_id: Optional[str] = Field(description="Clarifai application ID of the model.")
     user_id: Optional[str] = Field(description="Clarifai user ID of the model.")
@@ -89,7 +90,7 @@ class Clarifai(LLM):
         return LLMMetadata(
             context_window=self.context_window,
             num_output=self.max_tokens,
-            model_name=self.model,
+            model_name=self._model,
             is_chat_model=self._is_chat_model,
         )
 
@@ -113,7 +114,7 @@ class Clarifai(LLM):
         """Completion endpoint for LLM."""
         try:
             response = (
-                self.model.predict_by_bytes(
+                self._model.predict_by_bytes(
                     input_bytes=prompt.encode(encoding="utf-8"), input_type="text"
                 )
                 .outputs[0]
@@ -134,3 +135,32 @@ class Clarifai(LLM):
         raise NotImplementedError(
             "Clarifai does not currently support streaming completion."
         )
+    
+    @llm_chat_callback()
+    async def achat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any) -> ChatResponse:
+
+        raise NotImplementedError(
+            "Clarifai does not currently support this function.")
+    
+    @llm_completion_callback()
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        return self.complete(prompt, **kwargs)
+    
+    @llm_chat_callback()
+    async def astream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any):
+
+        raise NotImplementedError(
+            "Clarifai does not currently support this function.")
+    
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ):
+        raise NotImplementedError(
+            "Clarifai does not currently support this function.")
