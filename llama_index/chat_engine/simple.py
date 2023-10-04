@@ -2,6 +2,7 @@ import asyncio
 from threading import Thread
 from typing import Any, List, Optional, Type
 
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
@@ -11,7 +12,6 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.callbacks import CallbackManager, trace_method
 
 
 class SimpleChatEngine(BaseChatEngine):

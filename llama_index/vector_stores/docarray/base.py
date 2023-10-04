@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Type
 import numpy as np
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     VectorStore,
@@ -46,7 +45,6 @@ class DocArrayVectorStore(VectorStore, ABC):
 
         This method should be overridden by the subclasses.
         """
-        pass
 
     @abstractmethod
     def _find_docs_to_be_removed(self, doc_id: str) -> List[str]:
@@ -60,7 +58,6 @@ class DocArrayVectorStore(VectorStore, ABC):
 
         This is an abstract method and needs to be implemented in any concrete subclass.
         """
-        pass
 
     @property
     def client(self) -> Any:
@@ -85,7 +82,6 @@ class DocArrayVectorStore(VectorStore, ABC):
         Returns:
             DocArraySchema: Schema for a DocArray index.
         """
-
         from docarray import BaseDoc
         from docarray.typing import ID, NdArray
 

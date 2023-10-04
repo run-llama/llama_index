@@ -261,7 +261,7 @@ class GithubClient:
                 response.raise_for_status()
             except httpx.HTTPError as excp:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
-                raise excp
+                raise
             return response
 
     async def get_branch(

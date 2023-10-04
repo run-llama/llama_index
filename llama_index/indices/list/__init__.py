@@ -2,12 +2,12 @@
 
 from llama_index.indices.list.base import GPTListIndex, ListIndex, SummaryIndex
 from llama_index.indices.list.retrievers import (
-    SummaryIndexRetriever,
-    SummaryIndexEmbeddingRetriever,
-    SummaryIndexLLMRetriever,
     ListIndexEmbeddingRetriever,
     ListIndexLLMRetriever,
     ListIndexRetriever,
+    SummaryIndexEmbeddingRetriever,
+    SummaryIndexLLMRetriever,
+    SummaryIndexRetriever,
 )
 
 __all__ = [

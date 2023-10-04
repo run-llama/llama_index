@@ -42,7 +42,7 @@ def node_to_metadata_dict(
     # remove embedding from node_dict
     node_dict["embedding"] = None
 
-    # dump remainer of node_dict to json string
+    # dump remainder of node_dict to json string
     metadata["_node_content"] = json.dumps(node_dict)
 
     # store ref doc id at top level to allow metadata filtering

@@ -1,11 +1,9 @@
 from typing import Dict, Type
 
-
 from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.text_splitter.sentence_splitter import SentenceSplitter
 from llama_index.text_splitter.token_splitter import TokenTextSplitter
 from llama_index.text_splitter.types import TextSplitter
-
 
 RECOGNIZED_TEXT_SPLITTERS: Dict[str, Type[TextSplitter]] = {
     SentenceSplitter.class_name(): SentenceSplitter,

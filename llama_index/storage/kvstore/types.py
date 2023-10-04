@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
+
 import fsspec
 
 DEFAULT_COLLECTION = "data"

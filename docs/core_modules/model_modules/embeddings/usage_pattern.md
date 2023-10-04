@@ -41,8 +41,6 @@ By default, embeddings requests are sent to OpenAI in batches of 10. For some us
 embed_model = OpenAIEmbedding(embed_batch_size=42)
 ```
 
-(local-embedding-models)=
-
 ### Local Embedding Models
 
 The easiest way to use a local model is:
@@ -62,7 +60,35 @@ service_context = ServiceContext.from_defaults(
 )
 ```
 
-### Embedding Model Integrations
+### HuggingFace Optimum ONNX Embeddings
+
+LlamaIndex also supports creating and using ONNX embeddings using the Optimum library from HuggingFace. Simple create and save the ONNX embeddings, and use them.
+
+Some prerequisites:
+
+```
+pip install transformers optimum[exporters]
+```
+
+Creation with specifying the model and output path:
+
+```python
+from llama_index.embeddings import OptimumEmbedding
+
+OptimumEmbedding.create_and_save_optimum_model("BAAI/bge-small-en-v1.5", "./bge_onnx")
+```
+
+And then usage:
+
+```python
+embed_model = OptimumEmbedding(folder_name="./bge_onnx")
+service_context = ServiceContext.from_defaults(
+  embed_model=embed_model
+)
+```
+
+
+### LangChain Integrations
 
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/).
 
@@ -90,7 +116,7 @@ from llama_index.embeddings.base import BaseEmbedding
 
 class InstructorEmbeddings(BaseEmbedding):
   def __init__(
-    self, 
+    self,
     instructor_model_name: str = "hkunlp/instructor-large",
     instruction: str = "Represent the Computer Science documentation or question:",
     **kwargs: Any,
@@ -105,7 +131,7 @@ class InstructorEmbeddings(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
       embeddings = self._model.encode([[self._instruction, text]])
-      return embeddings[0] 
+      return embeddings[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
       embeddings = self._model.encode([[self._instruction, text] for text in texts])

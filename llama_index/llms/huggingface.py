@@ -3,7 +3,6 @@ from threading import Thread
 from typing import Any, List, Optional, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     CompletionResponse,
@@ -99,13 +98,19 @@ class HuggingFaceLLM(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
-        import torch
-        from transformers import (
-            AutoModelForCausalLM,
-            AutoTokenizer,
-            StoppingCriteria,
-            StoppingCriteriaList,
-        )
+        try:
+            import torch
+            from transformers import (
+                AutoModelForCausalLM,
+                AutoTokenizer,
+                StoppingCriteria,
+                StoppingCriteriaList,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                f"{type(self).__name__} requires torch and transformers packages.\n"
+                f"Please install both with `pip install torch transformers`."
+            ) from exc
 
         model_kwargs = model_kwargs or {}
         self._model = model or AutoModelForCausalLM.from_pretrained(
@@ -171,7 +176,6 @@ class HuggingFaceLLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "HuggingFace_LLM"
 
     @property
@@ -186,7 +190,6 @@ class HuggingFaceLLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
-
         full_prompt = prompt
         if self.query_wrapper_prompt:
             full_prompt = self.query_wrapper_prompt.format(query_str=prompt)

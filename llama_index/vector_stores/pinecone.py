@@ -12,17 +12,17 @@ from typing import Any, Callable, Dict, List, Optional, cast
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 ID_KEY = "id"
@@ -68,8 +68,7 @@ def generate_sparse_vectors(
     # create batch of input_ids
     inputs = tokenizer(context_batch)["input_ids"]
     # create sparse dictionaries
-    sparse_embeds = build_dict(inputs)
-    return sparse_embeds
+    return build_dict(inputs)
 
 
 def get_default_tokenizer() -> Callable:
@@ -82,13 +81,12 @@ def get_default_tokenizer() -> Callable:
 
     orig_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
     # set some default arguments, so input is just a list of strings
-    tokenizer = partial(
+    return partial(
         orig_tokenizer,
         padding=True,
         truncation=True,
         max_length=512,
     )
-    return tokenizer
 
 
 def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
@@ -152,7 +150,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         try:
-            import pinecone  # noqa: F401
+            import pinecone
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -200,7 +198,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> "PineconeVectorStore":
         try:
-            import pinecone  # noqa: F401
+            import pinecone
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -231,7 +229,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     ) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """

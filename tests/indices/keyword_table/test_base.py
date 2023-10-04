@@ -4,14 +4,14 @@ from typing import Any, List
 from unittest.mock import patch
 
 import pytest
-
 from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import Document
+
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now
@@ -138,10 +138,10 @@ def test_insert(
     table = SimpleKeywordTableIndex([])
     table.insert(document1)
     table.insert(document2)
-    chunk_index1_1 = list(table.index_struct.table["this"])[0]
-    chunk_index1_2 = list(table.index_struct.table["is"])[0]
-    chunk_index2_1 = list(table.index_struct.table["test"])[0]
-    chunk_index2_2 = list(table.index_struct.table["v3"])[0]
+    chunk_index1_1 = next(iter(table.index_struct.table["this"]))
+    chunk_index1_2 = next(iter(table.index_struct.table["is"]))
+    chunk_index2_1 = next(iter(table.index_struct.table["test"]))
+    chunk_index2_2 = next(iter(table.index_struct.table["v3"]))
     nodes = table.docstore.get_nodes(
         [chunk_index1_1, chunk_index1_2, chunk_index2_1, chunk_index2_2]
     )
@@ -185,7 +185,7 @@ def test_delete(
 
     # test ref doc info
     all_ref_doc_info = table.ref_doc_info
-    for doc_id in all_ref_doc_info.keys():
+    for doc_id in all_ref_doc_info:
         assert doc_id in ("test_id_1", "test_id_2", "test_id_3")
 
     # test delete

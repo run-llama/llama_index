@@ -1,19 +1,19 @@
 # LlamaHub Tools Guide
 
-We offer a rich set of Tool Specs that are offered through [LlamaHub](https://llamahub.ai/) 🦙. 
+We offer a rich set of Tool Specs that are offered through [LlamaHub](https://llamahub.ai/) 🦙.
 ![](/_static/data_connectors/llamahub.png)
 
-These tool specs represent an initial curated list of services that an agent can interact with and enrich its capability to perform different actions. 
+These tool specs represent an initial curated list of services that an agent can interact with and enrich its capability to perform different actions.
 
 We also provide a list of **utility tools** that help to abstract away pain points when designing agents to interact with different API services that return large amounts of data.
 
 ## Tool Specs
 
-Coming soon! 
+Coming soon!
 
 ## Utility Tools
 
-Oftentimes, directly querying an API can return a massive volume of data, which on its own may overflow the context window of the LLM (or at the very least unnecessarily increase the number of tokens that you are using). 
+Oftentimes, directly querying an API can return a massive volume of data, which on its own may overflow the context window of the LLM (or at the very least unnecessarily increase the number of tokens that you are using).
 
 To tackle this, we’ve provided an initial set of “utility tools” in LlamaHub Tools - utility tools are not conceptually tied to a given service (e.g. Gmail, Notion), but rather can augment the capabilities of existing Tools. In this particular case, utility tools help to abstract away common patterns of needing to cache/index and query data that’s returned from any API request.
 
@@ -23,13 +23,13 @@ Let’s walk through our two main utility tools below.
 
 This tool turns any existing LlamaIndex data loader ( `BaseReader` class) into a tool that an agent can use. The tool can be called with all the parameters needed to trigger `load_data` from the data loader, along with a natural language query string. During execution, we first load data from the data loader, index it (for instance with a vector store), and then query it “on-demand”. All three of these steps happen in a single tool call.
 
-Oftentimes this can be preferable to figuring out how to load and index API data yourself. While this may allow for data reusability, oftentimes users just need an ad-hoc index to abstract away prompt window limitations for any API call. 
+Oftentimes this can be preferable to figuring out how to load and index API data yourself. While this may allow for data reusability, oftentimes users just need an ad-hoc index to abstract away prompt window limitations for any API call.
 
 A usage example is given below:
 
 ```python
 from llama_hub.wikipedia.base import WikipediaReader
-from llama_index.tools.on_demand_loader_tool import OnDemandLoaderTool
+from llama_index.tools.ondemand_loader_tool import OnDemandLoaderTool
 
 tool = OnDemandLoaderTool.from_defaults(
 	reader,

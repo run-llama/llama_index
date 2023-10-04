@@ -4,9 +4,6 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, U
 
 import openai
 from openai import ChatCompletion, Completion
-
-from llama_index.bridge.pydantic import BaseModel
-
 from tenacity import (
     before_sleep_log,
     retry,
@@ -15,9 +12,9 @@ from tenacity import (
     wait_exponential,
 )
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
-
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -185,16 +182,12 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
             f"OpenAI model {modelname} has been discontinued. "
             "Please choose another model."
         )
-
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
-
-    if context_size is None:
+    if modelname not in ALL_AVAILABLE_MODELS:
         raise ValueError(
-            f"Unknown model: {modelname}. Please provide a valid OpenAI model name."
-            "Known models are: " + ", ".join(ALL_AVAILABLE_MODELS.keys())
+            f"Unknown model {modelname!r}. Please provide a valid OpenAI model name in:"
+            f" {', '.join(ALL_AVAILABLE_MODELS.keys())}"
         )
-
-    return context_size
+    return ALL_AVAILABLE_MODELS[modelname]
 
 
 def is_chat_model(model: str) -> bool:
@@ -276,7 +269,6 @@ def resolve_openai_credentials(
     3. openai module
     4. default
     """
-
     # resolve from param or env
     api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY", "")
     api_type = get_from_param_or_env("api_type", api_type, "OPENAI_API_TYPE", "")
@@ -302,3 +294,10 @@ def validate_openai_api_key(api_key: Optional[str] = None) -> None:
 
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+
+
+def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:
+    for arg in args:
+        if arg is not None:
+            return arg
+    return None

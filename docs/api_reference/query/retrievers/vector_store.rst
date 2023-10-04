@@ -10,6 +10,6 @@ Vector Store Retrievers
    :inherited-members:
 
 .. automodule:: llama_index.vector_stores.types
-   :members: 
-   :inherited-members: 
+   :members:
+   :inherited-members:
    :exclude-members: VectorStore, VectorStoreQueryResult, NodeWithEmbedding, VectorStoreQuerySpec, VectorStoreQuery

@@ -15,7 +15,10 @@ from tenacity import (
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from llama_index.llms.openai_utils import validate_openai_api_key
+from llama_index.llms.openai_utils import (
+    resolve_from_aliases,
+    resolve_openai_credentials,
+)
 
 
 class OpenAIEmbeddingMode(str, Enum):
@@ -232,7 +235,14 @@ class OpenAIEmbedding(BaseEmbedding):
     """
 
     deployment_name: Optional[str]
-    openai_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional kwargs for the OpenAI API."
+    )
+
+    api_key: str = Field(default=None, description="The OpenAI API key.")
+    api_type: str = Field(default=None, description="The OpenAI API type.")
+    api_base: str = Field(description="The base URL for OpenAI API.")
+    api_version: str = Field(description="The API version for OpenAI API.")
 
     _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
@@ -243,30 +253,66 @@ class OpenAIEmbedding(BaseEmbedding):
         model: str = OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
         deployment_name: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        api_key: Optional[str] = None,
+        api_type: Optional[str] = None,
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        # aliases for deployment name
+        deployment: Optional[str] = None,
+        deployment_id: Optional[str] = None,
+        engine: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        # Validate that either the openai.api_key property
-        # or OPENAI_API_KEY env variable are set to a valid key
-        # Raises ValueError if missing
-        validate_openai_api_key(kwargs.get("api_key", None))
+        additional_kwargs = additional_kwargs or {}
+
+        api_key, api_type, api_base, api_version = resolve_openai_credentials(
+            api_key=api_key,
+            api_type=api_type,
+            api_base=api_base,
+            api_version=api_version,
+        )
+
+        deployment_name = resolve_from_aliases(
+            deployment_name, deployment, deployment_id, engine
+        )
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
 
-        """Init params."""
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=model,
             deployment_name=deployment_name,
-            openai_kwargs=kwargs,
+            additional_kwargs=additional_kwargs,
+            api_key=api_key,
+            api_type=api_type,
+            api_version=api_version,
+            api_base=api_base,
+            **kwargs,
         )
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "OpenAIEmbedding"
+
+    @property
+    def _credential_kwargs(self) -> Dict[str, Any]:
+        return {
+            "api_key": self.api_key,
+            "api_type": self.api_type,
+            "api_base": self.api_base,
+            "api_version": self.api_version,
+        }
+
+    @property
+    def _all_kwargs(self) -> Dict[str, Any]:
+        return {
+            **self._credential_kwargs,
+            **self.additional_kwargs,
+        }
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
@@ -274,7 +320,7 @@ class OpenAIEmbedding(BaseEmbedding):
             query,
             engine=self._query_engine,
             deployment_id=self.deployment_name,
-            **self.openai_kwargs,
+            **self._all_kwargs,
         )
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
@@ -283,7 +329,7 @@ class OpenAIEmbedding(BaseEmbedding):
             query,
             engine=self._query_engine,
             deployment_id=self.deployment_name,
-            **self.openai_kwargs,
+            **self._all_kwargs,
         )
 
     def _get_text_embedding(self, text: str) -> List[float]:
@@ -292,7 +338,7 @@ class OpenAIEmbedding(BaseEmbedding):
             text,
             engine=self._text_engine,
             deployment_id=self.deployment_name,
-            **self.openai_kwargs,
+            **self._all_kwargs,
         )
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
@@ -301,21 +347,21 @@ class OpenAIEmbedding(BaseEmbedding):
             text,
             engine=self._text_engine,
             deployment_id=self.deployment_name,
-            **self.openai_kwargs,
+            **self._all_kwargs,
         )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
-        Can be overriden for batch queries.
+        Can be overridden for batch queries.
 
         """
         return get_embeddings(
             texts,
             engine=self._text_engine,
             deployment_id=self.deployment_name,
-            **self.openai_kwargs,
+            **self._all_kwargs,
         )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -324,5 +370,5 @@ class OpenAIEmbedding(BaseEmbedding):
             texts,
             engine=self._text_engine,
             deployment_id=self.deployment_name,
-            **self.openai_kwargs,
+            **self._all_kwargs,
         )

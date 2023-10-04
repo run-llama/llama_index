@@ -2,8 +2,6 @@
 from typing import Any, Dict
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
-
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
@@ -95,7 +93,6 @@ class MockLLMPredictor(BaseLLMPredictor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "MockLLMPredictor"
 
     @property
@@ -112,7 +109,6 @@ class MockLLMPredictor(BaseLLMPredictor):
 
     def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Mock predict."""
-
         prompt_str = prompt.metadata["prompt_type"]
         if prompt_str == PromptType.SUMMARY:
             output = _mock_summary_predict(self.max_tokens, prompt_args)
