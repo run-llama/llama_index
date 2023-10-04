@@ -98,7 +98,7 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
         else:
             pass
 
-    def push_to_hub(self, repo_id: Any = None):
+    def push_to_hub(self, repo_id: Any = None) -> None:
         """
         Saves the model and tokenizer to HuggingFace hub
         """
