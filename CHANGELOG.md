@@ -6,6 +6,7 @@
 - Added support for pydantic object outputs with query engines (#7893)
 - `ClarifaiEmbedding` class added for embedding support (#7940)
 - Markdown node parser, flat file reader and simple file node parser (#7863)
+- Added support for mongdb atlas `$vectorSearch` (#7866)
 
 ### Bug Fixes / Nits
 - Adds support for using message metadata in discord reader (#7906)
