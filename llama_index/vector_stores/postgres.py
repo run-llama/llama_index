@@ -26,7 +26,7 @@ def get_data_model(
     index_name: str,
     hybrid_search: bool,
     text_search_config: str,
-    set_cache_ok: bool,
+    cache_okay: bool,
     embed_dim: int = 1536,
 ) -> Any:
     """
@@ -42,7 +42,7 @@ def get_data_model(
 
     class TSVector(TypeDecorator):
         impl = TSVECTOR
-        cache_ok = set_cache_ok 
+        cache_ok = cache_okay 
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
