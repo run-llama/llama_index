@@ -9,6 +9,7 @@
 - Update document summary index (#7815)
   - change default retrieval mode to embedding
   - embed summaries into vector store by default at indexing time (instead of calculating embedding on the fly)
+  - support configuring top k in llm retriever
 
 ### New Features
 - Added support for pydantic object outputs with query engines (#7893)
