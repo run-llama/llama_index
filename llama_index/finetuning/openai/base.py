@@ -25,11 +25,13 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         data_path: str,
         verbose: bool = False,
         start_job_id: Optional[str] = None,
+        validate_json: bool = True
     ) -> None:
         """Init params."""
         self.base_model = base_model
         self.data_path = data_path
         self._verbose = verbose
+        self._validate_json = validate_json
         self._start_job: Optional[Any] = None
         if start_job_id is not None:
             self._start_job = openai.FineTuningJob.retrieve(start_job_id)
@@ -53,7 +55,8 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
 
     def finetune(self) -> None:
         """Finetune model."""
-        validate_json(self.data_path)
+        if self._validate_json:
+            validate_json(self.data_path)
 
         file_name = os.path.basename(self.data_path)
 

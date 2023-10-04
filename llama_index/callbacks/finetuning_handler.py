@@ -1,9 +1,10 @@
 import json
 from typing import Any, Dict, List, Optional, Type
 
+from pydantic import BaseModel
+
 from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from pydantic import BaseModel
 
 
 class OpenAIFineTuningHandler(BaseCallbackHandler):
@@ -15,10 +16,7 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
     in a `.jsonl` format that can be used for fine-tuning with OpenAI's API.
     """
 
-    def __init__(
-        self,
-        output_cls: Optional[Type[BaseModel]] = None
-    ) -> None:
+    def __init__(self, output_cls: Optional[Type[BaseModel]] = None) -> None:
         """Initialize the base callback handler."""
         super().__init__(
             event_starts_to_ignore=[],
@@ -54,7 +52,7 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
                     self._finetuning_events[event_id].extend(cur_messages)
                 else:
                     self._finetuning_events[event_id] = cur_messages
-            
+
             # if functions exists, add that
             if payload and EventPayload.ADDITIONAL_KWARGS in payload:
                 kwargs_dict = payload[EventPayload.ADDITIONAL_KWARGS]
@@ -113,10 +111,8 @@ class OpenAIFineTuningHandler(BaseCallbackHandler):
         json_strs = []
         for event_id, event in events_dict.items():
             all_messages = event["messages"] + [event["response"]]
-            message_dicts = to_openai_message_dicts(all_messages)
-            event_dict = {
-                "messages": message_dicts
-            }
+            message_dicts = to_openai_message_dicts(all_messages, drop_none=True)
+            event_dict = {"messages": message_dicts}
             if event_id in self._function_calls:
                 event_dict["functions"] = self._function_calls[event_id]
             json_strs.append(json.dumps(event_dict))
