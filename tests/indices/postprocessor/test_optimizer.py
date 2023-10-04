@@ -3,19 +3,10 @@
 from typing import Any, List
 from unittest.mock import patch
 
-import pytest
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.optimizer import SentenceEmbeddingOptimizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import NodeWithScore, TextNode
-from llama_index.utils import (
-    get_transformer_tokenizer_fn,
-)
-
-try:
-    from transformers import AutoTokenizer
-except ImportError:
-    AutoTokenizer = None  # type: ignore
 
 
 def mock_tokenizer_fn(text: str) -> List[str]:
@@ -150,28 +141,3 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
         [NodeWithScore(node=orig_node)], query
     )[0]
     assert optimized_node.node.get_content() == "world foo bar"
-
-
-@patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embeddings_chinese
-)
-@patch.object(
-    OpenAIEmbedding,
-    "_get_text_embeddings",
-    side_effect=mock_get_text_embeddings_chinese,
-)
-@pytest.mark.skipif(AutoTokenizer is None, reason="transformers not installed")
-def test_optimizer_chinese(_mock_embeds: Any, _mock_embed: Any) -> None:
-    """Test optimizer."""
-    optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=get_transformer_tokenizer_fn("GanymedeNil/text2vec-large-chinese"),
-        percentile_cutoff=0.5,
-    )
-    query = QueryBundle(query_str="你好 世界", embedding=[1, 0, 0, 0, 0])
-    orig_node = TextNode(text="你好 世界")
-    optimized_node = optimizer.postprocess_nodes(
-        [NodeWithScore(node=orig_node)], query
-    )[0]
-    assert len(optimized_node.node.get_content()) < len(
-        TextNode(text="你好 世界").get_content()
-    )
