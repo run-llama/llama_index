@@ -2,18 +2,15 @@ from typing import Any, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.anthropic_utils import (
-    anthropic_modelname_to_contextsize, messages_to_anthropic_prompt)
-from llama_index.llms.base import (LLM, ChatMessage, ChatResponse,
-                                   ChatResponseAsyncGen, ChatResponseGen,
-                                   CompletionResponse,
-                                   CompletionResponseAsyncGen,
-                                   CompletionResponseGen, LLMMetadata,
-                                   MessageRole, llm_chat_callback,
-                                   llm_completion_callback)
-from llama_index.llms.generic_utils import (
-    achat_to_completion_decorator, astream_chat_to_completion_decorator,
-    chat_to_completion_decorator, stream_chat_to_completion_decorator)
+from llama_index.llms.base import (
+    LLM,
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 
 EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 
@@ -44,7 +41,6 @@ class Clarifai(LLM):
     ):
         try:
             from clarifai.client.model import Model
-            from google.protobuf.struct_pb2 import Struct
         except ImportError:
             raise ImportError("ClarifaiLLM requires `pip install clarifai`.")
 
@@ -97,32 +93,35 @@ class Clarifai(LLM):
             is_chat_model=self._is_chat_model,
         )
 
-    """
-    Example:
-    
-    from clarifai.client.model import Model
-    from google.protobuf.struct_pb2 import Struct
-
-
-    inference_params = Struct()
-    inference_params.update(dict(temperature=str(0.7)))
-
-    output_info = dict(params=inference_params)
-
-    m = Model(user_id="openai",app_id="chat-completion",model_id="GPT-4",
-            model_version=dict(output_info=output_info))
-
-    print(m.predict_by_bytes(b"Tweet on enjoying event at PyCon", "text"))
-    """
-
+    # TODO: When the Clarifai python SDK supports inference params, add here.
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM."""
-        prompt = magic(messages)  ## TODO: implement this converter message
-        self._model.predict_by_bytes(prompt.encode(encoding="UTF-8"), "text")
+        prompt = "".join([str(m) for m in messages])
+        try:
+            response = (
+                self._model.predict_by_bytes(
+                    input_bytes=prompt.encode(encoding="UTF-8"), input_type="text"
+                )
+                .outputs[0]
+                .data.text.raw
+            )
+        except Exception as e:
+            raise Exception(f"Prediction failed: {e}")
+        return ChatResponse(message=ChatMessage(content=response))
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint for LLM."""
-        pass
+        try:
+            response = (
+                self.model.predict_by_bytes(
+                    input_bytes=prompt.encode(encoding="utf-8"), input_type="text"
+                )
+                .outputs[0]
+                .data.text.raw
+            )
+        except Exception as e:
+            raise Exception(f"Prediction failed: {e}")
+        return CompletionResponse(text=response)
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
