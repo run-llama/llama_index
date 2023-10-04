@@ -33,7 +33,7 @@ Make sure that filters are only used as needed. If there are no filters that sho
 applied return [] for the filter value.\
 
 If the user's query explicitly mentions number of documents to retrieve, set top_k to \
-that number, otherwise do not set top_k. 
+that number, otherwise do not set top_k.
 
 """
 
@@ -60,28 +60,24 @@ example_output = VectorStoreQuerySpec(
     ],
 )
 
-EXAMPLES = (
-    """\
+EXAMPLES = f"""\
 << Example 1. >>
 Data Source:
 ```json
-{info_str}
+{example_info.json(indent=4)}
 ```
 
 User Query:
-{query_str}
+{example_query}
 
 Structured Request:
 ```json
-{output_str}
+{example_output.json()}
 ```
-""".format(
-        info_str=example_info.json(indent=4),
-        query_str=example_query,
-        output_str=example_output.json(),
-    )
-    .replace("{", "{{")
-    .replace("}", "}}")
+""".replace(
+    "{", "{{"
+).replace(
+    "}", "}}"
 )
 
 

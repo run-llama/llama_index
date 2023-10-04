@@ -1,8 +1,6 @@
 """Test tools."""
 import pytest
-
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.tools.function_tool import FunctionTool
 
 
@@ -16,7 +14,6 @@ async def async_tmp_function(x: int) -> str:
 
 def test_function_tool() -> None:
     """Test function tool."""
-
     function_tool = FunctionTool.from_defaults(
         lambda x: str(x), name="foo", description="bar"
     )
@@ -62,7 +59,7 @@ def test_function_tool() -> None:
     assert langchain_tool2.args_schema == TestSchema
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_function_tool_async() -> None:
     """Test function tool async."""
     function_tool = FunctionTool.from_defaults(
@@ -105,7 +102,7 @@ async def test_function_tool_async() -> None:
     assert langchain_tool2.args_schema == TestSchema
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_function_tool_async_defaults() -> None:
     """Test async calls to function tool when only sync function is given."""
     function_tool = FunctionTool.from_defaults(

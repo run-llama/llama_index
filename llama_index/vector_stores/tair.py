@@ -33,7 +33,7 @@ def _to_filter_expr(filters: MetadataFilters) -> str:
         value = str(f.value)
         if isinstance(f.value, str):
             value = '"' + value + '"'
-        conditions.append("%s==%s" % (f.key, value))
+        conditions.append(f"{f.key}=={value}")
     return "&&".join(conditions)
 
 
@@ -89,7 +89,7 @@ class TairVectorStore(VectorStore):
 
         """
         try:
-            from tair import Tair, tairvector  # noqa: F401
+            from tair import Tair, tairvector
         except ImportError:
             raise ValueError(
                 "Could not import tair-py python package. "
@@ -165,7 +165,7 @@ class TairVectorStore(VectorStore):
             ids.append(node.node_id)
             self._tair_client.tvs_hset(
                 self._index_name,
-                "%s#%s" % (node.ref_doc_id, node.node_id),
+                f"{node.ref_doc_id}#{node.node_id}",
                 vector=node.get_embedding(),
                 is_binary=False,
                 **attributes,
@@ -252,7 +252,7 @@ class TairVectorStore(VectorStore):
 
     def _create_index(self) -> None:
         try:
-            from tair import tairvector  # noqa: F401
+            from tair import tairvector
         except ImportError:
             raise ValueError(
                 "Could not import tair-py python package. "

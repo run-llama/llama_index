@@ -1,7 +1,8 @@
 from typing import Any, Dict, Optional
+
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
-# keyword "_" is reserved in Firestore but refered in llama_index/constants.py.
+# keyword "_" is reserved in Firestore but referred in llama_index/constants.py.
 FIELD_NAME_REPLACE_SET = {"__data__": "data", "__type__": "type"}
 FIELD_NAME_REPLACE_GET = {"data": "__data__", "type": "__type__"}
 

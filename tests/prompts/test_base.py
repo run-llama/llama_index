@@ -2,10 +2,10 @@
 
 
 from typing import Any
+
 import pytest
-from llama_index.bridge.langchain import BaseLanguageModel
+from llama_index.bridge.langchain import BaseLanguageModel, FakeListLLM
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
-from llama_index.bridge.langchain import FakeListLLM
 from llama_index.bridge.langchain import PromptTemplate as LangchainTemplate
 from llama_index.llms import MockLLM
 from llama_index.llms.base import ChatMessage, MessageRole
@@ -33,7 +33,7 @@ class MockOutputParser(BaseOutputParser):
         return query + "\n" + self._format_string
 
 
-@pytest.fixture
+@pytest.fixture()
 def output_parser() -> BaseOutputParser:
     return MockOutputParser(format_string="output_instruction")
 

@@ -2,12 +2,12 @@
 
 Prototyping a RAG application is easy, but making it performant, robust, and scalable to a large knowledge corpus is hard.
 
-This guide contains a variety of tips and tricks to improve the performance of your RAG pipeline. We first outline 
+This guide contains a variety of tips and tricks to improve the performance of your RAG pipeline. We first outline
 some general techniques - they are loosely ordered in terms of most straightforward to most challenging.
 We then dive a bit more deeply into each technique, the use cases that it solves,
-and how to implement it with LlamaIndex! 
+and how to implement it with LlamaIndex!
 
-The end goal is to optimize your retrieval and generation performance to answer more 
+The end goal is to optimize your retrieval and generation performance to answer more
 queries over more complex datasets accurately and without hallucinations.
 
 ## General Techniques for Building Production-Grade RAG
@@ -19,19 +19,19 @@ Here are some top Considerations for Building Production-Grade RAG
 - Dynamically Retrieve Chunks Depending on your Task
 - Optimize context embeddings
 
-We discussed this and more during our [Production RAG Webinar](https://www.youtube.com/watch?v=Zj5RCweUHIk). 
+We discussed this and more during our [Production RAG Webinar](https://www.youtube.com/watch?v=Zj5RCweUHIk).
 Check out [this Tweet thread](https://twitter.com/jerryjliu0/status/1692931028963221929?s=20) for more synthesized details.
 
 
 ## Decoupling Chunks Used for Retrieval vs. Chunks Used for Synthesis
 
-A key technique for better retrieval is to decouple chunks used for retrieval with those that are used for synthesis. 
+A key technique for better retrieval is to decouple chunks used for retrieval with those that are used for synthesis.
 
 ![](/_static/production_rag/decouple_chunks.png)
 
 #### Motivation
-The optimal chunk representation for retrieval might be different than the optimal consideration used for synthesis. 
-For instance, a raw text chunk may contain needed details for the LLM to synthesize a more detailed answer given a query. However, it 
+The optimal chunk representation for retrieval might be different than the optimal consideration used for synthesis.
+For instance, a raw text chunk may contain needed details for the LLM to synthesize a more detailed answer given a query. However, it
 may contain filler words/info that may bias the embedding representation, or it may lack global context and not be retrieved at all
 when a relevant query comes in.
 
@@ -77,7 +77,7 @@ using structured information to ensure those two PDFs get returned beyond raw em
 #### Key Techniques
 There’s a few ways of performing more structured tagging/retrieval for production-quality RAG systems, each with their own pros/cons.
 
-**1. Metadata Filters + Auto Retrieval** 
+**1. Metadata Filters + Auto Retrieval**
 Tag each document with metadata and then store in a vector database. During inference time, use the LLM to infer the right metadata filters to query the vector db in addition to the semantic query string.
 
 - Pros ✅: Supported in major vector dbs. Can filter document via multiple dimensions.
@@ -147,7 +147,7 @@ maxdepth: 1
 ## Optimize Context Embeddings
 
 #### Motivation
-This is related to the motivation described above in "decoupling chunks used for retrieval vs. synthesis". 
+This is related to the motivation described above in "decoupling chunks used for retrieval vs. synthesis".
 We want to make sure that the embeddings are optimized for better retrieval over your specific data corpus.
 Pre-trained models may not capture the salient properties of the data relevant to your use case.
 

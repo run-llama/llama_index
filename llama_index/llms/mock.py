@@ -1,12 +1,12 @@
 from typing import Any, Optional
 
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
     llm_completion_callback,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.custom import CustomLLM
 
 
@@ -22,7 +22,6 @@ class MockLLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "MockLLM"
 
     @property

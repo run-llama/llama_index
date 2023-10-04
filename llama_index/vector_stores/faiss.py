@@ -6,13 +6,13 @@ An index that that is built on top of an existing vector store.
 
 import logging
 import os
+from typing import Any, List, Optional, cast
+
 import fsspec
-from fsspec.implementations.local import LocalFileSystem
-from typing import Any, List, cast, Optional
-
 import numpy as np
-from llama_index.schema import BaseNode
+from fsspec.implementations.local import LocalFileSystem
 
+from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
@@ -50,7 +50,7 @@ class FaissVectorStore(VectorStore):
             https://github.com/facebookresearch/faiss/wiki/Installing-Faiss
         """
         try:
-            import faiss  # noqa: F401
+            import faiss
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -96,7 +96,7 @@ class FaissVectorStore(VectorStore):
 
         NOTE: in the Faiss vector store, we do not store text in Faiss.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
@@ -169,12 +169,12 @@ class FaissVectorStore(VectorStore):
         dists, indices = self._faiss_index.search(
             query_embedding_np, query.similarity_top_k
         )
-        dists = [d for d in dists[0]]
+        dists = list(dists[0])
         # if empty, then return an empty response
         if len(indices) == 0:
             return VectorStoreQueryResult(similarities=[], ids=[])
 
         # returned dimension is 1 x k
-        node_idxs = list([str(i) for i in indices[0]])
+        node_idxs = [str(i) for i in indices[0]]
 
         return VectorStoreQueryResult(similarities=dists, ids=node_idxs)

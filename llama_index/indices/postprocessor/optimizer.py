@@ -3,7 +3,6 @@ import logging
 from typing import Callable, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
@@ -21,7 +20,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         description="Percentile cutoff for the top k sentences to use."
     )
     threshold_cutoff: Optional[float] = Field(
-        description="Threshold cutoff for similiarity for each sentence to use."
+        description="Threshold cutoff for similarity for each sentence to use."
     )
 
     _embed_model: BaseEmbedding = PrivateAttr()
@@ -68,8 +67,10 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         self._embed_model = embed_model or OpenAIEmbedding()
 
         if tokenizer_fn is None:
-            import nltk.data
             import os
+
+            import nltk.data
+
             from llama_index.utils import get_cache_dir
 
             cache_dir = get_cache_dir()

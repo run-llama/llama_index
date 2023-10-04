@@ -9,45 +9,39 @@ import logging
 from logging import NullHandler
 from typing import Optional
 
+# import global eval handler
+from llama_index.callbacks.global_handlers import set_global_handler
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-
-# indices
-from llama_index.indices.keyword_table import (
-    KeywordTableIndex,
-    RAKEKeywordTableIndex,
-    SimpleKeywordTableIndex,
-    GPTKeywordTableIndex,
-    GPTRAKEKeywordTableIndex,
-    GPTSimpleKeywordTableIndex,
-)
-from llama_index.indices.knowledge_graph import (
-    KnowledgeGraphIndex,
-    GPTKnowledgeGraphIndex,
-)
-from llama_index.indices.list import ListIndex, GPTListIndex, SummaryIndex
-from llama_index.indices.tree import TreeIndex, GPTTreeIndex
-from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
-from llama_index.indices.document_summary import (
-    DocumentSummaryIndex,
-    GPTDocumentSummaryIndex,
-)
-from llama_index.indices.empty import EmptyIndex, GPTEmptyIndex
-from llama_index.indices.struct_store.pandas import PandasIndex, GPTPandasIndex
-from llama_index.indices.struct_store.sql import (
-    SQLStructStoreIndex,
-    GPTSQLStructStoreIndex,
-)
-
 # structured
 from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 
 # for composability
 from llama_index.indices.composability.graph import ComposableGraph
+from llama_index.indices.document_summary import (
+    DocumentSummaryIndex,
+    GPTDocumentSummaryIndex,
+)
+from llama_index.indices.empty import EmptyIndex, GPTEmptyIndex
+
+# indices
+from llama_index.indices.keyword_table import (
+    GPTKeywordTableIndex,
+    GPTRAKEKeywordTableIndex,
+    GPTSimpleKeywordTableIndex,
+    KeywordTableIndex,
+    RAKEKeywordTableIndex,
+    SimpleKeywordTableIndex,
+)
+from llama_index.indices.knowledge_graph import (
+    GPTKnowledgeGraphIndex,
+    KnowledgeGraphIndex,
+)
+from llama_index.indices.list import GPTListIndex, ListIndex, SummaryIndex
 
 # loading
 from llama_index.indices.loading import (
@@ -59,30 +53,38 @@ from llama_index.indices.loading import (
 # prompt helper
 from llama_index.indices.prompt_helper import PromptHelper
 
-# Response Synthesizer
-from llama_index.response_synthesizers.factory import get_response_synthesizer
-
 # QueryBundle
 from llama_index.indices.query.schema import QueryBundle
-
 from llama_index.indices.service_context import (
     ServiceContext,
     set_global_service_context,
 )
+from llama_index.indices.struct_store.pandas import GPTPandasIndex, PandasIndex
+from llama_index.indices.struct_store.sql import (
+    GPTSQLStructStoreIndex,
+    SQLStructStoreIndex,
+)
+from llama_index.indices.tree import GPTTreeIndex, TreeIndex
+from llama_index.indices.vector_store import GPTVectorStoreIndex, VectorStoreIndex
+from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 
 # langchain helper
 from llama_index.llm_predictor import LLMPredictor
-from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+
+# token predictor
+from llama_index.llm_predictor.mock import MockLLMPredictor
+
+# vellum
+from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
 # prompts
 from llama_index.prompts import (
     BasePromptTemplate,
-    PromptTemplate,
     ChatPromptTemplate,
-    SelectorPromptTemplate,
     # backwards compatibility
     Prompt,
+    PromptTemplate,
+    SelectorPromptTemplate,
 )
 from llama_index.prompts.prompts import (
     KeywordExtractPrompt,
@@ -94,9 +96,6 @@ from llama_index.prompts.prompts import (
     TreeSelectMultiplePrompt,
     TreeSelectPrompt,
 )
-
-# readers
-from llama_index.schema import Document
 from llama_index.readers import (
     BeautifulSoupWebReader,
     ChromaReader,
@@ -129,18 +128,18 @@ from llama_index.readers.download import download_loader
 # response
 from llama_index.response.schema import Response
 
+# Response Synthesizer
+from llama_index.response_synthesizers.factory import get_response_synthesizer
+
+# readers
+from llama_index.schema import Document
+
 # storage
 from llama_index.storage.storage_context import StorageContext
-
-# token predictor
-from llama_index.llm_predictor.mock import MockLLMPredictor
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
-# vellum
-from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
-
-# import global eval handler
-from llama_index.callbacks.global_handlers import set_global_handler
+# sql wrapper
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
@@ -239,7 +238,7 @@ __all__ = [
 ]
 
 # eval global toggle
-from llama_index.callbacks.base_handler import BaseCallbackHandler  # noqa: E402
+from llama_index.callbacks.base_handler import BaseCallbackHandler
 
 global_handler: Optional[BaseCallbackHandler] = None
 

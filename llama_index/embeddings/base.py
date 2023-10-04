@@ -42,8 +42,7 @@ def similarity(
         # Using -euclidean distance as similarity to achieve same ranking order
         return -float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
     elif mode == SimilarityMode.DOT_PRODUCT:
-        product = np.dot(embedding1, embedding2)
-        return product
+        return np.dot(embedding1, embedding2)
     else:
         product = np.dot(embedding1, embedding2)
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
@@ -150,7 +149,7 @@ class BaseEmbedding(BaseComponent):
         """Asynchronously get text embedding.
 
         By default, this falls back to _get_text_embedding.
-        Meant to be overriden if there is a true async implementation.
+        Meant to be overridden if there is a true async implementation.
 
         """
         return self._get_text_embedding(text)
@@ -159,23 +158,21 @@ class BaseEmbedding(BaseComponent):
         """Get a list of text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
-        Meant to be overriden for batch queries.
+        Meant to be overridden for batch queries.
 
         """
-        result = [self._get_text_embedding(text) for text in texts]
-        return result
+        return [self._get_text_embedding(text) for text in texts]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         """Async get a list of text embeddings.
 
         By default, this is a wrapper around _aget_text_embedding.
-        Meant to be overriden for batch queries.
+        Meant to be overridden for batch queries.
 
         """
-        result = await asyncio.gather(
+        return await asyncio.gather(
             *[self._aget_text_embedding(text) for text in texts]
         )
-        return result
 
     def get_text_embedding(self, text: str) -> Embedding:
         """Get text embedding."""
@@ -258,6 +255,7 @@ class BaseEmbedding(BaseComponent):
                 )
                 callback_payloads.append((event_id, cur_batch))
                 embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
+                cur_batch = []
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
@@ -275,7 +273,6 @@ class BaseEmbedding(BaseComponent):
                 ]
             except ImportError:
                 nested_embeddings = await asyncio.gather(*embeddings_coroutines)
-                pass
         else:
             nested_embeddings = await asyncio.gather(*embeddings_coroutines)
 

@@ -4,7 +4,6 @@ Contains simple parser for mbox files.
 
 """
 import logging
-
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -40,7 +39,7 @@ class MboxReader(BaseReader):
     ) -> None:
         """Init params."""
         try:
-            from bs4 import BeautifulSoup  # noqa: F401
+            from bs4 import BeautifulSoup
         except ImportError:
             raise ImportError(
                 "`beautifulsoup4` package not found: `pip install beautifulsoup4`"

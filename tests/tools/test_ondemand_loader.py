@@ -3,7 +3,6 @@
 from typing import List
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.readers.string_iterable import StringIterableReader

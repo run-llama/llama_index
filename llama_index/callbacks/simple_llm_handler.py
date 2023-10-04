@@ -48,6 +48,7 @@ class SimpleLLMHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         return event_id

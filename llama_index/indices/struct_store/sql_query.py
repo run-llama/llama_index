@@ -12,13 +12,13 @@ from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +65,7 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
         # NOTE: since the query_str is a SQL query, it doesn't make sense
         # to use ResponseBuilder anywhere.
         response_str, metadata = self._sql_database.run_sql(query_bundle.query_str)
-        response = Response(response=response_str, metadata=metadata)
-        return response
+        return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         return self._query(query_bundle)
@@ -133,8 +132,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]
-        result_response = response.strip()
-        return result_response
+        return response.strip()
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
         """Get table context.
@@ -188,8 +186,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         else:
             response_str = raw_response_str
 
-        response = Response(response=response_str, metadata=metadata)
-        return response
+        return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
@@ -209,8 +206,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
         response_str, metadata = self._sql_database.run_sql(sql_query_str)
         metadata["sql_query"] = sql_query_str
-        response = Response(response=response_str, metadata=metadata)
-        return response
+        return Response(response=response_str, metadata=metadata)
 
 
 class BaseSQLTableQueryEngine(BaseQueryEngine):
@@ -243,17 +239,13 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
-        # Find and remove SQLResult part
-        sql_result_start = response.find("SQLResult:")
         sql_query_start = response.find("SQLQuery:")
-        if sql_result_start != -1 and sql_query_start != -1:
-            response = response[sql_query_start + 1 : sql_result_start].lstrip(
-                "SQLQuery:"
-            )
-        elif sql_result_start != -1:
+        if sql_query_start != -1:
+            response = response[sql_query_start:].removeprefix("SQLQuery:")
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
             response = response[:sql_result_start]
-        result_response = response.strip()
-        return result_response
+        return response.strip()
 
     @abstractmethod
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
@@ -292,8 +284,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         else:
             response_str = raw_response_str
 
-        response = Response(response=response_str, metadata=metadata)
-        return response
+        return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
@@ -313,8 +304,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         response_str, metadata = self._sql_database.run_sql(sql_query_str)
         metadata["sql_query"] = sql_query_str
-        response = Response(response=response_str, metadata=metadata)
-        return response
+        return Response(response=response_str, metadata=metadata)
 
 
 class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
@@ -384,8 +374,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
 
                 context_strs.append(table_info)
 
-        tables_desc_str = "\n\n".join(context_strs)
-        return tables_desc_str
+        return "\n\n".join(context_strs)
 
 
 class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
@@ -439,8 +428,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
 
             context_strs.append(table_info)
 
-        tables_desc_str = "\n\n".join(context_strs)
-        return tables_desc_str
+        return "\n\n".join(context_strs)
 
 
 # legacy

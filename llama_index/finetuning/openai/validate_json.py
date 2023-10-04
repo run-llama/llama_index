@@ -8,11 +8,12 @@
 
 import json
 import os
-import tiktoken
-import numpy as np
 import sys
 from collections import defaultdict
 from typing import Dict, List
+
+import numpy as np
+import tiktoken
 
 
 def validate_json(data_path: str) -> None:
@@ -164,7 +165,7 @@ def validate_json(data_path: str) -> None:
         f"~{n_epochs * n_billing_tokens_in_dataset} tokens"
     )
 
-    print("As of Augest 22, 2023, fine-tuning gpt-3.5-turbo is $0.008 / 1K Tokens.")
+    print("As of August 22, 2023, fine-tuning gpt-3.5-turbo is $0.008 / 1K Tokens.")
     print(
         "This means your total cost for training will be "
         f"${n_billing_tokens_in_dataset * 0.008 / 1000} per epoch."

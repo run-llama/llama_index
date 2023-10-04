@@ -10,18 +10,17 @@ from llama_index.output_parsers.base import OutputParserException
 
 
 def _marshal_llm_to_json(output: str) -> str:
-    """Extract a valid JSON object or array from a string.
-    Extracts a substring that represents a valid JSON object or array.
+    """
+    Extract a substring containing valid JSON or array from a string.
 
     Args:
         output: A string that may contain a valid JSON object or array surrounded by
         extraneous characters or information.
 
     Returns:
-        A string representing a valid JSON object or array.
-
+        A string containing a valid JSON object or array.
     """
-    output = output.strip()
+    output = output.strip().replace("{{", "{").replace("}}", "}")
     left_square = output.find("[")
     left_brace = output.find("{")
 
@@ -32,8 +31,7 @@ def _marshal_llm_to_json(output: str) -> str:
         left = left_brace
         right = output.rfind("}")
 
-    output = output[left : right + 1]
-    return output
+    return output[left : right + 1]
 
 
 def parse_json_markdown(text: str) -> Any:

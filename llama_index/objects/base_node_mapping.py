@@ -1,7 +1,8 @@
 """Base object types."""
 
-from typing import TypeVar, Generic, Sequence, Any, Optional
 from abc import abstractmethod
+from typing import Any, Generic, Optional, Sequence, TypeVar
+
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 
 OT = TypeVar("OT")
@@ -21,11 +22,9 @@ class BaseObjectNodeMapping(Generic[OT]):
         needs to be initialized with a list of objects.
 
         """
-        pass
 
     def validate_object(self, obj: OT) -> None:
         """Validate object."""
-        pass
 
     def add_object(self, obj: OT) -> None:
         """Add object.
@@ -49,7 +48,6 @@ class BaseObjectNodeMapping(Generic[OT]):
     @abstractmethod
     def to_node(self, obj: OT) -> TextNode:
         """To node."""
-        pass
 
     def to_nodes(self, objs: Sequence[OT]) -> Sequence[TextNode]:
         return [self.to_node(obj) for obj in objs]

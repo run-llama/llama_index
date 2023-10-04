@@ -1,7 +1,6 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
@@ -27,13 +26,13 @@ from llama_index.llms.generic_utils import (
     stream_completion_to_chat_decorator,
 )
 from llama_index.llms.konko_utils import (
-    resolve_konko_credentials,
-    konko_modelname_to_contextsize,
-    is_chat_model,
-    to_openai_message_dicts,
+    acompletion_with_retry,
     completion_with_retry,
     from_openai_message_dict,
-    acompletion_with_retry,
+    is_chat_model,
+    konko_modelname_to_contextsize,
+    resolve_konko_credentials,
+    to_openai_message_dicts,
 )
 
 
@@ -41,12 +40,12 @@ class Konko(LLM):
     class_type = "konko"
 
     model: str = Field(description="The konko model to use.")
-    temperature: float = Field(description="The tempature to use during generation.")
+    temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the konko API."
+        default_factory=dict, description="Additional kwargs for the konko API."
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
@@ -103,12 +102,10 @@ class Konko(LLM):
         )
 
     def _get_model_name(self) -> str:
-        model_name = self.model
-        return model_name
+        return self.model
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Konko_LLM"
 
     @property
@@ -144,14 +141,13 @@ class Konko(LLM):
 
     @property
     def _credential_kwargs(self) -> Dict[str, Any]:
-        credential_kwargs = {
+        return {
             "konko_api_key": self.konko_api_key,
             "api_type": self.api_type,
             "api_base": self.api_base,
             "api_version": self.api_version,
             "openai_api_key": self.openai_api_key,
         }
-        return credential_kwargs
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -160,11 +156,10 @@ class Konko(LLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        model_kwargs = {
+        return {
             **base_kwargs,
             **self.additional_kwargs,
         }
-        return model_kwargs
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {

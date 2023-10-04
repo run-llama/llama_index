@@ -18,7 +18,7 @@ class MetalReader(BaseReader):
             "`metal_sdk` package not found, please run `pip install metal_sdk`"
         )
         try:
-            import metal_sdk  # noqa: F401
+            import metal_sdk
         except ImportError:
             raise ImportError(import_err_msg)
         from metal_sdk.metal import Metal
@@ -50,7 +50,6 @@ class MetalReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
-
         payload = {
             "embedding": query_embedding,
             "filters": filters,

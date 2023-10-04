@@ -1,12 +1,8 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-
-from openai import ChatCompletion, Completion
 import openai
-
-from llama_index.bridge.pydantic import BaseModel
-
+from openai import ChatCompletion, Completion
 from tenacity import (
     before_sleep_log,
     retry,
@@ -15,6 +11,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
 
@@ -193,7 +190,6 @@ def resolve_konko_credentials(
     3. konkoai module
     4. default
     """
-
     import konko
 
     # resolve from param or env

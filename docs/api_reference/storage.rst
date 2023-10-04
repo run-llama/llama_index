@@ -25,7 +25,7 @@ We show the API references for the Storage Classes, loading indices from the Sto
    storage/vector_store.rst
    storage/kv_store.rst
 
-| 
+|
 
 .. toctree::
    :maxdepth: 1

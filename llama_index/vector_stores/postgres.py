@@ -1,17 +1,17 @@
 import logging
-from typing import List, Any, Type, Optional
 from collections import namedtuple
+from typing import Any, List, Optional, Type
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 DBEmbeddingRow = namedtuple(
     "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"]
@@ -33,10 +33,8 @@ def get_data_model(
     """
     from pgvector.sqlalchemy import Vector
     from sqlalchemy import Column, Computed
-    from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, JSON
+    from sqlalchemy.dialects.postgresql import BIGINT, JSON, TSVECTOR, VARCHAR
     from sqlalchemy.schema import Index
-
-    from sqlalchemy.dialects.postgresql import TSVECTOR
     from sqlalchemy.types import TypeDecorator
 
     class TSVector(TypeDecorator):
@@ -117,11 +115,11 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
     ) -> None:
         try:
-            import sqlalchemy  # noqa: F401
-            import pgvector  # noqa: F401
-            import psycopg2  # noqa: F401
-            import asyncpg  # noqa: F401
-            import sqlalchemy.ext.asyncio  # noqa: F401
+            import asyncpg
+            import pgvector
+            import psycopg2
+            import sqlalchemy
+            import sqlalchemy.ext.asyncio
         except ImportError:
             raise ImportError(
                 "`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` "
@@ -160,7 +158,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
     async def close(self) -> None:
         if not self._is_initialized:
-            return None
+            return
 
         self._session.close_all()
         self._engine.dispose()
@@ -213,9 +211,8 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _connect(self) -> Any:
         from sqlalchemy import create_engine
+        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
         from sqlalchemy.orm import sessionmaker
-        from sqlalchemy.ext.asyncio import create_async_engine
-        from sqlalchemy.ext.asyncio import async_sessionmaker
 
         self._engine = create_engine(self.connection_string, echo=self.debug)
         self._session = sessionmaker(self._engine)
@@ -345,7 +342,7 @@ class PGVectorStore(BasePydanticVectorStore):
         async with self._async_session() as async_session:
             async with async_session.begin():
                 res = await async_session.execute(stmt)
-                results = [
+                return [
                     DBEmbeddingRow(
                         node_id=item.node_id,
                         text=item.text,
@@ -354,7 +351,6 @@ class PGVectorStore(BasePydanticVectorStore):
                     )
                     for item, distance in res.all()
                 ]
-                return results
 
     def _build_sparse_query(
         self,

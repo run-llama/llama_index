@@ -1,7 +1,6 @@
 from typing import Sequence
 
 import pytest
-
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.llama_utils import (
     B_INST,
@@ -16,7 +15,7 @@ from llama_index.llms.llama_utils import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_first_chat() -> Sequence[ChatMessage]:
     # example first chat with system message
     return [
@@ -25,7 +24,7 @@ def chat_messages_first_chat() -> Sequence[ChatMessage]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_first_chat_no_system(
     chat_messages_first_chat: Sequence[ChatMessage],
 ) -> Sequence[ChatMessage]:
@@ -33,7 +32,7 @@ def chat_messages_first_chat_no_system(
     return chat_messages_first_chat[1:]
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_second_chat() -> Sequence[ChatMessage]:
     # example second chat with system message
     return [
@@ -44,7 +43,7 @@ def chat_messages_second_chat() -> Sequence[ChatMessage]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_second_chat_no_system(
     chat_messages_second_chat: Sequence[ChatMessage],
 ) -> Sequence[ChatMessage]:
@@ -52,7 +51,7 @@ def chat_messages_second_chat_no_system(
     return chat_messages_second_chat[1:]
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_third_chat() -> Sequence[ChatMessage]:
     # example third chat with system message
     return [
@@ -65,7 +64,7 @@ def chat_messages_third_chat() -> Sequence[ChatMessage]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_third_chat_no_system(
     chat_messages_third_chat: Sequence[ChatMessage],
 ) -> Sequence[ChatMessage]:
@@ -73,7 +72,7 @@ def chat_messages_third_chat_no_system(
     return chat_messages_third_chat[1:]
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_assistant_first() -> Sequence[ChatMessage]:
     # assistant message first in chat (after system)
     # should raise error as we expect the first message after any system
@@ -85,7 +84,7 @@ def chat_messages_assistant_first() -> Sequence[ChatMessage]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_user_twice() -> Sequence[ChatMessage]:
     # user message twice in a row (after system)
     # should raise error as we expect an assistant message

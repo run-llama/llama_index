@@ -1,12 +1,11 @@
 """Test tool spec."""
 
-from llama_index.bridge.pydantic import BaseModel
+from typing import List, Tuple, Type, Union
 
+import pytest
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.types import ToolMetadata
-
-from typing import List, Type, Tuple, Union
-import pytest
 
 
 class FooSchema(BaseModel):
@@ -98,7 +97,7 @@ def test_tool_spec() -> None:
     assert fn_schema["properties"]["arg1"]["type"] == "boolean"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_tool_spec_async() -> None:
     """Test async_fn of tool spec."""
     tool_spec = TestToolSpec()
