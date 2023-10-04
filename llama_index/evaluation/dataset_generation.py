@@ -51,6 +51,17 @@ class QueryResponseDataset(BaseModel):
         default_factory=dict, description="Query id -> response"
     )
 
+    @classmethod
+    def from_qr_pairs(
+        cls,
+        qr_pairs: List[Tuple[str, str]],
+    ) -> QueryResponseDataset:
+        """Create from qr pairs."""
+        # define ids as simple integers
+        queries = {str(idx): query for idx, (query, _) in enumerate(qr_pairs)}
+        responses = {str(idx): response for idx, (_, response) in enumerate(qr_pairs)}
+        return cls(queries=queries, responses=responses)
+
     @property
     def qr_pairs(self) -> List[Tuple[str, str]]:
         """Get pairs."""
