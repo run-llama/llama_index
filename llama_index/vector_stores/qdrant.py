@@ -47,6 +47,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     url: Optional[str]
     api_key: Optional[str]
     batch_size: int
+    prefer_grpc: bool
     client_kwargs: dict = Field(default_factory=dict)
 
     _client: Any = PrivateAttr()
@@ -59,6 +60,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         batch_size: int = 100,
+        prefer_grpc: bool = False,
         client_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
@@ -79,6 +81,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             url=url,
             api_key=api_key,
             batch_size=batch_size,
+            prefer_grpc=prefer_grpc,
             client_kwargs=client_kwargs or {},
         )
 
@@ -157,6 +160,91 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ids.extend(node_ids)
         return ids
 
+    async def async_add(self, nodes: List[BaseNode]) -> List[str]:
+        """Asynchronously method to add nodes to Qdrant index.
+
+        Args:
+            nodes: List[BaseNode]: List of nodes with embeddings.
+
+        Returns:
+            List of node IDs that were added to the index.
+
+        Raises:
+            ImportError: If trying to using async methods without
+                            setting `prefer_grpc` to True.
+        """
+        if not self.prefer_grpc:
+            raise ValueError(
+                "`prefer_grpc` must be set to True to use async insertion."
+            )
+
+        from qdrant_client import grpc
+        from qdrant_client.conversions.conversion import RestToGrpc
+
+        if len(nodes) > 0 and not self._collection_initialized:
+            await self._async_create_collection(
+                collection_name=self.collection_name,
+                vector_size=len(nodes[0].get_embedding()),
+            )
+
+        ids = []
+        for node_batch in iter_batch(nodes, self.batch_size):
+            node_ids = []
+            grpc_points = []
+            for node in node_batch:
+                assert isinstance(node, BaseNode)
+                node_ids.append(node.node_id)
+                grpc_points.append(
+                    grpc.PointStruct(
+                        id=grpc.PointId(num=node.node_id),
+                        payload=self._get_async_payload(
+                            node_to_metadata_dict(
+                                node,
+                                remove_text=False,
+                                flat_metadata=self.flat_metadata,
+                            )
+                        ),
+                        vectors=grpc.Vectors(
+                            vector=grpc.Vector(data=node.get_embedding()),
+                        ),
+                    )
+                )
+
+            await self._client.async_grpc_points.Upsert(
+                grpc.UpsertPoints(
+                    collection_name=self.collection_name,
+                    points=grpc_points,
+                )
+            )
+            ids.extend(node_ids)
+        return ids
+
+    def _get_async_payload(self, metadata: dict) -> dict:
+        """Convert the metadata payload to formatted Qdrant payload.
+
+        Args:
+            metadata: Metadata of a node.
+
+        """
+        from qdrant_client import grpc
+        from qdrant_client.grpc import NullValue
+
+        grpc_payload = {}
+
+        for key, value in metadata.items():
+            if value is None:
+                grpc_payload[key] = grpc.Value(null_value=NullValue.NULL_VALUE)
+            elif isinstance(value, int):
+                grpc_payload[key] = grpc.Value(integer_value=value)
+            elif isinstance(value, float):
+                grpc_payload[key] = grpc.Value(double_value=value)
+            elif isinstance(value, bool):
+                grpc_payload[key] = grpc.Value(bool_value=value)
+            elif isinstance(value, str):
+                grpc_payload[key] = grpc.Value(string_value=value)
+
+        return grpc_payload
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
@@ -194,6 +282,26 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 distance=rest.Distance.COSINE,
             ),
         )
+        self._collection_initialized = True
+
+    async def _async_create_collection(
+        self, collection_name: str, vector_size: int
+    ) -> None:
+        """Create a Qdrant collection asynchronously."""
+        from qdrant_client import grpc
+
+        await self._client.async_grpc_collections.Create(
+            grpc.CreateCollection(
+                collection_name=collection_name,
+                vectors_config=grpc.VectorsConfig(
+                    params=grpc.VectorParams(
+                        size=vector_size,
+                        distance=grpc.Distance.Cosine,
+                    )
+                ),
+            )
+        )
+
         self._collection_initialized = True
 
     def _collection_exists(self, collection_name: str) -> bool:
