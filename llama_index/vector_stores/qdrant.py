@@ -260,7 +260,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
-                        key="ref_doc_id", match=rest.MatchValue(value=ref_doc_id)
+                        key="doc_id", match=rest.MatchValue(value=ref_doc_id)
                     )
                 ]
             ),
@@ -284,7 +284,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         must=[
                             grpc.Condition(
                                 field=grpc.FieldCondition(
-                                    key="ref_doc_id", match=grpc.Match(text=ref_doc_id)
+                                    key="doc_id", match=grpc.Match(text=ref_doc_id)
                                 )
                             )
                         ]
