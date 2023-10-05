@@ -98,6 +98,7 @@ class QdrantReader(BaseReader):
             rang_search_mapping (Optional[Dict[str, Dict[str, float]]]): Mapping from
                 field name to range query.
             limit (int): Number of results to return.
+
         Example:
             reader = QdrantReader()
             reader.load_data(
@@ -110,6 +111,7 @@ class QdrantReader(BaseReader):
                  rang_search_mapping={"text_field": {"gte": 0.1, "lte": 0.2}},
                  limit=10
              )
+
         Returns:
             List[Document]: A list of documents.
         """

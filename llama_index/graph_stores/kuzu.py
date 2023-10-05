@@ -218,6 +218,7 @@ class KuzuGraphStore(GraphStore):
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "KuzuGraphStore":
         """Initialize graph store from configuration dictionary.
+
         Args:
             config_dict: Configuration dictionary.
 

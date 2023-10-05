@@ -136,7 +136,6 @@ class ElasticsearchStore(VectorStore):
     """Elasticsearch vector store.
 
     Args:
-
         index_name: Name of the Elasticsearch index.
         es_client: Optional. Pre-existing AsyncElasticsearch client.
         es_url: Optional. Elasticsearch URL.

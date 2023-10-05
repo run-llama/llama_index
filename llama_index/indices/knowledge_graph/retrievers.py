@@ -111,7 +111,7 @@ class KGTableRetriever(BaseRetriever):
         except NotImplementedError:
             self._graph_schema = ""
         except Exception as e:
-            logger.warn(f"Failed to get graph schema: {e}")
+            logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
 
     def _get_keywords(self, query_str: str) -> List[str]:
@@ -149,7 +149,7 @@ class KGTableRetriever(BaseRetriever):
         chunk_indices_count: Dict[str, int] = defaultdict(int)
         if self._retriever_mode != KGRetrieverMode.EMBEDDING:
             for keyword in keywords:
-                subjs = set((keyword,))
+                subjs = {keyword}
                 node_ids = self._index_struct.search_node_by_keyword(keyword)
                 for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
                     if node_id in node_visited:
@@ -467,7 +467,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         except NotImplementedError:
             self._graph_schema = ""
         except Exception as e:
-            logger.warn(f"Failed to get graph schema: {e}")
+            logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
 
     def _process_entities(
@@ -766,7 +766,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 nodes_nl2graphquery = self._kg_query_engine._retrieve(query_bundle)
                 nodes.extend(nodes_nl2graphquery)
             except Exception as e:
-                logger.warn(f"Error in retrieving from nl2graphquery: {e}")
+                logger.warning(f"Error in retrieving from nl2graphquery: {e}")
 
         nodes.extend(self._retrieve_keyword(query_bundle))
         nodes.extend(self._retrieve_embedding(query_bundle))
@@ -783,7 +783,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 )
                 nodes.extend(nodes_nl2graphquery)
             except Exception as e:
-                logger.warn(f"Error in retrieving from nl2graphquery: {e}")
+                logger.warning(f"Error in retrieving from nl2graphquery: {e}")
 
         nodes.extend(await self._aretrieve_keyword(query_bundle))
         nodes.extend(await self._aretrieve_embedding(query_bundle))

@@ -17,6 +17,7 @@ _logger = logging.getLogger(__name__)
 
 class VectaraRetriever(BaseRetriever):
     """Vectara Retriever.
+
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return.
