@@ -223,7 +223,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Convert the metadata payload to formatted Qdrant payload.
 
         Args:
-            metadata: Metadata of a node.
+            metadata (dict): Metadata of a node.
 
         """
         from qdrant_client import grpc
@@ -260,10 +260,37 @@ class QdrantVectorStore(BasePydanticVectorStore):
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
-                        key="doc_id", match=rest.MatchValue(value=ref_doc_id)
+                        key="ref_doc_id", match=rest.MatchValue(value=ref_doc_id)
                     )
                 ]
             ),
+        )
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
+        from qdrant_client import grpc
+
+        await self._client.async_grpc_points.Delete(
+            grpc.DeletePoints(
+                collection_name=self.collection_name,
+                points=grpc.PointsSelector(
+                    filter=grpc.Filter(
+                        must=[
+                            grpc.Condition(
+                                field=grpc.FieldCondition(
+                                    key="ref_doc_id", match=grpc.Match(text=ref_doc_id)
+                                )
+                            )
+                        ]
+                    )
+                ),
+            )
         )
 
     @property
