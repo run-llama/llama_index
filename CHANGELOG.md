@@ -4,6 +4,7 @@
 
 ### New Features
 - Added support for `Clarifai` LLM (#7967)
+- Simplified `LocalAI.__init__` preserving the same behaviors (#7982)
 
 ### Breaking Changes
 - Update document summary index (#7815)
