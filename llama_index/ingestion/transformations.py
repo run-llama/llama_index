@@ -87,7 +87,7 @@ class TransformationCategories(Enum):
 
 class ConfigurableTransformation(BaseModel):
     """
-    A class containing metdata for a type of transformation that can be in a pipeline.
+    A class containing metadata for a type of transformation that can be in a pipeline.
     """
 
     name: str = Field(
@@ -226,7 +226,7 @@ T = TypeVar("T", bound=BaseComponent)
 
 class ConfiguredTransformation(GenericModel, Generic[T]):
     """
-    A class containing metdata & implementation for a transformation in a pipeline.
+    A class containing metadata & implementation for a transformation in a pipeline.
     """
 
     name: str

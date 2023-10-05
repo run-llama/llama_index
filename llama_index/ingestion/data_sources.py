@@ -35,7 +35,7 @@ class RawFile(BaseComponent):
 
 class DataSource(BaseModel):
     """
-    A class containing metdata for a type of data source
+    A class containing metadata for a type of data source
     """
 
     name: str = Field(
@@ -165,7 +165,7 @@ T = TypeVar("T", bound=BaseComponent)
 
 class ConfiguredDataSource(GenericModel, Generic[T]):
     """
-    A class containing metdata & implementation for a data source in a pipeline.
+    A class containing metadata & implementation for a data source in a pipeline.
     """
 
     name: str

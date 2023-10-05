@@ -24,10 +24,10 @@ class Document(pydantic.BaseModel):
         description="A flat dictionary of metadata fields"
     )
     excluded_embed_metadata_keys: typing.Optional[typing.List[str]] = pydantic.Field(
-        description="Metadata keys that are exluded from text for the embed model."
+        description="Metadata keys that are excluded from text for the embed model."
     )
     excluded_llm_metadata_keys: typing.Optional[typing.List[str]] = pydantic.Field(
-        description="Metadata keys that are exluded from text for the LLM."
+        description="Metadata keys that are excluded from text for the LLM."
     )
     relationships: typing.Optional[
         typing.Dict[str, DocumentRelationshipsValue]
@@ -49,7 +49,7 @@ class Document(pydantic.BaseModel):
         description="Template for how metadata is formatted, with {key} and {value} placeholders."
     )
     metadata_seperator: typing.Optional[str] = pydantic.Field(
-        description="Seperator between metadata fields when converting to string."
+        description="Separator between metadata fields when converting to string."
     )
     class_name: typing.Optional[str]
 

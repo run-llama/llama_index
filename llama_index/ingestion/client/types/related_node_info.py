@@ -11,7 +11,7 @@ from .object_type import ObjectType
 
 class RelatedNodeInfo(pydantic.BaseModel):
     """
-    Base component object to caputure class names.
+    Base component object to capture class names.
     """
 
     node_id: str
