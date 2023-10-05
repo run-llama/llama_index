@@ -21,7 +21,7 @@ def test_service_context_serialize() -> None:
         TitleExtractor(),
     ]
 
-    node_parser = SentenceAwareNodeParser()
+    node_parser = SentenceAwareNodeParser(chunk_size=1, chunk_overlap=0)
 
     transformations: List[TransformComponent] = [node_parser, *extractors]
 
