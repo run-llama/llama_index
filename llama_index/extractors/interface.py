@@ -1,12 +1,12 @@
 """Node parser interface."""
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Sequence, Optional, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
+
 from typing_extensions import Self
 
 from llama_index.bridge.pydantic import Field
 from llama_index.schema import BaseNode, MetadataMode, TextNode, TransformComponent
-
 
 DEFAULT_NODE_TEXT_TEMPLATE = """\
 [Excerpt from document]\n{metadata_str}\n\

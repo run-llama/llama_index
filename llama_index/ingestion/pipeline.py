@@ -2,22 +2,22 @@ from typing import Any, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.indices.service_context import ServiceContext
 from llama_index.ingestion.client import (
-    ConfiguredTransformationItem,
-    DataSinkCreate,
-    DataSourceCreate,
     ConfigurableDataSinkNames,
     ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
+    ConfiguredTransformationItem,
+    DataSinkCreate,
+    DataSourceCreate,
 )
 from llama_index.ingestion.client.client import PlatformApi
 from llama_index.ingestion.data_sinks import ConfiguredDataSink
 from llama_index.ingestion.data_sources import ConfiguredDataSource
 from llama_index.ingestion.transformations import ConfiguredTransformation
-from llama_index.indices.service_context import ServiceContext
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.readers.base import ReaderConfig
-from llama_index.schema import TransformComponent, BaseNode, Document
+from llama_index.schema import BaseNode, Document, TransformComponent
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "llamaindex_pipeline"
@@ -142,7 +142,7 @@ class IngestionPipeline(BaseModel):
 
     def _get_default_transformations(self) -> List[TransformComponent]:
         return [
-            SimpleNodeParser.from_defaults(),
+            SentenceAwareNodeParser(),
             resolve_embed_model("default"),
         ]
 

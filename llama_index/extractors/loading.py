@@ -1,10 +1,10 @@
 from llama_index.extractors.metadata_extractors import (
     BaseExtractor,
-    SummaryExtractor,
-    QuestionsAnsweredExtractor,
     EntityExtractor,
-    TitleExtractor,
     KeywordExtractor,
+    QuestionsAnsweredExtractor,
+    SummaryExtractor,
+    TitleExtractor,
 )
 
 

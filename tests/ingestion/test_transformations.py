@@ -3,8 +3,7 @@ from llama_index.ingestion.transformations import (
     ConfigurableTransformations,
     ConfiguredTransformation,
 )
-
-from llama_index.node_parser import SimpleNodeParser, SentenceWindowNodeParser
+from llama_index.node_parser import SentenceAwareNodeParser, SentenceWindowNodeParser
 
 
 @pytest.mark.parametrize(
@@ -28,11 +27,11 @@ def test_can_generate_schema_for_transformation_component_type(
 
 
 def test_can_build_configured_transform_from_component() -> None:
-    parser = SimpleNodeParser.from_defaults()
+    parser = SentenceAwareNodeParser()
     configured_transformation = ConfiguredTransformation.from_component(parser)
     assert isinstance(
         configured_transformation,
-        ConfiguredTransformation[SimpleNodeParser],  # type: ignore
+        ConfiguredTransformation[SentenceAwareNodeParser],  # type: ignore
     )
     assert not isinstance(
         configured_transformation,
@@ -40,20 +39,18 @@ def test_can_build_configured_transform_from_component() -> None:
     )
     assert (
         configured_transformation.configurable_transformation_type.value.component_type
-        == SimpleNodeParser
+        == SentenceAwareNodeParser
     )
 
 
 def test_build_configured_transformation() -> None:
-    parser = SimpleNodeParser.from_defaults()
-    configured_transformation = (
-        ConfigurableTransformations.SIMPLE_NODE_PARSER.build_configured_transformation(
-            parser
-        )
+    parser = SentenceAwareNodeParser()
+    configured_transformation = ConfigurableTransformations.SENTENCE_AWARE_NODE_PARSER.build_configured_transformation(
+        parser
     )
     assert isinstance(
         configured_transformation,
-        ConfiguredTransformation[SimpleNodeParser],  # type: ignore
+        ConfiguredTransformation[SentenceAwareNodeParser],  # type: ignore
     )
 
     with pytest.raises(ValueError):

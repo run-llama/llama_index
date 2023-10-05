@@ -1,13 +1,15 @@
 """Token splitter."""
 import logging
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
-from llama_index.text_splitter.types import MetadataAwareTextSplitter
-from llama_index.text_splitter.utils import split_by_char, split_by_sep
+from llama_index.node_parser.interface import MetadataAwareTextNodeParser
+from llama_index.node_parser.node_utils import build_nodes_from_splits
+from llama_index.node_parser.text.utils import split_by_char, split_by_sep
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import globals_helper
 
 _logger = logging.getLogger(__name__)
@@ -16,7 +18,7 @@ _logger = logging.getLogger(__name__)
 DEFAULT_METADATA_FORMAT_LEN = 2
 
 
-class TokenTextSplitter(MetadataAwareTextSplitter):
+class TokenAwareNodeParser(MetadataAwareTextNodeParser):
     """Implementation of splitting text that looks at word tokens."""
 
     chunk_size: int = Field(
@@ -31,9 +33,6 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
     )
     backup_separators: List = Field(
         default_factory=list, description="Additional separators for splitting."
-    )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
     )
     tokenizer: Callable = Field(
         default_factory=globals_helper.tokenizer,  # type: ignore
@@ -51,6 +50,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         callback_manager: Optional[CallbackManager] = None,
         separator: str = " ",
         backup_separators: Optional[List[str]] = ["\n"],
+        include_metadata: bool = True,
+        include_prev_next_rel: bool = True,
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:
@@ -71,6 +72,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             backup_separators=backup_separators,
             callback_manager=callback_manager,
             tokenizer=tokenizer,
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
         )
 
     @classmethod
@@ -194,3 +197,16 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             chunks.append(chunk)
 
         return chunks
+
+    def _parse_nodes(
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> List[BaseNode]:
+        all_nodes: List[BaseNode] = []
+        for node in nodes:
+            splits = self.split_text_metadata_aware(
+                node.get_content(metadata_mode=MetadataMode.NONE),
+                metadata_str=node.get_metadata_str(),
+            )
+            all_nodes.extend(build_nodes_from_splits(splits, node))
+
+        return all_nodes

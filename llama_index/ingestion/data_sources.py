@@ -2,20 +2,20 @@ from enum import Enum
 from typing import Generic, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.readers.base import BasePydanticReader, ReaderConfig
 from llama_index.readers import (
+    BeautifulSoupWebReader,
     DiscordReader,
     ElasticsearchReader,
     NotionPageReader,
-    SlackReader,
-    TwitterTweetReader,
-    SimpleWebPageReader,
-    TrafilaturaWebReader,
-    BeautifulSoupWebReader,
     RssReader,
+    SimpleWebPageReader,
+    SlackReader,
+    TrafilaturaWebReader,
+    TwitterTweetReader,
     WikipediaReader,
     YoutubeTranscriptReader,
 )
+from llama_index.readers.base import BasePydanticReader, ReaderConfig
 from llama_index.readers.google_readers.gdocs import GoogleDocsReader
 from llama_index.readers.google_readers.gsheets import GoogleSheetsReader
 from llama_index.schema import BaseComponent, Document

@@ -1,17 +1,19 @@
 """Code splitter."""
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.text_splitter.types import TextSplitter
+from llama_index.node_parser.interface import TextNodeParser
+from llama_index.node_parser.node_utils import build_nodes_from_splits
+from llama_index.schema import BaseNode
 
 DEFAULT_CHUNK_LINES = 40
 DEFAULT_LINES_OVERLAP = 15
 DEFAULT_MAX_CHARS = 1500
 
 
-class CodeSplitter(TextSplitter):
+class CodeNodeParser(TextNodeParser):
     """Split code using a AST parser.
 
     Thank you to Kevin Lu / SweepAI for suggesting this elegant code splitting solution.
@@ -32,26 +34,6 @@ class CodeSplitter(TextSplitter):
     max_chars: int = Field(
         default=DEFAULT_MAX_CHARS, description="Maximum number of characters per chunk."
     )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
-
-    def __init__(
-        self,
-        language: str,
-        chunk_lines: int = 40,
-        chunk_lines_overlap: int = 15,
-        max_chars: int = 1500,
-        callback_manager: Optional[CallbackManager] = None,
-    ):
-        callback_manager = callback_manager or CallbackManager([])
-        super().__init__(
-            language=language,
-            chunk_lines=chunk_lines,
-            chunk_lines_overlap=chunk_lines_overlap,
-            max_chars=max_chars,
-            callback_manager=callback_manager,
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -120,3 +102,14 @@ class CodeSplitter(TextSplitter):
                 raise ValueError(f"Could not parse code with language {self.language}.")
 
         # TODO: set up auto-language detection using something like https://github.com/yoeo/guesslang.
+
+    def _parse_nodes(
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> List[BaseNode]:
+        all_nodes: List[BaseNode] = []
+        for node in nodes:
+            splits = self.split_text(node.get_content())
+
+            all_nodes.extend(build_nodes_from_splits(splits, node))
+
+        return all_nodes

@@ -1,18 +1,20 @@
 """Sentence splitter."""
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_SIZE
-from llama_index.text_splitter.types import MetadataAwareTextSplitter
-from llama_index.text_splitter.utils import (
+from llama_index.node_parser.interface import MetadataAwareTextNodeParser
+from llama_index.node_parser.node_utils import build_nodes_from_splits
+from llama_index.node_parser.text.utils import (
     split_by_char,
     split_by_regex,
     split_by_sentence_tokenizer,
     split_by_sep,
 )
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import globals_helper
 
 SENTENCE_CHUNK_OVERLAP = 200
@@ -26,7 +28,7 @@ class _Split:
     is_sentence: bool  # save whether this is a full sentence
 
 
-class SentenceSplitter(MetadataAwareTextSplitter):
+class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
     """_Split text with a preference for complete sentences.
 
     In general, this class tries to keep sentences and paragraphs together. Therefore
@@ -57,9 +59,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             "Defaults to `nltk.sent_tokenize`."
         ),
     )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
     tokenizer: Callable = Field(
         default_factory=globals_helper.tokenizer,  # type: ignore
         description="Tokenizer for splitting words into tokens.",
@@ -79,6 +78,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
         secondary_chunking_regex: str = CHUNKING_REGEX,
         callback_manager: Optional[CallbackManager] = None,
+        include_metadata: bool = True,
+        include_prev_next_rel: bool = True,
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:
@@ -111,6 +112,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             paragraph_separator=paragraph_separator,
             callback_manager=callback_manager,
             tokenizer=tokenizer,
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
         )
 
     @classmethod
@@ -278,3 +281,16 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 break
 
         return splits, False
+
+    def _parse_nodes(
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> List[BaseNode]:
+        all_nodes: List[BaseNode] = []
+        for node in nodes:
+            splits = self.split_text_metadata_aware(
+                node.get_content(metadata_mode=MetadataMode.NONE),
+                metadata_str=node.get_metadata_str(),
+            )
+            all_nodes.extend(build_nodes_from_splits(splits, node))
+
+        return all_nodes

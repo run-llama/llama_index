@@ -4,7 +4,6 @@ from llama_index.ingestion.data_sources import (
     ConfiguredDataSource,
     RawFile,
 )
-
 from llama_index.schema import Document
 
 

@@ -1,9 +1,8 @@
-import pytest
 import sys
 from unittest.mock import MagicMock
 
+import pytest
 from llama_index.ingestion.data_sinks import ConfigurableDataSinks, ConfiguredDataSink
-
 from llama_index.vector_stores import WeaviateVectorStore
 
 
