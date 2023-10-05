@@ -38,9 +38,9 @@ class GoogleSheetsReader(BasePydanticReader):
     def __init__(self) -> None:
         """Initialize with parameters."""
         try:
-            import google  # noqa: F401
-            import google_auth_oauthlib  # noqa: F401
-            import googleapiclient  # noqa: F401
+            import google
+            import google_auth_oauthlib
+            import googleapiclient
         except ImportError:
             raise ImportError(
                 "`google_auth_oauthlib`, `googleapiclient` and `google` "
@@ -51,7 +51,6 @@ class GoogleSheetsReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "GoogleSheetsReader"
 
     def load_data(self, spreadsheet_ids: List[str]) -> List[Document]:

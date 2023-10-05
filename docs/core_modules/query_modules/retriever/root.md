@@ -3,7 +3,7 @@
 
 ## Concept
 
-Retrievers are responsible for fetching the most relevant context given a user query (or chat message).  
+Retrievers are responsible for fetching the most relevant context given a user query (or chat message).
 
 It can be built on top of [Indices](/core_modules/data_modules/index/root.md), but can also be defined independently.
 It is used as a key building block in [Query Engines](/core_modules/query_modules/query_engine/root.md) (and [Chat Engines](/core_modules/query_modules/chat_engines/root.md)) for retrieving relevant context.

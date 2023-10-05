@@ -1,7 +1,6 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
@@ -44,13 +43,13 @@ class LiteLLM(LLM):
     model: str = Field(
         description="The LiteLLM model to use."
     )  # For complete list of providers https://docs.litellm.ai/docs/providers
-    temperature: float = Field(description="The tempature to use during generation.")
+    temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate."
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
-        description="Additonal kwargs for the LLM API.",
+        description="Additional kwargs for the LLM API.",
         # for all inputs https://docs.litellm.ai/docs/completion/input
     )
     max_retries: int = Field(description="The maximum number of API retries.")
@@ -69,8 +68,8 @@ class LiteLLM(LLM):
     ) -> None:
         if "custom_llm_provider" in kwargs:
             if (
-                "ollama" != kwargs["custom_llm_provider"]
-                and "vllm" != kwargs["custom_llm_provider"]
+                kwargs["custom_llm_provider"] != "ollama"
+                and kwargs["custom_llm_provider"] != "vllm"
             ):  # don't check keys for local models
                 validate_litellm_api_key(api_key, api_type)
         else:  # by default assume it's a hosted endpoint
@@ -103,7 +102,6 @@ class LiteLLM(LLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "litellm_llm"
 
     @property
@@ -161,11 +159,10 @@ class LiteLLM(LLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        model_kwargs = {
+        return {
             **base_kwargs,
             **self.additional_kwargs,
         }
-        return model_kwargs
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {

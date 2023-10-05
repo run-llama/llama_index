@@ -1,10 +1,9 @@
 from typing import List
 
 import pytest
-
-from llama_index.storage.docstore.redis_docstore import RedisDocumentStore
 from llama_index.readers.schema.base import Document
 from llama_index.schema import BaseNode
+from llama_index.storage.docstore.redis_docstore import RedisDocumentStore
 from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
 
 try:
@@ -13,7 +12,7 @@ except ImportError:
     Redis = None  # type: ignore
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     return [
         Document(text="doc_1"),
@@ -79,17 +78,15 @@ def test_redis_docstore_deserialization(
     redis_docstore: RedisDocumentStore, documents: List[Document]
 ) -> None:
     from llama_index import (
-        SummaryIndex,
-        StorageContext,
         Document,
+        StorageContext,
+        SummaryIndex,
     )
     from llama_index.storage.docstore import RedisDocumentStore
     from llama_index.storage.index_store import RedisIndexStore
 
-    ds = RedisDocumentStore.from_host_and_port(
-        "127.0.0.1", int(6379), namespace="data4"
-    )
-    idxs = RedisIndexStore.from_host_and_port("127.0.0.1", int(6379), namespace="data4")
+    ds = RedisDocumentStore.from_host_and_port("127.0.0.1", 6379, namespace="data4")
+    idxs = RedisIndexStore.from_host_and_port("127.0.0.1", 6379, namespace="data4")
 
     storage_context = StorageContext.from_defaults(docstore=ds, index_store=idxs)
 

@@ -1,19 +1,17 @@
-from typing import List, Any, Generator
-
-import pytest
 import asyncio
 import os
+from datetime import datetime, timedelta
+from typing import Any, Generator, List
 
+import pytest
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import TimescaleVectorStore
 from llama_index.vector_stores.timescalevector import IndexType
 from llama_index.vector_stores.types import (
-    VectorStoreQuery,
-    MetadataFilters,
     ExactMatchFilter,
+    MetadataFilters,
+    VectorStoreQuery,
 )
-
-from datetime import timedelta, datetime
 
 # from testing find install here https://github.com/timescale/python-vector/
 
@@ -24,7 +22,7 @@ TEST_SERVICE_URL = os.environ.get(
 TEST_TABLE_NAME = "lorem_ipsum"
 
 try:
-    from timescale_vector import client  # noqa: F401
+    from timescale_vector import client
 
     cli = client.Sync(TEST_SERVICE_URL, TEST_TABLE_NAME, 1536)
     with cli.connect() as test_conn:
@@ -41,8 +39,7 @@ except (ImportError, Exception):
 def conn() -> Any:
     import psycopg2
 
-    conn_ = psycopg2.connect(TEST_SERVICE_URL)  # type: ignore
-    return conn_
+    return psycopg2.connect(TEST_SERVICE_URL)  # type: ignore
 
 
 @pytest.fixture()
@@ -58,7 +55,7 @@ def db(conn: Any) -> Generator:
         conn.commit()
 
 
-@pytest.fixture
+@pytest.fixture()
 def tvs(db: None) -> Any:
     tvs = TimescaleVectorStore.from_params(
         service_url=TEST_SERVICE_URL,
@@ -73,7 +70,7 @@ def tvs(db: None) -> Any:
         asyncio.run(tvs.close())
 
 
-@pytest.fixture
+@pytest.fixture()
 def tvs_tp(db: None) -> Any:
     tvs = TimescaleVectorStore.from_params(
         service_url=TEST_SERVICE_URL,
@@ -111,7 +108,7 @@ def node_embeddings() -> List[TextNode]:
 @pytest.mark.skipif(
     timescale_not_available, reason="timescale vector store is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_instance_creation(db: None) -> None:
     tvs = TimescaleVectorStore.from_params(
         service_url=TEST_SERVICE_URL,
@@ -124,7 +121,7 @@ async def test_instance_creation(db: None) -> None:
 @pytest.mark.skipif(
     timescale_not_available, reason="timescale vector store is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_add_to_db_and_query(
     tvs: TimescaleVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -147,7 +144,7 @@ async def test_add_to_db_and_query(
 @pytest.mark.skipif(
     timescale_not_available, reason="timescale vector store is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_add_to_db_and_query_with_metadata_filters(
     tvs: TimescaleVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -177,7 +174,7 @@ async def test_add_to_db_and_query_with_metadata_filters(
 @pytest.mark.skipif(
     timescale_not_available, reason="timescale vector store is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_async_add_to_db_query_and_delete(
     tvs: TimescaleVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -239,7 +236,7 @@ def test_add_to_db_query_and_delete(
 @pytest.mark.skipif(
     timescale_not_available, reason="timescale vector store is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_time_partitioning_default_uuid(
     tvs_tp: TimescaleVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -264,7 +261,7 @@ async def test_time_partitioning_default_uuid(
 @pytest.mark.skipif(
     timescale_not_available, reason="timescale vector store is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [(True), (False)])
 async def test_time_partitioning_explicit_uuid(
     tvs_tp: TimescaleVectorStore, node_embeddings: List[TextNode], use_async: bool

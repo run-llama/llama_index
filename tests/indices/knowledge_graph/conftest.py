@@ -4,7 +4,7 @@ import pytest
 from llama_index.schema import Document
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now

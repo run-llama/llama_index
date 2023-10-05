@@ -59,7 +59,7 @@ filtered_nodes = processor.postprocess_nodes(nodes)
 
 ## Custom Node PostProcessor
 
-The base class is `BaseNodePostprocessor`, and the API interface is very simple: 
+The base class is `BaseNodePostprocessor`, and the API interface is very simple:
 
 ```python
 class BaseNodePostprocessor:
@@ -84,7 +84,7 @@ class DummyNodePostprocessor:
     def postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:
-        
+
         # subtracts 1 from the score
         for n in nodes:
             n.score -= 1

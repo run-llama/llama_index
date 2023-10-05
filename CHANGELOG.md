@@ -1,9 +1,63 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.40] - 2023-10-05
+
+### New Features
+- Added support for `Clarifai` LLM (#7967)
+- Add support for function fine-tuning (#7971)
+
+### Breaking Changes
+- Update document summary index (#7815)
+  - change default retrieval mode to embedding
+  - embed summaries into vector store by default at indexing time (instead of calculating embedding on the fly)
+  - support configuring top k in llm retriever
+
+
+## [0.8.39] - 2023-10-03
+
+### New Features
+- Added support for pydantic object outputs with query engines (#7893)
+- `ClarifaiEmbedding` class added for embedding support (#7940)
+- Markdown node parser, flat file reader and simple file node parser (#7863)
+- Added support for mongdb atlas `$vectorSearch` (#7866)
+
+### Bug Fixes / Nits
+- Adds support for using message metadata in discord reader (#7906)
+- Fix `LocalAI` chat capability without `max_tokens` (#7942)
+- Added `codespell` for automated checking (#7941)
+- `ruff` modernization and autofixes (#7889)
+- Implement own SQLDatabase class (#7929)
+- Update LlamaCPP context_params property (#7945)
+- fix duplicate embedding (#7949)
+- Adds `codespell` tool for enforcing good spelling (#7941)
+- Supporting `mypy` local usage with `venv` (#7952)
+- Vectara - minor update (#7954)
+- Avoiding `pydantic` reinstalls in CI (#7956)
+- move tree_sitter_languages into data_requirements.txt (#7955)
+- Add `cache_okay` param to `PGVectorStore` to help suppress TSVector warnings (#7950)
+
+## [0.8.38] - 2023-10-02
+
+### New Features
+- Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
+- `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
+- Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
+- Added support for `ElasticsearchEmbeddings` (#7914)
+
+## [0.8.37] - 2023-09-30
+
+### New Features
+- Supporting `LocalAI` LLMs (#7913)
+- Validations protecting against misconfigured chunk sizes (#7917)
 
 ### Bug Fixes / Nits
 - Simplify NL SQL response to SQL parsing, with expanded NL SQL prompt (#7868)
+- Improve vector store retrieval speed for vectordb integrations (#7876)
+- Added replacing {{ and }}, and fixed JSON parsing recursion (#7888)
+- Nice-ified JSON decoding error (#7891)
+- Nice-ified SQL error from LLM not providing SQL (#7900)
+- Nice-ified `ImportError` for `HuggingFaceLLM` (#7904)
+- eval fixes: fix dataset response generation, add score to evaluators (#7915)
 
 ## [0.8.36] - 2023-09-27
 
@@ -16,6 +70,7 @@
 - Fix async streaming with azure (#7856)
 - Avoid `NotImplementedError()` in sub question generator (#7855)
 - Patch predibase initialization (#7859)
+- Bumped min langchain version and changed prompt imports from langchain (#7862)
 
 ## [0.8.35] - 2023-09-27
 
@@ -413,7 +468,7 @@
 
 ### Bug Fixes / Nits
 
-- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+- Fix infinite looping with forced function call in `OpenAIAgent` (#7363)
 
 ## [0.8.6] - 2023-08-22
 
@@ -1017,7 +1072,7 @@
 ### Breaking/Deprecated API Changes
 
 - `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
-- `TextNode` and `Document` must be instansiated with kwargs: `Document(text=text)` (#6586)
+- `TextNode` and `Document` must be instantiated with kwargs: `Document(text=text)` (#6586)
 - `TextNode` (fka `Node`) has a `id_` or `node_id` property, rather than `doc_id` (#6586)
 - `TextNode` and `Document` have a metadata property, which replaces the extra_info property (#6586)
 - `TextNode` no longer has a `node_info` property (start/end indexes are accessed directly with `start/end_char_idx` attributes) (#6586)

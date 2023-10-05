@@ -7,9 +7,9 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.query.schema import QueryType
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.readers.base import Document
 from llama_index.schema import BaseNode
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 DEFAULT_CONTEXT_QUERY_TMPL = (
     "Please return the relevant tables (including the full schema) "
@@ -109,11 +109,10 @@ class SQLContextContainerBuilder:
         for table_name, context_str in full_context_dict.items():
             doc = Document(text=context_str, metadata={"table_name": table_name})
             context_docs.append(doc)
-        index = index_cls.from_documents(
+        return index_cls.from_documents(
             documents=context_docs,
             **index_kwargs,
         )
-        return index
 
     def query_index_for_context(
         self,

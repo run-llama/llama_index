@@ -1,6 +1,7 @@
-from typing import List, Any, Generator, Dict
+from typing import Any, Dict, Generator, List
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from llama_index.llms.base import (
     ChatMessage,
     MessageRole,
@@ -91,8 +92,7 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[str, None, No
             }
         ),
     ]
-    for event in events:
-        yield event
+    yield from events
 
 
 def mock_chat_completion_stream(
@@ -161,8 +161,7 @@ def mock_chat_completion_stream(
             }
         ),
     ]
-    for event in events:
-        yield event
+    yield from events
 
 
 def mock_chat_history(*args: Any, **kwargs: Any) -> List[ChatMessage]:

@@ -9,9 +9,9 @@ from llama_index.indices.common.struct_store.base import (
     OUTPUT_PARSER_TYPE,
     BaseStructDatapointExtractor,
 )
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts import BasePromptTemplate
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 
 class SQLStructDatapointExtractor(BaseStructDatapointExtractor):

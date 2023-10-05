@@ -1,10 +1,9 @@
 import pytest
-
 from llama_index.llm_predictor.vellum.utils import convert_to_kebab_case
 
 
 @pytest.mark.parametrize(
-    "input_string, expected",
+    ("input_string", "expected"),
     [
         ("HelloWorld", "helloworld"),
         (

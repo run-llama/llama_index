@@ -1,17 +1,17 @@
 from __future__ import annotations
 
+import os
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
-import os
 
 IMPORT_ERROR_MSG = "`boto3` package not found, please run `pip install boto3`"
 
 
 def parse_schema(table: Any) -> Tuple[str, str]:
-    key_hash: Optional[str] = None
-    key_range: Optional[str] = None
+    key_hash: str | None = None
+    key_range: str | None = None
 
     for key in table.key_schema:
         if key["KeyType"] == "HASH":
@@ -116,7 +116,7 @@ class DynamoDBKVStore(BaseKVStore):
         item[self._key_range] = key
         self._table.put_item(Item=item)
 
-    def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
+    def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
         """Get a value from the store.
 
         Args:

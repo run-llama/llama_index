@@ -1,5 +1,5 @@
 # Component Wise Evaluation
-To do more in-depth evaluation of your pipeline, it helps to break it down into an evaluation of individual components. 
+To do more in-depth evaluation of your pipeline, it helps to break it down into an evaluation of individual components.
 
 For instance, a particular failure case may be due to a combination of not retrieving the right documents and also the LLM misunderstanding the context and hallucinating an incorrect result. Being able to isolate and deal with these issues separately can help reduce complexity and guide you in a step-by-step manner to a more satisfactory overall result.
 
@@ -13,7 +13,7 @@ A useful benchmark for embeddings is the [MTEB Leaderboard](https://huggingface.
 
 BEIR is useful for benchmarking if a particular retrieval model generalize well to niche domains in a zero-shot setting.
 
-Since most publically-available embedding and retrieval models are already benchmarked against BEIR (e.g. through the MTEB benchmark), utilizing BEIR is more helpful when you have a unique model that you want to evaluate. 
+Since most publically-available embedding and retrieval models are already benchmarked against BEIR (e.g. through the MTEB benchmark), utilizing BEIR is more helpful when you have a unique model that you want to evaluate.
 
 For instance, after fine-tuning an embedding model on your dataset, it may be helpful to view whether and by how much its performance degrades on a diverse set of domains. This can be an indication of how much data drift may affect your retrieval accuracy, such as if you add documents to your RAG system outside of your fine-tuning training distribution.
 

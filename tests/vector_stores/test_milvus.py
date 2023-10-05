@@ -20,7 +20,7 @@ from llama_index.vector_stores.types import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def embedded_milvus() -> Generator:
     default_server.cleanup()
     default_server.start()
@@ -31,7 +31,7 @@ def embedded_milvus() -> Generator:
     default_server.cleanup()
 
 
-@pytest.fixture
+@pytest.fixture()
 def node_embeddings() -> List[TextNode]:
     return [
         TextNode(

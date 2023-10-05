@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import pytest
 from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
-from pathlib import Path
 
 
 @pytest.fixture()

@@ -1,7 +1,6 @@
 from typing import List
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.prompts.guidance_utils import (
     convert_to_handlebars,
     pydantic_to_guidance_output_template,
@@ -16,6 +15,7 @@ def test_convert_to_handlebars() -> None:
 
 
 class TestSimpleModel(BaseModel):
+    __test__ = False
     attr0: str
     attr1: str
 
@@ -29,6 +29,7 @@ EXPECTED_SIMPLE_STR = """\
 
 
 class TestNestedModel(BaseModel):
+    __test__ = False
     attr2: List[TestSimpleModel]
 
 
