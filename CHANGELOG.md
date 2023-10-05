@@ -10,7 +10,7 @@
   - change default retrieval mode to embedding
   - embed summaries into vector store by default at indexing time (instead of calculating embedding on the fly)
   - support configuring top k in llm retriever
-
+- Removes `OpenAI.class_type` as it was dead code (#7983)
 
 ## [0.8.39] - 2023-10-03
 
