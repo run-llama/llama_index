@@ -2,6 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from collections import ChainMap
 from typing import Any, List, Optional
 
 from llama_index.bridge.pydantic import BaseModel, PrivateAttr
@@ -118,7 +119,7 @@ class LLMPredictor(BaseLLMPredictor):
     ) -> None:
         template_vars = {
             k: v
-            for k, v in {**prompt.kwargs, **prompt_args}.items()
+            for k, v in ChainMap(prompt.kwargs, prompt_args).items()
             if k in prompt.template_vars
         }
         with self.callback_manager.event(
