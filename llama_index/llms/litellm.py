@@ -38,8 +38,6 @@ from llama_index.llms.litellm_utils import (
 
 
 class LiteLLM(LLM):
-    class_type = "litellm"
-
     model: str = Field(
         description="The LiteLLM model to use."
     )  # For complete list of providers https://docs.litellm.ai/docs/providers
