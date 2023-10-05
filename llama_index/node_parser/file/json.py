@@ -66,7 +66,7 @@ class JSONNodeParser(NodeParser):
         json_nodes = []
         if isinstance(data, dict):
             lines = [*self._depth_first_yield(data, 0, [])]
-            json_nodes.append(self._build_node_from_split("\n".join(lines), node, {}))
+            json_nodes.extend(build_nodes_from_splits(["\n".join(lines)], node))
         elif isinstance(data, list):
             for json_object in data:
                 lines = [*self._depth_first_yield(json_object, 0, [])]

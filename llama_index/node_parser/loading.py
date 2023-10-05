@@ -1,6 +1,27 @@
+from typing import Dict, Type
+
+from llama_index.node_parser.file.html import HTMLNodeParser
+from llama_index.node_parser.file.json import JSONNodeParser
+from llama_index.node_parser.file.markdown import MarkdownNodeParser
+from llama_index.node_parser.file.simple_file import SimpleFileNodeParser
 from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.relational.sentence_window import SentenceWindowNodeParser
-from llama_index.node_parser.relational.simple import SimpleNodeParser
+from llama_index.node_parser.relational.hierarchical import HierarchicalNodeParser
+from llama_index.node_parser.text.code import CodeNodeParser
+from llama_index.node_parser.text.sentence import SentenceAwareNodeParser
+from llama_index.node_parser.text.sentence_window import SentenceWindowNodeParser
+from llama_index.node_parser.text.token import TokenAwareNodeParser
+
+all_node_parsers: Dict[str, Type[NodeParser]] = {
+    HTMLNodeParser.class_name(): HTMLNodeParser,
+    JSONNodeParser.class_name(): JSONNodeParser,
+    MarkdownNodeParser.class_name(): MarkdownNodeParser,
+    SimpleFileNodeParser.class_name(): SimpleFileNodeParser,
+    HierarchicalNodeParser.class_name(): HierarchicalNodeParser,
+    CodeNodeParser.class_name(): CodeNodeParser,
+    SentenceAwareNodeParser.class_name(): SentenceAwareNodeParser,
+    TokenAwareNodeParser.class_name(): TokenAwareNodeParser,
+    SentenceWindowNodeParser.class_name(): SentenceWindowNodeParser,
+}
 
 
 def load_parser(
@@ -12,13 +33,7 @@ def load_parser(
     if parser_name is None:
         raise ValueError("Parser loading requires a class_name")
 
-    if parser_name == SimpleNodeParser.class_name():
-        return SimpleNodeParser.from_dict(
-            data,
-        )
-    elif parser_name == SentenceWindowNodeParser.class_name():
-        return SentenceWindowNodeParser.from_dict(
-            data,
-        )
+    if parser_name not in all_node_parsers:
+        raise ValueError(f"Invalid parser name: {parser_name}")
     else:
-        raise ValueError(f"Unknown parser name: {parser_name}")
+        return all_node_parsers[parser_name].from_dict(data)
