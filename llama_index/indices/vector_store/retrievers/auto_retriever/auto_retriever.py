@@ -102,7 +102,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
             )
             query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
         except OutputParserException:
-            _logger.warn("Failed to parse query spec, using defaults as fallback.")
+            _logger.warning("Failed to parse query spec, using defaults as fallback.")
             query_spec = VectorStoreQuerySpec(
                 query=query_bundle.query_str,
                 filters=[],

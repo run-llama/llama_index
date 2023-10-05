@@ -1,4 +1,5 @@
-"""Test document summary index.""" ""
+"""Test document summary index."""
+
 from typing import List
 
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
