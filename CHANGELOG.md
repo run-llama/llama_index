@@ -5,6 +5,9 @@
 ### New Features
 - Added support for `Clarifai` LLM (#7967)
 
+### Bug Fixes / Nits
+- Fixing `HuggingFaceLLM.device_map` type hint (#7989)
+
 ### Breaking Changes
 - Update document summary index (#7815)
   - change default retrieval mode to embedding
