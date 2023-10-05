@@ -17,7 +17,7 @@ install_requires = [
     "tiktoken",
     "dataclasses_json",
     "langchain>=0.0.303",
-    "sqlalchemy>=2.0.15",
+    "sqlalchemy",
     "numpy",
     "tenacity>=8.2.0,<9.0.0",
     "openai>=0.26.4",
