@@ -1,6 +1,7 @@
 """Set up the package."""
-from pathlib import Path
 import os
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 DEFAULT_PACKAGE_NAME = "llama_index"
@@ -16,7 +17,7 @@ install_requires = [
     "tiktoken",
     "dataclasses_json",
     "langchain>=0.0.262,<=0.0.266",
-    "sqlalchemy>=2.0.15",
+    "sqlalchemy",
     "numpy",
     "tenacity>=8.2.0,<9.0.0",
     "openai>=0.26.4",
