@@ -25,7 +25,7 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         data_path: str,
         verbose: bool = False,
         start_job_id: Optional[str] = None,
-        validate_json: bool = True
+        validate_json: bool = True,
     ) -> None:
         """Init params."""
         self.base_model = base_model
