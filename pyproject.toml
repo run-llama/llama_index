@@ -1,7 +1,7 @@
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-ignore-words-list = "ot,gallary"
+ignore-words-list = "ot,gallary,rouge,narl"
 # Remove .git and venv skips when integrated with pre-commit
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)

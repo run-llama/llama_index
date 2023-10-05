@@ -148,8 +148,8 @@ from llama_index.agent import ContextRetrieverOpenAIAgent
 
 # toy index - stores a list of abbreviations
 texts = [
-    "Abbrevation: X = Revenue",
-    "Abbrevation: YZ = Risk Factors",
+    "Abbreviation: X = Revenue",
+    "Abbreviation: YZ = Risk Factors",
     "Abbreviation: Z = Costs",
 ]
 docs = [Document(text=t) for t in texts]
