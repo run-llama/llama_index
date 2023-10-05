@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def english_text() -> str:
     return """\
 A Curious Beginning
@@ -20,7 +20,9 @@ rustling with ancient tales.
 """
 
 
-@pytest.fixture
+# There's a pretty big difference between GPT2 and cl100k_base for non-English
+# The same text goes from 1178 tokens to 665 tokens.
+@pytest.fixture()
 def chinese_text() -> str:
     return """\
 教育的重要性
@@ -47,6 +49,6 @@ def chinese_text() -> str:
 """
 
 
-@pytest.fixture
+@pytest.fixture()
 def contiguous_text() -> str:
     return "abcde" * 200

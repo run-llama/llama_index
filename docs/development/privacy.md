@@ -1,4 +1,4 @@
-# Privacy and Security  
+# Privacy and Security
 By default, LLamaIndex sends your data to OpenAI for generating embeddings and natural language responses. However, it is important to note that this can be configured according to your preferences. LLamaIndex provides the flexibility to use your own embedding model or run a large language model locally if desired.
 
 ## Data Privacy

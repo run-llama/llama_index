@@ -2,6 +2,7 @@ import asyncio
 from threading import Thread
 from typing import Any, List, Optional, Tuple, Type
 
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
@@ -16,7 +17,6 @@ from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.schema import MetadataMode, NodeWithScore
-from llama_index.callbacks import CallbackManager, trace_method
 
 DEFAULT_CONTEXT_TEMPALTE = (
     "Context information is below."
@@ -49,7 +49,10 @@ class ContextChatEngine(BaseChatEngine):
         self._prefix_messages = prefix_messages
         self._node_postprocessors = node_postprocessors or []
         self._context_template = context_template or DEFAULT_CONTEXT_TEMPALTE
+
         self.callback_manager = callback_manager or CallbackManager([])
+        for node_postprocessor in self._node_postprocessors:
+            node_postprocessor.callback_manager = self.callback_manager
 
     @classmethod
     def from_defaults(
@@ -62,6 +65,7 @@ class ContextChatEngine(BaseChatEngine):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        context_template: Optional[str] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
@@ -92,6 +96,7 @@ class ContextChatEngine(BaseChatEngine):
             prefix_messages=prefix_messages,
             node_postprocessors=node_postprocessors,
             callback_manager=service_context.callback_manager,
+            context_template=context_template,
         )
 
     def _generate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
@@ -111,6 +116,10 @@ class ContextChatEngine(BaseChatEngine):
     async def _agenerate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(
+                nodes, query_bundle=QueryBundle(message)
+            )
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
         )
@@ -119,7 +128,6 @@ class ContextChatEngine(BaseChatEngine):
 
     def _get_prefix_messages_with_context(self, context_str: str) -> List[ChatMessage]:
         """Get the prefix messages with context"""
-
         # ensure we grab the user-configured system prompt
         system_prompt = ""
         prefix_messages = self._prefix_messages
@@ -132,8 +140,9 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_w_sys_prompt = context_str + system_prompt.strip()
         return [
-            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM)
-        ] + prefix_messages
+            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM),
+            *prefix_messages,
+        ]
 
     @trace_method("chat")
     def chat(

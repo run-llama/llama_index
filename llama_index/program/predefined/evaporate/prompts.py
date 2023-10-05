@@ -6,32 +6,32 @@ Full credits go to: https://github.com/HazyResearch/evaporate
 
 """
 
-from llama_index.prompts.prompts import Prompt
+from llama_index.prompts import PromptTemplate
 
 # deprecated, kept for backward compatibility
 
-"""Pandas prompt. Convert query to python code.
+"""Pandas PromptTemplate. Convert query to python code.
 
 Required template variables: `chunk`, `topic`.
 
 Args:
-    template (str): Template for the prompt.
-    **prompt_kwargs: Keyword arguments for the prompt.
+    template (str): Template for the PromptTemplate.
+    **prompt_kwargs: Keyword arguments for the PromptTemplate.
 
 """
-SchemaIDPrompt = Prompt
+SchemaIDPrompt = PromptTemplate
 
-"""Function generation prompt. Generate a function from existing text.
+"""Function generation PromptTemplate. Generate a function from existing text.
 
 Required template variables: `context_str`, `query_str`,
     `attribute`, `function_field`.
 
 Args:
-    template (str): Template for the prompt.
-    **prompt_kwargs: Keyword arguments for the prompt.
+    template (str): Template for the PromptTemplate.
+    **prompt_kwargs: Keyword arguments for the PromptTemplate.
 
 """
-FnGeneratePrompt = Prompt
+FnGeneratePrompt = PromptTemplate
 
 # used for schema identification
 SCHEMA_ID_PROMPT_TMPL = f"""Sample text:
@@ -53,7 +53,7 @@ SCHEMA_ID_PROMPT_TMPL = f"""Sample text:
 </ul>
 
 Question: List all relevant attributes about 'Canada' that are exactly mentioned in this sample text if any.
-Answer: 
+Answer:
 - Monarch: Charles III
 - Governor General: Mary Simon
 - Provinces and Territories: Saskatchewan, Manitoba, Ontario, Quebec, New Brunswick, Prince Edward Island, Nova Scotia, Newfoundland and Labrador, Yukon, Nunavut, Northwest Territories
@@ -69,7 +69,7 @@ Date of discharge: 2020-01-01
 Hospital address: 123 Main Street, New York, NY 10001
 
 Question: List all relevant attributes about 'medications' that are exactly mentioned in this sample text if any.
-Answer: 
+Answer:
 - Prescribed medication: aspirin, ibuprofen, acetaminophen
 - Prescribed dosage: 1 tablet, 2 tablets, 3 tablets
 
@@ -78,10 +78,10 @@ Answer:
 Sample text:
 {{chunk:}}
 
-Question: List all relevant attributes about '{{topic:}}' that are exactly mentioned in this sample text if any. 
-Answer:"""  # noqa: E501, F541
+Question: List all relevant attributes about '{{topic:}}' that are exactly mentioned in this sample text if any.
+Answer:"""
 
-SCHEMA_ID_PROMPT = Prompt(SCHEMA_ID_PROMPT_TMPL)
+SCHEMA_ID_PROMPT = PromptTemplate(SCHEMA_ID_PROMPT_TMPL)
 
 
 # used for function generation
@@ -93,7 +93,7 @@ FN_GENERATION_PROMPT_TMPL = f"""Here is a sample of text:
 
 Question: {{query_str:}}
 
-Given the function signature, write Python code to extract the 
+Given the function signature, write Python code to extract the
 "{{attribute:}}" field from the text.
 Return the result as a single value (string, int, float), and not a list.
 Make sure there is a return statement in the code. Do not leave out a return statement.
@@ -103,12 +103,12 @@ import re
 
 def get_{{function_field:}}_field(text: str):
     \"""
-    Function to extract the "{{attribute:}} field", and return the result 
+    Function to extract the "{{attribute:}} field", and return the result
     as a single value.
     \"""
-    """  # noqa: E501, F541
+    """
 
-FN_GENERATION_PROMPT = Prompt(FN_GENERATION_PROMPT_TMPL)
+FN_GENERATION_PROMPT = PromptTemplate(FN_GENERATION_PROMPT_TMPL)
 
 
 FN_GENERATION_LIST_PROMPT_TMPL = f"""Here is a sample of text:
@@ -118,7 +118,7 @@ FN_GENERATION_LIST_PROMPT_TMPL = f"""Here is a sample of text:
 
 Question: {{query_str:}}
 
-Given the function signature, write Python code to extract the 
+Given the function signature, write Python code to extract the
 "{{attribute:}}" field from the text.
 Return the result as a list of values (if there is just one item, return a single \
 element list).
@@ -129,12 +129,12 @@ import re
 
 def get_{{function_field:}}_field(text: str) -> List:
     \"""
-    Function to extract the "{{attribute:}} field", and return the result 
+    Function to extract the "{{attribute:}} field", and return the result
     as a single value.
     \"""
-    """  # noqa: E501, F541
+    """
 
-FN_GENERATION_LIST_PROMPT = Prompt(FN_GENERATION_LIST_PROMPT_TMPL)
+FN_GENERATION_LIST_PROMPT = PromptTemplate(FN_GENERATION_LIST_PROMPT_TMPL)
 
 DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL = (
     "Here is the expected output on the text after running the function. "

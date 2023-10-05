@@ -4,20 +4,17 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-from llama_index.bridge.langchain import print_text
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.base import Prompt, PromptType
+from llama_index.prompts import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
-from llama_index.prompts.prompts import QueryKeywordExtractPrompt
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TextNode
 from llama_index.storage.storage_context import StorageContext
-from llama_index.utils import truncate_text
-
+from llama_index.utils import print_text, truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 DEFAULT_NODE_SCORE = 1000.0
@@ -54,15 +51,15 @@ class KGTableRetriever(BaseRetriever):
         query_keyword_extract_template (Optional[QueryKGExtractPrompt]): A Query
             KG Extraction
             Prompt (see :ref:`Prompt-Templates`).
-        refine_template (Optional[RefinePrompt]): A Refinement Prompt
+        refine_template (Optional[BasePromptTemplate]): A Refinement Prompt
             (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question Answering Prompt
+        text_qa_template (Optional[BasePromptTemplate]): A Question Answering Prompt
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): Maximum number of keywords to extract from query.
         num_chunks_per_query (int): Maximum number of text chunks to query.
         include_text (bool): Use the document text source from each relevant triplet
             during queries.
-        retriever_mode (KGRetrieverMode): Specifies whether to use keyowrds,
+        retriever_mode (KGRetrieverMode): Specifies whether to use keywords,
             embeddings, or both to find relevant triplets. Should be one of "keyword",
             "embedding", or "hybrid".
         similarity_top_k (int): The number of top embeddings to use
@@ -78,7 +75,7 @@ class KGTableRetriever(BaseRetriever):
     def __init__(
         self,
         index: KnowledgeGraphIndex,
-        query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
+        query_keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         include_text: bool = True,
@@ -90,7 +87,6 @@ class KGTableRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-
         assert isinstance(index, KnowledgeGraphIndex)
         self._index = index
         self._service_context = self._index.service_context
@@ -108,6 +104,15 @@ class KGTableRetriever(BaseRetriever):
         self.graph_store_query_depth = graph_store_query_depth
         self.use_global_node_triplets = use_global_node_triplets
         self.max_knowledge_sequence = max_knowledge_sequence
+        self._verbose = kwargs.get("verbose", False)
+        refresh_schema = kwargs.get("refresh_schema", False)
+        try:
+            self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
+        except NotImplementedError:
+            self._graph_schema = ""
+        except Exception as e:
+            logger.warning(f"Failed to get graph schema: {e}")
+            self._graph_schema = ""
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -135,16 +140,16 @@ class KGTableRetriever(BaseRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         """Get nodes for response."""
-        logger.info(f"> Starting query: {query_bundle.query_str}")
         node_visited = set()
         keywords = self._get_keywords(query_bundle.query_str)
-        logger.info(f"> Query keywords: {keywords}")
+        if self._verbose:
+            print_text(f"Extracted keywords: {keywords}\n", color="green")
         rel_texts = []
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
         if self._retriever_mode != KGRetrieverMode.EMBEDDING:
             for keyword in keywords:
-                subjs = set((keyword,))
+                subjs = {keyword}
                 node_ids = self._index_struct.search_node_by_keyword(keyword)
                 for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
                     if node_id in node_visited:
@@ -179,8 +184,8 @@ class KGTableRetriever(BaseRetriever):
                     continue
                 rel_texts.extend(
                     [
-                        f"{sub} {rel_obj}"
-                        for sub, rel_objs in rel_map.items()
+                        str(rel_obj)
+                        for rel_objs in rel_map.values()
                         for rel_obj in rel_objs
                     ]
                 )
@@ -205,9 +210,9 @@ class KGTableRetriever(BaseRetriever):
                 embedding_ids=all_rel_texts,
             )
             logger.debug(
-                f"Found the following rel_texts+query similarites: {str(similarities)}"
+                f"Found the following rel_texts+query similarites: {similarities!s}"
             )
-            logger.debug(f"Found the following top_k rel_texts: {str(rel_texts)}")
+            logger.debug(f"Found the following top_k rel_texts: {rel_texts!s}")
             rel_texts.extend(top_rel_texts)
             if self._include_text:
                 keywords = self._extract_rel_text_keywords(top_rel_texts)
@@ -219,7 +224,7 @@ class KGTableRetriever(BaseRetriever):
                 for node_id in node_ids:
                     chunk_indices_count[node_id] += 1
         elif len(self._index_struct.embedding_dict) == 0:
-            logger.error(
+            logger.warning(
                 "Index was not constructed with embeddings, skipping embedding usage..."
             )
 
@@ -235,11 +240,11 @@ class KGTableRetriever(BaseRetriever):
                         rel_texts[j] = ""
             rel_texts = [rel_text for rel_text in rel_texts if rel_text != ""]
 
-            # tuncate rel_texts
+            # truncate rel_texts
             rel_texts = rel_texts[: self.max_knowledge_sequence]
 
         sorted_chunk_indices = sorted(
-            list(chunk_indices_count.keys()),
+            chunk_indices_count.keys(),
             key=lambda x: chunk_indices_count[x],
             reverse=True,
         )
@@ -269,23 +274,37 @@ class KGTableRetriever(BaseRetriever):
             logger.info("> No relationships found, returning nodes found by keywords.")
             if len(sorted_nodes_with_scores) == 0:
                 logger.info("> No nodes found by keywords, returning empty response.")
-            return sorted_nodes_with_scores
+            return [
+                NodeWithScore(node=TextNode(text="No relationships found."), score=1.0)
+            ]
 
         # add relationships as Node
         # TODO: make initial text customizable
         rel_initial_text = (
             f"The following are knowledge sequence in max depth"
             f" {self.graph_store_query_depth} "
-            f"in the form of "
-            f"`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
+            f"in the form of directed graph like:\n"
+            f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+            f" object_next_hop ...`"
         )
-        rel_info = [rel_initial_text] + rel_texts
+        rel_info = [rel_initial_text, *rel_texts]
         rel_node_info = {
             "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
         }
+        if self._graph_schema != "":
+            rel_node_info["kg_schema"] = {"schema": self._graph_schema}
+        rel_info_text = "\n".join(
+            [
+                str(item)
+                for sublist in rel_info
+                for item in (sublist if isinstance(sublist, list) else [sublist])
+            ]
+        )
+        if self._verbose:
+            print_text(f"KG context:\n{rel_info_text}\n", color="blue")
         rel_text_node = TextNode(
-            text="\n".join(rel_info),
+            text=rel_info_text,
             metadata=rel_node_info,
             excluded_embed_metadata_keys=["kg_rel_map", "kg_rel_texts"],
             excluded_llm_metadata_keys=["kg_rel_map", "kg_rel_texts"],
@@ -294,8 +313,6 @@ class KGTableRetriever(BaseRetriever):
         sorted_nodes_with_scores.append(
             NodeWithScore(node=rel_text_node, score=DEFAULT_NODE_SCORE)
         )
-        rel_info_text = "\n".join(rel_info)
-        logger.info(f"> Extracted relationships: {rel_info_text}")
 
         return sorted_nodes_with_scores
 
@@ -320,7 +337,7 @@ KEYWORDS: {question}
 ----
 """
 
-DEFAULT_SYNONYM_EXPAND_PROMPT = Prompt(
+DEFAULT_SYNONYM_EXPAND_PROMPT = PromptTemplate(
     DEFAULT_SYNONYM_EXPAND_TEMPLATE,
     prompt_type=PromptType.QUERY_KEYWORD_EXTRACT,
 )
@@ -336,7 +353,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         service_context (Optional[ServiceContext]): A service context to use.
         storage_context (Optional[StorageContext]): A storage context to use.
         entity_extract_fn (Optional[Callable]): A function to extract entities.
-        entity_extract_template Optional[QueryKeywordExtractPrompt]): A Query Key Entity
+        entity_extract_template Optional[BasePromptTemplate]): A Query Key Entity
             Extraction Prompt (see :ref:`Prompt-Templates`).
         entity_extract_policy (Optional[str]): The entity extraction policy to use.
             default: "union"
@@ -368,17 +385,17 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
         entity_extract_fn: Optional[Callable] = None,
-        entity_extract_template: Optional[QueryKeywordExtractPrompt] = None,
+        entity_extract_template: Optional[BasePromptTemplate] = None,
         entity_extract_policy: Optional[str] = "union",
         synonym_expand_fn: Optional[Callable] = None,
-        synonym_expand_template: Optional[Prompt] = None,
+        synonym_expand_template: Optional[BasePromptTemplate] = None,
         synonym_expand_policy: Optional[str] = "union",
         max_entities: int = 5,
         max_synonyms: int = 5,
         retriever_mode: Optional[str] = "keyword",
         with_nl2graphquery: bool = False,
         graph_traversal_depth: int = 2,
-        max_knowledge_sequence: int = 30,
+        max_knowledge_sequence: int = REL_TEXT_LIMIT,
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -418,10 +435,16 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 "graph_query_synthesis_prompt",
                 None,
             )
+            if graph_query_synthesis_prompt is not None:
+                del kwargs["graph_query_synthesis_prompt"]
+
             graph_response_answer_prompt = kwargs.get(
                 "graph_response_answer_prompt",
                 None,
             )
+            if graph_response_answer_prompt is not None:
+                del kwargs["graph_response_answer_prompt"]
+
             refresh_schema = kwargs.get("refresh_schema", False)
             response_synthesizer = kwargs.get("response_synthesizer", None)
             self._kg_query_engine = KnowledgeGraphQueryEngine(
@@ -438,12 +461,20 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self._graph_traversal_depth = graph_traversal_depth
         self._max_knowledge_sequence = max_knowledge_sequence
         self._verbose = verbose
+        refresh_schema = kwargs.get("refresh_schema", False)
+        try:
+            self._graph_schema = self._graph_store.get_schema(refresh=refresh_schema)
+        except NotImplementedError:
+            self._graph_schema = ""
+        except Exception as e:
+            logger.warning(f"Failed to get graph schema: {e}")
+            self._graph_schema = ""
 
     def _process_entities(
         self,
         query_str: str,
         handle_fn: Optional[Callable],
-        handle_llm_prompt_template: Optional[Prompt],
+        handle_llm_prompt_template: Optional[BasePromptTemplate],
         cross_handle_policy: Optional[str] = "union",
         max_items: Optional[int] = 5,
         result_start_token: str = "KEYWORDS:",
@@ -493,7 +524,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self,
         query_str: str,
         handle_fn: Optional[Callable],
-        handle_llm_prompt_template: Optional[Prompt],
+        handle_llm_prompt_template: Optional[BasePromptTemplate],
         cross_handle_policy: Optional[str] = "union",
         max_items: Optional[int] = 5,
         result_start_token: str = "KEYWORDS:",
@@ -593,7 +624,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         """Get knowledge sequence from entities."""
         # Get SubGraph from Graph Store as Knowledge Sequence
         rel_map: Optional[Dict] = self._graph_store.get_rel_map(
-            entities, self._graph_traversal_depth
+            entities, self._graph_traversal_depth, limit=self._max_knowledge_sequence
         )
         logger.debug(f"rel_map: {rel_map}")
 
@@ -601,14 +632,11 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         knowledge_sequence = []
         if rel_map:
             knowledge_sequence.extend(
-                [rel_obj for rel_objs in rel_map.values() for rel_obj in rel_objs]
+                [str(rel_obj) for rel_objs in rel_map.values() for rel_obj in rel_objs]
             )
         else:
             logger.info("> No knowledge sequence extracted from entities.")
             return [], None
-        # truncate knowledge sequence
-        if len(knowledge_sequence) > self._max_knowledge_sequence:
-            knowledge_sequence = knowledge_sequence[: self._max_knowledge_sequence]
 
         return knowledge_sequence, rel_map
 
@@ -619,22 +647,19 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         # Get SubGraph from Graph Store as Knowledge Sequence
         # TBD: async in graph store
         rel_map: Optional[Dict] = self._graph_store.get_rel_map(
-            entities, self._graph_traversal_depth
+            entities, self._graph_traversal_depth, limit=self._max_knowledge_sequence
         )
-        logger.debug(f"rel_map: {rel_map}")
+        logger.debug(f"rel_map from GraphStore:\n{rel_map}")
 
         # Build Knowledge Sequence
         knowledge_sequence = []
         if rel_map:
             knowledge_sequence.extend(
-                [rel_obj for rel_objs in rel_map.values() for rel_obj in rel_objs]
+                [str(rel_obj) for rel_objs in rel_map.values() for rel_obj in rel_objs]
             )
         else:
             logger.info("> No knowledge sequence extracted from entities.")
             return [], None
-        # truncate knowledge sequence
-        if len(knowledge_sequence) > self._max_knowledge_sequence:
-            knowledge_sequence = knowledge_sequence[: self._max_knowledge_sequence]
 
         return knowledge_sequence, rel_map
 
@@ -649,33 +674,41 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         context_string = (
             f"The following are knowledge sequence in max depth"
             f" {self._graph_traversal_depth} "
-            f"in the form of "
-            f"`subject predicate, object, predicate_next_hop, object_next_hop ...`"
+            f"in the form of directed graph like:\n"
+            f"`subject -[predicate]->, object, <-[predicate_next_hop]-,"
+            f" object_next_hop ...`"
             f" extracted based on key entities as subject:\n"
             f"{_new_line_char.join(knowledge_sequence)}"
         )
         if self._verbose:
             print_text(f"Graph RAG context:\n{context_string}\n", color="blue")
 
+        rel_node_info = {
+            "kg_rel_map": rel_map,
+            "kg_rel_text": knowledge_sequence,
+        }
+        metadata_keys = ["kg_rel_map", "kg_rel_text"]
+        if self._graph_schema != "":
+            rel_node_info["kg_schema"] = {"schema": self._graph_schema}
+            metadata_keys.append("kg_schema")
         node = NodeWithScore(
             node=TextNode(
                 text=context_string,
                 score=1.0,
-                metadata={
-                    "kg_rel_text": knowledge_sequence,
-                    "kg_rel_map": rel_map,
-                },
+                metadata=rel_node_info,
+                excluded_embed_metadata_keys=metadata_keys,
+                excluded_llm_metadata_keys=metadata_keys,
             )
         )
         return [node]
 
     def _retrieve_keyword(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """retrieve in keyword mode."""
+        """Retrieve in keyword mode."""
         if self._retriever_mode not in ["keyword", "keyword_embedding"]:
             return []
         # Get entities
         entities = self._get_entities(query_bundle.query_str)
-        # Before we enable embedding/symantic search, we need to make sure
+        # Before we enable embedding/semantic search, we need to make sure
         # we don't miss any entities that's synoynm of the entities we extracted
         # in string matching based retrieval in following steps, thus we expand
         # synonyms here.
@@ -691,12 +724,12 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
     async def _aretrieve_keyword(
         self, query_bundle: QueryBundle
     ) -> List[NodeWithScore]:
-        """retrieve in keyword mode."""
+        """Retrieve in keyword mode."""
         if self._retriever_mode not in ["keyword", "keyword_embedding"]:
             return []
         # Get entities
         entities = await self._aget_entities(query_bundle.query_str)
-        # Before we enable embedding/symantic search, we need to make sure
+        # Before we enable embedding/semantic search, we need to make sure
         # we don't miss any entities that's synoynm of the entities we extracted
         # in string matching based retrieval in following steps, thus we expand
         # synonyms here.
@@ -710,7 +743,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         return self._build_nodes(knowledge_sequence, rel_map)
 
     def _retrieve_embedding(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """retrieve in embedding mode."""
+        """Retrieve in embedding mode."""
         if self._retriever_mode not in ["embedding", "keyword_embedding"]:
             return []
         # TBD: will implement this later with vector store.
@@ -719,7 +752,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
     async def _aretrieve_embedding(
         self, query_bundle: QueryBundle
     ) -> List[NodeWithScore]:
-        """retrieve in embedding mode."""
+        """Retrieve in embedding mode."""
         if self._retriever_mode not in ["embedding", "keyword_embedding"]:
             return []
         # TBD: will implement this later with vector store.
@@ -733,7 +766,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 nodes_nl2graphquery = self._kg_query_engine._retrieve(query_bundle)
                 nodes.extend(nodes_nl2graphquery)
             except Exception as e:
-                logger.warn(f"Error in retrieving from nl2graphquery: {e}")
+                logger.warning(f"Error in retrieving from nl2graphquery: {e}")
 
         nodes.extend(self._retrieve_keyword(query_bundle))
         nodes.extend(self._retrieve_embedding(query_bundle))
@@ -750,7 +783,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 )
                 nodes.extend(nodes_nl2graphquery)
             except Exception as e:
-                logger.warn(f"Error in retrieving from nl2graphquery: {e}")
+                logger.warning(f"Error in retrieving from nl2graphquery: {e}")
 
         nodes.extend(await self._aretrieve_keyword(query_bundle))
         nodes.extend(await self._aretrieve_embedding(query_bundle))

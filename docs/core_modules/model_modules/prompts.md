@@ -2,7 +2,7 @@
 
 ## Concept
 
-Prompting is the fundamental input that gives LLMs their expressive power. LlamaIndex uses prompts to build the index, do insertion, 
+Prompting is the fundamental input that gives LLMs their expressive power. LlamaIndex uses prompts to build the index, do insertion,
 perform traversal during querying, and to synthesize the final answer.
 
 LlamaIndex uses a set of [default prompt templates](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py) that work well out of the box.
@@ -18,7 +18,7 @@ Users may also provide their own prompt templates to further customize the behav
 Defining a custom prompt is as simple as creating a format string
 
 ```python
-from llama_index import Prompt
+from llama_index.prompts import PromptTemplate
 
 template = (
     "We have provided context information below. \n"
@@ -27,10 +27,36 @@ template = (
     "\n---------------------\n"
     "Given this information, please answer the question: {query_str}\n"
 )
-qa_template = Prompt(template)
+qa_template = PromptTemplate(template)
+
+# you can create text prompt (for completion API)
+prompt = qa_template.format(context_str=..., query_str=...)
+
+# or easily convert to message prompts (for chat API)
+messages = qa_template.format_messages(context_str=..., query_str=...)
 ```
 
-> Note: you may see references to legacy prompt subclasses such as `QuestionAnswerPrompt`, `RefinePrompt`. These have been deprecated (and now are type aliases of `Prompt`). Now you can directly specify `Prompt(template)` to construct custom prompts. But you still have to make sure the template string contains the expected parameters (e.g. `{context_str}` and `{query_str}`) when replacing a default question answer prompt.
+> Note: you may see references to legacy prompt subclasses such as `QuestionAnswerPrompt`, `RefinePrompt`. These have been deprecated (and now are type aliases of `PromptTemplate`). Now you can directly specify `PromptTemplate(template)` to construct custom prompts. But you still have to make sure the template string contains the expected parameters (e.g. `{context_str}` and `{query_str}`) when replacing a default question answer prompt.
+
+You can also define a template from chat messages
+```python
+from llama_index.prompts import ChatPromptTemplate, ChatMessage, MessageRole
+
+message_templates = [
+    ChatMessage(content="You are an expert system.", role=MessageRole.SYSTEM),
+    ChatMessage(
+        content="Generate a short story about {topic}",
+        role=MessageRole.USER,
+    ),
+]
+chat_template = ChatPromptTemplate(message_templates=message_templates)
+
+# you can create message prompts (for chat API)
+messages = chat_template.format_messages(topic=...)
+
+# or easily convert to text prompt (for completion API)
+prompt = chat_template.format(topic=...)
+```
 
 ### Passing custom prompts into the pipeline
 
@@ -38,19 +64,19 @@ Since LlamaIndex is a multi-step pipeline, it's important to identify the operat
 
 At a high-level, prompts are used in 1) index construction, and 2) query engine execution
 
-The most commonly used prompts will be the `text_qa_template` and the `refine_template`. 
+The most commonly used prompts will be the `text_qa_template` and the `refine_template`.
 
 - `text_qa_template` - used to get an initial answer to a query using retrieved nodes
 - `refine_tempalate` - used when the retrieved text does not fit into a single LLM call with `response_mode="compact"` (the default), or when more than one node is retrieved using `response_mode="refine"`. The answer from the first query is inserted as an `existing_answer`, and the LLM must update or repeat the existing answer based on the new context.
 
 #### Modify prompts used in index construction
-Different indices use different types of prompts during construction (some don't use prompts at all). 
-For instance, `TreeIndex` uses a `SummaryPrompt` to hierarchically
-summarize the nodes, and `KeywordTableIndex` uses a `KeywordExtractPrompt` to extract keywords.
+Different indices use different types of prompts during construction (some don't use prompts at all).
+For instance, `TreeIndex` uses a summary prompt to hierarchically
+summarize the nodes, and `KeywordTableIndex` uses a keyword extract prompt to extract keywords.
 
 There are two equivalent ways to override the prompts:
 
-1. via the default nodes constructor 
+1. via the default nodes constructor
 
 ```python
 index = TreeIndex(nodes, summary_template=<custom_prompt>)
@@ -65,7 +91,7 @@ For more details on which index uses which prompts, please visit
 [Index class references](/api_reference/indices.rst).
 
 #### Modify prompts used in query engine
-More commonly, prompts are used at query-time (i.e. for executing a query against an index and synthesizing the final response). 
+More commonly, prompts are used at query-time (i.e. for executing a query against an index and synthesizing the final response).
 
 There are also two equivalent ways to override the prompts:
 

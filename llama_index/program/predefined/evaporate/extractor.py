@@ -1,31 +1,21 @@
 import random
 import re
 import signal
-
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Optional, List, Any, Set, Tuple, Dict
-
-from llama_index.indices.service_context import ServiceContext
-from llama_index.response_synthesizers import (
-    ResponseMode,
-    get_response_synthesizer,
-)
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
-
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import QuestionAnswerPrompt
-
-
+from llama_index.indices.service_context import ServiceContext
 from llama_index.program.predefined.evaporate.prompts import (
+    DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
+    DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
     FN_GENERATION_PROMPT,
     SCHEMA_ID_PROMPT,
     FnGeneratePrompt,
     SchemaIDPrompt,
-    DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
-    DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
 )
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 
 class TimeoutException(Exception):
@@ -80,7 +70,7 @@ def extract_field_dicts(result: str, text_chunk: str) -> Set:
             field.replace("-", ""),
             field.replace("_", ""),
         ]
-        if not any([f.lower() in text_chunk.lower() for f in field_versions]):
+        if not any(f.lower() in text_chunk.lower() for f in field_versions):
             continue
         if not value:
             continue
@@ -156,33 +146,36 @@ class EvaporateExtractor:
                 field2count[field] += 1
 
         sorted_tups: List[Tuple[str, int]] = sorted(
-            list(field2count.items()), key=lambda x: x[1], reverse=True
+            field2count.items(), key=lambda x: x[1], reverse=True
         )
         sorted_fields = [f[0] for f in sorted_tups]
-        sorted_fields = sorted_fields[:fields_top_k]
-
-        return sorted_fields
+        return sorted_fields[:fields_top_k]
 
     def extract_fn_from_nodes(
         self, nodes: List[BaseNode], field: str, expected_output: Optional[Any] = None
     ) -> str:
         """Extract function from nodes."""
+        # avoid circular import
+        from llama_index.response_synthesizers import (
+            ResponseMode,
+            get_response_synthesizer,
+        )
+
         function_field = get_function_field_from_attribute(field)
         # TODO: replace with new response synthesis module
 
         if expected_output is not None:
             expected_output_str = (
-                f"{self._expected_output_prefix_tmpl}{str(expected_output)}\n"
+                f"{self._expected_output_prefix_tmpl}{expected_output!s}\n"
             )
         else:
             expected_output_str = ""
 
-        new_prompt = self._fn_generate_prompt.partial_format(
+        qa_prompt = self._fn_generate_prompt.partial_format(
             attribute=field,
             function_field=function_field,
             expected_output_str=expected_output_str,
         )
-        qa_prompt = QuestionAnswerPrompt.from_prompt(new_prompt)
 
         response_synthesizer = get_response_synthesizer(
             service_context=self._service_context,
@@ -199,9 +192,9 @@ class EvaporateExtractor:
         )
         fn_str = f"""def get_{function_field}_field(text: str):
     \"""
-    Function to extract {field}. 
+    Function to extract {field}.
     \"""
-    {str(response)}
+    {response!s}
 """
 
         # format fn_str
@@ -212,14 +205,9 @@ class EvaporateExtractor:
         return_idx = return_idx_list[0]
         fn_str = "\n".join(fn_str.split("\n")[: return_idx + 1])
         fn_str = "\n".join([s for s in fn_str.split("\n") if "print(" not in s])
-        fn_str = "\n".join(
-            [
-                s
-                for s in fn_str.split("\n")
-                if s.startswith(" ") or s.startswith("\t") or s.startswith("def")
-            ]
+        return "\n".join(
+            [s for s in fn_str.split("\n") if s.startswith((" ", "\t", "def"))]
         )
-        return fn_str
 
     def run_fn_on_nodes(
         self, nodes: List[BaseNode], fn_str: str, field_name: str, num_timeouts: int = 1
@@ -244,7 +232,7 @@ class EvaporateExtractor:
                     exec(fn_str, globals())
                     exec(f"result = get_{function_field}_field(node_text)", globals())
             except TimeoutException as e:
-                raise e
+                raise
             results.append(result)  # type: ignore[name-defined]
         return results
 

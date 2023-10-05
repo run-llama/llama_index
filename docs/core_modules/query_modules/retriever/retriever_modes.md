@@ -1,16 +1,16 @@
 # Retriever Modes
 Here we show the mapping from `retriever_mode` configuration to the selected retriever class.
-> Note that `retriever_mode` can mean different thing for different index classes. 
+> Note that `retriever_mode` can mean different thing for different index classes.
 
 ## Vector Index
 Specifying `retriever_mode` has no effect (silently ignored).
 `vector_index.as_retriever(...)` always returns a VectorIndexRetriever.
 
 
-## List Index
-* `default`: ListIndexRetriever 
-* `embedding`: ListIndexEmbeddingRetriever 
-* `llm`: ListIndexLLMRetriever
+## Summary Index
+* `default`: SummaryIndexRetriever
+* `embedding`: SummaryIndexEmbeddingRetriever
+* `llm`: SummaryIndexLLMRetriever
 
 ## Tree Index
 * `select_leaf`: TreeSelectLeafRetriever
@@ -31,5 +31,5 @@ Specifying `retriever_mode` has no effect (silently ignored).
 * `hybrid`: KGTableRetriever
 
 ## Document Summary Index
-* `default`: DocumentSummaryIndexRetriever
+* `llm`: DocumentSummaryIndexLLMRetriever
 * `embedding`: DocumentSummaryIndexEmbeddingRetrievers

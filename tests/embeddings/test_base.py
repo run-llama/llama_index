@@ -5,11 +5,10 @@ from unittest.mock import patch
 
 import openai
 import pytest
-
 from llama_index.embeddings.base import SimilarityMode, mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-from ..conftest import CachedOpenAIApiKeys
+from tests.conftest import CachedOpenAIApiKeys
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -45,32 +44,29 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 @patch.object(
     OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
-def test_get_queued_text_embeddings(
+def test_get_text_embeddings(
     _mock_get_text_embeddings: Any, _mock_get_text_embedding: Any
 ) -> None:
     """Test get queued text embeddings."""
     embed_model = OpenAIEmbedding(embed_batch_size=8)
+    texts_to_embed = []
     for i in range(8):
-        embed_model.queue_text_for_embedding(f"id:{i}", "Hello world.")
+        texts_to_embed.append("Hello world.")
     for i in range(8):
-        embed_model.queue_text_for_embedding(f"id:{i}", "This is a test.")
+        texts_to_embed.append("This is a test.")
     for i in range(4):
-        embed_model.queue_text_for_embedding(f"id:{i}", "This is another test.")
+        texts_to_embed.append("This is another test.")
     for i in range(4):
-        embed_model.queue_text_for_embedding(f"id:{i}", "This is a test v2.")
+        texts_to_embed.append("This is a test v2.")
 
-    result_ids, result_embeddings = embed_model.get_queued_text_embeddings()
+    result_embeddings = embed_model.get_text_embedding_batch(texts_to_embed)
     for i in range(8):
-        assert result_ids[i] == f"id:{i}"
         assert result_embeddings[i] == [1, 0, 0, 0, 0]
     for i in range(8, 16):
-        assert result_ids[i] == f"id:{i-8}"
         assert result_embeddings[i] == [0, 1, 0, 0, 0]
     for i in range(16, 20):
-        assert result_ids[i] == f"id:{i-16}"
         assert result_embeddings[i] == [0, 0, 1, 0, 0]
     for i in range(20, 24):
-        assert result_ids[i] == f"id:{i-20}"
         assert result_embeddings[i] == [0, 0, 0, 1, 0]
 
 
@@ -120,26 +116,4 @@ def test_validates_api_key_is_present() -> None:
 
         # We can create a new LLM when the api_key is set on the
         # library directly
-        assert OpenAIEmbedding()
-
-
-def test_validates_api_key_format_from_env() -> None:
-    with CachedOpenAIApiKeys(set_env_key_to="api-hf47930g732gf372"):
-        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
-            OpenAIEmbedding()
-
-    with CachedOpenAIApiKeys(
-        set_env_key_to="api-hf47930g732gf372", set_env_type_to="azure"
-    ):
-        assert OpenAIEmbedding()
-
-
-def test_validates_api_key_format_in_library() -> None:
-    with CachedOpenAIApiKeys(set_library_key_to="api-hf47930g732gf372"):
-        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
-            OpenAIEmbedding()
-
-    with CachedOpenAIApiKeys(
-        set_library_key_to="api-hf47930g732gf372", set_library_type_to="azure"
-    ):
         assert OpenAIEmbedding()

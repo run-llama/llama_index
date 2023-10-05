@@ -1,22 +1,23 @@
 """General prompt helper that can help deal with LLM context window token limitations.
 
-At its core, it calculates available context size by starting with the context window 
+At its core, it calculates available context size by starting with the context window
 size of an LLM and reserve token space for the prompt template, and the output.
 
-It provides utility for "repacking" text chunks (retrieved from index) to maximally 
-make use of the available context window (and thereby reducing the number of LLM calls 
+It provides utility for "repacking" text chunks (retrieved from index) to maximally
+make use of the available context window (and thereby reducing the number of LLM calls
 needed), or truncating them so that they fit in a single LLM call.
 """
 
 import logging
-from pydantic import BaseModel, Field, PrivateAttr
 from typing import Callable, List, Optional, Sequence
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.openai_utils import is_chat_model
 from llama_index.llm_predictor.base import LLMMetadata
-from llama_index.prompts.base import Prompt
-from llama_index.prompts.utils import get_empty_prompt_txt
+from llama_index.llms.openai_utils import is_chat_model
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.prompt_utils import get_empty_prompt_txt
+from llama_index.schema import BaseComponent
 from llama_index.text_splitter import TokenTextSplitter
 from llama_index.text_splitter.utils import truncate_text
 from llama_index.utils import globals_helper
@@ -27,7 +28,7 @@ DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
 logger = logging.getLogger(__name__)
 
 
-class PromptHelper(BaseModel):
+class PromptHelper(BaseComponent):
     """Prompt helper.
 
     General prompt helper that can help deal with LLM context window token limitations.
@@ -127,67 +128,77 @@ class PromptHelper(BaseModel):
             separator=separator,
         )
 
-    def _get_available_context_size(self, prompt: Prompt) -> int:
+    @classmethod
+    def class_name(cls) -> str:
+        return "PromptHelper"
+
+    def _get_available_context_size(self, prompt: BasePromptTemplate) -> int:
         """Get available context size.
 
         This is calculated as:
             available context window = total context window
                 - input (partially filled prompt)
                 - output (room reserved for response)
+
+        Notes:
+        - Available context size is further clamped to be non-negative.
         """
         empty_prompt_txt = get_empty_prompt_txt(prompt)
-        prompt_tokens = self._tokenizer(empty_prompt_txt)
-        num_prompt_tokens = len(prompt_tokens)
-
-        return self.context_window - num_prompt_tokens - self.num_output
+        num_empty_prompt_tokens = len(self._tokenizer(empty_prompt_txt))
+        context_size_tokens = (
+            self.context_window - num_empty_prompt_tokens - self.num_output
+        )
+        if context_size_tokens < 0:
+            raise ValueError(
+                f"Calculated available context size {context_size_tokens} was"
+                " not non-negative."
+            )
+        return context_size_tokens
 
     def _get_available_chunk_size(
-        self, prompt: Prompt, num_chunks: int = 1, padding: int = 5
+        self, prompt: BasePromptTemplate, num_chunks: int = 1, padding: int = 5
     ) -> int:
         """Get available chunk size.
 
         This is calculated as:
-            available context window = total context window
-                - input (partially filled prompt)
-                - output (room reserved for response)
-
-            available chunk size  = available context window  // number_chunks
+            available chunk size = available context window  // number_chunks
                 - padding
 
-        Note:
+        Notes:
         - By default, we use padding of 5 (to save space for formatting needs).
-        - The available chunk size is further clamped to chunk_size_limit if specified
+        - Available chunk size is further clamped to chunk_size_limit if specified.
         """
         available_context_size = self._get_available_context_size(prompt)
-
-        result = available_context_size // num_chunks
-        result -= padding
-
+        result = available_context_size // num_chunks - padding
         if self.chunk_size_limit is not None:
             result = min(result, self.chunk_size_limit)
-
         return result
 
     def get_text_splitter_given_prompt(
-        self, prompt: Prompt, num_chunks: int = 1, padding: int = DEFAULT_PADDING
+        self,
+        prompt: BasePromptTemplate,
+        num_chunks: int = 1,
+        padding: int = DEFAULT_PADDING,
     ) -> TokenTextSplitter:
         """Get text splitter configured to maximally pack available context window,
         taking into account of given prompt, and desired number of chunks.
         """
         chunk_size = self._get_available_chunk_size(prompt, num_chunks, padding=padding)
-        if chunk_size == 0:
-            raise ValueError("Got 0 as available chunk size.")
+        if chunk_size <= 0:
+            raise ValueError(f"Chunk size {chunk_size} is not positive.")
         chunk_overlap = int(self.chunk_overlap_ratio * chunk_size)
-        text_splitter = TokenTextSplitter(
+        return TokenTextSplitter(
             separator=self.separator,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             tokenizer=self._tokenizer,
         )
-        return text_splitter
 
     def truncate(
-        self, prompt: Prompt, text_chunks: Sequence[str], padding: int = DEFAULT_PADDING
+        self,
+        prompt: BasePromptTemplate,
+        text_chunks: Sequence[str],
+        padding: int = DEFAULT_PADDING,
     ) -> List[str]:
         """Truncate text chunks to fit available context window."""
         text_splitter = self.get_text_splitter_given_prompt(
@@ -198,7 +209,10 @@ class PromptHelper(BaseModel):
         return [truncate_text(chunk, text_splitter) for chunk in text_chunks]
 
     def repack(
-        self, prompt: Prompt, text_chunks: Sequence[str], padding: int = DEFAULT_PADDING
+        self,
+        prompt: BasePromptTemplate,
+        text_chunks: Sequence[str],
+        padding: int = DEFAULT_PADDING,
     ) -> List[str]:
         """Repack text chunks to fit available context window.
 

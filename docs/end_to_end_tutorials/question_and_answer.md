@@ -6,7 +6,7 @@ whether it's question-answering, summarization, or a component in a chatbot.
 This section describes the different ways you can query your data with LlamaIndex, roughly in order
 of simplest (top-k semantic search), to more advanced capabilities.
 
-### Semantic Search 
+### Semantic Search
 
 The most basic example usage of LlamaIndex is through semantic search. We provide
 a simple in-memory vector store for you to get started, but you can also choose
@@ -33,16 +33,16 @@ print(response)
 ### Summarization
 
 A summarization query requires the LLM to iterate through many if not most documents in order to synthesize an answer.
-For instance, a summarization query could look like one of the following: 
+For instance, a summarization query could look like one of the following:
 - "What is a summary of this collection of text?"
 - "Give me a summary of person X's experience with the company."
 
-In general, a list index would be suited for this use case. A list index by default goes through all the data.
+In general, a summary index would be suited for this use case. A summary index by default goes through all the data.
 
 Empirically, setting `response_mode="tree_summarize"` also leads to better summarization results.
 
 ```python
-index = ListIndex.from_documents(documents)
+index = SummaryIndex.from_documents(documents)
 
 query_engine = index.as_query_engine(
     response_mode="tree_summarize"
@@ -68,17 +68,17 @@ Here are some relevant resources:
 ### Synthesis over Heterogeneous Data
 
 LlamaIndex supports synthesizing across heterogeneous data sources. This can be done by composing a graph over your existing data.
-Specifically, compose a list index over your subindices. A list index inherently combines information for each node; therefore
+Specifically, compose a summary index over your subindices. A summary index inherently combines information for each node; therefore
 it can synthesize information across your heterogeneous data sources.
 
 ```python
-from llama_index import VectorStoreIndex, ListIndex
+from llama_index import VectorStoreIndex, SummaryIndex
 from llama_index.indices.composability import ComposableGraph
 
 index1 = VectorStoreIndex.from_documents(notion_docs)
 index2 = VectorStoreIndex.from_documents(slack_docs)
 
-graph = ComposableGraph.from_indices(ListIndex, [index1, index2], index_summaries=["summary1", "summary2"])
+graph = ComposableGraph.from_indices(SummaryIndex, [index1, index2], index_summaries=["summary1", "summary2"])
 query_engine = graph.as_query_engine()
 response = query_engine.query("<query_str>")
 
@@ -92,7 +92,7 @@ response = query_engine.query("<query_str>")
 
 ### Routing over Heterogeneous Data
 
-LlamaIndex also supports routing over heterogeneous data sources with `RouterQueryEngine` - for instance, if you want to "route" a query to an 
+LlamaIndex also supports routing over heterogeneous data sources with `RouterQueryEngine` - for instance, if you want to "route" a query to an
 underlying Document or a sub-index.
 
 
@@ -111,11 +111,11 @@ index2 = VectorStoreIndex.from_documents(slack_docs)
 
 # define query engines and tools
 tool1 = QueryEngineTool.from_defaults(
-    query_engine=index1.as_query_engine(), 
+    query_engine=index1.as_query_engine(),
     description="Use this query engine to do...",
 )
 tool2 = QueryEngineTool.from_defaults(
-    query_engine=index2.as_query_engine(), 
+    query_engine=index2.as_query_engine(),
     description="Use this query engine for something else...",
 )
 ```
@@ -160,7 +160,7 @@ You can also rely on the LLM to *infer* whether to perform compare/contrast quer
 
 ### Multi-Document Queries
 
-Besides the explicit synthesis/routing flows described above, LlamaIndex can support more general multi-document queries as well. 
+Besides the explicit synthesis/routing flows described above, LlamaIndex can support more general multi-document queries as well.
 It can do this through our `SubQuestionQueryEngine` class. Given a query, this query engine will generate a "query plan" containing
 sub-queries against sub-documents before synthesizing the final answer.
 
@@ -171,15 +171,15 @@ from llama_index.tools import QueryEngineTool, ToolMetadata
 
 query_engine_tools = [
     QueryEngineTool(
-        query_engine=sept_engine, 
+        query_engine=sept_engine,
         metadata=ToolMetadata(name='sept_22', description='Provides information about Uber quarterly financials ending September 2022')
     ),
     QueryEngineTool(
-        query_engine=june_engine, 
+        query_engine=june_engine,
         metadata=ToolMetadata(name='june_22', description='Provides information about Uber quarterly financials ending June 2022')
     ),
     QueryEngineTool(
-        query_engine=march_engine, 
+        query_engine=march_engine,
         metadata=ToolMetadata(name='march_22', description='Provides information about Uber quarterly financials ending March 2022')
     ),
 ]

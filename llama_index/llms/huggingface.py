@@ -1,16 +1,17 @@
 import logging
-from pydantic import Field, PrivateAttr
 from threading import Thread
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
     llm_completion_callback,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.custom import CustomLLM
+from llama_index.prompts.base import PromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ class HuggingFaceLLM(CustomLLM):
     query_wrapper_prompt: str = Field(
         description=(
             "The query wrapper prompt, containing the query placeholder. "
-            "The model card on HuggingFace should specify if this is needed."
+            "The model card on HuggingFace should specify if this is needed. "
+            "Should contain a `{query_str}` placeholder."
         ),
     )
     tokenizer_name: str = Field(
@@ -82,7 +84,7 @@ class HuggingFaceLLM(CustomLLM):
         context_window: int = 4096,
         max_new_tokens: int = 256,
         system_prompt: str = "",
-        query_wrapper_prompt: str = "",
+        query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
         tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model: Optional[Any] = None,
@@ -96,13 +98,19 @@ class HuggingFaceLLM(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
-        import torch
-        from transformers import (
-            AutoModelForCausalLM,
-            AutoTokenizer,
-            StoppingCriteria,
-            StoppingCriteriaList,
-        )
+        try:
+            import torch
+            from transformers import (
+                AutoModelForCausalLM,
+                AutoTokenizer,
+                StoppingCriteria,
+                StoppingCriteriaList,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                f"{type(self).__name__} requires torch and transformers packages.\n"
+                f"Please install both with `pip install torch transformers`."
+            ) from exc
 
         model_kwargs = model_kwargs or {}
         self._model = model or AutoModelForCausalLM.from_pretrained(
@@ -147,6 +155,9 @@ class HuggingFaceLLM(CustomLLM):
 
         self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
+        if isinstance(query_wrapper_prompt, PromptTemplate):
+            query_wrapper_prompt = query_wrapper_prompt.template
+
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
@@ -163,6 +174,10 @@ class HuggingFaceLLM(CustomLLM):
             callback_manager=callback_manager,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "HuggingFace_LLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
@@ -175,7 +190,6 @@ class HuggingFaceLLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
-
         full_prompt = prompt
         if self.query_wrapper_prompt:
             full_prompt = self.query_wrapper_prompt.format(query_str=prompt)

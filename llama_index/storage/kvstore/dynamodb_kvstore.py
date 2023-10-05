@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -9,8 +10,8 @@ IMPORT_ERROR_MSG = "`boto3` package not found, please run `pip install boto3`"
 
 
 def parse_schema(table: Any) -> Tuple[str, str]:
-    key_hash: Optional[str] = None
-    key_range: Optional[str] = None
+    key_hash: str | None = None
+    key_range: str | None = None
 
     for key in table.key_schema:
         if key["KeyType"] == "HASH":
@@ -56,6 +57,11 @@ class DynamoDBKVStore(BaseKVStore):
     The DynamoDB Table must have both a hash key and a range key,
         and their types must be string.
 
+    You can specify a custom URL for DynamoDB by setting the `DYNAMODB_URL`
+    environment variable. This is useful if you're using a local instance of
+    DynamoDB for development or testing. If `DYNAMODB_URL` is not set, the
+    application will use the default AWS DynamoDB service.
+
     Args:
         table (Any): DynamoDB Table Service Resource
     """
@@ -83,7 +89,18 @@ class DynamoDBKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        ddb = boto3.resource("dynamodb")
+        # Get the DynamoDB URL from environment variable
+        dynamodb_url = os.getenv("DYNAMODB_URL")
+
+        # Create a session
+        session = boto3.Session()
+
+        # If the DynamoDB URL is set, use it as the endpoint URL
+        if dynamodb_url:
+            ddb = session.resource("dynamodb", endpoint_url=dynamodb_url)
+        else:
+            # Otherwise, let boto3 use its default configuration
+            ddb = session.resource("dynamodb")
         return cls(table=ddb.Table(table_name))
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
@@ -99,7 +116,7 @@ class DynamoDBKVStore(BaseKVStore):
         item[self._key_range] = key
         self._table.put_item(Item=item)
 
-    def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
+    def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
         """Get a value from the store.
 
         Args:

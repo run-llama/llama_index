@@ -3,15 +3,14 @@
 from typing import Dict, List
 
 import pytest
-
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import Document
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now
@@ -26,6 +25,10 @@ def documents() -> List[Document]:
 
 
 class MockEmbedding(BaseEmbedding):
+    @classmethod
+    def class_name(cls) -> str:
+        return "MockEmbedding"
+
     async def _aget_query_embedding(self, query: str) -> List[float]:
         text_embed_map: Dict[str, List[float]] = {
             "It is what it is.": [1.0, 0.0, 0.0, 0.0, 0.0],
@@ -73,7 +76,7 @@ def test_embedding_query(
 ) -> None:
     """Test embedding query."""
     mock_service_context.embed_model = MockEmbedding()
-    index = ListIndex.from_documents(documents, service_context=mock_service_context)
+    index = SummaryIndex.from_documents(documents, service_context=mock_service_context)
 
     # test embedding query
     query_bundle = QueryBundle(

@@ -5,27 +5,27 @@ import time
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pandas as pd
-from llama_index.bridge.langchain import get_color_mapping, print_text
 
 from llama_index.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.indices.base import BaseIndex
-from llama_index.indices.list.base import ListIndex, ListRetrieverMode
+from llama_index.indices.list.base import ListRetrieverMode, SummaryIndex
 from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.schema import Document
+from llama_index.utils import get_color_mapping, print_text
 
 DEFAULT_INDEX_CLASSES: List[Type[BaseIndex]] = [
     VectorStoreIndex,
     TreeIndex,
-    ListIndex,
+    SummaryIndex,
 ]
 
 INDEX_SPECIFIC_QUERY_MODES_TYPE = Dict[Type[BaseIndex], List[str]]
 
 DEFAULT_MODES: INDEX_SPECIFIC_QUERY_MODES_TYPE = {
     TreeIndex: [e.value for e in TreeRetrieverMode],
-    ListIndex: [e.value for e in ListRetrieverMode],
+    SummaryIndex: [e.value for e in ListRetrieverMode],
     VectorStoreIndex: ["default"],
 }
 
@@ -121,8 +121,8 @@ class Playground:
         self._retriever_modes = retriever_modes
 
     def compare(
-        self, query_text: str, to_pandas: Optional[bool] = True
-    ) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
+        self, query_text: str, to_pandas: bool | None = True
+    ) -> pd.DataFrame | List[Dict[str, Any]]:
         """Compare index outputs on an input query.
 
         Args:

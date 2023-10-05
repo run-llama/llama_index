@@ -24,7 +24,7 @@ query_engine = index.as_query_engine(
     verbose=True,
 )
 ```
-> Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.  
+> Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.
 
 See [**Response Modes**](./response_modes.md) for a full list of response modes and what they do.
 
@@ -59,7 +59,7 @@ index = VectorStoreIndex.from_documents(documents)
 
 # configure retriever
 retriever = VectorIndexRetriever(
-    index=index, 
+    index=index,
     similarity_top_k=2,
 )
 
@@ -86,11 +86,36 @@ query_engine = index.as_query_engine(
     streaming=True,
 )
 streaming_response = query_engine.query(
-    "What did the author do growing up?", 
+    "What did the author do growing up?",
 )
-streaming_response.print_response_stream() 
+streaming_response.print_response_stream()
 ```
 
 * Read the full [streaming guide](/core_modules/query_modules/query_engine/streaming.md)
 * See an [end-to-end example](/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
 
+
+
+## Defining a Custom Query Engine
+
+You can also define a custom query engine. Simply subclass the `CustomQueryEngine` class, define any attributes you'd want to have (similar to defining a Pydantic class), and implement a `custom_query` function that returns either a `Response` object or a string.
+
+```python
+from llama_index.query_engine import CustomQueryEngine
+from llama_index.retrievers import BaseRetriever
+from llama_index.response_synthesizers import get_response_synthesizer, BaseSynthesizer
+
+class RAGQueryEngine(CustomQueryEngine):
+    """RAG Query Engine."""
+
+    retriever: BaseRetriever
+    response_synthesizer: BaseSynthesizer
+
+    def custom_query(self, query_str: str):
+        nodes = self.retriever.retrieve(query_str)
+        response_obj = self.response_synthesizer.synthesize(query_str, nodes)
+        return response_obj
+
+```
+
+See the [Custom Query Engine guide](/examples/query_engine/custom_query_engine.ipynb) for more details.

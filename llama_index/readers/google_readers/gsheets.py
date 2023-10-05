@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Any, List
 
-from llama_index.readers.base import BaseReader
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
@@ -26,19 +26,21 @@ logger = logging.getLogger(__name__)
 # limitations under the License.
 
 
-class GoogleSheetsReader(BaseReader):
+class GoogleSheetsReader(BasePydanticReader):
     """Google Sheets reader.
 
     Reads a sheet as TSV from Google Sheets
 
     """
 
+    is_remote: bool = True
+
     def __init__(self) -> None:
         """Initialize with parameters."""
         try:
-            import google  # noqa: F401
-            import google_auth_oauthlib  # noqa: F401
-            import googleapiclient  # noqa: F401
+            import google
+            import google_auth_oauthlib
+            import googleapiclient
         except ImportError:
             raise ImportError(
                 "`google_auth_oauthlib`, `googleapiclient` and `google` "
@@ -46,6 +48,10 @@ class GoogleSheetsReader(BaseReader):
                 "Please run `pip install --upgrade google-api-python-client "
                 "google-auth-httplib2 google-auth-oauthlib`."
             )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "GoogleSheetsReader"
 
     def load_data(self, spreadsheet_ids: List[str]) -> List[Document]:
         """Load data from the input directory.

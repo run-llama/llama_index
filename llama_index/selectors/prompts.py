@@ -1,25 +1,25 @@
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 
 """Single select prompt.
 
-Prompt to select one out of `num_choices` options provided in `context_list`,
+PromptTemplate to select one out of `num_choices` options provided in `context_list`,
 given a query `query_str`.
 
 Required template variables: `num_chunks`, `context_list`, `query_str`
 
 """
-SingleSelectPrompt = Prompt
+SingleSelectPrompt = PromptTemplate
 
 """Multiple select prompt.
 
-Prompt to select multiple candidates (up to `max_outputs`) out of `num_choices`
+PromptTemplate to select multiple candidates (up to `max_outputs`) out of `num_choices`
 options provided in `context_list`, given a query `query_str`.
 
 Required template variables: `num_chunks`, `context_list`, `query_str`,
     `max_outputs`
 """
-MultiSelectPrompt = Prompt
+MultiSelectPrompt = PromptTemplate
 
 
 # single select
@@ -35,7 +35,7 @@ DEFAULT_SINGLE_SELECT_PROMPT_TMPL = (
 )
 
 
-DEFAULT_SINGLE_SELECT_PROMPT = Prompt(
+DEFAULT_SINGLE_SELECT_PROMPT = PromptTemplate(
     template=DEFAULT_SINGLE_SELECT_PROMPT_TMPL, prompt_type=PromptType.SINGLE_SELECT
 )
 
@@ -54,7 +54,7 @@ DEFAULT_MULTI_SELECT_PROMPT_TMPL = (
 )
 
 
-DEFAULT_MULTIPLE_SELECT_PROMPT = Prompt(
+DEFAULT_MULTIPLE_SELECT_PROMPT = PromptTemplate(
     template=DEFAULT_MULTI_SELECT_PROMPT_TMPL, prompt_type=PromptType.MULTI_SELECT
 )
 

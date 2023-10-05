@@ -1,16 +1,16 @@
 """Palm API."""
 import os
-from pydantic import Field, PrivateAttr
-from typing import Optional, Any
+from typing import Any, Optional
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.custom import CustomLLM
 from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
     llm_completion_callback,
 )
+from llama_index.llms.custom import CustomLLM
 
 
 class PaLM(CustomLLM):
@@ -64,6 +64,10 @@ class PaLM(CustomLLM):
             callback_manager=callback_manager,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "PaLM_llm"
+
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
@@ -80,13 +84,12 @@ class PaLM(CustomLLM):
         """Predict the answer to a query.
 
         Args:
-            prompt (Prompt): Prompt to use for prediction.
+            prompt (str): Prompt to use for prediction.
 
         Returns:
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-
         import google.generativeai as palm
 
         completion = palm.generate_text(
@@ -104,7 +107,7 @@ class PaLM(CustomLLM):
         better abstractions about response handling.
 
         Args:
-            prompt (Prompt): Prompt to use for prediction.
+            prompt (str): Prompt to use for prediction.
 
         Returns:
             str: The predicted answer.

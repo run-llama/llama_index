@@ -10,7 +10,6 @@ def run_async_tasks(
     progress_bar_desc: str = "Running async tasks",
 ) -> List[Any]:
     """Run a list of async tasks."""
-
     tasks_to_execute: List[Any] = tasks
     if show_progress:
         try:

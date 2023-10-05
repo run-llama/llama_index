@@ -1,25 +1,23 @@
 from __future__ import annotations
 
-from pydantic import Field, PrivateAttr
 from typing import Any, Optional, Tuple, cast
 
-from llama_index import Prompt
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata, LLM
+from llama_index.llm_predictor.base import LLM, BaseLLMPredictor, LLMMetadata
 from llama_index.llm_predictor.vellum.exceptions import VellumGenerateException
 from llama_index.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
 from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
+from llama_index.prompts import BasePromptTemplate
 from llama_index.types import TokenAsyncGen, TokenGen
 
 
 class VellumPredictor(BaseLLMPredictor):
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    _callback_manager: CallbackManager = PrivateAttr(default_factory=CallbackManager)
 
     _vellum_client: Any = PrivateAttr()
     _async_vellum_client = PrivateAttr()
@@ -31,75 +29,81 @@ class VellumPredictor(BaseLLMPredictor):
     def __init__(
         self,
         vellum_api_key: str,
-        callback_manager: Optional[CallbackManager] = None,
+        callback_manager: CallbackManager | None = None,
     ) -> None:
         import_err_msg = (
             "`vellum` package not found, please run `pip install vellum-ai`"
         )
         try:
-            from vellum.client import AsyncVellum, Vellum  # noqa: F401
+            from vellum.client import AsyncVellum, Vellum
         except ImportError:
             raise ImportError(import_err_msg)
 
-        callback_manager = callback_manager or CallbackManager([])
+        self._callback_manager = callback_manager or CallbackManager([])
 
         # Vellum-specific
         self._vellum_client = Vellum(api_key=vellum_api_key)
         self._async_vellum_client = AsyncVellum(api_key=vellum_api_key)
         self._prompt_registry = VellumPromptRegistry(vellum_api_key=vellum_api_key)
 
-        super().__init__(callback_manager=callback_manager)
+        super().__init__()
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "VellumPredictor"
 
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
-
         # Note: We use default values here, but ideally we would retrieve this metadata
         # via Vellum's API based on the LLM that backs the registered prompt's
         # deployment. This is not currently possible, so we use default values.
         return LLMMetadata()
 
     @property
+    def callback_manager(self) -> CallbackManager:
+        """Get callback manager."""
+        return self._callback_manager
+
+    @property
     def llm(self) -> LLM:
         """Get the LLM."""
         raise NotImplementedError("Vellum does not expose the LLM.")
 
-    def predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict the answer to a query."""
-
         from vellum import GenerateRequest
 
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         result = self._vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
-        completion_text = self._process_generate_response(
-            result, compiled_prompt, event_id
-        )
+        return self._process_generate_response(result, compiled_prompt, event_id)
 
-        return completion_text
-
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> TokenGen:
+    def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream the answer to a query."""
-
         from vellum import GenerateRequest, GenerateStreamResult
 
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         responses = self._vellum_client.generate_stream(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
         def text_generator() -> TokenGen:
@@ -135,29 +139,28 @@ class VellumPredictor(BaseLLMPredictor):
 
         return text_generator()
 
-    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+    async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Asynchronously predict the answer to a query."""
-
         from vellum import GenerateRequest
 
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
 
+        input_values = {
+            **prompt.kwargs,
+            **prompt_args,
+        }
         result = await self._async_vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
-            requests=[
-                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
-            ],
+            requests=[GenerateRequest(input_values=input_values)],
         )
 
-        completion_text = self._process_generate_response(
-            result, compiled_prompt, event_id
-        )
+        return self._process_generate_response(result, compiled_prompt, event_id)
 
-        return completion_text
-
-    async def astream(self, prompt: Prompt, **prompt_args: Any) -> TokenAsyncGen:
+    async def astream(
+        self, prompt: BasePromptTemplate, **prompt_args: Any
+    ) -> TokenAsyncGen:
         async def gen() -> TokenAsyncGen:
             for token in self.stream(prompt, **prompt_args):
                 yield token
@@ -166,10 +169,9 @@ class VellumPredictor(BaseLLMPredictor):
         return gen()
 
     def _prepare_generate_call(
-        self, prompt: Prompt, **prompt_args: Any
+        self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> Tuple[VellumRegisteredPrompt, VellumCompiledPrompt, str]:
         """Prepare a generate call."""
-
         registered_prompt = self._prompt_registry.from_prompt(prompt)
         compiled_prompt = self._prompt_registry.get_compiled_prompt(
             registered_prompt, prompt_args
@@ -193,7 +195,6 @@ class VellumPredictor(BaseLLMPredictor):
         event_id: str,
     ) -> str:
         """Process the response from a generate call."""
-
         from vellum import GenerateResponse
 
         result = cast(GenerateResponse, result)

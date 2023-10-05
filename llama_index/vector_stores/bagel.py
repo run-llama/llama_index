@@ -2,10 +2,9 @@ import logging
 import math
 from typing import Any, List
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -15,7 +14,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +45,6 @@ class BagelVectorStore(VectorStore):
             collection: Bagel collection.
             **kwargs: Additional arguments.
         """
-
         try:
             from bagel.api.Cluster import Cluster
         except ImportError:
@@ -58,14 +55,12 @@ class BagelVectorStore(VectorStore):
 
         self._collection = collection
 
-    def add(
-        self, embedding_results: List[NodeWithEmbedding], **kwargs: Any
-    ) -> List[str]:
+    def add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """
         Add a list of nodes with embeddings to the vector store.
 
         Args:
-            embedding_results: List of nodes with embeddings.
+            nodes: List of nodes with embeddings.
             kwargs: Additional arguments.
 
         Returns:
@@ -79,20 +74,17 @@ class BagelVectorStore(VectorStore):
         metadatas = []
         documents = []
 
-        for node_with_embedding in embedding_results:
-            ids.append(node_with_embedding.id)
-            embeddings.append(node_with_embedding.embedding)
+        for node in nodes:
+            ids.append(node.node_id)
+            embeddings.append(node.get_embedding())
             metadatas.append(
                 node_to_metadata_dict(
-                    node_with_embedding.node,
+                    node,
                     remove_text=True,
                     flat_metadata=self.flat_metadata,
                 )
             )
-            documents.append(
-                node_with_embedding.node.get_content(metadata_mode=MetadataMode.NONE)
-                or ""
-            )
+            documents.append(node.get_content(metadata_mode=MetadataMode.NONE) or "")
 
         self._collection.add(
             ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents

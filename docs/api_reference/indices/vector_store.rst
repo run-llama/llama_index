@@ -12,5 +12,3 @@ class and a vector store, shown below.
    :members:
    :inherited-members:
    :exclude-members: delete, docstore, index_struct, index_struct_cls
-
-

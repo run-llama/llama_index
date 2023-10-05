@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
+from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -24,15 +24,15 @@ class MockVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding results to vector store."""
-        raise NotImplementedError()
+        """Add nodes to vector store."""
+        raise NotImplementedError
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete doc."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
-        raise NotImplementedError()
+        raise NotImplementedError

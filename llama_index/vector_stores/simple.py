@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
@@ -14,16 +14,18 @@ from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
     get_top_k_mmr_embeddings,
 )
+from llama_index.schema import BaseNode
+from llama_index.utils import concat_dirs
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
-    NodeWithEmbedding,
+    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.utils import concat_dirs
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +36,32 @@ LEARNER_MODES = {
 }
 
 MMR_MODE = VectorStoreQueryMode.MMR
+
+
+def _build_metadata_filter_fn(
+    metadata_lookup_fn: Callable[[str], Mapping[str, Any]],
+    metadata_filters: Optional[MetadataFilters] = None,
+) -> Callable[[str], bool]:
+    """Build metadata filter function."""
+    filter_list = metadata_filters.filters if metadata_filters else []
+    if not filter_list:
+        return lambda _: True
+
+    def filter_fn(node_id: str) -> bool:
+        metadata = metadata_lookup_fn(node_id)
+        for filter_ in filter_list:
+            metadata_value = metadata.get(filter_.key, None)
+            if metadata_value is None:
+                return False
+            elif isinstance(metadata_value, list):
+                if filter_.value not in metadata_value:
+                    return False
+            elif isinstance(metadata_value, (int, float, str, bool)):
+                if metadata_value != filter_.value:
+                    return False
+        return True
+
+    return filter_fn
 
 
 @dataclass
@@ -49,6 +77,7 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
     text_id_to_ref_doc_id: Dict[str, str] = field(default_factory=dict)
+    metadata_dict: Dict[str, Any] = field(default_factory=dict)
 
 
 class SimpleVectorStore(VectorStore):
@@ -90,7 +119,7 @@ class SimpleVectorStore(VectorStore):
     @property
     def client(self) -> None:
         """Get client."""
-        return None
+        return
 
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""
@@ -98,13 +127,19 @@ class SimpleVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeWithEmbedding],
+        nodes: List[BaseNode],
     ) -> List[str]:
-        """Add embedding_results to index."""
-        for result in embedding_results:
-            self._data.embedding_dict[result.id] = result.embedding
-            self._data.text_id_to_ref_doc_id[result.id] = result.ref_doc_id
-        return [result.id for result in embedding_results]
+        """Add nodes to index."""
+        for node in nodes:
+            self._data.embedding_dict[node.node_id] = node.get_embedding()
+            self._data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
+
+            metadata = node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=False
+            )
+            metadata.pop("_node_content", None)
+            self._data.metadata_dict[node.node_id] = metadata
+        return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -122,6 +157,11 @@ class SimpleVectorStore(VectorStore):
         for text_id in text_ids_to_delete:
             del self._data.embedding_dict[text_id]
             del self._data.text_id_to_ref_doc_id[text_id]
+            # Handle metadata_dict not being present in stores that were persisted
+            # without metadata, or, not being present for nodes stored
+            # prior to metadata functionality.
+            if self._data.metadata_dict is not None:
+                self._data.metadata_dict.pop(text_id, None)
 
     def query(
         self,
@@ -129,22 +169,39 @@ class SimpleVectorStore(VectorStore):
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
-        if query.filters is not None:
+        # Prevent metadata filtering on stores that were persisted without metadata.
+        if (
+            query.filters is not None
+            and self._data.embedding_dict
+            and not self._data.metadata_dict
+        ):
             raise ValueError(
-                "Metadata filters not implemented for SimpleVectorStore yet."
+                "Cannot filter stores that were persisted without metadata. "
+                "Please rebuild the store with metadata to enable filtering."
             )
+        # Prefilter nodes based on the query filter and node ID restrictions.
+        query_filter_fn = _build_metadata_filter_fn(
+            lambda node_id: self._data.metadata_dict[node_id], query.filters
+        )
 
-        # TODO: consolidate with get_query_text_embedding_similarities
-        items = self._data.embedding_dict.items()
-
-        if query.node_ids:
+        if query.node_ids is not None:
             available_ids = set(query.node_ids)
 
-            node_ids = [t[0] for t in items if t[0] in available_ids]
-            embeddings = [t[1] for t in items if t[0] in available_ids]
+            def node_filter_fn(node_id: str) -> bool:
+                return node_id in available_ids
+
         else:
-            node_ids = [t[0] for t in items]
-            embeddings = [t[1] for t in items]
+
+            def node_filter_fn(node_id: str) -> bool:
+                return True
+
+        node_ids = []
+        embeddings = []
+        # TODO: consolidate with get_query_text_embedding_similarities
+        for node_id, embedding in self._data.embedding_dict.items():
+            if node_filter_fn(node_id) and query_filter_fn(node_id):
+                node_ids.append(node_id)
+                embeddings.append(embedding)
 
         query_embedding = cast(List[float], query.query_embedding)
 

@@ -2,6 +2,7 @@
 import logging
 from typing import Callable, List, Optional
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
@@ -15,12 +16,32 @@ logger = logging.getLogger(__name__)
 class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
     """Optimization of a text chunk given the query by shortening the input text."""
 
+    percentile_cutoff: Optional[float] = Field(
+        description="Percentile cutoff for the top k sentences to use."
+    )
+    threshold_cutoff: Optional[float] = Field(
+        description="Threshold cutoff for similarity for each sentence to use."
+    )
+
+    _embed_model: BaseEmbedding = PrivateAttr()
+    _tokenizer_fn: Callable[[str], List[str]] = PrivateAttr()
+
+    context_before: Optional[int] = Field(
+        description="Number of sentences before retrieved sentence for further context"
+    )
+
+    context_after: Optional[int] = Field(
+        description="Number of sentences after retrieved sentence for further context"
+    )
+
     def __init__(
         self,
         embed_model: Optional[BaseEmbedding] = None,
         percentile_cutoff: Optional[float] = None,
         threshold_cutoff: Optional[float] = None,
         tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
+        context_before: Optional[int] = None,
+        context_after: Optional[int] = None,
     ):
         """Optimizer class that is passed into BaseGPTIndexQuery.
 
@@ -43,13 +64,13 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         )
         response = query_engine.query("<query_str>")
         """
-        self.embed_model = embed_model or OpenAIEmbedding()
-        self._percentile_cutoff = percentile_cutoff
-        self._threshold_cutoff = threshold_cutoff
+        self._embed_model = embed_model or OpenAIEmbedding()
 
         if tokenizer_fn is None:
-            import nltk.data
             import os
+
+            import nltk.data
+
             from llama_index.utils import get_cache_dir
 
             cache_dir = get_cache_dir()
@@ -68,6 +89,17 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn
 
+        super().__init__(
+            percentile_cutoff=percentile_cutoff,
+            threshold_cutoff=threshold_cutoff,
+            context_after=context_after,
+            context_before=context_before,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "SentenceEmbeddingOptimizer"
+
     def postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -84,24 +116,24 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
 
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
-                    self.embed_model.get_agg_embedding_from_queries(
+                    self._embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
                 )
 
-            text_embeddings = self.embed_model._get_text_embeddings(split_text)
+            text_embeddings = self._embed_model._get_text_embeddings(split_text)
 
             num_top_k = None
             threshold = None
-            if self._percentile_cutoff is not None:
-                num_top_k = int(len(split_text) * self._percentile_cutoff)
-            if self._threshold_cutoff is not None:
-                threshold = self._threshold_cutoff
+            if self.percentile_cutoff is not None:
+                num_top_k = int(len(split_text) * self.percentile_cutoff)
+            if self.threshold_cutoff is not None:
+                threshold = self.threshold_cutoff
 
             top_similarities, top_idxs = get_top_k_embeddings(
                 query_embedding=query_bundle.embedding,
                 embeddings=text_embeddings,
-                similarity_fn=self.embed_model.similarity,
+                similarity_fn=self._embed_model.similarity,
                 similarity_top_k=num_top_k,
                 embedding_ids=list(range(len(text_embeddings))),
                 similarity_cutoff=threshold,
@@ -110,7 +142,23 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             if len(top_idxs) == 0:
                 raise ValueError("Optimizer returned zero sentences.")
 
-            top_sentences = [split_text[idx] for idx in top_idxs]
+            rangeMin, rangeMax = 0, len(split_text)
+
+            if self.context_before is None:
+                self.context_before = 1
+            if self.context_after is None:
+                self.context_after = 1
+
+            top_sentences = [
+                " ".join(
+                    split_text[
+                        max(idx - self.context_before, rangeMin) : min(
+                            idx + self.context_after + 1, rangeMax
+                        )
+                    ]
+                )
+                for idx in top_idxs
+            ]
 
             logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
             if logger.isEnabledFor(logging.DEBUG):

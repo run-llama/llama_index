@@ -4,15 +4,16 @@ import os
 import time
 from datetime import datetime
 from ssl import SSLContext
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from llama_index.readers.base import BaseReader
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 
 
-class SlackReader(BaseReader):
+class SlackReader(BasePydanticReader):
     """Slack reader.
 
     Reads conversations from channels. If an earliest_date is provided, an
@@ -31,12 +32,21 @@ class SlackReader(BaseReader):
             in combination with earliest_date.
     """
 
+    is_remote: bool = True
+    slack_token: str
+    earliest_date_timestamp: Optional[float]
+    latest_date_timestamp: float
+
+    _client: Any = PrivateAttr()
+
     def __init__(
         self,
         slack_token: Optional[str] = None,
         ssl: Optional[SSLContext] = None,
         earliest_date: Optional[datetime] = None,
         latest_date: Optional[datetime] = None,
+        earliest_date_timestamp: Optional[float] = None,
+        latest_date_timestamp: Optional[float] = None,
     ) -> None:
         """Initialize with parameters."""
         from slack_sdk import WebClient
@@ -49,24 +59,34 @@ class SlackReader(BaseReader):
                 "variable `SLACK_BOT_TOKEN`."
             )
         if ssl is None:
-            self.client = WebClient(token=slack_token)
+            self._client = WebClient(token=slack_token)
         else:
-            self.client = WebClient(token=slack_token, ssl=ssl)
+            self._client = WebClient(token=slack_token, ssl=ssl)
         if latest_date is not None and earliest_date is None:
             raise ValueError(
                 "Must specify `earliest_date` if `latest_date` is specified."
             )
         if earliest_date is not None:
-            self.earliest_date_timestamp: Optional[float] = earliest_date.timestamp()
+            earliest_date_timestamp = earliest_date.timestamp()
         else:
-            self.earliest_date_timestamp = None
+            earliest_date_timestamp = None or earliest_date_timestamp
         if latest_date is not None:
-            self.latest_date_timestamp = latest_date.timestamp()
+            latest_date_timestamp = latest_date.timestamp()
         else:
-            self.latest_date_timestamp = datetime.now().timestamp()
-        res = self.client.api_test()
+            latest_date_timestamp = datetime.now().timestamp() or latest_date_timestamp
+        res = self._client.api_test()
         if not res["ok"]:
             raise ValueError(f"Error initializing Slack API: {res['error']}")
+
+        super().__init__(
+            slack_token=slack_token,
+            earliest_date_timestamp=earliest_date_timestamp,
+            latest_date_timestamp=latest_date_timestamp,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "SlackReader"
 
     def _read_message(self, channel_id: str, message_ts: str) -> str:
         from slack_sdk.errors import SlackApiError
@@ -80,7 +100,7 @@ class SlackReader(BaseReader):
                 # https://slack.com/api/conversations.replies
                 # List all replies to a message, including the message itself.
                 if self.earliest_date_timestamp is None:
-                    result = self.client.conversations_replies(
+                    result = self._client.conversations_replies(
                         channel=channel_id, ts=message_ts, cursor=next_cursor
                     )
                 else:
@@ -94,7 +114,7 @@ class SlackReader(BaseReader):
                         conversations_replies_kwargs["oldest"] = str(
                             self.earliest_date_timestamp
                         )
-                    result = self.client.conversations_replies(
+                    result = self._client.conversations_replies(
                         **conversations_replies_kwargs  # type: ignore
                     )
                 messages = result["messages"]
@@ -112,7 +132,7 @@ class SlackReader(BaseReader):
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logger.error("Error parsing conversation replies: {}".format(e))
+                    logger.error(f"Error parsing conversation replies: {e}")
 
         return "\n\n".join(messages_text)
 
@@ -138,15 +158,13 @@ class SlackReader(BaseReader):
                     conversations_history_kwargs["oldest"] = str(
                         self.earliest_date_timestamp
                     )
-                result = self.client.conversations_history(
+                result = self._client.conversations_history(
                     **conversations_history_kwargs  # type: ignore
                 )
                 conversation_history = result["messages"]
                 # Print results
                 logger.info(
-                    "{} messages found in {}".format(
-                        len(conversation_history), channel_id
-                    )
+                    f"{len(conversation_history)} messages found in {channel_id}"
                 )
                 result_messages.extend(
                     self._read_message(channel_id, message["ts"])
@@ -165,7 +183,7 @@ class SlackReader(BaseReader):
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logger.error("Error parsing conversation replies: {}".format(e))
+                    logger.error(f"Error parsing conversation replies: {e}")
 
         return (
             "\n\n".join(result_messages)
@@ -180,6 +198,7 @@ class SlackReader(BaseReader):
 
         Args:
             channel_ids (List[str]): List of channel ids to read.
+
         Returns:
             List[Document]: List of documents.
         """

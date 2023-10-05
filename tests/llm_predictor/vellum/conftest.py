@@ -1,34 +1,23 @@
-from typing import Optional, Type, Callable
+from typing import Callable, Optional
 from unittest import mock
 
 import pytest
-
-from llama_index import Prompt
 from llama_index.callbacks import CallbackManager
 from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
-from llama_index.prompts.prompt_type import PromptType
+from llama_index.prompts.base import PromptTemplate
 
 
-@pytest.fixture
-def dummy_prompt_class() -> Type[Prompt]:
-    class DummyPrompt(Prompt):
-        prompt_type = PromptType.CUSTOM
-        input_variables = ["thing"]
-
-    return DummyPrompt
+@pytest.fixture()
+def dummy_prompt() -> PromptTemplate:
+    return PromptTemplate(template="What's your favorite {thing}?")
 
 
-@pytest.fixture
-def dummy_prompt(dummy_prompt_class: Type[Prompt]) -> Prompt:
-    return dummy_prompt_class(template="What's your favorite {thing}?")
-
-
-@pytest.fixture
+@pytest.fixture()
 def fake_vellum_api_key() -> str:
     return "abc-123"
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_vellum_client_factory() -> Callable[..., mock.MagicMock]:
     import vellum
 
@@ -39,7 +28,7 @@ def mock_vellum_client_factory() -> Callable[..., mock.MagicMock]:
     ) -> mock.MagicMock:
         mocked_vellum_client = mock.MagicMock()
 
-        mocked_vellum_client.model_versions.model_version_compile_prompt.return_value.prompt = vellum.ModelVersionCompiledPrompt(  # noqa: E501
+        mocked_vellum_client.model_versions.model_version_compile_prompt.return_value.prompt = vellum.ModelVersionCompiledPrompt(
             text=compiled_prompt_text, num_tokens=compiled_prompt_num_tokens
         )
         mocked_vellum_client.generate.return_value = vellum.GenerateResponse(
@@ -65,7 +54,7 @@ def mock_vellum_client_factory() -> Callable[..., mock.MagicMock]:
     return _create_vellum_client
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_vellum_async_client_factory() -> Callable[..., mock.MagicMock]:
     def _create_async_vellum_client() -> mock.MagicMock:
         return mock.MagicMock()
@@ -73,7 +62,7 @@ def mock_vellum_async_client_factory() -> Callable[..., mock.MagicMock]:
     return _create_async_vellum_client
 
 
-@pytest.fixture
+@pytest.fixture()
 def vellum_prompt_registry_factory(
     fake_vellum_api_key: str,
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
@@ -89,7 +78,7 @@ def vellum_prompt_registry_factory(
     return _create_vellum_prompt_registry
 
 
-@pytest.fixture
+@pytest.fixture()
 def vellum_predictor_factory(
     fake_vellum_api_key: str,
     mock_vellum_client_factory: Callable[..., mock.MagicMock],

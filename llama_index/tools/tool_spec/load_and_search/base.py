@@ -5,14 +5,15 @@ Tool that wraps any data loader, and is able to load data on-demand.
 """
 
 
-from llama_index.tools.types import ToolMetadata
-from typing import Any, Optional, Dict, Type, List
+from typing import Any, Dict, List, Optional, Type
+
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
-from llama_index.tools.utils import create_schema_from_function
-from pydantic import BaseModel
 from llama_index.tools.function_tool import FunctionTool
 from llama_index.tools.tool_spec.base import BaseToolSpec
+from llama_index.tools.types import ToolMetadata
+from llama_index.tools.utils import create_schema_from_function
 
 
 class LoadAndSearchToolSpec(BaseToolSpec):
@@ -30,7 +31,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
         the corresponding read_{} function.
 
         {}
-    """  # noqa: E501
+    """
 
     # TODO, more general read prompt, not always natural language?
     reader_prompt = """
@@ -41,7 +42,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
 
         Args:
             query (str): The natural language query used to retreieve information from the index
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -62,7 +63,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
             raise ValueError("Tool name cannot be None")
         self.spec_functions = [
             self._metadata.name,
-            "read_{}".format(self._metadata.name),
+            f"read_{self._metadata.name}",
         ]
         self._tool_list = [
             FunctionTool.from_defaults(
@@ -75,7 +76,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
             ),
             FunctionTool.from_defaults(
                 fn=self.read,
-                name=str("read_{}".format(self._metadata.name)),
+                name=str(f"read_{self._metadata.name}"),
                 description=self.reader_prompt.format(metadata.name),
                 fn_schema=create_schema_from_function("ReadData", self.read),
             ),
@@ -96,7 +97,6 @@ class LoadAndSearchToolSpec(BaseToolSpec):
         fn_schema: Optional[Type[BaseModel]] = None,
     ) -> "LoadAndSearchToolSpec":
         """From defaults."""
-
         index_cls = index_cls or VectorStoreIndex
         index_kwargs = index_kwargs or {}
         if name is None:
@@ -136,11 +136,10 @@ class LoadAndSearchToolSpec(BaseToolSpec):
     def read(self, query: str) -> Any:
         # Query the index for the result
         if not self._index:
-            err_msg = (
+            return (
                 "Error: No content has been loaded into the index. "
-                "You must call {} first"
-            ).format(self._metadata.name)
-            return err_msg
+                f"You must call {self._metadata.name} first"
+            )
         query_engine = self._index.as_query_engine()
         response = query_engine.query(query)
         return str(response)

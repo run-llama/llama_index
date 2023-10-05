@@ -2,17 +2,16 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import TextNode, IndexNode, NodeWithScore
-from llama_index.bridge.langchain import print_text
-from llama_index.indices.base_retriever import BaseRetriever
-
+from llama_index.schema import BaseNode, IndexNode, NodeWithScore, TextNode
+from llama_index.utils import print_text
 
 DEFAULT_QUERY_RESPONSE_TMPL = "Query: {query_str}\nResponse: {response}"
 
 
-R_AND_Q_TYPE = Union[BaseRetriever, BaseQueryEngine]
+RQN_TYPE = Union[BaseRetriever, BaseQueryEngine, BaseNode]
 
 
 class RecursiveRetriever(BaseRetriever):
@@ -38,6 +37,7 @@ class RecursiveRetriever(BaseRetriever):
         root_id: str,
         retriever_dict: Dict[str, BaseRetriever],
         query_engine_dict: Optional[Dict[str, BaseQueryEngine]] = None,
+        node_dict: Optional[Dict[str, BaseNode]] = None,
         callback_manager: Optional[CallbackManager] = None,
         query_response_tmpl: Optional[str] = None,
         verbose: bool = False,
@@ -50,6 +50,7 @@ class RecursiveRetriever(BaseRetriever):
             )
         self._retriever_dict = retriever_dict
         self._query_engine_dict = query_engine_dict or {}
+        self._node_dict = node_dict or {}
         self.callback_manager = callback_manager or CallbackManager([])
 
         # make sure keys don't overlap
@@ -61,7 +62,7 @@ class RecursiveRetriever(BaseRetriever):
         super().__init__()
 
     def _query_retrieved_nodes(
-        self, query_bundle: QueryBundle, node_with_score: NodeWithScore
+        self, query_bundle: QueryBundle, nodes_with_score: List[NodeWithScore]
     ) -> Tuple[List[NodeWithScore], List[NodeWithScore]]:
         """Query for retrieved nodes.
 
@@ -69,30 +70,56 @@ class RecursiveRetriever(BaseRetriever):
         If node is a TextNode, then simply return the node.
 
         """
-        node = node_with_score.node
+        nodes_to_add = []
+        additional_nodes = []
+        visited_ids = set()
 
-        if isinstance(node, IndexNode):
-            if self._verbose:
-                print_text(
-                    "Retrieved node with id, entering: " f"{node.index_id}\n",
-                    color="pink",
-                )
-            retrieved_nodes, additional_nodes = self._retrieve_rec(
-                query_bundle, query_id=node.index_id
-            )
-        else:
-            assert isinstance(node, TextNode)
-            if self._verbose:
-                print_text(
-                    "Retrieving text node: " f"{node.get_content()}\n",
-                    color="pink",
-                )
-            retrieved_nodes = [node_with_score]
-            additional_nodes = []
-        return retrieved_nodes, additional_nodes
+        # dedup index nodes that reference same index id
+        new_nodes_with_score = []
+        for node_with_score in nodes_with_score:
+            node = node_with_score.node
+            if isinstance(node, IndexNode):
+                if node.index_id not in visited_ids:
+                    visited_ids.add(node.index_id)
+                    new_nodes_with_score.append(node_with_score)
+            else:
+                new_nodes_with_score.append(node_with_score)
 
-    def _fetch_retriever_or_query_engine(self, query_id: str) -> R_AND_Q_TYPE:
+        nodes_with_score = new_nodes_with_score
+
+        # recursively retrieve
+        for node_with_score in nodes_with_score:
+            node = node_with_score.node
+            if isinstance(node, IndexNode):
+                if self._verbose:
+                    print_text(
+                        "Retrieved node with id, entering: " f"{node.index_id}\n",
+                        color="pink",
+                    )
+                cur_retrieved_nodes, cur_additional_nodes = self._retrieve_rec(
+                    query_bundle,
+                    query_id=node.index_id,
+                    cur_similarity=node_with_score.score,
+                )
+            else:
+                assert isinstance(node, TextNode)
+                if self._verbose:
+                    print_text(
+                        "Retrieving text node: " f"{node.get_content()}\n",
+                        color="pink",
+                    )
+                cur_retrieved_nodes = [node_with_score]
+                cur_additional_nodes = []
+            nodes_to_add.extend(cur_retrieved_nodes)
+            additional_nodes.extend(cur_additional_nodes)
+
+        return nodes_to_add, additional_nodes
+
+    def _get_object(self, query_id: str) -> RQN_TYPE:
         """Fetch retriever or query engine."""
+        node = self._node_dict.get(query_id, None)
+        if node is not None:
+            return node
         retriever = self._retriever_dict.get(query_id, None)
         if retriever is not None:
             return retriever
@@ -105,7 +132,10 @@ class RecursiveRetriever(BaseRetriever):
         )
 
     def _retrieve_rec(
-        self, query_bundle: QueryBundle, query_id: Optional[str] = None
+        self,
+        query_bundle: QueryBundle,
+        query_id: Optional[str] = None,
+        cur_similarity: Optional[float] = None,
     ) -> Tuple[List[NodeWithScore], List[NodeWithScore]]:
         """Query recursively."""
         if self._verbose:
@@ -114,8 +144,13 @@ class RecursiveRetriever(BaseRetriever):
                 color="blue",
             )
         query_id = query_id or self._root_id
-        obj = self._fetch_retriever_or_query_engine(query_id)
-        if isinstance(obj, BaseRetriever):
+        cur_similarity = cur_similarity or 1.0
+
+        obj = self._get_object(query_id)
+        if isinstance(obj, BaseNode):
+            nodes_to_add = [NodeWithScore(node=obj, score=cur_similarity)]
+            additional_nodes: List[NodeWithScore] = []
+        elif isinstance(obj, BaseRetriever):
             with self.callback_manager.event(
                 CBEventType.RETRIEVE,
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
@@ -123,20 +158,15 @@ class RecursiveRetriever(BaseRetriever):
                 nodes = obj.retrieve(query_bundle)
                 event.on_end(payload={EventPayload.NODES: nodes})
 
-            nodes_to_add = []
-            additional_nodes = []
-            for node_with_score in nodes:
-                cur_nodes_to_add, node_additional_sources = self._query_retrieved_nodes(
-                    query_bundle, node_with_score
-                )
-                nodes_to_add.extend(cur_nodes_to_add)
-                additional_nodes.extend(node_additional_sources)
+            nodes_to_add, additional_nodes = self._query_retrieved_nodes(
+                query_bundle, nodes
+            )
 
         elif isinstance(obj, BaseQueryEngine):
             sub_resp = obj.query(query_bundle)
             if self._verbose:
                 print_text(
-                    f"Got response: {str(sub_resp)}\n",
+                    f"Got response: {sub_resp!s}\n",
                     color="green",
                 )
             # format with both the query and the response
@@ -144,7 +174,7 @@ class RecursiveRetriever(BaseRetriever):
                 query_str=query_bundle.query_str, response=str(sub_resp)
             )
             node = TextNode(text=node_text)
-            nodes_to_add = [NodeWithScore(node=node, score=1.0)]
+            nodes_to_add = [NodeWithScore(node=node, score=cur_similarity)]
             additional_nodes = sub_resp.source_nodes
         else:
             raise ValueError("Must be a retriever or query engine.")

@@ -1,12 +1,10 @@
 import asyncio
-from typing import Any, List, Sequence, Optional
+from typing import Any, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompts import (
-    DEFAULT_TEXT_QA_PROMPT,
-)
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -16,8 +14,9 @@ class Accumulate(BaseSynthesizer):
 
     def __init__(
         self,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
+        output_cls: Optional[Any] = None,
         streaming: bool = False,
         use_async: bool = False,
     ) -> None:
@@ -27,9 +26,10 @@ class Accumulate(BaseSynthesizer):
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
+        self._output_cls = output_cls
 
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
-        return list(item for sublist in md_array for item in sublist)
+        return [item for sublist in md_array for item in sublist]
 
     def _format_response(self, outputs: List[Any], separator: str) -> str:
         responses: List[str] = []
@@ -48,7 +48,6 @@ class Accumulate(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Apply the same prompt to text chunks and return async responses"""
-
         if self._streaming:
             raise ValueError("Unable to stream in Accumulate response mode")
 
@@ -70,7 +69,6 @@ class Accumulate(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Apply the same prompt to text chunks and return responses"""
-
         if self._streaming:
             raise ValueError("Unable to stream in Accumulate response mode")
 
@@ -106,6 +104,7 @@ class Accumulate(BaseSynthesizer):
             predictor(
                 text_qa_template,
                 context_str=cur_text_chunk,
+                output_cls=self._output_cls,
             )
             for cur_text_chunk in text_chunks
         ]

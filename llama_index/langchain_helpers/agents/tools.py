@@ -3,8 +3,7 @@
 from typing import Any, Dict, List
 
 from llama_index.bridge.langchain import BaseTool
-from pydantic import BaseModel, Field
-
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import TextNode

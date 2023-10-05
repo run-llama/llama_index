@@ -9,9 +9,9 @@ from llama_index.indices.common.struct_store.base import (
     OUTPUT_PARSER_TYPE,
     BaseStructDatapointExtractor,
 )
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.prompts.prompts import SchemaExtractPrompt
+from llama_index.prompts import BasePromptTemplate
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 
 class SQLStructDatapointExtractor(BaseStructDatapointExtractor):
@@ -20,7 +20,7 @@ class SQLStructDatapointExtractor(BaseStructDatapointExtractor):
     def __init__(
         self,
         llm_predictor: BaseLLMPredictor,
-        schema_extract_prompt: SchemaExtractPrompt,
+        schema_extract_prompt: BasePromptTemplate,
         output_parser: OUTPUT_PARSER_TYPE,
         sql_database: SQLDatabase,
         table_name: Optional[str] = None,

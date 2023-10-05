@@ -8,7 +8,9 @@ ASSISTANT_PREFIX = "\n\nAssistant:"
 
 CLAUDE_MODELS = {
     "claude-instant-1": 100000,
+    "claude-instant-1.2": 100000,
     "claude-2": 100000,
+    "claude-2.0": 100000,
 }
 
 
@@ -43,10 +45,10 @@ def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> str:
 
     # NOTE: make sure the prompt ends with the assistant prefix
     if messages[-1].role != MessageRole.ASSISTANT:
-        messages = list(messages) + [
-            ChatMessage(role=MessageRole.ASSISTANT, content="")
+        messages = [
+            *list(messages),
+            ChatMessage(role=MessageRole.ASSISTANT, content=""),
         ]
 
     str_list = [_message_to_anthropic_prompt(message) for message in messages]
-    prompt_str = "".join(str_list)
-    return prompt_str
+    return "".join(str_list)

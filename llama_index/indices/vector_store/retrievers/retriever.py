@@ -44,6 +44,7 @@ class VectorIndexRetriever(BaseRetriever):
         alpha: Optional[float] = None,
         node_ids: Optional[List[str]] = None,
         doc_ids: Optional[List[str]] = None,
+        sparse_top_k: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -58,15 +59,26 @@ class VectorIndexRetriever(BaseRetriever):
         self._node_ids = node_ids
         self._doc_ids = doc_ids
         self._filters = filters
+        self._sparse_top_k = sparse_top_k
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
+
+    @property
+    def similarity_top_k(self) -> int:
+        """Return similarity top k."""
+        return self._similarity_top_k
+
+    @similarity_top_k.setter
+    def similarity_top_k(self, similarity_top_k: int) -> None:
+        """Set similarity top k."""
+        self._similarity_top_k = similarity_top_k
 
     def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None:
+            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
                 query_bundle.embedding = (
                     self._service_context.embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
@@ -76,7 +88,7 @@ class VectorIndexRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None:
+            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
                 embed_model = self._service_context.embed_model
                 query_bundle.embedding = (
                     await embed_model.aget_agg_embedding_from_queries(
@@ -98,6 +110,7 @@ class VectorIndexRetriever(BaseRetriever):
             mode=self._vector_store_query_mode,
             alpha=self._alpha,
             filters=self._filters,
+            sparse_top_k=self._sparse_top_k,
         )
 
     def _build_node_list_from_query_result(
@@ -126,7 +139,7 @@ class VectorIndexRetriever(BaseRetriever):
                     source_node is not None and source_node.node_type != ObjectType.TEXT
                 ):
                     node_id = query_result.nodes[i].node_id
-                    if node_id in self._docstore.docs:
+                    if self._docstore.document_exists(node_id):
                         query_result.nodes[
                             i
                         ] = self._docstore.get_node(  # type: ignore[index]

@@ -1,16 +1,60 @@
 """Base schema for data structures."""
+import json
+import textwrap
 import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
-from pydantic import BaseModel, Field, root_validator
 from typing import Any, Dict, List, Optional, Union
 
+from typing_extensions import Self
+
 from llama_index.bridge.langchain import Document as LCDocument
-from llama_index.utils import SAMPLE_TEXT
+from llama_index.bridge.pydantic import BaseModel, Field, root_validator
+from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
+# NOTE: for pretty printing
+TRUNCATE_LENGTH = 350
+WRAP_WIDTH = 70
+
+
+class BaseComponent(BaseModel):
+    """Base component object to capture class names."""
+
+    @classmethod
+    @abstractmethod
+    def class_name(cls) -> str:
+        """
+        Get the class name, used as a unique ID in serialization.
+
+        This provides a key that makes serialization robust against actual class
+        name changes.
+        """
+
+    def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = self.dict(**kwargs)
+        data["class_name"] = self.class_name()
+        return data
+
+    def to_json(self, **kwargs: Any) -> str:
+        data = self.to_dict(**kwargs)
+        return json.dumps(data)
+
+    # TODO: return type here not supported by current mypy version
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        if isinstance(kwargs, dict):
+            data.update(kwargs)
+
+        data.pop("class_name", None)
+        return cls(**data)
+
+    @classmethod
+    def from_json(cls, data_str: str, **kwargs: Any) -> Self:  # type: ignore
+        data = json.loads(data_str)
+        return cls.from_dict(data, **kwargs)
 
 
 class NodeRelationship(str, Enum):
@@ -46,20 +90,22 @@ class MetadataMode(str, Enum):
     NONE = auto()
 
 
-class RelatedNodeInfo(BaseModel):
+class RelatedNodeInfo(BaseComponent):
     node_id: str
     node_type: Optional[ObjectType] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "RelatedNodeInfo"
 
 
 RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
 
 
 # Node classes for indexes
-
-
-class BaseNode(BaseModel):
+class BaseNode(BaseComponent):
     """Base node Object.
 
     Generic abstract interface for retrievable nodes
@@ -90,11 +136,11 @@ class BaseNode(BaseModel):
     )
     excluded_embed_metadata_keys: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are exluded from text for the embed model.",
+        description="Metadata keys that are excluded from text for the embed model.",
     )
     excluded_llm_metadata_keys: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are exluded from text for the LLM.",
+        description="Metadata keys that are excluded from text for the LLM.",
     )
     relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
         default_factory=dict,
@@ -122,6 +168,10 @@ class BaseNode(BaseModel):
     @property
     def node_id(self) -> str:
         return self.id_
+
+    @node_id.setter
+    def node_id(self, value: str) -> None:
+        self.id_ = value
 
     @property
     def source_node(self) -> Optional[RelatedNodeInfo]:
@@ -177,7 +227,7 @@ class BaseNode(BaseModel):
         if NodeRelationship.CHILD not in self.relationships:
             return None
 
-        relation = self.relationships[NodeRelationship.PARENT]
+        relation = self.relationships[NodeRelationship.CHILD]
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
@@ -194,6 +244,15 @@ class BaseNode(BaseModel):
     def extra_info(self) -> Dict[str, Any]:
         """TODO: DEPRECATED: Extra info."""
         return self.metadata
+
+    def __str__(self) -> str:
+        source_text_truncated = truncate_text(
+            self.get_content().strip(), TRUNCATE_LENGTH
+        )
+        source_text_wrapped = textwrap.fill(
+            f"Text: {source_text_truncated}\n", width=WRAP_WIDTH
+        )
+        return f"Node ID: {self.node_id}\n{source_text_wrapped}"
 
     def get_embedding(self) -> List[float]:
         """Get embedding.
@@ -236,8 +295,12 @@ class TextNode(BaseNode):
     )
     metadata_seperator: str = Field(
         default="\n",
-        description="Seperator between metadata fields when converting to string.",
+        description="Separator between metadata fields when converting to string.",
     )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "TextNode"
 
     @root_validator
     def _check_hash(cls, values: dict) -> dict:
@@ -266,7 +329,7 @@ class TextNode(BaseNode):
         ).strip()
 
     def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
-        """metadata info string."""
+        """Metadata info string."""
         if mode == MetadataMode.NONE:
             return ""
 
@@ -320,20 +383,101 @@ class ImageNode(TextNode):
     def get_type(cls) -> str:
         return ObjectType.IMAGE
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "ImageNode"
+
 
 class IndexNode(TextNode):
-    """Node with reference to an index."""
+    """Node with reference to any object.
+
+    This can include other indices, query engines, retrievers.
+
+    This can also include other nodes (though this is overlapping with `relationships`
+    on the Node class).
+
+    """
 
     index_id: str
+
+    @classmethod
+    def from_text_node(
+        cls,
+        node: TextNode,
+        index_id: str,
+    ) -> "IndexNode":
+        """Create index node from text node."""
+        # copy all attributes from text node, add index id
+        return cls(
+            **node.dict(),
+            index_id=index_id,
+        )
 
     @classmethod
     def get_type(cls) -> str:
         return ObjectType.INDEX
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "IndexNode"
 
-class NodeWithScore(BaseModel):
+
+class NodeWithScore(BaseComponent):
     node: BaseNode
     score: Optional[float] = None
+
+    def __str__(self) -> str:
+        return f"{self.node}\nScore: {self.score: 0.3f}\n"
+
+    def get_score(self, raise_error: bool = False) -> float:
+        """Get score."""
+        if self.score is None:
+            if raise_error:
+                raise ValueError("Score not set.")
+            else:
+                return 0.0
+        else:
+            return self.score
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "NodeWithScore"
+
+    ##### pass through methods to BaseNode #####
+    @property
+    def node_id(self) -> str:
+        return self.node.node_id
+
+    @property
+    def id_(self) -> str:
+        return self.node.id_
+
+    @property
+    def text(self) -> str:
+        if isinstance(self.node, TextNode):
+            return self.node.text
+        else:
+            raise ValueError("Node must be a TextNode to get text.")
+
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        return self.node.metadata
+
+    @property
+    def embedding(self) -> Optional[List[float]]:
+        return self.node.embedding
+
+    def get_text(self) -> str:
+        if isinstance(self.node, TextNode):
+            return self.node.get_text()
+        else:
+            raise ValueError("Node must be a TextNode to get text.")
+
+    def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
+        return self.node.get_content(metadata_mode=metadata_mode)
+
+    def get_embedding(self) -> List[float]:
+        return self.node.get_embedding()
 
 
 # Document Classes for Readers
@@ -365,6 +509,15 @@ class Document(TextNode):
         """Get document ID."""
         return self.id_
 
+    def __str__(self) -> str:
+        source_text_truncated = truncate_text(
+            self.get_content().strip(), TRUNCATE_LENGTH
+        )
+        source_text_wrapped = textwrap.fill(
+            f"Text: {source_text_truncated}\n", width=WRAP_WIDTH
+        )
+        return f"Doc ID: {self.doc_id}\n{source_text_wrapped}"
+
     def get_doc_id(self) -> str:
         """TODO: Deprecated: Get document ID."""
         return self.id_
@@ -386,11 +539,14 @@ class Document(TextNode):
 
     @classmethod
     def example(cls) -> "Document":
-        document = Document(
+        return Document(
             text=SAMPLE_TEXT,
             metadata={"filename": "README.md", "category": "codebase"},
         )
-        return document
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "Document"
 
 
 class ImageDocument(Document):
@@ -398,3 +554,7 @@ class ImageDocument(Document):
 
     # base64 encoded image str
     image: Optional[str] = None
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ImageDocument"

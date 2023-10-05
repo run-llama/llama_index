@@ -4,8 +4,6 @@ import dataclasses
 from abc import abstractmethod
 from typing import Dict, Optional, cast
 
-from llama_index.bridge.langchain import print_text
-
 from llama_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
@@ -17,9 +15,10 @@ from llama_index.indices.query.query_transform.prompts import (
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.prompts.base import Prompt
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.response.schema import Response
+from llama_index.utils import print_text
 
 
 class BaseQueryTransform:
@@ -87,7 +86,7 @@ class HyDEQueryTransform(BaseQueryTransform):
     def __init__(
         self,
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        hyde_prompt: Optional[Prompt] = None,
+        hyde_prompt: Optional[BasePromptTemplate] = None,
         include_original: bool = True,
     ) -> None:
         """Initialize HyDEQueryTransform.
@@ -95,7 +94,7 @@ class HyDEQueryTransform(BaseQueryTransform):
         Args:
             llm_predictor (Optional[LLMPredictor]): LLM for generating
                 hypothetical documents
-            hyde_prompt (Optional[Prompt]): Custom prompt for HyDE
+            hyde_prompt (Optional[BasePromptTemplate]): Custom prompt for HyDE
             include_original (bool): Whether to include original query
                 string as one of the embedding strings
         """
@@ -200,8 +199,7 @@ class ImageOutputQueryTransform(BaseQueryTransform):
         new_query_str = self._query_prompt.format(
             query_str=query_bundle.query_str, image_width=self._width
         )
-        new_query_bundle = dataclasses.replace(query_bundle, query_str=new_query_str)
-        return new_query_bundle
+        return dataclasses.replace(query_bundle, query_str=new_query_str)
 
 
 class StepDecomposeQueryTransform(BaseQueryTransform):

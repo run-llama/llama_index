@@ -1,23 +1,21 @@
 """DynamoDB vector store index."""
 from __future__ import annotations
-from typing import Optional, List, Any, cast, Dict
 
-from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
+from logging import getLogger
+from typing import Any, Dict, List, Optional, cast
 
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
 )
-
+from llama_index.schema import BaseNode
+from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-
-from logging import getLogger
 
 logger = getLogger(__name__)
 
@@ -44,7 +42,7 @@ class DynamoDBVectorStore(VectorStore):
     stores_text: bool = False
 
     def __init__(
-        self, dynamodb_kvstore: DynamoDBKVStore, namespace: Optional[str] = None
+        self, dynamodb_kvstore: DynamoDBKVStore, namespace: str | None = None
     ) -> None:
         """Initialize params."""
         self._kvstore = dynamodb_kvstore
@@ -55,7 +53,7 @@ class DynamoDBVectorStore(VectorStore):
 
     @classmethod
     def from_table_name(
-        cls, table_name: str, namespace: Optional[str] = None
+        cls, table_name: str, namespace: str | None = None
     ) -> DynamoDBVectorStore:
         """Load from DynamoDB table name."""
         dynamodb_kvstore = DynamoDBKVStore.from_table_name(table_name=table_name)
@@ -64,7 +62,7 @@ class DynamoDBVectorStore(VectorStore):
     @property
     def client(self) -> None:
         """Get client."""
-        return None
+        return
 
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""
@@ -72,21 +70,21 @@ class DynamoDBVectorStore(VectorStore):
         item = cast(Dict[str, List[float]], item)
         return item[self._key_value]
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        """Add embedding_results to index."""
+    def add(self, nodes: List[BaseNode]) -> List[str]:
+        """Add nodes to index."""
         response = []
-        for result in embedding_results:
+        for node in nodes:
             self._kvstore.put(
-                key=result.id,
-                val={self._key_value: result.embedding},
+                key=node.node_id,
+                val={self._key_value: node.get_embedding()},
                 collection=self._collection_embedding,
             )
             self._kvstore.put(
-                key=result.id,
-                val={self._key_value: result.ref_doc_id},
+                key=node.node_id,
+                val={self._key_value: node.ref_doc_id},
                 collection=self._collection_text_id_to_doc_id,
             )
-            response.append(result.id)
+            response.append(node.node_id)
         return response
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:

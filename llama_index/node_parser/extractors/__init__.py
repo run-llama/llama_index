@@ -1,11 +1,14 @@
+from llama_index.node_parser.extractors.marvin_metadata_extractor import (
+    MarvinMetadataExtractor,
+)
 from llama_index.node_parser.extractors.metadata_extractors import (
-    MetadataExtractor,
-    SummaryExtractor,
-    QuestionsAnsweredExtractor,
-    TitleExtractor,
-    KeywordExtractor,
     EntityExtractor,
+    KeywordExtractor,
+    MetadataExtractor,
     MetadataFeatureExtractor,
+    QuestionsAnsweredExtractor,
+    SummaryExtractor,
+    TitleExtractor,
 )
 
 __all__ = [
@@ -17,4 +20,5 @@ __all__ = [
     "KeywordExtractor",
     "EntityExtractor",
     "MetadataFeatureExtractor",
+    "MarvinMetadataExtractor",
 ]

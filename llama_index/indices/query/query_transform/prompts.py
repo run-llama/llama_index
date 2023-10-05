@@ -1,35 +1,35 @@
 """Query transform prompts."""
 
 
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 
 # deprecated, kept for backwards compatibility
 """Decompose prompt for query transformation.
 
-Prompt to "decompose" a query into another query
+PromptTemplate to "decompose" a query into another query
 given the existing context.
 
 Required template variables: `context_str`, `query_str`
 """
-DecomposeQueryTransformPrompt = Prompt
+DecomposeQueryTransformPrompt = PromptTemplate
 
 """Step Decompose prompt for query transformation.
 
-Prompt to "decompose" a query into another query
+PromptTemplate to "decompose" a query into another query
 given the existing context + previous reasoning (the previous steps).
 
 Required template variables: `context_str`, `query_str`, `prev_reasoning`
 """
-StepDecomposeQueryTransformPrompt = Prompt
+StepDecomposeQueryTransformPrompt = PromptTemplate
 
 """Image output prompt for query transformation.
 
-Prompt to add instructions for formatting image output.
+PromptTemplate to add instructions for formatting image output.
 
 Required template variables: `query_str`, `image_width`
 """
-ImageOutputQueryTransformPrompt = Prompt
+ImageOutputQueryTransformPrompt = PromptTemplate
 
 
 DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
@@ -59,7 +59,7 @@ DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
     "New question: "
 )
 
-DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT = Prompt(
+DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT = PromptTemplate(
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL, prompt_type=PromptType.DECOMPOSE
 )
 
@@ -70,7 +70,7 @@ DEFAULT_IMAGE_OUTPUT_TMPL = (
     'e.g., <image src="data/img.jpg" width="{image_width}" />.'
 )
 
-DEFAULT_IMAGE_OUTPUT_PROMPT = Prompt(DEFAULT_IMAGE_OUTPUT_TMPL)
+DEFAULT_IMAGE_OUTPUT_PROMPT = PromptTemplate(DEFAULT_IMAGE_OUTPUT_TMPL)
 
 
 DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
@@ -125,6 +125,6 @@ DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
     "New question: "
 )
 
-DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT = Prompt(
+DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT = PromptTemplate(
     DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL
 )

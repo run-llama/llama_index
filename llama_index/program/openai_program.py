@@ -1,15 +1,13 @@
-from typing import Any, Dict, Optional, Type, Union, Generator
+from typing import Any, Dict, Generator, Optional, Tuple, Type, Union, cast
 
-from pydantic import BaseModel
-
-from llama_index.llms.base import LLM, ChatMessage, MessageRole
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import to_openai_function
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.prompts.base import Prompt
-from llama_index.types import Model
 from llama_index.program.utils import create_list_model
-from typing import Tuple
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.types import Model
 
 
 def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
@@ -46,7 +44,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self,
         output_cls: Type[Model],
         llm: LLM,
-        prompt: Prompt,
+        prompt: BasePromptTemplate,
         function_call: Union[str, Dict[str, Any]],
         verbose: bool = False,
     ) -> None:
@@ -61,7 +59,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     def from_defaults(
         cls,
         output_cls: Type[Model],
-        prompt_template_str: str,
+        prompt_template_str: Optional[str] = None,
+        prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         function_call: Optional[Union[str, Dict[str, Any]]] = None,
@@ -69,18 +68,28 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     ) -> "OpenAIPydanticProgram":
         llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
 
+        if not isinstance(llm, OpenAI):
+            raise ValueError(
+                "OpenAIPydanticProgram only supports OpenAI LLMs. " f"Got: {type(llm)}"
+            )
+
         if not llm.metadata.is_function_calling_model:
             raise ValueError(
                 f"Model name {llm.metadata.model_name} does not support "
                 "function calling API. "
             )
 
-        prompt = Prompt(prompt_template_str)
+        if prompt is None and prompt_template_str is None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt is not None and prompt_template_str is not None:
+            raise ValueError("Must provide either prompt or prompt_template_str.")
+        if prompt_template_str is not None:
+            prompt = PromptTemplate(prompt_template_str)
         function_call = function_call or _default_function_call(output_cls)
         return cls(
             output_cls=output_cls,
             llm=llm,
-            prompt=prompt,
+            prompt=cast(PromptTemplate, prompt),
             function_call=function_call,
             verbose=verbose,
         )
@@ -94,12 +103,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        formatted_prompt = self._prompt.format(**kwargs)
-
         openai_fn_spec = to_openai_function(self._output_cls)
 
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
         chat_response = self._llm.chat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=self._function_call,
         )
@@ -127,12 +136,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        formatted_prompt = self._prompt.format(**kwargs)
-
         openai_fn_spec = to_openai_function(self._output_cls)
 
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
         chat_response = await self._llm.achat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=self._function_call,
         )
@@ -159,15 +168,14 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self, *args: Any, **kwargs: Any
     ) -> Generator[BaseModel, None, None]:
         """Streams a list of objects."""
-
-        formatted_prompt = self._prompt.format(**kwargs)
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         # openai_fn_spec = to_openai_function(self._output_cls)
         list_output_cls = create_list_model(self._output_cls)
         openai_fn_spec = to_openai_function(list_output_cls)
 
         chat_response_gen = self._llm.stream_chat(
-            messages=[ChatMessage(role=MessageRole.USER, content=formatted_prompt)],
+            messages=messages,
             functions=[openai_fn_spec],
             function_call=_default_function_call(list_output_cls),
         )

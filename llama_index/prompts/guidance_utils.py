@@ -6,7 +6,7 @@ from llama_index.output_parsers.utils import parse_json_markdown
 if TYPE_CHECKING:
     from guidance import Program
 
-from pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel
 
 
 def convert_to_handlebars(text: str) -> str:
@@ -32,8 +32,7 @@ def convert_to_handlebars(text: str) -> str:
 
     # Replace the temporary placeholder with single braces
     text = text.replace(var_left, "{")
-    text = text.replace(var_right, "}")
-    return text
+    return text.replace(var_right, "}")
 
 
 def wrap_json_markdown(text: str) -> str:

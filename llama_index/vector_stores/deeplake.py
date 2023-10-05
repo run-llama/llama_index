@@ -6,13 +6,12 @@ An index that is built within DeepLake.
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.schema import MetadataMode
+from llama_index.schema import BaseNode, MetadataMode
+from llama_index.vector_stores.types import VectorStore as VectorStoreBase
 from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.types import VectorStore as VectorStoreBase
 from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
@@ -34,7 +33,7 @@ class DeepLakeVectorStore(VectorStoreBase):
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a deeplake dataset. This implemnetation
     allows the use of an already existing deeplake dataset if it is one that was created
-    this vector store. It also supports creating a new one if the dataset doesnt
+    this vector store. It also supports creating a new one if the dataset doesn't
     exist or if `overwrite` is set to True.
     """
 
@@ -124,11 +123,11 @@ class DeepLakeVectorStore(VectorStoreBase):
         """
         return self.vectorstore.dataset
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+    def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): The embeddings and their data
+            nodes (List[BaseNode]): List of nodes with embeddings
                 to insert.
 
         Returns:
@@ -139,15 +138,15 @@ class DeepLakeVectorStore(VectorStoreBase):
         id_ = []
         text = []
 
-        for result in embedding_results:
-            embedding.append(result.embedding)
+        for node in nodes:
+            embedding.append(node.get_embedding())
             metadata.append(
                 node_to_metadata_dict(
-                    result.node, remove_text=False, flat_metadata=self.flat_metadata
+                    node, remove_text=False, flat_metadata=self.flat_metadata
                 )
             )
-            id_.append(result.id)
-            text.append(result.node.get_content(metadata_mode=MetadataMode.NONE))
+            id_.append(node.node_id)
+            text.append(node.get_content(metadata_mode=MetadataMode.NONE))
 
         kwargs = {
             "embedding": embedding,

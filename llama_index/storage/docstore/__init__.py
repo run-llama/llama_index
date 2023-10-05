@@ -1,8 +1,4 @@
-from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.storage.docstore.firestore_docstore import FirestoreDocumentStore
-from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
-from llama_index.storage.docstore.mongo_docstore import MongoDocumentStore
-from llama_index.storage.docstore.cosmosdb_docstore import CosmosDBDocStore
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.storage.docstore.mongo_docstore import MongoDocumentStore
 from llama_index.storage.docstore.redis_docstore import RedisDocumentStore
@@ -20,7 +16,6 @@ __all__ = [
     "FirestoreDocumentStore",
     "SimpleDocumentStore",
     "MongoDocumentStore",
-    "CosmosDBDocStore",
     "KVDocumentStore",
     "RedisDocumentStore",
 ]

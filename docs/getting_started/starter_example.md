@@ -3,7 +3,7 @@
 ```{tip}
 Make sure you've followed the [installation](installation.md) steps first.
 ```
-Here is a starter example for using LlamaIndex. 
+Here is a starter example for using LlamaIndex.
 
 ### Download
 
@@ -68,6 +68,14 @@ logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 You can set the level to `DEBUG` for verbose output, or use `level=logging.INFO` for less.
 
+To view all requests made to your LLMs, you can set the `openai` logging flag:
+
+```python
+openai.log = "debug"
+```
+
+This will print out every request and response made via `openai`. Change it back to `None` to turn off.
+
 ### Saving and Loading
 
 By default, data is stored in-memory.
@@ -95,4 +103,3 @@ index = load_index_from_storage(storage_context)
 * curious about a specific module? check out the guides 👈
 * have a use case in mind? check out the [end-to-end tutorials](/end_to_end_tutorials/use_cases.md)
 ```
-

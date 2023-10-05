@@ -1,6 +1,16 @@
 # App Showcase
 
-Here is a sample of some of the incredible applications and tools built on top of LlamaIndex! 
+Here is a sample of some of the incredible applications and tools built on top of LlamaIndex!
+
+###### SEC Insights - Answer questions about SEC 10-K & 10-Q documents (built by LlamaIndex!)
+
+SEC Insights uses the Retrieval Augmented Generation (RAG) capabilities of LlamaIndex to answer questions about SEC 10-K & 10-Q documents.
+
+We built and open-sourced SEC Insights so that we could provide our developer community with an example of a production-ready full-stack application that uses LlamaIndex. It comes with many product features that we think users will love as well as development features that we think developers will love. You can use the Github repo as a reference when building out your own LlamaIndex application or you can fork it to start your project off with a solid Next.js + FastAPI codebase.
+
+[[Website]](https://www.secinsights.ai/)
+[[Github]](https://github.com/run-llama/sec-insights/)
+[[Tweet thread]](https://twitter.com/jerryjliu0/status/1699119197190775084?s=20)
 
 ###### Meru - Dense Data Retrieval API
 
@@ -20,11 +30,6 @@ Summarize PowerPoint files and other documents with AI. SlideSpeak is an open so
 [[Website]](https://slidespeak.co/?ref=llamaindex)
 [[GitHub]](https://github.com/SlideSpeak/slidespeak-backend)
 
-###### ChatGPT LlamaIndex
-
-Interface that allows users to upload long docs and chat with the bot.
-[[Tweet thread]](https://twitter.com/s_jobs6/status/1618346125697875968?s=20&t=RJhQu2mD0-zZNGfq65xodA)
-
 ###### AgentHQ
 
 A web tool to build agents, interacting with LlamaIndex data structures.[[Website]](https://app.agent-hq.io/)
@@ -32,35 +37,35 @@ A web tool to build agents, interacting with LlamaIndex data structures.[[Websit
 ###### SiteChatAI
 
 SiteChatAi is ChatGPT powered that can be integrated into any website. It is a simple chatbot that can be used to answer simple questions and can be trained to answer more complex questions. It provides human like conversation experience to the users. It can be used to answer questions related to the website or the business. It uses Llamma Index and LangChain
-  
-Current version of SiteChatAI support following features:  
-- Multi-lingual support  
-- Real time chat  
-- Easy to integrate  
-- Customizable  
-- Human like conversation experience  
+
+Current version of SiteChatAI support following features:
+
+- Multi-lingual support
+- Real time chat
+- Easy to integrate
+- Customizable
+- Human like conversation experience
 - Can be trained to answer complex questions
 - and more.
 
-  
 [[Website]](https://sitechatai.com/?utm_source=llama-index&utm_medium=app%20showcase&utm_campaign=promotion)
-
 
 ###### PapersGPT
 
 Feed any of the following content into GPT to give it deep customized knowledge:
+
 - Scientific Papers
 - Substack Articles
 - Podcasts
 - Github Repos
-and more.
+  and more.
 
 [[Tweet thread]](https://twitter.com/thejessezhang/status/1615390646763945991?s=20&t=eHvhmIaaaoYFyPSzDRNGtA)
 [[Website]](https://jessezhang.org/llmdemo)
 
 ###### VideoQues + DocsQues
 
-**VideoQues**: A tool that answers your queries on YouTube videos. 
+**VideoQues**: A tool that answers your queries on YouTube videos.
 [[LinkedIn post here]](https://www.linkedin.com/posts/ravidesetty_ai-ml-dl-activity-7020599110953050112-EJA_/?utm_source=share&utm_medium=member_desktop).
 
 **DocsQues**: A tool that answers your questions on longer documents (including .pdfs!)
@@ -72,16 +77,15 @@ A platform to access/understand research papers.
 
 [[Tweet thread]](https://twitter.com/mdarshad1000/status/1619824637898264578?s=20&t=eHvhmIaaaoYFyPSzDRNGtA).
 
-
 ###### CACTUS
-Contextual search on top of LinkedIn search results. 
+
+Contextual search on top of LinkedIn search results.
 [[LinkedIn post here]](https://www.linkedin.com/posts/mathewteoh_chromeextension-chatgpt-python-activity-7019362515566403584-ryqW?utm_source=share&utm_medium=member_desktop).
 
-
 ###### Personal Note Chatbot
-A chatbot that can answer questions over a directory of Obsidian notes. 
-[[Tweet thread]](https://twitter.com/Sarah_A_Bentley/status/1611069576099336207?s=20&t=IjPLK3msACQjEBYxJJxj4w).
 
+A chatbot that can answer questions over a directory of Obsidian notes.
+[[Tweet thread]](https://twitter.com/Sarah_A_Bentley/status/1611069576099336207?s=20&t=IjPLK3msACQjEBYxJJxj4w).
 
 ###### RHOBH AMA
 
@@ -95,17 +99,18 @@ A journaling app that uses AI to uncover insights and patterns over time.
 [[Website]](https://mynd.so)
 
 ###### CoFounder
+
 The First AI Co-Founder for Your Start-up 🙌
 
 [CoFounder](https://co-founder.ai?utm_source=llama-index&utm_medium=gallary&utm_campaign=alpha) is a platform to revolutionize the start-up ecosystem by providing founders with unparalleled tools, resources, and support. We are changing how founders build their companies from 0-1—productizing the accelerator/incubator programs using AI.
 
 Current features:
 
-* AI Investor Matching and Introduction and Tracking
-* AI Pitch Deck creation
-* Real-time Pitch Deck practice/feedback
-* Automatic Competitive Analysis / Watchlist
-* More coming soon...
+- AI Investor Matching and Introduction and Tracking
+- AI Pitch Deck creation
+- Real-time Pitch Deck practice/feedback
+- Automatic Competitive Analysis / Watchlist
+- More coming soon...
 
 [[Website]](https://co-founder.ai?utm_source=llama-index&utm_medium=gallary&utm_campaign=alpha)
 

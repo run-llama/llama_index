@@ -1,11 +1,11 @@
-from pydantic import Field, PrivateAttr
 from typing import Any, Dict, Optional, Sequence
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks import CallbackManager
 from llama_index.llms.anthropic_utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_prompt,
 )
-from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -41,7 +41,7 @@ class Anthropic(LLM):
         default=10, description="The maximum number of API retries."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the anthropic API."
+        default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
     _client: Any = PrivateAttr()
@@ -88,6 +88,10 @@ class Anthropic(LLM):
             callback_manager=callback_manager,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "Anthropic_LLM"
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
@@ -104,11 +108,10 @@ class Anthropic(LLM):
             "temperature": self.temperature,
             "max_tokens_to_sample": self.max_tokens,
         }
-        model_kwargs = {
+        return {
             **base_kwargs,
             **self.additional_kwargs,
         }
-        return model_kwargs
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {

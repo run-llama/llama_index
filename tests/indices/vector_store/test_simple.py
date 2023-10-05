@@ -1,12 +1,9 @@
 """Test vector store indexes."""
-
 from typing import Any, List, cast
+
 from llama_index.indices.loading import load_index_from_storage
-
-
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
-
 from llama_index.schema import Document
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import SimpleVectorStore
@@ -17,7 +14,6 @@ def test_build_simple(
     documents: List[Document],
 ) -> None:
     """Test build VectorStoreIndex."""
-
     index = VectorStoreIndex.from_documents(
         documents=documents, service_context=mock_service_context
     )
@@ -30,7 +26,7 @@ def test_build_simple(
         ("This is another test.", [0, 0, 1, 0, 0]),
         ("This is a test v2.", [0, 0, 0, 1, 0]),
     ]
-    for text_id in index.index_struct.nodes_dict.keys():
+    for text_id in index.index_struct.nodes_dict:
         node_id = index.index_struct.nodes_dict[text_id]
         node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
@@ -64,7 +60,7 @@ def test_simple_insert(
         ("This is a test v2.", [0, 0, 0, 1, 0]),
         ("This is a test v3.", [0, 0, 0, 0, 1]),
     ]
-    for text_id in index.index_struct.nodes_dict.keys():
+    for text_id in index.index_struct.nodes_dict:
         node_id = index.index_struct.nodes_dict[text_id]
         node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
@@ -96,7 +92,7 @@ def test_simple_delete(
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
         ("This is a test v2.", [0, 0, 0, 1, 0], "test_id_3"),
     ]
-    for text_id in index.index_struct.nodes_dict.keys():
+    for text_id in index.index_struct.nodes_dict:
         node_id = index.index_struct.nodes_dict[text_id]
         node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
@@ -113,7 +109,7 @@ def test_simple_delete(
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
         ("This is a test v2.", [0, 0, 0, 1, 0], "test_id_3"),
     ]
-    for text_id in index.index_struct.nodes_dict.keys():
+    for text_id in index.index_struct.nodes_dict:
         node_id = index.index_struct.nodes_dict[text_id]
         node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
@@ -153,7 +149,6 @@ def test_simple_async(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test simple vector index with use_async."""
-
     index = VectorStoreIndex.from_documents(
         documents=documents, use_async=True, service_context=mock_service_context
     )
@@ -166,7 +161,7 @@ def test_simple_async(
         ("This is another test.", [0, 0, 1, 0, 0]),
         ("This is a test v2.", [0, 0, 0, 1, 0]),
     ]
-    for text_id in index.index_struct.nodes_dict.keys():
+    for text_id in index.index_struct.nodes_dict:
         node_id = index.index_struct.nodes_dict[text_id]
         node = index.docstore.get_node(node_id)
         vector_store = cast(SimpleVectorStore, index._vector_store)

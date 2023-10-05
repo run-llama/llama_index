@@ -2,6 +2,7 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional, Type
 
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
@@ -10,13 +11,13 @@ from llama_index.chat_engine.types import (
 from llama_index.chat_engine.utils import response_gen_from_query_engine
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
+from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.prompts.base import Prompt
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.tools import ToolOutput
-from llama_index.callbacks import CallbackManager, trace_method
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ Given a conversation (between Human and Assistant) and a follow up message from 
 rewrite the message to be a standalone question that captures all relevant context \
 from the conversation.
 
-<Chat History> 
+<Chat History>
 {chat_history}
 
 <Follow Up Message>
@@ -35,7 +36,7 @@ from the conversation.
 <Standalone question>
 """
 
-DEFAULT_PROMPT = Prompt(DEFAULT_TEMPLATE)
+DEFAULT_PROMPT = PromptTemplate(DEFAULT_TEMPLATE)
 
 
 class CondenseQuestionChatEngine(BaseChatEngine):
@@ -48,7 +49,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def __init__(
         self,
         query_engine: BaseQueryEngine,
-        condense_question_prompt: Prompt,
+        condense_question_prompt: BasePromptTemplate,
         memory: BaseMemory,
         service_context: ServiceContext,
         verbose: bool = False,
@@ -65,7 +66,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def from_defaults(
         cls,
         query_engine: BaseQueryEngine,
-        condense_question_prompt: Optional[Prompt] = None,
+        condense_question_prompt: Optional[BasePromptTemplate] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
@@ -77,9 +78,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     ) -> "CondenseQuestionChatEngine":
         """Initialize a CondenseQuestionChatEngine from default parameters."""
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
-        chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history)
+
         service_context = service_context or ServiceContext.from_defaults()
+        if not isinstance(service_context.llm_predictor, LLMPredictor):
+            raise ValueError("llm_predictor must be a LLMPredictor instance")
+        llm = service_context.llm_predictor.llm
+
+        chat_history = chat_history or []
+        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
         if system_prompt is not None:
             raise NotImplementedError(
@@ -105,16 +111,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """
         Generate standalone question from conversation context and last message.
         """
-
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        response = self._service_context.llm_predictor.predict(
+        return self._service_context.llm_predictor.predict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
         )
-        return response
 
     async def _acondense_question(
         self, chat_history: List[ChatMessage], last_message: str
@@ -122,16 +126,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """
         Generate standalone question from conversation context and last message.
         """
-
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        response = await self._service_context.llm_predictor.apredict(
+        return await self._service_context.llm_predictor.apredict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
         )
-        return response
 
     def _get_tool_output_from_response(
         self, query: str, response: RESPONSE_TYPE

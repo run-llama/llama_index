@@ -1,19 +1,20 @@
 """Test LLM reranker."""
 
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import Prompt
-from llama_index.llm_predictor import LLMPredictor
+from typing import Any, List
 from unittest.mock import patch
-from typing import List, Any
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+
 from llama_index.indices.postprocessor.llm_rerank import LLMRerank
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import BaseNode, TextNode, NodeWithScore
+from llama_index.llm_predictor import LLMPredictor
+from llama_index.prompts import BasePromptTemplate
+from llama_index.schema import BaseNode, NodeWithScore, TextNode
 
 
-def mock_llmpredictor_predict(self: Any, prompt: Prompt, **prompt_args: Any) -> str:
+def mock_llmpredictor_predict(
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+) -> str:
     """Patch llm predictor predict."""
-    assert isinstance(prompt, QuestionAnswerPrompt)
     context_str = prompt_args["context_str"]
     node_strs = context_str.split("\n")
     node_to_choice_and_score = {
@@ -32,7 +33,7 @@ def mock_llmpredictor_predict(self: Any, prompt: Prompt, **prompt_args: Any) -> 
         if choice:
             choices_and_scores.append((idx + 1, score))
 
-    result_strs = [f"Doc: {str(c)}, Relevance: {s}" for c, s in choices_and_scores]
+    result_strs = [f"Doc: {c!s}, Relevance: {s}" for c, s in choices_and_scores]
     return "\n".join(result_strs)
 
 

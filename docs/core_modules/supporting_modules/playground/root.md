@@ -18,12 +18,12 @@ from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.playground import Playground
 
-# load data 
+# load data
 WikipediaReader = download_loader("WikipediaReader")
 loader = WikipediaReader()
 documents = loader.load_data(pages=['Berlin'])
 
-# define multiple index data structures (vector index, list index)
+# define multiple index data structures (vector index, summary index)
 indices = [VectorStoreIndex(documents), TreeIndex(documents)]
 
 # initialize playground

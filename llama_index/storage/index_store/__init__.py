@@ -1,4 +1,3 @@
-from llama_index.storage.index_store.cosmosdb_index_store import CosmosDBIndexStore
 from llama_index.storage.index_store.firestore_indexstore import FirestoreKVStore
 from llama_index.storage.index_store.keyval_index_store import KVIndexStore
 from llama_index.storage.index_store.mongo_index_store import MongoIndexStore
@@ -11,5 +10,4 @@ __all__ = [
     "SimpleIndexStore",
     "MongoIndexStore",
     "RedisIndexStore",
-    "CosmosDBIndexStore",
 ]

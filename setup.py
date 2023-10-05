@@ -10,14 +10,14 @@ PACKAGE_NAME = os.environ.get("PACKAGE_NAME_OVERRIDE", DEFAULT_PACKAGE_NAME)
 with open(Path(__file__).absolute().parents[0] / "llama_index" / "VERSION") as _f:
     __version__ = _f.read().strip()
 
-with open("README.md", "r", encoding="utf-8") as f:
+with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
     "tiktoken",
     "dataclasses_json",
-    "langchain>=0.0.262,<=0.0.266",
-    "sqlalchemy",
+    "langchain>=0.0.303",
+    "sqlalchemy>=2.0.15",
     "numpy",
     "tenacity>=8.2.0,<9.0.0",
     "openai>=0.26.4",
@@ -28,6 +28,7 @@ install_requires = [
     "typing_extensions>=4.5.0",
     "beautifulsoup4",  # hotfix for langchain 0.0.212 bug
     "nest_asyncio",
+    "nltk",
 ]
 
 setup(

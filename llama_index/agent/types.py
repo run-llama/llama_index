@@ -1,11 +1,12 @@
 """Base agent type."""
 from typing import List, Optional
+
+from llama_index.callbacks import trace_method
 from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResponse
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import ChatMessage
 from llama_index.response.schema import RESPONSE_TYPE, Response
-from llama_index.callbacks import trace_method
 
 
 class BaseAgent(BaseChatEngine, BaseQueryEngine):

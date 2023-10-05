@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ NODE_SCHEMA: List[Dict] = [
 def validate_client(client: Any) -> None:
     """Validate client and import weaviate library."""
     try:
-        import weaviate  # noqa: F401
+        import weaviate
         from weaviate import Client
 
         client = cast(Client, client)
@@ -154,7 +154,7 @@ def add_node(
     )
     metadata.update(additional_metadata)
 
-    vector = node.embedding
+    vector = node.get_embedding()
     id = node.node_id
 
     # if batch object is provided (via a context manager), use that instead

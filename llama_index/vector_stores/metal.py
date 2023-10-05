@@ -1,18 +1,17 @@
 import math
 from typing import Any, List
 
-from llama_index.schema import MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
-    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 
@@ -40,10 +39,10 @@ class MetalVectorStore(VectorStore):
             "`metal_sdk` package not found, please run `pip install metal_sdk`"
         )
         try:
-            import metal_sdk  # noqa: F401
+            import metal_sdk
         except ImportError:
             raise ImportError(import_err_msg)
-        from metal_sdk.metal import Metal  # noqa: F401
+        from metal_sdk.metal import Metal
 
         self.api_key = api_key
         self.client_id = client_id
@@ -112,34 +111,32 @@ class MetalVectorStore(VectorStore):
         """Return Metal client."""
         return self.metal_client
 
-    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        """Add embedding results to index.
+    def add(self, nodes: List[BaseNode]) -> List[str]:
+        """Add nodes to index.
 
-        Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+        Args:
+            nodes: List[BaseNode]: list of nodes with embeddings.
 
         """
         if not self.metal_client:
             raise ValueError("metal_client not initialized")
 
         ids = []
-        for result in embedding_results:
-            ids.append(result.id)
+        for node in nodes:
+            ids.append(node.node_id)
 
             metadata = {}
-            metadata["text"] = (
-                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
-            )
+            metadata["text"] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
 
             additional_metadata = node_to_metadata_dict(
-                result.node, remove_text=True, flat_metadata=self.flat_metadata
+                node, remove_text=True, flat_metadata=self.flat_metadata
             )
             metadata.update(additional_metadata)
 
             payload = {
-                "embedding": result.embedding,
+                "embedding": node.get_embedding(),
                 "metadata": metadata,
-                "id": result.id,
+                "id": node.node_id,
             }
 
             self.metal_client.index(payload)

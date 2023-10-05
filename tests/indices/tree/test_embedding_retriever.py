@@ -5,22 +5,21 @@ from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
-
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
-from llama_index.indices.tree.base import TreeIndex
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, Document
+
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_SUMMARY_PROMPT,
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def index_kwargs() -> dict:
     """Index kwargs."""
     return {
@@ -30,7 +29,7 @@ def index_kwargs() -> dict:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now

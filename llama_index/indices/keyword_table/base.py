@@ -11,7 +11,6 @@ existing keywords in the table.
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Set, Union
-from llama_index.utils import get_tqdm_iterable
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import KeywordTable
@@ -19,13 +18,14 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
-from llama_index.prompts.prompts import KeywordExtractPrompt
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.utils import get_tqdm_iterable
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -40,7 +40,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     """Base Keyword Table Index.
 
     This index extracts keywords from the text, and maps each
-    keyword to the node(s) that it corresponds to. In this sense it mimicks a
+    keyword to the node(s) that it corresponds to. In this sense it mimics a
     "hash table". During index construction, the keyword table is constructed
     by extracting keywords from each node and creating an internal mapping.
 
@@ -49,7 +49,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     are then used to answer the query.
 
     Args:
-        keyword_extract_template (Optional[KeywordExtractPrompt]): A Keyword
+        keyword_extract_template (Optional[BasePromptTemplate]): A Keyword
             Extraction Prompt
             (see :ref:`Prompt-Templates`).
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
@@ -64,7 +64,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[KeywordTable] = None,
         service_context: Optional[ServiceContext] = None,
-        keyword_extract_template: Optional[KeywordExtractPrompt] = None,
+        keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_chunk: int = 10,
         use_async: bool = False,
         show_progress: bool = False,
@@ -223,8 +223,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        return keywords
+        return extract_keywords_given_response(response, start_token="KEYWORDS:")
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
@@ -232,8 +231,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        return keywords
+        return extract_keywords_given_response(response, start_token="KEYWORDS:")
 
 
 # legacy

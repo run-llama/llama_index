@@ -18,8 +18,8 @@ from llama_index.graph_stores.types import GraphStore
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
-from llama_index.prompts.prompts import KnowledgeGraphPrompt
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
@@ -34,7 +34,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     Build a KG by extracting triplets, and leveraging the KG during query-time.
 
     Args:
-        kg_triple_extract_template (KnowledgeGraphPrompt): The prompt to use for
+        kg_triple_extract_template (BasePromptTemplate): The prompt to use for
             extracting triplets.
         max_triplets_per_chunk (int): The maximum number of triplets to extract.
         service_context (Optional[ServiceContext]): The service context to use.
@@ -58,7 +58,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         index_struct: Optional[KG] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
-        kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
+        kg_triple_extract_template: Optional[BasePromptTemplate] = None,
         max_triplets_per_chunk: int = 10,
         include_embeddings: bool = False,
         show_progress: bool = False,
@@ -127,6 +127,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             self.kg_triple_extract_template,
             text=text,
         )
+        print(response, flush=True)
         return self._parse_triplet_response(
             response, max_length=self._max_object_length
         )
@@ -178,17 +179,13 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 index_struct.add_node([subj, obj], n)
 
             if self.include_embeddings:
-                for triplet in triplets:
-                    self._service_context.embed_model.queue_text_for_embedding(
-                        str(triplet), str(triplet)
-                    )
+                triplet_texts = [str(t) for t in triplets]
 
-                embed_outputs = (
-                    self._service_context.embed_model.get_queued_text_embeddings(
-                        self._show_progress
-                    )
+                embed_model = self._service_context.embed_model
+                embed_outputs = embed_model.get_text_embedding_batch(
+                    triplet_texts, show_progress=self._show_progress
                 )
-                for rel_text, rel_embed in zip(*embed_outputs):
+                for rel_text, rel_embed in zip(triplet_texts, embed_outputs):
                     index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         return index_struct
@@ -222,7 +219,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         Used for manual insertion of KG triplets (in the form
         of (subject, relationship, object)).
 
-        Args
+        Args:
             triplet (str): Knowledge triplet
 
         """
@@ -301,22 +298,26 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             )
 
         g = nx.Graph()
-        # add nodes with limited number of starting nodes
-        for node_name in self.index_struct.table.keys():
-            if limit <= 0:
-                break
-            g.add_node(node_name)
-            limit -= 1
+        subjs = list(self.index_struct.table.keys())
 
         # add edges
-        rel_map = self._graph_store.get_rel_map(list(g.nodes().keys()), 1)
-        for keyword in rel_map.keys():
+        rel_map = self._graph_store.get_rel_map(subjs=subjs, depth=1, limit=limit)
+
+        added_nodes = set()
+        for keyword in rel_map:
             for path in rel_map[keyword]:
                 subj = keyword
                 for i in range(0, len(path), 2):
-                    if i + 1 >= len(path):
+                    if i + 2 >= len(path):
                         break
-                    rel, obj = path[i : i + 2]
+
+                    if subj not in added_nodes:
+                        g.add_node(subj)
+                        added_nodes.add(subj)
+
+                    rel = path[i + 1]
+                    obj = path[i + 2]
+
                     g.add_edge(subj, obj, label=rel, title=rel)
                     subj = obj
         return g

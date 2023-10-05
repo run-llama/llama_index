@@ -81,7 +81,7 @@ def get_redis_query(
         filters (str, optional): string to filter the results by. Defaults to "*".
 
     """
-    from redis.commands.search.query import Query  # noqa: F401
+    from redis.commands.search.query import Query
 
     base_query = f"{filters}=>[KNN {top_k} @{vector_field} $vector AS vector_score]"
     query = Query(base_query).return_fields(*return_fields).dialect(2)

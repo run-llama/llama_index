@@ -3,12 +3,11 @@ from typing import Any, AsyncGenerator, Generator
 
 import openai
 import pytest
-from pytest import MonkeyPatch
-
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
+from pytest import MonkeyPatch
 
-from ..conftest import CachedOpenAIApiKeys
+from tests.conftest import CachedOpenAIApiKeys
 
 
 def mock_completion(*args: Any, **kwargs: Any) -> dict:
@@ -70,8 +69,7 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
             ],
         },
     ]
-    for response in responses:
-        yield response
+    yield from responses
 
 
 async def mock_async_completion_stream(
@@ -122,8 +120,7 @@ def mock_chat_completion_stream(
             "object": "chat.completion.chunk",
         },
     ]
-    for response in responses:
-        yield response
+    yield from responses
 
 
 def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
@@ -196,7 +193,7 @@ def test_chat_model_streaming(monkeypatch: MonkeyPatch) -> None:
     assert chat_responses[-1].message.role == "assistant"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_completion_model_async(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.llms.openai.acompletion_with_retry", mock_async_completion
@@ -213,7 +210,7 @@ async def test_completion_model_async(monkeypatch: MonkeyPatch) -> None:
     assert chat_response.message.content == "\n\nThis is indeed a test"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_completion_model_async_streaming(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.llms.openai.acompletion_with_retry",
@@ -248,15 +245,3 @@ def test_validates_api_key_is_present() -> None:
     # We can create a new LLM when the api_key is set on the
     # library directly
     assert OpenAI()
-
-
-def test_validates_api_key_format_from_env() -> None:
-    with CachedOpenAIApiKeys(set_env_key_to="api-fake123"):
-        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
-            OpenAI()
-
-
-def test_validates_api_key_format_in_library() -> None:
-    with CachedOpenAIApiKeys(set_library_key_to="api-fake123"):
-        with pytest.raises(ValueError, match="Invalid OpenAI API key."):
-            OpenAI()

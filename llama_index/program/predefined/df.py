@@ -1,11 +1,11 @@
-from llama_index.program.base_program import BasePydanticProgram
+from typing import Any, List, Optional, Type, cast
 
-from typing import Optional, List, Any, Type, cast
-from pydantic import BaseModel, Field
-from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.prompts.prompts import Prompt
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 import pandas as pd
+
+from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.program.openai_program import OpenAIPydanticProgram
+from llama_index.types import BasePydanticProgram
 
 
 class DataFrameRow(BaseModel):
@@ -141,8 +141,7 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
         if self._input_key not in kwds:
             raise ValueError(f"Input key {self._input_key} not found in kwds.")
         result = self._pydantic_program(**{self._input_key: kwds[self._input_key]})
-        result = cast(DataFrame, result)
-        return result
+        return cast(DataFrame, result)
 
 
 class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
@@ -162,16 +161,12 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
     ) -> None:
         """Init params."""
         # partial format df parser template string with column schema
-        # NOTE: hack where we use prompt class to partial format
-        orig_prompt = Prompt(df_parser_template_str)
-        new_prompt = Prompt.from_prompt(
-            orig_prompt.partial_format(
-                column_schema=column_schema,
-            )
+        prompt_template_str = df_parser_template_str.replace(
+            "{column_schema}", column_schema or ""
         )
 
         pydantic_program = pydantic_program_cls.from_defaults(
-            DataFrameRowsOnly, new_prompt.original_template, **program_kwargs
+            DataFrameRowsOnly, prompt_template_str, **program_kwargs
         )
         self._validate_program(pydantic_program)
         self._pydantic_program = pydantic_program
@@ -226,5 +221,4 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
         if self._input_key not in kwds:
             raise ValueError(f"Input key {self._input_key} not found in kwds.")
         result = self._pydantic_program(**{self._input_key: kwds[self._input_key]})
-        result = cast(DataFrameRowsOnly, result)
-        return result
+        return cast(DataFrameRowsOnly, result)

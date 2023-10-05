@@ -16,9 +16,9 @@ Use a response synthesizer on it's own:
 
 ```python
 from llama_index.schema import Node
-from llama_index.response_synthesizers import get_response_synthesizer
+from llama_index.response_synthesizers import ResponseMode, get_response_synthesizer
 
-response_synthesizer = get_response_synthesizer(response_mode='compact')
+response_synthesizer = get_response_synthesizer(response_mode=ResponseMode.COMPACT)
 
 response = response_synthesizer.synthesize("query text", nodes=[Node(text="text"), ...])
 ```

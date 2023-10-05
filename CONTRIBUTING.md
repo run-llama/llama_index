@@ -99,9 +99,20 @@ See [Storage guide](https://gpt-index.readthedocs.io/en/latest/how_to/storage.ht
 
 ---
 
+#### Managed Index
+
+A managed index is used to represent an index that's managed via an API, exposing API calls to index documents and query documents.
+
+Currently we support the [VectaraIndex](https://github.com/run-llama/llama_index/tree/ca09272af000307762d301c99da46ddc70d3bfd2/llama_index/indices/managed/vectara).
+Open to contributions!
+
+See [Managed Index docs](https://gpt-index.readthedocs.io/en/stable/community/integrations/managed_indices.html) for details.
+
+---
+
 #### Vector Stores
 
-Our vector store classes store embeddings and support lookup via similiarity search.
+Our vector store classes store embeddings and support lookup via similarity search.
 These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
@@ -146,7 +157,7 @@ data if you wish.
 
 **Ideas**:
 
-- Besides the "default" retrievers built on top of each index, what about fancier retrievers? E.g. retrievers that take in other retrivers as input? Or other
+- Besides the "default" retrievers built on top of each index, what about fancier retrievers? E.g. retrievers that take in other retrievers as input? Or other
   types of data?
 
 ---
@@ -190,7 +201,7 @@ See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transf
 
 A token usage optimizer refines the retrieved `Nodes` to reduce token usage during response synthesis.
 
-**Interface**: `optimize` takes in the `QueryBundle` and a text chunk `str`, and outputs a refined text chunk `str` that yeilds a more optimized response
+**Interface**: `optimize` takes in the `QueryBundle` and a text chunk `str`, and outputs a refined text chunk `str` that yields a more optimized response
 
 **Examples**:
 
@@ -208,7 +219,7 @@ A node postprocessor refines a list of retrieve nodes given configuration and co
 
 - [Keyword Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L32): filters nodes based on keyword match
 - [Similarity Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L62): filers nodes based on similarity threshold
-- [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L135): fetchs additional nodes to augment context based on node relationships.
+- [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L135): fetches additional nodes to augment context based on node relationships.
 
 ---
 
@@ -317,6 +328,7 @@ For bigger changes, you'll want to create a unit test. Our tests are in the `tes
 We use `pytest` for unit testing. To run all unit tests, run the following in the root dir:
 
 ```bash
+pip install -r data_requirements.txt
 pytest tests
 ```
 

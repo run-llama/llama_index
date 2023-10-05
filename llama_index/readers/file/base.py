@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.docs_reader import DocxReader, PDFReader
+from llama_index.readers.file.docs_reader import DocxReader, HWPReader, PDFReader
 from llama_index.readers.file.epub_reader import EpubReader
 from llama_index.readers.file.image_reader import ImageReader
 from llama_index.readers.file.ipynb_reader import IPYNBReader
@@ -17,6 +17,7 @@ from llama_index.readers.file.video_audio_reader import VideoAudioReader
 from llama_index.schema import Document
 
 DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
+    ".hwp": HWPReader,
     ".pdf": PDFReader,
     ".docx": DocxReader,
     ".pptx": PptxReader,
@@ -162,7 +163,7 @@ class SimpleDirectoryReader(BaseReader):
             else:
                 all_files.add(ref)
 
-        new_input_files = sorted(list(all_files))
+        new_input_files = sorted(all_files)
 
         if len(new_input_files) == 0:
             raise ValueError(f"No files found in {input_dir}.")
@@ -205,14 +206,12 @@ class SimpleDirectoryReader(BaseReader):
                 # iterate over docs if needed
                 if self.filename_as_id:
                     for i, doc in enumerate(docs):
-                        doc.id_ = f"{str(input_file)}_part_{i}"
+                        doc.id_ = f"{input_file!s}_part_{i}"
 
                 documents.extend(docs)
             else:
                 # do standard read
-                with open(
-                    input_file, "r", errors=self.errors, encoding=self.encoding
-                ) as f:
+                with open(input_file, errors=self.errors, encoding=self.encoding) as f:
                     data = f.read()
 
                 doc = Document(text=data, metadata=metadata or {})

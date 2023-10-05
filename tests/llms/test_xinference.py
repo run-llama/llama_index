@@ -1,11 +1,11 @@
-from typing import List, Dict, Any, Union, Iterator, Generator, Mapping, Sequence, Tuple
+from typing import Any, Dict, Generator, Iterator, List, Mapping, Sequence, Tuple, Union
 
 import pytest
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
-    MessageRole,
     CompletionResponse,
+    MessageRole,
 )
 from llama_index.llms.xinference import Xinference
 
@@ -73,8 +73,7 @@ mock_chat_stream: List[Dict[str, Any]] = [
 
 
 def mock_chat_stream_iterator() -> Generator:
-    for i in mock_chat_stream:
-        yield i
+    yield from mock_chat_stream
 
 
 class MockXinferenceModel:
@@ -124,6 +123,25 @@ def test_init() -> None:
     )
     assert dummy.model_uid == "uid"
     assert dummy.endpoint == "endpoint"
+    assert isinstance(dummy.temperature, float)
+    assert dummy.temperature == 1.0
+    assert isinstance(dummy.max_tokens, int)
+    assert dummy.max_tokens == dummy.context_window // 4
+
+    dummy_custom = MockXinference(
+        model_uid="uid_custom",
+        endpoint="endpoint_custom",
+        temperature=(dummy.temperature + 0.1) / 2,
+        max_tokens=dummy.max_tokens + 2,
+    )
+    assert dummy_custom.model_uid == "uid_custom"
+    assert dummy_custom.endpoint == "endpoint_custom"
+    assert isinstance(dummy_custom.temperature, float)
+    assert dummy_custom.temperature != dummy.temperature
+    assert dummy_custom.temperature == (dummy.temperature + 0.1) / 2
+    assert isinstance(dummy_custom.max_tokens, int)
+    assert dummy_custom.max_tokens != dummy.max_tokens
+    assert dummy_custom.max_tokens == dummy.max_tokens + 2
 
 
 @pytest.mark.parametrize("chat_history", [mock_chat_history, tuple(mock_chat_history)])
