@@ -1,7 +1,7 @@
 """Test text splitter."""
 import tiktoken
+from llama_index.node_parser.text.utils import truncate_text
 from llama_index.text_splitter import TokenTextSplitter
-from llama_index.text_splitter.utils import truncate_text
 
 
 def test_split_token() -> None:
