@@ -38,8 +38,6 @@ from llama_index.llms.openai_utils import (
 
 
 class OpenAI(LLM):
-    class_type = "openai"
-
     model: str = Field(description="The OpenAI model to use.")
     temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
