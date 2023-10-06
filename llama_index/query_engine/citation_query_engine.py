@@ -84,9 +84,9 @@ class CitationQueryEngine(BaseQueryEngine):
             Size of citation chunks, default=512. Useful for controlling
             granularity of sources.
         citation_chunk_overlap (int): Overlap of citation nodes, default=20.
-        text_splitter (Optional[TextSplitterType]):
+        text_splitter (Optional[TextNodeParser]):
             A text splitter for creating citation source nodes. Default is
-            a SentenceSplitter.
+            a SentenceAwareNodeParser.
         callback_manager (Optional[CallbackManager]): A callback manager.
     """
 
@@ -143,9 +143,9 @@ class CitationQueryEngine(BaseQueryEngine):
                 Size of citation chunks, default=512. Useful for controlling
                 granularity of sources.
             citation_chunk_overlap (int): Overlap of citation nodes, default=20.
-            text_splitter (Optional[TextSplitter]):
+            text_splitter (Optional[TextNodeParser]):
                 A text splitter for creating citation source nodes. Default is
-                a SentenceSplitter.
+                a SentenceAwareNodeParser.
             citation_qa_template (BasePromptTemplate): Template for initial citation QA
             citation_refine_template (BasePromptTemplate):
                 Template for citation refinement.

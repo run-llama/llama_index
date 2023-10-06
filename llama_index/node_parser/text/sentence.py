@@ -1,20 +1,18 @@
 """Sentence splitter."""
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Sequence, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_SIZE
 from llama_index.node_parser.interface import MetadataAwareTextNodeParser
-from llama_index.node_parser.node_utils import build_nodes_from_splits
 from llama_index.node_parser.text.utils import (
     split_by_char,
     split_by_regex,
     split_by_sentence_tokenizer,
     split_by_sep,
 )
-from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import globals_helper
 
 SENTENCE_CHUNK_OVERLAP = 200
@@ -29,10 +27,10 @@ class _Split:
 
 
 class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
-    """_Split text with a preference for complete sentences.
+    """Parse text with a preference for complete sentences.
 
     In general, this class tries to keep sentences and paragraphs together. Therefore
-    compared to the original TokenTextSplitter, there are less likely to be
+    compared to the original TokenAwareNodeParser, there are less likely to be
     hanging sentences or parts of sentences at the end of the node chunk.
     """
 
