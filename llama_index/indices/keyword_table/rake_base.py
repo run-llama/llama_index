@@ -4,7 +4,7 @@ Similar to KeywordTableIndex, but uses RAKE instead of GPT.
 
 """
 
-from typing import Set
+from typing import Set, Union, Any
 
 from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import rake_extract_keywords
