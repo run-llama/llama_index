@@ -79,7 +79,7 @@ For saving and loading a graph/composable index, see the [full guide here](../in
 
 ### Vector Store Integrations and Storage
 
-Most of our vector store integrations store the entire index (vectors + text) in the vector store itself. This comes with the major benefit of not having to exlicitly persist the index as shown above, since the vector store is already hosted and persisting the data in our index.
+Most of our vector store integrations store the entire index (vectors + text) in the vector store itself. This comes with the major benefit of not having to explicitly persist the index as shown above, since the vector store is already hosted and persisting the data in our index.
 
 The vector stores that support this practice are:
 
