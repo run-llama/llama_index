@@ -49,6 +49,7 @@ class SimpleMongoReader(BaseReader):
         collection_name: str,
         field_names: List[str] = ["text"],
         query_dict: Optional[Dict] = None,
+        metadata_names: Optional[List[str]] = None,
     ) -> List[Document]:
         """Load data from the input directory.
 
@@ -59,6 +60,8 @@ class SimpleMongoReader(BaseReader):
                 Defaults to ["text"]
             query_dict (Optional[Dict]): query to filter documents.
                 Defaults to None
+            metadata_names (Optional[List[str]]): names of the fields to be added
+                to the metadata attribute of the Document. Defaults to None
 
         Returns:
             List[Document]: A list of documents.
@@ -81,6 +84,16 @@ class SimpleMongoReader(BaseReader):
                 field = item[field_name]
                 text += field if isinstance(field, str) else "".join(field)
 
-            documents.append(Document(text=text))
+            if metadata_names is None:
+                documents.append(Document(text=text))
+            else:
+                metadata = {}
+                for metadata_name in metadata_names:
+                    if metadata_name not in item:
+                        raise ValueError(
+                            f"`{metadata_name}` field not found in Mongo document."
+                        )
+                    metadata[metadata_name] = item[metadata_name]
+                documents.append(Document(text=text, metadata=metadata))
 
         return documents

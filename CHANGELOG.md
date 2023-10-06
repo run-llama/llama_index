@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### New Features
+- Pull fields from mongodb into metadata with `metadata_names` argument (#8001)
 - Simplified `LocalAI.__init__` preserving the same behaviors (#7982)
 
 ### Bug Fixes / Nits
