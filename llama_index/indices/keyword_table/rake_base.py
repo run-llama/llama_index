@@ -9,6 +9,7 @@ from typing import Set, Union, Any
 from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import rake_extract_keywords
 from llama_index.indices.keyword_table.base import KeywordTableRetrieverMode
+from llama_index.indices.base_retriever import BaseRetriever
 
 class RAKEKeywordTableIndex(BaseKeywordTableIndex):
     """RAKE Keyword Table Index.
