@@ -50,17 +50,11 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
     secondary_chunking_regex: str = Field(
         default=CHUNKING_REGEX, description="Backup regex for splitting into sentences."
     )
-    chunking_tokenizer_fn: Callable[[str], List[str]] = Field(
-        exclude=True,
-        description=(
-            "Function to split text into sentences. "
-            "Defaults to `nltk.sent_tokenize`."
-        ),
-    )
-    tokenizer: Callable = Field(
+    
+    _chunking_tokenizer_fn: Callable[[str], List[str]] = PrivateAttr()
+    
+    _tokenizer: Callable = PrivateAttr(
         default_factory=globals_helper.tokenizer,  # type: ignore
-        description="Tokenizer for splitting words into tokens.",
-        exclude=True,
     )
 
     _split_fns: List[Callable] = PrivateAttr()
@@ -87,8 +81,8 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
             )
 
         callback_manager = callback_manager or CallbackManager([])
-        chunking_tokenizer_fn = chunking_tokenizer_fn or split_by_sentence_tokenizer()
-        tokenizer = tokenizer or globals_helper.tokenizer
+        self._chunking_tokenizer_fn = chunking_tokenizer_fn or split_by_sentence_tokenizer()
+        self._tokenizer = tokenizer or globals_helper.tokenizer
 
         self._split_fns = [
             split_by_sep(paragraph_separator),
@@ -104,12 +98,10 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
         super().__init__(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
-            chunking_tokenizer_fn=chunking_tokenizer_fn,
             secondary_chunking_regex=secondary_chunking_regex,
             separator=separator,
             paragraph_separator=paragraph_separator,
             callback_manager=callback_manager,
-            tokenizer=tokenizer,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
         )
@@ -119,7 +111,7 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
         return "SentenceSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
-        metadata_len = len(self.tokenizer(metadata_str))
+        metadata_len = len(self._tokenizer(metadata_str))
         effective_chunk_size = self.chunk_size - metadata_len
         if effective_chunk_size <= 0:
             raise ValueError(
@@ -222,7 +214,7 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
 
         while len(splits) > 0:
             cur_split = splits[0]
-            cur_split_len = len(self.tokenizer(cur_split.text))
+            cur_split_len = len(self._tokenizer(cur_split.text))
             if cur_split_len > chunk_size:
                 raise ValueError("Single token exceeded chunk size")
             if cur_chunk_len + cur_split_len > chunk_size and not new_chunk:
@@ -264,7 +256,7 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
         return new_chunks
 
     def _token_size(self, text: str) -> int:
-        return len(self.tokenizer(text))
+        return len(self._tokenizer(text))
 
     def _get_splits_by_fns(self, text: str) -> Tuple[List[str], bool]:
         for split_fn in self._split_fns:

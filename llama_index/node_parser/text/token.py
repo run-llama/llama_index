@@ -34,10 +34,9 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
     backup_separators: List = Field(
         default_factory=list, description="Additional separators for splitting."
     )
-    tokenizer: Callable = Field(
+
+    _tokenizer: Callable = PrivateAttr(
         default_factory=globals_helper.tokenizer,  # type: ignore
-        description="Tokenizer for splitting words into tokens.",
-        exclude=True,
     )
 
     _split_fns: List[Callable] = PrivateAttr()
@@ -60,7 +59,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
                 f"({chunk_size}), should be smaller."
             )
         callback_manager = callback_manager or CallbackManager([])
-        tokenizer = tokenizer or globals_helper.tokenizer
+        self._tokenizer = tokenizer or globals_helper.tokenizer
 
         all_seps = [separator] + (backup_separators or [])
         self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
@@ -71,18 +70,17 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
             separator=separator,
             backup_separators=backup_separators,
             callback_manager=callback_manager,
-            tokenizer=tokenizer,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
         )
-
+    
     @classmethod
     def class_name(cls) -> str:
         return "TokenTextSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text into chunks, reserving space required for metadata str."""
-        metadata_len = len(self.tokenizer(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN
+        metadata_len = len(self._tokenizer(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN
         effective_chunk_size = self.chunk_size - metadata_len
         if effective_chunk_size <= 0:
             raise ValueError(
@@ -132,7 +130,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
 
         NOTE: the splits contain the separators.
         """
-        if len(self.tokenizer(text)) <= chunk_size:
+        if len(self._tokenizer(text)) <= chunk_size:
             return [text]
 
         for split_fn in self._split_fns:
@@ -142,7 +140,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
 
         new_splits = []
         for split in splits:
-            split_len = len(self.tokenizer(split))
+            split_len = len(self._tokenizer(split))
             if split_len <= chunk_size:
                 new_splits.append(split)
             else:
@@ -164,7 +162,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
         cur_chunk: List[str] = []
         cur_len = 0
         for split in splits:
-            split_len = len(self.tokenizer(split))
+            split_len = len(self._tokenizer(split))
             if split_len > chunk_size:
                 _logger.warning(
                     f"Got a split of size {split_len}, ",
@@ -186,7 +184,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
                 while cur_len > self.chunk_overlap or cur_len + split_len > chunk_size:
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)
-                    cur_len -= len(self.tokenizer(first_chunk))
+                    cur_len -= len(self._tokenizer(first_chunk))
 
             cur_chunk.append(split)
             cur_len += split_len
