@@ -12,7 +12,7 @@ from llama_index.indices.keyword_table.base import (
     KeywordTableRetrieverMode,
 )
 from llama_index.indices.keyword_table.utils import rake_extract_keywords
-
+from llama_index.indices.keyword_table.base import KeywordTableRetrieverMode
 
 class RAKEKeywordTableIndex(BaseKeywordTableIndex):
     """RAKE Keyword Table Index.
