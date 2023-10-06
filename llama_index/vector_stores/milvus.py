@@ -92,6 +92,8 @@ class MilvusVectorStore(VectorStore):
         consistency_level: str = "Strong",
         overwrite: bool = False,
         text_key: Optional[str] = None,
+        index_config: Optional[dict] = None,
+        search_config: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -103,7 +105,7 @@ class MilvusVectorStore(VectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        from pymilvus import MilvusClient
+        from pymilvus import Collection, MilvusClient
 
         self.collection_name = collection_name
         self.dim = dim
@@ -112,6 +114,8 @@ class MilvusVectorStore(VectorStore):
         self.consistency_level = consistency_level
         self.overwrite = overwrite
         self.text_key = text_key
+        self.index_config = index_config.copy() if index_config else {}
+        self.search_config = search_config.copy() if search_config else {}
 
         # Select the similarity metric
         if similarity_metric.lower() in ("ip"):
@@ -143,6 +147,11 @@ class MilvusVectorStore(VectorStore):
                 max_length=65_535,
                 consistency_level=self.consistency_level,
             )
+
+        self.collection = Collection(
+            self.collection_name, using=self.milvusclient._using
+        )
+        self._create_index_if_required(force=True)
 
         logger.debug(f"Successfully created a new collection: {self.collection_name}")
 
@@ -177,7 +186,9 @@ class MilvusVectorStore(VectorStore):
             insert_list.append(entry)
 
         # Insert the data into milvus
-        self.milvusclient.insert(self.collection_name, insert_list)
+        self.collection.insert(insert_list)
+        self.collection.flush()
+        self._create_index_if_required()
         logger.debug(
             f"Successfully inserted embeddings into: {self.collection_name} "
             f"Num Inserted: {len(insert_list)}"
@@ -258,6 +269,7 @@ class MilvusVectorStore(VectorStore):
             filter=string_expr,
             limit=query.similarity_top_k,
             output_fields=output_fields,
+            search_params=self.search_config,
         )
 
         logger.debug(
@@ -291,3 +303,19 @@ class MilvusVectorStore(VectorStore):
             ids.append(hit["id"])
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _create_index_if_required(self, force=False) -> None:
+        if (self.collection.has_index() and self.overwrite) or force:
+            self.collection.release()
+            self.collection.drop_index()
+            index_params = {
+                "params": self.index_config.copy(),
+                "metric_type": self.similarity_metric,
+            }
+            index_params["index_type"] = index_params["params"].pop(
+                "index_type", "FLAT"
+            )
+            self.collection.create_index(
+                self.embedding_field, index_params=index_params
+            )
+            self.collection.load()
