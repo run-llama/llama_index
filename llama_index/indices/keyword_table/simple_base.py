@@ -5,7 +5,7 @@ technique that doesn't involve GPT - just uses regex.
 
 """
 
-from typing import Set
+from typing import Set, Union, Any
 
 from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import simple_extract_keywords
