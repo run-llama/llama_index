@@ -78,7 +78,8 @@ class SimpleMongoReader(BaseReader):
                     raise ValueError(
                         f"`{field_name}` field not found in Mongo document."
                     )
-                text += item[field_name]
+                field = item[field_name]
+                text += field if isinstance(field, str) else "".join(field)
 
             documents.append(Document(text=text))
 

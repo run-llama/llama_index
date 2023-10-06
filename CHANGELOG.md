@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+- Handle lists of strings in mongodb reader (#8002)
+
+## [0.8.40] - 2023-10-05
+
 ### New Features
 - Added support for `Clarifai` LLM (#7967)
+- Add support for function fine-tuning (#7971)
 
 ### Breaking Changes
 - Update document summary index (#7815)
