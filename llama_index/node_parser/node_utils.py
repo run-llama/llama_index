@@ -126,13 +126,13 @@ def get_nodes_from_node(
 
             # use the longest metadata str for splitting
             if len(embed_metadata_str) > len(llm_metadata_str):
-                embed_str = embed_metadata_str
+                metadata_str = embed_metadata_str
             else:
-                embed_str = llm_metadata_str
+                metadata_str = llm_metadata_str
 
             text_splits = text_splitter.split_text_metadata_aware(
                 text=node.get_content(metadata_mode=MetadataMode.NONE),
-                metadata_str=embed_str,
+                metadata_str=metadata_str,
             )
         else:
             logger.warning(
