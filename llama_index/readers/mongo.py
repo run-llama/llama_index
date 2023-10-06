@@ -34,13 +34,11 @@ class SimpleMongoReader(BaseReader):
                 "`pymongo` package not found, please run `pip install pymongo`"
             )
         if uri:
-            if uri is None:
-                raise ValueError("Either `host` and `port` or `uri` must be provided.")
-            self.client: MongoClient = MongoClient(uri)
-        else:
-            if host is None or port is None:
-                raise ValueError("Either `host` and `port` or `uri` must be provided.")
+            self.client = MongoClient(uri)
+        elif host and port:
             self.client = MongoClient(host, port)
+        else:
+            raise ValueError("Either `host` and `port` or `uri` must be provided.")
         self.max_docs = max_docs
 
     def load_data(
