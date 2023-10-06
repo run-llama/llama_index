@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 from llama_index.readers.mongo import SimpleMongoReader
+from llama_index.schema import MetadataMode
 
 try:
     from pymongo import MongoClient
@@ -44,9 +45,9 @@ def test_load_data_with_field_name() -> None:
         )
 
         assert len(documents) == 3
-        assert documents[0].get_content() == "first1second1third1"
-        assert documents[1].get_content() == "first2second2third2"
-        assert documents[2].get_content() == "first3second3third3"
+        assert documents[0].get_content() == "first1second1second11third1"
+        assert documents[1].get_content() == "first2second2second22third2"
+        assert documents[2].get_content() == "first3second3second33third3"
 
 
 @pytest.mark.skipif(MongoClient is None, reason="pymongo not installed")
@@ -73,6 +74,15 @@ def test_load_data_with_metadata_name() -> None:
         assert documents[0].get_metadata_str() == "second: second1\nthird: third1"
         assert documents[1].get_metadata_str() == "second: second2\nthird: third2"
         assert documents[2].get_metadata_str() == "second: second3\nthird: third3"
-        assert documents[0].get_content() == "first1second1second11third1"
-        assert documents[1].get_content() == "first2second2second22third2"
-        assert documents[2].get_content() == "first3second3second33third3"
+        assert (
+            documents[0].get_content(metadata_mode=MetadataMode.ALL)
+            == "second: second1\nthird: third1\n\nfirst1"
+        )
+        assert (
+            documents[1].get_content(metadata_mode=MetadataMode.ALL)
+            == "second: second2\nthird: third2\n\nfirst2"
+        )
+        assert (
+            documents[2].get_content(metadata_mode=MetadataMode.ALL)
+            == "second: second3\nthird: third3\n\nfirst3"
+        )
