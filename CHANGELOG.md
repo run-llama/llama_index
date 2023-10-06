@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Handle lists of strings in mongodb reader (#8002)
+
 ## [0.8.40] - 2023-10-05
 
 ### New Features
