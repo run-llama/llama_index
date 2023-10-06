@@ -4,7 +4,7 @@
 LlamaIndex provides callbacks to help debug, track, and trace the inner workings of the library.
 Using the callback manager, as many callbacks as needed can be added.
 
-In addition to logging data related to events, you can also track the duration and number of occurances
+In addition to logging data related to events, you can also track the duration and number of occurrences
 of each event.
 
 Furthermore, a trace map of events is also recorded, and callbacks can use this data

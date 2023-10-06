@@ -30,7 +30,7 @@ There are a few tradeoffs in LLM application development:
 1. **Cost** - more powerful models may be more expensive
 2. **Latency** - more powerful models may be slower
 3. **Simplicity** (one size fits all) - how powerful and flexible is the model / pipeline?
-4. **Reliability / Useability** - is my application working at least in the general case? Is it ready for unstructured user interaction? Have I covered the major usage patterns?
+4. **Reliability / Usability** - is my application working at least in the general case? Is it ready for unstructured user interaction? Have I covered the major usage patterns?
 
 LLM infra improvements are progressing quickly and we expect cost and latency to go down over time.
 

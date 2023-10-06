@@ -109,7 +109,7 @@ class HuggingFaceLLM(CustomLLM):
         except ImportError as exc:
             raise ImportError(
                 f"{type(self).__name__} requires torch and transformers packages.\n"
-                f"Please install both with `pip install torch transformers`."
+                f"Please install both with `pip install transformers[torch]`."
             ) from exc
 
         model_kwargs = model_kwargs or {}
