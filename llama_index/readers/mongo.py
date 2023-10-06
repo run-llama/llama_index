@@ -1,6 +1,6 @@
 """Mongo client."""
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
@@ -33,14 +33,16 @@ class SimpleMongoReader(BaseReader):
             raise ImportError(
                 "`pymongo` package not found, please run `pip install pymongo`"
             )
+
+        client: MongoClient
         if uri:
-            if uri is None:
-                raise ValueError("Either `host` and `port` or `uri` must be provided.")
-            self.client: MongoClient = MongoClient(uri)
+            client = MongoClient(uri)
+        elif host and port:
+            client = MongoClient(host, port)
         else:
-            if host is None or port is None:
-                raise ValueError("Either `host` and `port` or `uri` must be provided.")
-            self.client = MongoClient(host, port)
+            raise ValueError("Either `host` and `port` or `uri` must be provided.")
+
+        self.client = client
         self.max_docs = max_docs
 
     def load_data(
