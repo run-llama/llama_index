@@ -7,12 +7,10 @@ Similar to KeywordTableIndex, but uses RAKE instead of GPT.
 from typing import Any, Set, Union
 
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.keyword_table.base import (
-    BaseKeywordTableIndex,
-    KeywordTableRetrieverMode,
-)
+from llama_index.indices.keyword_table.base import (BaseKeywordTableIndex,
+                                                    KeywordTableRetrieverMode)
 from llama_index.indices.keyword_table.utils import rake_extract_keywords
-from llama_index.indices.keyword_table.base import KeywordTableRetrieverMode
+
 
 class RAKEKeywordTableIndex(BaseKeywordTableIndex):
     """RAKE Keyword Table Index.
