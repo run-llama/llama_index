@@ -10,6 +10,9 @@ from ...core.api_error import ApiError
 from ...core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ...core.jsonable_encoder import jsonable_encoder
 from ...errors.unprocessable_entity_error import UnprocessableEntityError
+from ...types.configured_transformation_execution import (
+    ConfiguredTransformationExecution,
+)
 from ...types.configured_transformation_item import ConfiguredTransformationItem
 from ...types.data_sink_create import DataSinkCreate
 from ...types.data_source_create import DataSourceCreate
@@ -202,7 +205,7 @@ class PipelineClient:
         pipeline_id: str,
         pipeline_execution_id: str,
         configured_transformation_execution_id: str,
-    ) -> typing.Dict[str, typing.Any]:
+    ) -> ConfiguredTransformationExecution:
         """
         Get the result of an execution step.
 
@@ -223,7 +226,7 @@ class PipelineClient:
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(typing.Dict[str, typing.Any], _response.json())  # type: ignore
+            return pydantic.parse_obj_as(ConfiguredTransformationExecution, _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -414,7 +417,7 @@ class AsyncPipelineClient:
         pipeline_id: str,
         pipeline_execution_id: str,
         configured_transformation_execution_id: str,
-    ) -> typing.Dict[str, typing.Any]:
+    ) -> ConfiguredTransformationExecution:
         """
         Get the result of an execution step.
 
@@ -435,7 +438,7 @@ class AsyncPipelineClient:
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(typing.Dict[str, typing.Any], _response.json())  # type: ignore
+            return pydantic.parse_obj_as(ConfiguredTransformationExecution, _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:

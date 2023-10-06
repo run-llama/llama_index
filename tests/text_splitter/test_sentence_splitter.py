@@ -64,7 +64,9 @@ def test_edge_case() -> None:
     chunks = splitter.split_text(text)
     assert len(chunks) == 2
 
-    splitter = SentenceAwareNodeParser(tokenizer=tiktoken.get_encoding("cl100k_base").encode)
+    splitter = SentenceAwareNodeParser(
+        tokenizer=tiktoken.get_encoding("cl100k_base").encode
+    )
     chunks = splitter.split_text(text)
     # Like the Chinese there's a big difference in the # of tokens
     assert len(chunks) == 1

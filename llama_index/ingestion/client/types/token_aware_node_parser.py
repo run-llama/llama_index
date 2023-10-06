@@ -8,17 +8,9 @@ import pydantic
 from ..core.datetime_utils import serialize_datetime
 
 
-class SentenceWindowNodeParser(pydantic.BaseModel):
+class TokenAwareNodeParser(pydantic.BaseModel):
     """
-    Sentence window node parser.
-
-    Splits a document into Nodes, with each node being a sentence.
-    Each node contains a window from the surrounding sentences in the metadata.
-
-    Args:
-        sentence_splitter (Optional[Callable]): splits text into sentences
-        include_metadata (bool): whether to include metadata in nodes
-        include_prev_next_rel (bool): whether to include prev/next relationships
+    Implementation of splitting text that looks at word tokens.
     """
 
     include_metadata: typing.Optional[bool] = pydantic.Field(
@@ -28,14 +20,17 @@ class SentenceWindowNodeParser(pydantic.BaseModel):
         description="Include prev/next node relationships."
     )
     callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
-    window_size: typing.Optional[int] = pydantic.Field(
-        description="The number of sentences on each side of a sentence to capture."
+    chunk_size: typing.Optional[int] = pydantic.Field(
+        description="The token chunk size for each chunk."
     )
-    window_metadata_key: typing.Optional[str] = pydantic.Field(
-        description="The metadata key to store the sentence window under."
+    chunk_overlap: typing.Optional[int] = pydantic.Field(
+        description="The token overlap of each chunk when splitting."
     )
-    original_text_metadata_key: typing.Optional[str] = pydantic.Field(
-        description="The metadata key to store the original sentence in."
+    separator: typing.Optional[str] = pydantic.Field(
+        description="Default separator for splitting into words"
+    )
+    backup_separators: typing.Optional[typing.List[typing.Any]] = pydantic.Field(
+        description="Additional separators for splitting."
     )
     class_name: typing.Optional[str]
 

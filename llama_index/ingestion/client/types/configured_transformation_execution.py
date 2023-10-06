@@ -6,25 +6,28 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
+from .status_enum import StatusEnum
+from .text_node import TextNode
 
 
-class PgVectorStore(pydantic.BaseModel):
+class ConfiguredTransformationExecution(pydantic.BaseModel):
     """
-    Abstract vector store protocol.
+    Schema for a configured transformation execution.
     """
 
-    stores_text: typing.Optional[bool]
-    is_embedding_query: typing.Optional[bool]
-    connection_string: str
-    async_connection_string: str
-    table_name: str
-    embed_dim: int
-    hybrid_search: bool
-    text_search_config: str
-    cache_ok: bool
-    debug: bool
-    flat_metadata: typing.Optional[bool]
-    class_name: typing.Optional[str]
+    id: typing.Optional[str] = pydantic.Field(description="Unique identifier")
+    created_at: typing.Optional[dt.datetime] = pydantic.Field(
+        description="Creation datetime"
+    )
+    updated_at: typing.Optional[dt.datetime] = pydantic.Field(
+        description="Update datetime"
+    )
+    status: StatusEnum
+    started_at: dt.datetime
+    ended_at: typing.Optional[dt.datetime]
+    pipeline_execution_id: str
+    configured_transformation_id: str
+    nodes: typing.Optional[typing.List[TextNode]]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

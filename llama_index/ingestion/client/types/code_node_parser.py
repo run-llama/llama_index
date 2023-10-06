@@ -6,24 +6,16 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
-from .simple_node_parser_text_splitter import SimpleNodeParserTextSplitter
 
 
-class SimpleNodeParser(pydantic.BaseModel):
+class CodeNodeParser(pydantic.BaseModel):
     """
-    Simple node parser.
+    Split code using a AST parser.
 
-    Splits a document into Nodes using a TextSplitter.
-
-    Args:
-        text_splitter (Optional[TextSplitter]): text splitter
-        include_metadata (bool): whether to include metadata in nodes
-        include_prev_next_rel (bool): whether to include prev/next relationships
+    Thank you to Kevin Lu / SweepAI for suggesting this elegant code splitting solution.
+    https://docs.sweep.dev/blogs/chunking-2m-files
     """
 
-    text_splitter: typing.Optional[SimpleNodeParserTextSplitter] = pydantic.Field(
-        description="The text splitter to use when splitting documents."
-    )
     include_metadata: typing.Optional[bool] = pydantic.Field(
         description="Whether or not to consider metadata when splitting."
     )
@@ -31,6 +23,18 @@ class SimpleNodeParser(pydantic.BaseModel):
         description="Include prev/next node relationships."
     )
     callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
+    language: str = pydantic.Field(
+        description="The programming language of the code being split."
+    )
+    chunk_lines: typing.Optional[int] = pydantic.Field(
+        description="The number of lines to include in each chunk."
+    )
+    chunk_lines_overlap: typing.Optional[int] = pydantic.Field(
+        description="How many lines of code each chunk overlaps with."
+    )
+    max_chars: typing.Optional[int] = pydantic.Field(
+        description="Maximum number of characters per chunk."
+    )
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:

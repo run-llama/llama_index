@@ -8,12 +8,27 @@ import pydantic
 from ..core.datetime_utils import serialize_datetime
 
 
-class TextSplitter(pydantic.BaseModel):
+class HtmlNodeParser(pydantic.BaseModel):
     """
-    Helper class that provides a standard way to create an ABC using
-    inheritance.
+    HTML node parser.
+
+    Splits a document into Nodes using custom HTML splitting logic.
+
+    Args:
+        include_metadata (bool): whether to include metadata in nodes
+        include_prev_next_rel (bool): whether to include prev/next relationships
     """
 
+    include_metadata: typing.Optional[bool] = pydantic.Field(
+        description="Whether or not to consider metadata when splitting."
+    )
+    include_prev_next_rel: typing.Optional[bool] = pydantic.Field(
+        description="Include prev/next node relationships."
+    )
+    callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
+    tags: typing.Optional[typing.List[str]] = pydantic.Field(
+        description="HTML tags to extract text from."
+    )
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:

@@ -17,9 +17,15 @@ class ConfigurableTransformationNames(str, enum.Enum):
     MARVIN_METADATA_EXTRACTOR = "MARVIN_METADATA_EXTRACTOR"
     SUMMARY_EXTRACTOR = "SUMMARY_EXTRACTOR"
     QUESTIONS_ANSWERED_EXTRACTOR = "QUESTIONS_ANSWERED_EXTRACTOR"
-    SIMPLE_NODE_PARSER = "SIMPLE_NODE_PARSER"
     SENTENCE_WINDOW_NODE_PARSER = "SENTENCE_WINDOW_NODE_PARSER"
     HIERARCHICAL_NODE_PARSER = "HIERARCHICAL_NODE_PARSER"
+    CODE_NODE_PARSER = "CODE_NODE_PARSER"
+    SENTENCE_AWARE_NODE_PARSER = "SENTENCE_AWARE_NODE_PARSER"
+    TOKEN_AWARE_NODE_PARSER = "TOKEN_AWARE_NODE_PARSER"
+    HTML_NODE_PARSER = "HTML_NODE_PARSER"
+    MARKDOWN_NODE_PARSER = "MARKDOWN_NODE_PARSER"
+    JSON_NODE_PARSER = "JSON_NODE_PARSER"
+    SIMPLE_FILE_NODE_PARSER = "SIMPLE_FILE_NODE_PARSER"
     OPENAI_EMBEDDING = "OPENAI_EMBEDDING"
     HUGGINGFACE_EMBEDDING = "HUGGINGFACE_EMBEDDING"
 
@@ -31,9 +37,15 @@ class ConfigurableTransformationNames(str, enum.Enum):
         marvin_metadata_extractor: typing.Callable[[], T_Result],
         summary_extractor: typing.Callable[[], T_Result],
         questions_answered_extractor: typing.Callable[[], T_Result],
-        simple_node_parser: typing.Callable[[], T_Result],
         sentence_window_node_parser: typing.Callable[[], T_Result],
         hierarchical_node_parser: typing.Callable[[], T_Result],
+        code_node_parser: typing.Callable[[], T_Result],
+        sentence_aware_node_parser: typing.Callable[[], T_Result],
+        token_aware_node_parser: typing.Callable[[], T_Result],
+        html_node_parser: typing.Callable[[], T_Result],
+        markdown_node_parser: typing.Callable[[], T_Result],
+        json_node_parser: typing.Callable[[], T_Result],
+        simple_file_node_parser: typing.Callable[[], T_Result],
         openai_embedding: typing.Callable[[], T_Result],
         huggingface_embedding: typing.Callable[[], T_Result],
     ) -> T_Result:
@@ -49,12 +61,24 @@ class ConfigurableTransformationNames(str, enum.Enum):
             return summary_extractor()
         if self is ConfigurableTransformationNames.QUESTIONS_ANSWERED_EXTRACTOR:
             return questions_answered_extractor()
-        if self is ConfigurableTransformationNames.SIMPLE_NODE_PARSER:
-            return simple_node_parser()
         if self is ConfigurableTransformationNames.SENTENCE_WINDOW_NODE_PARSER:
             return sentence_window_node_parser()
         if self is ConfigurableTransformationNames.HIERARCHICAL_NODE_PARSER:
             return hierarchical_node_parser()
+        if self is ConfigurableTransformationNames.CODE_NODE_PARSER:
+            return code_node_parser()
+        if self is ConfigurableTransformationNames.SENTENCE_AWARE_NODE_PARSER:
+            return sentence_aware_node_parser()
+        if self is ConfigurableTransformationNames.TOKEN_AWARE_NODE_PARSER:
+            return token_aware_node_parser()
+        if self is ConfigurableTransformationNames.HTML_NODE_PARSER:
+            return html_node_parser()
+        if self is ConfigurableTransformationNames.MARKDOWN_NODE_PARSER:
+            return markdown_node_parser()
+        if self is ConfigurableTransformationNames.JSON_NODE_PARSER:
+            return json_node_parser()
+        if self is ConfigurableTransformationNames.SIMPLE_FILE_NODE_PARSER:
+            return simple_file_node_parser()
         if self is ConfigurableTransformationNames.OPENAI_EMBEDDING:
             return openai_embedding()
         if self is ConfigurableTransformationNames.HUGGINGFACE_EMBEDDING:

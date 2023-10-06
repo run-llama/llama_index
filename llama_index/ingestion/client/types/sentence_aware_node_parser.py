@@ -8,17 +8,13 @@ import pydantic
 from ..core.datetime_utils import serialize_datetime
 
 
-class SentenceWindowNodeParser(pydantic.BaseModel):
+class SentenceAwareNodeParser(pydantic.BaseModel):
     """
-    Sentence window node parser.
+    Parse text with a preference for complete sentences.
 
-    Splits a document into Nodes, with each node being a sentence.
-    Each node contains a window from the surrounding sentences in the metadata.
-
-    Args:
-        sentence_splitter (Optional[Callable]): splits text into sentences
-        include_metadata (bool): whether to include metadata in nodes
-        include_prev_next_rel (bool): whether to include prev/next relationships
+    In general, this class tries to keep sentences and paragraphs together. Therefore
+    compared to the original TokenAwareNodeParser, there are less likely to be
+    hanging sentences or parts of sentences at the end of the node chunk.
     """
 
     include_metadata: typing.Optional[bool] = pydantic.Field(
@@ -28,14 +24,20 @@ class SentenceWindowNodeParser(pydantic.BaseModel):
         description="Include prev/next node relationships."
     )
     callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
-    window_size: typing.Optional[int] = pydantic.Field(
-        description="The number of sentences on each side of a sentence to capture."
+    chunk_size: typing.Optional[int] = pydantic.Field(
+        description="The token chunk size for each chunk."
     )
-    window_metadata_key: typing.Optional[str] = pydantic.Field(
-        description="The metadata key to store the sentence window under."
+    chunk_overlap: typing.Optional[int] = pydantic.Field(
+        description="The token overlap of each chunk when splitting."
     )
-    original_text_metadata_key: typing.Optional[str] = pydantic.Field(
-        description="The metadata key to store the original sentence in."
+    separator: typing.Optional[str] = pydantic.Field(
+        description="Default separator for splitting into words"
+    )
+    paragraph_separator: typing.Optional[str] = pydantic.Field(
+        description="Separator between paragraphs."
+    )
+    secondary_chunking_regex: typing.Optional[str] = pydantic.Field(
+        description="Backup regex for splitting into sentences."
     )
     class_name: typing.Optional[str]
 

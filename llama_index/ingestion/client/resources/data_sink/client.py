@@ -52,6 +52,35 @@ class DataSinkClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
+    def upsert_data_sink_api_data_sink_put(
+        self, *, request: DataSinkCreate
+    ) -> DataSink:
+        """
+        Upserts a data sink.
+        Updates if a data sink with the same name and user_id already exists. Otherwise, creates a new data sink.
+
+        Parameters:
+            - request: DataSinkCreate.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "PUT",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/", "api/data_sink"
+            ),
+            json=jsonable_encoder(request),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(DataSink, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
     def get_data_sink(self, data_sink_id: str) -> DataSink:
         """
         Get a data sink by ID.
@@ -165,6 +194,35 @@ class AsyncDataSinkClient:
         """
         _response = await self._client_wrapper.httpx_client.request(
             "POST",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/", "api/data_sink"
+            ),
+            json=jsonable_encoder(request),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(DataSink, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def upsert_data_sink_api_data_sink_put(
+        self, *, request: DataSinkCreate
+    ) -> DataSink:
+        """
+        Upserts a data sink.
+        Updates if a data sink with the same name and user_id already exists. Otherwise, creates a new data sink.
+
+        Parameters:
+            - request: DataSinkCreate.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "PUT",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/", "api/data_sink"
             ),

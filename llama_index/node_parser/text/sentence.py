@@ -50,9 +50,9 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
     secondary_chunking_regex: str = Field(
         default=CHUNKING_REGEX, description="Backup regex for splitting into sentences."
     )
-    
+
     _chunking_tokenizer_fn: Callable[[str], List[str]] = PrivateAttr()
-    
+
     _tokenizer: Callable = PrivateAttr(
         default_factory=globals_helper.tokenizer,  # type: ignore
     )
@@ -81,7 +81,9 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
             )
 
         callback_manager = callback_manager or CallbackManager([])
-        self._chunking_tokenizer_fn = chunking_tokenizer_fn or split_by_sentence_tokenizer()
+        self._chunking_tokenizer_fn = (
+            chunking_tokenizer_fn or split_by_sentence_tokenizer()
+        )
         self._tokenizer = tokenizer or globals_helper.tokenizer
 
         self._split_fns = [

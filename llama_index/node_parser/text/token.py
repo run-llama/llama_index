@@ -73,7 +73,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
         )
-    
+
     @classmethod
     def class_name(cls) -> str:
         return "TokenTextSplitter"

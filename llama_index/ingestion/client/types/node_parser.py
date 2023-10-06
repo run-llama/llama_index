@@ -8,22 +8,18 @@ import pydantic
 from ..core.datetime_utils import serialize_datetime
 
 
-class PgVectorStore(pydantic.BaseModel):
+class NodeParser(pydantic.BaseModel):
     """
-    Abstract vector store protocol.
+    Base interface for node parser.
     """
 
-    stores_text: typing.Optional[bool]
-    is_embedding_query: typing.Optional[bool]
-    connection_string: str
-    async_connection_string: str
-    table_name: str
-    embed_dim: int
-    hybrid_search: bool
-    text_search_config: str
-    cache_ok: bool
-    debug: bool
-    flat_metadata: typing.Optional[bool]
+    include_metadata: typing.Optional[bool] = pydantic.Field(
+        description="Whether or not to consider metadata when splitting."
+    )
+    include_prev_next_rel: typing.Optional[bool] = pydantic.Field(
+        description="Include prev/next node relationships."
+    )
+    callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
