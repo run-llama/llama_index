@@ -102,14 +102,3 @@ class CodeNodeParser(TextNodeParser):
                 raise ValueError(f"Could not parse code with language {self.language}.")
 
         # TODO: set up auto-language detection using something like https://github.com/yoeo/guesslang.
-
-    def _parse_nodes(
-        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
-    ) -> List[BaseNode]:
-        all_nodes: List[BaseNode] = []
-        for node in nodes:
-            splits = self.split_text(node.get_content())
-
-            all_nodes.extend(build_nodes_from_splits(splits, node))
-
-        return all_nodes

@@ -197,16 +197,3 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
             chunks.append(chunk)
 
         return chunks
-
-    def _parse_nodes(
-        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
-    ) -> List[BaseNode]:
-        all_nodes: List[BaseNode] = []
-        for node in nodes:
-            splits = self.split_text_metadata_aware(
-                node.get_content(metadata_mode=MetadataMode.NONE),
-                metadata_str=node.get_metadata_str(),
-            )
-            all_nodes.extend(build_nodes_from_splits(splits, node))
-
-        return all_nodes
