@@ -48,7 +48,9 @@ class HuggingFaceLLM(CustomLLM):
             "Unused if `tokenizer` is passed in directly."
         )
     )
-    device_map: str = Field(description="The device_map to use. Defaults to 'auto'.")
+    device_map: Optional[str] = Field(
+        description="The device_map to use. Defaults to 'auto'."
+    )
     stopping_ids: List[int] = Field(
         default_factory=list,
         description=(
@@ -89,7 +91,7 @@ class HuggingFaceLLM(CustomLLM):
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: str = "auto",
+        device_map: Optional[str] = "auto",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
@@ -109,7 +111,7 @@ class HuggingFaceLLM(CustomLLM):
         except ImportError as exc:
             raise ImportError(
                 f"{type(self).__name__} requires torch and transformers packages.\n"
-                f"Please install both with `pip install torch transformers`."
+                f"Please install both with `pip install transformers[torch]`."
             ) from exc
 
         model_kwargs = model_kwargs or {}

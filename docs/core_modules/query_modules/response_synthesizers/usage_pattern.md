@@ -39,7 +39,7 @@ Several response synthesizers are implemented already in LlamaIndex:
     `text_qa_template` prompt. Then the answer and the next chunk (as well as the original question) are used
     in another query with the `refine_template` prompt. And so on until all chunks have been parsed.
 
-    If a chunk is too large to fit within the window (considering the prompt size), it is splitted using a `TokenTextSplitter`
+    If a chunk is too large to fit within the window (considering the prompt size), it is split using a `TokenTextSplitter`
     (allowing some text overlap between chunks) and the (new) additional chunks are considered as chunks
     of the original chunks collection (and thus queried with the `refine_template` as well).
 
@@ -48,7 +48,7 @@ Several response synthesizers are implemented already in LlamaIndex:
 
     **Details:** stuff as many text (concatenated/packed from the retrieved chunks) that can fit within the context window
     (considering the maximum prompt size between `text_qa_template` and `refine_template`).
-    If the text is too long to fit in one prompt, it is splitted in as many parts as needed
+    If the text is too long to fit in one prompt, it is split in as many parts as needed
     (using a `TokenTextSplitter` and thus allowing some overlap between text chunks).
 
     Each text part is considered a "chunk" and is sent to the `refine` synthesizer.

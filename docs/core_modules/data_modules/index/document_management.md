@@ -38,7 +38,7 @@ You can "delete" a Document from most index data structures by specifying a docu
 index.delete_ref_doc("doc_id_0", delete_from_docstore=True)
 ```
 
-`delete_from_docstore` will default to `False` in case you are sharing nodes betweeen indexes using the same docstore. However, these nodes will not be used when querying when this is set to `False` as they will be deleted from the `index_struct` of the index, which keeps track of which nodes can be used for querying.
+`delete_from_docstore` will default to `False` in case you are sharing nodes between indexes using the same docstore. However, these nodes will not be used when querying when this is set to `False` as they will be deleted from the `index_struct` of the index, which keeps track of which nodes can be used for querying.
 
 ## Update
 
@@ -90,7 +90,7 @@ print(refreshed_docs)
 
 This is most useful when you are reading from a directory that is constantly updating with new information.
 
-To autmatically set the doc `id_` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. More details can be found [here](../documents_and_nodes/usage_documents.md).
+To automatically set the doc `id_` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. More details can be found [here](../documents_and_nodes/usage_documents.md).
 
 ## Document Tracking
 
