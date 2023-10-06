@@ -89,4 +89,5 @@ __all__ = [
     "ChatGPTRetrievalPluginReader",
     "BagelReader",
     "HTMLTagReader",
+    "PDFReader",
 ]
