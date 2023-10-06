@@ -93,6 +93,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         api_key: Optional[str] = None,
         client_kwargs: Optional[dict] = None,
         batch_size: int = 100,
+        prefer_grpc: bool = False,
         **kwargs: Any,
     ) -> "QdrantVectorStore":
         """Create a connection to a remote Qdrant vector store from a config."""
@@ -105,9 +106,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return cls(
             collection_name=collection_name,
             client=qdrant_client.QdrantClient(
-                url=url, api_key=api_key, **client_kwargs
+                url=url, api_key=api_key, prefer_grpc=prefer_grpc, **client_kwargs
             ),
             batch_size=batch_size,
+            prefer_grpc=prefer_grpc,
             client_kwargs=client_kwargs,
             url=url,
             api_key=api_key,
@@ -161,7 +163,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return ids
 
     async def async_add(self, nodes: List[BaseNode]) -> List[str]:
-        """Asynchronously method to add nodes to Qdrant index.
+        """Asynchronous method to add nodes to Qdrant index.
 
         Args:
             nodes: List[BaseNode]: List of nodes with embeddings.
@@ -170,7 +172,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             List of node IDs that were added to the index.
 
         Raises:
-            ImportError: If trying to using async methods without
+            ValueError: If trying to using async methods without
                             setting `prefer_grpc` to True.
         """
         if not self.prefer_grpc:
@@ -179,7 +181,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             )
 
         from qdrant_client import grpc
-        from qdrant_client.conversions.conversion import RestToGrpc
 
         if len(nodes) > 0 and not self._collection_initialized:
             await self._async_create_collection(
@@ -226,24 +227,45 @@ class QdrantVectorStore(BasePydanticVectorStore):
             metadata (dict): Metadata of a node.
 
         """
-        from qdrant_client import grpc
-        from qdrant_client.grpc import NullValue
-
         grpc_payload = {}
 
         for key, value in metadata.items():
-            if value is None:
-                grpc_payload[key] = grpc.Value(null_value=NullValue.NULL_VALUE)
-            elif isinstance(value, int):
-                grpc_payload[key] = grpc.Value(integer_value=value)
-            elif isinstance(value, float):
-                grpc_payload[key] = grpc.Value(double_value=value)
-            elif isinstance(value, bool):
-                grpc_payload[key] = grpc.Value(bool_value=value)
-            elif isinstance(value, str):
-                grpc_payload[key] = grpc.Value(string_value=value)
+            grpc_payload[key] = self._value_to_grpc_value(value)
 
         return grpc_payload
+
+    def _value_to_grpc_value(self, value: Any) -> Optional[Any]:
+        """Convert the REST value to gRPC value.
+
+        Raises:
+            ValueError: If an unsupported value is passed.
+        """
+        from qdrant_client.grpc import ListValue, NullValue, Struct, Value
+
+        if value is None:
+            return Value(null_value=NullValue.NULL_VALUE)
+        if isinstance(value, bool):
+            return Value(bool_value=value)
+        if isinstance(value, int):
+            return Value(integer_value=value)
+        if isinstance(value, float):
+            return Value(double_value=value)
+        if isinstance(value, str):
+            return Value(string_value=value)
+        if isinstance(value, list):
+            return Value(
+                list_value=ListValue(
+                    values=[self._value_to_grpc_value(v) for v in value]
+                )
+            )
+        if isinstance(value, dict):
+            return Value(
+                struct_value=Struct(
+                    fields={k: self._value_to_grpc_value(v) for k, v in value.items()}
+                )
+            )
+
+        raise ValueError(f"{value} is not a supported value.")
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -268,7 +290,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Asynchronous method to delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
@@ -314,7 +336,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def _async_create_collection(
         self, collection_name: str, vector_size: int
     ) -> None:
-        """Create a Qdrant collection asynchronously."""
+        """Asynchronous method to create a Qdrant collection."""
         from qdrant_client import grpc
 
         await self._client.async_grpc_collections.Create(
@@ -365,9 +387,48 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         logger.debug(f"> Top {len(response)} nodes:")
 
+        return self.parse_to_query_result(response=response)
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """Asynchronous method to query index for top k most similar nodes.
+
+        Args:
+            query (VectorStoreQuery): query
+        """
+        from qdrant_client import grpc
+        from qdrant_client.conversions.conversion import GrpcToRest, RestToGrpc
+        from qdrant_client.http.models import Filter
+
+        query_embedding = cast(List[float], query.query_embedding)
+        query_filter = RestToGrpc.convert_filter(
+            cast(Filter, self._build_query_filter(query))
+        )
+
+        res = await self._client.async_grpc_points.Search(
+            grpc.SearchPoints(
+                collection_name=self.collection_name,
+                vector=query_embedding,
+                filter=query_filter,
+                limit=cast(int, query.similarity_top_k),
+                with_payload=grpc.WithPayloadSelector(enable=True),
+            )
+        )
+
+        response = [GrpcToRest.convert_scored_point(hit) for hit in res.result]
+
+        logger.debug(f"> Top {len(response)} nodes:")
+
+        return self.parse_to_query_result(response=response)
+
+    def parse_to_query_result(self, response: List[Any]) -> VectorStoreQueryResult:
+        from qdrant_client.http.models import Payload
+
         nodes = []
         similarities = []
         ids = []
+
         for point in response:
             payload = cast(Payload, point.payload)
             try:
