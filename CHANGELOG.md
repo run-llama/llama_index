@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Pull fields from mongodb into metadata with `metadata_names` argument (#8001)
+
 ### Bug Fixes / Nits
 - Handle lists of strings in mongodb reader (#8002)
 
