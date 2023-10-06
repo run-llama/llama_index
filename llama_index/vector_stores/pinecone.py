@@ -168,7 +168,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         insert_kwargs = insert_kwargs or {}
 
-        if tokenizer is None:
+        if tokenizer is None and add_sparse_vector:
             tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
 
