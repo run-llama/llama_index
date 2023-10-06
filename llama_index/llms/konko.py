@@ -37,8 +37,6 @@ from llama_index.llms.konko_utils import (
 
 
 class Konko(LLM):
-    class_type = "konko"
-
     model: str = Field(description="The konko model to use.")
     temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
