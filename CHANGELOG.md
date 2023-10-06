@@ -4,6 +4,7 @@
 
 ### Bug Fixes / Nits
 - Handle lists of strings in mongodb reader (#8002)
+- Fixing `HuggingFaceLLM.device_map` type hint (#7989)
 
 ## [0.8.40] - 2023-10-05
 
