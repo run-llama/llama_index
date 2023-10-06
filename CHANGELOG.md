@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Simplified `LocalAI.__init__` preserving the same behaviors (#7982)
+
 ### Bug Fixes / Nits
 - Handle lists of strings in mongodb reader (#8002)
 - Removes `OpenAI.class_type` as it was dead code (#7983)
