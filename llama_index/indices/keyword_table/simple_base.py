@@ -11,6 +11,7 @@ from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.indices.keyword_table.base import KeywordTableRetrieverMode
+from llama_index.indices.base_retriever import BaseRetriever
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
