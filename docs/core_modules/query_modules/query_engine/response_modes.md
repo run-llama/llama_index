@@ -9,7 +9,7 @@ Right now, we support the following options:
     `text_qa_template` prompt. Then the answer and the next chunk (as well as the original question) are used
     in another query with the `refine_template` prompt. And so on until all chunks have been parsed.
 
-    If a chunk is too large to fit within the window (considering the prompt size), it is splitted using a `TokenTextSplitter`
+    If a chunk is too large to fit within the window (considering the prompt size), it is split  using a `NodeParser`
     (allowing some text overlap between chunks) and the (new) additional chunks are considered as chunks
     of the original chunks collection (and thus queried with the `refine_template` as well).
 
@@ -18,8 +18,8 @@ Right now, we support the following options:
 
     **Details:** stuff as many text (concatenated/packed from the retrieved chunks) that can fit within the context window
     (considering the maximum prompt size between `text_qa_template` and `refine_template`).
-    If the text is too long to fit in one prompt, it is splitted in as many parts as needed
-    (using a `TokenTextSplitter` and thus allowing some overlap between text chunks).
+    If the text is too long to fit in one prompt, it is split in as many parts as needed
+    (using a `NodeParser` and thus allowing some overlap between text chunks).
 
     Each text part is considered a "chunk" and is sent to the `refine` synthesizer.
 
@@ -29,7 +29,7 @@ Right now, we support the following options:
    and so on, until there's only one chunk left, and thus only one final answer.
 
    **Details:** concatenate the chunks as much as possible to fit within the context window using the `summary_template` prompt,
-   and split them if needed (again with a `TokenTextSplitter` and some text overlap). Then, query each resulting chunk/split against
+   and split them if needed (again with a `NodeParser` and some text overlap). Then, query each resulting chunk/split against
    `summary_template` (there is no ***refine*** query !) and get as many answers.
 
    If there is only one answer (because there was only one chunk), then it's the final answer.

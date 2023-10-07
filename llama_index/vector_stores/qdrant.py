@@ -69,6 +69,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             raise ImportError(import_err_msg)
 
         if client is None:
+            client_kwargs = client_kwargs or {}
             self._client = (
                 qdrant_client.QdrantClient(url=url, api_key=api_key, **client_kwargs),
             )

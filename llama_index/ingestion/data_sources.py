@@ -2,20 +2,20 @@ from enum import Enum
 from typing import Generic, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.readers.base import BasePydanticReader, ReaderConfig
 from llama_index.readers import (
+    BeautifulSoupWebReader,
     DiscordReader,
     ElasticsearchReader,
     NotionPageReader,
-    SlackReader,
-    TwitterTweetReader,
-    SimpleWebPageReader,
-    TrafilaturaWebReader,
-    BeautifulSoupWebReader,
     RssReader,
+    SimpleWebPageReader,
+    SlackReader,
+    TrafilaturaWebReader,
+    TwitterTweetReader,
     WikipediaReader,
     YoutubeTranscriptReader,
 )
+from llama_index.readers.base import BasePydanticReader, ReaderConfig
 from llama_index.readers.google_readers.gdocs import GoogleDocsReader
 from llama_index.readers.google_readers.gsheets import GoogleSheetsReader
 from llama_index.schema import BaseComponent, Document
@@ -35,7 +35,7 @@ class RawFile(BaseComponent):
 
 class DataSource(BaseModel):
     """
-    A class containing metdata for a type of data source
+    A class containing metadata for a type of data source
     """
 
     name: str = Field(
@@ -165,7 +165,7 @@ T = TypeVar("T", bound=BaseComponent)
 
 class ConfiguredDataSource(GenericModel, Generic[T]):
     """
-    A class containing metdata & implementation for a data source in a pipeline.
+    A class containing metadata & implementation for a data source in a pipeline.
     """
 
     name: str

@@ -14,6 +14,7 @@ class QuestionsAnsweredExtractor(pydantic.BaseModel):
     """
     Questions answered extractor. Node-level extractor.
     Extracts `questions_this_excerpt_can_answer` metadata field.
+
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         questions (int): number of questions to extract

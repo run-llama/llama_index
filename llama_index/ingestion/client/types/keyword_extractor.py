@@ -14,6 +14,7 @@ class KeywordExtractor(pydantic.BaseModel):
     """
     Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
+
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         keywords (int): number of keywords to extract

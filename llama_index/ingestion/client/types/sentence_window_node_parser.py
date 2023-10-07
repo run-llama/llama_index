@@ -21,6 +21,13 @@ class SentenceWindowNodeParser(pydantic.BaseModel):
         include_prev_next_rel (bool): whether to include prev/next relationships
     """
 
+    include_metadata: typing.Optional[bool] = pydantic.Field(
+        description="Whether or not to consider metadata when splitting."
+    )
+    include_prev_next_rel: typing.Optional[bool] = pydantic.Field(
+        description="Include prev/next node relationships."
+    )
+    callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
     window_size: typing.Optional[int] = pydantic.Field(
         description="The number of sentences on each side of a sentence to capture."
     )
@@ -30,13 +37,6 @@ class SentenceWindowNodeParser(pydantic.BaseModel):
     original_text_metadata_key: typing.Optional[str] = pydantic.Field(
         description="The metadata key to store the original sentence in."
     )
-    include_metadata: typing.Optional[bool] = pydantic.Field(
-        description="Whether or not to consider metadata when splitting."
-    )
-    include_prev_next_rel: typing.Optional[bool] = pydantic.Field(
-        description="Include prev/next node relationships."
-    )
-    callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:

@@ -2,25 +2,31 @@
 This module maintains the list of transformations that are supported by the system.
 """
 
-from typing import Sequence, Type, TypeVar, Generic
 from enum import Enum
+from typing import Generic, Sequence, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.embeddings import OpenAIEmbedding, HuggingFaceEmbedding
+from llama_index.embeddings import HuggingFaceEmbedding, OpenAIEmbedding
 from llama_index.extractors import (
-    KeywordExtractor,
-    TitleExtractor,
     EntityExtractor,
+    KeywordExtractor,
     MarvinMetadataExtractor,
-    SummaryExtractor,
     QuestionsAnsweredExtractor,
+    SummaryExtractor,
+    TitleExtractor,
 )
 from llama_index.node_parser import (
-    SimpleNodeParser,
-    SentenceWindowNodeParser,
+    CodeNodeParser,
     HierarchicalNodeParser,
+    HTMLNodeParser,
+    JSONNodeParser,
+    MarkdownNodeParser,
+    SentenceAwareNodeParser,
+    SentenceWindowNodeParser,
+    SimpleFileNodeParser,
+    TokenAwareNodeParser,
 )
-from llama_index.schema import Document, BaseNode, BaseComponent
+from llama_index.schema import BaseComponent, BaseNode, Document
 
 
 # Transform Input/Output Types
@@ -81,7 +87,7 @@ class TransformationCategories(Enum):
 
 class ConfigurableTransformation(BaseModel):
     """
-    A class containing metdata for a type of transformation that can be in a pipeline.
+    A class containing metadata for a type of transformation that can be in a pipeline.
     """
 
     name: str = Field(
@@ -100,6 +106,7 @@ class ConfigurableTransformations(Enum):
     Enumeration of all supported ConfigurableTransformation instances.
     """
 
+    ## Metadata Extractors
     KEYWORD_EXTRACTOR = ConfigurableTransformation(
         name="Keyword Extractor",
         transformation_category=TransformationCategories.METADATA_EXTRACTOR,
@@ -130,11 +137,8 @@ class ConfigurableTransformations(Enum):
         transformation_category=TransformationCategories.METADATA_EXTRACTOR,
         component_type=QuestionsAnsweredExtractor,
     )
-    SIMPLE_NODE_PARSER = ConfigurableTransformation(
-        name="Simple Node Parser",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=SimpleNodeParser,
-    )
+
+    ## Node Parsers
     SENTENCE_WINDOW_NODE_PARSER = ConfigurableTransformation(
         name="Sentence Window Node Parser",
         transformation_category=TransformationCategories.NODE_PARSER,
@@ -145,6 +149,43 @@ class ConfigurableTransformations(Enum):
         transformation_category=TransformationCategories.NODE_PARSER,
         component_type=HierarchicalNodeParser,
     )
+    CODE_NODE_PARSER = ConfigurableTransformation(
+        name="Code Node Parser",
+        transformation_category=TransformationCategories.NODE_PARSER,
+        component_type=CodeNodeParser,
+    )
+    SENTENCE_AWARE_NODE_PARSER = ConfigurableTransformation(
+        name="Sentence Aware Node Parser",
+        transformation_category=TransformationCategories.NODE_PARSER,
+        component_type=SentenceAwareNodeParser,
+    )
+    TOKEN_AWARE_NODE_PARSER = ConfigurableTransformation(
+        name="Token Aware Node Parser",
+        transformation_category=TransformationCategories.NODE_PARSER,
+        component_type=TokenAwareNodeParser,
+    )
+    HTML_NODE_PARSER = ConfigurableTransformation(
+        name="HTML Node Parser",
+        transformation_category=TransformationCategories.NODE_PARSER,
+        component_type=HTMLNodeParser,
+    )
+    MARKDOWN_NODE_PARSER = ConfigurableTransformation(
+        name="Markdown Node Parser",
+        transformation_category=TransformationCategories.NODE_PARSER,
+        component_type=MarkdownNodeParser,
+    )
+    JSON_NODE_PARSER = ConfigurableTransformation(
+        name="JSON Node Parser",
+        transformation_category=TransformationCategories.NODE_PARSER,
+        component_type=JSONNodeParser,
+    )
+    SIMPLE_FILE_NODE_PARSER = ConfigurableTransformation(
+        name="Simple File Node Parser",
+        transformation_category=TransformationCategories.NODE_PARSER,
+        component_type=SimpleFileNodeParser,
+    )
+
+    ## Embeddings
     OPENAI_EMBEDDING = ConfigurableTransformation(
         name="OpenAI Embedding",
         transformation_category=TransformationCategories.EMBEDDING,
@@ -185,7 +226,7 @@ T = TypeVar("T", bound=BaseComponent)
 
 class ConfiguredTransformation(GenericModel, Generic[T]):
     """
-    A class containing metdata & implementation for a transformation in a pipeline.
+    A class containing metadata & implementation for a transformation in a pipeline.
     """
 
     name: str
@@ -201,10 +242,10 @@ class ConfiguredTransformation(GenericModel, Generic[T]):
         corresponding enum value in ConfigurableTransformations.
 
         This has the added bonus that you don't need to specify the generic type
-        like ConfiguredTransformation[SimpleNodeParser]. The return value of
+        like ConfiguredTransformation[SentenceAwareNodeParser]. The return value of
         this ConfiguredTransformation.from_component(simple_node_parser) will be
-        ConfiguredTransformation[SimpleNodeParser] if simple_node_parser is
-        a SimpleNodeParser.
+        ConfiguredTransformation[SentenceAwareNodeParser] if simple_node_parser is
+        a SentenceAwareNodeParser.
         """
         return ConfigurableTransformations.from_component(
             component

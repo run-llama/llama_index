@@ -66,13 +66,12 @@ Here's a complete example that sets up all objects using their default settings:
 ```python
 from llama_index import ServiceContext, LLMPredictor, OpenAIEmbedding, PromptHelper
 from llama_index.llms import OpenAI
-from llama_index.text_splitter import TokenTextSplitter
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceAwareNodeParser
 
 llm = OpenAI(model='text-davinci-003', temperature=0, max_tokens=256)
 embed_model = OpenAIEmbedding()
-node_parser = SimpleNodeParser.from_defaults(
-  text_splitter=TokenTextSplitter(chunk_size=1024, chunk_overlap=20)
+node_parser = SentenceAwareNodeParser(
+  chunk_size=1024, chunk_overlap=20
 )
 prompt_helper = PromptHelper(
   context_window=4096,

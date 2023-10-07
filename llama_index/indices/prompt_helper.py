@@ -15,11 +15,11 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import LLMMetadata
 from llama_index.llms.openai_utils import is_chat_model
+from llama_index.node_parser.text.token import TokenAwareNodeParser
+from llama_index.node_parser.text.utils import truncate_text
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.prompt_utils import get_empty_prompt_txt
 from llama_index.schema import BaseComponent
-from llama_index.text_splitter import TokenTextSplitter
-from llama_index.text_splitter.utils import truncate_text
 from llama_index.utils import globals_helper
 
 DEFAULT_PADDING = 5
@@ -179,7 +179,7 @@ class PromptHelper(BaseComponent):
         prompt: BasePromptTemplate,
         num_chunks: int = 1,
         padding: int = DEFAULT_PADDING,
-    ) -> TokenTextSplitter:
+    ) -> TokenAwareNodeParser:
         """Get text splitter configured to maximally pack available context window,
         taking into account of given prompt, and desired number of chunks.
         """
@@ -187,7 +187,7 @@ class PromptHelper(BaseComponent):
         if chunk_size <= 0:
             raise ValueError(f"Chunk size {chunk_size} is not positive.")
         chunk_overlap = int(self.chunk_overlap_ratio * chunk_size)
-        return TokenTextSplitter(
+        return TokenAwareNodeParser(
             separator=self.separator,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,

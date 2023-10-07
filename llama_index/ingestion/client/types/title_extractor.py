@@ -14,6 +14,7 @@ class TitleExtractor(pydantic.BaseModel):
     """
     Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
+
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         nodes (int): number of nodes from front to use for title extraction

@@ -21,7 +21,7 @@ class KVDocumentStore(BaseDocumentStore):
     otherwise, each index would create a docstore under the hood.
 
     .. code-block:: python
-        nodes = SimpleNodeParser.get_nodes_from_documents()
+        nodes = SentenceAwareNodeParser().get_nodes_from_documents()
         docstore = SimpleDocumentStore()
         docstore.add_documents(nodes)
         storage_context = StorageContext.from_defaults(docstore=docstore)

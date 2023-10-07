@@ -2,22 +2,23 @@ from typing import Any, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.indices.service_context import ServiceContext
 from llama_index.ingestion.client import (
-    ConfiguredTransformationItem,
-    DataSinkCreate,
-    DataSourceCreate,
     ConfigurableDataSinkNames,
     ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
+    ConfiguredTransformationItem,
+    DataSinkCreate,
+    DataSourceCreate,
+    PipelineCreate,
 )
 from llama_index.ingestion.client.client import PlatformApi
 from llama_index.ingestion.data_sinks import ConfiguredDataSink
 from llama_index.ingestion.data_sources import ConfiguredDataSource
 from llama_index.ingestion.transformations import ConfiguredTransformation
-from llama_index.indices.service_context import ServiceContext
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.readers.base import ReaderConfig
-from llama_index.schema import TransformComponent, BaseNode, Document
+from llama_index.schema import BaseNode, Document, TransformComponent
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "llamaindex_pipeline"
@@ -142,7 +143,7 @@ class IngestionPipeline(BaseModel):
 
     def _get_default_transformations(self) -> List[TransformComponent]:
         return [
-            SimpleNodeParser.from_defaults(),
+            SentenceAwareNodeParser(),
             resolve_embed_model("default"),
         ]
 
@@ -217,20 +218,20 @@ class IngestionPipeline(BaseModel):
         assert project.id is not None, "Project ID should not be None"
 
         # upload?
-        pipeline = client.project.create_pipeline_for_project(
-            name=pipeline_name,
-            project_id=project.id,
-            configured_transformations=configured_transformations,
-            data_sinks=data_sinks,
-            data_sources=data_sources,
+        pipeline = client.project.upsert_pipeline_for_project(
+            project.id,
+            request=PipelineCreate(
+                name=pipeline_name,
+                configured_transformations=configured_transformations,
+                data_sinks=data_sinks,
+                data_sources=data_sources,
+            ),
         )
         assert pipeline.id is not None, "Pipeline ID should not be None"
 
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
-        pipeline_execution = client.pipeline.create_pipeline_execution(
-            pipeline_id=pipeline.id
-        )
+        pipeline_execution = client.pipeline.create_pipeline_execution(pipeline.id)
 
         return f"Find your remote results here: {pipeline_execution.id}"
 

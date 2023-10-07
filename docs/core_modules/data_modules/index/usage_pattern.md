@@ -54,9 +54,9 @@ The steps are:
 1. Configure a node parser
 
 ```python
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceAwareNodeParser
 
-parser = SimpleNodeParser.from_defaults(
+parser = SentenceAwareNodeParser(
     chunk_size=512,
     include_extra_info=False,
     include_prev_next_rel=False,

@@ -35,13 +35,13 @@ index = VectorStoreIndex.from_documents(documents)
 #### Nodes
 ```python
 
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceAwareNodeParser
 
 # load documents
 ...
 
 # parse nodes
-parser = SimpleNodeParser.from_defaults()
+parser = SentenceAwareNodeParser()
 nodes = parser.get_nodes_from_documents(documents)
 
 # build index

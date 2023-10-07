@@ -10,11 +10,9 @@ from ...core.api_error import ApiError
 from ...core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ...core.jsonable_encoder import jsonable_encoder
 from ...errors.unprocessable_entity_error import UnprocessableEntityError
-from ...types.configured_transformation_item import ConfiguredTransformationItem
-from ...types.data_sink_create import DataSinkCreate
-from ...types.data_source_create import DataSourceCreate
 from ...types.http_validation_error import HttpValidationError
 from ...types.pipeline import Pipeline
+from ...types.pipeline_create import PipelineCreate
 from ...types.project import Project
 
 # this is used as the default value for optional parameters
@@ -105,17 +103,7 @@ class ProjectClient:
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
     def create_pipeline_for_project(
-        self,
-        project_id: str,
-        *,
-        configured_transformations: typing.Optional[
-            typing.List[ConfiguredTransformationItem]
-        ] = OMIT,
-        data_source_ids: typing.Optional[typing.List[str]] = OMIT,
-        data_sources: typing.Optional[typing.List[DataSourceCreate]] = OMIT,
-        data_sink_ids: typing.Optional[typing.List[str]] = OMIT,
-        data_sinks: typing.Optional[typing.List[DataSinkCreate]] = OMIT,
-        name: str,
+        self, project_id: str, *, request: PipelineCreate
     ) -> Pipeline:
         """
         Create a new pipeline for a project.
@@ -123,36 +111,47 @@ class ProjectClient:
         Parameters:
             - project_id: str.
 
-            - configured_transformations: typing.Optional[typing.List[ConfiguredTransformationItem]]. List of configured transformations.
-
-            - data_source_ids: typing.Optional[typing.List[str]]. List of data source IDs. When provided instead of data_sources, the data sources will be looked up by ID.
-
-            - data_sources: typing.Optional[typing.List[DataSourceCreate]]. List of data sources. When provided instead of data_source_ids, the data sources will be created.
-
-            - data_sink_ids: typing.Optional[typing.List[str]]. List of data sink IDs. When provided instead of data_sinks, the data sinks will be looked up by ID.
-
-            - data_sinks: typing.Optional[typing.List[DataSinkCreate]]. List of data sinks. When provided instead of data_sink_ids, the data sinks will be created.
-
-            - name: str.
+            - request: PipelineCreate.
         """
-        _request: typing.Dict[str, typing.Any] = {"name": name}
-        if configured_transformations is not OMIT:
-            _request["configured_transformations"] = configured_transformations
-        if data_source_ids is not OMIT:
-            _request["data_source_ids"] = data_source_ids
-        if data_sources is not OMIT:
-            _request["data_sources"] = data_sources
-        if data_sink_ids is not OMIT:
-            _request["data_sink_ids"] = data_sink_ids
-        if data_sinks is not OMIT:
-            _request["data_sinks"] = data_sinks
         _response = self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
                 f"api/project/{project_id}/pipeline",
             ),
-            json=jsonable_encoder(_request),
+            json=jsonable_encoder(request),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(Pipeline, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def upsert_pipeline_for_project(
+        self, project_id: str, *, request: PipelineCreate
+    ) -> Pipeline:
+        """
+        Upsert a pipeline for a project.
+        Updates if a pipeline with the same name and project_id already exists. Otherwise, creates a new pipeline.
+
+        Parameters:
+            - project_id: str.
+
+            - request: PipelineCreate.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "PUT",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/project/{project_id}/pipeline",
+            ),
+            json=jsonable_encoder(request),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
@@ -251,17 +250,7 @@ class AsyncProjectClient:
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
     async def create_pipeline_for_project(
-        self,
-        project_id: str,
-        *,
-        configured_transformations: typing.Optional[
-            typing.List[ConfiguredTransformationItem]
-        ] = OMIT,
-        data_source_ids: typing.Optional[typing.List[str]] = OMIT,
-        data_sources: typing.Optional[typing.List[DataSourceCreate]] = OMIT,
-        data_sink_ids: typing.Optional[typing.List[str]] = OMIT,
-        data_sinks: typing.Optional[typing.List[DataSinkCreate]] = OMIT,
-        name: str,
+        self, project_id: str, *, request: PipelineCreate
     ) -> Pipeline:
         """
         Create a new pipeline for a project.
@@ -269,36 +258,47 @@ class AsyncProjectClient:
         Parameters:
             - project_id: str.
 
-            - configured_transformations: typing.Optional[typing.List[ConfiguredTransformationItem]]. List of configured transformations.
-
-            - data_source_ids: typing.Optional[typing.List[str]]. List of data source IDs. When provided instead of data_sources, the data sources will be looked up by ID.
-
-            - data_sources: typing.Optional[typing.List[DataSourceCreate]]. List of data sources. When provided instead of data_source_ids, the data sources will be created.
-
-            - data_sink_ids: typing.Optional[typing.List[str]]. List of data sink IDs. When provided instead of data_sinks, the data sinks will be looked up by ID.
-
-            - data_sinks: typing.Optional[typing.List[DataSinkCreate]]. List of data sinks. When provided instead of data_sink_ids, the data sinks will be created.
-
-            - name: str.
+            - request: PipelineCreate.
         """
-        _request: typing.Dict[str, typing.Any] = {"name": name}
-        if configured_transformations is not OMIT:
-            _request["configured_transformations"] = configured_transformations
-        if data_source_ids is not OMIT:
-            _request["data_source_ids"] = data_source_ids
-        if data_sources is not OMIT:
-            _request["data_sources"] = data_sources
-        if data_sink_ids is not OMIT:
-            _request["data_sink_ids"] = data_sink_ids
-        if data_sinks is not OMIT:
-            _request["data_sinks"] = data_sinks
         _response = await self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
                 f"api/project/{project_id}/pipeline",
             ),
-            json=jsonable_encoder(_request),
+            json=jsonable_encoder(request),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(Pipeline, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def upsert_pipeline_for_project(
+        self, project_id: str, *, request: PipelineCreate
+    ) -> Pipeline:
+        """
+        Upsert a pipeline for a project.
+        Updates if a pipeline with the same name and project_id already exists. Otherwise, creates a new pipeline.
+
+        Parameters:
+            - project_id: str.
+
+            - request: PipelineCreate.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "PUT",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/project/{project_id}/pipeline",
+            ),
+            json=jsonable_encoder(request),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )

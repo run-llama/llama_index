@@ -39,7 +39,7 @@ class EntityExtractor(pydantic.BaseModel):
     prediction_threshold: typing.Optional[float] = pydantic.Field(
         description="The confidence threshold for accepting predictions."
     )
-    span_joiner: str = pydantic.Field(description="The seperator beween entity names.")
+    span_joiner: str = pydantic.Field(description="The separator between entity names.")
     label_entities: typing.Optional[bool] = pydantic.Field(
         description="Include entity class labels or not."
     )

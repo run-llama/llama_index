@@ -14,7 +14,11 @@ from llama_index.llms.base import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.simple import SimpleNodeParser
+from llama_index.node_parser.text.sentence import (
+    DEFAULT_CHUNK_SIZE,
+    SENTENCE_CHUNK_OVERLAP,
+    SentenceAwareNodeParser,
+)
 from llama_index.prompts.base import BasePromptTemplate
 from llama_index.schema import TransformComponent
 
@@ -22,15 +26,15 @@ logger = logging.getLogger(__name__)
 
 
 def _get_default_node_parser(
-    chunk_size: Optional[int] = None,
-    chunk_overlap: Optional[int] = None,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    chunk_overlap: int = SENTENCE_CHUNK_OVERLAP,
     callback_manager: Optional[CallbackManager] = None,
 ) -> NodeParser:
     """Get default node parser."""
-    return SimpleNodeParser.from_defaults(
+    return SentenceAwareNodeParser(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        callback_manager=callback_manager,
+        callback_manager=callback_manager or CallbackManager(),
     )
 
 
@@ -169,8 +173,8 @@ class ServiceContext:
         )
 
         node_parser = node_parser or _get_default_node_parser(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
+            chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
+            chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
             callback_manager=callback_manager,
         )
 
@@ -257,8 +261,8 @@ class ServiceContext:
 
         if not node_parser_found:
             node_parser = node_parser or _get_default_node_parser(
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
+                chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
+                chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
                 callback_manager=callback_manager,
             )
             transformations = [node_parser, *transformations]

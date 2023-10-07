@@ -14,7 +14,7 @@ from llama_index.vector_stores.types import BasePydanticVectorStore
 
 class DataSink(BaseModel):
     """
-    A class containing metdata for a type of data sink
+    A class containing metadata for a type of data sink
     """
 
     name: str = Field(
@@ -86,7 +86,7 @@ T = TypeVar("T", bound=BasePydanticVectorStore)
 
 class ConfiguredDataSink(GenericModel, Generic[T]):
     """
-    A class containing metdata & implementation for a data sink in a pipeline.
+    A class containing metadata & implementation for a data sink in a pipeline.
     """
 
     name: str

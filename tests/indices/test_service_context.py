@@ -8,22 +8,19 @@ from llama_index.extractors import (
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llms import MockLLM
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.schema import TransformComponent
-from llama_index.text_splitter import TokenTextSplitter
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
 
 def test_service_context_serialize() -> None:
-    text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
-
     extractors: List[TransformComponent] = [
         SummaryExtractor(),
         QuestionsAnsweredExtractor(),
         TitleExtractor(),
     ]
 
-    node_parser = SimpleNodeParser.from_defaults(text_splitter=text_splitter)
+    node_parser = SentenceAwareNodeParser(chunk_size=1, chunk_overlap=0)
 
     transformations: List[TransformComponent] = [node_parser, *extractors]
 
@@ -49,14 +46,13 @@ def test_service_context_serialize() -> None:
 
     assert isinstance(loaded_service_context.llm, MockLLM)
     assert isinstance(loaded_service_context.embed_model, MockEmbedding)
-    assert isinstance(loaded_service_context.transformations[0], SimpleNodeParser)
-    assert isinstance(loaded_service_context.prompt_helper, PromptHelper)
     assert isinstance(
-        loaded_service_context.transformations[0].text_splitter, TokenTextSplitter
+        loaded_service_context.transformations[0], SentenceAwareNodeParser
     )
+    assert isinstance(loaded_service_context.prompt_helper, PromptHelper)
 
     assert len(loaded_service_context.transformations) == 4
-    assert loaded_service_context.transformations[0].text_splitter.chunk_size == 1
+    assert loaded_service_context.transformations[0].chunk_size == 1
     assert loaded_service_context.prompt_helper.context_window == 1
     assert loaded_service_context.llm.max_tokens == 1
     assert loaded_service_context.embed_model.embed_dim == 1
