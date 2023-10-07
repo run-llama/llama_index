@@ -13,7 +13,6 @@ from copy import deepcopy
 from typing import Any, Callable, Optional
 
 from llama_index.bridge.langchain import BaseLLM
-
 from llama_index.types import BaseOutputParser
 
 

@@ -23,7 +23,7 @@ class MilvusReader(BaseReader):
             "`pymilvus` package not found, please run `pip install pymilvus`"
         )
         try:
-            import pymilvus  # noqa: F401
+            import pymilvus
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -51,7 +51,7 @@ class MilvusReader(BaseReader):
         try:
             self._create_connection_alias()
         except MilvusException as e:
-            raise e
+            raise
 
     def load_data(
         self,
@@ -76,13 +76,13 @@ class MilvusReader(BaseReader):
         try:
             self.collection = Collection(collection_name, using=self.alias)
         except MilvusException as e:
-            raise e
+            raise
 
         assert self.collection is not None
         try:
             self.collection.load()
         except MilvusException as e:
-            raise e
+            raise
         if search_params is None:
             search_params = self._create_search_params()
 
@@ -117,7 +117,7 @@ class MilvusReader(BaseReader):
             if (
                 x[1]
                 and ("address" in addr)
-                and (addr["address"] == "{}:{}".format(self.host, self.port))
+                and (addr["address"] == f"{self.host}:{self.port}")
             ):
                 self.alias = x[0]
                 break

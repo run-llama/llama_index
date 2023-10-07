@@ -1,13 +1,13 @@
+from llama_index import Document
+from llama_index.indices.service_context import ServiceContext
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.extractors import (
-    MetadataExtractor,
-    SummaryExtractor,
-    QuestionsAnsweredExtractor,
-    TitleExtractor,
     KeywordExtractor,
+    MetadataExtractor,
+    QuestionsAnsweredExtractor,
+    SummaryExtractor,
+    TitleExtractor,
 )
-from llama_index.indices.service_context import ServiceContext
-from llama_index import Document
 
 
 def test_metadata_extractor(mock_service_context: ServiceContext) -> None:

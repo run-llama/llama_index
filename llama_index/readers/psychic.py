@@ -28,7 +28,7 @@ class PsychicReader(BaseReader):
     def __init__(self, psychic_key: Optional[str] = None) -> None:
         """Initialize with parameters."""
         try:
-            from psychicapi import ConnectorId, Psychic  # noqa: F401
+            from psychicapi import ConnectorId, Psychic
         except ImportError:
             raise ImportError(
                 "`psychicapi` package not found, please run `pip install psychicapi`"
@@ -59,7 +59,7 @@ class PsychicReader(BaseReader):
         """
         if not connector_id or not account_id:
             raise ValueError("Must specify both `connector_id` and `account_id`.")
-        if connector_id not in self.ConnectorId.__members__.keys():
+        if connector_id not in self.ConnectorId.__members__:
             raise ValueError("Invalid connector ID.")
 
         # get all the documents in the database

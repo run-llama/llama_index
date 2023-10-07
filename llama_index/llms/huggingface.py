@@ -3,7 +3,6 @@ from threading import Thread
 from typing import Any, List, Optional, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     CompletionResponse,
@@ -49,7 +48,9 @@ class HuggingFaceLLM(CustomLLM):
             "Unused if `tokenizer` is passed in directly."
         )
     )
-    device_map: str = Field(description="The device_map to use. Defaults to 'auto'.")
+    device_map: Optional[str] = Field(
+        description="The device_map to use. Defaults to 'auto'."
+    )
     stopping_ids: List[int] = Field(
         default_factory=list,
         description=(
@@ -90,7 +91,7 @@ class HuggingFaceLLM(CustomLLM):
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: str = "auto",
+        device_map: Optional[str] = "auto",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
@@ -99,13 +100,19 @@ class HuggingFaceLLM(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
-        import torch
-        from transformers import (
-            AutoModelForCausalLM,
-            AutoTokenizer,
-            StoppingCriteria,
-            StoppingCriteriaList,
-        )
+        try:
+            import torch
+            from transformers import (
+                AutoModelForCausalLM,
+                AutoTokenizer,
+                StoppingCriteria,
+                StoppingCriteriaList,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                f"{type(self).__name__} requires torch and transformers packages.\n"
+                f"Please install both with `pip install transformers[torch]`."
+            ) from exc
 
         model_kwargs = model_kwargs or {}
         self._model = model or AutoModelForCausalLM.from_pretrained(
@@ -171,7 +178,6 @@ class HuggingFaceLLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "HuggingFace_LLM"
 
     @property
@@ -186,7 +192,6 @@ class HuggingFaceLLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
-
         full_prompt = prompt
         if self.query_wrapper_prompt:
             full_prompt = self.query_wrapper_prompt.format(query_str=prompt)

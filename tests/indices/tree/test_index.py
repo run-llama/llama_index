@@ -5,10 +5,9 @@ from unittest.mock import patch
 
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.indices.service_context import ServiceContext
-from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.indices.tree.base import TreeIndex
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, Document
+from llama_index.storage.docstore import BaseDocumentStore
 
 
 def _get_left_or_right_node(

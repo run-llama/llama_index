@@ -1,11 +1,11 @@
 # Cost Analysis
 
 ## Concept
-Each call to an LLM will cost some amount of money - for instance, OpenAI's gpt-3.5-turbo costs $0.002 / 1k tokens. The cost of building an index and querying depends on 
+Each call to an LLM will cost some amount of money - for instance, OpenAI's gpt-3.5-turbo costs $0.002 / 1k tokens. The cost of building an index and querying depends on
 
 - the type of LLM used
 - the type of data structure used
-- parameters used during building 
+- parameters used during building
 - parameters used during querying
 
 The cost of building and querying each index is a TODO in the reference documentation. In the meantime, we provide the following information:
@@ -28,14 +28,14 @@ The following indices do require LLM calls during build time:
 
 ### Query Time
 
-There will always be >= 1 LLM call during query time, in order to synthesize the final answer. 
+There will always be >= 1 LLM call during query time, in order to synthesize the final answer.
 Some indices contain cost tradeoffs between index building and querying. `SummaryIndex`, for instance,
 is free to build, but running a query over a summary index (without filtering or embedding lookups), will
 call the LLM {math}`N` times.
 
 Here are some notes regarding each of the indices:
 - `SummaryIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
-- `TreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes. 
+- `TreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes.
     - Setting `child_branch_factor=2` will be more expensive than the default `child_branch_factor=1` (polynomial vs logarithmic), because we traverse 2 children instead of just 1 for each parent node.
 - `KeywordTableIndex`: by default requires an LLM call to extract query keywords.
     - Can do `index.as_retriever(retriever_mode="simple")` or `index.as_retriever(retriever_mode="rake")` to also use regex/RAKE keyword extractors on your query text.
@@ -65,11 +65,11 @@ service_context = ServiceContext.from_defaults(llm=llm)
 set_global_service_context(service_context)
 ```
 
-You can then use this predictor during both index construction and querying. 
+You can then use this predictor during both index construction and querying.
 
 ### Using MockEmbedding
 
-You may also predict the token usage of embedding calls with `MockEmbedding`. 
+You may also predict the token usage of embedding calls with `MockEmbedding`.
 
 ```python
 from llama_index import ServiceContext, set_global_service_context

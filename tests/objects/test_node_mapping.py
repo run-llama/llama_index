@@ -1,7 +1,6 @@
 """Test node mapping."""
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
 from llama_index.tools.function_tool import FunctionTool
@@ -9,6 +8,8 @@ from llama_index.tools.function_tool import FunctionTool
 
 class TestObject(BaseModel):
     """Test object for node mapping."""
+
+    __test__ = False
 
     name: str
 
@@ -21,7 +22,6 @@ class TestObject(BaseModel):
 
 def test_simple_object_node_mapping() -> None:
     """Test simple object node mapping."""
-
     strs = ["a", "b", "c"]
     node_mapping = SimpleObjectNodeMapping.from_objects(strs)
     assert node_mapping.to_node("a").text == "a"
@@ -35,7 +35,6 @@ def test_simple_object_node_mapping() -> None:
 
 def test_tool_object_node_mapping() -> None:
     """Test tool object node mapping."""
-
     tool1 = FunctionTool.from_defaults(
         fn=lambda x: x,
         name="test_tool",

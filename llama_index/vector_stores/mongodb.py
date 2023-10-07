@@ -8,6 +8,8 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
+from pymongo import MongoClient
+
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -16,9 +18,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,19 +35,12 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
-    """MongoDB Vector Store.
+    """MongoDB Atlas Vector Store.
 
-    In this vector store, embeddings and docs are stored within a
-    MongoDB index.
-
-    During query time, the index uses Atlas knnbeta to query for the top
-    k most similar nodes.
-
-    Args:
-        mongodb_index (Optional[pymongo.MongoClient]): MongoDB index instance
-        db_name (str): MongoDB database name
-        collection_name (str): MongoDB collection name
-        insert_kwargs (Optional[Dict]): kwargs used during `insert`.
+    To use, you should have both:
+    - the ``pymongo`` python package installed
+    - a connection string associated with a MongoDB Atlas Cluster
+    that has an Atlas Vector Search index
 
     """
 
@@ -54,7 +49,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def __init__(
         self,
-        mongodb_client: Optional[Any] = None,
+        mongodb_client: Optional[MongoClient] = None,
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         index_name: str = "default",
@@ -65,10 +60,24 @@ class MongoDBAtlasVectorSearch(VectorStore):
         insert_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize params."""
+        """Initialize the vector store.
+
+        Args:
+            mongodb_client: A MongoDB client.
+            db_name: A MongoDB database name.
+            collection_name: A MongoDB collection name.
+            index_name: A MongoDB Atlas Vector Search index name.
+            id_key: The data field to use as the id.
+            embedding_key: A MongoDB field that will contain
+            the embedding for each document.
+            text_key: A MongoDB field that will contain the text for each document.
+            metadata_key: A MongoDB field that will contain
+            the metadata for each document.
+            insert_kwargs: The kwargs used during `insert`.
+        """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
         try:
-            import pymongo  # noqa: F401
+            import pymongo
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -96,8 +105,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
+
+        Returns:
+            A List of ids for successfully added nodes.
 
         """
         ids = []
@@ -140,31 +152,27 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """Return MongoDB client."""
         return self._mongodb_client
 
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
-
-        Args:
-            query_embedding (List[float]): query embedding
-            similarity_top_k (int): top k most similar nodes
-
-        """
-
-        knn_beta: Dict[str, Any] = {
-            "vector": query.query_embedding,
+    def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        params: Dict[str, Any] = {
+            "queryVector": query.query_embedding,
             "path": self._embedding_key,
-            "k": query.similarity_top_k,
+            "numCandidates": query.similarity_top_k * 10,
+            "limit": query.similarity_top_k,
+            "index": self._index_name,
         }
         if query.filters:
-            knn_beta["filter"] = _to_mongodb_filter(query.filters)
+            params["filter"] = _to_mongodb_filter(query.filters)
+
+        query_field = {"$vectorSearch": params}
 
         pipeline = [
+            query_field,
             {
-                "$search": {
-                    "index": self._index_name,
-                    "knnBeta": knn_beta,
+                "$project": {
+                    "score": {"$meta": "vectorSearchScore"},
+                    self._embedding_key: 0,
                 }
             },
-            {"$project": {"score": {"$meta": "searchScore"}, self._embedding_key: 0}},
         ]
         logger.debug("Running query pipeline: %s", pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore
@@ -203,3 +211,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
         )
         logger.debug("Result of query: %s", result)
         return result
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """Query index for top k most similar nodes.
+
+        Args:
+            query: a VectorStoreQuery object.
+
+        Returns:
+            A VectorStoreQueryResult containing the results of the query.
+        """
+        return self._query(query)

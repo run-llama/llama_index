@@ -1,4 +1,4 @@
-# Usage Pattern
+# Usage Pattern (Response Evaluation)
 
 ## Using `BaseEvaluator`
 All of the evaluation modules in LlamaIndex implement the `BaseEvaluator` class, with two main methods:
@@ -171,7 +171,7 @@ service_context = ServiceContext.from_defaults(llm=llm)
 # build documents
 documents = SimpleDirectoryReader("./data").load_data()
 
-# define genertor, generate questions
+# define generator, generate questions
 data_generator = DatasetGenerator.from_documents(documents)
 
 eval_questions = data_generator.generate_questions_from_nodes()

@@ -1,21 +1,12 @@
 """Test optimization."""
 
-import pytest
 from typing import Any, List
 from unittest.mock import patch
 
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.postprocessor.optimizer import SentenceEmbeddingOptimizer
-from llama_index.schema import TextNode, NodeWithScore
-from llama_index.utils import (
-    get_transformer_tokenizer_fn,
-)
-
-try:
-    from transformers import AutoTokenizer
-except ImportError:
-    AutoTokenizer = None  # type: ignore
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.schema import NodeWithScore, TextNode
 
 
 def mock_tokenizer_fn(text: str) -> List[str]:
@@ -83,7 +74,10 @@ def mock_get_text_embeddings_chinese(texts: List[str]) -> List[List[float]]:
 def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
     """Test optimizer."""
     optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=mock_tokenizer_fn, percentile_cutoff=0.5
+        tokenizer_fn=mock_tokenizer_fn,
+        percentile_cutoff=0.5,
+        context_before=0,
+        context_after=0,
     )
     query = QueryBundle(query_str="hello", embedding=[1, 0, 0, 0, 0])
     orig_node = TextNode(text="hello world")
@@ -94,7 +88,10 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 
     # test with threshold cutoff
     optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=mock_tokenizer_fn, threshold_cutoff=0.3
+        tokenizer_fn=mock_tokenizer_fn,
+        threshold_cutoff=0.3,
+        context_after=0,
+        context_before=0,
     )
     query = QueryBundle(query_str="world", embedding=[0, 1, 0, 0, 0])
     orig_node = TextNode(text="hello world")
@@ -105,7 +102,10 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 
     # test with comma splitter
     optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=mock_tokenizer_fn2, threshold_cutoff=0.3
+        tokenizer_fn=mock_tokenizer_fn2,
+        threshold_cutoff=0.3,
+        context_after=0,
+        context_before=0,
     )
     query = QueryBundle(query_str="foo", embedding=[0, 0, 1, 0, 0])
     orig_node = TextNode(text="hello,world,foo,bar")
@@ -114,27 +114,30 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
     )[0]
     assert optimized_node.node.get_content() == "foo"
 
-
-@patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embeddings_chinese
-)
-@patch.object(
-    OpenAIEmbedding,
-    "_get_text_embeddings",
-    side_effect=mock_get_text_embeddings_chinese,
-)
-@pytest.mark.skipif(AutoTokenizer is None, reason="transformers not installed")
-def test_optimizer_chinese(_mock_embeds: Any, _mock_embed: Any) -> None:
-    """Test optimizer."""
+    # test with further context after top sentence
     optimizer = SentenceEmbeddingOptimizer(
-        tokenizer_fn=get_transformer_tokenizer_fn("GanymedeNil/text2vec-large-chinese"),
-        percentile_cutoff=0.5,
+        tokenizer_fn=mock_tokenizer_fn2,
+        threshold_cutoff=0.3,
+        context_after=1,
+        context_before=0,
     )
-    query = QueryBundle(query_str="你好 世界", embedding=[1, 0, 0, 0, 0])
-    orig_node = TextNode(text="你好 世界")
+    query = QueryBundle(query_str="foo", embedding=[0, 0, 1, 0, 0])
+    orig_node = TextNode(text="hello,world,foo,bar")
     optimized_node = optimizer.postprocess_nodes(
         [NodeWithScore(node=orig_node)], query
     )[0]
-    assert len(optimized_node.node.get_content()) < len(
-        TextNode(text="你好 世界").get_content()
+    assert optimized_node.node.get_content() == "foo bar"
+
+    # test with further context before and after top sentence
+    optimizer = SentenceEmbeddingOptimizer(
+        tokenizer_fn=mock_tokenizer_fn2,
+        threshold_cutoff=0.3,
+        context_after=1,
+        context_before=1,
     )
+    query = QueryBundle(query_str="foo", embedding=[0, 0, 1, 0, 0])
+    orig_node = TextNode(text="hello,world,foo,bar")
+    optimized_node = optimizer.postprocess_nodes(
+        [NodeWithScore(node=orig_node)], query
+    )[0]
+    assert optimized_node.node.get_content() == "world foo bar"

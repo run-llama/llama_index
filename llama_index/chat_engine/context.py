@@ -116,6 +116,10 @@ class ContextChatEngine(BaseChatEngine):
     async def _agenerate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(
+                nodes, query_bundle=QueryBundle(message)
+            )
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
         )
@@ -124,7 +128,6 @@ class ContextChatEngine(BaseChatEngine):
 
     def _get_prefix_messages_with_context(self, context_str: str) -> List[ChatMessage]:
         """Get the prefix messages with context"""
-
         # ensure we grab the user-configured system prompt
         system_prompt = ""
         prefix_messages = self._prefix_messages
@@ -137,8 +140,9 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_w_sys_prompt = context_str + system_prompt.strip()
         return [
-            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM)
-        ] + prefix_messages
+            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM),
+            *prefix_messages,
+        ]
 
     @trace_method("chat")
     def chat(

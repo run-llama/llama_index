@@ -2,12 +2,11 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import TextNode, IndexNode, NodeWithScore, BaseNode
-from llama_index.bridge.langchain import print_text
-from llama_index.indices.base_retriever import BaseRetriever
-
+from llama_index.schema import BaseNode, IndexNode, NodeWithScore, TextNode
+from llama_index.utils import print_text
 
 DEFAULT_QUERY_RESPONSE_TMPL = "Query: {query_str}\nResponse: {response}"
 
@@ -83,6 +82,9 @@ class RecursiveRetriever(BaseRetriever):
                 if node.index_id not in visited_ids:
                     visited_ids.add(node.index_id)
                     new_nodes_with_score.append(node_with_score)
+            else:
+                new_nodes_with_score.append(node_with_score)
+
         nodes_with_score = new_nodes_with_score
 
         # recursively retrieve
@@ -115,7 +117,6 @@ class RecursiveRetriever(BaseRetriever):
 
     def _get_object(self, query_id: str) -> RQN_TYPE:
         """Fetch retriever or query engine."""
-
         node = self._node_dict.get(query_id, None)
         if node is not None:
             return node
@@ -165,7 +166,7 @@ class RecursiveRetriever(BaseRetriever):
             sub_resp = obj.query(query_bundle)
             if self._verbose:
                 print_text(
-                    f"Got response: {str(sub_resp)}\n",
+                    f"Got response: {sub_resp!s}\n",
                     color="green",
                 )
             # format with both the query and the response

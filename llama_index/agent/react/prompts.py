@@ -46,4 +46,4 @@ Answer: [your answer here]
 ## Current Conversation
 Below is the current conversation consisting of interleaving human and assistant messages.
 
-"""  # noqa: E501
+"""

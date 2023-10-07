@@ -1,8 +1,8 @@
 from typing import Any
 
 from llama_index.output_parsers.base import StructuredOutput
-from llama_index.types import BaseOutputParser
 from llama_index.output_parsers.utils import parse_json_markdown
+from llama_index.types import BaseOutputParser
 from llama_index.vector_stores.types import VectorStoreQuerySpec
 
 
@@ -14,5 +14,4 @@ class VectorStoreQueryOutputParser(BaseOutputParser):
         return StructuredOutput(raw_output=output, parsed_output=query_and_filters)
 
     def format(self, prompt_template: str) -> str:
-        del prompt_template
-        raise NotImplementedError()
+        return prompt_template

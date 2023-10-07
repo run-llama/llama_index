@@ -3,7 +3,7 @@
 ```{tip}
 Make sure you've followed the [installation](installation.md) steps first.
 ```
-Here is a starter example for using LlamaIndex. 
+Here is a starter example for using LlamaIndex.
 
 ### Download
 
@@ -103,4 +103,3 @@ index = load_index_from_storage(storage_context)
 * curious about a specific module? check out the guides 👈
 * have a use case in mind? check out the [end-to-end tutorials](/end_to_end_tutorials/use_cases.md)
 ```
-

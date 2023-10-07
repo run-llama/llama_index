@@ -1,7 +1,7 @@
-from typing import Any, Callable, Dict, Optional, Sequence, Iterator
 import json
-from llama_index.bridge.pydantic import Field, PrivateAttr
+from typing import Any, Callable, Dict, Iterator, Optional, Sequence
 
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -15,17 +15,17 @@ from llama_index.llms.base import (
     llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import completion_response_to_chat_response
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 
 
 class Ollama(CustomLLM):
-    base_url: str = "http://localhost:11434"
-    """Base url the model is hosted under."""
-
+    base_url: str = Field(description="Base url the model is hosted under.")
     model: str = Field(description="The Ollama model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     context_window: int = Field(
@@ -33,7 +33,7 @@ class Ollama(CustomLLM):
     )
     prompt_key: str = Field(description="The key to use for the prompt in API calls.")
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the Ollama API."
+        default_factory=dict, description="Additional kwargs for the Ollama API."
     )
 
     _messages_to_prompt: Callable = PrivateAttr()
@@ -42,6 +42,7 @@ class Ollama(CustomLLM):
     def __init__(
         self,
         model: str,
+        base_url: str = "http://localhost:11434",
         temperature: float = 0.75,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -56,6 +57,7 @@ class Ollama(CustomLLM):
         super().__init__(
             model=model,
             temperature=temperature,
+            base_url=base_url,
             additional_kwargs=additional_kwargs or {},
             context_window=context_window,
             prompt_key=prompt_key,
@@ -64,7 +66,6 @@ class Ollama(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Ollama_llm"
 
     @property
@@ -82,11 +83,10 @@ class Ollama(CustomLLM):
             "temperature": self.temperature,
             "max_length": self.context_window,
         }
-        model_kwargs = {
+        return {
             **base_kwargs,
             **self.additional_kwargs,
         }
-        return model_kwargs
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {

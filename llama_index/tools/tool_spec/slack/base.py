@@ -6,7 +6,6 @@ from ssl import SSLContext
 from typing import List, Optional, Type
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.readers.slack import SlackReader
 from llama_index.schema import Document
 from llama_index.tools.tool_spec.base import BaseToolSpec
@@ -64,7 +63,7 @@ class SlackToolSpec(BaseToolSpec):
             logger.info(msg_result)
         except Exception as e:
             logger.error(e)
-            raise e
+            raise
 
     def fetch_channels(
         self,
@@ -76,6 +75,6 @@ class SlackToolSpec(BaseToolSpec):
             logger.info(msg_result)
         except Exception as e:
             logger.error(e)
-            raise e
+            raise
 
         return msg_result["channels"]

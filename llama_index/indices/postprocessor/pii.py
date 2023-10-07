@@ -1,14 +1,13 @@
 """PII postprocessor."""
 import json
 from copy import deepcopy
-from typing import List, Optional, Dict, Tuple, Callable
+from typing import Callable, Dict, List, Optional, Tuple
 
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import PromptTemplate
-from llama_index.schema import NodeWithScore, MetadataMode
-
+from llama_index.schema import MetadataMode, NodeWithScore
 
 DEFAULT_PII_TMPL = (
     "The current context information is provided. \n"
@@ -22,7 +21,7 @@ DEFAULT_PII_TMPL = (
     "LLC credit card account 1111-0000-1111-0008 "
     "has a minimum payment of $24.53 that is due "
     "by July 31st. Based on your autopay settings, we will withdraw your payment. "
-    "Task: Mask out the PII, replace each PII with a tag, and return the text. Return the mapping in JSON. \n"  # noqa: E501
+    "Task: Mask out the PII, replace each PII with a tag, and return the text. Return the mapping in JSON. \n"
     "Output: \n"
     "Hello [NAME1], I am [NAME2]. "
     "Your AnyCompany Financial Services, "
@@ -30,7 +29,7 @@ DEFAULT_PII_TMPL = (
     "has a minimum payment of $24.53 that is due "
     "by [DATE_TIME]. Based on your autopay settings, we will withdraw your payment. "
     "Output Mapping:\n"
-    '{{"NAME1": "Zhang Wei", "NAME2": "John", "CREDIT_CARD_NUMBER": "1111-0000-1111-0008", "DATE_TIME": "July 31st"}}\n'  # noqa: E501
+    '{{"NAME1": "Zhang Wei", "NAME2": "John", "CREDIT_CARD_NUMBER": "1111-0000-1111-0008", "DATE_TIME": "July 31st"}}\n'
     "Context:\n{context_str}\n"
     "Task: {query_str}\n"
     "Output: \n"

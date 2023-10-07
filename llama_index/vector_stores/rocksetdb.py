@@ -1,9 +1,11 @@
 from __future__ import annotations
+
+from enum import Enum
 from os import getenv
 from time import sleep
-from enum import Enum
-from typing import List, Any, Optional, TypeVar, Type
 from types import ModuleType
+from typing import Any, List, Optional, Type, TypeVar
+
 from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
     VectorStore,
@@ -11,10 +13,10 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    node_to_metadata_dict,
-    metadata_dict_to_node,
-    DEFAULT_TEXT_KEY,
     DEFAULT_EMBEDDING_KEY,
+    DEFAULT_TEXT_KEY,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
 )
 
 T = TypeVar("T", bound="RocksetVectorStore")
@@ -24,7 +26,7 @@ def _get_rockset() -> ModuleType:
     """Gets the rockset module and raises an ImportError if
     the rockset package hasn't been installed
 
-    Returns
+    Returns:
         rockset module (ModuleType)
     """
     try:
@@ -34,13 +36,11 @@ def _get_rockset() -> ModuleType:
     return rockset
 
 
-def _get_client(
-    api_key: Optional[str], api_server: Optional[str], client: Optional[Any]
-) -> Any:
+def _get_client(api_key: str | None, api_server: str | None, client: Any | None) -> Any:
     """Returns the passed in client object if valid, else
     constructs and returns one.
 
-    Returns
+    Returns:
         The rockset client object (rockset.RocksetClient)
     """
     rockset = _get_rockset()
@@ -72,13 +72,13 @@ class RocksetVectorStore(VectorStore):
     def __init__(
         self,
         collection: str,
-        client: Optional[Any] = None,
+        client: Any | None = None,
         text_key: str = DEFAULT_TEXT_KEY,
         embedding_col: str = DEFAULT_EMBEDDING_KEY,
         metadata_col: str = "metadata",
         workspace: str = "commons",
-        api_server: Optional[str] = None,
-        api_key: Optional[str] = None,
+        api_server: str | None = None,
+        api_key: str | None = None,
         distance_func: DistanceFunc = DistanceFunc.COSINE_SIM,
     ) -> None:
         """Rockset Vector Store Data container.
@@ -164,9 +164,9 @@ class RocksetVectorStore(VectorStore):
                 self.rockset.models.DeleteDocumentsRequestData(id=row["_id"])
                 for row in self.rs.sql(
                     f"""
-                        SELECT 
+                        SELECT
                             _id
-                        FROM 
+                        FROM
                             "{self.workspace}"."{self.collection}" x
                         WHERE
                             x.{self.metadata_col}.ref_doc_id=:ref_doc_id
@@ -190,19 +190,19 @@ class RocksetVectorStore(VectorStore):
         similarity_col = kwargs.get("similarity_col", "_similarity")
         res = self.rs.sql(
             f"""
-                SELECT 
-                    _id, 
+                SELECT
+                    _id,
                     {self.metadata_col}
                     {
                         f''', {self.distance_func.value}(
-                            {query.query_embedding}, 
+                            {query.query_embedding},
                             {self.embedding_col}
-                        ) 
+                        )
                             AS {similarity_col}'''
-                        if query.query_embedding 
+                        if query.query_embedding
                         else ''
                     }
-                FROM 
+                FROM
                     "{self.workspace}"."{self.collection}" x
                 {"WHERE" if query.node_ids or query.filters else ""} {
                     f'''({
@@ -214,14 +214,14 @@ class RocksetVectorStore(VectorStore):
                     f''' {'AND' if query.node_ids else ''} ({
                         ' AND '.join([
                             f"x.{self.metadata_col}.{filter.key}=:{filter.key}"
-                            for filter 
+                            for filter
                             in query.filters.filters
                         ])
                     })''' if query.filters else ""
                 }
-                ORDER BY 
+                ORDER BY
                     {similarity_col} {self.distance_order}
-                LIMIT 
+                LIMIT
                     {query.similarity_top_k}
             """,
             params={filter.key: filter.value for filter in query.filters.filters}
@@ -229,7 +229,7 @@ class RocksetVectorStore(VectorStore):
             else {},
         )
 
-        similarities: Optional[list[float]] = [] if query.query_embedding else None
+        similarities: list[float] | None = [] if query.query_embedding else None
         nodes, ids = [], []
         for row in res.results:
             if similarities is not None:
@@ -241,7 +241,7 @@ class RocksetVectorStore(VectorStore):
 
     @classmethod
     def with_new_collection(
-        cls: Type[T], dimensions: Optional[int] = None, **rockset_vector_store_args: Any
+        cls: Type[T], dimensions: int | None = None, **rockset_vector_store_args: Any
     ) -> RocksetVectorStore:
         """Creates a new collection and returns its RocksetVectorStore.
 
@@ -251,7 +251,7 @@ class RocksetVectorStore(VectorStore):
                 collection will do no vector enforcement.
             collection (str): The name of the collection to be created
             client (Optional[Any]): Rockset client object
-            workspace (str): The workspace containing the colleciton to be
+            workspace (str): The workspace containing the collection to be
                 created (default: "commons")
             text_key (str): The key to the text of nodes
                 (default: llama_index.vector_stores.utils.DEFAULT_TEXT_KEY)
@@ -284,8 +284,8 @@ class RocksetVectorStore(VectorStore):
                 sql=f"""
                     SELECT
                         *, VECTOR_ENFORCE(
-                            {embeddings_col}, 
-                            {dimensions}, 
+                            {embeddings_col},
+                            {dimensions},
                             'float'
                         ) AS {embeddings_col}
                     FROM
@@ -295,10 +295,10 @@ class RocksetVectorStore(VectorStore):
 
         client.Collections.create_s3_collection(**collection_args)  # create collection
         while (
-            not client.Collections.get(
+            client.Collections.get(
                 collection=rockset_vector_store_args.get("collection")
             ).data.status
-            == "READY"
+            != "READY"
         ):  # wait until collection is ready
             sleep(0.1)
             # TODO: add async, non-blocking method collection creation

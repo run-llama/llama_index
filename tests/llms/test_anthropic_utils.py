@@ -1,5 +1,4 @@
 import pytest
-
 from llama_index.llms.anthropic_utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_prompt,

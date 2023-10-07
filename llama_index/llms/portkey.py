@@ -1,39 +1,38 @@
 """
-    Portkey intergation with Llama_index for enchanced monitoring
+Portkey integration with Llama_index for enhanced monitoring
 """
-from typing import Any, Optional, Sequence, Union, List, TYPE_CHECKING, cast
-
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.base import (
-    ChatMessage,
-    LLMMetadata,
-    ChatResponse,
-    CompletionResponse,
-    ChatResponseGen,
-    llm_completion_callback,
-    llm_chat_callback,
-    CompletionResponseGen,
-)
-from llama_index.llms.portkey_utils import (
-    is_chat_model,
-    generate_llm_metadata,
-    get_llm,
-    IMPORT_ERROR_MESSAGE,
-)
-from llama_index.llms.generic_utils import (
-    completion_to_chat_decorator,
-    chat_to_completion_decorator,
-    stream_completion_to_chat_decorator,
-    stream_chat_to_completion_decorator,
-)
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.llms.base import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import (
+    chat_to_completion_decorator,
+    completion_to_chat_decorator,
+    stream_chat_to_completion_decorator,
+    stream_completion_to_chat_decorator,
+)
+from llama_index.llms.portkey_utils import (
+    IMPORT_ERROR_MESSAGE,
+    generate_llm_metadata,
+    get_llm,
+    is_chat_model,
+)
 
 if TYPE_CHECKING:
     from portkey import (
         LLMOptions,
-        ModesLiteral,
         Modes,
+        ModesLiteral,
         PortkeyResponse,
     )
 
@@ -125,6 +124,7 @@ class Portkey(CustomLLM):
                     LLMOptions in portkey-ai
 
             NOTE: User may choose to pass additional params as well.
+
         Returns:
             self
         """
@@ -177,7 +177,7 @@ class Portkey(CustomLLM):
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         try:
-            from portkey import Message, Config
+            from portkey import Config, Message
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         _messages = cast(
@@ -208,7 +208,7 @@ class Portkey(CustomLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         try:
-            from portkey import Message, Config
+            from portkey import Config, Message
         except ImportError as exc:
             raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         _messages = cast(

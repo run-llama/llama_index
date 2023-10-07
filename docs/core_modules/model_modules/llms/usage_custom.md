@@ -2,7 +2,7 @@
 
 You can plugin these LLM abstractions within our other modules in LlamaIndex (indexes, retrievers, query engines, agents) which allow you to build advanced workflows over your data.
 
-By default, we use OpenAI's `text-davinci-003` model. But you may choose to customize
+By default, we use OpenAI's `gpt-3.5-turbo` model. But you may choose to customize
 the underlying LLM being used.
 
 Below we show a few examples of LLM customization. This includes
@@ -14,7 +14,7 @@ Below we show a few examples of LLM customization. This includes
 ## Example: Changing the underlying LLM
 
 An example snippet of customizing the LLM being used is shown below.
-In this example, we use `gpt-4` instead of `text-davinci-003`. Available models include `gpt-3.5-turbo`, `gpt-3.5-turbo-16k`, `gpt-4`, `gpt-4-32k`, `text-davinci-003`, and `text-davinci-002`. 
+In this example, we use `gpt-4` instead of `gpt-3.5-turbo`. Available models include `gpt-3.5-turbo`, `gpt-3.5-turbo-instruct`, `gpt-3.5-turbo-16k`, `gpt-4`, `gpt-4-32k`, `text-davinci-003`, and `text-davinci-002`.
 
 Note that
 you may also plug in any LLM shown on Langchain's
@@ -97,8 +97,8 @@ num_output = 256
 
 # define LLM
 llm = OpenAI(
-    temperature=0, 
-    model="text-davinci-002", 
+    temperature=0,
+    model="text-davinci-002",
     max_tokens=num_output,
 )
 
@@ -134,7 +134,7 @@ query_wrapper_prompt = PromptTemplate("<|USER|>{query_str}<|ASSISTANT|>")
 import torch
 from llama_index.llms import HuggingFaceLLM
 llm = HuggingFaceLLM(
-    context_window=4096, 
+    context_window=4096,
     max_new_tokens=256,
     generate_kwargs={"temperature": 0.7, "do_sample": False},
     system_prompt=system_prompt,
@@ -148,7 +148,7 @@ llm = HuggingFaceLLM(
     # model_kwargs={"torch_dtype": torch.float16}
 )
 service_context = ServiceContext.from_defaults(
-    chunk_size=1024, 
+    chunk_size=1024,
     llm=llm,
 )
 ```
@@ -184,15 +184,14 @@ from transformers import pipeline
 from typing import Optional, List, Mapping, Any
 
 from llama_index import (
-    ServiceContext, 
-    SimpleDirectoryReader, 
-    LangchainEmbedding, 
+    ServiceContext,
+    SimpleDirectoryReader,
     SummaryIndex
 )
 from llama_index.callbacks import CallbackManager
 from llama_index.llms import (
-    CustomLLM, 
-    CompletionResponse, 
+    CustomLLM,
+    CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
@@ -204,7 +203,7 @@ context_window = 2048
 # set number of output tokens
 num_output = 256
 
-# store the pipeline/model outisde of the LLM class to avoid memory issues
+# store the pipeline/model outside of the LLM class to avoid memory issues
 model_name = "facebook/opt-iml-max-30b"
 pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
 
@@ -227,7 +226,7 @@ class OurLLM(CustomLLM):
         # only return newly generated tokens
         text = response[prompt_length:]
         return CompletionResponse(text=text)
-    
+
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         raise NotImplementedError()
@@ -236,8 +235,9 @@ class OurLLM(CustomLLM):
 llm = OurLLM()
 
 service_context = ServiceContext.from_defaults(
-    llm=llm, 
-    context_window=context_window, 
+    llm=llm,
+    embed_model="local:BAAI/bge-base-en-v1.5",
+    context_window=context_window,
     num_output=num_output
 )
 
@@ -258,4 +258,3 @@ The decorator is optional, but provides observability via callbacks on the LLM c
 Note that you may have to adjust the internal prompts to get good performance. Even then, you should be using a sufficiently large LLM to ensure it's capable of handling the complex queries that LlamaIndex uses internally, so your mileage may vary.
 
 A list of all default internal prompts is available [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py). You can also implement your own custom prompts, as described [here](/core_modules/service_modules/prompts.md).
-

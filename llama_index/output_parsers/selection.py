@@ -11,12 +11,11 @@ from llama_index.types import BaseOutputParser
 
 def _escape_curly_braces(input_string: str) -> str:
     # Replace '{' with '{{' and '}' with '}}' to escape curly braces
-    escaped_string = input_string.replace("{", "{{").replace("}", "}}")
-    return escaped_string
+    return input_string.replace("{", "{{").replace("}", "}}")
 
 
-FORMAT_STR = """The output should be formatted as a JSON instance that conforms to 
-the JSON schema below. 
+FORMAT_STR = """The output should be formatted as a JSON instance that conforms to
+the JSON schema below.
 
 Here is the output schema:
 {
@@ -48,22 +47,16 @@ class Answer(DataClassJsonMixin):
 
 
 class SelectionOutputParser(BaseOutputParser):
-    REQUIRED_KEYS = {"choice", "reason"}
+    REQUIRED_KEYS = frozenset(Answer.__annotations__)
 
     def _filter_dict(self, json_dict: dict) -> dict:
+        """Filter recursively until a dictionary matches all REQUIRED_KEYS."""
         output_dict = json_dict
         for key, val in json_dict.items():
             if key in self.REQUIRED_KEYS:
                 continue
             elif isinstance(val, dict):
-                found = True
-                for key in self.REQUIRED_KEYS:
-                    if key not in val:
-                        found = False
-                        break
-                if found:
-                    output_dict = val
-                    break
+                output_dict = self._filter_dict(val)
             elif isinstance(val, list):
                 for item in val:
                     if isinstance(item, dict):
@@ -71,7 +64,7 @@ class SelectionOutputParser(BaseOutputParser):
 
         return output_dict
 
-    def _validate_output(self, output: List[dict]) -> List[dict]:
+    def _format_output(self, output: List[dict]) -> List[dict]:
         output_json = []
         for json_dict in output:
             valid = True
@@ -88,15 +81,18 @@ class SelectionOutputParser(BaseOutputParser):
         return output_json
 
     def parse(self, output: str) -> Any:
-        output = _marshal_llm_to_json(output)
-        json_output = json.loads(output)
+        try:
+            json_output = json.loads(s=_marshal_llm_to_json(output))
+        except json.decoder.JSONDecodeError as exc:
+            raise ValueError(
+                f"Failed to convert LLM output {output!r} to JSON."
+            ) from exc
         if isinstance(json_output, dict):
             json_output = [json_output]
 
-        json_output = self._validate_output(json_output)
+        json_output = self._format_output(json_output)
         answers = [Answer.from_dict(json_dict) for json_dict in json_output]
         return StructuredOutput(raw_output=output, parsed_output=answers)
 
     def format(self, prompt_template: str) -> str:
-        fmt = prompt_template + "\n\n" + _escape_curly_braces(FORMAT_STR)
-        return fmt
+        return prompt_template + "\n\n" + _escape_curly_braces(FORMAT_STR)

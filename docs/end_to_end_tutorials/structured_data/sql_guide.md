@@ -90,11 +90,11 @@ the prompt fits your context window.
 
 ## Building our Table Index
 If we don't know ahead of time which table we would like to use, and the total size of
-the table schema overflows your context window size, we should store the table schema 
+the table schema overflows your context window size, we should store the table schema
 in an index so that during query time we can retrieve the right schema.
 
-The way we can do this is using the SQLTableNodeMapping object, which takes in a 
-SQLDatabase and produces a Node object for each SQLTableSchema object passed 
+The way we can do this is using the SQLTableNodeMapping object, which takes in a
+SQLDatabase and produces a Node object for each SQLTableSchema object passed
 into the ObjectIndex constructor.
 
 ```python
@@ -148,5 +148,3 @@ and synthesize a SQL query and a response from the results of that query.
 
 This is it for now! We're constantly looking for ways to improve our structured data support.
 If you have any questions let us know in [our Discord](https://discord.gg/dGcwcsnxhU).
-
-

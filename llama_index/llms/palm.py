@@ -3,7 +3,6 @@ import os
 from typing import Any, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     CompletionResponse,
@@ -67,7 +66,6 @@ class PaLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "PaLM_llm"
 
     @property
@@ -92,7 +90,6 @@ class PaLM(CustomLLM):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-
         import google.generativeai as palm
 
         completion = palm.generate_text(

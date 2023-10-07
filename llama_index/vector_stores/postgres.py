@@ -1,17 +1,17 @@
 import logging
-from typing import List, Any, Type, Optional
 from collections import namedtuple
+from typing import Any, List, Optional, Type
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 DBEmbeddingRow = namedtuple(
     "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"]
@@ -26,6 +26,7 @@ def get_data_model(
     index_name: str,
     hybrid_search: bool,
     text_search_config: str,
+    cache_okay: bool,
     embed_dim: int = 1536,
 ) -> Any:
     """
@@ -33,17 +34,17 @@ def get_data_model(
     """
     from pgvector.sqlalchemy import Vector
     from sqlalchemy import Column, Computed
-    from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, JSON
+    from sqlalchemy.dialects.postgresql import BIGINT, JSON, TSVECTOR, VARCHAR
     from sqlalchemy.schema import Index
-
-    from sqlalchemy.dialects.postgresql import TSVECTOR
     from sqlalchemy.types import TypeDecorator
 
     class TSVector(TypeDecorator):
         impl = TSVECTOR
+        cache_ok = cache_okay
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
+    indexname = "%s_idx" % index_name  # dynamic class name
 
     if hybrid_search:
 
@@ -64,7 +65,7 @@ def get_data_model(
         model = type(class_name, (HybridAbstractData,), {"__tablename__": tablename})
 
         Index(
-            "text_search_tsv_idx",
+            indexname,
             model.text_search_tsv,  # type: ignore
             postgresql_using="gin",
         )
@@ -95,6 +96,8 @@ class PGVectorStore(BasePydanticVectorStore):
     embed_dim: int
     hybrid_search: bool
     text_search_config: str
+    cache_ok: bool
+    debug: bool
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
@@ -102,6 +105,7 @@ class PGVectorStore(BasePydanticVectorStore):
     _session: Any = PrivateAttr()
     _async_engine: Any = PrivateAttr()
     _async_session: Any = PrivateAttr()
+    _is_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -111,13 +115,15 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        cache_ok: bool = False,
+        debug: bool = False,
     ) -> None:
         try:
-            import sqlalchemy  # noqa: F401
-            import pgvector  # noqa: F401
-            import psycopg2  # noqa: F401
-            import asyncpg  # noqa: F401
-            import sqlalchemy.ext.asyncio  # noqa: F401
+            import asyncpg
+            import pgvector
+            import psycopg2
+            import sqlalchemy
+            import sqlalchemy.ext.asyncio
         except ImportError:
             raise ImportError(
                 "`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` "
@@ -141,6 +147,7 @@ class PGVectorStore(BasePydanticVectorStore):
             table_name,
             hybrid_search,
             text_search_config,
+            cache_ok,
             embed_dim=embed_dim,
         )
 
@@ -151,13 +158,14 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            cache_ok=cache_ok,
+            debug=debug,
         )
 
-        self._connect()
-        self._create_extension()
-        self._create_tables_if_not_exists()
-
     async def close(self) -> None:
+        if not self._is_initialized:
+            return
+
         self._session.close_all()
         self._engine.dispose()
 
@@ -181,6 +189,8 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        cache_ok: bool = False,
+        debug: bool = False,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = (
@@ -197,19 +207,22 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            cache_ok=cache_ok,
+            debug=debug,
         )
 
     @property
     def client(self) -> Any:
+        if not self._is_initialized:
+            return None
         return self._engine
 
     def _connect(self) -> Any:
         from sqlalchemy import create_engine
+        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
         from sqlalchemy.orm import sessionmaker
-        from sqlalchemy.ext.asyncio import create_async_engine
-        from sqlalchemy.ext.asyncio import async_sessionmaker
 
-        self._engine = create_engine(self.connection_string)
+        self._engine = create_engine(self.connection_string, echo=self.debug)
         self._session = sessionmaker(self._engine)
 
         self._async_engine = create_async_engine(self.async_connection_string)
@@ -229,6 +242,13 @@ class PGVectorStore(BasePydanticVectorStore):
                 session.execute(statement)
                 session.commit()
 
+    def _initialize(self) -> None:
+        if not self._is_initialized:
+            self._connect()
+            self._create_extension()
+            self._create_tables_if_not_exists()
+            self._is_initialized = True
+
     def _node_to_table_row(self, node: BaseNode) -> Any:
         return self._table_class(
             node_id=node.node_id,
@@ -242,6 +262,7 @@ class PGVectorStore(BasePydanticVectorStore):
         )
 
     def add(self, nodes: List[BaseNode]) -> List[str]:
+        self._initialize()
         ids = []
         with self._session() as session:
             with session.begin():
@@ -253,6 +274,7 @@ class PGVectorStore(BasePydanticVectorStore):
         return ids
 
     async def async_add(self, nodes: List[BaseNode]) -> List[str]:
+        self._initialize()
         ids = []
         async with self._async_session() as session:
             async with session.begin():
@@ -328,7 +350,7 @@ class PGVectorStore(BasePydanticVectorStore):
         async with self._async_session() as async_session:
             async with async_session.begin():
                 res = await async_session.execute(stmt)
-                results = [
+                return [
                     DBEmbeddingRow(
                         node_id=item.node_id,
                         text=item.text,
@@ -337,7 +359,6 @@ class PGVectorStore(BasePydanticVectorStore):
                     )
                     for item, distance in res.all()
                 ]
-                return results
 
     def _build_sparse_query(
         self,
@@ -474,6 +495,7 @@ class PGVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
+        self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
             results = await self._async_hybrid_query(query)
         elif query.mode in [
@@ -494,6 +516,7 @@ class PGVectorStore(BasePydanticVectorStore):
         return self._db_rows_to_query_result(results)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
             results = self._hybrid_query(query)
         elif query.mode in [
@@ -516,6 +539,7 @@ class PGVectorStore(BasePydanticVectorStore):
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         import sqlalchemy
 
+        self._initialize()
         with self._session() as session:
             with session.begin():
                 stmt = sqlalchemy.text(

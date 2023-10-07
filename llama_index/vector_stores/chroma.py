@@ -7,8 +7,8 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -69,7 +69,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         try:
-            import chromadb  # noqa: F401
+            import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection
@@ -96,7 +96,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> "ChromaVectorStore":
         try:
-            import chromadb  # noqa: F401
+            import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -122,7 +122,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
@@ -222,7 +222,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
             nodes.append(node)
 
-            similarity_score = 1.0 - math.exp(-distance)
+            similarity_score = math.exp(-distance)
             similarities.append(similarity_score)
 
             logger.debug(

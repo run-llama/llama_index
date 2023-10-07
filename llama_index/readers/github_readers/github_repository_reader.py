@@ -201,7 +201,7 @@ class GithubRepositoryReader(BaseReader):
         :param `current_path`: current path of the tree
         :param `current_depth`: current depth of the tree
         :return: list of tuples of
-            (tree object, file's full path realtive to the root of the repo)
+            (tree object, file's full path relative to the root of the repo)
         """
         blobs_and_full_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]] = []
         print_if_verbose(
@@ -255,7 +255,7 @@ class GithubRepositoryReader(BaseReader):
         Generate documents from a list of blobs and their full paths.
 
         :param `blobs_and_paths`: list of tuples of
-            (tree object, file's full path in the repo realtive to the root of the repo)
+            (tree object, file's full path in the repo relative to the root of the repo)
         :return: list of documents
         """
         buffered_iterator = BufferedGitBlobDataIterator(

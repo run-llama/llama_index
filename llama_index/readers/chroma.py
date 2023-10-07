@@ -12,7 +12,7 @@ class ChromaReader(BaseReader):
     Retrieve documents from existing persisted Chroma collections.
 
     Args:
-        collection_name: Name of the peristed collection.
+        collection_name: Name of the persisted collection.
         persist_directory: Directory where the collection is persisted.
 
     """
@@ -31,7 +31,7 @@ class ChromaReader(BaseReader):
             "`chromadb` package not found, please run `pip install chromadb`"
         )
         try:
-            import chromadb  # noqa: F401
+            import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
 

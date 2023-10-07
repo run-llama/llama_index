@@ -4,7 +4,6 @@ from tempfile import TemporaryDirectory
 from typing import Any, Dict
 
 import pytest
-
 from llama_index.readers.file.base import SimpleDirectoryReader
 
 

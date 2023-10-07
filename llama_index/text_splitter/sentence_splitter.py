@@ -1,6 +1,6 @@
 """Sentence splitter."""
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
@@ -115,7 +115,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "SentenceSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
@@ -161,7 +160,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return chunks
 
     def _split(self, text: str, chunk_size: int) -> List[_Split]:
-        """Break text into splits that are smaller than chunk size.
+        r"""Break text into splits that are smaller than chunk size.
 
         The order of splitting is:
         1. split by paragraph separator
@@ -170,35 +169,21 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         4. split by default separator (" ")
 
         """
-        if len(self.tokenizer(text)) <= chunk_size:
+        if self._token_size(text) <= chunk_size:
             return [_Split(text, is_sentence=True)]
 
-        for split_fn in self._split_fns:
-            splits = split_fn(text)
-            if len(splits) > 1:
-                break
+        text_splits_by_fns, is_sentence = self._get_splits_by_fns(text)
 
-        if len(splits) > 1:
-            is_sentence = True
-        else:
-            for split_fn in self._sub_sentence_split_fns:
-                splits = split_fn(text)
-                if len(splits) > 1:
-                    break
-            is_sentence = False
-
-        new_splits = []
-        for split in splits:
-            split_len = len(self.tokenizer(split))
-            if split_len <= chunk_size:
-                new_splits.append(_Split(split, is_sentence=is_sentence))
+        text_splits = []
+        for text_split_by_fns in text_splits_by_fns:
+            if self._token_size(text_split_by_fns) <= chunk_size:
+                text_splits.append(_Split(text_split_by_fns, is_sentence=is_sentence))
             else:
-                ns = self._split(split, chunk_size=chunk_size)
-                if len(ns) == 0:
-                    print("0 length split")
-                # recursively split
-                new_splits.extend(ns)
-        return new_splits
+                recursive_text_splits = self._split(
+                    text_split_by_fns, chunk_size=chunk_size
+                )
+                text_splits.extend(recursive_text_splits)
+        return text_splits
 
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
@@ -263,9 +248,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             chunks.append(chunk)
 
         # run postprocessing to remove blank spaces
-        chunks = self._postprocess_chunks(chunks)
-
-        return chunks
+        return self._postprocess_chunks(chunks)
 
     def _postprocess_chunks(self, chunks: List[str]) -> List[str]:
         """Post-process chunks.
@@ -278,3 +261,20 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 continue
             new_chunks.append(stripped_chunk)
         return new_chunks
+
+    def _token_size(self, text: str) -> int:
+        return len(self.tokenizer(text))
+
+    def _get_splits_by_fns(self, text: str) -> Tuple[List[str], bool]:
+        for split_fn in self._split_fns:
+            splits = split_fn(text)
+            if len(splits) > 1:
+                return splits, True
+                break
+
+        for split_fn in self._sub_sentence_split_fns:
+            splits = split_fn(text)
+            if len(splits) > 1:
+                break
+
+        return splits, False

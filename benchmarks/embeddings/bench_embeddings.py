@@ -1,11 +1,12 @@
-import pandas as pd
 import time
-from typing import List, Optional, Tuple, Callable
+from functools import partial
+from typing import Callable, List, Optional, Tuple
+
+import pandas as pd
 
 from llama_index import SimpleDirectoryReader
 from llama_index.embeddings import OpenAIEmbedding, resolve_embed_model
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from functools import partial
 
 
 def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[str]:
@@ -27,7 +28,7 @@ def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[st
     num_loops_upper_bound = int(num_strings / strings_per_loop) + 1
     strings = []
 
-    for offset in range(0, num_loops_upper_bound + 1):
+    for offset in range(num_loops_upper_bound + 1):
         ptr = offset % string_length
         while ptr + string_length < content_length:
             strings.append(content[ptr : ptr + string_length])
@@ -89,11 +90,8 @@ def bench_simple_vector_store(
                     models.append(create_model(batch_size=batch_size))  # type: ignore
 
                 for model in models:
-                    for i, string in enumerate(strings):
-                        model[0].queue_text_for_embedding(str(i), string)
-
                     time1 = time.time()
-                    _ = model[0].get_queued_text_embeddings(show_progress=True)
+                    _ = model[0].get_text_embedding_batch(strings, show_progress=True)
 
                     time2 = time.time()
                     print(

@@ -2,23 +2,22 @@
 An index that that is built on top of Vectara
 """
 
+import json
 import logging
 from typing import Any, List, Optional
-import json
 
-from llama_index.schema import TextNode
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.managed.vectara.base import VectaraIndex
-from llama_index.schema import NodeWithScore
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.query.schema import QueryBundle
-
+from llama_index.schema import NodeWithScore, TextNode
 
 _logger = logging.getLogger(__name__)
 
 
 class VectaraRetriever(BaseRetriever):
     """Vectara Retriever.
+
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return.
@@ -57,6 +56,7 @@ class VectaraRetriever(BaseRetriever):
             "x-api-key": self._index._vectara_api_key,
             "customer-id": self._index._vectara_customer_id,
             "Content-Type": "application/json",
+            "X-Source": "llama_index",
         }
 
     def _retrieve(
@@ -69,7 +69,6 @@ class VectaraRetriever(BaseRetriever):
         Args:
             query: Query Bundle
         """
-
         similarity_top_k = (
             self._similarity_top_k
             if self._similarity_top_k

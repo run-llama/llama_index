@@ -17,6 +17,7 @@ We are actively adding more integrations and improving feature coverage for each
 | ------------------------ | ------------------- | ------------------ | ------------- | ------ | --------------- | ----- |
 | Elasticsearch            | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓    |
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
+| Timescale                |                     | ✓                  |               | ✓      | ✓               | ✓     |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Cassandra                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
@@ -34,9 +35,9 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
-| MyScale                  | cloud               |                    |               |        | ✓               |       |
+| MyScale                  | cloud               | ✓                  | ✓             |        | ✓               |       |
 | Tair                     | cloud               | ✓                  |               | ✓      | ✓               |       |
-| Simple                   | in-memory           |                    |               | ✓      |                 |       |
+| Simple                   | in-memory           | ✓                  |               | ✓      |                 |       |
 | FAISS                    | in-memory           |                    |               |        |                 |       |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
@@ -76,4 +77,5 @@ maxdepth: 1
 /examples/vector_stores/Neo4jVectorDemo.ipynb
 /examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 /examples/vector_stores/EpsillaIndexDemo.ipynb
+/examples/vector_stores/Timescalevector.ipynb
 ```
