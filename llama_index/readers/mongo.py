@@ -50,6 +50,7 @@ class SimpleMongoReader(BaseReader):
         db_name: str,
         collection_name: str,
         field_names: List[str] = ["text"],
+        separator: str = "",
         query_dict: Optional[Dict] = None,
         metadata_names: Optional[List[str]] = None,
     ) -> List[Document]:
@@ -60,6 +61,8 @@ class SimpleMongoReader(BaseReader):
             collection_name (str): name of the collection.
             field_names(List[str]): names of the fields to be concatenated.
                 Defaults to ["text"]
+            separator (str): separator to be used between fields.
+                Defaults to ""
             query_dict (Optional[Dict]): query to filter documents.
                 Defaults to None
             metadata_names (Optional[List[str]]): names of the fields to be added
@@ -77,14 +80,15 @@ class SimpleMongoReader(BaseReader):
             cursor = db[collection_name].find(query_dict)
 
         for item in cursor:
-            text = ""
+            texts = []
             for field_name in field_names:
                 if field_name not in item:
                     raise ValueError(
                         f"`{field_name}` field not found in Mongo document."
                     )
                 field = item[field_name]
-                text += field if isinstance(field, str) else "".join(field)
+                texts += [field] if isinstance(field, str) else field
+            text = separator.join(texts)
 
             if metadata_names is None:
                 documents.append(Document(text=text))
