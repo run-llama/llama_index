@@ -86,7 +86,7 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
 
         self._split_fns = [
             split_by_sep(paragraph_separator),
-            chunking_tokenizer_fn,
+            self._chunking_tokenizer_fn,
         ]
 
         self._sub_sentence_split_fns = [
