@@ -220,9 +220,8 @@ class IngestionPipeline(BaseModel):
         # upload?
         pipeline = client.project.upsert_pipeline_for_project(
             project.id,
-            PipelineCreate(
+            request=PipelineCreate(
                 name=pipeline_name,
-                project_id=project.id,
                 configured_transformations=configured_transformations,
                 data_sinks=data_sinks,
                 data_sources=data_sources,
