@@ -50,7 +50,7 @@ class QueryEngineTool(AsyncBaseTool):
         return self._metadata
 
     def call(self, input: Any) -> ToolOutput:
-        query_str = cast(str, input)
+        query_str = str(input)
         response = self._query_engine.query(query_str)
         return ToolOutput(
             content=str(response),
