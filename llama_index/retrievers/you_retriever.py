@@ -22,7 +22,6 @@ class YouRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve."""
-        query_bundle.query_str
         headers = {"X-API-Key": self._api_key}
         results = requests.get(
             f"https://api.ydc-index.io/search?query={query_bundle.query_str}",
