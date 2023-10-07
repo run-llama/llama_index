@@ -1,8 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.41] - 2023-10-07
 
 ### New Features
+- You.com retriever (#8024)
 - Pull fields from mongodb into metadata with `metadata_names` argument (#8001)
 - Simplified `LocalAI.__init__` preserving the same behaviors (#7982)
 
