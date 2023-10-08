@@ -65,7 +65,7 @@ class AutoMergingRetriever(BaseRetriever):
         nodes_to_add: Dict[str, BaseNode] = {}
         for parent_node_id, parent_node in parent_nodes.items():
             parent_child_nodes = parent_node.child_nodes
-            parent_num_children = len(parent_child_nodes) if parent_child_nodes else 0
+            parent_num_children = len(parent_child_nodes) if parent_child_nodes else 1
             parent_cur_children = parent_cur_children_dict[parent_node_id]
             ratio = len(parent_cur_children) / parent_num_children
 
