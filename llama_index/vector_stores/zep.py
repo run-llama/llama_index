@@ -113,7 +113,7 @@ class ZepVectorStore(VectorStore):
                 ZepDocument(
                     document_id=node.node_id,
                     content=node.get_content(metadata_mode=MetadataMode.NONE),
-                    embedding=node.embedding,
+                    embedding=node.get_embedding(),
                     metadata=metadata_dict,
                 )
             )
@@ -245,7 +245,7 @@ class ZepVectorStore(VectorStore):
 
     def _to_zep_filters(self, filters: MetadataFilters) -> dict[str, Any]:
         """Convert filters to Zep filters. Filters are ANDed together."""
-        filter_conditions = [dict[str, Any]]
+        filter_conditions: List[dict[str, Any]] = []
 
         for f in filters.filters:
             filter_conditions.append({"jsonpath": f'$[*] ? (@.{f.key} == "{f.value}")'})
