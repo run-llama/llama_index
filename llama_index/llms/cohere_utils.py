@@ -1,12 +1,6 @@
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
-import cohere
-from cohere.client import Client
-from cohere.client_async import AsyncClient
-from cohere.responses import Chat, Generations
-
-#
 from tenacity import (
     before_sleep_log,
     retry,
@@ -15,7 +9,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.base import ChatMessage
 
 COMMAND_MODELS = {
     "command": 4096,
@@ -36,7 +30,6 @@ ALL_AVAILABLE_MODELS = {**COMMAND_MODELS, **GENERATION_MODELS, **REPRESENTATION_
 CHAT_MODELS = {**COMMAND_MODELS}
 
 logger = logging.getLogger(__name__)
-CompletionClientType = Union[Type[Generations], Type[Chat]]
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -44,6 +37,14 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    try:
+        import cohere
+    except ImportError as e:
+        raise ImportError(
+            "You must install the `cohere` package to use Cohere."
+            "Please `pip install cohere`"
+        ) from e
+
     return retry(
         reraise=True,
         stop=stop_after_attempt(max_retries),
@@ -54,7 +55,7 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
 
 
 def completion_with_retry(
-    client: Client, max_retries: int, chat=False, **kwargs: Any
+    client: Any, max_retries: int, chat: bool = False, **kwargs: Any
 ) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
@@ -70,7 +71,10 @@ def completion_with_retry(
 
 
 async def acompletion_with_retry(
-    aclient: AsyncClient, max_retries: int, chat=False, **kwargs: Any
+    aclient: Any,
+    max_retries: int,
+    chat: bool = False,
+    **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
@@ -100,7 +104,9 @@ def is_chat_model(model: str) -> bool:
     return model in COMMAND_MODELS
 
 
-def messages_to_cohere_history(messages: Sequence[ChatMessage]) -> str:
+def messages_to_cohere_history(
+    messages: Sequence[ChatMessage],
+) -> List[Dict[str, Optional[str]]]:
     return [
         {"user_name": message.role, "message": message.content} for message in messages
     ]
