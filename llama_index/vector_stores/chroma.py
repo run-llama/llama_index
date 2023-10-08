@@ -62,6 +62,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
     """
 
+    MAX_CHUNK_SIZE = 41665  # One less than the max chunk size for ChromaDB
+
     stores_text: bool = True
     flat_metadata: bool = True
 
@@ -145,7 +147,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        max_chunk_size = 41665  # One less than the max chunk size for ChromaDB
+        max_chunk_size = MAX_CUNK_SIZE
         node_chunks = chunk_list(nodes, max_chunk_size)
 
         all_ids = []
