@@ -155,7 +155,7 @@ class ReActAgent(BaseAgent):
                 EventPayload.TOOL: tool.metadata,
             },
         ) as event:
-            tool_output = tool.call(input=reasoning_step.action_input)
+            tool_output = tool.call(**reasoning_step.action_input)
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
         observation_step = ObservationReasoningStep(observation=str(tool_output))
