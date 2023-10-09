@@ -15,6 +15,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import build_nodes_from_splits
+from llama_index.response.schema import PydanticResponse
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.utils import get_tqdm_iterable
 
@@ -75,7 +76,9 @@ def filter_table(table_element: Any) -> bool:
     return len(table_df) > 1 and len(table_df.columns) > 1
 
 
-def extract_elements(text: str, table_filters: Optional[List[Callable]] = None):
+def extract_elements(
+    text: str, table_filters: Optional[List[Callable]] = None
+) -> List[Element]:
     """Extract elements."""
     table_filters = table_filters or []
     elements = partition_html(text=text)
@@ -118,7 +121,7 @@ def extract_table_summaries(
         query_engine = index.as_query_engine(output_cls=TableOutput)
         try:
             response = query_engine.query(summary_query_str)
-            element.table_output = response.response
+            element.table_output = cast(PydanticResponse, response).response
         except ValidationError as e:
             # There was a pydantic validation error, so we will run with text completion
             # fill in the summary and leave other fields blank
@@ -127,28 +130,30 @@ def extract_table_summaries(
             element.table_output = TableOutput(summary=response_txt, columns=[])
 
 
-def get_table_elements(elements) -> List[Element]:
+def get_table_elements(elements: List[Element]) -> List[Element]:
     """Get table elements."""
     return [e for e in elements if e.type == "table"]
 
 
-def get_text_elements(elements) -> List[Element]:
+def get_text_elements(elements: List[Element]) -> List[Element]:
     """Get text elements."""
     return [e for e in elements if e.type == "text"]
 
 
-def _get_nodes_from_buffer(buffer, node_parser):
+def _get_nodes_from_buffer(
+    buffer: List[str], node_parser: NodeParser
+) -> List[BaseNode]:
     """Get nodes from buffer."""
     doc = Document(text="\n\n".join(list(buffer)))
     return node_parser.get_nodes_from_documents([doc])
 
 
-def get_nodes_from_elements(elements: List[Element]) -> Tuple[List[BaseNode], Dict]:
+def get_nodes_from_elements(elements: List[Element]) -> List[BaseNode]:
     """Get nodes and mappings."""
     node_parser = SimpleNodeParser.from_defaults()
 
     nodes = []
-    cur_text_el_buffer = []
+    cur_text_el_buffer: List[str] = []
     for element in elements:
         if element.type == "table":
             # flush text buffer
@@ -157,19 +162,21 @@ def get_nodes_from_elements(elements: List[Element]) -> Tuple[List[BaseNode], Di
                 nodes.extend(cur_text_nodes)
                 cur_text_el_buffer = []
 
+            table_output = cast(TableOutput, element.table_output)
+            table_df = cast(pd.DataFrame, element.table)
+
             table_id = element.id + "_table"
             table_ref_id = element.id + "_table_ref"
             # TODO: figure out what to do with columns
             # NOTE: right now they're excluded from embedding
-            col_schema = "\n\n".join([str(col) for col in element.table_output.columns])
+            col_schema = "\n\n".join([str(col) for col in table_output.columns])
             index_node = IndexNode(
-                text=str(element.table_output.summary),
+                text=str(table_output.summary),
                 metadata={"col_schema": col_schema},
                 excluded_embed_metadata_keys=["col_schema"],
                 id_=table_ref_id,
                 index_id=table_id,
             )
-            table_df = element.table
             table_str = table_df.to_string()
             text_node = TextNode(
                 text=table_str,
@@ -265,8 +272,8 @@ class UnstructuredElementNodeParser(NodeParser):
         extract_table_summaries(table_elements, self.llm, self.summary_query_str)
 
         # convert into nodes
-        return get_nodes_from_elements(elements)
         # will return a list of Nodes and Index Nodes
+        return get_nodes_from_elements(elements)
 
     def get_nodes_from_documents(
         self,
