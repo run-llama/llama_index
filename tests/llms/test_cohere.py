@@ -114,7 +114,7 @@ def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.llms.cohere.completion_with_retry", mock_completion_with_retry
     )
-    mock_api_key = "5secFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    mock_api_key = "fake_key"
     llm = Cohere(model="command", api_key=mock_api_key)
     test_prompt = "test prompt"
     response = llm.complete(test_prompt)
@@ -132,7 +132,7 @@ def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
 @pytest.mark.skipif(cohere is None, reason="cohere not installed")
 @pytest.mark.asyncio()
 async def test_async(monkeypatch: MonkeyPatch) -> None:
-    mock_api_key = "5secFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    mock_api_key = "fake_key"
     monkeypatch.setattr(
         "llama_index.llms.cohere.acompletion_with_retry", mock_acompletion_with_retry
     )
