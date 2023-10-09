@@ -49,23 +49,23 @@ class QueryEngineTool(AsyncBaseTool):
     def metadata(self) -> ToolMetadata:
         return self._metadata
 
-    def call(self, **kwargs: Any) -> ToolOutput:
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         query_str = str(kwargs)
         response = self._query_engine.query(query_str)
         return ToolOutput(
             content=str(response),
             tool_name=self.metadata.name,
-            raw_input={"kwargs": kwargs},
+            raw_input={"args": args, "kwargs": kwargs},
             raw_output=response,
         )
 
-    async def acall(self, **kwargs: Any) -> ToolOutput:
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         query_str = cast(str, input)
         response = await self._query_engine.aquery(query_str)
         return ToolOutput(
             content=str(response),
             tool_name=self.metadata.name,
-            raw_input={"kwargs": kwargs},
+            raw_input={"args": args, "kwargs": kwargs},
             raw_output=response,
         )
 

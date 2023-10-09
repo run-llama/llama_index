@@ -124,13 +124,13 @@ class AsyncBaseTool(BaseTool):
         return self.call(*args, **kwargs)
 
     @abstractmethod
-    def call(self, input: Any) -> ToolOutput:
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """
         This is the method that should be implemented by the tool developer.
         """
 
     @abstractmethod
-    async def acall(self, input: Any) -> ToolOutput:
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """
         This is the async version of the call method.
         Should also be implemented by the tool developer as an
