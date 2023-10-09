@@ -299,7 +299,7 @@ class UnstructuredElementNodeParser(NodeParser):
     ) -> Tuple[List[BaseNode], Dict]:
         """Get base nodes and mappings.
 
-        Givne a list of nodes and IndexNode objects, return the base nodes and a mapping
+        Given a list of nodes and IndexNode objects, return the base nodes and a mapping
         from index id to child nodes (which are excluded from the base nodes).
 
         """
