@@ -31,6 +31,8 @@ def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
 
 import_err_msg = "`chromadb` package not found, please run `pip install chromadb`"
 
+MAX_CHUNK_SIZE = 41665  # One less than the max chunk size for ChromaDB
+
 
 def chunk_list(
     lst: List[BaseNode], max_chunk_size: int
@@ -61,8 +63,6 @@ class ChromaVectorStore(BasePydanticVectorStore):
             ChromaDB collection instance
 
     """
-
-    MAX_CHUNK_SIZE = 41665  # One less than the max chunk size for ChromaDB
 
     stores_text: bool = True
     flat_metadata: bool = True
