@@ -6,6 +6,9 @@
 - `LocalAI` more intuitive module-level var names (#8028)
 - Enable `codespell` for markdown docs (#7972)
 
+### Bug Fixes / Nits
+- Add properly named kwargs to keyword `as_retriever` calls (#8011)
+
 ## [0.8.41] - 2023-10-07
 
 ### New Features
