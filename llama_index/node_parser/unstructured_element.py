@@ -3,10 +3,8 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
 import pandas as pd
-from lxml import html
 from pydantic import BaseModel, ValidationError
 from tqdm import tqdm
-from unstructured.partition.html import partition_html
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
@@ -14,7 +12,6 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llms.openai import OpenAI
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.node_utils import build_nodes_from_splits
 from llama_index.response.schema import PydanticResponse
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.utils import get_tqdm_iterable
@@ -56,8 +53,9 @@ class Element(BaseModel):
 
 def html_to_df(html_str: str) -> pd.DataFrame:
     """Convert HTML to dataframe."""
+    from lxml import html
+
     tree = html.fromstring(html_str)
-    # print(tree.xpath('//table'))
     table_element = tree.xpath("//table")[0]
     rows = table_element.xpath(".//tr")
 
@@ -80,6 +78,8 @@ def extract_elements(
     text: str, table_filters: Optional[List[Callable]] = None
 ) -> List[Element]:
     """Extract elements."""
+    from unstructured.partition.html import partition_html
+
     table_filters = table_filters or []
     elements = partition_html(text=text)
     output_els = []
@@ -248,6 +248,27 @@ class UnstructuredElementNodeParser(NodeParser):
         default=DEFAULT_SUMMARY_QUERY_STR,
         description="Query string to use for summarization.",
     )
+
+    def __init__(
+        self,
+        callback_manager: CallbackManager,
+        llm: Optional[Any] = None,
+        summary_query_str: str = DEFAULT_SUMMARY_QUERY_STR,
+    ) -> None:
+        """Initialize."""
+        try:
+            import lxml
+            import unstructured
+        except ImportError:
+            raise ImportError(
+                "You must install the `unstructured` and `lxml` package to use this node parser."
+            )
+
+        return super().__init__(
+            callback_manager=callback_manager,
+            llm=llm,
+            summary_query_str=summary_query_str,
+        )
 
     @classmethod
     def class_name(cls) -> str:
