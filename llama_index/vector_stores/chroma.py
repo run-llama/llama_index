@@ -147,7 +147,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        max_chunk_size = MAX_CUNK_SIZE
+        max_chunk_size = MAX_CHUNK_SIZE
         node_chunks = chunk_list(nodes, max_chunk_size)
 
         all_ids = []
