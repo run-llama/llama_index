@@ -9,7 +9,7 @@ from tqdm import tqdm
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai import LLM, OpenAI
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.response.schema import PydanticResponse
@@ -106,7 +106,6 @@ def extract_table_summaries(
     """Go through elements, extract out summaries that are tables."""
     from llama_index.indices.list.base import SummaryIndex
     from llama_index.indices.service_context import ServiceContext
-    from llama_index.llms.base import LLM
 
     llm = llm or OpenAI()
     llm = cast(LLM, llm)
@@ -195,35 +194,6 @@ def get_nodes_from_elements(elements: List[Element]) -> List[BaseNode]:
     return nodes
 
 
-def get_base_nodes_and_mappings(nodes: List[BaseNode]) -> Tuple[List[BaseNode], Dict]:
-    """Get base nodes and mappings.
-
-    Givne a list of nodes and IndexNode objects, return the base nodes and a mapping
-    from index id to child nodes (which are excluded from the base nodes).
-
-    """
-    node_dict = {node.node_id: node for node in nodes}
-
-    node_mappings = {}
-    base_nodes = []
-
-    # first map index nodes to their child nodes
-    nonbase_node_ids = set()
-    for node in nodes:
-        if isinstance(node, IndexNode):
-            node_mappings[node.index_id] = node_dict[node.index_id]
-            nonbase_node_ids.add(node.index_id)
-        else:
-            pass
-
-    # then add all nodes that are not children of index nodes
-    for node in nodes:
-        if node.node_id not in nonbase_node_ids:
-            base_nodes.append(node)
-
-    return base_nodes, node_mappings
-
-
 DEFAULT_SUMMARY_QUERY_STR = """\
 What is this table about? Give a very concise summary (imagine you are adding a caption), \
 and also output whether or not the table should be kept.\
@@ -241,7 +211,7 @@ class UnstructuredElementNodeParser(NodeParser):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
-    llm: Optional[Any] = Field(
+    llm: Optional[LLM] = Field(
         default=None, description="LLM model to use for summarization."
     )
     summary_query_str: str = Field(
@@ -322,3 +292,33 @@ class UnstructuredElementNodeParser(NodeParser):
             event.on_end(payload={EventPayload.NODES: all_nodes})
 
         return all_nodes
+
+    def get_base_nodes_and_mappings(
+        self, nodes: List[BaseNode]
+    ) -> Tuple[List[BaseNode], Dict]:
+        """Get base nodes and mappings.
+
+        Givne a list of nodes and IndexNode objects, return the base nodes and a mapping
+        from index id to child nodes (which are excluded from the base nodes).
+
+        """
+        node_dict = {node.node_id: node for node in nodes}
+
+        node_mappings = {}
+        base_nodes = []
+
+        # first map index nodes to their child nodes
+        nonbase_node_ids = set()
+        for node in nodes:
+            if isinstance(node, IndexNode):
+                node_mappings[node.index_id] = node_dict[node.index_id]
+                nonbase_node_ids.add(node.index_id)
+            else:
+                pass
+
+        # then add all nodes that are not children of index nodes
+        for node in nodes:
+            if node.node_id not in nonbase_node_ids:
+                base_nodes.append(node)
+
+        return base_nodes, node_mappings
