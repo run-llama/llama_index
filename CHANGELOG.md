@@ -8,6 +8,7 @@
 
 ### Bug Fixes / Nits
 - Parse multi-line outputs in react agent answers (#8029)
+- Add properly named kwargs to keyword `as_retriever` calls (#8011)
 
 ## [0.8.41] - 2023-10-07
 
