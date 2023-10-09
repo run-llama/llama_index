@@ -6,9 +6,9 @@ from pytest import MonkeyPatch
 
 try:
     import cohere
-    from llama_index.llms.cohere import Cohere
 except ImportError:
     cohere = None  # type: ignore
+from llama_index.llms.cohere import Cohere
 
 
 def mock_completion_with_retry(*args: Any, **kwargs: Any) -> dict:
