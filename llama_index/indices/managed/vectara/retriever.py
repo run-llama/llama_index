@@ -36,11 +36,11 @@ class VectaraRetriever(BaseRetriever):
     def __init__(
         self,
         index: VectaraIndex,
-        similarity_top_k: Optional[int] = DEFAULT_SIMILARITY_TOP_K,
-        lambda_val: Optional[float] = None,
-        n_sentences_before: Optional[int] = 2,
-        n_sentences_after: Optional[int] = 2,
-        filter: Optional[str] = None,
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        lambda_val: float = 0.025,
+        n_sentences_before: int = 2,
+        n_sentences_after: int = 2,
+        filter: str = "",
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -71,21 +71,14 @@ class VectaraRetriever(BaseRetriever):
             query: Query Bundle
         """
 
-        similarity_top_k = (
-            self._similarity_top_k
-            if self._similarity_top_k
-            else DEFAULT_SIMILARITY_TOP_K
-        )
-        n_sentences_before = self._n_sentences_before if self._n_sentences_before else 2
-        n_sentences_after = self._n_sentences_after if self._n_sentences_after else 2
-        lambda_val = self._lambda_val if self._lambda_val else 0.025
+        similarity_top_k = self._similarity_top_k
         corpus_key = {
             "customer_id": self._index._vectara_customer_id,
             "corpus_id": self._index._vectara_corpus_id,
-            "lexical_interpolation_config": {"lambda": lambda_val},
+            "lexical_interpolation_config": {"lambda": self._lambda_val},
         }
-        if self._filter:
-            corpus_key["metadataFilter"] = self._filter if self._filter else None
+        if len(self._filter) > 0:
+            corpus_key["metadataFilter"] = self._filter
 
         data = json.dumps(
             {
@@ -93,10 +86,10 @@ class VectaraRetriever(BaseRetriever):
                     {
                         "query": query_bundle.query_str,
                         "start": 0,
-                        "num_results": similarity_top_k,
+                        "num_results": self._similarity_top_k,
                         "context_config": {
-                            "sentences_before": n_sentences_before,
-                            "sentences_after": n_sentences_after,
+                            "sentences_before": self._n_sentences_before,
+                            "sentences_after": self._n_sentences_after,
                         },
                         "corpus_key": [corpus_key],
                     }
