@@ -202,4 +202,4 @@ eval_results = await runner.aevaluate_queries(
 We also integrate with community evaluation tools.
 
 - [DeepEval](../../../community/integrations/deepeval.md)
-- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/integrations/llamaindex.ipynb)
+- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
