@@ -72,10 +72,7 @@ def html_to_df(html_str: str) -> pd.DataFrame:
 def filter_table(table_element: Any) -> bool:
     """Filter table."""
     table_df = html_to_df(table_element.metadata.text_as_html)
-    if len(table_df) <= 1 or len(table_df.columns) <= 1:
-        return False
-    else:
-        return True
+    return len(table_df) > 1 and len(table_df.columns) > 1
 
 
 def extract_elements(text: str, table_filters: Optional[List[Callable]] = None):
@@ -163,10 +160,12 @@ def get_nodes_from_elements(elements: List[Element]) -> Tuple[List[BaseNode], Di
             table_id = element.id + "_table"
             table_ref_id = element.id + "_table_ref"
             # TODO: figure out what to do with columns
+            # NOTE: right now they're excluded from embedding
             col_schema = "\n\n".join([str(col) for col in element.table_output.columns])
             index_node = IndexNode(
                 text=str(element.table_output.summary),
                 metadata={"col_schema": col_schema},
+                excluded_embed_metadata_keys=["col_schema"],
                 id_=table_ref_id,
                 index_id=table_id,
             )
