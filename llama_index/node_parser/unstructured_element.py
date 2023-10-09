@@ -11,12 +11,12 @@ from unstructured.partition.html import partition_html
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.llms.openai import OpenAI
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import build_nodes_from_splits
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.utils import get_tqdm_iterable
-from llama_index.llms.openai import OpenAI
 
 
 class TableColumnOutput(BaseModel):
@@ -28,7 +28,10 @@ class TableColumnOutput(BaseModel):
 
     def __str__(self) -> str:
         """Convert to string representation."""
-        return f"Column: {self.col_name}\nType: {self.col_type}\nSummary: {self.summary}"
+        return (
+            f"Column: {self.col_name}\nType: {self.col_type}\nSummary: {self.summary}"
+        )
+
 
 class TableOutput(BaseModel):
     """Output from analyzing a table."""
@@ -97,11 +100,13 @@ def extract_elements(text: str, table_filters: Optional[List[Callable]] = None):
     return output_els
 
 
-def extract_table_summaries(elements: List[Element], llm: Optional[Any], summary_query_str: str) -> None:
+def extract_table_summaries(
+    elements: List[Element], llm: Optional[Any], summary_query_str: str
+) -> None:
     """Go through elements, extract out summaries that are tables."""
     from llama_index.indices.list.base import SummaryIndex
-    from llama_index.llms.base import LLM
     from llama_index.indices.service_context import ServiceContext
+    from llama_index.llms.base import LLM
 
     llm = llm or OpenAI()
     llm = cast(LLM, llm)
@@ -160,7 +165,7 @@ def get_nodes_from_elements(elements: List[Element]) -> Tuple[List[BaseNode], Di
             # TODO: figure out what to do with columns
             col_schema = "\n\n".join([str(col) for col in element.table_output.columns])
             index_node = IndexNode(
-                text=str(element.table_output.summary), 
+                text=str(element.table_output.summary),
                 metadata={"col_schema": col_schema},
                 id_=table_ref_id,
                 index_id=table_id,
@@ -168,7 +173,8 @@ def get_nodes_from_elements(elements: List[Element]) -> Tuple[List[BaseNode], Di
             table_df = element.table
             table_str = table_df.to_string()
             text_node = TextNode(
-                text=table_str, id_=table_id,
+                text=table_str,
+                id_=table_id,
             )
             nodes.extend([index_node, text_node])
         else:
@@ -183,15 +189,13 @@ def get_nodes_from_elements(elements: List[Element]) -> Tuple[List[BaseNode], Di
     return nodes
 
 
-
 def get_base_nodes_and_mappings(nodes: List[BaseNode]) -> Tuple[List[BaseNode], Dict]:
     """Get base nodes and mappings.
 
     Givne a list of nodes and IndexNode objects, return the base nodes and a mapping
     from index id to child nodes (which are excluded from the base nodes).
-    
-    """
 
+    """
     node_dict = {node.node_id: node for node in nodes}
 
     node_mappings = {}
@@ -212,7 +216,6 @@ def get_base_nodes_and_mappings(nodes: List[BaseNode]) -> Tuple[List[BaseNode], 
             base_nodes.append(node)
 
     return base_nodes, node_mappings
-
 
 
 DEFAULT_SUMMARY_QUERY_STR = """\
@@ -261,11 +264,10 @@ class UnstructuredElementNodeParser(NodeParser):
         table_elements = get_table_elements(elements)
         # extract summaries over table elements
         extract_table_summaries(table_elements, self.llm, self.summary_query_str)
-        
+
         # convert into nodes
-        nodes = get_nodes_from_elements(elements)
+        return get_nodes_from_elements(elements)
         # will return a list of Nodes and Index Nodes
-        return nodes
 
     def get_nodes_from_documents(
         self,
