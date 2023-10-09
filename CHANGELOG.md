@@ -3,10 +3,18 @@
 ## Unreleased
 
 ### New Features
+- `LocalAI` more intuitive module-level var names (#8028)
+- Enable `codespell` for markdown docs (#7972)
+
+## [0.8.41] - 2023-10-07
+
+### New Features
+- You.com retriever (#8024)
 - Pull fields from mongodb into metadata with `metadata_names` argument (#8001)
 - Simplified `LocalAI.__init__` preserving the same behaviors (#7982)
 
 ### Bug Fixes / Nits
+- Use longest metadata string for metadata aware text splitting (#7987)
 - Handle lists of strings in mongodb reader (#8002)
 - Removes `OpenAI.class_type` as it was dead code (#7983)
 - Fixing `HuggingFaceLLM.device_map` type hint (#7989)

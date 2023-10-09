@@ -195,7 +195,7 @@ Zep stores texts, metadata, and embeddings. All are returned in search results.
 
 ```python
 
-from llama_index.vector_stores import ZepVectorStore
+from llama_index.vector_stores.zep import ZepVectorStore
 
 vector_store = ZepVectorStore(
     api_url="<api_url>",
