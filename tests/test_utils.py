@@ -1,20 +1,19 @@
 """Test utils."""
 
 from typing import Optional, Type, Union
-from _pytest.capture import CaptureFixture
 
 import pytest
-
+from _pytest.capture import CaptureFixture
 from llama_index.utils import (
-    ErrorToRetry,
-    globals_helper,
-    retry_on_exceptions_with_backoff,
-    iter_batch,
-    get_color_mapping,
-    _get_colored_text,
-    print_text,
-    _LLAMA_INDEX_COLORS,
     _ANSI_COLORS,
+    _LLAMA_INDEX_COLORS,
+    ErrorToRetry,
+    _get_colored_text,
+    get_color_mapping,
+    globals_helper,
+    iter_batch,
+    print_text,
+    retry_on_exceptions_with_backoff,
 )
 
 
@@ -108,7 +107,7 @@ def test_retry_on_conditional_exceptions() -> None:
 
 def test_iter_batch() -> None:
     """Check iter_batch works as expected on regular, lazy and empty sequences."""
-    lst = [i for i in range(6)]
+    lst = list(range(6))
     assert list(iter_batch(lst, 3)) == [[0, 1, 2], [3, 4, 5]]
 
     gen = (i for i in range(5))

@@ -5,9 +5,6 @@ from llama_index.bridge.langchain import (
     AIMessage,
     BaseChatModel,
     BaseLanguageModel,
-)
-from llama_index.bridge.langchain import BaseMessage as LCMessage
-from llama_index.bridge.langchain import (
     ChatAnyscale,
     ChatOpenAI,
     Cohere,
@@ -16,6 +13,7 @@ from llama_index.bridge.langchain import (
     OpenAI,
     SystemMessage,
 )
+from llama_index.bridge.langchain import BaseMessage as LCMessage
 from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
 from llama_index.llms.anyscale_utils import anyscale_modelname_to_contextsize
 from llama_index.llms.base import ChatMessage, LLMMetadata, MessageRole
@@ -145,7 +143,7 @@ def get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         # June 2023:
         #   AI21's supported max input size for
         #   J2 models is 8K (8192 tokens to be exact)
-        # Reference: <https://docs.ai21.com/changelog/increased-context-length-for-j2-foundation-models>  # noqa
+        # Reference: <https://docs.ai21.com/changelog/increased-context-length-for-j2-foundation-models>
         return LLMMetadata(
             context_window=AI21_J2_CONTEXT_WINDOW,
             num_output=llm.maxTokens,

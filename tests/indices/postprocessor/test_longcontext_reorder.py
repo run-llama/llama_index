@@ -25,4 +25,3 @@ def test_long_context_reorder() -> None:
     filtered_nodes = lcr.postprocess_nodes(nodes)
     nodes_lost_in_the_middle = [n.score for n in filtered_nodes[3:-2]]
     assert set(expected_scores_at_tails).intersection(nodes_lost_in_the_middle) == set()
-    return None

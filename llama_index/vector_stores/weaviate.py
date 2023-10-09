@@ -11,8 +11,8 @@ from uuid import uuid4
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -91,8 +91,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         try:
-            import weaviate  # noqa: F401
-            from weaviate import Client  # noqa: F401
+            import weaviate
+            from weaviate import Client
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -136,8 +136,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     ) -> "WeaviateVectorStore":
         """Create WeaviateVectorStore from config."""
         try:
-            import weaviate  # noqa: F401
-            from weaviate import Client, AuthApiKey  # noqa: F401
+            import weaviate
+            from weaviate import AuthApiKey, Client
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -195,7 +195,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-
         where_filter = {
             "path": ["ref_doc_id"],
             "operator": "Equal",
@@ -215,7 +214,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
-
         all_properties = get_all_properties(self._client, self.index_name)
 
         # build query
@@ -264,8 +262,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         if query.filters is not None and len(query.filters.filters) > 0:
             filter = _to_weaviate_filter(query.filters)
             query_builder = query_builder.with_where(filter)
-        else:
-            filter = kwargs.pop("filter", {})
+        elif "filter" in kwargs and kwargs["filter"] is not None:
+            query_builder = query_builder.with_where(kwargs["filter"])
 
         query_builder = query_builder.with_limit(query.similarity_top_k)
         logger.debug(f"Using limit of {query.similarity_top_k}")

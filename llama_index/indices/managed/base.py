@@ -4,7 +4,6 @@ An index that that is built on top of a managed service.
 
 """
 from abc import ABC, abstractmethod
-
 from typing import Any, Dict, Optional, Sequence, Type
 
 from llama_index.data_structs.data_structs import IndexDict

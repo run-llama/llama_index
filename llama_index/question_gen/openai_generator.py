@@ -26,7 +26,7 @@ questions that can be answered by the tools.
 
 These are the guidelines you consider when completing your task:
 * Be as specific as possible
-* The sub questions should be relevant to the user question 
+* The sub questions should be relevant to the user question
 * The sub questions should be answerable by the tools provided
 * You can generate multiple sub questions for each tool
 * Tools must be specified by their name, not their description

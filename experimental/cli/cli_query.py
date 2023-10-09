@@ -1,5 +1,6 @@
-from .configuration import load_index
 from argparse import Namespace, _SubParsersAction
+
+from .configuration import load_index
 
 
 def query_cli(args: Namespace) -> None:

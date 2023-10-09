@@ -1,7 +1,8 @@
 import os
-import openai
-import time
 import sys
+import time
+
+import openai
 from validate_json import validate_json
 
 openai.api_key = os.getenv("OPENAI_API_KEY")

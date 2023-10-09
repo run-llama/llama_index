@@ -2,6 +2,7 @@ import re
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
+
 from tests.mock_utils.mock_prompts import (
     MOCK_REFINE_PROMPT,
     MOCK_SCHEMA_EXTRACT_PROMPT,
@@ -29,7 +30,7 @@ def _mock_output_parser(output: str) -> Optional[Dict[str, Any]]:
     return fields
 
 
-@pytest.fixture
+@pytest.fixture()
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
     # NOTE: QuestionAnswer and Refine templates aren't technically used

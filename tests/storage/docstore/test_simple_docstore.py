@@ -2,11 +2,10 @@
 
 
 from pathlib import Path
-import pytest
 
-from llama_index.schema import TextNode
+import pytest
+from llama_index.schema import Document, TextNode
 from llama_index.storage.docstore import SimpleDocumentStore
-from llama_index.schema import Document
 from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
 
 

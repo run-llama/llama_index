@@ -9,7 +9,7 @@ LlamaIndex offers key modules to measure the quality of generated results. We al
 - **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelnes?
 - **Retrieval Evaluation**: Are the retrieved sources relevant to the query?
 
-This section describes how the evaluation components within LlamaIndex work. 
+This section describes how the evaluation components within LlamaIndex work.
 
 ### Response Evaluation
 
@@ -17,7 +17,7 @@ Evaluation of generated results can be difficult, since unlike traditional machi
 
 LlamaIndex offers **LLM-based** evaluation modules to measure the quality of results. This uses a "gold" LLM (e.g. GPT-4) to decide whether the predicted answer is correct in a variety of ways.
 
-Note that many of these current evaluoation modules
+Note that many of these current evaluation modules
 do *not* require ground-truth labels. Evaluation can be done with some combination of the query, context, response,
 and combine these with LLM calls.
 

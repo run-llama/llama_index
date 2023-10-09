@@ -193,44 +193,44 @@ extra gold: SELECT t3.title FROM director AS t2 JOIN directed_by AS t1 ON t2.did
 extra pred: SELECT movie.title, movie.release_year FROM movie JOIN directed_by ON movie.mid = directed_by.msid JOIN director ON directed_by.did = director.did WHERE director.name = "Jim Jarmusch" ORDER BY movie.release_year DESC LIMIT 1
 extra gold: SELECT t3.title FROM director AS t2 JOIN directed_by AS t1 ON t2.did  =  t1.did JOIN movie AS t3 ON t3.mid  =  t1.msid WHERE t2.name  =  "Jim Jarmusch" ORDER BY t3.release_year DESC LIMIT 1;
 
-                     easy                 medium               hard                 extra                all                 
-count                24                   28                   17                   17                   86                  
+                     easy                 medium               hard                 extra                all
+count                24                   28                   17                   17                   86
 =====================   EXECUTION ACCURACY     =====================
-execution            0.708                0.429                0.176                0.059                0.384               
+execution            0.708                0.429                0.176                0.059                0.384
 
 ====================== EXACT MATCHING ACCURACY =====================
-exact match          0.708                0.393                0.118                0.000                0.349               
+exact match          0.708                0.393                0.118                0.000                0.349
 
 ---------------------PARTIAL MATCHING ACCURACY----------------------
-select               0.905                0.750                0.800                0.250                0.746               
-select(no AGG)       0.905                0.750                0.800                0.250                0.746               
-where                0.889                0.818                0.444                0.429                0.667               
-where(no OP)         1.000                0.818                0.444                0.429                0.694               
-group(no Having)     0.000                1.000                0.000                1.000                1.000               
-group                0.000                1.000                0.000                1.000                1.000               
-order                0.750                0.429                0.000                0.429                0.409               
-and/or               1.000                0.964                1.000                0.938                0.976               
-IUEN                 0.000                0.000                0.000                0.000                0.000               
-keywords             0.833                0.667                0.333                0.500                0.614               
+select               0.905                0.750                0.800                0.250                0.746
+select(no AGG)       0.905                0.750                0.800                0.250                0.746
+where                0.889                0.818                0.444                0.429                0.667
+where(no OP)         1.000                0.818                0.444                0.429                0.694
+group(no Having)     0.000                1.000                0.000                1.000                1.000
+group                0.000                1.000                0.000                1.000                1.000
+order                0.750                0.429                0.000                0.429                0.409
+and/or               1.000                0.964                1.000                0.938                0.976
+IUEN                 0.000                0.000                0.000                0.000                0.000
+keywords             0.833                0.667                0.333                0.500                0.614
 ---------------------- PARTIAL MATCHING RECALL ----------------------
-select               0.792                0.536                0.471                0.118                0.512               
-select(no AGG)       0.792                0.536                0.471                0.118                0.512               
-where                0.889                0.643                0.364                0.250                0.522               
-where(no OP)         1.000                0.643                0.364                0.250                0.543               
-group(no Having)     0.000                0.167                0.000                0.111                0.100               
-group                0.000                0.167                0.000                0.111                0.100               
-order                1.000                0.500                0.000                0.250                0.391               
-and/or               1.000                1.000                0.882                0.938                0.964               
-IUEN                 0.000                0.000                0.000                0.000                0.000               
-keywords             0.714                0.400                0.176                0.235                0.370               
+select               0.792                0.536                0.471                0.118                0.512
+select(no AGG)       0.792                0.536                0.471                0.118                0.512
+where                0.889                0.643                0.364                0.250                0.522
+where(no OP)         1.000                0.643                0.364                0.250                0.543
+group(no Having)     0.000                0.167                0.000                0.111                0.100
+group                0.000                0.167                0.000                0.111                0.100
+order                1.000                0.500                0.000                0.250                0.391
+and/or               1.000                1.000                0.882                0.938                0.964
+IUEN                 0.000                0.000                0.000                0.000                0.000
+keywords             0.714                0.400                0.176                0.235                0.370
 ---------------------- PARTIAL MATCHING F1 --------------------------
-select               0.844                0.625                0.593                0.160                0.607               
-select(no AGG)       0.844                0.625                0.593                0.160                0.607               
-where                0.889                0.720                0.400                0.316                0.585               
-where(no OP)         1.000                0.720                0.400                0.316                0.610               
-group(no Having)     1.000                0.286                1.000                0.200                0.182               
-group                1.000                0.286                1.000                0.200                0.182               
-order                0.857                0.462                1.000                0.316                0.400               
-and/or               1.000                0.982                0.938                0.938                0.970               
-IUEN                 1.000                1.000                1.000                1.000                1.000               
-keywords             0.769                0.500                0.231                0.320                0.462               
+select               0.844                0.625                0.593                0.160                0.607
+select(no AGG)       0.844                0.625                0.593                0.160                0.607
+where                0.889                0.720                0.400                0.316                0.585
+where(no OP)         1.000                0.720                0.400                0.316                0.610
+group(no Having)     1.000                0.286                1.000                0.200                0.182
+group                1.000                0.286                1.000                0.200                0.182
+order                0.857                0.462                1.000                0.316                0.400
+and/or               1.000                0.982                0.938                0.938                0.970
+IUEN                 1.000                1.000                1.000                1.000                1.000
+keywords             0.769                0.500                0.231                0.320                0.462

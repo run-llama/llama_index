@@ -1,9 +1,8 @@
 from typing import List
 
 import numpy as np
-
-from llama_index.vector_stores.lancedb import _to_llama_similarities
 import pandas as pd
+from llama_index.vector_stores.lancedb import _to_llama_similarities
 
 data_stub = {
     "id": [1, 2, 3],

@@ -2,8 +2,8 @@ from enum import Enum
 from typing import Dict, Type
 
 from llama_index.vector_stores.bagel import BagelVectorStore
-from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.cassandra import CassandraVectorStore
+from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.epsilla import EpsillaVectorStore

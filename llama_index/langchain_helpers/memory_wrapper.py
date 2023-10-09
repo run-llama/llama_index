@@ -2,11 +2,14 @@
 
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.pydantic import Field
-
-from llama_index.bridge.langchain import AIMessage, BaseChatMemory
+from llama_index.bridge.langchain import (
+    AIMessage,
+    BaseChatMemory,
+    BaseMessage,
+    HumanMessage,
+)
 from llama_index.bridge.langchain import BaseMemory as Memory
-from llama_index.bridge.langchain import BaseMessage, HumanMessage
+from llama_index.bridge.pydantic import Field
 from llama_index.indices.base import BaseIndex
 from llama_index.schema import Document
 from llama_index.utils import get_new_id
@@ -20,7 +23,7 @@ def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) ->
     """
     # "stop" is a special key that can be passed as input but is not used to
     # format the prompt.
-    prompt_input_keys = list(set(inputs).difference(memory_variables + ["stop"]))
+    prompt_input_keys = list(set(inputs).difference([*memory_variables, "stop"]))
     if len(prompt_input_keys) != 1:
         raise ValueError(f"One input key expected got {prompt_input_keys}")
     return prompt_input_keys[0]
@@ -78,18 +81,17 @@ class GPTIndexMemory(Memory):
         if self.output_key is None:
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
+            output_key = next(iter(outputs.keys()))
         else:
             output_key = self.output_key
         human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
-        doc_text = "\n".join([human, ai])
+        doc_text = f"{human}\n{ai}"
         doc = Document(text=doc_text)
         self.index.insert(doc)
 
     def clear(self) -> None:
         """Clear memory contents."""
-        pass
 
     def __repr__(self) -> str:
         """Return representation."""
@@ -163,7 +165,7 @@ class GPTIndexChatMemory(BaseChatMemory):
         if self.output_key is None:
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
+            output_key = next(iter(outputs.keys()))
         else:
             output_key = self.output_key
 
@@ -191,7 +193,6 @@ class GPTIndexChatMemory(BaseChatMemory):
 
     def clear(self) -> None:
         """Clear memory contents."""
-        pass
 
     def __repr__(self) -> str:
         """Return representation."""

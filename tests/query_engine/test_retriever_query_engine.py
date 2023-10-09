@@ -1,13 +1,13 @@
 import pytest
-from llama_index import (
-    ServiceContext,
-    LLMPredictor,
-    TreeIndex,
-    Document,
-)
-from llama_index.llms import Anthropic
 from langchain.chat_models import ChatOpenAI
+from llama_index import (
+    Document,
+    LLMPredictor,
+    ServiceContext,
+    TreeIndex,
+)
 from llama_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
+from llama_index.llms import Anthropic
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
 try:

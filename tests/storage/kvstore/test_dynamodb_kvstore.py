@@ -1,7 +1,8 @@
 from typing import Generator
+
 import pytest
-from pytest import MonkeyPatch
 from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
+from pytest import MonkeyPatch
 
 try:
     import boto3

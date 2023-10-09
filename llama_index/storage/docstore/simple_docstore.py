@@ -49,7 +49,6 @@ class SimpleDocumentStore(KVDocumentStore):
             fs (Optional[fsspec.AbstractFileSystem]): filesystem to use
 
         """
-
         if fs is not None:
             persist_path = concat_dirs(persist_dir, DEFAULT_PERSIST_FNAME)
         else:
@@ -71,7 +70,6 @@ class SimpleDocumentStore(KVDocumentStore):
             fs (Optional[fsspec.AbstractFileSystem]): filesystem to use
 
         """
-
         simple_kvstore = SimpleKVStore.from_persist_path(persist_path, fs=fs)
         return cls(simple_kvstore, namespace)
 

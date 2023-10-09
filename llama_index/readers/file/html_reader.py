@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional
+
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
 
@@ -32,7 +33,7 @@ class HTMLTagReader(BaseReader):
         except ImportError:
             raise ImportError("bs4 is required to read HTML files.")
 
-        with open(file, "r", encoding="utf-8") as html_file:
+        with open(file, encoding="utf-8") as html_file:
             soup = BeautifulSoup(html_file, "html.parser")
 
         tags = soup.find_all(self._tag)

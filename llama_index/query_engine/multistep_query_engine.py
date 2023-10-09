@@ -15,10 +15,7 @@ def default_stop_fn(stop_dict: Dict) -> bool:
     if query_bundle is None:
         raise ValueError("Response must be provided to stop function.")
 
-    if "none" in query_bundle.query_str.lower():
-        return True
-    else:
-        return False
+    return "none" in query_bundle.query_str.lower()
 
 
 class MultiStepQueryEngine(BaseQueryEngine):
@@ -111,8 +108,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             "prev_reasoning": prev_reasoning,
             "index_summary": self._index_summary,
         }
-        query_bundle = self._query_transform(query_bundle, metadata=transform_metadata)
-        return query_bundle
+        return self._query_transform(query_bundle, metadata=transform_metadata)
 
     def _query_multistep(
         self, query_bundle: QueryBundle
@@ -148,7 +144,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             # append to response builder
             cur_qa_text = (
                 f"\nQuestion: {updated_query_bundle.query_str}\n"
-                f"Answer: {str(cur_response)}"
+                f"Answer: {cur_response!s}"
             )
             text_chunks.append(cur_qa_text)
             for source_node in cur_response.source_nodes:
@@ -159,7 +155,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             )
 
             prev_reasoning += (
-                f"- {updated_query_bundle.query_str}\n" f"- {str(cur_response)}\n"
+                f"- {updated_query_bundle.query_str}\n" f"- {cur_response!s}\n"
             )
             cur_steps += 1
 

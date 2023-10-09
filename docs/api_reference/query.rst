@@ -32,11 +32,11 @@ Additional Query Classes
 
 We also detail some additional query classes below.
 
-- **Query Bundle**: This is the input to the query classes: retriever, response synthesizer, 
-   and query engine. It enables the user to customize the string(s) 
+- **Query Bundle**: This is the input to the query classes: retriever, response synthesizer,
+   and query engine. It enables the user to customize the string(s)
    used for embedding-based query.
-- **Query Transform**: This class augments a raw query string with 
-   associated transformations to improve index querying. Can be used 
+- **Query Transform**: This class augments a raw query string with
+   associated transformations to improve index querying. Can be used
    with a Retriever (see TransformRetriever) or QueryEngine.
 
 
@@ -46,4 +46,3 @@ We also detail some additional query classes below.
 
    query/query_bundle.rst
    query/query_transform.rst
-

@@ -1,16 +1,16 @@
 """SQL wrapper around SQLDatabase in langchain."""
-from typing import Any, Dict, List, Tuple, Optional, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from sqlalchemy import MetaData, create_engine, insert, text, inspect
+from sqlalchemy import MetaData, create_engine, insert, inspect, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import ProgrammingError, OperationalError
 from sqlalchemy.engine.interfaces import ReflectedIndex
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 
 def _format_index(index: ReflectedIndex) -> str:
     return (
         f'Name: {index["name"]}, Unique: {index["unique"]},'
-        f' Columns: {str(index["column_names"])}'
+        f' Columns: {index["column_names"]!s}'
     )
 
 
@@ -166,13 +166,11 @@ class SQLDatabase:
         for column in self._inspector.get_columns(table_name):
             if column.get("comment"):
                 columns.append(
-                    (
-                        f"{column['name']} ({str(column['type'])}): "
-                        f"'{column.get('comment')}'"
-                    )
+                    f"{column['name']} ({column['type']!s}): "
+                    f"'{column.get('comment')}'"
                 )
             else:
-                columns.append(f"{column['name']} ({str(column['type'])})")
+                columns.append(f"{column['name']} ({column['type']!s})")
 
         column_str = ", ".join(columns)
         foreign_keys = []
@@ -182,10 +180,9 @@ class SQLDatabase:
                 f"{foreign_key['referred_table']}.{foreign_key['referred_columns']}"
             )
         foreign_key_str = ", ".join(foreign_keys)
-        table_str = template.format(
+        return template.format(
             table_name=table_name, columns=column_str, foreign_keys=foreign_key_str
         )
-        return table_str
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
         """Insert data into a table."""

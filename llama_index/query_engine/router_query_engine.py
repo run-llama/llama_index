@@ -9,22 +9,22 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.objects.base import ObjectRetriever
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
 from llama_index.response.schema import (
     RESPONSE_TYPE,
+    PydanticResponse,
     Response,
     StreamingResponse,
-    PydanticResponse,
 )
 from llama_index.response_synthesizers import TreeSummarize
-from llama_index.selectors.utils import get_selector_from_context
-from llama_index.selectors.types import BaseSelector
 from llama_index.schema import BaseNode
+from llama_index.selectors.types import BaseSelector
+from llama_index.selectors.utils import get_selector_from_context
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import ToolMetadata
-from llama_index.objects.base import ObjectRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +219,6 @@ def default_node_to_metadata_fn(node: BaseNode) -> ToolMetadata:
     We use the node's text as the Tool description.
 
     """
-
     metadata = node.metadata or {}
     if "tool_name" not in metadata:
         raise ValueError("Node must have a tool_name in metadata.")

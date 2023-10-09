@@ -27,7 +27,7 @@ Given a conversation (between Human and Assistant) and a follow up message from 
 rewrite the message to be a standalone question that captures all relevant context \
 from the conversation.
 
-<Chat History> 
+<Chat History>
 {chat_history}
 
 <Follow Up Message>
@@ -111,16 +111,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """
         Generate standalone question from conversation context and last message.
         """
-
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        response = self._service_context.llm_predictor.predict(
+        return self._service_context.llm_predictor.predict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
         )
-        return response
 
     async def _acondense_question(
         self, chat_history: List[ChatMessage], last_message: str
@@ -128,16 +126,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """
         Generate standalone question from conversation context and last message.
         """
-
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        response = await self._service_context.llm_predictor.apredict(
+        return await self._service_context.llm_predictor.apredict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
         )
-        return response
 
     def _get_tool_output_from_response(
         self, query: str, response: RESPONSE_TYPE

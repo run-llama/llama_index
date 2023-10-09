@@ -10,7 +10,7 @@ class KuzuGraphStore(GraphStore):
         database: Any,
         node_table_name: str = "entity",
         rel_table_name: str = "links",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         try:
             import kuzu
@@ -34,8 +34,9 @@ class KuzuGraphStore(GraphStore):
         rel_tables = [rel_table["name"] for rel_table in rel_tables]
         if self.rel_table_name not in rel_tables:
             self.connection.execute(
-                "CREATE REL TABLE %s (FROM %s TO %s, predicate STRING)"
-                % (self.rel_table_name, self.node_table_name, self.node_table_name)
+                "CREATE REL TABLE {} (FROM {} TO {}, predicate STRING)".format(
+                    self.rel_table_name, self.node_table_name, self.node_table_name
+                )
             )
 
     @property
@@ -64,7 +65,7 @@ class KuzuGraphStore(GraphStore):
     ) -> Dict[str, List[List[str]]]:
         """Get depth-aware rel map."""
         rel_wildcard = "r:%s*1..%d" % (self.rel_table_name, depth)
-        match_clause = "MATCH (n1:%s)-[%s]->(n2:%s)" % (
+        match_clause = "MATCH (n1:{})-[{}]->(n2:{})".format(
             self.node_table_name,
             rel_wildcard,
             self.node_table_name,
@@ -80,7 +81,7 @@ class KuzuGraphStore(GraphStore):
                 params.append((str(i), curr_subj))
         else:
             where_clause = ""
-        query = "%s %s %s" % (match_clause, where_clause, return_clause)
+        query = f"{match_clause} {where_clause} {return_clause}"
         prepared_statement = self.connection.prepare(query)
         if subjs is not None:
             query_result = self.connection.execute(prepared_statement, params)
@@ -129,10 +130,11 @@ class KuzuGraphStore(GraphStore):
         def check_rel_exists(connection: Any, subj: str, obj: str, rel: str) -> bool:
             is_exists_result = connection.execute(
                 (
-                    "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID = "
+                    "MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.ID = $subj AND n2.ID = "
                     "$obj AND r.predicate = $pred RETURN r.predicate"
-                )
-                % (self.node_table_name, self.rel_table_name, self.node_table_name),
+                ).format(
+                    self.node_table_name, self.rel_table_name, self.node_table_name
+                ),
                 [("subj", subj), ("obj", obj), ("pred", rel)],
             )
             return is_exists_result.has_next()
@@ -140,10 +142,11 @@ class KuzuGraphStore(GraphStore):
         def create_rel(connection: Any, subj: str, obj: str, rel: str) -> None:
             connection.execute(
                 (
-                    "MATCH (n1:%s), (n2:%s) WHERE n1.ID = $subj AND n2.ID = $obj "
-                    "CREATE (n1)-[r:%s {predicate: $pred}]->(n2)"
-                )
-                % (self.node_table_name, self.node_table_name, self.rel_table_name),
+                    "MATCH (n1:{}), (n2:{}) WHERE n1.ID = $subj AND n2.ID = $obj "
+                    "CREATE (n1)-[r:{} {{predicate: $pred}}]->(n2)"
+                ).format(
+                    self.node_table_name, self.node_table_name, self.rel_table_name
+                ),
                 [("subj", subj), ("obj", obj), ("pred", rel)],
             )
 
@@ -168,10 +171,11 @@ class KuzuGraphStore(GraphStore):
         def delete_rel(connection: Any, subj: str, obj: str, rel: str) -> None:
             connection.execute(
                 (
-                    "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.ID = $subj AND n2.ID"
+                    "MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.ID = $subj AND n2.ID"
                     " = $obj AND r.predicate = $pred DELETE r"
-                )
-                % (self.node_table_name, self.rel_table_name, self.node_table_name),
+                ).format(
+                    self.node_table_name, self.rel_table_name, self.node_table_name
+                ),
                 [("subj", subj), ("obj", obj), ("pred", rel)],
             )
 
@@ -183,8 +187,9 @@ class KuzuGraphStore(GraphStore):
 
         def check_edges(connection: Any, entity: str) -> bool:
             is_exists_result = connection.execute(
-                "MATCH (n1:%s)-[r:%s]-(n2:%s) WHERE n2.ID = $entity RETURN r.predicate"
-                % (self.node_table_name, self.rel_table_name, self.node_table_name),
+                "MATCH (n1:{})-[r:{}]-(n2:{}) WHERE n2.ID = $entity RETURN r.predicate".format(
+                    self.node_table_name, self.rel_table_name, self.node_table_name
+                ),
                 [("entity", entity)],
             )
             return is_exists_result.has_next()
@@ -213,6 +218,7 @@ class KuzuGraphStore(GraphStore):
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "KuzuGraphStore":
         """Initialize graph store from configuration dictionary.
+
         Args:
             config_dict: Configuration dictionary.
 

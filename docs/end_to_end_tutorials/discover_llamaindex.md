@@ -4,7 +4,7 @@ This page contains links to videos + associated notebooks for our ongoing video 
 
 ## Bottoms-Up Development (Llama Docs Bot)
 
-This is a sub-series within Discover LlamaIndex that shows you how to build a document chatbot from scratch. 
+This is a sub-series within Discover LlamaIndex that shows you how to build a document chatbot from scratch.
 
 We show you how to do this in a "bottoms-up" fashion - start by using the LLMs, data objects as independent modules. Then gradually add higher-level abstractions like indexing, and advanced retrievers/rerankers.
 
@@ -30,7 +30,7 @@ This video covers managing documents from a source that is consantly updating (i
 
 [Youtube](https://www.youtube.com/watch?v=j6dJcODLd_c)
 
-[Notebook + Supplimentary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/discover_llamaindex/document_management/)
+[Notebook + Supplementary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/discover_llamaindex/document_management/)
 
 [Reference Docs](../../core_modules/data_modules/index/document_management.md)
 

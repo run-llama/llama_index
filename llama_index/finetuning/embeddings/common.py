@@ -1,14 +1,15 @@
 """Common utils for embeddings."""
+import json
+import re
+import uuid
 from typing import Dict, List, Optional
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.schema import TextNode, MetadataMode
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.base import LLM
 from tqdm import tqdm
-import uuid
-import re
-import json
+
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.llms.base import LLM
+from llama_index.llms.openai import OpenAI
+from llama_index.schema import MetadataMode, TextNode
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):
@@ -33,7 +34,7 @@ class EmbeddingQAFinetuneDataset(BaseModel):
     @classmethod
     def from_json(cls, path: str) -> "EmbeddingQAFinetuneDataset":
         """Load json."""
-        with open(path, "r") as f:
+        with open(path) as f:
             data = json.load(f)
         return cls(**data)
 
@@ -91,8 +92,6 @@ def generate_qa_embedding_pairs(
             relevant_docs[question_id] = [node_id]
 
     # construct dataset
-    dataset = EmbeddingQAFinetuneDataset(
+    return EmbeddingQAFinetuneDataset(
         queries=queries, corpus=node_dict, relevant_docs=relevant_docs
     )
-
-    return dataset

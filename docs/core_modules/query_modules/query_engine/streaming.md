@@ -32,7 +32,7 @@ calling `query` now returns a `StreamingResponse` object.
 
 ```python
 streaming_response = query_engine.query(
-    "What did the author do growing up?", 
+    "What did the author do growing up?",
 )
 ```
 
@@ -48,9 +48,7 @@ for text in streaming_response.response_gen:
 
 Alternatively, if you just want to print the text as they arrive:
 ```
-streaming_response.print_response_stream() 
+streaming_response.print_response_stream()
 ```
 
 See an [end-to-end example](/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
-
-

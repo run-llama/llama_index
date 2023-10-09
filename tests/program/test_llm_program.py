@@ -4,11 +4,10 @@ import json
 from unittest.mock import MagicMock
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.llms.base import (
-    CompletionResponse,
     ChatMessage,
     ChatResponse,
+    CompletionResponse,
     LLMMetadata,
     MessageRole,
 )

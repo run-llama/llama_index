@@ -8,11 +8,12 @@
 
 import json
 import os
-import tiktoken
-import numpy as np
 import sys
 from collections import defaultdict
 from typing import Dict, List
+
+import numpy as np
+import tiktoken
 
 
 def validate_json(data_path: str) -> None:
@@ -85,6 +86,9 @@ def validate_json(data_path: str) -> None:
         for message in messages:
             num_tokens += tokens_per_message
             for key, value in message.items():
+                # NOTE: try to count tokens in function calling (not in cookbook)
+                if key == "function_call":
+                    value = str(value)
                 num_tokens += len(encoding.encode(value))
                 if key == "name":
                     num_tokens += tokens_per_name

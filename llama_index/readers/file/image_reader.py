@@ -28,9 +28,9 @@ class ImageReader(BaseReader):
         """Init parser."""
         if parser_config is None and parse_text:
             try:
-                import sentencepiece  # noqa: F401
-                import torch  # noqa: F401
-                from PIL import Image  # noqa: F401
+                import sentencepiece
+                import torch
+                from PIL import Image
                 from transformers import DonutProcessor, VisionEncoderDecoderModel
             except ImportError:
                 raise ImportError(

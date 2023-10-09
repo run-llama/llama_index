@@ -30,7 +30,7 @@ class FaissReader(BaseReader):
             https://github.com/facebookresearch/faiss/wiki/Installing-Faiss
         """
         try:
-            import faiss  # noqa: F401
+            import faiss
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -51,6 +51,7 @@ class FaissReader(BaseReader):
             k (int): Number of nearest neighbors to retrieve. Defaults to 4.
             separate_documents (Optional[bool]): Whether to return separate
                 documents. Defaults to True.
+
         Returns:
             List[Document]: A list of documents.
 
