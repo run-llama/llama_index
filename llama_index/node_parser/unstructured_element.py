@@ -221,7 +221,7 @@ class UnstructuredElementNodeParser(NodeParser):
 
     def __init__(
         self,
-        callback_manager: CallbackManager,
+        callback_manager: Optional[CallbackManager] = None,
         llm: Optional[Any] = None,
         summary_query_str: str = DEFAULT_SUMMARY_QUERY_STR,
     ) -> None:
@@ -233,6 +233,7 @@ class UnstructuredElementNodeParser(NodeParser):
             raise ImportError(
                 "You must install the `unstructured` and `lxml` package to use this node parser."
             )
+        callback_manager = callback_manager or CallbackManager([])
 
         return super().__init__(
             callback_manager=callback_manager,
