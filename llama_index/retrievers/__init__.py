@@ -28,6 +28,7 @@ from llama_index.retrievers.bm25_retriever import BM25Retriever
 from llama_index.retrievers.recursive_retriever import RecursiveRetriever
 from llama_index.retrievers.router_retriever import RouterRetriever
 from llama_index.retrievers.transform_retriever import TransformRetriever
+from llama_index.retrievers.you_retriever import YouRetriever
 
 __all__ = [
     "VectorIndexRetriever",
@@ -50,6 +51,7 @@ __all__ = [
     "RouterRetriever",
     "BM25Retriever",
     "VectaraRetriever",
+    "YouRetriever",
     # legacy
     "ListIndexEmbeddingRetriever",
     "ListIndexRetriever",
