@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- `LocalAI` more intuitive module-level var names (#8028)
+- Enable `codespell` for markdown docs (#7972)
+
 ## [0.8.41] - 2023-10-07
 
 ### New Features
