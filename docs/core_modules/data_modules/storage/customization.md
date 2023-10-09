@@ -52,7 +52,7 @@ index = VectorStoreIndex(nodes, storage_context=storage_context)
 index.storage_context.persist(persist_dir="<persist_dir>")
 
 # can also set index_id to save multiple indexes to the same folder
-index.set_index_id = "<index_id>"
+index.set_index_id("<index_id>")
 index.storage_context.persist(persist_dir="<persist_dir>")
 
 # to load index later, make sure you setup the storage context

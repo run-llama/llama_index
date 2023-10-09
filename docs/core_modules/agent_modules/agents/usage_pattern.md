@@ -146,7 +146,7 @@ from llama_index.schema import Document
 from llama_index.agent import ContextRetrieverOpenAIAgent
 
 
-# toy index - stores a list of abbreviations
+# toy index - stores a list of Abbreviations
 texts = [
     "Abbreviation: X = Revenue",
     "Abbreviation: YZ = Risk Factors",

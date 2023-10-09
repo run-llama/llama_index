@@ -3,14 +3,32 @@
 ## Unreleased
 
 ### New Features
+- `LocalAI` more intuitive module-level var names (#8028)
+
+## [0.8.41] - 2023-10-07
+
+### New Features
+- You.com retriever (#8024)
+- Pull fields from mongodb into metadata with `metadata_names` argument (#8001)
+- Simplified `LocalAI.__init__` preserving the same behaviors (#7982)
+
+### Bug Fixes / Nits
+- Use longest metadata string for metadata aware text splitting (#7987)
+- Handle lists of strings in mongodb reader (#8002)
+- Removes `OpenAI.class_type` as it was dead code (#7983)
+- Fixing `HuggingFaceLLM.device_map` type hint (#7989)
+
+## [0.8.40] - 2023-10-05
+
+### New Features
 - Added support for `Clarifai` LLM (#7967)
+- Add support for function fine-tuning (#7971)
 
 ### Breaking Changes
 - Update document summary index (#7815)
   - change default retrieval mode to embedding
   - embed summaries into vector store by default at indexing time (instead of calculating embedding on the fly)
   - support configuring top k in llm retriever
-
 
 ## [0.8.39] - 2023-10-03
 
