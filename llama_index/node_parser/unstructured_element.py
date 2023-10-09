@@ -1,6 +1,12 @@
 """Unstructured element node parser."""
 
-from typing import List, Optional, Sequence, Callable, Any, Tuple, Dict
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
+
+import pandas as pd
+from lxml import html
+from pydantic import BaseModel, ValidationError
+from tqdm import tqdm
+from unstructured.partition.html import partition_html
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
@@ -8,14 +14,27 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import build_nodes_from_splits
-from llama_index.schema import BaseNode, TextNode, Document, IndexNode
+from llama_index.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.utils import get_tqdm_iterable
-from pydantic import BaseModel
-import pandas as pd
-from lxml import html
-from tqdm import tqdm
+from llama_index.llms.openai import OpenAI
 
-from unstructured.partition.html import partition_html
+
+class TableColumnOutput(BaseModel):
+    """Output from analyzing a table column."""
+
+    col_name: str
+    col_type: str
+    summary: Optional[str] = None
+
+    def __str__(self) -> str:
+        """Convert to string representation."""
+        return f"Column: {self.col_name}\nType: {self.col_type}\nSummary: {self.summary}"
+
+class TableOutput(BaseModel):
+    """Output from analyzing a table."""
+
+    summary: str
+    columns: List[TableColumnOutput]
 
 
 class Element(BaseModel):
@@ -24,18 +43,11 @@ class Element(BaseModel):
     id: str
     type: str
     element: Any
-    summary: Optional[str] = None
+    table_output: Optional[TableOutput] = None
     table: Optional[pd.DataFrame] = None
 
     class Config:
         arbitrary_types_allowed = True
-
-
-class TableOutput(BaseModel):
-    """Output from analyzing a table."""
-
-    summary: str
-    should_keep: bool
 
 
 def html_to_df(html_str: str) -> pd.DataFrame:
@@ -51,8 +63,7 @@ def html_to_df(html_str: str) -> pd.DataFrame:
         cols = [c.text.strip() if c.text is not None else "" for c in cols]
         data.append(cols)
 
-    df = pd.DataFrame(data[1:], columns=data[0])
-    return df
+    return pd.DataFrame(data[1:], columns=data[0])
 
 
 def filter_table(table_element: Any) -> bool:
@@ -71,7 +82,7 @@ def extract_elements(text: str, table_filters: Optional[List[Callable]] = None):
     output_els = []
     for idx, element in enumerate(elements):
         if "unstructured.documents.html.HTMLTable" in str(type(element)):
-            should_keep = all([tf(element) for tf in table_filters])
+            should_keep = all(tf(element) for tf in table_filters)
             if should_keep:
                 table_df = html_to_df(str(element.metadata.text_as_html))
                 output_els.append(
@@ -86,22 +97,32 @@ def extract_elements(text: str, table_filters: Optional[List[Callable]] = None):
     return output_els
 
 
-def extract_table_summaries(elements: List[Element]) -> None:
+def extract_table_summaries(elements: List[Element], llm: Optional[Any], summary_query_str: str) -> None:
     """Go through elements, extract out summaries that are tables."""
-
     from llama_index.indices.list.base import SummaryIndex
+    from llama_index.llms.base import LLM
+    from llama_index.indices.service_context import ServiceContext
 
+    llm = llm or OpenAI()
+    llm = cast(LLM, llm)
+
+    service_context = ServiceContext.from_defaults(llm=llm)
     for element in tqdm(elements):
         if element.type != "table":
             continue
-        index = SummaryIndex.from_documents([Document(text=str(element.element))])
+        index = SummaryIndex.from_documents(
+            [Document(text=str(element.element))], service_context=service_context
+        )
         query_engine = index.as_query_engine(output_cls=TableOutput)
-        query_str = """\
-What is this table about? Give a very concise summary (imagine you are adding a caption), \
-and also output whether or not the table should be kept.
-"""
-        response = query_engine.query(query_str)
-        element.summary = response.response.summary
+        try:
+            response = query_engine.query(summary_query_str)
+            element.table_output = response.response
+        except ValidationError as e:
+            # There was a pydantic validation error, so we will run with text completion
+            # fill in the summary and leave other fields blank
+            query_engine = index.as_query_engine()
+            response_txt = str(query_engine.query(summary_query_str))
+            element.table_output = TableOutput(summary=response_txt, columns=[])
 
 
 def get_table_elements(elements) -> List[Element]:
@@ -116,17 +137,15 @@ def get_text_elements(elements) -> List[Element]:
 
 def _get_nodes_from_buffer(buffer, node_parser):
     """Get nodes from buffer."""
-    doc = Document(text="\n\n".join([t for t in buffer]))
-    nodes = node_parser.get_nodes_from_documents([doc])
-    return nodes
+    doc = Document(text="\n\n".join(list(buffer)))
+    return node_parser.get_nodes_from_documents([doc])
 
 
-def get_nodes_and_mappings(elements: List[Element]) -> Tuple[List[BaseNode], Dict]:
+def get_nodes_from_elements(elements: List[Element]) -> Tuple[List[BaseNode], Dict]:
     """Get nodes and mappings."""
     node_parser = SimpleNodeParser.from_defaults()
 
     nodes = []
-    node_mappings = {}
     cur_text_el_buffer = []
     for element in elements:
         if element.type == "table":
@@ -136,15 +155,22 @@ def get_nodes_and_mappings(elements: List[Element]) -> Tuple[List[BaseNode], Dic
                 nodes.extend(cur_text_nodes)
                 cur_text_el_buffer = []
 
+            table_id = element.id + "_table"
+            table_ref_id = element.id + "_table_ref"
+            # TODO: figure out what to do with columns
+            col_schema = "\n\n".join([str(col) for col in element.table_output.columns])
             index_node = IndexNode(
-                text=str(element.summary), index_id=(element.id + "_table")
+                text=str(element.table_output.summary), 
+                metadata={"col_schema": col_schema},
+                id_=table_ref_id,
+                index_id=table_id,
             )
             table_df = element.table
             table_str = table_df.to_string()
-            node_mappings[(element.id + "_table")] = TextNode(
-                text=table_str, id_=(element.id + "_table")
+            text_node = TextNode(
+                text=table_str, id_=table_id,
             )
-            nodes.append(index_node)
+            nodes.extend([index_node, text_node])
         else:
             cur_text_el_buffer.append(str(element.element))
 
@@ -154,7 +180,45 @@ def get_nodes_and_mappings(elements: List[Element]) -> Tuple[List[BaseNode], Dic
         nodes.extend(cur_text_nodes)
         cur_text_el_buffer = []
 
-    return nodes, node_mappings
+    return nodes
+
+
+
+def get_base_nodes_and_mappings(nodes: List[BaseNode]) -> Tuple[List[BaseNode], Dict]:
+    """Get base nodes and mappings.
+
+    Givne a list of nodes and IndexNode objects, return the base nodes and a mapping
+    from index id to child nodes (which are excluded from the base nodes).
+    
+    """
+
+    node_dict = {node.node_id: node for node in nodes}
+
+    node_mappings = {}
+    base_nodes = []
+
+    # first map index nodes to their child nodes
+    nonbase_node_ids = set()
+    for node in nodes:
+        if isinstance(node, IndexNode):
+            node_mappings[node.index_id] = node_dict[node.index_id]
+            nonbase_node_ids.add(node.index_id)
+        else:
+            pass
+
+    # then add all nodes that are not children of index nodes
+    for node in nodes:
+        if node.node_id not in nonbase_node_ids:
+            base_nodes.append(node)
+
+    return base_nodes, node_mappings
+
+
+
+DEFAULT_SUMMARY_QUERY_STR = """\
+What is this table about? Give a very concise summary (imagine you are adding a caption), \
+and also output whether or not the table should be kept.\
+"""
 
 
 class UnstructuredElementNodeParser(NodeParser):
@@ -168,6 +232,17 @@ class UnstructuredElementNodeParser(NodeParser):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
+    llm: Optional[Any] = Field(
+        default=None, description="LLM model to use for summarization."
+    )
+    summary_query_str: str = Field(
+        default=DEFAULT_SUMMARY_QUERY_STR,
+        description="Query string to use for summarization.",
+    )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "UnstructuredElementNodeParser"
 
     @classmethod
     def from_defaults(
@@ -185,9 +260,10 @@ class UnstructuredElementNodeParser(NodeParser):
         elements = extract_elements(node.get_content(), table_filters=[filter_table])
         table_elements = get_table_elements(elements)
         # extract summaries over table elements
-        extract_table_summaries(table_elements)
+        extract_table_summaries(table_elements, self.llm, self.summary_query_str)
+        
         # convert into nodes
-        nodes, node_mappings, other_mappings = get_nodes_and_mappings(elements)
+        nodes = get_nodes_from_elements(elements)
         # will return a list of Nodes and Index Nodes
         return nodes
 
