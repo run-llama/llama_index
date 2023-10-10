@@ -14,10 +14,10 @@ def _escape_curly_braces(input_string: str) -> str:
     return input_string.replace("{", "{{").replace("}", "}}")
 
 
-FORMAT_STR = """The output should be formatted as a JSON instance that conforms to
+FORMAT_STR = """The output should be ONLY JSON formatted as a JSON instance that conforms to
 the JSON schema below.
 
-Here is the output schema:
+Here is the output schema describing the desired JSON format:
 {
   "type": "array",
   "items": {
