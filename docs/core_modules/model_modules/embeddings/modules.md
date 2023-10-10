@@ -8,8 +8,7 @@ maxdepth: 1
 ---
 /examples/embeddings/OpenAI.ipynb
 /examples/embeddings/Langchain.ipynb
-/examples/embeddings/gradient_base_model.ipynb
-/examples/embeddings/gradient_model_adapter.ipynb
+/examples/embeddings/gradient.ipynb
 /examples/customization/llms/AzureOpenAI.ipynb
 /examples/embeddings/custom_embeddings.ipynb
 /examples/embeddings/huggingface.ipynb

@@ -35,9 +35,9 @@ class GradientEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        gradient_access_token: str,
-        gradient_workspace_id: str,
         gradient_model_slug: str,
+        gradient_access_token: Optional[str] = None,
+        gradient_workspace_id: Optional[str] = None,
         gradient_host: Optional[str] = None,
         **kwargs: Any,
     ):
@@ -47,9 +47,11 @@ class GradientEmbedding(BaseEmbedding):
         workspace id and the slug of the model, the model is fetched from Gradient AI and prepared to use.
 
         Args:
-            gradient_access_token (str): The access token of the Gradient AI account.
-            gradient_workspace_id (str): The workspace ID of the Gradient AI account.
             gradient_model_slug (str): The model slug of the model in the Gradient AI account.
+            gradient_access_token (str, optional): The access token of the Gradient AI account, if
+                `None` read from the environment variable `GRADIENT_ACCESS_TOKEN`.
+            gradient_workspace_id (str, optional): The workspace ID of the Gradient AI account, if `None`
+                read from the environment variable `GRADIENT_WORKSPACE_ID`.
             gradient_host (str, optional): The host of the Gradient AI API. Defaults to None, which
               means the default host is used.
 

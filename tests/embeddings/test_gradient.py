@@ -36,8 +36,8 @@ def test_gradientai_embedding_constructor(
 ) -> None:
     """Test Gradient AI embedding query."""
     test_object = GradientEmbedding(
-        gradient_access_token=gradient_access_token,
         gradient_model_slug=gradient_model_slug,
+        gradient_access_token=gradient_access_token,
         gradient_workspace_id=gradient_workspace_id,
     )
     assert test_object is not None
@@ -51,8 +51,8 @@ def test_gradientai_throws_if_not_installed(
 ) -> None:
     with pytest.raises(ImportError):
         GradientEmbedding(
-            gradient_access_token=gradient_access_token,
             gradient_model_slug=gradient_model_slug,
+            gradient_access_token=gradient_access_token,
             gradient_workspace_id=gradient_workspace_id,
         )
 
@@ -64,8 +64,8 @@ def test_gradientai_throws_without_proper_auth(
     """Test Gradient AI embedding query."""
     with pytest.raises(ValueError):
         GradientEmbedding(
-            gradient_access_token="definitely-not-a-valid-token",
             gradient_model_slug=gradient_model_slug,
+            gradient_access_token="definitely-not-a-valid-token",
             gradient_workspace_id=gradient_workspace_id,
         )
 
@@ -75,8 +75,8 @@ def test_gradientai_can_receive_text_embedding(
     gradient_access_token: str, gradient_model_slug: str, gradient_workspace_id: str
 ) -> None:
     test_object = GradientEmbedding(
-        gradient_access_token=gradient_access_token,
         gradient_model_slug=gradient_model_slug,
+        gradient_access_token=gradient_access_token,
         gradient_workspace_id=gradient_workspace_id,
     )
 
@@ -90,8 +90,8 @@ def test_gradientai_can_receive_multiple_text_embeddings(
     gradient_access_token: str, gradient_model_slug: str, gradient_workspace_id: str
 ) -> None:
     test_object = GradientEmbedding(
-        gradient_access_token=gradient_access_token,
         gradient_model_slug=gradient_model_slug,
+        gradient_access_token=gradient_access_token,
         gradient_workspace_id=gradient_workspace_id,
     )
 
@@ -108,8 +108,8 @@ def test_gradientai_can_receive_query_embedding(
     gradient_access_token: str, gradient_model_slug: str, gradient_workspace_id: str
 ) -> None:
     test_object = GradientEmbedding(
-        gradient_access_token=gradient_access_token,
         gradient_model_slug=gradient_model_slug,
+        gradient_access_token=gradient_access_token,
         gradient_workspace_id=gradient_workspace_id,
     )
 
