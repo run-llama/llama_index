@@ -1,6 +1,5 @@
 import logging
-from collections import namedtuple
-from typing import Any, List, Optional, Type
+from typing import Any, List, NamedTuple, Optional, Type
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
@@ -13,9 +12,12 @@ from llama_index.vector_stores.types import (
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
-DBEmbeddingRow = namedtuple(
-    "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"]
-)
+
+class DBEmbeddingRow(NamedTuple):
+    node_id: int
+    text: str
+    metadata: dict
+    similarity: float
 
 
 _logger = logging.getLogger(__name__)
