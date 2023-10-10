@@ -40,6 +40,7 @@ class GradientEmbedding(BaseEmbedding):
         gradient_access_token: Optional[str] = None,
         gradient_workspace_id: Optional[str] = None,
         gradient_host: Optional[str] = None,
+        **kwargs,
     ):
         """Initializes the GradientEmbedding class.
 
