@@ -35,4 +35,4 @@ jobs:
         run: poetry install --with dev
       - name: Run linter
         shell: bash
-        run: make lint
+        run: poetry run make lint

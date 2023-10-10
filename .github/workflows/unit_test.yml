@@ -35,4 +35,4 @@ jobs:
         env:
           CI: true
         shell: bash
-        run: make test
+        run: poetry run make test
