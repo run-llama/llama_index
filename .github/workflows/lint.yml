@@ -6,6 +6,11 @@ on:
       - main
   pull_request:
 
+
+env:
+  POETRY_VERSION: "1.6.1"
+
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,14 +23,14 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: ${{ vars.RUNNER_TEMP }}
+          cache-key: extended
       - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r data_requirements.txt
+        run: poetry install
       - name: Run linter
         run: make lint
