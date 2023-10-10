@@ -29,7 +29,7 @@ jobs:
           working-directory: ${{ vars.RUNNER_TEMP }}
           cache-key: extended
       - name: Install deps
-        run: poetry install
+        run: poetry install --with dev
       - name: Run testing
         env:
           CI: true
