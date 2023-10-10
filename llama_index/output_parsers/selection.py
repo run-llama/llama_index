@@ -68,16 +68,28 @@ class SelectionOutputParser(BaseOutputParser):
         return output_json
 
     def parse(self, output: str) -> Any:
+        json_string = _marshal_llm_to_json(output) 
         try:
-            json_output = json.loads(s=_marshal_llm_to_json(output))
-        except json.decoder.JSONDecodeError as exc:
-            raise ValueError(
-                f"Failed to convert LLM output {output!r} to JSON."
-            ) from exc
-        if isinstance(json_output, dict):
-            json_output = [json_output]
+            json_obj = json.loads(json_string)
+        except json.JSONDecodeError as e_json:
+            try:
+                # NOTE: parsing again with pyyaml
+                #       pyyaml is less strict, and allows for trailing commas
+                #       right now we rely on this since guidance program generates
+                #       trailing commas
+                json_obj = yaml.safe_load(json_string)
+            except yaml.YAMLError as e_yaml:
+                raise OutputParserException(
+                    f"Got invalid JSON object. Error: {e_json} {e_yaml}. "
+                    f"Got JSON string: {json_string}"
+                )
+            except NameError as exc:
+                raise ImportError("Please pip install PyYAML.") from exc
+        
+        if isinstance(json_obj, dict):
+            json_obj = [json_obj]
 
-        json_output = self._format_output(json_output)
+        json_output = self._format_output(json_obj)
         answers = [Answer.from_dict(json_dict) for json_dict in json_output]
         return StructuredOutput(raw_output=output, parsed_output=answers)
 
