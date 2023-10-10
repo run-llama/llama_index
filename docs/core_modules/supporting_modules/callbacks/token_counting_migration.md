@@ -6,7 +6,7 @@ We know token counting is important to many users, so this guide was created to 
 
 Previously, token counting was kept track of on the `llm_predictor` and `embed_model` objects directly, and optionally printed to the console. This implementation used a static tokenizer for token counting (gpt-2), and the `last_token_usage` and `total_token_usage` attributes were not always kept track of properly.
 
-Going forward, token counting as moved into a callback. Using the `TokenCountingHandler` callback, you now have more options for how tokens are counted, the lifetime of the token counts, and even creating separete token counters for different indexes.
+Going forward, token counting as moved into a callback. Using the `TokenCountingHandler` callback, you now have more options for how tokens are counted, the lifetime of the token counts, and even creating separate token counters for different indexes.
 
 Here is a minimum example of using the new `TokenCountingHandler` with an OpenAI model:
 

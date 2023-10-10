@@ -4,10 +4,10 @@ from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.openai import OpenAI
 
-DEFAULT_KEY = "fake"
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8080
-DEFAULT_API_BASE = f"{DEFAULT_HOST}{DEFAULT_PORT}"
+DEFAULT_API_KEY = "fake"
+DEFAULT_API_HOST = "localhost"
+DEFAULT_API_PORT = 8080
+DEFAULT_API_BASE = f"{DEFAULT_API_HOST}{DEFAULT_API_PORT}"
 
 
 class LocalAI(OpenAI):
@@ -38,16 +38,11 @@ class LocalAI(OpenAI):
 
     def __init__(
         self,
-        context_window: int = DEFAULT_CONTEXT_WINDOW,
-        api_key: Optional[str] = DEFAULT_KEY,
+        api_key: Optional[str] = DEFAULT_API_KEY,
         api_base: Optional[str] = DEFAULT_API_BASE,
-        globally_use_chat_completions: Optional[bool] = None,
-        **openai_kwargs: Any,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(api_key=api_key, api_base=api_base, **openai_kwargs)
-        # Below sets the pydantic Fields specific to this class
-        self.context_window = context_window
-        self.globally_use_chat_completions = globally_use_chat_completions
+        super().__init__(api_key=api_key, api_base=api_base, **kwargs)
 
     def _get_context_window(self) -> int:
         return self.context_window

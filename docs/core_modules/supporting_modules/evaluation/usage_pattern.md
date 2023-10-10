@@ -171,7 +171,7 @@ service_context = ServiceContext.from_defaults(llm=llm)
 # build documents
 documents = SimpleDirectoryReader("./data").load_data()
 
-# define genertor, generate questions
+# define generator, generate questions
 data_generator = DatasetGenerator.from_documents(documents)
 
 eval_questions = data_generator.generate_questions_from_nodes()
@@ -202,4 +202,4 @@ eval_results = await runner.aevaluate_queries(
 We also integrate with community evaluation tools.
 
 - [DeepEval](../../../community/integrations/deepeval.md)
-- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/integrations/llamaindex.ipynb)
+- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
