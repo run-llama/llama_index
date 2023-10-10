@@ -19,12 +19,12 @@ def gradient_model_slug() -> str:
 
 @pytest.fixture()
 def gradient_access_token() -> str:
-    return "7WVYcqWaMvGVbgng05gcs27YpPGBMSCJ"
+    return "some-access-token"
 
 
 @pytest.fixture()
 def gradient_workspace_id() -> str:
-    return "1a80a8f4-8b37-4b47-9f30-2c8041a1a971_workspace"
+    return "some-workspace-id"
 
 
 BGE_LARGE_EMBEDDING_SIZE = 1024
@@ -49,7 +49,6 @@ def test_gradientai_embedding_constructor(
 def test_gradientai_throws_if_not_installed(
     gradient_access_token: str, gradient_model_slug: str, gradient_workspace_id: str
 ) -> None:
-    """Test Gradient AI embedding query."""
     with pytest.raises(ImportError):
         GradientEmbedding(
             gradient_access_token=gradient_access_token,

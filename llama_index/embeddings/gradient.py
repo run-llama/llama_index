@@ -1,5 +1,3 @@
-"""GradientAI embeddings wrapper """
-
 import logging
 from typing import Any, List, Optional
 
@@ -9,7 +7,8 @@ from llama_index.embeddings.base import BaseEmbedding, Embedding
 logger = logging.getLogger(__name__)
 
 
-# For bge models that Gradient AI provides, it is suggested to add the instruction for retrieval. Reference:
+# For bge models that Gradient AI provides, it is suggested to add the instruction for retrieval.
+# Reference: https://huggingface.co/BAAI/bge-large-en-v1.5#model-list
 QUERY_INSTRUCTION_FOR_RETRIEVAL = (
     "Represent this sentence for searching relevant passages:"
 )
@@ -21,6 +20,10 @@ class GradientEmbedding(BaseEmbedding):
     This class provides an interface to generate embeddings using a model
     deployed in Gradient AI. At the initialization it requires a model_id
     of the model deployed in the cluster.
+
+    Note:
+        Requires `gradientai` package to be available in the PYTHONPATH. It can be installed with
+        `pip install gradientai`.
     """
 
     _gradient: Any = PrivateAttr()
@@ -38,6 +41,22 @@ class GradientEmbedding(BaseEmbedding):
         gradient_host: Optional[str] = None,
         **kwargs: Any,
     ):
+        """Initializes the GradientEmbedding class.
+
+        During the initialization the `gradientai` package is imported. Using the access token,
+        workspace id and the slug of the model, the model is fetched from Gradient AI and prepared to use.
+
+        Args:
+            gradient_access_token (str): The access token of the Gradient AI account.
+            gradient_workspace_id (str): The workspace ID of the Gradient AI account.
+            gradient_model_slug (str): The model slug of the model in the Gradient AI account.
+            gradient_host (str, optional): The host of the Gradient AI API. Defaults to None, which
+              means the default host is used.
+
+        Raises:
+            ImportError: If the `gradientai` package is not available in the PYTHONPATH.
+            ValueError: If the model cannot be fetched from Gradient AI.
+        """
         try:
             import gradientai
         except ImportError:
@@ -59,6 +78,7 @@ class GradientEmbedding(BaseEmbedding):
         super().__init__(model_name=gradient_model_slug, **kwargs)
 
     async def _aget_query_embedding(self, query: str) -> Embedding:
+        # Gradient AI doesn't have the proper API for async yet, so we just use the sync version.
         return self._get_query_embedding(query)
 
     def _get_text_embedding(self, text: str) -> Embedding:
@@ -72,4 +92,4 @@ class GradientEmbedding(BaseEmbedding):
         return [e.embedding for e in result]
 
     def _get_query_embedding(self, query: str) -> Embedding:
-        return self._get_text_embedding(f"{QUERY_INSTRUCTION_FOR_RETRIEVAL}{query}")
+        return self._get_text_embedding(f"{QUERY_INSTRUCTION_FOR_RETRIEVAL} {query}")
