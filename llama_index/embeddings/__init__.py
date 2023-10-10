@@ -18,18 +18,18 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 
 __all__ = [
-    "AdapterEmbeddingModel",
-    "ClarifaiEmbedding",
-    "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
-    "ElasticsearchEmbeddings",
     "GoogleUnivSentEncoderEmbedding",
-    "GradientEmbedding",
+    "LangchainEmbedding",
+    "OpenAIEmbedding",
+    "LinearAdapterEmbeddingModel",
+    "AdapterEmbeddingModel",
     "HuggingFaceEmbedding",
     "InstructorEmbedding",
-    "LangchainEmbedding",
-    "LinearAdapterEmbeddingModel",
-    "OpenAIEmbedding",
     "OptimumEmbedding",
-    "SimilarityMode",
     "resolve_embed_model",
+    "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
+    "SimilarityMode",
+    "ElasticsearchEmbeddings",
+    "ClarifaiEmbedding",
+    "GradientEmbedding",
 ]
