@@ -6,10 +6,9 @@ help:	## Show all Makefile targets.
 format:	## Run code autoformatters (black).
 	black .
 
-lint: ## Run linters: mypy, black, codespell, ruff
+lint: ## Run linters: black, codespell, ruff, mypy
 	pre-commit install && pre-commit run --all-files
 	mypy .
-	codespell .
 
 test:	## Run tests via pytest.
 	pytest tests

@@ -6,10 +6,9 @@ requires = ["poetry-core"]
 check-filenames = true
 check-hidden = true
 ignore-words-list = "ot,gallary,rouge,narl"
-# Remove .git and venv skips when integrated with pre-commit
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
-skip = "poetry.lock,./.git,./*venv,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+skip = "./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.mypy]
 disallow_untyped_defs = true
