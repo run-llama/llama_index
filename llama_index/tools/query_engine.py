@@ -49,8 +49,14 @@ class QueryEngineTool(AsyncBaseTool):
     def metadata(self) -> ToolMetadata:
         return self._metadata
 
-    def call(self, input: Any) -> ToolOutput:
-        query_str = str(input)
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        if args is not None and len(args) > 0:
+            query_str = str(args[0])
+        elif kwargs is not None and len(kwargs) > 0:
+            query_str = str(kwargs)
+        else:
+            raise ValueError("Cannot call query engine without inputs")
+
         response = self._query_engine.query(query_str)
         return ToolOutput(
             content=str(response),
@@ -60,7 +66,13 @@ class QueryEngineTool(AsyncBaseTool):
         )
 
     async def acall(self, input: Any) -> ToolOutput:
-        query_str = str(input)
+        if args is not None and len(args) > 0:
+            query_str = str(args[0])
+        elif kwargs is not None and len(kwargs) > 0:
+            query_str = str(kwargs)
+        else:
+            raise ValueError("Cannot call query engine without inputs")
+        
         response = await self._query_engine.aquery(query_str)
         return ToolOutput(
             content=str(response),
