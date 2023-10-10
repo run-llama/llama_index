@@ -15,7 +15,7 @@ from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metad
 
 
 class IndexType(enum.Enum):
-    """Enumerator for the supported Index types"""
+    """Enumerator for the supported Index types."""
 
     TIMESCALE_VECTOR = 1
     PGVECTOR_IVFFLAT = 2

@@ -7,12 +7,12 @@ from llama_index.tools.function_tool import FunctionTool
 
 
 def add(a: int, b: int) -> int:
-    """Add two integers and returns the result integer"""
+    """Add two integers and returns the result integer."""
     return a + b
 
 
 def multiply(a: int, b: int) -> int:
-    """Multiple two integers and returns the result integer"""
+    """Multiple two integers and returns the result integer."""
     return a * b
 
 

@@ -7,7 +7,7 @@ from .configuration import load_index, save_index
 
 
 def add_cli(args: Namespace) -> None:
-    """Handle subcommand "add" """
+    """Handle subcommand "add"."""
     index = load_index()
 
     for p in args.files:
@@ -26,7 +26,7 @@ def add_cli(args: Namespace) -> None:
 
 
 def register_add_cli(subparsers: _SubParsersAction) -> None:
-    """Register subcommand "add" to ArgumentParser"""
+    """Register subcommand "add" to ArgumentParser."""
     parser = subparsers.add_parser("add")
     parser.add_argument(
         "files",

@@ -362,7 +362,7 @@ class LongContextReorder(BaseNodePostprocessor):
     performance typically arises when crucial data is positioned
     at the start or conclusion of the input context. Additionally,
     as the input context lengthens, performance drops notably, even
-    in models designed for long contexts."
+    in models designed for long contexts.".
     """
 
     @classmethod

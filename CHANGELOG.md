@@ -1,14 +1,27 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.42] - 2023-10-10
 
 ### New Features
 - `LocalAI` more intuitive module-level var names (#8028)
 - Enable `codespell` for markdown docs (#7972)
+- add unstructured table element node parser  (#8036)
+- Add: Async upserting for Qdrant vector store (#7968)
+- Add cohere llm (#8023)
 
 ### Bug Fixes / Nits
 - Parse multi-line outputs in react agent answers (#8029)
 - Add properly named kwargs to keyword `as_retriever` calls (#8011)
+- Updating Reference to RAGAS LlamaIndex Integration (#8035)
+- Vectara bugfix (#8032)
+- Fix: ChromaVectorStore can attempt to add in excess of chromadb batch… (#8019)
+- Fix get_content method in Mbox reader (#8012)
+- Apply kwarg filters in WeaviateVectorStore (#8017)
+- Avoid ZeroDivisionError (#8027)
+- `LocalAI` intuitive module-level var names (#8028)
+- zep/fix: imports & typing (#8030)
+- refactor: use `str.join` (#8020)
+- use proper metadata str for node parsing (#7987)
 
 ## [0.8.41] - 2023-10-07
 
