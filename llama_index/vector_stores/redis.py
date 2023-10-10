@@ -124,7 +124,7 @@ class RedisVectorStore(VectorStore):
 
     @property
     def client(self) -> "RedisType":
-        """Return the redis client instance"""
+        """Return the redis client instance."""
         return self._redis_client
 
     def add(self, nodes: List[BaseNode]) -> List[str]:

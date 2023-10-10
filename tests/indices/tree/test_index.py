@@ -197,7 +197,7 @@ def test_insert(
 def test_twice_insert_empty(
     mock_service_context: ServiceContext,
 ) -> None:
-    """# test twice insert from empty (with_id)"""
+    """# test twice insert from empty (with_id)."""
     tree = TreeIndex.from_documents([], service_context=mock_service_context)
 
     # test first insert

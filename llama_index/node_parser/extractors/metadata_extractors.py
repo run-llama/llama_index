@@ -407,7 +407,7 @@ class SummaryExtractor(MetadataFeatureExtractor):
     Args:
         llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
-        prompt_template (str): template for summary extraction
+        prompt_template (str): template for summary extraction.
     """
 
     llm_predictor: BaseLLMPredictor = Field(

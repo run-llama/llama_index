@@ -22,7 +22,7 @@ hotpot/hotpot_dev_distractor_v1.json"""
 
 class HotpotQAEvaluator:
     """
-    Refer to https://hotpotqa.github.io/ for more details on the dataset
+    Refer to https://hotpotqa.github.io/ for more details on the dataset.
     """
 
     def _download_datasets(self) -> Dict[str, str]:

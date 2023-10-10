@@ -241,7 +241,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     """
     Args:
         model_name(str): the model name of the tokenizer.
-                        For instance, fxmarty/tiny-llama-fast-tokenizer
+                        For instance, fxmarty/tiny-llama-fast-tokenizer.
     """
     try:
         from transformers import AutoTokenizer
@@ -255,7 +255,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
 
 def get_cache_dir() -> str:
     """Locate a platform-appropriate cache directory for llama_index,
-    and create it if it doesn't yet exist
+    and create it if it doesn't yet exist.
     """
     # User override
     if "LLAMA_INDEX_CACHE_DIR" in os.environ:

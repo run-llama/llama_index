@@ -11,7 +11,7 @@ from llama_index.tools import BaseTool
 
 
 def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:
-    """Tool"""
+    """Tool."""
     tool_descs = []
     for tool in tools:
         tool_desc = (
