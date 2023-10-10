@@ -1,7 +1,6 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
@@ -39,15 +38,13 @@ from llama_index.llms.openai_utils import (
 
 
 class OpenAI(LLM):
-    class_type = "openai"
-
     model: str = Field(description="The OpenAI model to use.")
-    temperature: float = Field(description="The tempature to use during generation.")
+    temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
-        description="The maximum number of tokens to generate."
+        default=None, description="The maximum number of tokens to generate."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the OpenAI API."
+        default_factory=dict, description="Additional kwargs for the OpenAI API."
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
@@ -164,21 +161,24 @@ class OpenAI(LLM):
 
     @property
     def _credential_kwargs(self) -> Dict[str, Any]:
-        credential_kwargs = {
+        return {
             "api_key": self.api_key,
             "api_type": self.api_type,
             "api_base": self.api_base,
             "api_version": self.api_version,
         }
-        return credential_kwargs
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "model": self.model,
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
         }
+        if self.max_tokens is not None:
+            # If max_tokens is None, don't include in the payload:
+            # https://platform.openai.com/docs/api-reference/chat
+            # https://platform.openai.com/docs/api-reference/completions
+            base_kwargs["max_tokens"] = self.max_tokens
         return {**base_kwargs, **self.additional_kwargs}
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:

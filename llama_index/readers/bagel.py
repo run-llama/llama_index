@@ -18,15 +18,8 @@ Metadatas = List[Metadata]
 
 # Metadata Query Grammar
 LiteralValue = Union[str, int, float]
-LogicalOperator = Union[Literal["$and"], Literal["$or"]]
-WhereOperator = Union[
-    Literal["$gt"],
-    Literal["$gte"],
-    Literal["$lt"],
-    Literal["$lte"],
-    Literal["$ne"],
-    Literal["$eq"],
-]
+LogicalOperator = Literal["$and", "$or"]
+WhereOperator = Literal["$gt", "$gte", "$lt", "$lte", "$ne", "$eq"]
 OperatorExpression = Dict[Union[WhereOperator, LogicalOperator], LiteralValue]
 
 Where = Dict[
@@ -47,14 +40,7 @@ OneOrMany = Union[T, List[T]]
 
 # This should ust be List[Literal["documents", "embeddings", "metadatas", "distances"]]
 # However, this provokes an incompatibility with the Overrides library and Python 3.7
-Include = List[
-    Union[
-        Literal["documents"],
-        Literal["embeddings"],
-        Literal["metadatas"],
-        Literal["distances"],
-    ]
-]
+Include = List[Literal["documents", "embeddings", "metadatas", "distances"]]
 
 LiteralValue = LiteralValue
 LogicalOperator = LogicalOperator
@@ -74,7 +60,6 @@ class BagelReader(BaseReader):
 
         Returns: None
         """
-
         try:
             import bagel
         except ImportError:
@@ -105,7 +90,6 @@ class BagelReader(BaseReader):
         Returns:
             List of documents.
         """
-
         documents = []
         # create a list of results
         all_results = list(
@@ -186,6 +170,4 @@ class BagelReader(BaseReader):
             raise ValueError("No embeddings or documents found")
 
         # create documents from the results
-        documents = self.create_documents(results)
-
-        return documents
+        return self.create_documents(results)

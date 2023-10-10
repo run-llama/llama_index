@@ -1,10 +1,8 @@
 from typing import Any, List, Sequence
 
 import pytest
-
-from llama_index.bridge.pydantic import PrivateAttr
-
 from llama_index.agent.react.base import ReActAgent
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import (
     ChatMessage,
@@ -16,7 +14,7 @@ from llama_index.llms.mock import MockLLM
 from llama_index.tools.function_tool import FunctionTool
 
 
-@pytest.fixture
+@pytest.fixture()
 def add_tool() -> FunctionTool:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""
@@ -93,7 +91,7 @@ def test_chat_basic(
     ]
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_achat_basic(
     add_tool: FunctionTool,
 ) -> None:
@@ -219,7 +217,7 @@ def test_stream_chat_basic(
     # )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_astream_chat_basic(
     add_tool: FunctionTool,
 ) -> None:

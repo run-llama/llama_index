@@ -8,7 +8,6 @@ Tool that wraps any data loader, and is able to load data on-demand.
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.readers.base import BaseReader

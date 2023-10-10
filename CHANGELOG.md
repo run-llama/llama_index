@@ -1,6 +1,77 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.42] - 2023-10-10
+
+### New Features
+- `LocalAI` more intuitive module-level var names (#8028)
+- Enable `codespell` for markdown docs (#7972)
+- add unstructured table element node parser  (#8036)
+- Add: Async upserting for Qdrant vector store (#7968)
+- Add cohere llm (#8023)
+
+### Bug Fixes / Nits
+- Parse multi-line outputs in react agent answers (#8029)
+- Add properly named kwargs to keyword `as_retriever` calls (#8011)
+- Updating Reference to RAGAS LlamaIndex Integration (#8035)
+- Vectara bugfix (#8032)
+- Fix: ChromaVectorStore can attempt to add in excess of chromadb batch… (#8019)
+- Fix get_content method in Mbox reader (#8012)
+- Apply kwarg filters in WeaviateVectorStore (#8017)
+- Avoid ZeroDivisionError (#8027)
+- `LocalAI` intuitive module-level var names (#8028)
+- zep/fix: imports & typing (#8030)
+- refactor: use `str.join` (#8020)
+- use proper metadata str for node parsing (#7987)
+
+## [0.8.41] - 2023-10-07
+
+### New Features
+- You.com retriever (#8024)
+- Pull fields from mongodb into metadata with `metadata_names` argument (#8001)
+- Simplified `LocalAI.__init__` preserving the same behaviors (#7982)
+
+### Bug Fixes / Nits
+- Use longest metadata string for metadata aware text splitting (#7987)
+- Handle lists of strings in mongodb reader (#8002)
+- Removes `OpenAI.class_type` as it was dead code (#7983)
+- Fixing `HuggingFaceLLM.device_map` type hint (#7989)
+
+## [0.8.40] - 2023-10-05
+
+### New Features
+- Added support for `Clarifai` LLM (#7967)
+- Add support for function fine-tuning (#7971)
+
+### Breaking Changes
+- Update document summary index (#7815)
+  - change default retrieval mode to embedding
+  - embed summaries into vector store by default at indexing time (instead of calculating embedding on the fly)
+  - support configuring top k in llm retriever
+
+## [0.8.39] - 2023-10-03
+
+### New Features
+- Added support for pydantic object outputs with query engines (#7893)
+- `ClarifaiEmbedding` class added for embedding support (#7940)
+- Markdown node parser, flat file reader and simple file node parser (#7863)
+- Added support for mongdb atlas `$vectorSearch` (#7866)
+
+### Bug Fixes / Nits
+- Adds support for using message metadata in discord reader (#7906)
+- Fix `LocalAI` chat capability without `max_tokens` (#7942)
+- Added `codespell` for automated checking (#7941)
+- `ruff` modernization and autofixes (#7889)
+- Implement own SQLDatabase class (#7929)
+- Update LlamaCPP context_params property (#7945)
+- fix duplicate embedding (#7949)
+- Adds `codespell` tool for enforcing good spelling (#7941)
+- Supporting `mypy` local usage with `venv` (#7952)
+- Vectara - minor update (#7954)
+- Avoiding `pydantic` reinstalls in CI (#7956)
+- move tree_sitter_languages into data_requirements.txt (#7955)
+- Add `cache_okay` param to `PGVectorStore` to help suppress TSVector warnings (#7950)
+
+## [0.8.38] - 2023-10-02
 
 ### New Features
 - Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
@@ -432,7 +503,7 @@
 
 ### Bug Fixes / Nits
 
-- Fix inifinite looping with forced function call in `OpenAIAgent` (#7363)
+- Fix infinite looping with forced function call in `OpenAIAgent` (#7363)
 
 ## [0.8.6] - 2023-08-22
 
@@ -1036,7 +1107,7 @@
 ### Breaking/Deprecated API Changes
 
 - `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
-- `TextNode` and `Document` must be instansiated with kwargs: `Document(text=text)` (#6586)
+- `TextNode` and `Document` must be instantiated with kwargs: `Document(text=text)` (#6586)
 - `TextNode` (fka `Node`) has a `id_` or `node_id` property, rather than `doc_id` (#6586)
 - `TextNode` and `Document` have a metadata property, which replaces the extra_info property (#6586)
 - `TextNode` no longer has a `node_info` property (start/end indexes are accessed directly with `start/end_char_idx` attributes) (#6586)

@@ -104,7 +104,7 @@ from llama_index.indices.postprocessor import SentenceTransformerRerank
 
 # We choose a model with relatively high speed and decent accuracy.
 postprocessor = SentenceTransformerRerank(
-  model="cross-encoder/ms-marco-MiniLM-L-2-v2", 
+  model="cross-encoder/ms-marco-MiniLM-L-2-v2",
   top_n=3
 )
 
@@ -204,7 +204,7 @@ postprocessor.postprocess_nodes(nodes)
 
 ### NER Version
 
-This version uses the default local model from Hugging Face that is loaded when you run `pipline("ner")`.
+This version uses the default local model from Hugging Face that is loaded when you run `pipeline("ner")`.
 
 ```python
 from llama_index.indices.postprocessor import NERPIINodePostprocessor

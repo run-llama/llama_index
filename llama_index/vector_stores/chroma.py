@@ -1,14 +1,14 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, Generator, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -30,6 +30,24 @@ def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
 
 
 import_err_msg = "`chromadb` package not found, please run `pip install chromadb`"
+
+MAX_CHUNK_SIZE = 41665  # One less than the max chunk size for ChromaDB
+
+
+def chunk_list(
+    lst: List[BaseNode], max_chunk_size: int
+) -> Generator[List[BaseNode], None, None]:
+    """Yield successive max_chunk_size-sized chunks from lst.
+
+    Args:
+        lst (List[BaseNode]): list of nodes with embeddings
+        max_chunk_size (int): max chunk size
+
+    Yields:
+        Generator[List[BaseNode], None, None]: list of nodes with embeddings
+    """
+    for i in range(0, len(lst), max_chunk_size):
+        yield lst[i : i + max_chunk_size]
 
 
 class ChromaVectorStore(BasePydanticVectorStore):
@@ -69,7 +87,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         try:
-            import chromadb  # noqa: F401
+            import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection
@@ -96,7 +114,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> "ChromaVectorStore":
         try:
-            import chromadb  # noqa: F401
+            import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -122,34 +140,41 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        embeddings = []
-        metadatas = []
-        ids = []
-        documents = []
-        for node in nodes:
-            embeddings.append(node.get_embedding())
-            metadatas.append(
-                node_to_metadata_dict(
-                    node, remove_text=True, flat_metadata=self.flat_metadata
-                )
-            )
-            ids.append(node.node_id)
-            documents.append(node.get_content(metadata_mode=MetadataMode.NONE))
+        max_chunk_size = MAX_CHUNK_SIZE
+        node_chunks = chunk_list(nodes, max_chunk_size)
 
-        self._collection.add(
-            embeddings=embeddings,
-            ids=ids,
-            metadatas=metadatas,
-            documents=documents,
-        )
-        return ids
+        all_ids = []
+        for node_chunk in node_chunks:
+            embeddings = []
+            metadatas = []
+            ids = []
+            documents = []
+            for node in node_chunk:
+                embeddings.append(node.get_embedding())
+                metadatas.append(
+                    node_to_metadata_dict(
+                        node, remove_text=True, flat_metadata=self.flat_metadata
+                    )
+                )
+                ids.append(node.node_id)
+                documents.append(node.get_content(metadata_mode=MetadataMode.NONE))
+
+            self._collection.add(
+                embeddings=embeddings,
+                ids=ids,
+                metadatas=metadatas,
+                documents=documents,
+            )
+            all_ids.extend(ids)
+
+        return all_ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

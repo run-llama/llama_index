@@ -41,7 +41,7 @@ class CSVReader(BaseReader):
         except ImportError:
             raise ImportError("csv module is required to read CSV files.")
         text_list = []
-        with open(file, "r") as fp:
+        with open(file) as fp:
             csv_reader = csv.reader(fp)
             for row in csv_reader:
                 text_list.append(", ".join(row))

@@ -13,8 +13,7 @@ def split_text_keep_separator(text: str, separator: str) -> List[str]:
     """Split text with separator and keep the separator at the end of each split."""
     parts = text.split(separator)
     result = [separator + s if i > 0 else s for i, s in enumerate(parts)]
-    result = [s for s in result if s]
-    return result
+    return [s for s in result if s]
 
 
 def split_by_sep(sep: str, keep_sep: bool = True) -> Callable[[str], List[str]]:
@@ -55,7 +54,7 @@ def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
     # using the start index of each span
     # instead of using end, use the start of the next span if available
     def split(text: str) -> List[str]:
-        spans = [s for s in tokenizer.span_tokenize(text)]
+        spans = list(tokenizer.span_tokenize(text))
         sentences = []
         for i, span in enumerate(spans):
             start = span[0]

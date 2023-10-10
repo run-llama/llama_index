@@ -1,15 +1,15 @@
 """Custom query engine."""
 
-from llama_index.indices.query.base import BaseQueryEngine
-from typing import Union
-from pydantic import BaseModel
-from llama_index.callbacks.base import CallbackManager
-from llama_index.response.schema import Response
-from llama_index.indices.query.schema import QueryBundle, QueryType
-from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.bridge.pydantic import Field
 from abc import abstractmethod
+from typing import Union
 
+from pydantic import BaseModel
+
+from llama_index.bridge.pydantic import Field
+from llama_index.callbacks.base import CallbackManager
+from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.indices.query.schema import QueryBundle, QueryType
+from llama_index.response.schema import RESPONSE_TYPE, Response
 
 STR_OR_RESPONSE_TYPE = Union[Response, str]
 
@@ -40,12 +40,11 @@ class CustomQueryEngine(BaseModel, BaseQueryEngine):
             else:
                 query_str = str_or_query_bundle
             raw_response = self.custom_query(query_str)
-            response = (
+            return (
                 Response(raw_response)
                 if isinstance(raw_response, str)
                 else raw_response
             )
-            return response
 
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         with self.callback_manager.as_trace("query"):
@@ -54,12 +53,11 @@ class CustomQueryEngine(BaseModel, BaseQueryEngine):
             else:
                 query_str = str_or_query_bundle
             raw_response = await self.acustom_query(query_str)
-            response = (
+            return (
                 Response(raw_response)
                 if isinstance(raw_response, str)
                 else raw_response
             )
-            return response
 
     @abstractmethod
     def custom_query(self, query_str: str) -> STR_OR_RESPONSE_TYPE:

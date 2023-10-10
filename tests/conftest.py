@@ -5,12 +5,12 @@ from typing import Any, Optional
 
 import openai
 import pytest
-
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.mock import MockLLM
 from llama_index.text_splitter import SentenceSplitter, TokenTextSplitter
+
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_predict import (
     patch_llmpredictor_apredict,
@@ -26,12 +26,12 @@ from tests.mock_utils.mock_text_splitter import patch_token_splitter_newline
 #     monkeypatch.setattr(socket, "socket", deny_network)
 
 
-@pytest.fixture
+@pytest.fixture()
 def allow_networking(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.undo()
 
 
-@pytest.fixture
+@pytest.fixture()
 def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(SentenceSplitter, "split_text", patch_token_splitter_newline)
     monkeypatch.setattr(
@@ -43,7 +43,7 @@ def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         LLMPredictor,
@@ -122,7 +122,7 @@ class CachedOpenAIApiKeys:
             openai.api_key = "sk-" + "a" * 48
 
     # No matter what, set the environment variable back to what it was
-    def __exit__(self, *exc: Any) -> None:
+    def __exit__(self, *exc: object) -> None:
         os.environ["OPENAI_API_KEY"] = str(self.api_env_variable_was)
         os.environ["OPENAI_API_TYPE"] = str(self.api_env_type_was)
         openai.api_key = self.openai_api_key_was

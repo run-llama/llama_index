@@ -2,9 +2,9 @@ from typing import Callable
 from unittest import mock
 
 from llama_index.llm_predictor.vellum import (
-    VellumRegisteredPrompt,
     VellumCompiledPrompt,
     VellumPromptRegistry,
+    VellumRegisteredPrompt,
 )
 from llama_index.prompts.base import PromptTemplate
 
@@ -13,8 +13,7 @@ def test_from_prompt__new(
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
-    """We should register a new prompt if no deployment exists"""
-
+    """We should register a new prompt if no deployment exists."""
     from vellum.core import ApiError
 
     dummy_prompt = PromptTemplate(template="What's your favorite {thing}?")
@@ -33,8 +32,7 @@ def test_from_prompt__existing(
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
-    """We shouldn't register a new prompt if a deployment id or name is provided"""
-
+    """We shouldn't register a new prompt if a deployment id or name is provided."""
     dummy_prompt = PromptTemplate(
         template="What's your favorite {thing}?",
         metadata={"vellum_deployment_id": "abc"},
@@ -56,8 +54,7 @@ def test_get_compiled_prompt__basic(
     mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
-    """Verify that we can get a compiled prompt from the registry"""
-
+    """Verify that we can get a compiled prompt from the registry."""
     registered_prompt = VellumRegisteredPrompt(
         deployment_id="abc",
         deployment_name="my-deployment",

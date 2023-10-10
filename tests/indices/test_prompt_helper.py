@@ -1,15 +1,15 @@
 """Test PromptHelper."""
 
-from typing import Optional, Union, Type
+from typing import Optional, Type, Union
 
 import pytest
-
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_utils import get_biggest_prompt, get_empty_prompt_txt
 from llama_index.schema import TextNode
 from llama_index.text_splitter.utils import truncate_text
+
 from tests.mock_utils.mock_utils import mock_tokenizer
 
 
@@ -94,7 +94,6 @@ def test_get_text_splitter() -> None:
 
 def test_get_text_splitter_partial() -> None:
     """Test get text splitter with a partially formatted prompt."""
-
     # test without partially formatting
     test_prompt_text = "This is the {foo} prompt{text}"
     test_prompt = PromptTemplate(test_prompt_text)

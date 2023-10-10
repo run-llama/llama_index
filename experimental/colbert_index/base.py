@@ -1,12 +1,12 @@
-from typing import Any, List, Optional, Sequence, Dict
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.data_structs.data_structs import IndexDict
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
-from llama_index.storage.storage_context import StorageContext
-from llama_index.indices.base import BaseIndex
-from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.storage.storage_context import StorageContext
 
 # TODO(jon-chuang):
 # 1. Add support for updating index (inserts/deletes)
@@ -100,8 +100,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
         """Generate a PLAID index from the ColBERT checkpoint via its hugging face
         model_name.
         """
-
-        from colbert import Indexer, Searcher, IndexUpdater
+        from colbert import Indexer, IndexUpdater, Searcher
         from colbert.infra import ColBERTConfig, Run, RunConfig
 
         index_struct = IndexDict()
@@ -144,10 +143,9 @@ class ColbertIndex(BaseIndex[IndexDict]):
 
         Returns: list of NodeWithScore.
         """
-
         doc_ids, _, scores = self.store.search(text=query_str, k=top_k)
 
-        node_doc_ids = list(map(lambda id: self._docs_pos_to_node_id[id], doc_ids))
+        node_doc_ids = [self._docs_pos_to_node_id[id] for id in doc_ids]
         nodes = self.docstore.get_nodes(node_doc_ids)
 
         nodes_with_score = []

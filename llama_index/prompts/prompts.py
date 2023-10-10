@@ -47,7 +47,7 @@ TreeSelectMultiplePrompt = PromptTemplate
 
 """Refine prompt.
 
-PromptTemplate to refine an existing answer `existing_answer` 
+PromptTemplate to refine an existing answer `existing_answer`
 given a context `context_msg`, and a query `query_str`.
 
 Required template variables: `query_str`, `existing_answer`, `context_msg`

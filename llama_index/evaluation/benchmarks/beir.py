@@ -1,10 +1,12 @@
-from typing import Callable, List, Dict
-from llama_index.utils import get_cache_dir
-from llama_index.schema import Document
-from llama_index.indices.base_retriever import BaseRetriever
 import os
-import tqdm
 from shutil import rmtree
+from typing import Callable, Dict, List
+
+import tqdm
+
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.schema import Document
+from llama_index.utils import get_cache_dir
 
 
 class BeirEvaluator:

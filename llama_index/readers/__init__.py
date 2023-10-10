@@ -20,6 +20,7 @@ from llama_index.readers.faiss import FaissReader
 
 # readers
 from llama_index.readers.file.base import SimpleDirectoryReader
+from llama_index.readers.file.docs_reader import PDFReader
 from llama_index.readers.file.html_reader import HTMLTagReader
 from llama_index.readers.github_readers.github_repository_reader import (
     GithubRepositoryReader,
@@ -28,16 +29,15 @@ from llama_index.readers.google_readers.gdocs import GoogleDocsReader
 from llama_index.readers.json import JSONReader
 from llama_index.readers.make_com.wrapper import MakeWrapper
 from llama_index.readers.mbox import MboxReader
+from llama_index.readers.metal import MetalReader
 from llama_index.readers.milvus import MilvusReader
 from llama_index.readers.mongo import SimpleMongoReader
-from llama_index.readers.metal import MetalReader
 from llama_index.readers.myscale import MyScaleReader
 from llama_index.readers.notion import NotionPageReader
 from llama_index.readers.obsidian import ObsidianReader
 from llama_index.readers.pinecone import PineconeReader
 from llama_index.readers.psychic import PsychicReader
 from llama_index.readers.qdrant import QdrantReader
-from llama_index.schema import Document
 from llama_index.readers.slack import SlackReader
 from llama_index.readers.steamship.file_reader import SteamshipFileReader
 from llama_index.readers.string_iterable import StringIterableReader
@@ -51,6 +51,7 @@ from llama_index.readers.web import (
 )
 from llama_index.readers.wikipedia import WikipediaReader
 from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
+from llama_index.schema import Document
 
 __all__ = [
     "WikipediaReader",
@@ -88,4 +89,5 @@ __all__ = [
     "ChatGPTRetrievalPluginReader",
     "BagelReader",
     "HTMLTagReader",
+    "PDFReader",
 ]

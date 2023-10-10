@@ -1,11 +1,10 @@
 from typing import List
+
 import pytest
-
-from llama_index.schema import Document
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import Document, NodeRelationship, RelatedNodeInfo, TextNode
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now
@@ -18,7 +17,7 @@ def documents() -> List[Document]:
     return [Document(text=doc_text)]
 
 
-@pytest.fixture
+@pytest.fixture()
 def nodes() -> List[TextNode]:
     """Get documents."""
     # NOTE: one document for now

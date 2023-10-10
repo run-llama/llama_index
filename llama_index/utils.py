@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    Dict,
     Generator,
     Iterable,
     List,
@@ -23,7 +24,6 @@ from typing import (
     Type,
     Union,
     cast,
-    Dict,
 )
 
 
@@ -241,7 +241,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     """
     Args:
         model_name(str): the model name of the tokenizer.
-                        For instance, fxmarty/tiny-llama-fast-tokenizer
+                        For instance, fxmarty/tiny-llama-fast-tokenizer.
     """
     try:
         from transformers import AutoTokenizer
@@ -255,7 +255,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
 
 def get_cache_dir() -> str:
     """Locate a platform-appropriate cache directory for llama_index,
-    and create it if it doesn't yet exist
+    and create it if it doesn't yet exist.
     """
     # User override
     if "LLAMA_INDEX_CACHE_DIR" in os.environ:
@@ -303,27 +303,27 @@ def add_sync_version(func: Any) -> Any:
 # Sample text from llama_index's readme
 SAMPLE_TEXT = """
 Context
-LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. 
+LLMs are a phenomenal piece of technology for knowledge generation and reasoning.
 They are pre-trained on large amounts of publicly available data.
 How do we best augment LLMs with our own private data?
 We need a comprehensive toolkit to help perform this data augmentation for LLMs.
 
 Proposed Solution
-That's where LlamaIndex comes in. LlamaIndex is a "data framework" to help 
+That's where LlamaIndex comes in. LlamaIndex is a "data framework" to help
 you build LLM  apps. It provides the following tools:
 
-Offers data connectors to ingest your existing data sources and data formats 
+Offers data connectors to ingest your existing data sources and data formats
 (APIs, PDFs, docs, SQL, etc.)
-Provides ways to structure your data (indices, graphs) so that this data can be 
+Provides ways to structure your data (indices, graphs) so that this data can be
 easily used with LLMs.
-Provides an advanced retrieval/query interface over your data: 
+Provides an advanced retrieval/query interface over your data:
 Feed in any LLM input prompt, get back retrieved context and knowledge-augmented output.
-Allows easy integrations with your outer application framework 
+Allows easy integrations with your outer application framework
 (e.g. with LangChain, Flask, Docker, ChatGPT, anything else).
-LlamaIndex provides tools for both beginner users and advanced users. 
-Our high-level API allows beginner users to use LlamaIndex to ingest and 
-query their data in 5 lines of code. Our lower-level APIs allow advanced users to 
-customize and extend any module (data connectors, indices, retrievers, query engines, 
+LlamaIndex provides tools for both beginner users and advanced users.
+Our high-level API allows beginner users to use LlamaIndex to ingest and
+query their data in 5 lines of code. Our lower-level APIs allow advanced users to
+customize and extend any module (data connectors, indices, retrievers, query engines,
 reranking modules), to fit their needs.
 """
 
@@ -366,9 +366,7 @@ def get_color_mapping(
         color_palette = _ANSI_COLORS
 
     colors = list(color_palette.keys())
-    color_mapping = {item: colors[i % len(colors)] for i, item in enumerate(items)}
-
-    return color_mapping
+    return {item: colors[i % len(colors)] for i, item in enumerate(items)}
 
 
 def _get_colored_text(text: str, color: str) -> str:

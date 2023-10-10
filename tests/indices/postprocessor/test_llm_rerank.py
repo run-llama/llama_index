@@ -33,7 +33,7 @@ def mock_llmpredictor_predict(
         if choice:
             choices_and_scores.append((idx + 1, score))
 
-    result_strs = [f"Doc: {str(c)}, Relevance: {s}" for c, s in choices_and_scores]
+    result_strs = [f"Doc: {c!s}, Relevance: {s}" for c, s in choices_and_scores]
     return "\n".join(result_strs)
 
 

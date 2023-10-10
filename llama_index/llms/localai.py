@@ -4,10 +4,10 @@ from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.openai import OpenAI
 
-DEFAULT_KEY = "fake"
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8080
-DEFAULT_API_BASE = f"{DEFAULT_HOST}{DEFAULT_PORT}"
+DEFAULT_API_KEY = "fake"
+DEFAULT_API_HOST = "localhost"
+DEFAULT_API_PORT = 8080
+DEFAULT_API_BASE = f"{DEFAULT_API_HOST}{DEFAULT_API_PORT}"
 
 
 class LocalAI(OpenAI):
@@ -38,16 +38,11 @@ class LocalAI(OpenAI):
 
     def __init__(
         self,
-        context_window: int = DEFAULT_CONTEXT_WINDOW,
-        api_key: Optional[str] = DEFAULT_KEY,
+        api_key: Optional[str] = DEFAULT_API_KEY,
         api_base: Optional[str] = DEFAULT_API_BASE,
-        globally_use_chat_completions: Optional[bool] = None,
-        **openai_kwargs: Any,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(api_key=api_key, api_base=api_base, **openai_kwargs)
-        # Below sets the pydantic Fields specific to this class
-        self.context_window = context_window
-        self.globally_use_chat_completions = globally_use_chat_completions
+        super().__init__(api_key=api_key, api_base=api_base, **kwargs)
 
     def _get_context_window(self) -> int:
         return self.context_window
@@ -56,14 +51,14 @@ class LocalAI(OpenAI):
         # This subclass only supports max_tokens via LocalAI(..., max_tokens=123)
         if self.max_tokens is not None:
             return
-        all_kwargs.pop("max_tokens", None)
 
     @property
     def _is_chat_model(self) -> bool:
         if self.globally_use_chat_completions is not None:
             return self.globally_use_chat_completions
         raise NotImplementedError(
-            f"Inferring of /chat/completions is not supported by {type(self).__name__}."
-            f" Please use the kwarg 'use_chat_completions' in your query, setting"
-            f" True to use /chat/completions or False to use /completions."
+            "Inferring of when to use /chat/completions is unsupported by"
+            f" {type(self).__name__}. Please either set 'globally_use_chat_completions'"
+            " arg during construction, or pass the arg 'use_chat_completions' in your"
+            " query, setting True for /chat/completions or False for /completions."
         )

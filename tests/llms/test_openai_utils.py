@@ -1,7 +1,6 @@
 from typing import List
 
 import pytest
-
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai_utils import (
     from_openai_message_dicts,
@@ -9,7 +8,7 @@ from llama_index.llms.openai_utils import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def chat_messages_with_function_calling() -> List[ChatMessage]:
     return [
         ChatMessage(role=MessageRole.USER, content="test question with functions"),
@@ -33,7 +32,7 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def openi_message_dicts_with_function_calling() -> List[dict]:
     return [
         {"role": "user", "content": "test question with functions"},
@@ -54,24 +53,24 @@ def openi_message_dicts_with_function_calling() -> List[dict]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def azure_openi_message_dicts_with_function_calling() -> List[dict]:
     """
     Taken from:
-    - https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling
+    - https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling.
     """
     return [
         {
             "role": "assistant",
             "function_call": {
                 "name": "search_hotels",
-                "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',  # noqa
+                "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
             },
         }
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
     return [
         ChatMessage(
@@ -80,7 +79,7 @@ def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
             additional_kwargs={
                 "function_call": {
                     "name": "search_hotels",
-                    "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',  # noqa
+                    "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
                 },
             },
         ),

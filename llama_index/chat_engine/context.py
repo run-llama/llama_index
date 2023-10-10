@@ -127,8 +127,7 @@ class ContextChatEngine(BaseChatEngine):
         return self._context_template.format(context_str=context_str), nodes
 
     def _get_prefix_messages_with_context(self, context_str: str) -> List[ChatMessage]:
-        """Get the prefix messages with context"""
-
+        """Get the prefix messages with context."""
         # ensure we grab the user-configured system prompt
         system_prompt = ""
         prefix_messages = self._prefix_messages
@@ -141,8 +140,9 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_w_sys_prompt = context_str + system_prompt.strip()
         return [
-            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM)
-        ] + prefix_messages
+            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM),
+            *prefix_messages,
+        ]
 
     @trace_method("chat")
     def chat(

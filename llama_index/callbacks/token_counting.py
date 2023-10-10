@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.utils import globals_helper
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.utils import globals_helper
 
 
 @dataclass
@@ -97,6 +97,7 @@ class TokenCountingHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         return event_id

@@ -40,7 +40,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     """Base Keyword Table Index.
 
     This index extracts keywords from the text, and maps each
-    keyword to the node(s) that it corresponds to. In this sense it mimicks a
+    keyword to the node(s) that it corresponds to. In this sense it mimics a
     "hash table". During index construction, the keyword table is constructed
     by extracting keywords from each node and creating an internal mapping.
 
@@ -223,8 +223,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        return keywords
+        return extract_keywords_given_response(response, start_token="KEYWORDS:")
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
@@ -232,8 +231,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        return keywords
+        return extract_keywords_given_response(response, start_token="KEYWORDS:")
 
 
 # legacy

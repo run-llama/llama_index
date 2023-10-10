@@ -43,7 +43,7 @@ def default_output_processor(
     import traceback
 
     if sys.version_info < (3, 9):
-        logger.warn(
+        logger.warning(
             "Python version must be >= 3.9 in order to use "
             "the default output processor, which executes "
             "the Python query. Instead, we will return the "
@@ -68,7 +68,7 @@ def default_output_processor(
         try:
             return str(eval(module_end_str, {"np": np}, local_vars))
         except Exception as e:
-            raise e
+            raise
     except Exception as e:
         err_string = (
             "There was an error running the output as Python code. "

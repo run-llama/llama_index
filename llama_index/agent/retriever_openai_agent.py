@@ -92,5 +92,4 @@ class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
         )
 
     def _get_tools(self, message: str) -> List[BaseTool]:
-        tools = self._retriever.retrieve(message)
-        return tools
+        return self._retriever.retrieve(message)

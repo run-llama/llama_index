@@ -1,4 +1,5 @@
 from typing import Optional
+
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.storage.kvstore.firestore_kvstore import FirestoreKVStore
 
@@ -33,7 +34,7 @@ class FirestoreDocumentStore(KVDocumentStore):
         Args:
             project (str): The project which the client acts on behalf of.
             database (str): The database name that the client targets.
-            namespace (str): namespace for the docstore
+            namespace (str): namespace for the docstore.
         """
         firestore_kvstore = FirestoreKVStore(project=project, database=database)
         return cls(firestore_kvstore, namespace)

@@ -1,12 +1,12 @@
 name: Documentation Change Request
-description: Request a change to the documenation
+description: Request a change to the documentation
 title: "[Documentation]: "
 labels: ["documentation", "triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this documenation request!
+        Thanks for taking the time to fill out this documentation request!
         Please complete the following form to help us assist you.
   - type: textarea
     id: doc-description
@@ -18,7 +18,7 @@ body:
   - type: input
     id: docs-link
     attributes:
-      label: Documenation Link
-      description: Please link to the section of documenation that is broken or missing information.
+      label: Documentation Link
+      description: Please link to the section of documentation that is broken or missing information.
     validations:
       required: true

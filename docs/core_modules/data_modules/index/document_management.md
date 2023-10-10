@@ -38,7 +38,7 @@ You can "delete" a Document from most index data structures by specifying a docu
 index.delete_ref_doc("doc_id_0", delete_from_docstore=True)
 ```
 
-`delete_from_docstore` will default to `False` in case you are sharing nodes betweeen indexes using the same docstore. However, these nodes will not be used when querying when this is set to `False` as they will be deleted from the `index_struct` of the index, which keeps track of which nodes can be used for querying.
+`delete_from_docstore` will default to `False` in case you are sharing nodes between indexes using the same docstore. However, these nodes will not be used when querying when this is set to `False` as they will be deleted from the `index_struct` of the index, which keeps track of which nodes can be used for querying.
 
 ## Update
 
@@ -48,7 +48,7 @@ If a Document is already present within an index, you can "update" a Document wi
 # NOTE: the document has a `doc_id` specified
 doc_chunks[0].text = "Brand new document text"
 index.update_ref_doc(
-    doc_chunks[0], 
+    doc_chunks[0],
     update_kwargs={"delete_kwargs": {'delete_from_docstore': True}}
 )
 ```
@@ -90,20 +90,20 @@ print(refreshed_docs)
 
 This is most useful when you are reading from a directory that is constantly updating with new information.
 
-To autmatically set the doc `id_` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. More details can be found [here](../documents_and_nodes/usage_documents.md).
+To automatically set the doc `id_` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. More details can be found [here](../documents_and_nodes/usage_documents.md).
 
 ## Document Tracking
 
-Any index that uses the docstore (i.e. all indexes except for most vector store integrations), you can also see which documents you have inserted into the docstore. 
+Any index that uses the docstore (i.e. all indexes except for most vector store integrations), you can also see which documents you have inserted into the docstore.
 
 ```python
 print(index.ref_doc_info)
-> {'doc_id_1': RefDocInfo(node_ids=['071a66a8-3c47-49ad-84fa-7010c6277479'], metadata={}), 
-   'doc_id_2': RefDocInfo(node_ids=['9563e84b-f934-41c3-acfd-22e88492c869'], metadata={}), 
-   'doc_id_0': RefDocInfo(node_ids=['b53e6c2f-16f7-4024-af4c-42890e945f36'], metadata={}), 
+> {'doc_id_1': RefDocInfo(node_ids=['071a66a8-3c47-49ad-84fa-7010c6277479'], metadata={}),
+   'doc_id_2': RefDocInfo(node_ids=['9563e84b-f934-41c3-acfd-22e88492c869'], metadata={}),
+   'doc_id_0': RefDocInfo(node_ids=['b53e6c2f-16f7-4024-af4c-42890e945f36'], metadata={}),
    'doc_id_3': RefDocInfo(node_ids=['6bedb29f-15db-4c7c-9885-7490e10aa33f'], metadata={})}
 ```
 
-Each entry in the output shows the ingested doc `id_`s as keys, and their associated `node_ids` of the nodes they were split into. 
+Each entry in the output shows the ingested doc `id_`s as keys, and their associated `node_ids` of the nodes they were split into.
 
 Lastly, the original `metadata` dictionary of each input document is also tracked. You can read more about the `metadata` attribute in [Customizing Documents](../documents_and_nodes/usage_documents.md).
