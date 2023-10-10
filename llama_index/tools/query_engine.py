@@ -65,7 +65,7 @@ class QueryEngineTool(AsyncBaseTool):
             raw_output=response,
         )
 
-    async def acall(self, input: Any) -> ToolOutput:
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         if args is not None and len(args) > 0:
             query_str = str(args[0])
         elif kwargs is not None and len(kwargs) > 0:
