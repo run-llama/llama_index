@@ -73,6 +73,7 @@ class SelectionOutputParser(BaseOutputParser):
             json_obj = json.loads(json_string)
         except json.JSONDecodeError as e_json:
             try:
+                import yaml
                 # NOTE: parsing again with pyyaml
                 #       pyyaml is less strict, and allows for trailing commas
                 #       right now we rely on this since guidance program generates
