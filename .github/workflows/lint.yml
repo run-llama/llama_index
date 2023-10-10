@@ -32,7 +32,7 @@ jobs:
           cache-key: core
       - name: Install deps
         shell: bash
-        run: poetry install
+        run: poetry install --with dev
       - name: Run linter
         shell: bash
         run: make lint
