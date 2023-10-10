@@ -47,7 +47,7 @@ class PsychicReader(BaseReader):
     def load_data(
         self, connector_id: Optional[str] = None, account_id: Optional[str] = None
     ) -> List[Document]:
-        """Load data from a Psychic connection
+        """Load data from a Psychic connection.
 
         Args:
             connector_id (str): The connector ID to connect to

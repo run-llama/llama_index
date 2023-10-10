@@ -145,7 +145,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
         """
         doc_ids, _, scores = self.store.search(text=query_str, k=top_k)
 
-        node_doc_ids = list(map(lambda id: self._docs_pos_to_node_id[id], doc_ids))
+        node_doc_ids = [self._docs_pos_to_node_id[id] for id in doc_ids]
         nodes = self.docstore.get_nodes(node_doc_ids)
 
         nodes_with_score = []

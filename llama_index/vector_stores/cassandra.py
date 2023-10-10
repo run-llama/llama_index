@@ -171,7 +171,7 @@ class CassandraVectorStore(VectorStore):
 
     @property
     def client(self) -> Any:
-        """Return the underlying cassIO vector table object"""
+        """Return the underlying cassIO vector table object."""
         return self.vector_table
 
     @staticmethod

@@ -203,7 +203,7 @@ class VectaraIndex(BaseManagedIndex):
     ) -> Optional[str]:
         """Vectara provides a way to add files (binary or text) directly via our API
         where pre-processing and chunking occurs internally in an optimal way
-        This method provides a way to use that API in Llama_index
+        This method provides a way to use that API in Llama_index.
 
         # ruff: noqa: E501
         Full API Docs: https://docs.vectara.com/docs/api-reference/indexing-apis/

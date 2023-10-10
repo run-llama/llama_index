@@ -57,7 +57,7 @@ def openi_message_dicts_with_function_calling() -> List[dict]:
 def azure_openi_message_dicts_with_function_calling() -> List[dict]:
     """
     Taken from:
-    - https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling
+    - https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling.
     """
     return [
         {
