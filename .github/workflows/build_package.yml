@@ -24,13 +24,14 @@ jobs:
         python-version: ["3.9"]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }} + OS ${{ matrix.os }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ vars.RUNNER_TEMP }}
-          cache-key: build
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
       - name: Install deps
         shell: bash
         run: poetry install

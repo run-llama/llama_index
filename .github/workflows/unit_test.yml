@@ -12,7 +12,7 @@ env:
 
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       # You can use PyPy versions in python-version.
@@ -21,13 +21,14 @@ jobs:
         python-version: ["3.10", "3.9", "3.8"]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ vars.RUNNER_TEMP }}
-          cache-key: dev
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
       - name: Install deps
         shell: bash
         run: poetry install --with dev
