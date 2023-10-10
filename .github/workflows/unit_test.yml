@@ -33,4 +33,4 @@ jobs:
       - name: Run testing
         env:
           CI: true
-        run: pytest tests
+        run: make test
