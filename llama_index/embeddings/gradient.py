@@ -35,11 +35,11 @@ class GradientEmbedding(BaseEmbedding):
 
     def __init__(
         self,
+        *,
         gradient_model_slug: str,
         gradient_access_token: Optional[str] = None,
         gradient_workspace_id: Optional[str] = None,
         gradient_host: Optional[str] = None,
-        **kwargs: Any,
     ):
         """Initializes the GradientEmbedding class.
 
