@@ -10,7 +10,7 @@ AZURE_OPENAI_API_TYPE = "azure"
 
 class AzureOpenAI(OpenAI):
     """
-    Azure OpenAI
+    Azure OpenAI.
 
     To use this, you must first deploy a model on Azure OpenAI.
     Unlike OpenAI, you need to specify a `engine` parameter to identify

@@ -122,7 +122,7 @@ class CachedOpenAIApiKeys:
             openai.api_key = "sk-" + "a" * 48
 
     # No matter what, set the environment variable back to what it was
-    def __exit__(self, *exc: Any) -> None:
+    def __exit__(self, *exc: object) -> None:
         os.environ["OPENAI_API_KEY"] = str(self.api_env_variable_was)
         os.environ["OPENAI_API_TYPE"] = str(self.api_env_type_was)
         openai.api_key = self.openai_api_key_was

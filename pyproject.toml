@@ -1,257 +1,377 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+ignore-words-list = "ot,gallary,rouge,narl"
+# Remove .git and venv skips when integrated with pre-commit
+# Feel free to un-skip examples, and experimental, you will just need to
+# work through many typos (--write-changes and --interactive will help)
+skip = "./.git,./*venv,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["build", "examples", "notebooks"]
+ignore_missing_imports = true
 
 [tool.poetry]
-name = "llama-index"
-version = "0.8.41"
-description = "Interface between LLMs and your data"
 authors = ["Jerry Liu <jerry@llamaindex.ai>"]
-maintainers = [
-  "Jerry Liu <jerry@llamaindex.ai>",
-  "Simon Suo <simon@llamaindex.ai>",
-  "Logan Markewich <logan@llamaindex.ai>",
-  "Sourabh Desai <sourabh@llamaindex.ai>"
-]
-license = "MIT"
-readme = "README.md"
-homepage = "https://llamaindex.ai"
-documentation = "https://docs.llamaindex.ai/en/stable/"
-repository = "https://github.com/run-llama/llama_index"
-keywords = ["LLM", "data", "index", "RAG", "retrieval", "devtools", "NLP"]
 classifiers = [
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Software Development :: Libraries :: Application Frameworks",
-  "Topic :: Software Development :: Libraries :: Python Modules"
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+description = "Interface between LLMs and your data"
+documentation = "https://docs.llamaindex.ai/en/stable/"
+homepage = "https://llamaindex.ai"
+keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
+license = "MIT"
+maintainers = [
+    "Jerry Liu <jerry@llamaindex.ai>",
+    "Logan Markewich <logan@llamaindex.ai>",
+    "Simon Suo <simon@llamaindex.ai>",
+    "Sourabh Desai <sourabh@llamaindex.ai>",
+]
+name = "llama-index"
 packages = [{include = "llama_index"}]
+readme = "README.md"
+repository = "https://github.com/run-llama/llama_index"
+version = "0.8.41"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
-tiktoken = ">=0.3.3"
+SQLAlchemy = {extras = ["asyncio"], version = ">=2.0.15"}
 dataclasses-json = "^0.5.7"
-langchain = ">=0.0.303"
-SQLAlchemy = {version = ">=2.0.15", extras = ["asyncio"]}
-numpy = "^1.24.4"
-tenacity = ">=8.2.0,<9.0.0"
-openai = ">=0.26.4"
-pandas = "^2.0.3"
-urllib3 = "<2"
 fsspec = ">=2023.5.0"
-typing-inspect = ">=0.8.0"
-typing-extensions = ">=4.5.0"
+langchain = ">=0.0.303"
 nest-asyncio = "^1.5.8"
 nltk = "^3.8.1"
+numpy = "^1.24.4"
+openai = ">=0.26.4"
+pandas = "^2.0.3"
+python = ">=3.8.1,<3.12"
+tenacity = ">=8.2.0,<9.0.0"
+tiktoken = ">=0.3.3"
+typing-extensions = ">=4.5.0"
+typing-inspect = ">=0.8.0"
+urllib3 = "<2"
 
 [tool.poetry.extras]
 dataloaders = [
-  "beautifulsoup4",
-  "discord.py",
-  "psychicapi",
-  "slack-sdk",
-  "youtube-transcript-api",
-  "EbookLib",
-  "Pillow",
-  "python-pptx",
-  "pydub",
-  "google-api-python-client",
-  "google-auth-httplib2",
-  "google-auth-oauthlib",
-  "html2text",
-  "wikipedia",
-  "tweepy",
-  "trafilatura",
-  "feedparser",
-  "nbconvert",
-  "mailbox",
-  "tree-sitter-languages",
-  "bark",
-  "elevenlabs",
-  "pypdf"
+    "EbookLib",
+    "Pillow",
+    "bark",
+    "beautifulsoup4",
+    "discord.py",
+    "elevenlabs",
+    "feedparser",
+    "google-api-python-client",
+    "google-auth-httplib2",
+    "google-auth-oauthlib",
+    "html2text",
+    "mailbox",
+    "nbconvert",
+    "psychicapi",
+    "pydub",
+    "pypdf",
+    "python-pptx",
+    "slack-sdk",
+    "trafilatura",
+    "tree-sitter-languages",
+    "tweepy",
+    "wikipedia",
+    "youtube-transcript-api",
 ]
 local_models = [
-  "sentencepiece",
-  "transformers",
-  "optimum"
-]
-query_tools = [
-  "spacy",
-  "scikit-learn",
-  "jsonpath-ng",
-  "guardrails-ai",
-  "guidance",
-  "rank-bm25"
+    "optimum",
+    "sentencepiece",
+    "transformers",
 ]
 postgres = [
-  "asyncpg",
-  "psycopg-binary",
-  "pgvector"
+    "asyncpg",
+    "pgvector",
+    "psycopg-binary",
+]
+query_tools = [
+    "guardrails-ai",
+    "guidance",
+    "jsonpath-ng",
+    "rank-bm25",
+    "scikit-learn",
+    "spacy",
 ]
 
 [tool.poetry.group.callbacks]
 optional = true
 
 [tool.poetry.group.callbacks.dependencies]
-aim = {version = "^4.0.3", optional = true}
-arize-phoenix = {version = "^0.0.44", optional = true}
-wandb = {version = "^0.15.12", optional = true}
+aim = {optional = true, version = "^4.0.3"}
+arize-phoenix = {optional = true, version = "^0.0.44"}
+wandb = {optional = true, version = "^0.15.12"}
 
 [tool.poetry.group.dataloaders]
 optional = true
 
 [tool.poetry.group.dataloaders.dependencies]
-beautifulsoup4 = {version = "^4.12.2", optional = true}
-"discord.py" = {version = "^2.3.2", optional = true}
-psychicapi = {version = "^0.8.4", optional = true}
-slack-sdk = {version = "^3.23.0", optional = true}
-youtube-transcript-api = {version = "^0.6.1", optional = true}
-EbookLib = {version = "^0.18", optional = true}
-Pillow = {version = "<=9.5.0", optional = true}
-python-pptx = {version = "^0.6.22", optional = true}
-pydub = {version = "^0.25.1", optional = true}
-google-api-python-client = {version = "^2.102.0", optional = true}
-google-auth-httplib2 = {version = "^0.1.1", optional = true}
-google-auth-oauthlib = {version = "^1.1.0", optional = true}
+EbookLib = {optional = true, version = "^0.18"}
+Pillow = {optional = true, version = "<=9.5.0"}
+bark = {optional = true, version = "^0.1.5"}
+beautifulsoup4 = {optional = true, version = "^4.12.2"}
+"discord.py" = {optional = true, version = "^2.3.2"}
+elevenlabs = {optional = true, version = "^0.2.24"}
+feedparser = {optional = true, version = "^6.0.10"}
+google-api-python-client = {optional = true, version = "^2.102.0"}
+google-auth-httplib2 = {optional = true, version = "^0.1.1"}
+google-auth-oauthlib = {optional = true, version = "^1.1.0"}
 # steamship = {version = "^2.17.31", optional = true}  # conflicts with weaviate-client
-html2text = {version = "^2020.1.16", optional = true}
-wikipedia = {version = "^1.4.0", optional = true}
-tweepy = {version = "^4.14.0", optional = true}
-trafilatura = {version = "^1.6.2", optional = true}
-feedparser = {version = "^6.0.10", optional = true}
-nbconvert = {version = "^6.5.0", optional = true}
-mailbox = {version = "^0.4", optional = true}
+html2text = {optional = true, version = "^2020.1.16"}
+mailbox = {optional = true, version = "^0.4"}
+nbconvert = {optional = true, version = "^6.5.0"}
+psychicapi = {optional = true, version = "^0.8.4"}
+pydub = {optional = true, version = "^0.25.1"}
+pypdf = {optional = true, version = "^3.16.3"}
+python-pptx = {optional = true, version = "^0.6.22"}
+slack-sdk = {optional = true, version = "^3.23.0"}
+trafilatura = {optional = true, version = "^1.6.2"}
 # openai-whisper = {git = "https://github.com/openai/whisper.git", optional = true}  # conflicts with litellm due to tiktoken
-tree-sitter-languages = {version = "^1.7.0", optional = true}
-bark = {version = "^0.1.5", optional = true}
-elevenlabs = {version = "^0.2.24", optional = true}
-pypdf = {version = "^3.16.3", optional = true}
+tree-sitter-languages = {optional = true, version = "^1.7.0"}
+tweepy = {optional = true, version = "^4.14.0"}
+wikipedia = {optional = true, version = "^1.4.0"}
+youtube-transcript-api = {optional = true, version = "^0.6.1"}
 
 [tool.poetry.group.dev.dependencies]
-pytest = "7.2.1"
-pytest-dotenv = "0.5.2"
-pytest-asyncio = "0.21.0"
-pytest-mock = "3.11.1"
-rake-nltk = "1.0.6"
-ipython = "8.10.0"
-types-PyYAML = "^6.0.12.12"
-types-requests = "2.28.11.8"
-types-setuptools = "67.1.0.0"
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
+ipython = "8.10.0"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
+pytest = "7.2.1"
+pytest-asyncio = "0.21.0"
+pytest-dotenv = "0.5.2"
+pytest-mock = "3.11.1"
+rake-nltk = "1.0.6"
 ruff = "0.0.292"
+types-PyYAML = "^6.0.12.12"
 types-redis = "4.5.5.0"
+types-requests = "2.28.11.8"
+types-setuptools = "67.1.0.0"
 
 [tool.poetry.group.docs]
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-sphinx = ">=4.3.0"
-furo = ">=2023.3.27"
-docutils = "<0.17"
-m2r2 = "0.3.2"
-myst-parser = "0.18.1"
-myst-nb = "0.17.2"
-sphinx-autobuild = "^2021.3.14"
-pydantic = "<2.0.0"
 autodoc-pydantic = "<=1.9.0"
+docutils = "<0.17"
+furo = ">=2023.3.27"
+m2r2 = "0.3.2"
+myst-nb = "0.17.2"
+myst-parser = "0.18.1"
+pydantic = "<2.0.0"
+sphinx = ">=4.3.0"
+sphinx-autobuild = "^2021.3.14"
 
 [tool.poetry.group.embeddings]
 optional = true
 
 [tool.poetry.group.embeddings.dependencies]
 # clarifai = {version = "^9.9.0", optional = true}  # conflicts with chromadb
-InstructorEmbedding = {version = "^1.0.1", optional = true}
-sentence-transformers = {version = "^2.2.2", optional = true}
+InstructorEmbedding = {optional = true, version = "^1.0.1"}
+sentence-transformers = {optional = true, version = "^2.2.2"}
 
 [tool.poetry.group.llms]
 optional = true
 
 [tool.poetry.group.llms.dependencies]
-anthropic = {version = "^0.3.11", optional = true}
+anthropic = {optional = true, version = "^0.3.11"}
 # clarifai = {version = "^9.9.0", optional = true}  # conflicts with chromadb
-cohere = {version = "^4.27", optional = true}
-google-generativeai = {version = "^0.2.1", optional = true, python = ">=3.9,<3.12"}
-gradientai = {version = "^1.1.0", optional = true, python = ">=3.10,<4.0"}
-litellm = {version = "^0.5.6", optional = true}
-llamaapi = {version = "^0.1.36", optional = true, python = ">=3.9,<3.12"}
-llama-cpp-python = {version = "^0.2.11", optional = true}
-monsterapi = {version = "^1.0.2", optional = true}
-replicate = {version = "^0.15.4", optional = true}
-portkey-ai = {version = "^0.1.52", optional = true}
-predibase = {version = "^2023.10.3", optional = true}
-sseclient-py = {version = "^1.8.0", optional = true}
-vellum = {version = "^0.17", optional = true}
-xinference = {version = "^0.5.2", optional = true}
+cohere = {optional = true, version = "^4.27"}
+google-generativeai = {optional = true, python = ">=3.9,<3.12", version = "^0.2.1"}
+gradientai = {optional = true, python = ">=3.10,<4.0", version = "^1.1.0"}
+litellm = {optional = true, version = "^0.5.6"}
+llama-cpp-python = {optional = true, version = "^0.2.11"}
+llamaapi = {optional = true, python = ">=3.9,<3.12", version = "^0.1.36"}
+monsterapi = {optional = true, version = "^1.0.2"}
+portkey-ai = {optional = true, version = "^0.1.52"}
+predibase = {optional = true, version = "^2023.10.3"}
+replicate = {optional = true, version = "^0.15.4"}
+sseclient-py = {optional = true, version = "^1.8.0"}
+vellum = {optional = true, version = "^0.17"}
+xinference = {optional = true, version = "^0.5.2"}
 
 [tool.poetry.group.metadata_extractors]
 optional = true
 
 [tool.poetry.group.metadata_extractors.dependencies]
-marvin = {version = "^1.5.1", optional = true, python = ">=3.9,<3.12"}
-span-marker = {version = "^1.4.0", optional = true}
+marvin = {optional = true, python = ">=3.9,<3.12", version = "^1.5.1"}
+span-marker = {optional = true, version = "^1.4.0"}
 
 [tool.poetry.group.model_utils]
 optional = true
 
 [tool.poetry.group.model_utils.dependencies]
-sentencepiece = {version = "^0.1.99", optional = true}
-transformers = {version = "^4.34.0", optional = true, extras = ["torch"]}
-optimum = {version = "^1.13.2", optional = true, extras = ["onnxruntime"]}
+optimum = {extras = ["onnxruntime"], optional = true, version = "^1.13.2"}
+sentencepiece = {optional = true, version = "^0.1.99"}
+transformers = {extras = ["torch"], optional = true, version = "^4.34.0"}
 
 [tool.poetry.group.query]
 optional = true
 
 [tool.poetry.group.query.dependencies]
-spacy = {version = "^3.7.1", optional = true}
-scikit-learn = {version = "<1.3.0", optional = true}
-jsonpath-ng = {version = "^1.6.0", optional = true}
 # guardrails-ai = {version = "^0.2.4", optional = true}  # conflicts with bageldb due to pydantic
-guidance = {version = "^0.0.64", optional = true}
-rank-bm25 = {version = "^0.2.2", optional = true}
+guidance = {optional = true, version = "^0.0.64"}
+jsonpath-ng = {optional = true, version = "^1.6.0"}
+rank-bm25 = {optional = true, version = "^0.2.2"}
+scikit-learn = {optional = true, version = "<1.3.0"}
+spacy = {optional = true, version = "^3.7.1"}
 
 [tool.poetry.group.storage]
 optional = true
 
 [tool.poetry.group.storage.dependencies]
-nebula3-python = {version = "^3.4.0", optional = true}
-redis = {version = ">=4.4.4", optional = true}
-boto3 = {version = ">=1.28.0", optional = true}
-google-cloud-firestore = {version = "^2.12.0", optional = true}
-pymongo = {version = "^4.5.0", optional = true}
-neo4j = {version = "^5.13.0", optional = true}
-kuzu = {version = "^0.0.9", optional = true}
-networkx = {version = "^3.1", optional = true}
+boto3 = {optional = true, version = ">=1.28.0"}
+google-cloud-firestore = {optional = true, version = "^2.12.0"}
+kuzu = {optional = true, version = "^0.0.9"}
+nebula3-python = {optional = true, version = "^3.4.0"}
+neo4j = {optional = true, version = "^5.13.0"}
+networkx = {optional = true, version = "^3.1"}
+pymongo = {optional = true, version = "^4.5.0"}
+redis = {optional = true, version = ">=4.4.4"}
 
 [tool.poetry.group.vector_stores]
 optional = true
 
 [tool.poetry.group.vector_stores.dependencies]
-awadb = {version = "^0.3.10", optional = true}
-azure-search-documents = {version = "^11.3.0", optional = true}
-betabageldb = {version = "^0.2.34", optional = true}
-cassio = {version = "^0.1.3", optional = true}
-chromadb = {version = ">=0.4.0", optional = true}
-clickhouse-connect = {version = "^0.6.14", optional = true}
-deeplake = {version = "^3.7.3", optional = true}
-docarray = {version = "^0.39.0", optional = true}
-elasticsearch = {version = "^8.10.0", optional = true}
-faiss = {version = "^1.5.3", optional = true}
-metal-sdk = {version = "^2.2.2", optional = true}
-opensearch-py = {version = "^2.3.1", optional = true}
-pgvector = {version = "^0.1.0", optional = true}
-psycopg-binary = {version = "^3.1.12", optional = true}
-asyncpg = {version = "^0.28.0", optional = true}
-pinecone-client = {version = "^2.2.4", optional = true}
-pyepsilla = {version = "^0.1.12", optional = true}
-pymilvus = {version = "^2.3.1", optional = true}
-qdrant-client = {version = "^1.6.0", optional = true}
-rockset = {version = "^2.1.0", optional = true}
-tair = {version = "^1.3.7", optional = true}
-timescale-vector = {version = "^0.0.1", optional = true}
-typesense = {version = "^0.17.0", optional = true}
-vecs = {version = "^0.4.1", optional = true}
-weaviate-client = {version = "^3.24.2", optional = true}
-zep-python = {version = "^1.2.1", optional = true}
+asyncpg = {optional = true, version = "^0.28.0"}
+awadb = {optional = true, version = "^0.3.10"}
+azure-search-documents = {optional = true, version = "^11.3.0"}
+betabageldb = {optional = true, version = "^0.2.34"}
+cassio = {optional = true, version = "^0.1.3"}
+chromadb = {optional = true, version = ">=0.4.0"}
+clickhouse-connect = {optional = true, version = "^0.6.14"}
+deeplake = {optional = true, version = "^3.7.3"}
+docarray = {optional = true, version = "^0.39.0"}
+elasticsearch = {optional = true, version = "^8.10.0"}
+faiss = {optional = true, version = "^1.5.3"}
+metal-sdk = {optional = true, version = "^2.2.2"}
+opensearch-py = {optional = true, version = "^2.3.1"}
+pgvector = {optional = true, version = "^0.1.0"}
+pinecone-client = {optional = true, version = "^2.2.4"}
+psycopg-binary = {optional = true, version = "^3.1.12"}
+pyepsilla = {optional = true, version = "^0.1.12"}
+pymilvus = {optional = true, version = "^2.3.1"}
+qdrant-client = {optional = true, version = "^1.6.0"}
+rockset = {optional = true, version = "^2.1.0"}
+tair = {optional = true, version = "^1.3.7"}
+timescale-vector = {optional = true, version = "^0.0.1"}
+typesense = {optional = true, version = "^0.17.0"}
+vecs = {optional = true, version = "^0.4.1"}
+weaviate-client = {optional = true, version = "^3.24.2"}
+zep-python = {optional = true, version = "^1.2.1"}
+
+[tool.ruff]
+exclude = [
+    "examples",
+    "notebooks",
+]
+ignore = [
+    "COM812",  # Too aggressive
+    "D212",  # Using D213
+    "D417",  # Too aggressive
+    "F541",  # Messes with prompts.py
+    "TCH002",
+    "UP006",  # Messes with pydantic
+]
+# Feel free to add more here
+select = [
+    "ANN204",
+    "B009",
+    "B010",
+    "B011",
+    "B013",
+    "B014",
+    "C4",
+    "COM812",
+    "COM819",
+    "D201",
+    "D202",
+    "D203",
+    "D204",
+    "D207",
+    "D208",
+    "D209",
+    "D211",
+    "D213",
+    "D214",
+    "D215",
+    "D3",
+    "D4",
+    "E7",
+    "EXE004",
+    "F504",
+    "F541",
+    "F632",
+    "FLY",
+    "G010",
+    "I",
+    "PERF1",
+    "PIE790",
+    "PIE794",
+    "PIE808",
+    "PIE810",
+    "PLC0414",
+    "PLE2510",
+    "PLE2512",
+    "PLE2513",
+    "PLE2514",
+    "PLE2515",
+    "PLR1701",
+    "PLR1711",
+    "PT001",
+    "PT003",
+    "PT006",
+    "PT02",
+    "PTH201",
+    "PYI",
+    "Q",
+    "RET501",
+    "RET502",
+    "RET503",
+    "RET504",
+    "RSE",
+    "RUF005",
+    "RUF010",
+    "RUF015",
+    "RUF1",
+    "SIM101",
+    "SIM103",
+    "SIM109",
+    "SIM118",
+    "SIM2",
+    "SIM300",
+    "SIM9",
+    "TCH005",
+    "TD006",
+    "TID",
+    "TRY201",
+    "UP",
+    "W",
+]
+target-version = "py38"
+unfixable = [
+    "ERA001",
+]
+
+[tool.ruff.flake8-annotations]
+mypy-init-return = true
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.tomlsort]
+all = true
+in_place = true
+spaces_before_inline_comment = 2  # Match Python PEP 8
+spaces_indent_inline_array = 4  # Match Python PEP 8
+trailing_comma_inline_array = true

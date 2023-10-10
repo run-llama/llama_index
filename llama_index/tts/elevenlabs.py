@@ -14,8 +14,6 @@ class ElevenLabsTTS(BaseTTS):
     """
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        """ """
-
         super().__init__()
 
         self.api_key = api_key
