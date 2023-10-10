@@ -32,11 +32,15 @@ jobs:
           working-directory: ${{ vars.RUNNER_TEMP }}
           cache-key: extended
       - name: Install deps
+        shell: bash
         run: poetry install
       - name: Build
+        shell: bash
         run: poetry build
       - name: Test installing built package
+        shell: bash
         run: python -m pip install .
       - name: Test import
+        shell: bash
         working-directory: ${{ vars.RUNNER_TEMP }}
         run: python -c "import llama_index"
