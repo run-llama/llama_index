@@ -27,7 +27,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ vars.RUNNER_TEMP }}
-          cache-key: core
+          cache-key: dev
       - name: Install deps
         shell: bash
         run: poetry install --with dev
