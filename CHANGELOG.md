@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Moves `codespell` to `pre-commit` (#8040)
+
 ## [0.8.43] - 2023-10-10
 
 ### New Features
