@@ -4,6 +4,8 @@ import sys
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
+
 
 def _mock_palm_completion(model_name: str, prompt: str, **kwargs: Any) -> str:
     """Mock PaLM completion."""
@@ -38,6 +40,9 @@ from llama_index.llms.base import CompletionResponse
 from llama_index.llms.palm import PaLM
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="PaLM requires Python 3.9 or higher"
+)
 def test_palm() -> None:
     """Test palm."""
     palm = PaLM(api_key="test_api_key", model_name="palm_model")
