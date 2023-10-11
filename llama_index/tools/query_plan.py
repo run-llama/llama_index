@@ -89,7 +89,7 @@ class QueryPlanTool(BaseTool):
         response_synthesizer: BaseSynthesizer,
         name: str,
         description_prefix: str,
-        include_tool_description: bool = True
+        include_tool_description: bool = True,
     ) -> None:
         """Initialize."""
         self._query_tools_dict = {t.metadata.name: t for t in query_engine_tools}
@@ -105,7 +105,7 @@ class QueryPlanTool(BaseTool):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         name: Optional[str] = None,
         description_prefix: Optional[str] = None,
-        include_tool_description: bool = True
+        include_tool_description: bool = True,
     ) -> "QueryPlanTool":
         """Initialize from defaults."""
         name = name or DEFAULT_NAME
@@ -117,7 +117,7 @@ class QueryPlanTool(BaseTool):
             response_synthesizer=response_synthesizer,
             name=name,
             description_prefix=description_prefix,
-            include_tool_description=include_tool_description
+            include_tool_description=include_tool_description,
         )
 
     @property
