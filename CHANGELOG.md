@@ -5,6 +5,7 @@
 ### New Features
 
 - Moves `codespell` to `pre-commit` (#8040)
+- Added `prettier` for autoformatting extensions besides `.py` (#8072)
 
 ## [0.8.43] - 2023-10-10
 
