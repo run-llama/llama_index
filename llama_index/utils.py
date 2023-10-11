@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from functools import partial, wraps
 from itertools import islice
 from pathlib import Path
+from types import TracebackType
 from typing import (
     Any,
     Callable,
@@ -20,11 +21,48 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Set,
     Type,
     Union,
     cast,
 )
+
+
+class ImportChecker:
+    """Wrap imports with this to niceify-import errors."""
+
+    def __init__(
+        self,
+        packages: Union[str, Sequence[str]],
+        caller: Optional[str] = None,
+        pip_install: Optional[str] = None,
+    ) -> None:
+        self._packages = [packages] if isinstance(packages, str) else packages
+        self._caller = caller
+        self._pip_install = pip_install
+
+    def __enter__(self) -> "ImportChecker":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> bool:
+        if exc_value is None or exc_type is not ModuleNotFoundError:
+            return False
+        pip_install = (
+            self._pip_install
+            if self._pip_install is not None
+            else " ".join(self._packages)
+        )
+        raise ModuleNotFoundError(
+            f"Packages {self._packages} not found"
+            f"{' are required by ' + self._caller if self._caller is not None else ''},"
+            f" please install via `pip install {pip_install}`."
+        ) from exc_value
 
 
 class GlobalsHelper:

@@ -8,6 +8,7 @@ from llama_index.utils import (
     _ANSI_COLORS,
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,
+    ImportChecker,
     _get_colored_text,
     get_color_mapping,
     globals_helper,
@@ -15,6 +16,30 @@ from llama_index.utils import (
     print_text,
     retry_on_exceptions_with_backoff,
 )
+
+
+def test_import_checker() -> None:
+    with ImportChecker("tiktoken"):
+        import tiktoken
+
+    with pytest.raises(ModuleNotFoundError, match="`pip install flake8`") as exc_info:
+        with ImportChecker("flake8"):
+            import flake8
+    assert isinstance(exc_info.value.__cause__, ModuleNotFoundError)
+
+    with pytest.raises(ModuleNotFoundError, match="required by Linter"):
+        with ImportChecker("flake8", "Linter"):
+            import flake8
+
+    with pytest.raises(ModuleNotFoundError, match="`pip install flake8-simplify`"):
+        with ImportChecker("flake8", pip_install="flake8-simplify"):
+            import flake8
+
+    with pytest.raises(
+        ModuleNotFoundError, match="`pip install flake8 flake8-simplify`"
+    ):
+        with ImportChecker(["flake8", "flake8-simplify"]):
+            import flake8
 
 
 def test_tokenizer() -> None:
