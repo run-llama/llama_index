@@ -12,10 +12,12 @@ pip install llama-index
 
 ## Installation from Source
 
-Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.git`. Then do:
+Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.git`. Then do the following:
 
-- `pip install -e .` if you want to do an editable install (you can modify source files) of just the package itself.
-- `pip install -r requirements.txt` if you want to install optional dependencies + dependencies used for development (e.g. unit testing).
+- [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
+- `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
+- `poetry install` - this will install the core package requirements
+- (Optional) `poetry install --with dev,docs` - this will install all dependencies needed for most local development
 
 ## OpenAI Environment Setup
 
