@@ -1,10 +1,10 @@
-""" Knowledge Graph Query Engine"""
+""" Knowledge Graph Query Engine."""
 
 import logging
 from typing import Any, List, Optional, Sequence
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.graph_stores.registery import (
+from llama_index.graph_stores.registry import (
     GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE,
     GraphStoreType,
 )
@@ -90,7 +90,7 @@ Given the Graph Query response, synthesise a response to the original question.
 Original question: {query_str}
 Graph query: {kg_query_str}
 Graph response: {kg_response_str}
-Response: 
+Response:
 """
 
 DEFAULT_KG_RESPONSE_ANSWER_PROMPT = PromptTemplate(

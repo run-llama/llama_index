@@ -1,10 +1,10 @@
 """General prompt helper that can help deal with LLM context window token limitations.
 
-At its core, it calculates available context size by starting with the context window 
+At its core, it calculates available context size by starting with the context window
 size of an LLM and reserve token space for the prompt template, and the output.
 
-It provides utility for "repacking" text chunks (retrieved from index) to maximally 
-make use of the available context window (and thereby reducing the number of LLM calls 
+It provides utility for "repacking" text chunks (retrieved from index) to maximally
+make use of the available context window (and thereby reducing the number of LLM calls
 needed), or truncating them so that they fit in a single LLM call.
 """
 
@@ -187,13 +187,12 @@ class PromptHelper(BaseComponent):
         if chunk_size <= 0:
             raise ValueError(f"Chunk size {chunk_size} is not positive.")
         chunk_overlap = int(self.chunk_overlap_ratio * chunk_size)
-        text_splitter = TokenTextSplitter(
+        return TokenTextSplitter(
             separator=self.separator,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             tokenizer=self._tokenizer,
         )
-        return text_splitter
 
     def truncate(
         self,

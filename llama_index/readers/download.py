@@ -73,7 +73,7 @@ def rewrite_exports(exports: List[str], custom_path: Optional[str] = None) -> No
     else:
         dirpath = Path(__file__).parent / "llamahub_modules"
     init_path = f"{dirpath}/__init__.py"
-    with open(init_path, "r") as f:
+    with open(init_path) as f:
         lines = f.readlines()
     with open(init_path, "w") as f:
         for line in lines:

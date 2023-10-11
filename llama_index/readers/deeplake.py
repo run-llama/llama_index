@@ -2,6 +2,7 @@
 from typing import List, Optional, Union
 
 import numpy as np
+
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
 
@@ -27,9 +28,9 @@ def vector_search(
         data_vectors: np.ndarray
         limit (int): number of nearest neighbors
         distance_metric: distance function 'L2' for Euclidean, 'L1' for Nuclear, 'Max'
-            l-infinity distnace, 'cos' for cosine similarity, 'dot' for dot product
+            l-infinity distance, 'cos' for cosine similarity, 'dot' for dot product
     returns:
-        nearest_indices: List, indices of nearest neighbors
+        nearest_indices: List, indices of nearest neighbors.
     """
     # Calculate the distance between the query_vector and all data_vectors
     if isinstance(query_vector, list):
@@ -61,12 +62,12 @@ class DeepLakeReader(BaseReader):
         self,
         token: Optional[str] = None,
     ):
-        """initializing the deepLake reader"""
+        """Initializing the deepLake reader."""
         import_err_msg = (
             "`deeplake` package not found, please run `pip install deeplake`"
         )
         try:
-            import deeplake  # noqa: F401
+            import deeplake
         except ImportError:
             raise ImportError(import_err_msg)
         self.token = token
@@ -81,7 +82,7 @@ class DeepLakeReader(BaseReader):
         """Load data from DeepLake.
 
         Args:
-            dataset_name (str): Name of the DeepLake dataet.
+            dataset_name (str): Name of the DeepLake dataset.
             query_vector (List[float]): Query vector.
             limit (int): Number of results to return.
 

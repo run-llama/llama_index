@@ -74,7 +74,7 @@ class RedisKVStore(BaseKVStore):
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
-        collection_kv_dict = dict()
+        collection_kv_dict = {}
         for key, val_str in self._redis_client.hscan_iter(name=collection):
             value = dict(json.loads(val_str))
             collection_kv_dict[key.decode()] = value

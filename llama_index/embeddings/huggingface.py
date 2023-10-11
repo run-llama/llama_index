@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr, Field
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.embeddings.huggingface_utils import (
@@ -44,7 +44,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
     ):
         try:
-            from transformers import AutoTokenizer, AutoModel
+            from transformers import AutoModel, AutoTokenizer
         except ImportError:
             raise ImportError(
                 "HuggingFaceEmbedding requires transformers to be installed.\n"

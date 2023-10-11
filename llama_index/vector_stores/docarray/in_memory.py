@@ -25,13 +25,12 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
             metric (Literal["cosine_sim", "euclidian_dist", "sgeuclidean_dist"]):
                 The distance metric to use. Default is "cosine_sim".
         """
-
         import_err_msg = """
                 `docarray` package not found. Install the package via pip:
                 `pip install docarray`
         """
         try:
-            import docarray  # noqa: F401
+            import docarray
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -48,7 +47,6 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
         Returns:
             tuple: The in-memory exact nearest neighbour index and its schema.
         """
-
         from docarray.index import InMemoryExactNNIndex
 
         schema = self._get_schema(**kwargs)

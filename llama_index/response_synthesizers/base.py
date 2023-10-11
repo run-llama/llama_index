@@ -11,10 +11,16 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+from llama_index.response.schema import (
+    RESPONSE_TYPE,
+    PydanticResponse,
+    Response,
+    StreamingResponse,
+)
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -30,11 +36,13 @@ class BaseSynthesizer(ABC):
         self,
         service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
+        output_cls: BaseModel = None,
     ) -> None:
         """Init params."""
         self._service_context = service_context or ServiceContext.from_defaults()
         self._callback_manager = self._service_context.callback_manager
         self._streaming = streaming
+        self._output_cls = output_cls
 
     @property
     def service_context(self) -> ServiceContext:
@@ -93,22 +101,26 @@ class BaseSynthesizer(ABC):
             [node_with_score.node for node_with_score in source_nodes]
         )
 
-        if response_str is None or isinstance(response_str, str):
+        if isinstance(response_str, str):
             return Response(
                 response_str,
                 source_nodes=source_nodes,
                 metadata=response_metadata,
             )
-        elif response_str is None or isinstance(response_str, Generator):
+        if isinstance(response_str, Generator):
             return StreamingResponse(
                 response_str,
                 source_nodes=source_nodes,
                 metadata=response_metadata,
             )
-        else:
-            raise ValueError(
-                f"Response must be a string or a generator. Found {type(response_str)}"
+        if isinstance(response_str, self._output_cls):
+            return PydanticResponse(
+                response_str, source_nodes=source_nodes, metadata=response_metadata
             )
+
+        raise ValueError(
+            f"Response must be a string or a generator. Found {type(response_str)}"
+        )
 
     def synthesize(
         self,

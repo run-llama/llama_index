@@ -12,6 +12,8 @@ from llama_index.llms.base import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.llms.clarifai import Clarifai
+from llama_index.llms.cohere import Cohere
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.everlyai import EverlyAI
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
@@ -39,6 +41,8 @@ __all__ = [
     "ChatResponse",
     "ChatResponseAsyncGen",
     "ChatResponseGen",
+    "Clarifai",
+    "Cohere",
     "CompletionResponse",
     "CompletionResponseAsyncGen",
     "CompletionResponseGen",

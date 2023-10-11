@@ -3,7 +3,6 @@ import string
 from random import choice
 
 import pytest
-
 from llama_index.readers import SimpleWebPageReader
 
 try:

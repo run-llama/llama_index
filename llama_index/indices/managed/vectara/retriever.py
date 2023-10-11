@@ -1,24 +1,23 @@
 """Vectara index.
-An index that that is built on top of Vectara
+An index that that is built on top of Vectara.
 """
 
+import json
 import logging
 from typing import Any, List, Optional
-import json
 
-from llama_index.schema import TextNode
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.managed.vectara.base import VectaraIndex
-from llama_index.schema import NodeWithScore
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.query.schema import QueryBundle
-
+from llama_index.schema import NodeWithScore, TextNode
 
 _logger = logging.getLogger(__name__)
 
 
 class VectaraRetriever(BaseRetriever):
     """Vectara Retriever.
+
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return.
@@ -36,11 +35,11 @@ class VectaraRetriever(BaseRetriever):
     def __init__(
         self,
         index: VectaraIndex,
-        similarity_top_k: Optional[int] = DEFAULT_SIMILARITY_TOP_K,
-        lambda_val: Optional[float] = None,
-        n_sentences_before: Optional[int] = 2,
-        n_sentences_after: Optional[int] = 2,
-        filter: Optional[str] = None,
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        lambda_val: float = 0.025,
+        n_sentences_before: int = 2,
+        n_sentences_after: int = 2,
+        filter: str = "",
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -57,6 +56,7 @@ class VectaraRetriever(BaseRetriever):
             "x-api-key": self._index._vectara_api_key,
             "customer-id": self._index._vectara_customer_id,
             "Content-Type": "application/json",
+            "X-Source": "llama_index",
         }
 
     def _retrieve(
@@ -69,22 +69,14 @@ class VectaraRetriever(BaseRetriever):
         Args:
             query: Query Bundle
         """
-
-        similarity_top_k = (
-            self._similarity_top_k
-            if self._similarity_top_k
-            else DEFAULT_SIMILARITY_TOP_K
-        )
-        n_sentences_before = self._n_sentences_before if self._n_sentences_before else 2
-        n_sentences_after = self._n_sentences_after if self._n_sentences_after else 2
-        lambda_val = self._lambda_val if self._lambda_val else 0.025
+        similarity_top_k = self._similarity_top_k
         corpus_key = {
             "customer_id": self._index._vectara_customer_id,
             "corpus_id": self._index._vectara_corpus_id,
-            "lexical_interpolation_config": {"lambda": lambda_val},
+            "lexical_interpolation_config": {"lambda": self._lambda_val},
         }
-        if self._filter:
-            corpus_key["metadataFilter"] = self._filter if self._filter else None
+        if len(self._filter) > 0:
+            corpus_key["metadataFilter"] = self._filter
 
         data = json.dumps(
             {
@@ -92,10 +84,10 @@ class VectaraRetriever(BaseRetriever):
                     {
                         "query": query_bundle.query_str,
                         "start": 0,
-                        "num_results": similarity_top_k,
+                        "num_results": self._similarity_top_k,
                         "context_config": {
-                            "sentences_before": n_sentences_before,
-                            "sentences_after": n_sentences_after,
+                            "sentences_before": self._n_sentences_before,
+                            "sentences_after": self._n_sentences_after,
                         },
                         "corpus_key": [corpus_key],
                     }

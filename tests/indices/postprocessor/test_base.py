@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Dict, cast
 
 import pytest
-
 from llama_index.indices.postprocessor.node import (
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
@@ -26,12 +25,11 @@ from llama_index.schema import (
 )
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
-spacy_installed = True if find_spec("spacy") else False
+spacy_installed = bool(find_spec("spacy"))
 
 
 def test_forward_back_processor(tmp_path: Path) -> None:
     """Test forward-back processor."""
-
     nodes = [
         TextNode(text="Hello world.", id_="3"),
         TextNode(text="This is a test.", id_="2"),
@@ -150,7 +148,6 @@ def test_fixed_recency_postprocessor(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test fixed recency processor."""
-
     # try in metadata
     nodes = [
         TextNode(
@@ -198,7 +195,6 @@ def test_embedding_recency_postprocessor(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test fixed recency processor."""
-
     # try in node info
     nodes = [
         TextNode(
@@ -257,7 +253,6 @@ def test_embedding_recency_postprocessor(
 
 def test_time_weighted_postprocessor() -> None:
     """Test time weighted processor."""
-
     key = "__last_accessed__"
     # try in metadata
     nodes = [
@@ -280,7 +275,7 @@ def test_time_weighted_postprocessor() -> None:
     assert cast(Dict, nodes[3].metadata)[key] != 3
 
     # low time decay
-    # artifically make earlier nodes more relevant
+    # artificially make earlier nodes more relevant
     # therefore postprocessor should still rank earlier nodes higher
     nodes = [
         TextNode(text="Hello world.", id_="1", metadata={key: 0}),
@@ -304,7 +299,6 @@ def test_time_weighted_postprocessor() -> None:
 @pytest.mark.skipif(not spacy_installed, reason="spacy not installed")
 def test_keyword_postprocessor() -> None:
     """Test keyword processor."""
-
     key = "__last_accessed__"
     # try in metadata
     nodes = [
@@ -342,7 +336,6 @@ def test_keyword_postprocessor() -> None:
 @pytest.mark.skipif(not spacy_installed, reason="spacy not installed")
 def test_keyword_postprocessor_for_non_english() -> None:
     """Test keyword processor for non English."""
-
     key = "__last_accessed__"
     # try in metadata
     nodes = [

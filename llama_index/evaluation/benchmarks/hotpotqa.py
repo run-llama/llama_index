@@ -1,18 +1,20 @@
+import json
+import os
 import re
-from shutil import rmtree
 import string
-from typing import Any, List, Dict, Optional, Tuple
+from collections import Counter
+from shutil import rmtree
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
+import tqdm
+
+from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.utils import get_cache_dir
 from llama_index.schema import NodeWithScore, TextNode
-from llama_index.indices.base_retriever import BaseRetriever
-import os
-import tqdm
-import requests
-import json
-from collections import Counter
+from llama_index.utils import get_cache_dir
 
 DEV_DISTRACTOR_URL = """http://curtis.ml.cmu.edu/datasets/\
 hotpot/hotpot_dev_distractor_v1.json"""
@@ -20,7 +22,7 @@ hotpot/hotpot_dev_distractor_v1.json"""
 
 class HotpotQAEvaluator:
     """
-    Refer to https://hotpotqa.github.io/ for more details on the dataset
+    Refer to https://hotpotqa.github.io/ for more details on the dataset.
     """
 
     def _download_datasets(self) -> Dict[str, str]:

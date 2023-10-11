@@ -2,7 +2,6 @@ import sys
 from unittest.mock import MagicMock
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 

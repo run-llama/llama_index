@@ -1,21 +1,21 @@
-from typing import List, Any, Optional, Dict
+import enum
+import uuid
+from datetime import timedelta
+from typing import Any, Dict, List, Optional
 
+from llama_index.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
-from llama_index.constants import DEFAULT_EMBEDDING_DIM
-from datetime import timedelta
-import enum
-import uuid
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 
 class IndexType(enum.Enum):
-    """Enumerator for the supported Index types"""
+    """Enumerator for the supported Index types."""
 
     TIMESCALE_VECTOR = 1
     PGVECTOR_IVFFLAT = 2
@@ -34,7 +34,7 @@ class TimescaleVectorStore(VectorStore):
         time_partition_interval: Optional[timedelta] = None,
     ) -> None:
         try:
-            from timescale_vector import client  # noqa: F401
+            from timescale_vector import client
         except ImportError:
             raise ImportError("`timescale-vector` package should be pre installed")
 
@@ -68,7 +68,7 @@ class TimescaleVectorStore(VectorStore):
     def _create_clients(self) -> None:
         from timescale_vector import client
 
-        # in the normal case doen't restrict the id type to even uuid.
+        # in the normal case doesn't restrict the id type to even uuid.
         # Allow arbitrary text
         id_type = "TEXT"
         if self.time_partition_interval is not None:

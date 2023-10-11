@@ -1,16 +1,14 @@
-""" Test embedding utility functions"""
+""" Test embedding utility functions."""
 
 import numpy as np
-
 from llama_index.indices.query.embedding_utils import (
-    get_top_k_mmr_embeddings,
     get_top_k_embeddings,
+    get_top_k_mmr_embeddings,
 )
 
 
 def test_get_top_k_mmr_embeddings() -> None:
-    """Test Maximum Marginal Relevance"""
-
+    """Test Maximum Marginal Relevance."""
     # Results score should follow from the mmr algorithm
     query_embedding = [5.0, 0.0, 0.0]
     embeddings = [[4.0, 3.0, 0.0], [3.0, 4.0, 0.0], [-4.0, 3.0, 0.0]]

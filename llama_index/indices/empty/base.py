@@ -68,8 +68,7 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
             IndexList: The created summary index.
         """
         del nodes  # Unused
-        index_struct = EmptyIndexStruct()
-        return index_struct
+        return EmptyIndexStruct()
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""

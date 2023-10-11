@@ -12,7 +12,7 @@ In this high-level concepts guide, you will learn:
 
 ## Retrieval Augmented Generation (RAG)
 Retrieval augmented generation (RAG) is a paradigm for augmenting LLM with custom data.
-It generally consists of two stages: 
+It generally consists of two stages:
 1) **indexing stage**: preparing a knowledge base, and
 2) **querying stage**: retrieving relevant context from the knowledge to assist the LLM in responding to a question
 
@@ -24,14 +24,14 @@ Let's explore each stage in detail.
 
 ### Indexing Stage
 LlamaIndex help you prepare the knowledge base with a suite of data connectors and indexes.
-![](/_static/getting_started/indexing.jpg) 
+![](/_static/getting_started/indexing.jpg)
 
 [**Data Connectors**](/core_modules/data_modules/connector/root.md):
 A data connector (i.e. `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
 [**Documents / Nodes**](/core_modules/data_modules/documents_and_nodes/root.md): A `Document` is a generic container around any data source - for instance, a PDF, an API output, or retrieved data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. It's a rich representation that includes metadata and relationships (to other nodes) to enable accurate and expressive retrieval operations.
 
-[**Data Indexes**](/core_modules/data_modules/index/root.md): 
+[**Data Indexes**](/core_modules/data_modules/index/root.md):
 Once you've ingested your data, LlamaIndex will help you index the data into a format that's easy to retrieve. Under the hood, LlamaIndex parses the raw documents into intermediate representations, calculates vector embeddings, and infers metadata. The most commonly used index is the [VectorStoreIndex](/core_modules/data_modules/index/vector_store_guide.ipynb)
 
 ### Querying Stage
@@ -47,15 +47,15 @@ These building blocks can be customized to reflect ranking preferences, as well 
 ![](/_static/getting_started/querying.jpg)
 
 #### Building Blocks
-[**Retrievers**](/core_modules/query_modules/retriever/root.md): 
+[**Retrievers**](/core_modules/query_modules/retriever/root.md):
 A retriever defines how to efficiently retrieve relevant context from a knowledge base (i.e. index) when given a query.
 The specific retrieval logic differs for different indices, the most popular being dense retrieval against a vector index.
 
 [**Node Postprocessors**](/core_modules/query_modules/node_postprocessors/root.md):
-A node postprocessor takes in a set of nodes, then apply transformation, filtering, or re-ranking logic to them. 
+A node postprocessor takes in a set of nodes, then apply transformation, filtering, or re-ranking logic to them.
 
 [**Response Synthesizers**](/core_modules/query_modules/response_synthesizers/root.md):
-A response synthesizer generates a response from an LLM, using a user query and a given set of retrieved text chunks.  
+A response synthesizer generates a response from an LLM, using a user query and a given set of retrieved text chunks.
 
 #### Pipelines
 
@@ -64,13 +64,13 @@ A query engine is an end-to-end pipeline that allow you to ask question over you
 It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
 
 
-[**Chat Engines**](/core_modules/query_modules/chat_engines/root.md): 
+[**Chat Engines**](/core_modules/query_modules/chat_engines/root.md):
 A chat engine is an end-to-end pipeline for having a conversation with your data
 (multiple back-and-forth instead of a single question & answer).
 
-[**Agents**](/core_modules/agent_modules/agents/root.md): 
+[**Agents**](/core_modules/agent_modules/agents/root.md):
 An agent is an automated decision maker (powered by an LLM) that interacts with the world via a set of tools.
-Agent may be used in the same fashion as query engines or chat engines. 
+Agent may be used in the same fashion as query engines or chat engines.
 The main distinction is that an agent dynamically decides the best sequence of actions, instead of following a predetermined logic.
 This gives it additional flexibility to tackle more complex tasks.
 

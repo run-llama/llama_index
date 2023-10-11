@@ -1,8 +1,8 @@
 from llama_index.llms.base import (
     ChatMessage,
-    MessageRole,
     ChatResponse,
     ChatResponseGen,
+    MessageRole,
 )
 from llama_index.types import TokenGen
 

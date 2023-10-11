@@ -15,7 +15,7 @@ DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
 
 You are given the following information:
-- a user query, 
+- a user query,
 - a reference answer, and
 - a generated answer.
 

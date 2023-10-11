@@ -15,9 +15,9 @@ from llama_index.agent.react.types import (
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
-    trace_method,
-    EventPayload,
     CBEventType,
+    EventPayload,
+    trace_method,
 )
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole

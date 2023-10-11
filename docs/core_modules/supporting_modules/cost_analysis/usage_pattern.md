@@ -34,14 +34,14 @@ from llama_index import ServiceContext, set_global_service_context
 
 set_global_service_context(
     ServiceContext.from_defaults(
-        llm=llm, 
-        embed_model=embed_model, 
+        llm=llm,
+        embed_model=embed_model,
         callback_manager=callback_manager
     )
 )
 ```
 
-4. Construct an Index 
+4. Construct an Index
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader

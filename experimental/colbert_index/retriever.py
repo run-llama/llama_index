@@ -1,11 +1,12 @@
-from typing import Optional, Dict, List, Any
+from typing import Any, Dict, List, Optional
 
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from .base import ColbertIndex
-from llama_index.schema import NodeWithScore
+from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.schema import NodeWithScore
 from llama_index.vector_stores.types import MetadataFilters
+
+from .base import ColbertIndex
 
 
 class ColbertRetriever(BaseRetriever):

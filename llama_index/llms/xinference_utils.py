@@ -1,4 +1,5 @@
 from typing import Optional
+
 from typing_extensions import NotRequired, TypedDict
 
 from llama_index.llms.base import ChatMessage

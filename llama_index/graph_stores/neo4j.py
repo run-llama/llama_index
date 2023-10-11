@@ -76,14 +76,14 @@ class Neo4jGraphStore(GraphStore):
         try:  # Using Neo4j 5
             self.query(
                 """
-                CREATE CONSTRAINT IF NOT EXISTS FOR (n:%s) REQUIRE n.id IS UNIQUE; 
+                CREATE CONSTRAINT IF NOT EXISTS FOR (n:%s) REQUIRE n.id IS UNIQUE;
                 """
                 % (self.node_label)
             )
         except Exception:  # Using Neo4j <5
             self.query(
                 """
-                CREATE CONSTRAINT IF NOT EXISTS ON (n:%s) ASSERT n.id IS UNIQUE; 
+                CREATE CONSTRAINT IF NOT EXISTS ON (n:%s) ASSERT n.id IS UNIQUE;
                 """
                 % (self.node_label)
             )
@@ -104,8 +104,7 @@ class Neo4jGraphStore(GraphStore):
 
         with self._driver.session(database=self._database) as session:
             data = session.run(prepared_statement, {"subj": subj})
-            retval = [record.values() for record in data]
-        return retval
+            return [record.values() for record in data]
 
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
@@ -146,7 +145,6 @@ class Neo4jGraphStore(GraphStore):
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
-
         query = """
             MERGE (n1:`%s` {id:$subj})
             MERGE (n2:`%s` {id:$obj})
@@ -169,10 +167,9 @@ class Neo4jGraphStore(GraphStore):
             with self._driver.session(database=self._database) as session:
                 session.run(
                     (
-                        "MATCH (n1:%s)-[r:%s]->(n2:%s) WHERE n1.id = $subj AND n2.id"
+                        "MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.id = $subj AND n2.id"
                         " = $obj DELETE r"
-                    )
-                    % (self.node_label, rel, self.node_label),
+                    ).format(self.node_label, rel, self.node_label),
                     {"subj": subj, "obj": obj},
                 )
 
