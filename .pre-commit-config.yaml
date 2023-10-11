@@ -29,3 +29,8 @@ repos:
     rev: v0.23.1
     hooks:
       - id: toml-sort-fix
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        additional_dependencies: [tomli]
