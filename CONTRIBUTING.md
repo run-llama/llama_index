@@ -281,7 +281,7 @@ on how to fork the repo and clone the forked repo.
 Then, create a new Python virtual environment using poetry.
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
-- `poetry shell` - this command creates a virutal envrionment, which keeps installed packages contained to this project
+- `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
 - `poetry install --with dev,docs` - this will install all dependencies needed for most local development
 
 Now you should be set!

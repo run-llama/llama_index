@@ -21,7 +21,7 @@ git clone https://github.com/jerryjliu/llama_index.git && cd llama_index
 Install all dependencies required for building docs (mainly `sphinx` and its extension):
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
-- `poetry shell` - this command creates a virutal envrionment, which keeps installed packages contained to this project
+- `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
 - `poetry install --with docs` - this will install all dependencies needed for building docs
 
 Build the sphinx docs:

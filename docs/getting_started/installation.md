@@ -15,7 +15,7 @@ pip install llama-index
 Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.git`. Then do the following:
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
-- `poetry shell` - this command creates a virutal envrionment, which keeps installed packages contained to this project
+- `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
 - `poetry install` - this will install the core package requirements
 - (Optional) `poetry install --with dev,docs` - this will install all dependencies needed for most local development
 
