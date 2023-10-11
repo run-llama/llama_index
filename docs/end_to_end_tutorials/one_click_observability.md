@@ -205,7 +205,7 @@ Colab <https://colab.research.google.com/github/truera/trulens/blob/main/trulens
 
 ### HoneyHive
 
-HoneyHive allows users to trace the execution flow of any LLM pipeline. Users can then debug and analyze their traces using reliable open-source tools like [Perfetto](https://perfetto.dev/docs/), or customize feedback on specific trace events to create evaluation or fine-tuning datasets from production.
+HoneyHive allows users to trace the execution flow of any LLM pipeline. Users can then debug and analyze their traces, or customize feedback on specific trace events to create evaluation or fine-tuning datasets from production.
 
 #### Usage Pattern
 
@@ -235,7 +235,7 @@ set_global_handler(
 
 ![](/_static/integrations/honeyhive.png)
 ![](/_static/integrations/perfetto.png)
-
+*Use Perfetto to debug and analyze your HoneyHive traces*
 #### Guides
 
 ```{toctree}
