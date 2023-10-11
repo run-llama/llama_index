@@ -26,6 +26,7 @@ from llama_index.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
+from llama_index.utils import ImportChecker
 
 
 class Anthropic(LLM):
@@ -59,13 +60,8 @@ class Anthropic(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        try:
+        with ImportChecker("anthropic", caller=type(self).__name__):
             import anthropic
-        except ImportError as e:
-            raise ImportError(
-                "You must install the `anthropic` package to use Anthropic."
-                "Please `pip install anthropic`"
-            ) from e
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])

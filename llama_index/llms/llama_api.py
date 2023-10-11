@@ -19,6 +19,7 @@ from llama_index.llms.openai_utils import (
     from_openai_message_dict,
     to_openai_message_dicts,
 )
+from llama_index.utils import ImportChecker
 
 
 class LlamaAPI(CustomLLM):
@@ -40,13 +41,8 @@ class LlamaAPI(CustomLLM):
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        try:
+        with ImportChecker("llamaapi", caller=type(self).__name__):
             from llamaapi import LlamaAPI as Client
-        except ImportError as e:
-            raise ImportError(
-                "llama_api not installed."
-                "Please install it with `pip install llamaapi`."
-            ) from e
 
         self._client = Client(api_key)
 

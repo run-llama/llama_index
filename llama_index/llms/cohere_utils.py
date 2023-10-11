@@ -10,6 +10,7 @@ from tenacity import (
 )
 
 from llama_index.llms.base import ChatMessage
+from llama_index.utils import ImportChecker
 
 COMMAND_MODELS = {
     "command": 4096,
@@ -37,13 +38,8 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    try:
+    with ImportChecker("cohere", caller="Cohere"):
         import cohere
-    except ImportError as e:
-        raise ImportError(
-            "You must install the `cohere` package to use Cohere."
-            "Please `pip install cohere`"
-        ) from e
 
     return retry(
         reraise=True,

@@ -24,6 +24,7 @@ from llama_index.llms.cohere_utils import (
     completion_with_retry,
     messages_to_cohere_history,
 )
+from llama_index.utils import ImportChecker
 
 
 class Cohere(LLM):
@@ -50,13 +51,8 @@ class Cohere(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        try:
+        with ImportChecker("cohere", caller=type(self).__name__):
             import cohere
-        except ImportError as e:
-            raise ImportError(
-                "You must install the `cohere` package to use Cohere."
-                "Please `pip install cohere`"
-            ) from e
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
