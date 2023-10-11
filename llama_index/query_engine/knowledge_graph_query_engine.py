@@ -1,4 +1,4 @@
-""" Knowledge Graph Query Engine"""
+""" Knowledge Graph Query Engine."""
 
 import logging
 from typing import Any, List, Optional, Sequence

@@ -23,7 +23,7 @@ def test_create_schema_from_function() -> None:
     assert schema["properties"]["a"]["type"] == "boolean"
 
     def test_fn2(x: int = 1) -> None:
-        """Optional input"""
+        """Optional input."""
 
     SchemaCls = create_schema_from_function("test_schema", test_fn2)
     schema = SchemaCls.schema()
