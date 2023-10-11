@@ -4,6 +4,7 @@
 
 ### New Features
 - Moves `codespell` to `pre-commit` (#8040)
+- Created `ImportChecker` for standardized import failures (#8076)
 
 ## [0.8.43] - 2023-10-10
 
