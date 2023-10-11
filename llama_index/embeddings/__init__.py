@@ -8,6 +8,7 @@ from llama_index.embeddings.base import SimilarityMode
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
 from llama_index.embeddings.elasticsearch import ElasticsearchEmbeddings
 from llama_index.embeddings.google import GoogleUnivSentEncoderEmbedding
+from llama_index.embeddings.gradient import GradientEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
 from llama_index.embeddings.huggingface_utils import DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
@@ -30,4 +31,5 @@ __all__ = [
     "SimilarityMode",
     "ElasticsearchEmbeddings",
     "ClarifaiEmbedding",
+    "GradientEmbedding",
 ]
