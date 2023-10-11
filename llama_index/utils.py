@@ -80,13 +80,8 @@ class GlobalsHelper:
     def tokenizer(self) -> Callable[[str], List]:
         """Get tokenizer."""
         if self._tokenizer is None:
-            tiktoken_import_err = (
-                "`tiktoken` package not found, please run `pip install tiktoken`"
-            )
-            try:
+            with ImportChecker("tiktoken", caller=type(self).__name__):
                 import tiktoken
-            except ImportError:
-                raise ImportError(tiktoken_import_err)
             enc = tiktoken.get_encoding("gpt2")
             self._tokenizer = cast(Callable[[str], List], enc.encode)
             self._tokenizer = partial(self._tokenizer, allowed_special="all")
@@ -96,15 +91,9 @@ class GlobalsHelper:
     def stopwords(self) -> List[str]:
         """Get stopwords."""
         if self._stopwords is None:
-            try:
+            with ImportChecker("nltk", caller=type(self).__name__):
                 import nltk
                 from nltk.corpus import stopwords
-            except ImportError:
-                raise ImportError(
-                    "`nltk` package not found, please run `pip install nltk`"
-                )
-
-            from llama_index.utils import get_cache_dir
 
             cache_dir = get_cache_dir()
             nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
@@ -281,12 +270,8 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
         model_name(str): the model name of the tokenizer.
                         For instance, fxmarty/tiny-llama-fast-tokenizer.
     """
-    try:
+    with ImportChecker("transformers"):
         from transformers import AutoTokenizer
-    except ImportError:
-        raise ValueError(
-            "`transformers` package not found, please run `pip install transformers`"
-        )
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     return tokenizer.tokenize
 

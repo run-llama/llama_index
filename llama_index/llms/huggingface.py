@@ -23,6 +23,7 @@ from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.prompts.base import PromptTemplate
+from llama_index.utils import ImportChecker
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,11 @@ class HuggingFaceLLM(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
-        try:
+        with ImportChecker(
+            ["torch", "transformers"],
+            caller=type(self).__name__,
+            pip_install="transformers[torch]",
+        ):
             import torch
             from transformers import (
                 AutoModelForCausalLM,
@@ -121,11 +126,6 @@ class HuggingFaceLLM(CustomLLM):
                 StoppingCriteria,
                 StoppingCriteriaList,
             )
-        except ImportError as exc:
-            raise ImportError(
-                f"{type(self).__name__} requires torch and transformers packages.\n"
-                f"Please install both with `pip install transformers[torch]`."
-            ) from exc
 
         model_kwargs = model_kwargs or {}
         self._model = model or AutoModelForCausalLM.from_pretrained(
