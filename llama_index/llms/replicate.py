@@ -30,8 +30,8 @@ class Replicate(CustomLLM):
     temperature: float = Field(
         default=DEFAULT_REPLICATE_TEMP,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=0.0,
+        gte=0.01,
+        lte=1.0,
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
