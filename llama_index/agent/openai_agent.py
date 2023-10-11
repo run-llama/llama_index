@@ -280,6 +280,7 @@ class BaseOpenAIAgent(BaseAgent):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         tools, functions = self.init_chat(message, chat_history)
+        print(functions)
         n_function_calls = 0
 
         # Loop until no more function calls or max_function_calls is reached
