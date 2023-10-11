@@ -29,7 +29,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
     chunk_overlap: int = Field(
         default=DEFAULT_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
-        gt=0,
+        gte=0,
     )
     separator: str = Field(
         default=" ", description="Default separator for splitting into words"
