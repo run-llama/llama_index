@@ -14,18 +14,32 @@ def _escape_curly_braces(input_string: str) -> str:
     return input_string.replace("{", "{{").replace("}", "}}")
 
 
-FORMAT_STR = """The output should be ONLY JSON.
+FORMAT_STR = """The output should be formatted as a JSON instance that conforms to
+the JSON schema below.
 
-Example JSON:
-[
-  {
-    choice: 1,
-    reason: "<reasoning about why this choice was chosen>",
-  },
-  ...
-]
+Here's a JSON schema to follow:
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "choice": {
+        "type": "integer"
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "choice",
+      "reason"
+    ],
+    "additionalProperties": false
+  }
+}
+
+Output a valid JSON object but do not repeat the schema.
 """
-
 
 @dataclass
 class Answer(DataClassJsonMixin):
