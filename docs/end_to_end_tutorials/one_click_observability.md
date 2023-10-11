@@ -202,3 +202,45 @@ maxdepth: 1
 Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
 Colab <https://colab.research.google.com/github/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
 ```
+
+### HoneyHive
+
+HoneyHive allows users to trace the execution flow of any LLM pipeline. Users can then debug and analyze their traces using reliable open-source tools like [Perfetto](https://perfetto.dev/docs/), or customize feedback on specific trace events to create evaluation or fine-tuning datasets from production.
+
+#### Usage Pattern
+
+```python
+from llama_index import set_global_handler
+set_global_handler(
+    "honeyhive",
+    project="My HoneyHive Project",
+    name="My LLM Pipeline Name",
+    api_key="MY HONEYHIVE API KEY",
+)
+
+# NOTE: No need to do the following
+# from llama_index import ServiceContext
+# from llama_index.callbacks import CallbackManager
+# from honeyhive.sdk.llamaindex_tracer import HoneyHiveLlamaIndexTracer
+# hh_tracer = HoneyHiveLlamaIndexTracer(
+#     project="My HoneyHive Project",
+#     name="My LLM Pipeline Name",
+#     api_key="MY HONEYHIVE API KEY",
+# )
+# callback_manager = CallbackManager([hh_tracer])
+# service_context = ServiceContext.from_defaults(
+#     callback_manager=callback_manager
+# )
+```
+
+![](/_static/integrations/honeyhive.png)
+![](/_static/integrations/perfetto.png)
+
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
+```
