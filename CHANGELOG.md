@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.43] - 2023-10-10
 
 ### New Features
 - Added support for `GradientEmbedding` embed models (#8050)
