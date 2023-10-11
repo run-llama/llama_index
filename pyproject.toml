@@ -5,7 +5,7 @@ requires = ["poetry-core"]
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-ignore-words-list = "ot,gallary,rouge,narl"
+ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
 skip = "./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
