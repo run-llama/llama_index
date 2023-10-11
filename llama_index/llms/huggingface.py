@@ -14,12 +14,14 @@ from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
+from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
+)
+from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.llms.custom import CustomLLM
 from llama_index.prompts.base import PromptTemplate
 
 logger = logging.getLogger(__name__)
@@ -170,7 +172,7 @@ class HuggingFaceLLM(CustomLLM):
 
         if isinstance(query_wrapper_prompt, PromptTemplate):
             query_wrapper_prompt = query_wrapper_prompt.template
-        
+
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         super().__init__(
             context_window=context_window,
@@ -278,7 +280,7 @@ class HuggingFaceLLM(CustomLLM):
                 yield CompletionResponse(text=text, delta=x)
 
         return gen()
-    
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = self._messages_to_prompt(messages)

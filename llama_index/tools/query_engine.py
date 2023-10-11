@@ -72,7 +72,7 @@ class QueryEngineTool(AsyncBaseTool):
             query_str = str(kwargs)
         else:
             raise ValueError("Cannot call query engine without inputs")
-        
+
         response = await self._query_engine.aquery(query_str)
         return ToolOutput(
             content=str(response),

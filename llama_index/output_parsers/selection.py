@@ -41,6 +41,7 @@ Here's a JSON schema to follow:
 Output a valid JSON object but do not repeat the schema.
 """
 
+
 @dataclass
 class Answer(DataClassJsonMixin):
     choice: int
@@ -82,12 +83,13 @@ class SelectionOutputParser(BaseOutputParser):
         return output_json
 
     def parse(self, output: str) -> Any:
-        json_string = _marshal_llm_to_json(output) 
+        json_string = _marshal_llm_to_json(output)
         try:
             json_obj = json.loads(json_string)
         except json.JSONDecodeError as e_json:
             try:
                 import yaml
+
                 # NOTE: parsing again with pyyaml
                 #       pyyaml is less strict, and allows for trailing commas
                 #       right now we rely on this since guidance program generates
@@ -100,7 +102,7 @@ class SelectionOutputParser(BaseOutputParser):
                 )
             except NameError as exc:
                 raise ImportError("Please pip install PyYAML.") from exc
-        
+
         if isinstance(json_obj, dict):
             json_obj = [json_obj]
 
