@@ -21,7 +21,9 @@ from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseNode, Document, TransformComponent
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
-DEFAULT_PIPELINE_NAME = "llamaindex_pipeline"
+DEFAULT_PIPELINE_NAME = "pipeline"
+DEFAULT_PROJECT_NAME = "project"
+BASE_URL = "http://localhost:8000"
 
 
 def run_transformations(
@@ -147,10 +149,10 @@ class IngestionPipeline(BaseModel):
             resolve_embed_model("default"),
         ]
 
-    def run_remote(
-        self, pipeline_name: str = "pipeline", project_name: str = "llamaindex"
+    def register(
+        self, project_name: str = DEFAULT_PROJECT_NAME, register_only: bool = False
     ) -> str:
-        client = PlatformApi(base_url="http://localhost:8000")
+        client = PlatformApi(base_url=BASE_URL)
 
         configured_transformations: List[ConfiguredTransformationItem] = []
         for item in self.configured_transformations:
@@ -159,9 +161,14 @@ class IngestionPipeline(BaseModel):
             ]
             configured_transformations.append(
                 ConfiguredTransformationItem(
-                    transformation_name=name, component=item.component
+                    transformation_name=name,
+                    component=item.component,
+                    configurable_transformation_type=item.configurable_transformation_type.name,
                 )
             )
+
+            # remove callback manager
+            configured_transformations[-1].component.pop("callback_manager", None)
 
         data_sinks = []
         if self.vector_store is not None:
@@ -217,23 +224,41 @@ class IngestionPipeline(BaseModel):
         project = client.project.create_project_api_project_post(name=project_name)
         assert project.id is not None, "Project ID should not be None"
 
-        # upload?
+        # upload
         pipeline = client.project.upsert_pipeline_for_project(
             project.id,
             request=PipelineCreate(
-                name=pipeline_name,
-                configured_transformations=configured_transformations,
+                name=self.name,
+                configured_transformations=[configured_transformations[0]],
                 data_sinks=data_sinks,
                 data_sources=data_sources,
             ),
         )
         assert pipeline.id is not None, "Pipeline ID should not be None"
 
+        # Print playground URL if not running remote
+        if not register_only:
+            print(
+                "Pipeline available at: https://llamalink.llamaindex.ai/"
+                f"playground?id={pipeline.id}"
+            )
+
+        return pipeline.id
+
+    def run_remote(self, project_name: str = DEFAULT_PROJECT_NAME) -> str:
+        client = PlatformApi(base_url=BASE_URL)
+
+        pipeline_id = self.register(project_name=project_name, register_only=True)
+
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
-        pipeline_execution = client.pipeline.create_pipeline_execution(pipeline.id)
+        pipeline_execution = client.pipeline.create_pipeline_execution(pipeline_id)
 
-        return f"Find your remote results here: {pipeline_execution.id}"
+        print(
+            "Find your remote results here: https://llamalink.llamaindex.ai/"
+            f"pipelines/execution?id={pipeline_execution.id}"
+        )
+        return pipeline_execution.id
 
     def run_local(
         self, show_progress: bool = False, **kwargs: Any
