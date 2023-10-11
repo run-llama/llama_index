@@ -45,7 +45,7 @@ class ImportChecker:
     def __enter__(self) -> "ImportChecker":
         return self
 
-    def __exit__(
+    def __exit__(  # type: ignore[exit-return]
         self,
         exc_type: Optional[Type[BaseException]],
         exc_value: Optional[BaseException],
