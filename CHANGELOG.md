@@ -9,6 +9,7 @@
 - added `messages_to_prompt` kwarg to `HuggingFaceLLM` (#8054)
 - improved selection and sql parsing for open-source models (#8054)
 - fixed bug when agents hallucinate too many kwargs for a tool (#8054)
+- improved prompts and debugging for selection+question generation (#8056)
 
 ## [0.8.42] - 2023-10-10
 
