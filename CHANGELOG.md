@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### New Features
+- Added support for `GradientEmbedding` embed models (#8050)
+
 ### Bug Fixes / Nits
 - added `messages_to_prompt` kwarg to `HuggingFaceLLM` (#8054)
 - improved selection and sql parsing for open-source models (#8054)
