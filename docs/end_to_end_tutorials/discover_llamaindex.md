@@ -15,7 +15,6 @@ We show you how to do this in a "bottoms-up" fashion - start by using the LLMs, 
 [[Part 4] Embeddings](https://www.youtube.com/watch?v=2c64G-iDJKQ)
 [[Part 5] Retrievers and Postprocessors](https://www.youtube.com/watch?v=mIyZ_9gqakE)
 
-
 ## SubQuestionQueryEngine + 10K Analysis
 
 This video covers the `SubQuestionQueryEngine` and how it can be applied to financial documents to help decompose complex queries into multiple sub-questions.

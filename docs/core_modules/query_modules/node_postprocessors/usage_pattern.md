@@ -2,7 +2,6 @@
 
 Most commonly, node-postprocessors will be used in a query engine, where they are applied to the nodes returned from a retriever, and before the response synthesis step.
 
-
 ## Using with a Query Engine
 
 ```python

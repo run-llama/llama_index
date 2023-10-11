@@ -5,15 +5,18 @@ LlamaIndex provides a lot of advanced features, powered by LLM's, to both create
 unstructured data, as well as analyze this structured data through augmented text-to-SQL capabilities.
 
 This guide helps walk through each of these capabilities. Specifically, we cover the following topics:
+
 - **Setup**: Defining up our example SQL Table.
 - **Building our Table Index**: How to go from sql database to a Table Schema Index
 - **Using natural language SQL queries**: How to query our SQL database using natural language.
 
 We will walk through a toy example table which contains city/population/country information.
 A notebook for this tutorial is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb).
+
 ## Setup
 
 First, we use SQLAlchemy to setup a simple sqlite db:
+
 ```python
 from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, select, column
 
@@ -22,6 +25,7 @@ metadata_obj = MetaData()
 ```
 
 We then create a toy `city_stats` table:
+
 ```python
 # create city SQL table
 table_name = "city_stats"
@@ -64,6 +68,7 @@ sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 ```
 
 ## Natural language SQL
+
 Once we have constructed our SQL database, we can use the NLSQLTableQueryEngine to
 construct natural language queries that are synthesized into SQL queries.
 
@@ -89,6 +94,7 @@ to query over beforehand, or the total size of all the table schema plus the res
 the prompt fits your context window.
 
 ## Building our Table Index
+
 If we don't know ahead of time which table we would like to use, and the total size of
 the table schema overflows your context window size, we should store the table schema
 in an index so that during query time we can retrieve the right schema.
@@ -129,6 +135,7 @@ table_schema_objs = [(SQLTableSchema(table_name="city_stats", context_str=city_s
 ```
 
 ## Using natural language SQL queries
+
 Once we have defined our table schema index obj_index, we can construct a SQLTableRetrieverQueryEngine
 by passing in our SQLDatabase, and a retriever constructed from our object index.
 
@@ -141,6 +148,7 @@ query_engine = SQLTableRetrieverQueryEngine(
 response = query_engine.query("Which city has the highest population?")
 print(response)
 ```
+
 Now when we query the retriever query engine, it will retrieve the relevant table schema
 and synthesize a SQL query and a response from the results of that query.
 

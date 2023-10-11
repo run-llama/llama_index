@@ -1,4 +1,3 @@
-
 # Retriever
 
 ## Concept
@@ -15,6 +14,7 @@ Confused about where retriever fits in the pipeline? Read about [high-level conc
 ## Usage Pattern
 
 Get started with:
+
 ```python
 retriever = index.as_retriever()
 nodes = retriever.retrieve("Who is Paul Graham?")
@@ -27,8 +27,8 @@ maxdepth: 2
 usage_pattern.md
 ```
 
-
 ## Modules
+
 ```{toctree}
 ---
 maxdepth: 2

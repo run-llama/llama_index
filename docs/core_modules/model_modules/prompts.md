@@ -39,6 +39,7 @@ messages = qa_template.format_messages(context_str=..., query_str=...)
 > Note: you may see references to legacy prompt subclasses such as `QuestionAnswerPrompt`, `RefinePrompt`. These have been deprecated (and now are type aliases of `PromptTemplate`). Now you can directly specify `PromptTemplate(template)` to construct custom prompts. But you still have to make sure the template string contains the expected parameters (e.g. `{context_str}` and `{query_str}`) when replacing a default question answer prompt.
 
 You can also define a template from chat messages
+
 ```python
 from llama_index.prompts import ChatPromptTemplate, ChatMessage, MessageRole
 
@@ -70,6 +71,7 @@ The most commonly used prompts will be the `text_qa_template` and the `refine_te
 - `refine_tempalate` - used when the retrieved text does not fit into a single LLM call with `response_mode="compact"` (the default), or when more than one node is retrieved using `response_mode="refine"`. The answer from the first query is inserted as an `existing_answer`, and the LLM must update or repeat the existing answer based on the new context.
 
 #### Modify prompts used in index construction
+
 Different indices use different types of prompts during construction (some don't use prompts at all).
 For instance, `TreeIndex` uses a summary prompt to hierarchically
 summarize the nodes, and `KeywordTableIndex` uses a keyword extract prompt to extract keywords.
@@ -81,6 +83,7 @@ There are two equivalent ways to override the prompts:
 ```python
 index = TreeIndex(nodes, summary_template=<custom_prompt>)
 ```
+
 2. via the documents constructor.
 
 ```python
@@ -91,17 +94,20 @@ For more details on which index uses which prompts, please visit
 [Index class references](/api_reference/indices.rst).
 
 #### Modify prompts used in query engine
+
 More commonly, prompts are used at query-time (i.e. for executing a query against an index and synthesizing the final response).
 
 There are also two equivalent ways to override the prompts:
 
 1. via the high-level API
+
 ```python
 query_engine = index.as_query_engine(
     text_qa_template=<custom_qa_prompt>,
     refine_template=<custom_refine_prompt>
 )
 ```
+
 2. via the low-level composition API
 
 ```python
@@ -114,7 +120,6 @@ query_engine = RetrieverQueryEngine(retriever, response_synthesizer)
 ```
 
 The two approaches above are equivalent, where 1 is essentially syntactic sugar for 2 and hides away the underlying complexity. You might want to use 1 to quickly modify some common parameters, and use 2 to have more granular control.
-
 
 For more details on which classes use which prompts, please visit
 [Query class references](/api_reference/query.rst).

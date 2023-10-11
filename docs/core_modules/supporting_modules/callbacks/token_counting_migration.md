@@ -1,6 +1,6 @@
 # Token Counting - Migration Guide
 
-The existing token counting implementation has been __deprecated__.
+The existing token counting implementation has been **deprecated**.
 
 We know token counting is important to many users, so this guide was created to walkthrough a (hopefully painless) transition.
 
