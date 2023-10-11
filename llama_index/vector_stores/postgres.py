@@ -228,7 +228,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._session = sessionmaker(self._engine)
 
         self._async_engine = create_async_engine(self.async_connection_string)
-        self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)
+        self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
@@ -362,13 +362,20 @@ class PGVectorStore(BasePydanticVectorStore):
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
-        from sqlalchemy import select
+        from sqlalchemy import select, type_coerce
         from sqlalchemy.sql import func, text
+        from sqlalchemy.types import UserDefinedType
+
+        class REGCONFIG(UserDefinedType):
+            def get_col_spec(self, **kw: Any) -> str:
+                return "regconfig"
 
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(self.text_search_config, query_str)
+        ts_query = func.plainto_tsquery(
+            type_coerce(self.text_search_config, REGCONFIG), query_str
+        )
         stmt = (
             select(  # type: ignore
                 self._table_class,
@@ -493,19 +500,11 @@ class PGVectorStore(BasePydanticVectorStore):
 
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
-            if sqlalchemy.__version__ < "2.0":
-                raise ImportError(
-                    "Async hybrid query mode requires sqlalchemy version >= 2.0"
-                )
             results = await self._async_hybrid_query(query)
         elif query.mode in [
             VectorStoreQueryMode.SPARSE,
             VectorStoreQueryMode.TEXT_SEARCH,
         ]:
-            if sqlalchemy.__version__ < "2.0":
-                raise ImportError(
-                    "Async sparse query mode requires sqlalchemy version >= 2.0"
-                )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
             results = await self._async_sparse_query_with_rank(
                 query.query_str, sparse_top_k, query.filters

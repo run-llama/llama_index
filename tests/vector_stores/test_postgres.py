@@ -290,11 +290,6 @@ async def test_sparse_query(
     hybrid_node_embeddings: List[TextNode],
     use_async: bool,
 ) -> None:
-    import sqlalchemy
-
-    if use_async and sqlalchemy.__version__ < "2.0":
-        pytest.skip("SQLAlchemy 2.0 is required for async support of sparse query")
-
     if use_async:
         await pg_hybrid.async_add(hybrid_node_embeddings)
     else:
@@ -328,11 +323,6 @@ async def test_hybrid_query(
     hybrid_node_embeddings: List[TextNode],
     use_async: bool,
 ) -> None:
-    import sqlalchemy
-
-    if use_async and sqlalchemy.__version__ < "2.0":
-        pytest.skip("SQLAlchemy 2.0 is required for async support of hybrid query")
-
     if use_async:
         await pg_hybrid.async_add(hybrid_node_embeddings)
     else:
@@ -405,11 +395,6 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
     hybrid_node_embeddings: List[TextNode],
     use_async: bool,
 ) -> None:
-    import sqlalchemy
-
-    if use_async and sqlalchemy.__version__ < "2.0":
-        pytest.skip("SQLAlchemy 2.0 is required for async support of hybrid query")
-
     if use_async:
         await pg_hybrid.async_add(hybrid_node_embeddings)
     else:
