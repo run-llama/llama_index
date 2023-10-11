@@ -106,6 +106,9 @@ class SelectionOutputParser(BaseOutputParser):
         if isinstance(json_obj, dict):
             json_obj = [json_obj]
 
+        if not json_obj:
+            raise ValueError(f"Failed to convert output to JSON: {output}")
+
         json_output = self._format_output(json_obj)
         answers = [Answer.from_dict(json_dict) for json_dict in json_output]
         return StructuredOutput(raw_output=output, parsed_output=answers)
