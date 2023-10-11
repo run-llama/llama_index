@@ -22,9 +22,8 @@ from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.objects.base import ObjectRetriever
-
+from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)

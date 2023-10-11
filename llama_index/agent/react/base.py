@@ -2,7 +2,7 @@
 
 import asyncio
 from threading import Thread
-from typing import Any, List, Optional, Sequence, Tuple, Type, cast, Dict
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
@@ -24,10 +24,10 @@ from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
+from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text
-from llama_index.objects.base import ObjectRetriever
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
