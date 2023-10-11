@@ -36,9 +36,9 @@ def _marshal_llm_to_json(output: str) -> str:
 
 def parse_json_markdown(text: str) -> Any:
     if "```json" in text:
-        json_string = text.split("```json")[1].strip().strip("```").strip()
-    else:
-        json_string = _marshal_llm_to_json(text)
+        text = text.split("```json")[1].strip().strip("```").strip()
+
+    json_string = _marshal_llm_to_json(text)
 
     try:
         json_obj = json.loads(json_string)
