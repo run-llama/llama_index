@@ -5,6 +5,9 @@
 ### New Features
 - Moves `codespell` to `pre-commit` (#8040)
 
+### Bug Fixes / Nits
+- Fixed forgotten f-str in `HuggingFaceLLM` (#8075)
+
 ## [0.8.43] - 2023-10-10
 
 ### New Features

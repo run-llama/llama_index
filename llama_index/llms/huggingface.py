@@ -140,7 +140,7 @@ class HuggingFaceLLM(CustomLLM):
         if model_context_window and model_context_window < context_window:
             logger.warning(
                 f"Supplied context_window {context_window} is greater "
-                "than the model's max input size {model_context_window}. "
+                f"than the model's max input size {model_context_window}. "
                 "Disable this warning by setting a lower context_window."
             )
             context_window = model_context_window
