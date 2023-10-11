@@ -2,7 +2,11 @@ import logging
 from typing import Any, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.embeddings.base import BaseEmbedding, Embedding
+from llama_index.embeddings.base import (
+    DEFAULT_EMBED_BATCH_SIZE,
+    BaseEmbedding,
+    Embedding,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +16,8 @@ logger = logging.getLogger(__name__)
 QUERY_INSTRUCTION_FOR_RETRIEVAL = (
     "Represent this sentence for searching relevant passages:"
 )
+
+GRADIENT_MAX_BATCH_SIZE = 100
 
 
 class GradientEmbedding(BaseEmbedding):
@@ -26,6 +32,10 @@ class GradientEmbedding(BaseEmbedding):
         `pip install gradientai`.
     """
 
+    embed_batch_size: int = Field(
+        default=DEFAULT_EMBED_BATCH_SIZE, gt=0, lte=GRADIENT_MAX_BATCH_SIZE
+    )
+
     _gradient: Any = PrivateAttr()
     _model: Any = PrivateAttr()
 
@@ -36,11 +46,12 @@ class GradientEmbedding(BaseEmbedding):
     def __init__(
         self,
         *,
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         gradient_model_slug: str,
         gradient_access_token: Optional[str] = None,
         gradient_workspace_id: Optional[str] = None,
         gradient_host: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         """Initializes the GradientEmbedding class.
 
@@ -48,6 +59,8 @@ class GradientEmbedding(BaseEmbedding):
         workspace id and the slug of the model, the model is fetched from Gradient AI and prepared to use.
 
         Args:
+            embed_batch_size (int, optional): The batch size for embedding generation. Defaults to 10,
+                must be > 0 and <= 100.
             gradient_model_slug (str): The model slug of the model in the Gradient AI account.
             gradient_access_token (str, optional): The access token of the Gradient AI account, if
                 `None` read from the environment variable `GRADIENT_ACCESS_TOKEN`.
@@ -58,8 +71,18 @@ class GradientEmbedding(BaseEmbedding):
 
         Raises:
             ImportError: If the `gradientai` package is not available in the PYTHONPATH.
-            ValueError: If the model cannot be fetched from Gradient AI.
+            ValueError: If the model cannot be fetched from Gradient AI. or if the embed_batch_size
+                is not in the range (0, 100].
         """
+        if embed_batch_size > GRADIENT_MAX_BATCH_SIZE:
+            raise ValueError(
+                f"Embed batch size {embed_batch_size} is too large for Gradient,"
+                " must be <= {GRADIENT_MAX_BATCH_SIZE}."
+            )
+
+        if embed_batch_size <= 0:
+            raise ValueError(f"Embed batch size {embed_batch_size}  must be > 0.")
+
         try:
             import gradientai
         except ImportError:
@@ -78,7 +101,9 @@ class GradientEmbedding(BaseEmbedding):
             self._gradient.close()
             raise ValueError("Unable to fetch the requested embeddings model") from e
 
-        super().__init__(model_name=gradient_model_slug, **kwargs)
+        super().__init__(
+            embed_batch_size=embed_batch_size, model_name=gradient_model_slug, **kwargs
+        )
 
     async def _aget_query_embedding(self, query: str) -> Embedding:
         # Gradient AI doesn't have the proper API for async yet, so we just use the sync version.
