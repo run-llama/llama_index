@@ -37,7 +37,7 @@ While LLMs are powerful, not every LLM is easy to set up. Furthermore, even with
 
 LlamaIndex offers integrations with nearly every LLM, but it can be often unclear if the LLM will work well out of the box, or if further customization is needed.
 
-The tables below attempt to validate the experience with various LlamaIndex features for various LLMs. These notebooks serve as a best attempt to gauge performance, as well as how much effort and tweaking is needed to get things to function properly.
+The tables below attempt to validate the **initial** experience with various LlamaIndex features for various LLMs. These notebooks serve as a best attempt to gauge performance, as well as how much effort and tweaking is needed to get things to function properly.
 
 Generally, paid APIs such as OpenAI or Anthropic are viewed as more reliable. However, local open-source models have been gaining popularity due to their customizability and approach to transparency.
 
@@ -68,6 +68,7 @@ Since open source LLMs require large amounts of resources, the quantization is r
 |-------------------------------------------------------------|---------------|-------------------|------------------------|----------|-------------------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [llama2-chat-7b 4bit](https://colab.research.google.com/drive/14N-hmJ87wZsFqHktrw40OU6sVcsiSzlQ?usp=sharing) (huggingface)           | ✅             | 🛑                 | 🛑                      | 🛑        | 🛑                 | ⚠️           | Llama2 seems to be quite chatty, which makes parsing structured outputs difficult. Fine-tuning and prompt engineering likely required for better performance on structured outputs. |
 | [Mistral-7B-instruct-v0.1 4bit](https://colab.research.google.com/drive/1ZAdrabTJmZ_etDp10rjij_zME2Q3umAQ?usp=sharing) (huggingface) | ✅             | 🛑                 | 🛑                      | ⚠️        | ⚠️                 | ⚠️           | Mistral seems slightly more reliable for structured outputs compared to Llama2. Likely with some prompt engineering, it may do better.                                              |
+| [zephyr-7b-alpha](https://colab.research.google.com/drive/16Ygf2IyGNkb725ZqtRmFQjwWBuzFX_kl?usp=sharing) (huggingface) |  ✅  |  ✅  | ✅ |  ✅  | ✅  | ⚠️ | Overall, `zyphyr-7b` is appears to be more reliable than other open-source models of this size. Although it still hallucinates a bit, especially as an agent. |
 
 ## Modules
 
