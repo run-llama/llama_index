@@ -2,6 +2,11 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+    DEFAULT_TEMPERATURE,
+)
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -36,19 +41,31 @@ from llama_index.llms.openai_utils import (
     to_openai_message_dicts,
 )
 
+DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
+
 
 class OpenAI(LLM):
     class_type = "openai"
 
-    model: str = Field(description="The OpenAI model to use.")
-    temperature: float = Field(description="The temperature to use during generation.")
+    model: str = Field(
+        default=DEFAULT_OPENAI_MODEL, description="The OpenAI model to use."
+    )
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use during generation.",
+        gte=0.0,
+        lte=1.0,
+    )
     max_tokens: Optional[int] = Field(
-        description="The maximum number of tokens to generate."
+        description="The maximum number of tokens to generate.",
+        gt=0,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
     )
-    max_retries: int = Field(description="The maximum number of API retries.")
+    max_retries: int = Field(
+        default=10, description="The maximum number of API retries."
+    )
 
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_type: str = Field(default=None, description="The OpenAI API type.")
@@ -57,8 +74,8 @@ class OpenAI(LLM):
 
     def __init__(
         self,
-        model: str = "gpt-3.5-turbo",
-        temperature: float = 0.1,
+        model: str = DEFAULT_OPENAI_MODEL,
+        temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,

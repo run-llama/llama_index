@@ -3,7 +3,11 @@ from typing import Any, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW
+from llama_index.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+    DEFAULT_TEMPERATURE,
+)
 from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
@@ -18,10 +22,21 @@ class PredibaseLLM(CustomLLM):
 
     model_name: str = Field(description="The Predibase model to use.")
     predibase_api_key: str = Field(description="The Predibase API key to use.")
-    max_new_tokens: int = Field(description="The number of tokens to generate.")
-    temperature: float = Field(description="The temperature to use for sampling.")
+    max_new_tokens: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="The number of tokens to generate.",
+        gt=0,
+    )
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use for sampling.",
+        gte=0.0,
+        lte=1.0,
+    )
     context_window: int = Field(
-        description="The number of context tokens available to the LLM."
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The number of context tokens available to the LLM.",
+        gt=0,
     )
 
     _client: Any = PrivateAttr()
@@ -30,8 +45,8 @@ class PredibaseLLM(CustomLLM):
         self,
         model_name: str,
         predibase_api_key: Optional[str] = None,
-        max_new_tokens: int = 256,
-        temperature: float = 0.1,
+        max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
+        temperature: float = DEFAULT_TEMPERATURE,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:

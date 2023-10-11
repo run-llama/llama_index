@@ -22,11 +22,14 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
     """Implementation of splitting text that looks at word tokens."""
 
     chunk_size: int = Field(
-        default=DEFAULT_CHUNK_SIZE, description="The token chunk size for each chunk."
+        default=DEFAULT_CHUNK_SIZE,
+        description="The token chunk size for each chunk.",
+        gt=0,
     )
     chunk_overlap: int = Field(
         default=DEFAULT_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
+        gt=0,
     )
     separator: str = Field(
         default=" ", description="Default separator for splitting into words"
@@ -63,6 +66,29 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
         self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
 
         super().__init__(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            separator=separator,
+            backup_separators=backup_separators,
+            callback_manager=callback_manager,
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
+        )
+
+    @classmethod
+    def from_defaults(
+        cls,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
+        separator: str = " ",
+        backup_separators: Optional[List[str]] = ["\n"],
+        callback_manager: Optional[CallbackManager] = None,
+        include_metadata: bool = True,
+        include_prev_next_rel: bool = True,
+    ) -> "TokenAwareNodeParser":
+        """Initialize with default parameters."""
+        callback_manager = callback_manager or CallbackManager([])
+        return cls(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             separator=separator,

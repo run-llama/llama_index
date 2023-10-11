@@ -2,6 +2,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -35,19 +36,30 @@ from llama_index.llms.konko_utils import (
     to_openai_message_dicts,
 )
 
+DEFAULT_KONKO_MODEL = "meta-llama/Llama-2-13b-chat-hf"
+
 
 class Konko(LLM):
-    class_type = "konko"
-
-    model: str = Field(description="The konko model to use.")
-    temperature: float = Field(description="The temperature to use during generation.")
-    max_tokens: Optional[int] = Field(
-        description="The maximum number of tokens to generate."
+    model: str = Field(
+        default=DEFAULT_KONKO_MODEL, description="The konko model to use."
+    )
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use during generation.",
+        gte=0.0,
+        lte=1.0,
+    )
+    max_tokens: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="The maximum number of tokens to generate.",
+        gt=0,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the konko API."
     )
-    max_retries: int = Field(description="The maximum number of API retries.")
+    max_retries: int = Field(
+        default=10, description="The maximum number of API retries.", gte=0
+    )
 
     konko_api_key: str = Field(default=None, description="The konko API key.")
     openai_api_key: str = Field(default=None, description="The Openai API key.")
@@ -57,9 +69,9 @@ class Konko(LLM):
 
     def __init__(
         self,
-        model: str = "meta-llama/Llama-2-13b-chat-hf",
-        temperature: float = 0.1,
-        max_tokens: Optional[int] = 256,
+        model: str = DEFAULT_KONKO_MODEL,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: Optional[int] = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         konko_api_key: Optional[str] = None,

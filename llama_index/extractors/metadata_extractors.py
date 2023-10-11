@@ -58,7 +58,9 @@ class TitleExtractor(BaseExtractor):
         description="The LLMPredictor to use for generation."
     )
     nodes: int = Field(
-        default=5, description="The number of nodes to extract titles from."
+        default=5,
+        description="The number of nodes to extract titles from.",
+        gt=0,
     )
     node_template: str = Field(
         default=DEFAULT_TITLE_NODE_TEMPLATE,
@@ -153,7 +155,9 @@ class KeywordExtractor(BaseExtractor):
     llm_predictor: LLMPredictor = Field(
         description="The LLMPredictor to use for generation."
     )
-    keywords: int = Field(default=5, description="The number of keywords to extract.")
+    keywords: int = Field(
+        default=5, description="The number of keywords to extract.", gt=0
+    )
 
     def __init__(
         self,
@@ -234,7 +238,9 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         description="The LLMPredictor to use for generation."
     )
     questions: int = Field(
-        default=5, description="The number of questions to generate."
+        default=5,
+        description="The number of questions to generate.",
+        gt=0,
     )
     prompt_template: str = Field(
         default=DEFAULT_QUESTION_GEN_TMPL,
@@ -430,9 +436,14 @@ class EntityExtractor(BaseExtractor):
         description="The model name of the SpanMarker model to use.",
     )
     prediction_threshold: float = Field(
-        default=0.5, description="The confidence threshold for accepting predictions."
+        default=0.5,
+        description="The confidence threshold for accepting predictions.",
+        gte=0.0,
+        lte=1.0,
     )
-    span_joiner: str = Field(description="The separator between entity names.")
+    span_joiner: str = Field(
+        default=" ", description="The separator between entity names."
+    )
     label_entities: bool = Field(
         default=False, description="Include entity class labels or not."
     )

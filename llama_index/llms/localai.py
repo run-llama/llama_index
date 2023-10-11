@@ -25,6 +25,7 @@ class LocalAI(OpenAI):
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
+        gt=0,
     )
     globally_use_chat_completions: Optional[bool] = Field(
         default=None,

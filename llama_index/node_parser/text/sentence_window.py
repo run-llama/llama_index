@@ -34,6 +34,7 @@ class SentenceWindowNodeParser(NodeParser):
     window_size: int = Field(
         default=DEFAULT_WINDOW_SIZE,
         description="The number of sentences on each side of a sentence to capture.",
+        gt=0,
     )
     window_metadata_key: str = Field(
         default=DEFAULT_WINDOW_METADATA_KEY,
