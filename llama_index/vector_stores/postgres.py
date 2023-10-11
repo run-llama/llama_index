@@ -221,14 +221,14 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _connect(self) -> Any:
         from sqlalchemy import create_engine
-        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
         self._engine = create_engine(self.connection_string, echo=self.debug)
         self._session = sessionmaker(self._engine)
 
         self._async_engine = create_async_engine(self.async_connection_string)
-        self._async_session = async_sessionmaker(self._async_engine)
+        self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)
 
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
@@ -489,13 +489,23 @@ class PGVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
+        import sqlalchemy
+
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
+            if sqlalchemy.__version__ < "2.0":
+                raise ImportError(
+                    "Async hybrid query mode requires sqlalchemy version >= 2.0"
+                )
             results = await self._async_hybrid_query(query)
         elif query.mode in [
             VectorStoreQueryMode.SPARSE,
             VectorStoreQueryMode.TEXT_SEARCH,
         ]:
+            if sqlalchemy.__version__ < "2.0":
+                raise ImportError(
+                    "Async sparse query mode requires sqlalchemy version >= 2.0"
+                )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
             results = await self._async_sparse_query_with_rank(
                 query.query_str, sparse_top_k, query.filters
