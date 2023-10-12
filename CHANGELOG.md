@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### New Features
+
+- Support for Hugging Face Inference API's `conversational`, `text_generation`,
+  and `feature_extraction` endpoints via `huggingface_hub[inference]` (#8098)
+
 ### Bug Fixes / Nits
 
 - Fixed missing spaces in prompt templates (#8190)
