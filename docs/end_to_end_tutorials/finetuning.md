@@ -128,6 +128,9 @@ Llama 2 Text-to-SQL Fine-tuning (Notebook) <https://github.com/run-llama/modal_f
 
 By finetuning a cross encoder, we can attempt to improve re-ranking performance on our own private data.
 
+Re-ranking is key step in advanced retrieval, where retrieved nodes from many sources are re-ranked using a separate model, so that the most relevant nodes
+are first.
+
 In this example, we use the `sentence-transformers` package to help finetune a crossencoder model, using a dataset that is generated based on the `QASPER` dataset.
 
 ```{toctree}
