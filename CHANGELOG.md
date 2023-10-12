@@ -1,9 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.44] - 2023-10-12
 
 ### New Features
 
+- add pgvector sql query engine (#8087)
 - Added HoneyHive one-click observability (#7944)
 - Add support for both SQLAlchemy V1 and V2 (#8060)
 
