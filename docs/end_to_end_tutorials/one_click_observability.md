@@ -10,9 +10,9 @@ your system - both as a whole and for each component.
 This feature allows you to seamlessly integrate the LlamaIndex library with powerful observability/evaluation tools offered by our partners.
 Configure a variable once, and you'll be able to do things like the following:
 
--   View LLM/prompt inputs/outputs
--   Ensure that the outputs of any component (LLMs, embeddings) are performing as expected
--   View call traces for both indexing and querying
+- View LLM/prompt inputs/outputs
+- Ensure that the outputs of any component (LLMs, embeddings) are performing as expected
+- View call traces for both indexing and querying
 
 Each provider has similarities and differences. Take a look below for the full set of guides for each one!
 
@@ -99,8 +99,8 @@ maxdepth: 1
 
 Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
 
--   LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
--   LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
+- LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
+- LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
 
 #### Usage Pattern
 

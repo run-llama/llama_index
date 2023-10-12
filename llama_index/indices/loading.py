@@ -50,7 +50,7 @@ def load_indices_from_storage(
     index_ids: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> List[BaseIndex]:
-    """Load multiple indices from storage context
+    """Load multiple indices from storage context.
 
     Args:
         storage_context (StorageContext): storage context containing

@@ -88,7 +88,7 @@ class HTMLNodeParser(NodeParser):
         return all_nodes
 
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
-        """Get nodes from document"""
+        """Get nodes from document."""
         try:
             from bs4 import BeautifulSoup
         except ImportError:
@@ -144,7 +144,7 @@ class HTMLNodeParser(NodeParser):
         node: BaseNode,
         metadata: dict,
     ) -> TextNode:
-        """Build node from single text split"""
+        """Build node from single text split."""
         node = build_nodes_from_splits(
             [text_split], node, self.include_metadata, self.include_prev_next_rel
         )[0]

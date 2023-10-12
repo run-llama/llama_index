@@ -21,10 +21,11 @@ def _marshal_llm_to_json(output: str) -> str:
         A string containing a valid JSON object or array.
     """
     output = output.strip().replace("{{", "{").replace("}}", "}")
+
     left_square = output.find("[")
     left_brace = output.find("{")
 
-    if left_square < left_brace:
+    if left_square < left_brace and left_square != -1:
         left = left_square
         right = output.rfind("]")
     else:
@@ -36,9 +37,9 @@ def _marshal_llm_to_json(output: str) -> str:
 
 def parse_json_markdown(text: str) -> Any:
     if "```json" in text:
-        json_string = text.split("```json")[1].strip().strip("```").strip()
-    else:
-        json_string = _marshal_llm_to_json(text)
+        text = text.split("```json")[1].strip().strip("```").strip()
+
+    json_string = _marshal_llm_to_json(text)
 
     try:
         json_obj = json.loads(json_string)

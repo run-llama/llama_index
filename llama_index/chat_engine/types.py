@@ -18,12 +18,12 @@ logger.setLevel(logging.WARNING)
 
 
 def is_function(message: ChatMessage) -> bool:
-    """Utility for ChatMessage responses from OpenAI models"""
+    """Utility for ChatMessage responses from OpenAI models."""
     return "function_call" in message.additional_kwargs
 
 
 class ChatResponseMode(str, Enum):
-    """Flag toggling waiting/streaming in `Agent._chat`"""
+    """Flag toggling waiting/streaming in `Agent._chat`."""
 
     WAIT = "wait"
     STREAM = "stream"

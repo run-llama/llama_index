@@ -20,7 +20,7 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
     The managed service can index documents into a managed service.
     How documents are structured into nodes is a detail for the managed service,
     and not exposed in this interface (although could be controlled by
-    configuration parameters)
+    configuration parameters).
 
     Args:
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.

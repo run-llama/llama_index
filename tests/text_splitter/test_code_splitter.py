@@ -5,7 +5,7 @@ from llama_index.text_splitter import CodeSplitter
 
 
 def test_python_code_splitter() -> None:
-    """Test case for code splitting using python"""
+    """Test case for code splitting using python."""
     if "CI" in os.environ:
         return
 
@@ -26,7 +26,7 @@ def baz():
 
 
 def test_typescript_code_splitter() -> None:
-    """Test case for code splitting using typescript"""
+    """Test case for code splitting using typescript."""
     if "CI" in os.environ:
         return
 
@@ -49,7 +49,7 @@ function baz() {
 
 
 def test_html_code_splitter() -> None:
-    """Test case for code splitting using typescript"""
+    """Test case for code splitting using typescript."""
     if "CI" in os.environ:
         return
 
@@ -82,7 +82,7 @@ def test_html_code_splitter() -> None:
 
 
 def test_tsx_code_splitter() -> None:
-    """Test case for code splitting using typescript"""
+    """Test case for code splitting using typescript."""
     if "CI" in os.environ:
         return
 
@@ -120,7 +120,7 @@ export default ExampleComponent;"""
 
 
 def test_cpp_code_splitter() -> None:
-    """Test case for code splitting using typescript"""
+    """Test case for code splitting using typescript."""
     if "CI" in os.environ:
         return
 

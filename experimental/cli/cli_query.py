@@ -4,14 +4,14 @@ from .configuration import load_index
 
 
 def query_cli(args: Namespace) -> None:
-    """Handle subcommand "query" """
+    """Handle subcommand "query"."""
     index = load_index()
     query_engine = index.as_query_engine()
     print(query_engine.query(args.query))
 
 
 def register_query_cli(subparsers: _SubParsersAction) -> None:
-    """Register subcommand "query" to ArgumentParser"""
+    """Register subcommand "query" to ArgumentParser."""
     parser = subparsers.add_parser("query")
     parser.add_argument(
         "query",

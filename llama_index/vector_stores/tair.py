@@ -122,7 +122,7 @@ class TairVectorStore(VectorStore):
 
     @property
     def client(self) -> "Tair":
-        """Return the Tair client instance"""
+        """Return the Tair client instance."""
         return self._tair_client
 
     def add(self, nodes: List[BaseNode]) -> List[str]:

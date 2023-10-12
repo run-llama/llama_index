@@ -27,10 +27,10 @@ agent = ReActAgent.from_tools([multiply_tool], llm=llm, verbose=True)
 An agent supports both `chat` and `query` endpoints, inheriting from our `ChatEngine` and `QueryEngine` respectively.
 
 Example usage:
+
 ```python
 agent.chat("What is 2123 * 215123")
 ```
-
 
 ## Query Engine Tools
 

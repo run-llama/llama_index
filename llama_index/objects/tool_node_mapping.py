@@ -1,4 +1,4 @@
-"""Tool mapping"""
+"""Tool mapping."""
 
 from typing import Any, Optional, Sequence
 

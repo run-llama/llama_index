@@ -20,9 +20,9 @@ git clone https://github.com/jerryjliu/llama_index.git && cd llama_index
 
 Install all dependencies required for building docs (mainly `sphinx` and its extension):
 
-```bash
-pip install -r docs/requirements.txt
-```
+- [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
+- `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
+- `poetry install --with docs` - this will install all dependencies needed for building docs
 
 Build the sphinx docs:
 
@@ -40,7 +40,6 @@ python -m http.server 8000 -d _build/html
 
 And open your browser at http://0.0.0.0:8000/ to view the generated docs.
 
-
 ##### Watch Docs
 
 We recommend using sphinx-autobuild during development, which provides a live-reloading
@@ -49,6 +48,7 @@ changes are saved. This enables a much shorter feedback loop which can help boos
 productivity when writing documentation.
 
 Simply run the following command from LlamaIndex project's root directory:
+
 ```bash
 make watch-docs
 ```
