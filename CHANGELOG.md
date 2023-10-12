@@ -1,5 +1,12 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Improved the `BM25Retriever` interface to accept `BaseNode` objects (#8096)
+- Fixed bug with `BM25Retriever` tokenizer not working as expected (#8096)
+
 ## [0.8.44] - 2023-10-12
 
 ### New Features
