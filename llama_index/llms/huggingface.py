@@ -1,16 +1,19 @@
 import logging
 from threading import Thread
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.llms import ChatResponseAsyncGen, CompletionResponseAsyncGen
 from llama_index.llms.base import (
+    LLM,
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -23,6 +26,15 @@ from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.prompts.base import PromptTemplate
+
+if TYPE_CHECKING:
+    try:
+        from huggingface_hub import AsyncInferenceClient, InferenceClient
+        from huggingface_hub.inference._types import ConversationalOutput
+    except ModuleNotFoundError:
+        AsyncInferenceClient = Any
+        InferenceClient = Any
+        ConversationalOutput = dict
 
 logger = logging.getLogger(__name__)
 
@@ -294,3 +306,141 @@ class HuggingFaceLLM(CustomLLM):
         prompt = self._messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
+
+
+def conversational_output_to_chat_response(
+    output: "ConversationalOutput", role: MessageRole = MessageRole.ASSISTANT
+) -> ChatResponse:
+    return ChatResponse(message=ChatMessage(role=role, content=output.generated_text))
+
+
+class HuggingFaceInferenceAPI(LLM):
+    """
+    Wrapper on the Hugging Face's Inference API.
+
+    Overview of the design:
+    - Synchronous uses InferenceClient, asynchronous uses AsyncInferenceClient
+    - chat uses the conversational task
+    - complete uses the text_generation task
+
+    Relevant links:
+    - General Docs: https://huggingface.co/docs/api-inference/index
+    - API Docs: https://huggingface.co/docs/huggingface_hub/main/en/package_reference/inference_client
+    - Source: https://github.com/huggingface/huggingface_hub/tree/main/src/huggingface_hub/inference
+    """
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "HuggingFaceInferenceAPI"
+
+    # Corresponds with huggingface_hub.InferenceClient
+    model_name: Optional[str] = Field(
+        default=None,
+        description=(
+            "The model to run inference with. Can be a model id hosted on the Hugging"
+            " Face Hub, e.g. bigcode/starcoder or a URL to a deployed Inference"
+            " Endpoint. Defaults to None, in which case a recommended model is"
+            " automatically selected for the task."
+        ),
+    )
+    token: Union[str, bool, None] = Field(
+        default=None,
+        description=(
+            "Hugging Face token. Will default to the locally saved token. Pass "
+            "token=False if you don’t want to send your token to the server."
+        ),
+    )
+    timeout: Optional[float] = Field(
+        default=None,
+        description=(
+            "The maximum number of seconds to wait for a response from the server."
+            " Loading a new model in Inference API can take up to several minutes."
+            " Defaults to None, meaning it will loop until the server is available."
+        ),
+    )
+    headers: Dict[str, str] = Field(
+        default=None,
+        description=(
+            "Additional headers to send to the server. By default only the"
+            " authorization and user-agent headers are sent. Values in this dictionary"
+            " will override the default values."
+        ),
+    )
+    cookies: Dict[str, str] = Field(
+        default=None, description="Additional cookies to send to the server."
+    )
+    _sync_client: "InferenceClient" = PrivateAttr()
+    _async_client: "AsyncInferenceClient" = PrivateAttr()
+
+    def _get_inference_client_kwargs(self) -> Dict[str, Any]:
+        """Extract the Hugging Face InferenceClient construction parameters."""
+        return {
+            "model": self.model_name,
+            "token": self.token,
+            "timeout": self.timeout,
+            "headers": self.headers,
+            "cookies": self.cookies,
+        }
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize.
+
+        Args:
+            kwargs: See the class-level Fields.
+        """
+        super().__init__(**kwargs)  # Populate pydantic Fields
+        try:
+            from huggingface_hub import AsyncInferenceClient, InferenceClient
+        except ModuleNotFoundError as exc:
+            raise ImportError(
+                f"{type(self).__name__} requires huggingface_hub with its inference"
+                " extras, please run `pip install huggingface_hub[inference]`."
+            ) from exc
+        self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
+        self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        raise NotImplementedError
+
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        if len(messages) != 1 or messages[0].role != MessageRole.USER:
+            raise NotImplementedError(
+                "Conversational chats or roles aren't yet supported."
+            )
+        chat_message = messages[0]
+        return conversational_output_to_chat_response(
+            output=self._sync_client.conversational(
+                text=chat_message.content,
+                **{**chat_message.additional_kwargs, **kwargs},
+            )
+        )
+
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        raise NotImplementedError
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        raise NotImplementedError
+
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        raise NotImplementedError
+
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        raise NotImplementedError
+
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        raise NotImplementedError
+
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError
+
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        raise NotImplementedError
