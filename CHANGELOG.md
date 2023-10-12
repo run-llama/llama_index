@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## Unrleased
+
+### New Features
+
+- Added support for fine-tuning cross encoders (#7705)
+
 ### Bug Fixes / Nits
 
 - Improved the `BM25Retriever` interface to accept `BaseNode` objects (#8096)
