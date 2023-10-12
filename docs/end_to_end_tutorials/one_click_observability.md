@@ -235,7 +235,8 @@ set_global_handler(
 
 ![](/_static/integrations/honeyhive.png)
 ![](/_static/integrations/perfetto.png)
-*Use Perfetto to debug and analyze your HoneyHive traces*
+_Use Perfetto to debug and analyze your HoneyHive traces_
+
 #### Guides
 
 ```{toctree}
