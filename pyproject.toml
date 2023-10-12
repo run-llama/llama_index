@@ -40,7 +40,7 @@ repository = "https://github.com/run-llama/llama_index"
 version = "0.8.43.post1"
 
 [tool.poetry.dependencies]
-SQLAlchemy = {extras = ["asyncio"], version = ">=2.0.15"}
+SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
 dataclasses-json = "^0.5.7"
 fsspec = ">=2023.5.0"
 langchain = ">=0.0.303"

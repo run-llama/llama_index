@@ -221,14 +221,14 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _connect(self) -> Any:
         from sqlalchemy import create_engine
-        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
         self._engine = create_engine(self.connection_string, echo=self.debug)
         self._session = sessionmaker(self._engine)
 
         self._async_engine = create_async_engine(self.async_connection_string)
-        self._async_session = async_sessionmaker(self._async_engine)
+        self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
@@ -362,13 +362,20 @@ class PGVectorStore(BasePydanticVectorStore):
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
-        from sqlalchemy import select
+        from sqlalchemy import select, type_coerce
         from sqlalchemy.sql import func, text
+        from sqlalchemy.types import UserDefinedType
+
+        class REGCONFIG(UserDefinedType):
+            def get_col_spec(self, **kw: Any) -> str:
+                return "regconfig"
 
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(self.text_search_config, query_str)
+        ts_query = func.plainto_tsquery(
+            type_coerce(self.text_search_config, REGCONFIG), query_str
+        )
         stmt = (
             select(  # type: ignore
                 self._table_class,
@@ -489,6 +496,8 @@ class PGVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
+        import sqlalchemy
+
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
             results = await self._async_hybrid_query(query)
