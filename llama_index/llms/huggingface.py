@@ -308,6 +308,34 @@ class HuggingFaceLLM(CustomLLM):
         return stream_completion_response_to_chat_response(completion_response)
 
 
+def chat_messages_to_conversational_kwargs(
+    messages: Sequence[ChatMessage],
+) -> Dict[str, Any]:
+    """Convert ChatMessages to keyword arguments for Inference API conversational."""
+    if len(messages) % 2 != 1:
+        raise NotImplementedError("Messages passed in must be of odd length.")
+    last_message = messages[-1]
+    kwargs: Dict[str, Any] = {
+        "text": last_message.content,
+        **last_message.additional_kwargs,
+    }
+    if len(messages) != 1:
+        kwargs["past_user_inputs"] = []
+        kwargs["generated_responses"] = []
+        for user_msg, assistant_msg in zip(messages[::2], messages[1::2]):
+            if (
+                user_msg.role != MessageRole.USER
+                or assistant_msg.role != MessageRole.ASSISTANT
+            ):
+                raise NotImplementedError(
+                    "Didn't handle when messages aren't ordered in alternating"
+                    f" pairs of {(MessageRole.USER, MessageRole.ASSISTANT)}."
+                )
+            kwargs["past_user_inputs"].append(user_msg.content)
+            kwargs["generated_responses"].append(assistant_msg.content)
+    return kwargs
+
+
 def conversational_output_to_chat_response(
     output: "ConversationalOutput", role: MessageRole = MessageRole.ASSISTANT
 ) -> ChatResponse:
@@ -404,15 +432,9 @@ class HuggingFaceInferenceAPI(LLM):
         raise NotImplementedError
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        if len(messages) != 1 or messages[0].role != MessageRole.USER:
-            raise NotImplementedError(
-                "Conversational chats or roles aren't yet supported."
-            )
-        chat_message = messages[0]
         return conversational_output_to_chat_response(
             output=self._sync_client.conversational(
-                text=chat_message.content,
-                **{**chat_message.additional_kwargs, **kwargs},
+                **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
             )
         )
 
