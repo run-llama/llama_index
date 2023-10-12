@@ -1,6 +1,7 @@
 # Cost Analysis
 
 ## Concept
+
 Each call to an LLM will cost some amount of money - for instance, OpenAI's gpt-3.5-turbo costs $0.002 / 1k tokens. The cost of building an index and querying depends on
 
 - the type of LLM used
@@ -16,13 +17,17 @@ The cost of building and querying each index is a TODO in the reference document
 ### Overview of Cost Structure
 
 #### Indices with no LLM calls
+
 The following indices don't require LLM calls at all during building (0 cost):
+
 - `SummaryIndex`
 - `SimpleKeywordTableIndex` - uses a regex keyword extractor to extract keywords from each document
 - `RAKEKeywordTableIndex` - uses a RAKE keyword extractor to extract keywords from each document
 
 #### Indices with LLM calls
+
 The following indices do require LLM calls during build time:
+
 - `TreeIndex` - use LLM to hierarchically summarize the text to build the tree
 - `KeywordTableIndex` - use LLM to extract keywords from each document
 
@@ -34,12 +39,13 @@ is free to build, but running a query over a summary index (without filtering or
 call the LLM {math}`N` times.
 
 Here are some notes regarding each of the indices:
+
 - `SummaryIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
 - `TreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes.
-    - Setting `child_branch_factor=2` will be more expensive than the default `child_branch_factor=1` (polynomial vs logarithmic), because we traverse 2 children instead of just 1 for each parent node.
+  - Setting `child_branch_factor=2` will be more expensive than the default `child_branch_factor=1` (polynomial vs logarithmic), because we traverse 2 children instead of just 1 for each parent node.
 - `KeywordTableIndex`: by default requires an LLM call to extract query keywords.
-    - Can do `index.as_retriever(retriever_mode="simple")` or `index.as_retriever(retriever_mode="rake")` to also use regex/RAKE keyword extractors on your query text.
--  `VectorStoreIndex`: by default, requires one LLM call per query. If you increase the `similarity_top_k` or `chunk_size`, or change the `response_mode`, then this number will increase.
+  - Can do `index.as_retriever(retriever_mode="simple")` or `index.as_retriever(retriever_mode="rake")` to also use regex/RAKE keyword extractors on your query text.
+- `VectorStoreIndex`: by default, requires one LLM call per query. If you increase the `similarity_top_k` or `chunk_size`, or change the `response_mode`, then this number will increase.
 
 ## Usage Pattern
 

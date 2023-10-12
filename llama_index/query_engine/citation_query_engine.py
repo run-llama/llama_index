@@ -136,7 +136,7 @@ class CitationQueryEngine(BaseQueryEngine):
         # class-specific args
         **kwargs: Any,
     ) -> "CitationQueryEngine":
-        """Initialize a CitationQueryEngine object."
+        """Initialize a CitationQueryEngine object.".
 
         Args:
             index: (BastGPTIndex): index to use for querying

@@ -71,7 +71,7 @@ class DocxReader(BaseReader):
 
 
 class HWPReader(BaseReader):
-    """Hwp Parser"""
+    """Hwp Parser."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -86,8 +86,10 @@ class HWPReader(BaseReader):
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Load data and extract table from Hwp file.
+
         Args:
             file (Path): Path for the Hwp file.
+
         Returns:
             List[Document]
         """

@@ -2,6 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from collections import ChainMap
 from typing import Any, List, Optional
 
 from llama_index.bridge.pydantic import BaseModel, PrivateAttr
@@ -116,11 +117,16 @@ class LLMPredictor(BaseLLMPredictor):
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> None:
+        template_vars = {
+            k: v
+            for k, v in ChainMap(prompt.kwargs, prompt_args).items()
+            if k in prompt.template_vars
+        }
         with self.callback_manager.event(
             CBEventType.TEMPLATING,
             payload={
                 EventPayload.TEMPLATE: prompt.get_template(llm=self._llm),
-                EventPayload.TEMPLATE_VARS: prompt_args,
+                EventPayload.TEMPLATE_VARS: template_vars,
                 EventPayload.SYSTEM_PROMPT: self.system_prompt,
                 EventPayload.QUERY_WRAPPER_PROMPT: self.query_wrapper_prompt,
             },
@@ -257,7 +263,7 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         formatted_prompt: str,
     ) -> str:
-        """Add system and query wrapper prompts to base prompt"""
+        """Add system and query wrapper prompts to base prompt."""
         extended_prompt = formatted_prompt
         if self.system_prompt:
             extended_prompt = self.system_prompt + "\n\n" + extended_prompt
@@ -270,7 +276,7 @@ class LLMPredictor(BaseLLMPredictor):
         return extended_prompt
 
     def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
-        """Add system prompt to chat message list"""
+        """Add system prompt to chat message list."""
         if self.system_prompt:
             messages = [
                 ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt),

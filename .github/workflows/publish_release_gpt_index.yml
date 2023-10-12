@@ -13,21 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - name: Build and publish to pypi
+        uses: JRubics/poetry-publish@v1.17
         with:
-          python-version: "3.x"
-
-      - name: Build source and wheel distributions
-        run: |
-          python -m pip install --upgrade build twine
-          PACKAGE_NAME_OVERRIDE=gpt_index python -m build
-          twine check --strict dist/*
-      - name: Publish distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.GPT_INDEX_PYPI_TOKEN }}
+          pypi_token: ${{ secrets.GPT_INDEX_PYPI_TOKEN }}
+          repository_name: "gpt-index"
+          ignore_dev_requirements: "yes"

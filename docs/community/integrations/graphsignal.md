@@ -6,7 +6,6 @@ Graphsignal **automatically** traces and monitors LlamaIndex. Traces and metrics
 
 When OpenAI APIs are used, Graphsignal provides additional insights such as **token counts** and **costs** per deployment, model or any context.
 
-
 ### Installation and Setup
 
 Adding [Graphsignal tracer](https://github.com/graphsignal/graphsignal-python) is simple, just install and configure it:
@@ -26,7 +25,6 @@ You can get an API key [here](https://app.graphsignal.com/).
 
 See the [Quick Start guide](https://graphsignal.com/docs/guides/quick-start/), [Integration guide](https://graphsignal.com/docs/integrations/llama-index/), and an [example app](https://github.com/graphsignal/examples/blob/main/llama-index-app/main.py) for more information.
 
-
 ### Tracing Other Functions
 
 To additionally trace any function or code, you can use a decorator or a context manager:
@@ -38,9 +36,8 @@ with graphsignal.start_trace('load-external-data'):
 
 See [Python API Reference](https://graphsignal.com/docs/reference/python-api/) for complete instructions.
 
-
 ### Useful Links
 
-* [Tracing and Monitoring LlamaIndex Applications](https://graphsignal.com/blog/tracing-and-monitoring-llama-index-applications/)
-* [Monitor OpenAI API Latency, Tokens, Rate Limits, and More](https://graphsignal.com/blog/monitor-open-ai-api-latency-tokens-rate-limits-and-more/)
-* [OpenAI API Cost Tracking: Analyzing Expenses by Model, Deployment, and Context](https://graphsignal.com/blog/open-ai-api-cost-tracking-analyzing-expenses-by-model-deployment-and-context/)
+- [Tracing and Monitoring LlamaIndex Applications](https://graphsignal.com/blog/tracing-and-monitoring-llama-index-applications/)
+- [Monitor OpenAI API Latency, Tokens, Rate Limits, and More](https://graphsignal.com/blog/monitor-open-ai-api-latency-tokens-rate-limits-and-more/)
+- [OpenAI API Cost Tracking: Analyzing Expenses by Model, Deployment, and Context](https://graphsignal.com/blog/open-ai-api-cost-tracking-analyzing-expenses-by-model-deployment-and-context/)

@@ -143,6 +143,7 @@ what is the comprehensive title for this document? Title: """
 class TitleExtractor(MetadataFeatureExtractor):
     """Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
+
     Args:
         llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         nodes (int): number of nodes from front to use for title extraction
@@ -238,6 +239,7 @@ class TitleExtractor(MetadataFeatureExtractor):
 class KeywordExtractor(MetadataFeatureExtractor):
     """Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
+
     Args:
         llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         keywords (int): number of keywords to extract
@@ -311,6 +313,7 @@ class QuestionsAnsweredExtractor(MetadataFeatureExtractor):
     """
     Questions answered extractor. Node-level extractor.
     Extracts `questions_this_excerpt_can_answer` metadata field.
+
     Args:
         llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         questions (int): number of questions to extract
@@ -400,7 +403,8 @@ class SummaryExtractor(MetadataFeatureExtractor):
     """
     Summary extractor. Node-level extractor with adjacent sharing.
     Extracts `section_summary`, `prev_section_summary`, `next_section_summary`
-    metadata fields
+    metadata fields.
+
     Args:
         llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'

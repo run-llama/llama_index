@@ -1,16 +1,27 @@
 import logging
 from threading import Thread
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    llm_chat_callback,
     llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
 from llama_index.prompts.base import PromptTemplate
 
 logger = logging.getLogger(__name__)
@@ -48,7 +59,9 @@ class HuggingFaceLLM(CustomLLM):
             "Unused if `tokenizer` is passed in directly."
         )
     )
-    device_map: str = Field(description="The device_map to use. Defaults to 'auto'.")
+    device_map: Optional[str] = Field(
+        description="The device_map to use. Defaults to 'auto'."
+    )
     stopping_ids: List[int] = Field(
         default_factory=list,
         description=(
@@ -78,6 +91,7 @@ class HuggingFaceLLM(CustomLLM):
     _model: Any = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
     _stopping_criteria: Any = PrivateAttr()
+    _messages_to_prompt: Callable = PrivateAttr()
 
     def __init__(
         self,
@@ -89,12 +103,13 @@ class HuggingFaceLLM(CustomLLM):
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: str = "auto",
+        device_map: Optional[str] = "auto",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
         model_kwargs: Optional[dict] = None,
         generate_kwargs: Optional[dict] = None,
+        messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
@@ -109,7 +124,7 @@ class HuggingFaceLLM(CustomLLM):
         except ImportError as exc:
             raise ImportError(
                 f"{type(self).__name__} requires torch and transformers packages.\n"
-                f"Please install both with `pip install torch transformers`."
+                f"Please install both with `pip install transformers[torch]`."
             ) from exc
 
         model_kwargs = model_kwargs or {}
@@ -125,7 +140,7 @@ class HuggingFaceLLM(CustomLLM):
         if model_context_window and model_context_window < context_window:
             logger.warning(
                 f"Supplied context_window {context_window} is greater "
-                "than the model's max input size {model_context_window}. "
+                f"than the model's max input size {model_context_window}. "
                 "Disable this warning by setting a lower context_window."
             )
             context_window = model_context_window
@@ -158,6 +173,7 @@ class HuggingFaceLLM(CustomLLM):
         if isinstance(query_wrapper_prompt, PromptTemplate):
             query_wrapper_prompt = query_wrapper_prompt.template
 
+        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
@@ -191,10 +207,12 @@ class HuggingFaceLLM(CustomLLM):
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
         full_prompt = prompt
-        if self.query_wrapper_prompt:
-            full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-        if self.system_prompt:
-            full_prompt = f"{self.system_prompt} {full_prompt}"
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            if self.query_wrapper_prompt:
+                full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
+            if self.system_prompt:
+                full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self._model.device)
@@ -221,10 +239,12 @@ class HuggingFaceLLM(CustomLLM):
         from transformers import TextIteratorStreamer
 
         full_prompt = prompt
-        if self.query_wrapper_prompt:
-            full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-        if self.system_prompt:
-            full_prompt = f"{self.system_prompt} {full_prompt}"
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            if self.query_wrapper_prompt:
+                full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
+            if self.system_prompt:
+                full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self._model.device)
@@ -260,3 +280,17 @@ class HuggingFaceLLM(CustomLLM):
                 yield CompletionResponse(text=text, delta=x)
 
         return gen()
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        prompt = self._messages_to_prompt(messages)
+        completion_response = self.complete(prompt, formatted=True, **kwargs)
+        return completion_response_to_chat_response(completion_response)
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        prompt = self._messages_to_prompt(messages)
+        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
+        return stream_completion_response_to_chat_response(completion_response)

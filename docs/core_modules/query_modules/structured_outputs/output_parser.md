@@ -2,14 +2,13 @@
 
 LlamaIndex supports integrations with output parsing modules offered
 by other frameworks. These output parsing modules can be used in the following ways:
+
 - To provide formatting instructions for any prompt / query (through `output_parser.format`)
 - To provide "parsing" for LLM outputs (through `output_parser.parse`)
-
 
 ### Guardrails
 
 Guardrails is an open-source Python package for specification/validation/correction of output schemas. See below for a code example.
-
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
@@ -81,10 +80,10 @@ print(response)
 ```
 
 Output:
+
 ```
 {'points': [{'explanation': 'Writing short stories', 'explanation2': 'Programming on an IBM 1401', 'explanation3': 'Using microcomputers'}]}
 ```
-
 
 ### Langchain
 

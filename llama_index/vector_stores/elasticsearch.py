@@ -136,7 +136,6 @@ class ElasticsearchStore(VectorStore):
     """Elasticsearch vector store.
 
     Args:
-
         index_name: Name of the Elasticsearch index.
         es_client: Optional. Pre-existing AsyncElasticsearch client.
         es_url: Optional. Elasticsearch URL.
@@ -200,12 +199,12 @@ class ElasticsearchStore(VectorStore):
 
     @property
     def client(self) -> Any:
-        """Get async elasticsearch client"""
+        """Get async elasticsearch client."""
         return self._client
 
     @staticmethod
     def get_user_agent() -> str:
-        """Get user agent for elasticsearch client"""
+        """Get user agent for elasticsearch client."""
         import llama_index
 
         return f"llama_index-py-vs/{llama_index.__version__}"

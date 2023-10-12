@@ -29,7 +29,7 @@ class Accumulate(BaseSynthesizer):
         self._output_cls = output_cls
 
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
-        return list(item for sublist in md_array for item in sublist)
+        return [item for sublist in md_array for item in sublist]
 
     def _format_response(self, outputs: List[Any], separator: str) -> str:
         responses: List[str] = []
@@ -47,7 +47,7 @@ class Accumulate(BaseSynthesizer):
         separator: str = "\n---------------------\n",
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        """Apply the same prompt to text chunks and return async responses"""
+        """Apply the same prompt to text chunks and return async responses."""
         if self._streaming:
             raise ValueError("Unable to stream in Accumulate response mode")
 
@@ -68,7 +68,7 @@ class Accumulate(BaseSynthesizer):
         separator: str = "\n---------------------\n",
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        """Apply the same prompt to text chunks and return responses"""
+        """Apply the same prompt to text chunks and return responses."""
         if self._streaming:
             raise ValueError("Unable to stream in Accumulate response mode")
 

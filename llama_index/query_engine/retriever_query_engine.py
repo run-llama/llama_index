@@ -67,7 +67,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         # class-specific args
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
-        """Initialize a RetrieverQueryEngine object."
+        """Initialize a RetrieverQueryEngine object.".
 
         Args:
             retriever (BaseRetriever): A retriever object.

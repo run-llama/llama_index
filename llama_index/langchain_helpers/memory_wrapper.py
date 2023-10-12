@@ -86,7 +86,7 @@ class GPTIndexMemory(Memory):
             output_key = self.output_key
         human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
-        doc_text = "\n".join([human, ai])
+        doc_text = f"{human}\n{ai}"
         doc = Document(text=doc_text)
         self.index.insert(doc)
 

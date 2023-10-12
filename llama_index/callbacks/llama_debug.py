@@ -116,7 +116,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
     def _get_time_stats_from_event_pairs(
         self, event_pairs: List[List[CBEvent]]
     ) -> EventStats:
-        """Calculate time-based stats for a set of event pairs"""
+        """Calculate time-based stats for a set of event pairs."""
         total_secs = 0.0
         for event_pair in event_pairs:
             start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)

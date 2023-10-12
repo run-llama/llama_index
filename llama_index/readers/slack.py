@@ -198,6 +198,7 @@ class SlackReader(BasePydanticReader):
 
         Args:
             channel_ids (List[str]): List of channel ids to read.
+
         Returns:
             List[Document]: List of documents.
         """

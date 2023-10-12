@@ -33,7 +33,7 @@ def get_top_k_embeddings(
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
             if similarity_top_k and len(similarity_heap) > similarity_top_k:
                 heapq.heappop(similarity_heap)
-    result_tups = list(sorted(similarity_heap, key=lambda x: x[0], reverse=True))
+    result_tups = sorted(similarity_heap, key=lambda x: x[0], reverse=True)
 
     result_similarities = [s for s, _ in result_tups]
     result_ids = [n for _, n in result_tups]

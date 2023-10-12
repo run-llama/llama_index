@@ -196,14 +196,12 @@ class NebulaGraphStore(GraphStore):
             if prop_names is not None:
                 self._tag_prop_names_map[tag] = f"`{tag}`.`{prop_names}`"
         self._tag_prop_names: List[str] = list(
-            set(
-                [
-                    prop_name.strip()
-                    for prop_names in tag_prop_names or []
-                    if prop_names is not None
-                    for prop_name in prop_names.split(",")
-                ]
-            )
+            {
+                prop_name.strip()
+                for prop_names in tag_prop_names or []
+                if prop_names is not None
+                for prop_name in prop_names.split(",")
+            }
         )
 
         self._include_vid = include_vid

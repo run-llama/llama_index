@@ -160,7 +160,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return chunks
 
     def _split(self, text: str, chunk_size: int) -> List[_Split]:
-        """Break text into splits that are smaller than chunk size.
+        r"""Break text into splits that are smaller than chunk size.
 
         The order of splitting is:
         1. split by paragraph separator

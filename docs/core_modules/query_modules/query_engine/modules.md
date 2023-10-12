@@ -1,6 +1,5 @@
 # Module Guides
 
-
 ## Basic
 
 First, check out our [module guide on Indexes](/core_modules/data_modules/index/modules.md) for in-depth guides for each index (vector index, summary index, knowledge graph index). Each index corresponds to a default query engine for that index.
@@ -16,6 +15,7 @@ Retriever Query Engine </examples/query_engine/CustomRetrievers.ipynb>
 ```
 
 ## Structured & Semi-Structured Data
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -27,6 +27,7 @@ maxdepth: 1
 ```
 
 ## Advanced
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -39,6 +40,7 @@ maxdepth: 1
 /examples/query_engine/SQLRouterQueryEngine.ipynb
 /examples/query_engine/SQLAutoVectorQueryEngine.ipynb
 /examples/query_engine/SQLJoinQueryEngine.ipynb
+/examples/query_engine/pgvector_sql_query_engine.ipynb
 /examples/index_structs/struct_indices/duckdb_sql_query.ipynb
 Retry Query Engine </examples/evaluation/RetryQuery.ipynb>
 Retry Source Query Engine </examples/evaluation/RetryQuery.ipynb>
@@ -51,6 +53,7 @@ Retry Guideline Query Engine </examples/evaluation/RetryQuery.ipynb>
 ```
 
 ### Advanced: Towards Multi-Document Querying/Analysis
+
 This specific subsection showcases modules that help with querying multiple documents.
 
 ```{toctree}
@@ -60,10 +63,11 @@ maxdepth: 1
 /examples/query_engine/sub_question_query_engine.ipynb
 /examples/query_engine/recursive_retriever_agents.ipynb
 /examples/agent/multi_document_agents.ipynb
+/examples/agent/multi_document_agents-v1.ipynb
 ```
 
-
 ## Experimental
+
 ```{toctree}
 ---
 maxdepth: 1

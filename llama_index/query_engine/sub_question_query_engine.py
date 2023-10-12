@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional, Sequence, cast
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.bridge.pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.base import BaseQueryEngine
@@ -28,7 +28,7 @@ class SubQuestionAnswerPair(BaseModel):
 
     sub_q: SubQuestion
     answer: Optional[str] = None
-    sources: Optional[List[NodeWithScore]] = None
+    sources: List[NodeWithScore] = Field(default_factory=list)
 
 
 class SubQuestionQueryEngine(BaseQueryEngine):
@@ -148,9 +148,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             nodes = [self._construct_node(pair) for pair in qa_pairs]
 
+            source_nodes = [node for qa_pair in qa_pairs for node in qa_pair.sources]
             response = self._response_synthesizer.synthesize(
                 query=query_bundle,
                 nodes=nodes,
+                additional_source_nodes=source_nodes,
             )
 
             query_event.on_end(payload={EventPayload.RESPONSE: response})
@@ -183,9 +185,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             nodes = [self._construct_node(pair) for pair in qa_pairs]
 
+            source_nodes = [node for qa_pair in qa_pairs for node in qa_pair.sources]
             response = await self._response_synthesizer.asynthesize(
                 query=query_bundle,
                 nodes=nodes,
+                additional_source_nodes=source_nodes,
             )
 
             query_event.on_end(payload={EventPayload.RESPONSE: response})
@@ -226,7 +230,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             return qa_pair
         except ValueError:
-            logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
+            logger.warning(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
 
     def _query_subq(
@@ -257,5 +261,5 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             return qa_pair
         except ValueError:
-            logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
+            logger.warning(f"[{sub_q.tool_name}] Failed to run {question}")
             return None

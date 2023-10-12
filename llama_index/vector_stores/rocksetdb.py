@@ -24,7 +24,7 @@ T = TypeVar("T", bound="RocksetVectorStore")
 
 def _get_rockset() -> ModuleType:
     """Gets the rockset module and raises an ImportError if
-    the rockset package hasn't been installed
+    the rockset package hasn't been installed.
 
     Returns:
         rockset module (ModuleType)
@@ -124,7 +124,7 @@ class RocksetVectorStore(VectorStore):
         return self.rs
 
     def add(self, nodes: List[BaseNode]) -> List[str]:
-        """Stores vectors in the collection
+        """Stores vectors in the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -151,7 +151,7 @@ class RocksetVectorStore(VectorStore):
         ]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Deletes nodes stored in the collection by their ref_doc_id
+        """Deletes nodes stored in the collection by their ref_doc_id.
 
         Args:
             ref_doc_id (str): The ref_doc_id of the document
@@ -177,7 +177,7 @@ class RocksetVectorStore(VectorStore):
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Gets nodes relevant to a query
+        """Gets nodes relevant to a query.
 
         Args:
             query (llama_index.vector_stores.types.VectorStoreQuery): The query
@@ -295,10 +295,10 @@ class RocksetVectorStore(VectorStore):
 
         client.Collections.create_s3_collection(**collection_args)  # create collection
         while (
-            not client.Collections.get(
+            client.Collections.get(
                 collection=rockset_vector_store_args.get("collection")
             ).data.status
-            == "READY"
+            != "READY"
         ):  # wait until collection is ready
             sleep(0.1)
             # TODO: add async, non-blocking method collection creation

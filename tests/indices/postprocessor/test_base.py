@@ -25,7 +25,7 @@ from llama_index.schema import (
 )
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
-spacy_installed = True if find_spec("spacy") else False
+spacy_installed = bool(find_spec("spacy"))
 
 
 def test_forward_back_processor(tmp_path: Path) -> None:
