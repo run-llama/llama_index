@@ -28,6 +28,28 @@ def test_load_data() -> None:
 
 
 @pytest.mark.skipif(MongoClient is None, reason="pymongo not installed")
+def test_load_data_with_max_docs() -> None:
+    """Test Mongo reader with max_docs."""
+    mock_cursor = [{"text": "one"}, {"text": "two"}, {"text": "three"}]
+
+    with patch("pymongo.collection.Collection.find") as mock_find:
+
+        def limit_fn(limit, *args, **kwargs):
+            if limit == 0:
+                return mock_cursor
+            return mock_cursor[:limit]
+
+        mock_find.side_effect = limit_fn
+
+        reader = SimpleMongoReader("host", 1, max_docs=2)
+        documents = reader.load_data("my_db", "my_collection")
+
+        assert len(documents) == 2
+        assert documents[0].get_content() == "one"
+        assert documents[1].get_content() == "two"
+
+
+@pytest.mark.skipif(MongoClient is None, reason="pymongo not installed")
 def test_load_data_with_field_name() -> None:
     """Test Mongo reader using passed in field_names."""
     mock_cursor = [
