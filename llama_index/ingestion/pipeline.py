@@ -78,6 +78,8 @@ class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
     name: str = Field(description="Unique name of the ingestion pipeline")
+    base_url: str = Field(default=BASE_URL, description="Base URL for the platform")
+
     configured_transformations: List[ConfiguredTransformation] = Field(
         description="Serialized schemas of transformations to apply to the data"
     )
@@ -94,11 +96,12 @@ class IngestionPipeline(BaseModel):
 
     def __init__(
         self,
-        name: Optional[str] = DEFAULT_PIPELINE_NAME,
+        name: str = DEFAULT_PIPELINE_NAME,
         transformations: Optional[List[TransformComponent]] = None,
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
+        base_url: str = BASE_URL,
     ) -> None:
         if documents is None and reader is None:
             raise ValueError("Must provide either documents or a reader")
@@ -119,6 +122,7 @@ class IngestionPipeline(BaseModel):
             reader=reader,
             documents=documents,
             vector_store=vector_store,
+            base_url=base_url,
         )
 
     @classmethod
@@ -150,7 +154,7 @@ class IngestionPipeline(BaseModel):
         ]
 
     def register(
-        self, project_name: str = DEFAULT_PROJECT_NAME, register_only: bool = False
+        self, project_name: str = DEFAULT_PROJECT_NAME, verbose: bool = True
     ) -> str:
         client = PlatformApi(base_url=BASE_URL)
 
@@ -168,7 +172,7 @@ class IngestionPipeline(BaseModel):
             )
 
             # remove callback manager
-            configured_transformations[-1].component.pop("callback_manager", None)
+            configured_transformations[-1].component.pop("callback_manager", None)  # type: ignore
 
         data_sinks = []
         if self.vector_store is not None:
@@ -229,7 +233,7 @@ class IngestionPipeline(BaseModel):
             project.id,
             request=PipelineCreate(
                 name=self.name,
-                configured_transformations=[configured_transformations[0]],
+                configured_transformations=configured_transformations,
                 data_sinks=data_sinks,
                 data_sources=data_sources,
             ),
@@ -237,7 +241,7 @@ class IngestionPipeline(BaseModel):
         assert pipeline.id is not None, "Pipeline ID should not be None"
 
         # Print playground URL if not running remote
-        if not register_only:
+        if verbose:
             print(
                 "Pipeline available at: https://llamalink.llamaindex.ai/"
                 f"playground?id={pipeline.id}"
@@ -248,7 +252,7 @@ class IngestionPipeline(BaseModel):
     def run_remote(self, project_name: str = DEFAULT_PROJECT_NAME) -> str:
         client = PlatformApi(base_url=BASE_URL)
 
-        pipeline_id = self.register(project_name=project_name, register_only=True)
+        pipeline_id = self.register(project_name=project_name, verbose=False)
 
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
