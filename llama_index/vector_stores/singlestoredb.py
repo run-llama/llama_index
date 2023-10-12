@@ -12,7 +12,6 @@ from llama_index.schema import BaseNode, MetadataMode, TextNode
 from sqlalchemy.pool import QueuePool
 import json
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class SingleStoreVectorStore(VectorStore):
