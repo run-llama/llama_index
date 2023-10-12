@@ -186,6 +186,7 @@ class OpensearchVectorClient:
         embedding_field: str = "embedding",
         text_field: str = "content",
         method: Optional[dict] = None,
+        max_chunk_bytes: int = 1 * 1024 * 1024,
         **kwargs: Any,
     ):
         """Init params."""
@@ -204,6 +205,7 @@ class OpensearchVectorClient:
         self._dim = dim
         self._index = index
         self._text_field = text_field
+        self._max_chunk_bytes = max_chunk_bytes
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -237,8 +239,6 @@ class OpensearchVectorClient:
             texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
             metadatas.append(node_to_metadata_dict(node, remove_text=True))
 
-        max_chunk_bytes = kwargs.get("max_chunk_bytes", 1 * 1024 * 1024)
-
         return _bulk_ingest_embeddings(
             self._os_client,
             self._index,
@@ -249,7 +249,7 @@ class OpensearchVectorClient:
             vector_field=self._embedding_field,
             text_field=self._text_field,
             mapping=None,
-            max_chunk_bytes=max_chunk_bytes,
+            max_chunk_bytes=self._max_chunk_bytes,
         )
 
     def delete_doc_id(self, doc_id: str) -> None:
