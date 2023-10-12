@@ -19,7 +19,9 @@ class BaseAgent(BaseChatEngine, BaseQueryEngine):
             query_bundle.query_str,
             chat_history=[],
         )
-        return Response(response=str(agent_response))
+        return Response(
+            response=str(agent_response), source_nodes=agent_response.source_nodes
+        )
 
     @trace_method("query")
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -27,7 +29,9 @@ class BaseAgent(BaseChatEngine, BaseQueryEngine):
             query_bundle.query_str,
             chat_history=[],
         )
-        return Response(response=str(agent_response))
+        return Response(
+            response=str(agent_response), source_nodes=agent_response.source_nodes
+        )
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
