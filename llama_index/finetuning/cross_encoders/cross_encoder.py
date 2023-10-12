@@ -56,7 +56,7 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
             CEBinaryClassificationEvaluator,
         )
 
-        # Todo: also add support for CERerankingEvaluator
+        # TODO: also add support for CERerankingEvaluator
         evaluator: Optional[CEBinaryClassificationEvaluator] = None
 
         if val_dataset is not None:
@@ -101,7 +101,7 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
 
     def push_to_hub(self, repo_id: Any = None) -> None:
         """
-        Saves the model and tokenizer to HuggingFace hub
+        Saves the model and tokenizer to HuggingFace hub.
         """
         if repo_id is not None:
             try:
@@ -119,12 +119,12 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
             raise ValueError("No value provided for repo_id")
 
     def get_finetuned_model(
-        self, repo_id: str, top_n: int = 3
+        self, model_name: str, top_n: int = 3
     ) -> SentenceTransformerRerank:
         """
-        Loads the model from huggingface hub as re-ranker
+        Loads the model from huggingface hub as re-ranker.
 
         :param repo_id: Huggingface Hub repo from where you want to load the model
         :param top_n: The value of nodes the re-ranker should filter
         """
-        return SentenceTransformerRerank(model=repo_id, top_n=top_n)
+        return SentenceTransformerRerank(model=model_name, top_n=top_n)

@@ -1,4 +1,4 @@
-"""Dataset Generator for Cross Encoder Finetuning"""
+"""Dataset Generator for Cross Encoder Finetuning."""
 import re
 from dataclasses import dataclass
 from typing import List, Optional
@@ -16,7 +16,7 @@ from llama_index.text_splitter import TokenTextSplitter
 
 @dataclass
 class CrossEncoderFinetuningDatasetSample:
-    """Class for keeping track of each item of Cross-Encoder training Dataset"""
+    """Class for keeping track of each item of Cross-Encoder training Dataset."""
 
     query: str
     context: str
