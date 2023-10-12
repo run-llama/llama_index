@@ -39,6 +39,7 @@ maxdepth: 1
 /examples/query_engine/SQLRouterQueryEngine.ipynb
 /examples/query_engine/SQLAutoVectorQueryEngine.ipynb
 /examples/query_engine/SQLJoinQueryEngine.ipynb
+/examples/query_engine/pgvector_sql_query_engine.ipynb
 /examples/index_structs/struct_indices/duckdb_sql_query.ipynb
 Retry Query Engine </examples/evaluation/RetryQuery.ipynb>
 Retry Source Query Engine </examples/evaluation/RetryQuery.ipynb>
