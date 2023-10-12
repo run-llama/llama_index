@@ -8,11 +8,12 @@
 
 import json
 import os
-import tiktoken
-import numpy as np
 import sys
 from collections import defaultdict
 from typing import Dict, List
+
+import numpy as np
+import tiktoken
 
 
 def validate_json(data_path: str) -> None:

@@ -217,7 +217,7 @@ See [Custom Prompts How-To](/core_modules/model_modules/prompts.md) for more det
 For embedding-based indices, you can choose to pass in a custom embedding model. See
 [Custom Embeddings How-To](/core_modules/model_modules/embeddings/usage_pattern.md) for more details.
 
-### Cost Analysis 
+### Cost Analysis
 
 Creating an index, inserting to an index, and querying an index may use tokens. We can track
 token usage through the outputs of these operations. When running operations,

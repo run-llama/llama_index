@@ -1,4 +1,5 @@
 from typing import Any
+
 from llama_index.llms.base import (
     ChatMessage,
     CompletionResponse,
@@ -9,6 +10,8 @@ from llama_index.llms.custom import CustomLLM
 
 
 class TestLLM(CustomLLM):
+    __test__ = False
+
     def __init__(self) -> None:
         super().__init__(callback_manager=None)
 

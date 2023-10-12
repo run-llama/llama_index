@@ -18,9 +18,9 @@ from llama_index.vector_stores.types import (
 )
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
+    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
-    legacy_metadata_dict_to_node,
 )
 
 _logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class TypesenseVectorStore(VectorStore):
             "`typesense` package not found, please run `pip install typesense`"
         )
         try:
-            import typesense  # noqa: F401
+            import typesense
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -133,7 +133,7 @@ class TypesenseVectorStore(VectorStore):
     ) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
@@ -165,7 +165,6 @@ class TypesenseVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-
         try:
             from typesense.collection import Collection
 
@@ -182,7 +181,6 @@ class TypesenseVectorStore(VectorStore):
             query (VectorStoreQuery): Vector store query object.
 
         """
-
         if query.filters:
             typesense_filter = self._to_typesense_filter(query.filters)
         else:

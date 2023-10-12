@@ -91,8 +91,8 @@ class S3DBKVStore(BaseKVStore):
         """
         obj_key = self._get_object_key(collection, key)
         try:
-            obj = list(self._bucket.objects.filter(Prefix=obj_key).limit(1))[0]
-        except IndexError:
+            obj = next(iter(self._bucket.objects.filter(Prefix=obj_key).limit(1)))
+        except StopIteration:
             return None
         body = obj.get()["Body"].read()
         return json.loads(body)

@@ -219,7 +219,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         Used for manual insertion of KG triplets (in the form
         of (subject, relationship, object)).
 
-        Args
+        Args:
             triplet (str): Knowledge triplet
 
         """
@@ -304,7 +304,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         rel_map = self._graph_store.get_rel_map(subjs=subjs, depth=1, limit=limit)
 
         added_nodes = set()
-        for keyword in rel_map.keys():
+        for keyword in rel_map:
             for path in rel_map[keyword]:
                 subj = keyword
                 for i in range(0, len(path), 2):

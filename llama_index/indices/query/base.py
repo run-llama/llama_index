@@ -20,15 +20,13 @@ class BaseQueryEngine(ABC):
         with self.callback_manager.as_trace("query"):
             if isinstance(str_or_query_bundle, str):
                 str_or_query_bundle = QueryBundle(str_or_query_bundle)
-            response = self._query(str_or_query_bundle)
-            return response
+            return self._query(str_or_query_bundle)
 
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         with self.callback_manager.as_trace("query"):
             if isinstance(str_or_query_bundle, str):
                 str_or_query_bundle = QueryBundle(str_or_query_bundle)
-            response = await self._aquery(str_or_query_bundle)
-            return response
+            return await self._aquery(str_or_query_bundle)
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         raise NotImplementedError(

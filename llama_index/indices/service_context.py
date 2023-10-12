@@ -2,9 +2,8 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from llama_index.bridge.pydantic import BaseModel
-
 import llama_index
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
@@ -314,8 +313,8 @@ class ServiceContext:
         from llama_index.embeddings.loading import load_embed_model
         from llama_index.llm_predictor.loading import load_predictor
         from llama_index.llms.loading import load_llm
-        from llama_index.node_parser.loading import load_parser
         from llama_index.node_parser.extractors.loading import load_extractor
+        from llama_index.node_parser.loading import load_parser
         from llama_index.text_splitter.loading import load_text_splitter
 
         service_context_data = ServiceContextData.parse_obj(data)

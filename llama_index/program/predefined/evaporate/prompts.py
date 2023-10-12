@@ -53,7 +53,7 @@ SCHEMA_ID_PROMPT_TMPL = f"""Sample text:
 </ul>
 
 Question: List all relevant attributes about 'Canada' that are exactly mentioned in this sample text if any.
-Answer: 
+Answer:
 - Monarch: Charles III
 - Governor General: Mary Simon
 - Provinces and Territories: Saskatchewan, Manitoba, Ontario, Quebec, New Brunswick, Prince Edward Island, Nova Scotia, Newfoundland and Labrador, Yukon, Nunavut, Northwest Territories
@@ -69,7 +69,7 @@ Date of discharge: 2020-01-01
 Hospital address: 123 Main Street, New York, NY 10001
 
 Question: List all relevant attributes about 'medications' that are exactly mentioned in this sample text if any.
-Answer: 
+Answer:
 - Prescribed medication: aspirin, ibuprofen, acetaminophen
 - Prescribed dosage: 1 tablet, 2 tablets, 3 tablets
 
@@ -78,8 +78,8 @@ Answer:
 Sample text:
 {{chunk:}}
 
-Question: List all relevant attributes about '{{topic:}}' that are exactly mentioned in this sample text if any. 
-Answer:"""  # noqa: E501, F541
+Question: List all relevant attributes about '{{topic:}}' that are exactly mentioned in this sample text if any.
+Answer:"""
 
 SCHEMA_ID_PROMPT = PromptTemplate(SCHEMA_ID_PROMPT_TMPL)
 
@@ -93,7 +93,7 @@ FN_GENERATION_PROMPT_TMPL = f"""Here is a sample of text:
 
 Question: {{query_str:}}
 
-Given the function signature, write Python code to extract the 
+Given the function signature, write Python code to extract the
 "{{attribute:}}" field from the text.
 Return the result as a single value (string, int, float), and not a list.
 Make sure there is a return statement in the code. Do not leave out a return statement.
@@ -103,10 +103,10 @@ import re
 
 def get_{{function_field:}}_field(text: str):
     \"""
-    Function to extract the "{{attribute:}} field", and return the result 
+    Function to extract the "{{attribute:}} field", and return the result
     as a single value.
     \"""
-    """  # noqa: E501, F541
+    """
 
 FN_GENERATION_PROMPT = PromptTemplate(FN_GENERATION_PROMPT_TMPL)
 
@@ -118,7 +118,7 @@ FN_GENERATION_LIST_PROMPT_TMPL = f"""Here is a sample of text:
 
 Question: {{query_str:}}
 
-Given the function signature, write Python code to extract the 
+Given the function signature, write Python code to extract the
 "{{attribute:}}" field from the text.
 Return the result as a list of values (if there is just one item, return a single \
 element list).
@@ -129,10 +129,10 @@ import re
 
 def get_{{function_field:}}_field(text: str) -> List:
     \"""
-    Function to extract the "{{attribute:}} field", and return the result 
+    Function to extract the "{{attribute:}} field", and return the result
     as a single value.
     \"""
-    """  # noqa: E501, F541
+    """
 
 FN_GENERATION_LIST_PROMPT = PromptTemplate(FN_GENERATION_LIST_PROMPT_TMPL)
 

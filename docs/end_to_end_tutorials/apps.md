@@ -10,4 +10,3 @@ Relevant Resources:
 - [Fullstack Application with Delphic](/end_to_end_tutorials/apps/fullstack_with_delphic.md)
 - [A Guide to Extracting Terms and Definitions](/end_to_end_tutorials/question_and_answer/terms_definitions_tutorial.md)
 - [LlamaIndex Starter Pack](https://github.com/logan-markewich/llama_index_starter_pack)
-

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, cast
-from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
+from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
 IMPORT_ERROR_MSG = "`pymongo` package not found, please run `pip install pymongo`"
 

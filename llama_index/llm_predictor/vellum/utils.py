@@ -7,5 +7,4 @@ def convert_to_kebab_case(input_string: str) -> str:
         input_string.lower(),
     )
 
-    formatted_string = "-".join(matches)
-    return formatted_string
+    return "-".join(matches)

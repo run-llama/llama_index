@@ -6,10 +6,11 @@ from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
 from typing import Any, Dict, List, Optional, Union
+
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.bridge.langchain import Document as LCDocument
+from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -20,12 +21,17 @@ WRAP_WIDTH = 70
 
 
 class BaseComponent(BaseModel):
-    """Base component object to caputure class names."""
+    """Base component object to capture class names."""
 
     @classmethod
     @abstractmethod
     def class_name(cls) -> str:
-        """Get class name."""
+        """
+        Get the class name, used as a unique ID in serialization.
+
+        This provides a key that makes serialization robust against actual class
+        name changes.
+        """
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)
@@ -92,7 +98,6 @@ class RelatedNodeInfo(BaseComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "RelatedNodeInfo"
 
 
@@ -131,11 +136,11 @@ class BaseNode(BaseComponent):
     )
     excluded_embed_metadata_keys: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are exluded from text for the embed model.",
+        description="Metadata keys that are excluded from text for the embed model.",
     )
     excluded_llm_metadata_keys: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are exluded from text for the LLM.",
+        description="Metadata keys that are excluded from text for the LLM.",
     )
     relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
         default_factory=dict,
@@ -290,12 +295,11 @@ class TextNode(BaseNode):
     )
     metadata_seperator: str = Field(
         default="\n",
-        description="Seperator between metadata fields when converting to string.",
+        description="Separator between metadata fields when converting to string.",
     )
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "TextNode"
 
     @root_validator
@@ -325,7 +329,7 @@ class TextNode(BaseNode):
         ).strip()
 
     def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
-        """metadata info string."""
+        """Metadata info string."""
         if mode == MetadataMode.NONE:
             return ""
 
@@ -381,7 +385,6 @@ class ImageNode(TextNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "ImageNode"
 
 
@@ -416,7 +419,6 @@ class IndexNode(TextNode):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "IndexNode"
 
 
@@ -439,7 +441,6 @@ class NodeWithScore(BaseComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "NodeWithScore"
 
     ##### pass through methods to BaseNode #####
@@ -538,15 +539,13 @@ class Document(TextNode):
 
     @classmethod
     def example(cls) -> "Document":
-        document = Document(
+        return Document(
             text=SAMPLE_TEXT,
             metadata={"filename": "README.md", "category": "codebase"},
         )
-        return document
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Document"
 
 
@@ -558,5 +557,4 @@ class ImageDocument(Document):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "ImageDocument"

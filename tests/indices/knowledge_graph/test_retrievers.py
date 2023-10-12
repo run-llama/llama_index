@@ -8,6 +8,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import Document
 from llama_index.storage.storage_context import StorageContext
+
 from tests.indices.knowledge_graph.test_base import MockEmbedding, mock_extract_triplets
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 

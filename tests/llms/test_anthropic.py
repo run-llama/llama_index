@@ -38,7 +38,7 @@ def test_streaming() -> None:
 
 
 @pytest.mark.skipif(anthropic is None, reason="anthropic not installed")
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_async() -> None:
     llm = Anthropic(model="claude-instant-1")
     test_prompt = "test prompt"
@@ -52,7 +52,7 @@ async def test_async() -> None:
 
 
 @pytest.mark.skipif(anthropic is None, reason="anthropic not installed")
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_async_streaming() -> None:
     llm = Anthropic(model="test")
     test_prompt = "test prompt"

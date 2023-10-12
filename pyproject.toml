@@ -1,16 +1,165 @@
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+ignore-words-list = "ot"
+# Remove .git and venv skips when integrated with pre-commit
+# Feel free to un-skip docs, examples, and experimental, you will just need to
+# work through many typos (--write-changes and --interactive will help)
+skip = "./.git,./*venv,./docs,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt"
+
 [tool.mypy]
-ignore_missing_imports = "True"
-disallow_untyped_defs = "True"
-exclude = ["notebooks", "build", "examples"]
+disallow_untyped_defs = true
+exclude = ["build", "examples", "notebooks"]
+ignore_missing_imports = true
 
 [tool.ruff]
 exclude = [
-    ".venv",
-    "__pycache__",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".ruff_cache",
     "examples",
     "notebooks",
-    ".git"
 ]
+ignore = [
+    "COM812",
+    "F541",  # Messes with prompts.py
+    "TCH002",
+    "UP006",  # Messes with pydantic
+]
+# Feel free to add more here
+select = [
+    "ANN204",
+    "B009",
+    "B010",
+    "B011",
+    "B013",
+    "B014",
+    "C400",
+    "C401",
+    "C402",
+    "C403",
+    "C404",
+    "C405",
+    "C406",
+    "C408",
+    "C409",
+    "C410",
+    "C411",
+    "C413",
+    "C414",
+    "C416",
+    "C418",
+    "C419",
+    "COM812",
+    "COM819",
+    "D201",
+    "D202",
+    "D203",
+    "D204",
+    "D207",
+    "D208",
+    "D209",
+    "D211",
+    "D213",
+    "D214",
+    "D215",
+    "D400",
+    "D403",
+    "D405",
+    "D406",
+    "D407",
+    "D408",
+    "D409",
+    "D410",
+    "D411",
+    "D412",
+    "D413",
+    "D416",
+    "E703",
+    "E711",
+    "E712",
+    "E713",
+    "E714",
+    "EXE004",
+    "F504",
+    "F541",
+    "F632",
+    "FLY",
+    "G010",
+    "I",
+    "PERF1",
+    "PIE790",
+    "PIE794",
+    "PIE808",
+    "PIE810",
+    "PLC0414",
+    "PLE2510",
+    "PLE2512",
+    "PLE2513",
+    "PLE2514",
+    "PLE2515",
+    "PLR1701",
+    "PLR1711",
+    "PT001",
+    "PT003",
+    "PT006",
+    "PT02",
+    "PTH201",
+    "PYI009",
+    "PYI010",
+    "PYI011",
+    "PYI012",
+    "PYI014",
+    "PYI015",
+    "PYI020",
+    "PYI026",
+    "PYI029",
+    "PYI032",
+    "PYI053",
+    "PYI054",
+    "Q",
+    "RET501",
+    "RET502",
+    "RET503",
+    "RET504",
+    "RSE",
+    "RUF005",
+    "RUF010",
+    "RUF015",
+    "RUF1",
+    "SIM101",
+    "SIM103",
+    "SIM109",
+    "SIM118",
+    "SIM201",
+    "SIM202",
+    "SIM208",
+    "SIM211",
+    "SIM212",
+    "SIM220",
+    "SIM221",
+    "SIM222",
+    "SIM223",
+    "SIM300",
+    "SIM9",
+    "TCH005",
+    "TD006",
+    "TID",
+    "TRY201",
+    "UP",
+    "W",
+]
+target-version = "py38"
+unfixable = [
+    "ERA001",
+]
+
+[tool.ruff.flake8-annotations]
+mypy-init-return = true
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.tomlsort]
+all = true
+in_place = true
+spaces_before_inline_comment = 2  # Match Python PEP 8
+spaces_indent_inline_array = 4  # Match Python PEP 8
+trailing_comma_inline_array = true

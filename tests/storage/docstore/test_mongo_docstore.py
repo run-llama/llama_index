@@ -1,10 +1,8 @@
 from typing import List
 
 import pytest
-
+from llama_index.schema import BaseNode, Document
 from llama_index.storage.docstore.mongo_docstore import MongoDocumentStore
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
 from llama_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 
 try:
@@ -13,7 +11,7 @@ except ImportError:
     MongoClient = None  # type: ignore
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     return [
         Document(text="doc_1"),

@@ -123,7 +123,7 @@ class Neo4jVectorStore(VectorStore):
         """
         version = self.database_query("CALL dbms.components()")[0]["versions"][0]
         if "aura" in version:
-            version_tuple = tuple(map(int, version.split("-")[0].split("."))) + (0,)
+            version_tuple = (*tuple(map(int, version.split("-")[0].split("."))), 0)
         else:
             version_tuple = tuple(map(int, version.split(".")))
 
@@ -170,7 +170,6 @@ class Neo4jVectorStore(VectorStore):
         Returns:
             int or None: The embedding dimension of the existing index if found.
         """
-
         index_information = self.database_query(
             "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
             "WHERE type = 'VECTOR' AND (name = $index_name "

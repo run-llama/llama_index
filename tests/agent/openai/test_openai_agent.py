@@ -1,14 +1,13 @@
 from typing import Any, List, Sequence
 
 import pytest
-from pytest import MonkeyPatch
-
 from llama_index.agent.openai_agent import OpenAIAgent
 from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.tools.function_tool import FunctionTool
+from pytest import MonkeyPatch
 
 
 def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
@@ -33,7 +32,7 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def add_tool() -> FunctionTool:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""

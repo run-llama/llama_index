@@ -19,12 +19,11 @@ class ImageVisionLLMReader(BaseReader):
         prompt: str = "Question: describe what you see in this image. Answer:",
     ):
         """Init params."""
-
         if parser_config is None:
             try:
-                import sentencepiece  # noqa: F401
-                import torch  # noqa: F401
-                from PIL import Image  # noqa: F401
+                import sentencepiece
+                import torch
+                from PIL import Image
                 from transformers import Blip2ForConditionalGeneration, Blip2Processor
             except ImportError:
                 raise ImportError(

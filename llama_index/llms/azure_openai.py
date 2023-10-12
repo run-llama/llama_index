@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional
 
 from llama_index.bridge.pydantic import Field, root_validator
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import resolve_from_aliases
@@ -107,5 +106,4 @@ class AzureOpenAI(OpenAI):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "azure_openai_llm"

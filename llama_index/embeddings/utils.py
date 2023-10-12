@@ -2,18 +2,18 @@
 import os
 from typing import List, Optional, Union
 
-from llama_index.utils import get_cache_dir
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.instructor import InstructorEmbedding
-from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.huggingface_utils import (
-    INSTRUCTOR_MODELS,
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
+    INSTRUCTOR_MODELS,
 )
+from llama_index.embeddings.instructor import InstructorEmbedding
+from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.token_counter.mock_embed_model import MockEmbedding
+from llama_index.utils import get_cache_dir
 
 EmbedType = Union[BaseEmbedding, LCEmbeddings, str]
 
@@ -26,7 +26,7 @@ def save_embedding(embedding: List[float], file_path: str) -> None:
 
 def load_embedding(file_path: str) -> List[float]:
     """Load embedding from file. Will only return first embedding in file."""
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         for line in f:
             embedding = [float(x) for x in line.strip().split(",")]
             break
@@ -46,7 +46,7 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
                 f"with model_name={DEFAULT_HUGGINGFACE_EMBEDDING_MODEL}. "
                 "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
                 "Original error:\n"
-                f"{str(e)}"
+                f"{e!s}"
                 "\n******"
             )
 

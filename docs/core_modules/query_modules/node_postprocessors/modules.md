@@ -104,7 +104,7 @@ from llama_index.indices.postprocessor import SentenceTransformerRerank
 
 # We choose a model with relatively high speed and decent accuracy.
 postprocessor = SentenceTransformerRerank(
-  model="cross-encoder/ms-marco-MiniLM-L-2-v2", 
+  model="cross-encoder/ms-marco-MiniLM-L-2-v2",
   top_n=3
 )
 

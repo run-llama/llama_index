@@ -1,19 +1,20 @@
 (one-click-observability)=
 
-#  One-Click Observability
+# One-Click Observability
 
-LlamaIndex provides **one-click observability**  🔭 to allow you to build principled LLM applications in a production setting.
+LlamaIndex provides **one-click observability** 🔭 to allow you to build principled LLM applications in a production setting.
 
 A key requirement for principled development of LLM applications over your data (RAG systems, agents) is being able to observe, debug, and evaluate
 your system - both as a whole and for each component.
 
 This feature allows you to seamlessly integrate the LlamaIndex library with powerful observability/evaluation tools offered by our partners.
 Configure a variable once, and you'll be able to do things like the following:
-- View LLM/prompt inputs/outputs
-- Ensure that the outputs of any component (LLMs, embeddings) are performing as expected
-- View call traces for both indexing and querying
 
-Each provider has similarities and differences. Take a look below for the full set of guides for each one! 
+-   View LLM/prompt inputs/outputs
+-   Ensure that the outputs of any component (LLMs, embeddings) are performing as expected
+-   View call traces for both indexing and querying
+
+Each provider has similarities and differences. Take a look below for the full set of guides for each one!
 
 ## Usage Pattern
 
@@ -53,7 +54,6 @@ llama_index.set_global_handler("simple")
 
 We offer a rich set of integrations with our partners. A short description + usage pattern, and guide is provided for each partner.
 
-
 ### Weights and Biases Prompts
 
 Prompts allows users to log/trace/inspect the execution flow of LlamaIndex during index construction and querying. It also allows users to version-control their indices.
@@ -87,11 +87,49 @@ storage_context = llama_index.global_handler.load_storage_context(
 ![](/_static/integrations/wandb.png)
 
 #### Guides
+
 ```{toctree}
 ---
 maxdepth: 1
 ---
 /examples/callbacks/WandbCallbackHandler.ipynb
+```
+
+### Arize Phoenix
+
+Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
+
+-   LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
+-   LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
+
+#### Usage Pattern
+
+```python
+# Phoenix can display in real time the traces automatically
+# collected from your LlamaIndex application.
+import phoenix as px
+# Look for a URL in the output to open the App in a browser.
+px.launch_app()
+# The App is initially empty, but as you proceed with the steps below,
+# traces will appear automatically as your LlamaIndex application runs.
+
+import llama_index
+llama_index.set_global_handler("arize_phoenix")
+
+# Run all of your LlamaIndex applications as usual and traces
+# will be collected and displayed in Phoenix.
+...
+```
+
+![](/_static/integrations/arize_phoenix.png)
+
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+Arize Phoenix Tracing Tutorial <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb>
 ```
 
 ### OpenInference
@@ -127,14 +165,14 @@ query_dataframe = as_dataframe(query_data_buffer)
 **NOTE**: To unlock capabilities of Phoenix, you will need to define additional steps to feed in query/ context dataframes. See below!
 
 #### Guides
+
 ```{toctree}
 ---
 maxdepth: 1
 ---
 /examples/callbacks/OpenInferenceCallback.ipynb
-Evaluating and Improving a LlamaIndex Search and Retrieval Application <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/llama_index_search_and_retrieval_tutorial.ipynb>
+Evaluating Search and Retrieval with Arize Phoenix <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/llama_index_search_and_retrieval_tutorial.ipynb>
 ```
-
 
 ### TruEra TruLens
 
@@ -147,10 +185,11 @@ TruLens allows users to instrument/evaluate LlamaIndex applications, through fea
 from trulens_eval import TruLlama
 tru_query_engine = TruLlama(query_engine)
 
-# query 
+# query
 tru_query_engine.query("What did the author do growing up?")
 
 ```
+
 ![](/_static/integrations/trulens.png)
 
 #### Guides
