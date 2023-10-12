@@ -339,7 +339,9 @@ def chat_messages_to_conversational_kwargs(
 def conversational_output_to_chat_response(
     output: "ConversationalOutput", role: MessageRole = MessageRole.ASSISTANT
 ) -> ChatResponse:
-    return ChatResponse(message=ChatMessage(role=role, content=output.generated_text))
+    return ChatResponse(
+        message=ChatMessage(role=role, content=output["generated_text"])
+    )
 
 
 class HuggingFaceInferenceAPI(LLM):
