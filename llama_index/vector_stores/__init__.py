@@ -33,6 +33,7 @@ from llama_index.vector_stores.redis import RedisVectorStore
 from llama_index.vector_stores.rocksetdb import RocksetVectorStore
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
+from llama_index.vector_stores.singlestoredb import SingleStoreVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.timescalevector import TimescaleVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
@@ -73,6 +74,7 @@ __all__ = [
     "Neo4jVectorStore",
     "CognitiveSearchVectorStore",
     "EpsillaVectorStore",
+    "SingleStoreVectorStore",
     "VectorStoreQuery",
     "VectorStoreQueryResult",
     "MetadataFilters",
