@@ -123,3 +123,16 @@ maxdepth: 1
 Llama 2 Text-to-SQL Fine-tuning (Repo) <https://github.com/run-llama/modal_finetune_sql>
 Llama 2 Text-to-SQL Fine-tuning (Notebook) <https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb>
 ```
+
+## Finetuning Cross-Encoders for Re-Ranking
+
+By finetuning a cross encoder, we can attempt to improve re-ranking performance on our own private data.
+
+In this example, we use the `sentence-transformers` package to help finetune a crossencoder model, using a dataset that is generated based on the `QASPER` dataset.
+
+```{toctree}
+---
+maxdepth: 1
+---
+Cross-Encoder Finetuning </home/loganm/llama_index_proper/llama_index/docs/examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb>
+```
