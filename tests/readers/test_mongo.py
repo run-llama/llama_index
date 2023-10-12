@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
@@ -35,7 +35,7 @@ def test_load_data_with_max_docs() -> None:
 
     with patch("pymongo.collection.Collection.find") as mock_find:
 
-        def limit_fn(limit: int, *_args: Any, **_kwargs: Any) -> list[dict[str, str]]:
+        def limit_fn(limit: int, *_args: Any, **_kwargs: Any) -> List[Dict[str, str]]:
             if limit == 0:
                 return mock_cursor
             return mock_cursor[:limit]
