@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from llama_index.embeddings.base import BaseEmbedding
+from llama_index.indices.postprocessor import SentenceTransformerRerank
 from llama_index.llms.base import LLM
 
 
@@ -39,5 +40,5 @@ class BaseCrossEncoderFinetuningEngine(ABC):
         """Goes off and does stuff."""
 
     @abstractmethod
-    def push_to_hub(self, repo_id: Any) -> None:
-        """Pushes the Cross Encoder model to HuggingFace Hub"""
+    def get_finetuned_model(self, **model_kwargs: Any) -> SentenceTransformerRerank:
+        """Gets fine-tuned Cross-Encoder model as re-ranker"""

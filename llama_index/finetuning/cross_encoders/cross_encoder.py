@@ -5,6 +5,7 @@ from llama_index.finetuning.cross_encoders.dataset_gen import (
     CrossEncoderFinetuningDatasetSample,
 )
 from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
+from llama_index.indices.postprocessor import SentenceTransformerRerank
 
 
 class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
@@ -116,3 +117,14 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
                 )
         else:
             raise ValueError("No value provided for repo_id")
+
+    def get_finetuned_model(
+        self, repo_id: str, top_n: int = 3
+    ) -> SentenceTransformerRerank:
+        """
+        Loads the model from huggingface hub as re-ranker
+
+        :param repo_id: Huggingface Hub repo from where you want to load the model
+        :param top_n: The value of nodes the re-ranker should filter
+        """
+        return SentenceTransformerRerank(model=repo_id, top_n=top_n)
