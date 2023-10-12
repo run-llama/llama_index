@@ -36,6 +36,8 @@ if TYPE_CHECKING:
         PortkeyResponse,
     )
 
+DEFAULT_PORTKEY_MODEL = "gpt-3.5-turbo"
+
 
 class Portkey(CustomLLM):
     """_summary_
@@ -48,7 +50,7 @@ class Portkey(CustomLLM):
         description="The mode for using the Portkey integration"
     )
 
-    model: Optional[str] = Field(default="gpt-3.5-turbo")
+    model: Optional[str] = Field(default=DEFAULT_PORTKEY_MODEL)
     llm: "LLMOptions" = Field(description="LLM parameter", default_factory=dict)
 
     llms: List["LLMOptions"] = Field(description="LLM parameters", default_factory=list)

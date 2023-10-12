@@ -35,11 +35,14 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
     """
 
     chunk_size: int = Field(
-        default=DEFAULT_CHUNK_SIZE, description="The token chunk size for each chunk."
+        default=DEFAULT_CHUNK_SIZE,
+        description="The token chunk size for each chunk.",
+        gt=0,
     )
     chunk_overlap: int = Field(
         default=SENTENCE_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
+        gte=0,
     )
     separator: str = Field(
         default=" ", description="Default separator for splitting into words"
@@ -101,6 +104,35 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
             secondary_chunking_regex=secondary_chunking_regex,
             separator=separator,
             paragraph_separator=paragraph_separator,
+            callback_manager=callback_manager,
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
+        )
+
+    @classmethod
+    def from_defaults(
+        cls,
+        separator: str = " ",
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = SENTENCE_CHUNK_OVERLAP,
+        tokenizer: Optional[Callable] = None,
+        paragraph_separator: str = DEFAULT_PARAGRAPH_SEP,
+        chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
+        secondary_chunking_regex: str = CHUNKING_REGEX,
+        callback_manager: Optional[CallbackManager] = None,
+        include_metadata: bool = True,
+        include_prev_next_rel: bool = True,
+    ) -> "SentenceAwareNodeParser":
+        """Initialize with parameters."""
+        callback_manager = callback_manager or CallbackManager([])
+        return cls(
+            separator=separator,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            tokenizer=tokenizer,
+            paragraph_separator=paragraph_separator,
+            chunking_tokenizer_fn=chunking_tokenizer_fn,
+            secondary_chunking_regex=secondary_chunking_regex,
             callback_manager=callback_manager,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,

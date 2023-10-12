@@ -9,11 +9,17 @@ from llama_index.embeddings.huggingface_utils import (
     get_text_instruct_for_model_name,
 )
 
+DEFAULT_HUGGINGFACE_LENGTH = 512
+
 
 class HuggingFaceEmbedding(BaseEmbedding):
     tokenizer_name: str = Field(description="Tokenizer name from HuggingFace.")
-    max_length: int = Field(description="Maximum length of input.")
-    pooling: str = Field(description="Pooling strategy. One of ['cls', 'mean'].")
+    max_length: int = Field(
+        default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
+    )
+    pooling: str = Field(
+        default="cls", description="Pooling strategy. One of ['cls', 'mean']."
+    )
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )

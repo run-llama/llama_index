@@ -22,12 +22,21 @@ from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 
+DEFAULT_REPLICATE_TEMP = 0.75
+
 
 class Replicate(CustomLLM):
     model: str = Field(description="The Replicate model to use.")
-    temperature: float = Field(description="The temperature to use for sampling.")
+    temperature: float = Field(
+        default=DEFAULT_REPLICATE_TEMP,
+        description="The temperature to use for sampling.",
+        gte=0.01,
+        lte=1.0,
+    )
     context_window: int = Field(
-        description="The maximum number of context tokens for the model."
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of context tokens for the model.",
+        gt=0,
     )
     prompt_key: str = Field(description="The key to use for the prompt in API calls.")
     additional_kwargs: Dict[str, Any] = Field(
@@ -40,7 +49,7 @@ class Replicate(CustomLLM):
     def __init__(
         self,
         model: str,
-        temperature: float = 0.75,
+        temperature: float = DEFAULT_REPLICATE_TEMP,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         prompt_key: str = "prompt",

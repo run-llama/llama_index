@@ -26,14 +26,33 @@ class CodeNodeParser(TextNodeParser):
     chunk_lines: int = Field(
         default=DEFAULT_CHUNK_LINES,
         description="The number of lines to include in each chunk.",
+        gt=0,
     )
     chunk_lines_overlap: int = Field(
         default=DEFAULT_LINES_OVERLAP,
         description="How many lines of code each chunk overlaps with.",
+        gt=0,
     )
     max_chars: int = Field(
-        default=DEFAULT_MAX_CHARS, description="Maximum number of characters per chunk."
+        default=DEFAULT_MAX_CHARS,
+        description="Maximum number of characters per chunk.",
+        gt=0,
     )
+
+    @classmethod
+    def from_defaults(
+        cls,
+        language: str,
+        chunk_lines: int = DEFAULT_CHUNK_LINES,
+        chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
+        max_chars: int = DEFAULT_MAX_CHARS,
+    ) -> "CodeNodeParser":
+        return cls(
+            language=language,
+            chunk_lines=chunk_lines,
+            chunk_lines_overlap=chunk_lines_overlap,
+            max_chars=max_chars,
+        )
 
     @classmethod
     def class_name(cls) -> str:
