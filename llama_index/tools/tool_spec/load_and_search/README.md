@@ -2,7 +2,6 @@
 
 This Tool Spec is intended to wrap other tools, allowing the Agent to perform separate loading and reading of data. This is very useful for when tools return information larger than or closer to the size of the context window.
 
-
 ## Usage
 
 Here's an example usage of the LoadAndSearchToolSpec.

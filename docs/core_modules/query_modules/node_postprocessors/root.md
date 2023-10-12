@@ -1,6 +1,7 @@
 # Node Postprocessor
 
 ## Concept
+
 Node postprocessors are a set of modules that take a set of nodes, and apply some kind of transformation or filtering before returning them.
 
 In LlamaIndex, node postprocessors are most commonly applied within a query engine, after the node retrieval step and before the response synthesis step.
@@ -39,6 +40,7 @@ usage_pattern.md
 ```
 
 ## Modules
+
 Below you can find guides for each node postprocessor.
 
 ```{toctree}

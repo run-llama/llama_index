@@ -1,10 +1,10 @@
 ---
 default_language_version:
-    python: python3
+  python: python3
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-byte-order-marker
       - id: check-merge-conflict
@@ -29,6 +29,10 @@ repos:
     rev: v0.23.1
     hooks:
       - id: toml-sort-fix
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.3
+    hooks:
+      - id: prettier
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:

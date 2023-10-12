@@ -3,9 +3,10 @@
 This guide describes how each index works with diagrams.
 
 Some terminology:
+
 - **Node**: Corresponds to a chunk of text from a Document. LlamaIndex takes in Document objects and internally parses/chunks them into Node objects.
 - **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to
-    [specify different response modes](setting-response-mode) here.
+  [specify different response modes](setting-response-mode) here.
 
 ## Summary Index (formerly List Index)
 
@@ -24,7 +25,6 @@ The summary index does offer numerous ways of querying a summary index, from an 
 will fetch the top-k neighbors, or with the addition of a keyword filter, as seen below:
 
 ![](/_static/indices/list_filter_query.png)
-
 
 ## Vector Store Index
 

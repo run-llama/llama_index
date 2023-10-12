@@ -1,9 +1,10 @@
-#my-component-root *, #headlessui-portal-root * {
-    z-index: 1000000000000;
-    font-size: 100%;
-  }
+#my-component-root *,
+#headlessui-portal-root * {
+  z-index: 1000000000000;
+  font-size: 100%;
+}
 
-textarea{
+textarea {
   border: 0;
   padding: 0;
 }

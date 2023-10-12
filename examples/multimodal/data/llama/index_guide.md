@@ -3,10 +3,11 @@
 This guide describes how each index works with diagrams. We also visually highlight our "Response Synthesis" modes.
 
 Some terminology:
+
 - **Node**: Corresponds to a chunk of text from a Document. LlamaIndex takes in Document objects and internally parses/chunks them into Node objects.
 - **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to
-    [specify different response modes](setting-response-mode) here.
-    See below for an illustration of how each response mode works.
+  [specify different response modes](setting-response-mode) here.
+  See below for an illustration of how each response mode works.
 
 ## Summary Index
 
@@ -25,7 +26,6 @@ The summary index does offer numerous ways of querying a summary index, from an 
 will fetch the top-k neighbors, or with the addition of a keyword filter, as seen below:
 
 ![](/docs/_static/indices/list_filter_query.png)
-
 
 ## Vector Store Index
 
@@ -87,7 +87,7 @@ number of nodes.
 ### Tree Summarize
 
 Tree summarize is another way of generating a response. We essentially build a tree index
-over the set of candidate nodes, with a *summary prompt* seeded with the query. The tree
+over the set of candidate nodes, with a _summary prompt_ seeded with the query. The tree
 is built in a bottoms-up fashion, and in the end the root node is returned as the response.
 
 ![](/docs/_static/indices/tree_summarize.png)

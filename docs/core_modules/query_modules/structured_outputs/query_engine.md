@@ -3,6 +3,7 @@
 Using `index.as_query_engine()` and it's underlying `RetrieverQueryEngine`, we can support structured pydantic outputs without an additional LLM calls (in contrast to a typical output parser.)
 
 Every query engine has support for integrated structured responses using the following `response_mode`s in `RetrieverQueryEngine`:
+
 - `refine`
 - `compact`
 - `tree_summarize`

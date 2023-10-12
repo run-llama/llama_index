@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
           justifyContent: "center",
         },
       },
-      "🦙"
+      "🦙",
     );
 
     const mendableFloatingButton = React.createElement(MendableFloatingButton, {
@@ -57,9 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
       () => {
         loadScript(
           "https://unpkg.com/@mendable/search@0.0.150/dist/umd/mendable.min.js",
-          initializeMendable
+          initializeMendable,
         );
-      }
+      },
     );
   });
 });

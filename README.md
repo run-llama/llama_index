@@ -1,12 +1,13 @@
 # 🗂️ LlamaIndex 🦙
+
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/llama-index)](https://pypi.org/project/llama-index/)
 [![GitHub contributors](https://img.shields.io/github/contributors/jerryjliu/llama_index)](https://github.com/jerryjliu/llama_index/graphs/contributors)
 [![Discord](https://img.shields.io/discord/1059199217496772688)](https://discord.gg/dGcwcsnxhU)
 
-
 LlamaIndex (GPT Index) is a data framework for your LLM application.
 
 PyPI:
+
 - LlamaIndex: https://pypi.org/project/llama-index/.
 - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 
@@ -23,12 +24,12 @@ Discord: https://discord.gg/dGcwcsnxhU.
 - LlamaHub (community library of data loaders): https://llamahub.ai
 - LlamaLab (cutting-edge AGI projects using LlamaIndex): https://github.com/run-llama/llama-lab
 
-
 ## 🚀 Overview
 
 **NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
 
 ### Context
+
 - LLMs are a phenomenal piece of technology for knowledge generation and reasoning. They are pre-trained on large amounts of publicly available data.
 - How do we best augment LLMs with our own private data?
 
@@ -47,7 +48,6 @@ LlamaIndex provides tools for both beginner users and advanced users. Our high-l
 5 lines of code. Our lower-level APIs allow advanced users to customize and extend any module (data connectors, indices, retrievers, query engines, reranking modules),
 to fit their needs.
 
-
 ## 💡 Contributing
 
 Interested in contributing? See our [Contribution Guide](CONTRIBUTING.md) for more details.
@@ -58,7 +58,6 @@ Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest
 
 Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources!
 
-
 ## 💻 Example Usage
 
 ```
@@ -68,6 +67,7 @@ pip install llama-index
 Examples are in the `examples` folder. Indices are in the `indices` folder (see list of indices below).
 
 To build a simple vector store index:
+
 ```python
 import os
 os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
@@ -77,13 +77,12 @@ documents = SimpleDirectoryReader('data').load_data()
 index = VectorStoreIndex.from_documents(documents)
 ```
 
-
 To query:
+
 ```python
 query_engine = index.as_query_engine()
 query_engine.query("<question_text>?")
 ```
-
 
 By default, data is stored in-memory.
 To persist to disk (under `./storage`):
@@ -93,6 +92,7 @@ index.storage_context.persist()
 ```
 
 To reload from disk:
+
 ```python
 from llama_index import StorageContext, load_index_from_storage
 
@@ -102,13 +102,11 @@ storage_context = StorageContext.from_defaults(persist_dir='./storage')
 index = load_index_from_storage(storage_context)
 ```
 
-
 ## 🔧 Dependencies
 
 The main third-party package requirements are `tiktoken`, `openai`, and `langchain`.
 
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`.
-
 
 ## 📖 Citation
 
