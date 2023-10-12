@@ -23,8 +23,34 @@ class SingleStoreVectorStore(VectorStore):
     k most similar nodes.
 
     Args:
-        db_config (dict): Configuration for connecting to SingleStore database
-        table_name (str): Name of the table to store the vector data
+        table_name (str, optional): Specifies the name of the table in use.
+                Defaults to "embeddings".
+        content_field (str, optional): Specifies the field to store the content.
+            Defaults to "content".
+        metadata_field (str, optional): Specifies the field to store metadata.
+            Defaults to "metadata".
+        vector_field (str, optional): Specifies the field to store the vector.
+            Defaults to "vector".
+
+        Following arguments pertain to the connection pool:
+
+        pool_size (int, optional): Determines the number of active connections in
+            the pool. Defaults to 5.
+        max_overflow (int, optional): Determines the maximum number of connections
+            allowed beyond the pool_size. Defaults to 10.
+        timeout (float, optional): Specifies the maximum wait time in seconds for
+            establishing a connection. Defaults to 30.
+
+        Following arguments pertain to the connection:    
+
+        host (str, optional): Specifies the hostname, IP address, or URL for the
+                database connection. The default scheme is "mysql".
+        user (str, optional): Database username.
+        password (str, optional): Database password.
+        port (int, optional): Database port. Defaults to 3306 for non-HTTP
+            connections, 80 for HTTP connections, and 443 for HTTPS connections.
+        database (str, optional): Database name.
+
     """
 
     stores_text: bool = True
