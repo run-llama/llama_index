@@ -74,10 +74,7 @@ class SimpleMongoReader(BaseReader):
         """
         documents = []
         db = self.client[db_name]
-        if query_dict is None:
-            cursor = db[collection_name].find()
-        else:
-            cursor = db[collection_name].find(query_dict)
+        cursor = db[collection_name].find(filter=query_dict or {}, limit=self.max_docs)
 
         for item in cursor:
             texts = []
