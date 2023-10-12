@@ -1,4 +1,14 @@
-from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Sequence,
+    runtime_checkable,
+)
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
@@ -35,6 +45,14 @@ from llama_index.llms.openai_utils import (
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
+
+
+@runtime_checkable
+class _Tokenizer(Protocol):
+    """Tokenizers support an encode function that returns a list of ints"""
+
+    def encode(self, text: str) -> List[int]:
+        ...
 
 
 class OpenAI(LLM):
@@ -314,7 +332,7 @@ class OpenAI(LLM):
 
         return gen()
 
-    def _get_encoding_for_model(self):
+    def _get_encoding_for_model(self) -> _Tokenizer:
         try:
             import tiktoken
         except ImportError as exc:

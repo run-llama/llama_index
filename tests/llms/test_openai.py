@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Generator
 import openai
 import pytest
 from llama_index.llms.base import ChatMessage
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI, _Tokenizer
 from pytest import MonkeyPatch
 
 from tests.conftest import CachedOpenAIApiKeys
