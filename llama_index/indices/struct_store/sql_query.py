@@ -15,7 +15,10 @@ from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
+from llama_index.prompts.default_prompts import (
+    DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
+    DEFAULT_TEXT_TO_SQL_PROMPT,
+)
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
 from llama_index.utilities.sql_wrapper import SQLDatabase
@@ -237,7 +240,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         """Get service context."""
         return self._service_context
 
-    def _parse_response_to_sql(self, response: str) -> str:
+    def _parse_response_to_sql(self, response: str, query_bundle: QueryBundle) -> str:
         """Parse response to SQL."""
         sql_query_start = response.find("SQLQuery:")
         if sql_query_start != -1:
@@ -267,7 +270,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             dialect=self._sql_database.dialect,
         )
 
-        sql_query_str = self._parse_response_to_sql(response_str)
+        sql_query_str = self._parse_response_to_sql(response_str, query_bundle)
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
@@ -298,7 +301,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             dialect=self._sql_database.dialect,
         )
 
-        sql_query_str = self._parse_response_to_sql(response_str)
+        sql_query_str = self._parse_response_to_sql(response_str, query_bundle)
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
@@ -375,6 +378,58 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
                 context_strs.append(table_info)
 
         return "\n\n".join(context_strs)
+
+
+class PGVectorSQLQueryEngine(NLSQLTableQueryEngine):
+    """PGvector SQL query engine.
+
+    A modified version of the normal text-to-SQL query engine because
+    we can infer embedding vectors in the sql query.
+
+    NOTE: this is a beta feature
+
+    """
+
+    def __init__(
+        self,
+        sql_database: SQLDatabase,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
+        context_query_kwargs: Optional[dict] = None,
+        synthesize_response: bool = True,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        tables: Optional[Union[List[str], List[Table]]] = None,
+        service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize params."""
+        self._tables = tables
+        text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT
+        super().__init__(
+            sql_database,
+            text_to_sql_prompt=text_to_sql_prompt,
+            context_query_kwargs=context_query_kwargs,
+            synthesize_response=synthesize_response,
+            response_synthesis_prompt=response_synthesis_prompt,
+            service_context=service_context,
+            **kwargs,
+        )
+
+    def _parse_response_to_sql(self, response: str, query_bundle: QueryBundle) -> str:
+        """Parse response to SQL."""
+        sql_query_start = response.find("SQLQuery:")
+        if sql_query_start != -1:
+            response = response[sql_query_start:].removeprefix("SQLQuery:")
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
+            response = response[:sql_result_start]
+
+        # this gets you the sql string with [query_vector] placeholders
+        raw_sql_str = response.strip().strip("```").strip()
+        query_embedding = self._service_context.embed_model.get_query_embedding(
+            query_bundle.query_str
+        )
+        query_embedding_str = str(query_embedding)
+        return raw_sql_str.replace("[query_vector]", query_embedding_str)
 
 
 class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
