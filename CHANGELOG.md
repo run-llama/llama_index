@@ -2,11 +2,10 @@
 
 ## Unreleased
 
-## Unrleased
-
 ### New Features
 
 - Added support for fine-tuning cross encoders (#7705)
+- Added `QueryFusionRetriever` for merging multiple retrievers + query augmentation (#8100)
 
 ### Bug Fixes / Nits
 
