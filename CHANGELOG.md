@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unrleased
+
+### New Features
+
+- Added support for fine-tuning cross encoders (#7705)
+
 ## [0.8.44] - 2023-10-12
 
 ### New Features
