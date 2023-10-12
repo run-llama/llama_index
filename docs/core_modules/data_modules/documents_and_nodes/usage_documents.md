@@ -1,6 +1,5 @@
 # Defining and Customizing Documents
 
-
 ## Defining Documents
 
 Documents can either be created automatically via data loaders, or constructed manually.
@@ -163,7 +162,6 @@ document = Document(
 print("The LLM sees this: \n", document.get_content(metadata_mode=MetadataMode.LLM))
 print("The Embedding model sees this: \n", document.get_content(metadata_mode=MetadataMode.EMBED))
 ```
-
 
 ### Advanced - Automatic Metadata Extraction
 

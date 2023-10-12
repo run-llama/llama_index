@@ -8,10 +8,8 @@ on:
       - main
   pull_request:
 
-
 env:
   POETRY_VERSION: "1.6.1"
-
 
 jobs:
   build:

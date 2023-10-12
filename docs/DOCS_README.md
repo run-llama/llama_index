@@ -40,7 +40,6 @@ python -m http.server 8000 -d _build/html
 
 And open your browser at http://0.0.0.0:8000/ to view the generated docs.
 
-
 ##### Watch Docs
 
 We recommend using sphinx-autobuild during development, which provides a live-reloading
@@ -49,6 +48,7 @@ changes are saved. This enables a much shorter feedback loop which can help boos
 productivity when writing documentation.
 
 Simply run the following command from LlamaIndex project's root directory:
+
 ```bash
 make watch-docs
 ```

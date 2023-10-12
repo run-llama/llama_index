@@ -1,10 +1,10 @@
 # Query Transformations
 
-
-LlamaIndex allows you to perform *query transformations* over your index structures.
+LlamaIndex allows you to perform _query transformations_ over your index structures.
 Query transformations are modules that will convert a query into another query. They can be **single-step**, as in the transformation is run once before the query is executed against an index.
 
 They can also be **multi-step**, as in:
+
 1. The query is transformed, executed against an index,
 2. The response is retrieved.
 3. Subsequent queries are transformed/executed in a sequential fashion.
@@ -12,11 +12,12 @@ They can also be **multi-step**, as in:
 We list some of our query transformations in more detail below.
 
 #### Use Cases
+
 Query transformations have multiple use cases:
+
 - Transforming an initial query into a form that can be more easily embedded (e.g. HyDE)
 - Transforming an initial query into a subquestion that can be more easily answered from the data (single-step query decomposition)
 - Breaking an initial query into multiple subquestions that can be more easily answered on their own. (multi-step query decomposition)
-
 
 ### HyDE (Hypothetical Document Embeddings)
 
@@ -45,7 +46,6 @@ print(response)
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
 
-
 ### Single-Step Query Decomposition
 
 Some recent approaches (e.g. [self-ask](https://ofir.io/self-ask.pdf), [ReAct](https://arxiv.org/abs/2210.03629)) have suggested that LLM's
@@ -60,7 +60,6 @@ This is especially helpful over a [composed graph](../../index/composability.md)
 An example image is shown below.
 
 ![](/_static/query_transformations/single_step_diagram.png)
-
 
 Here's a corresponding example code snippet over a composed graph.
 
@@ -98,8 +97,6 @@ response = query_engine.query(query_str)
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.
 
-
-
 ### Multi-Step Query Transformations
 
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
@@ -110,7 +107,6 @@ Given the response (along with prior responses) and the query, followup question
 An example image is shown below.
 
 ![](/_static/query_transformations/multi_step_diagram.png)
-
 
 Here's a corresponding example code snippet.
 
@@ -132,7 +128,6 @@ print(str(response))
 ```
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb) for a full walkthrough.
-
 
 ```{toctree}
 ---

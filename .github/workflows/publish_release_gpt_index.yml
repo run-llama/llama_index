@@ -18,6 +18,5 @@ jobs:
         uses: JRubics/poetry-publish@v1.17
         with:
           pypi_token: ${{ secrets.GPT_INDEX_PYPI_TOKEN }}
-          repository_name: "gpt_index"
-          repository_url: "https://github.com/run-llama/llama_index/"
+          repository_name: "gpt-index"
           ignore_dev_requirements: "yes"

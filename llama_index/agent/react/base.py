@@ -2,7 +2,7 @@
 
 import asyncio
 from threading import Thread
-from typing import Any, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
@@ -24,7 +24,9 @@ from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
+from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, adapt_to_async_tool
+from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -50,23 +52,31 @@ class ReActAgent(BaseAgent):
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
         self._llm = llm
-        self._tools = [adapt_to_async_tool(tool) for tool in tools]
-        self._tools_dict = {tool.metadata.name: tool for tool in self._tools}
         self._memory = memory
         self._max_iterations = max_iterations
-        self._react_chat_formatter = react_chat_formatter or ReActChatFormatter(
-            tools=tools
-        )
+        self._react_chat_formatter = react_chat_formatter or ReActChatFormatter()
         self._output_parser = output_parser or ReActOutputParser()
         self.callback_manager = callback_manager or self._llm.callback_manager
         self._verbose = verbose
+
+        if len(tools) > 0 and tool_retriever is not None:
+            raise ValueError("Cannot specify both tools and tool_retriever")
+        elif len(tools) > 0:
+            self._get_tools = lambda _: tools
+        elif tool_retriever is not None:
+            tool_retriever_c = cast(ObjectRetriever[BaseTool], tool_retriever)
+            self._get_tools = lambda message: tool_retriever_c.retrieve(message)
+        else:
+            self._get_tools = lambda _: []
 
     @classmethod
     def from_tools(
         cls,
         tools: Optional[List[BaseTool]] = None,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
@@ -88,6 +98,7 @@ class ReActAgent(BaseAgent):
 
         return cls(
             tools=tools,
+            tool_retriever=tool_retriever,
             llm=llm,
             memory=memory,
             max_iterations=max_iterations,
@@ -138,8 +149,11 @@ class ReActAgent(BaseAgent):
         return message_content, current_reasoning, False
 
     def _process_actions(
-        self, output: ChatResponse
+        self, tools: Sequence[AsyncBaseTool], output: ChatResponse
     ) -> Tuple[List[BaseReasoningStep], bool]:
+        tools_dict: Dict[str, AsyncBaseTool] = {
+            tool.metadata.get_name(): tool for tool in tools
+        }
         _, current_reasoning, is_done = self._extract_reasoning_step(output)
 
         if is_done:
@@ -147,7 +161,7 @@ class ReActAgent(BaseAgent):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
-        tool = self._tools_dict[reasoning_step.action]
+        tool = tools_dict[reasoning_step.action]
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
@@ -165,8 +179,9 @@ class ReActAgent(BaseAgent):
         return current_reasoning, False
 
     async def _aprocess_actions(
-        self, output: ChatResponse
+        self, tools: Sequence[AsyncBaseTool], output: ChatResponse
     ) -> Tuple[List[BaseReasoningStep], bool]:
+        tools_dict = {tool.metadata.name: tool for tool in tools}
         _, current_reasoning, is_done = self._extract_reasoning_step(output)
 
         if is_done:
@@ -174,7 +189,7 @@ class ReActAgent(BaseAgent):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
-        tool = self._tools_dict[reasoning_step.action]
+        tool = tools_dict[reasoning_step.action]
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
@@ -210,6 +225,10 @@ class ReActAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
+        # get tools
+        # TODO: do get tools dynamically at every iteration of the agent loop
+        tools = self.get_tools(message)
+
         if chat_history is not None:
             self._memory.set(chat_history)
 
@@ -220,12 +239,16 @@ class ReActAgent(BaseAgent):
         for _ in range(self._max_iterations):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
-                chat_history=self._memory.get(), current_reasoning=current_reasoning
+                tools,
+                chat_history=self._memory.get(),
+                current_reasoning=current_reasoning,
             )
             # send prompt
             chat_response = self._llm.chat(input_chat)
             # given react prompt outputs, call tools or return response
-            reasoning_steps, is_done = self._process_actions(output=chat_response)
+            reasoning_steps, is_done = self._process_actions(
+                tools, output=chat_response
+            )
             current_reasoning.extend(reasoning_steps)
             if is_done:
                 break
@@ -240,6 +263,10 @@ class ReActAgent(BaseAgent):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
+        # get tools
+        # TODO: do get tools dynamically at every iteration of the agent loop
+        tools = self.get_tools(message)
+
         if chat_history is not None:
             self._memory.set(chat_history)
 
@@ -250,13 +277,15 @@ class ReActAgent(BaseAgent):
         for _ in range(self._max_iterations):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
-                chat_history=self._memory.get(), current_reasoning=current_reasoning
+                tools,
+                chat_history=self._memory.get(),
+                current_reasoning=current_reasoning,
             )
             # send prompt
             chat_response = await self._llm.achat(input_chat)
             # given react prompt outputs, call tools or return response
             reasoning_steps, is_done = await self._aprocess_actions(
-                output=chat_response
+                tools, output=chat_response
             )
             current_reasoning.extend(reasoning_steps)
             if is_done:
@@ -272,6 +301,10 @@ class ReActAgent(BaseAgent):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
+        # get tools
+        # TODO: do get tools dynamically at every iteration of the agent loop
+        tools = self.get_tools(message)
+
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
@@ -281,7 +314,9 @@ class ReActAgent(BaseAgent):
         for _ in range(self._max_iterations):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
-                chat_history=self._memory.get(), current_reasoning=current_reasoning
+                tools,
+                chat_history=self._memory.get(),
+                current_reasoning=current_reasoning,
             )
             # send prompt
             chat_stream = self._llm.stream_chat(input_chat)
@@ -300,7 +335,9 @@ class ReActAgent(BaseAgent):
                 break
 
             # given react prompt outputs, call tools or return response
-            reasoning_steps, _ = self._process_actions(output=full_response)
+            reasoning_steps, _ = self._process_actions(
+                tools=tools, output=full_response
+            )
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
@@ -316,6 +353,10 @@ class ReActAgent(BaseAgent):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
+        # get tools
+        # TODO: do get tools dynamically at every iteration of the agent loop
+        tools = self.get_tools(message)
+
         if chat_history is not None:
             self._memory.set(chat_history)
 
@@ -326,7 +367,9 @@ class ReActAgent(BaseAgent):
         for _ in range(self._max_iterations):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
-                chat_history=self._memory.get(), current_reasoning=current_reasoning
+                tools,
+                chat_history=self._memory.get(),
+                current_reasoning=current_reasoning,
             )
             # send prompt
             chat_stream = await self._llm.astream_chat(input_chat)
@@ -345,7 +388,9 @@ class ReActAgent(BaseAgent):
                 break
 
             # given react prompt outputs, call tools or return response
-            reasoning_steps, _ = self._process_actions(output=full_response)
+            reasoning_steps, _ = self._process_actions(
+                tools=tools, output=full_response
+            )
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
@@ -356,3 +401,7 @@ class ReActAgent(BaseAgent):
         )
         # thread.start()
         return chat_stream_response
+
+    def get_tools(self, message: str) -> List[AsyncBaseTool]:
+        """Get tools."""
+        return [adapt_to_async_tool(t) for t in self._get_tools(message)]

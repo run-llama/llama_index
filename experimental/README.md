@@ -1,4 +1,4 @@
-# 🧪  Experimental
+# 🧪 Experimental
 
 This section is for experiments, cool ideas, and more!
 
