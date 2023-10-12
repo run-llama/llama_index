@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Added HoneyHive one-click observability (#7944)
+
 ## [0.8.43.post1] - 2023-10-11
 
 ### New Features
@@ -8,6 +14,7 @@
 - Added `prettier` for autoformatting extensions besides `.py` (#8072)
 
 ### Bug Fixes / Nits
+
 - Fixed forgotten f-str in `HuggingFaceLLM` (#8075)
 - Relaxed numpy/panadas reqs
 
