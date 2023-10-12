@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-## New Features
+### New Features
 
+- Added HoneyHive one-click observability (#7944)
 - Add support for both SQLAlchemy V1 and V2 (#8060)
 
 ## [0.8.43.post1] - 2023-10-11
