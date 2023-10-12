@@ -258,10 +258,15 @@ class IngestionPipeline(BaseModel):
         # the `PipeLineExecution` object should likely generate a URL at some point
         pipeline_execution = client.pipeline.create_pipeline_execution(pipeline_id)
 
+        assert (
+            pipeline_execution.id is not None
+        ), "Pipeline execution ID should not be None"
+
         print(
             "Find your remote results here: https://llamalink.llamaindex.ai/"
             f"pipelines/execution?id={pipeline_execution.id}"
         )
+
         return pipeline_execution.id
 
     def run_local(
