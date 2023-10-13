@@ -54,8 +54,10 @@ class CompletionResponse(BaseModel):
     Completion response.
 
     Fields:
-        text: TODOC.
-        additional_kwargs: TODOC.
+        text: Text content of the response if not streaming, or if streaming,
+            the current extent of streamed text.
+        additional_kwargs: Additional information on the response(i.e. token
+            counts, function calling information).
         raw: Optional raw JSON that was parsed to populate text, if relevant.
         delta: New text that just streamed in (only relevant when streaming).
     """
