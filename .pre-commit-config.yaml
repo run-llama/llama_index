@@ -38,3 +38,8 @@ repos:
     hooks:
       - id: codespell
         additional_dependencies: [tomli]
+  - repo: https://github.com/srstevenson/nb-clean
+    rev: 3.0.1
+    hooks:
+      - id: nb-clean
+        args: [--preserve-cell-outputs, --remove-empty-cells]
