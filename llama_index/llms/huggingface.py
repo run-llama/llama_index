@@ -350,8 +350,8 @@ class HuggingFaceInferenceAPI(LLM):
 
     Overview of the design:
     - Synchronous uses InferenceClient, asynchronous uses AsyncInferenceClient
-    - chat uses the conversational task
-    - complete uses the text_generation task
+    - chat uses the conversational task: https://huggingface.co/tasks/conversational
+    - complete uses the text generation task: https://huggingface.co/tasks/text-generation
 
     Relevant links:
     - General Docs: https://huggingface.co/docs/api-inference/index
@@ -455,7 +455,9 @@ class HuggingFaceInferenceAPI(LLM):
         )
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        raise NotImplementedError
+        return CompletionResponse(
+            text=self._sync_client.text_generation(prompt, **kwargs)
+        )
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any

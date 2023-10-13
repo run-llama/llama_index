@@ -66,3 +66,15 @@ class TestHuggingFaceInferenceAPI:
             past_user_inputs=["Which movie is the best?"],
             generated_responses=["It's Die Hard for sure."],
         )
+
+    def test_complete(self, hf_inference_api: HuggingFaceInferenceAPI) -> None:
+        prompt = "My favorite color is "
+        generated_text = '"green" and I love to paint. I have been painting for 30 years and have been'
+        with patch.object(
+            hf_inference_api._sync_client,
+            "text_generation",
+            return_value=generated_text,
+        ) as mock_text_generation:
+            response = hf_inference_api.complete(prompt)
+        mock_text_generation.assert_called_once_with(prompt)
+        assert response.text == generated_text
