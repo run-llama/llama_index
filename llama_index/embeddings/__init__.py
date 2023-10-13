@@ -15,6 +15,7 @@ from llama_index.embeddings.huggingface_utils import DEFAULT_HUGGINGFACE_EMBEDDI
 from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from llama_index.embeddings.utils import resolve_embed_model
 
 __all__ = [
@@ -32,4 +33,5 @@ __all__ = [
     "ElasticsearchEmbeddings",
     "ClarifaiEmbedding",
     "GradientEmbedding",
+    "TextEmbeddingsInference",
 ]
