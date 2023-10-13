@@ -125,6 +125,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
                     "Cannot use embedding retriever if embed_summaries is False"
                 )
 
+            kwargs["service_context"] = self._service_context
             return EmbeddingRetriever(self, **kwargs)
         if retriever_mode == _RetrieverMode.LLM:
             return LLMRetriever(self, **kwargs)
