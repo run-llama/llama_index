@@ -131,12 +131,12 @@ class TextEmbeddingsInference(BaseEmbedding):
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """Get query embedding async."""
         query = self._format_query_text(query)
-        return await self._acall_api([query])[0]
+        return (await self._acall_api([query]))[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Get text embedding async."""
         text = self._format_text(text)
-        return await self._acall_api([text])[0]
+        return (await self._acall_api([text]))[0]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         texts = [self._format_text(text) for text in texts]
