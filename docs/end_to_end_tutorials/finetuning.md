@@ -137,5 +137,5 @@ In this example, we use the `sentence-transformers` package to help finetune a c
 ---
 maxdepth: 1
 ---
-Cross-Encoder Finetuning </home/loganm/llama_index_proper/llama_index/docs/examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb>
+Cross-Encoder Finetuning </examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb>
 ```
