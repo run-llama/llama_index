@@ -73,11 +73,16 @@ class ReActAgent(BaseAgent):
     def from_tools(
         cls,
         tools: Optional[List[BaseTool]] = None,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        max_iterations: int = 10,
+        react_chat_formatter: Optional[ReActChatFormatter] = None,
+        output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActAgent":
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
@@ -88,9 +93,14 @@ class ReActAgent(BaseAgent):
         )
         return cls(
             tools=tools or [],
+            tool_retriever=tool_retriever,
             llm=llm,
             memory=memory,
+            max_iterations=max_iterations,
+            react_chat_formatter=react_chat_formatter,
+            output_parser=output_parser,
             callback_manager=callback_manager,
+            verbose=verbose,
             **kwargs,
         )
 
