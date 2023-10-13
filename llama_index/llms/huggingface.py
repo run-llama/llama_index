@@ -430,7 +430,13 @@ class HuggingFaceInferenceAPI(LLM):
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
 
     def validate_supported(self, task: str) -> None:
-        """Confirm the contained model_name is deployed on the Inference API service."""
+        """
+        Confirm the contained model_name is deployed on the Inference API service.
+
+        Args:
+            task: Hugging Face task to check within. A list of all tasks can be
+                found here: https://huggingface.co/tasks
+        """
         all_models = self._sync_client.list_deployed_models(frameworks="all")
         try:
             if self.model_name not in all_models[task]:
