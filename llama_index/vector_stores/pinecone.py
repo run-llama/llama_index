@@ -384,7 +384,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
             "the PineconeVectorStore."
         )  # add metadata docs link here
 
-        text_val = metadata_obj.get(text_key)
-        if not text_val:
+        if not metadata_obj.get(text_key):
             raise KeyError(key_err_msg)
-        return text_val
+        return metadata_obj.get(text_key)
