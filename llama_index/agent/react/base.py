@@ -54,12 +54,12 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
+        super().__init__(callback_manager=callback_manager or llm.callback_manager)
         self._llm = llm
         self._memory = memory
         self._max_iterations = max_iterations
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter()
         self._output_parser = output_parser or ReActOutputParser()
-        self.callback_manager = callback_manager or self._llm.callback_manager
         self._verbose = verbose
 
         if len(tools) > 0 and tool_retriever is not None:
