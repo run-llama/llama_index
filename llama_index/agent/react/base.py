@@ -1,5 +1,3 @@
-# ReAct agent
-
 import asyncio
 from threading import Thread
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
@@ -39,7 +37,6 @@ class ReActAgent(BaseAgent):
     completion endpoints.
 
     Can take in a set of tools that require structured inputs.
-
     """
 
     def __init__(
