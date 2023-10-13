@@ -7,6 +7,7 @@
 ### New Features
 
 - Added support for fine-tuning cross encoders (#7705)
+- Added `nb-clean` to `pre-commit` to minimize PR diffs (#8108)
 
 ### Bug Fixes / Nits
 
