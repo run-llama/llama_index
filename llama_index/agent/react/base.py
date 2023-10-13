@@ -76,36 +76,25 @@ class ReActAgent(BaseAgent):
     def from_tools(
         cls,
         tools: Optional[List[BaseTool]] = None,
-        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
-        max_iterations: int = 10,
-        react_chat_formatter: Optional[ReActChatFormatter] = None,
-        output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
-        verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActAgent":
-        tools = tools or []
-        chat_history = chat_history or []
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if callback_manager is not None:
             llm.callback_manager = callback_manager
-
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
-
+        memory = memory or memory_cls.from_defaults(
+            chat_history=chat_history or [], llm=llm
+        )
         return cls(
-            tools=tools,
-            tool_retriever=tool_retriever,
+            tools=tools or [],
             llm=llm,
             memory=memory,
-            max_iterations=max_iterations,
-            react_chat_formatter=react_chat_formatter,
-            output_parser=output_parser,
             callback_manager=callback_manager,
-            verbose=verbose,
+            **kwargs,
         )
 
     @property
