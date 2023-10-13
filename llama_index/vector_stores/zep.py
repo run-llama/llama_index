@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
@@ -45,7 +45,7 @@ class ZepVectorStore(VectorStore):
         api_url: str,
         api_key: Optional[str] = None,
         collection_description: Optional[str] = None,
-        collection_metadata: Optional[dict[str, Any]] = None,
+        collection_metadata: Optional[Dict[str, Any]] = None,
         embedding_dimensions: Optional[int] = None,
         is_auto_embedded: bool = False,
         **kwargs: Any,
@@ -102,7 +102,7 @@ class ZepVectorStore(VectorStore):
         ids: List[str] = []
 
         for node in nodes:
-            metadata_dict: dict[str, Any] = node_to_metadata_dict(
+            metadata_dict: Dict[str, Any] = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=self.flat_metadata
             )
 
@@ -243,9 +243,9 @@ class ZepVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _to_zep_filters(self, filters: MetadataFilters) -> dict[str, Any]:
+    def _to_zep_filters(self, filters: MetadataFilters) -> Dict[str, Any]:
         """Convert filters to Zep filters. Filters are ANDed together."""
-        filter_conditions: List[dict[str, Any]] = []
+        filter_conditions: List[Dict[str, Any]] = []
 
         for f in filters.filters:
             filter_conditions.append({"jsonpath": f'$[*] ? (@.{f.key} == "{f.value}")'})
