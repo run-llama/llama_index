@@ -377,7 +377,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     @staticmethod
     def validate_metadata_text_key(
-        metadata_obj: dict[str, str], text_key: str = "text"
+        metadata_obj: Dict[str, str], text_key: str = "text"
     ):
         # TODO: docstring
         key_err_msg = (
