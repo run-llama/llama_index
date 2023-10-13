@@ -350,11 +350,14 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
+
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     match.metadata, text_key=self.text_key
                 )
 
-                text = match.metadata[self.text_key]
+                # Validate metadata obj text field key:value pair
+                text = self.validate_metadata_text_key(match.metadata, self.text_key)
+
                 id = match.id
                 node = TextNode(
                     text=text,
@@ -371,3 +374,17 @@ class PineconeVectorStore(BasePydanticVectorStore):
         return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
+
+    @staticmethod
+    def validate_metadata_text_key(metadata_obj: dict[str:str], text_key: str = "text"):
+        # TODO: docstring
+        key_err_msg = (
+            'The text field of your metadata object(s) is set to something other than "text". Please '
+            "override the `text_key` parameter with the correct value when initializing "
+            "the PineconeVectorStore."
+        )  # add metadata docs link here
+
+        text_val = metadata_obj.get(text_key)
+        if not text_val:
+            raise KeyError(key_err_msg)
+        return text_val
