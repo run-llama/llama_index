@@ -429,6 +429,20 @@ class HuggingFaceInferenceAPI(LLM):
         self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
 
+    def validate_supported(self, task: str) -> None:
+        """Confirm the contained model_name is deployed on the Inference API service."""
+        all_models = self._sync_client.list_deployed_models(frameworks="all")
+        try:
+            if self.model_name not in all_models[task]:
+                raise ValueError(
+                    f"The Inference API service doesn't have the model"
+                    f" {self.model_name!r} deployed."
+                )
+        except KeyError as exc:
+            raise KeyError(
+                f"Input task {task!r} not in possible tasks {list(all_models.keys())}."
+            ) from exc
+
     @property
     def metadata(self) -> LLMMetadata:
         raise NotImplementedError
