@@ -229,7 +229,7 @@ class RocksetVectorStore(VectorStore):
             else {},
         )
 
-        similarities: list[float] | None = [] if query.query_embedding else None
+        similarities: List[float] | None = [] if query.query_embedding else None
         nodes, ids = [], []
         for row in res.results:
             if similarities is not None:

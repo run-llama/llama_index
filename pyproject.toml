@@ -12,7 +12,8 @@ skip = "./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipyn
 
 [tool.mypy]
 disallow_untyped_defs = true
-exclude = ["build", "examples", "notebooks"]
+# Remove venv skip when integrated with pre-commit
+exclude = ["build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 
 [tool.poetry]
