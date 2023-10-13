@@ -1,6 +1,6 @@
 """Markdown node parser."""
 import re
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
@@ -84,7 +84,7 @@ class MarkdownNodeParser(NodeParser):
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         markdown_nodes = []
         lines = text.split("\n")
-        metadata: dict[str, str] = {}
+        metadata: Dict[str, str] = {}
         code_block = False
         current_section = ""
 
