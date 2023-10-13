@@ -376,7 +376,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
 
     @staticmethod
-    def validate_metadata_text_key(metadata_obj: dict[str:str], text_key: str = "text"):
+    def validate_metadata_text_key(
+        metadata_obj: dict[str, str], text_key: str = "text"
+    ):
         # TODO: docstring
         key_err_msg = (
             'The text field of your metadata object(s) is set to something other than "text". Please '
