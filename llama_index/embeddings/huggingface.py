@@ -8,6 +8,7 @@ from llama_index.embeddings.huggingface_utils import (
     get_query_instruct_for_model_name,
     get_text_instruct_for_model_name,
 )
+from llama_index.utils import get_cache_dir
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
@@ -59,6 +60,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
             else:
                 device = "cpu"
         self._device = device
+
+        cache_folder = cache_folder or get_cache_dir()
 
         if model is None:
             model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
