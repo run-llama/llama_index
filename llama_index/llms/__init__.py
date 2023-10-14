@@ -17,7 +17,7 @@ from llama_index.llms.cohere import Cohere
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.everlyai import EverlyAI
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
-from llama_index.llms.huggingface import HuggingFaceLLM
+from llama_index.llms.huggingface import HuggingFaceInferenceAPI, HuggingFaceLLM
 from llama_index.llms.konko import Konko
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.litellm import LiteLLM
@@ -50,6 +50,7 @@ __all__ = [
     "EverlyAI",
     "GradientBaseModelLLM",
     "GradientModelAdapterLLM",
+    "HuggingFaceInferenceAPI",
     "HuggingFaceLLM",
     "Konko",
     "LLMMetadata",
