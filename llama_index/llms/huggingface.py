@@ -1,9 +1,14 @@
 import logging
+from enum import Enum
 from threading import Thread
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union
 
+import numpy as np
+from langchain.schema.embeddings import Embeddings
+
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.embeddings.base import Embedding
 from llama_index.llms import ChatResponseAsyncGen, CompletionResponseAsyncGen
 from llama_index.llms.base import (
     LLM,
@@ -344,7 +349,35 @@ def conversational_output_to_chat_response(
     )
 
 
-class HuggingFaceInferenceAPI(LLM):
+class Pooling(str, Enum):
+    """Enum of possible pooling choices with pooling behaviors."""
+
+    CLS = "cls"
+    MEAN = "mean"
+
+    def __call__(self, array: np.ndarray) -> np.ndarray:
+        if self == self.CLS:
+            return self.cls_pooling(array)
+        return self.mean_pooling(array)
+
+    @classmethod
+    def cls_pooling(cls, array: np.ndarray) -> np.ndarray:
+        if len(array.shape) == 3:
+            return array[:, 0]
+        if len(array.shape) == 2:
+            return array[0]
+        raise NotImplementedError(f"Unhandled shape {array.shape}.")
+
+    @classmethod
+    def mean_pooling(cls, array: np.ndarray) -> np.ndarray:
+        if len(array.shape) == 3:
+            return array.mean(axis=1)
+        if len(array.shape) == 2:
+            return array.mean(axis=0)
+        raise NotImplementedError(f"Unhandled shape {array.shape}.")
+
+
+class HuggingFaceInferenceAPI(LLM, Embeddings):
     """
     Wrapper on the Hugging Face's Inference API.
 
@@ -398,6 +431,13 @@ class HuggingFaceInferenceAPI(LLM):
     )
     cookies: Dict[str, str] = Field(
         default=None, description="Additional cookies to send to the server."
+    )
+    pooling: Optional[Pooling] = Field(
+        default=None,
+        description=(
+            "Optional pooling technique to use with embeddings capability, if"
+            " the model's raw output needs pooling."
+        ),
     )
     _sync_client: "InferenceClient" = PrivateAttr()
     _async_client: "AsyncInferenceClient" = PrivateAttr()
@@ -490,3 +530,24 @@ class HuggingFaceInferenceAPI(LLM):
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError
+
+    def embed_documents(self, texts: List[str]) -> List[Embedding]:
+        embeddings = self._sync_client.feature_extraction(texts).squeeze(axis=1)
+        if len(embeddings.shape) == 2:
+            return [list(e) for e in embeddings]
+        if self.pooling is None:
+            raise ValueError("Pooling is required, please specify pooling as not None.")
+        return [list(e) for e in self.pooling(embeddings)]
+
+    def embed_query(self, text: str) -> Embedding:
+        return self.embed_documents(texts=[text])[0]
+
+    async def aembed_documents(self, texts: List[str]) -> List[Embedding]:
+        raise NotImplementedError(
+            "Implement with AsyncInferenceClient.feature_extraction."
+        )
+
+    async def aembed_query(self, text: str) -> Embedding:
+        raise NotImplementedError(
+            "Implement with AsyncInferenceClient.feature_extraction."
+        )

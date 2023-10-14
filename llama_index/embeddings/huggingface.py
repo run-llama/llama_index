@@ -8,6 +8,7 @@ from llama_index.embeddings.huggingface_utils import (
     format_query,
     format_text,
 )
+from llama_index.llms.huggingface import HuggingFaceInferenceAPI
 from llama_index.utils import get_cache_dir, infer_torch_device
 
 
@@ -176,3 +177,6 @@ class HuggingFaceEmbedding(BaseEmbedding):
             format_text(text, self.model_name, self.text_instruction) for text in texts
         ]
         return self._embed(texts)
+
+
+HuggingFaceInferenceAPIEmbedding = HuggingFaceInferenceAPI

@@ -1,8 +1,10 @@
 from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pytest
+from llama_index.embeddings.huggingface import HuggingFaceInferenceAPIEmbedding
 from llama_index.llms import ChatMessage, MessageRole
-from llama_index.llms.huggingface import HuggingFaceInferenceAPI
+from llama_index.llms.huggingface import HuggingFaceInferenceAPI, Pooling
 
 STUB_MODEL_NAME = "placeholder_model"
 
@@ -24,6 +26,10 @@ class TestHuggingFaceInferenceAPI:
             llm = HuggingFaceInferenceAPI(model_name=STUB_MODEL_NAME)
 
         assert llm.model_name == STUB_MODEL_NAME
+
+        # Check can be both a large language model and an embedding model
+        assert isinstance(llm, HuggingFaceInferenceAPI)
+        assert isinstance(llm, HuggingFaceInferenceAPIEmbedding)
 
         # Confirm Clients are instantiated correctly
         mock_hub.InferenceClient.assert_called_once_with(
@@ -78,3 +84,33 @@ class TestHuggingFaceInferenceAPI:
             response = hf_inference_api.complete(prompt)
         mock_text_generation.assert_called_once_with(prompt)
         assert response.text == generated_text
+
+    def test_embed_query(self, hf_inference_api: HuggingFaceInferenceAPI) -> None:
+        raw_embedding = np.random.rand(1, 1, 3, 1024)
+
+        hf_inference_api.pooling = Pooling.CLS
+        with patch.object(
+            hf_inference_api._sync_client,
+            "feature_extraction",
+            return_value=raw_embedding,
+        ):
+            embedding = hf_inference_api.embed_query(text="test")
+        assert isinstance(embedding, list)
+        assert len(embedding) == 1024
+        assert np.all(
+            np.array(embedding, dtype=raw_embedding.dtype) == raw_embedding[0, 0, 0]
+        )
+
+        hf_inference_api.pooling = Pooling.MEAN
+        with patch.object(
+            hf_inference_api._sync_client,
+            "feature_extraction",
+            return_value=raw_embedding,
+        ):
+            embedding = hf_inference_api.embed_query(text="test")
+        assert isinstance(embedding, list)
+        assert len(embedding) == 1024
+        assert np.all(
+            np.array(embedding, dtype=raw_embedding.dtype)
+            == raw_embedding[0, 0].mean(axis=0)
+        )
