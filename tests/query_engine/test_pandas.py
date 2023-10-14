@@ -19,8 +19,9 @@ def test_pandas_query_engine(mock_service_context: ServiceContext) -> None:
 Known for its iconic skyline featuring the CN Tower, Toronto is a cultural melting pot with a rich blend of communities, languages, and cuisines.
 It boasts a thriving arts scene, world-class museums, and a strong economic hub.
 Visitors can explore historic neighborhoods, such as Kensington Market and Distillery District, or enjoy beautiful natural surroundings on Toronto Islands. 
-With its welcoming atmosphere, top-notch education, and multicultural charm, Toronto is a global destination for both tourists and professionals alike."""
-                           , "A city", "Another City"]
+With its welcoming atmosphere, top-notch education, and multicultural charm, Toronto is a global destination for both tourists and professionals alike.""",
+                            "A city",
+                            "Another City"]
         }
     )
     # the mock prompt just takes the all items in the given column
@@ -47,4 +48,3 @@ With its welcoming atmosphere, top-notch education, and multicultural charm, Tor
         correst_rsp_str = str(df["description"])
         pd.reset_option('display.max_colwidth')
         assert str(response) == correst_rsp_str
-    import sys
