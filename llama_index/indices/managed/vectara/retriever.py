@@ -30,6 +30,12 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_after (int):
              number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
+        mmr: if True, use maximal marginal relevance to select the results
+        mmr_k: number of results to fetch for MMR, defaults to 50
+        mmr_diversity_bias: number between 0 and 1 that determines the degree
+            of diversity among the results with 0 corresponding
+            to minimum diversity and 1 to maximum diversity.
+            Defaults to 0.3.
     """
 
     def __init__(
@@ -40,6 +46,9 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
         filter: str = "",
+        mmr: bool = False,
+        mmr_k: int = 50,
+        mmr_diversity_bias: float = 0.3,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -49,6 +58,9 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
+        self._mmr = mmr
+        self._mmr_k = mmr_k
+        self._mmr_diversity_bias = mmr_diversity_bias
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -69,36 +81,38 @@ class VectaraRetriever(BaseRetriever):
         Args:
             query: Query Bundle
         """
-        similarity_top_k = self._similarity_top_k
         corpus_key = {
-            "customer_id": self._index._vectara_customer_id,
-            "corpus_id": self._index._vectara_corpus_id,
-            "lexical_interpolation_config": {"lambda": self._lambda_val},
+            "customerId": self._index._vectara_customer_id,
+            "corpusId": self._index._vectara_corpus_id,
+            "lexicalInterpolationConfig": {"lambda": self._lambda_val},
         }
         if len(self._filter) > 0:
             corpus_key["metadataFilter"] = self._filter
 
-        data = json.dumps(
-            {
-                "query": [
-                    {
-                        "query": query_bundle.query_str,
-                        "start": 0,
-                        "num_results": self._similarity_top_k,
-                        "context_config": {
-                            "sentences_before": self._n_sentences_before,
-                            "sentences_after": self._n_sentences_after,
-                        },
-                        "corpus_key": [corpus_key],
-                    }
-                ]
+        data = {
+            "query": [
+                {
+                    "query": query_bundle.query_str,
+                    "start": 0,
+                    "numResults": self._mmr_k if self._mmr else self._similarity_top_k,
+                    "contextConfig": {
+                        "sentencesBefore": self._n_sentences_before,
+                        "sentencesAfter": self._n_sentences_after,
+                    },
+                    "corpusKey": [corpus_key],
+                }
+            ]
+        }
+        if self._mmr:
+            data["query"][0]["rerankingConfig"] = {
+                "rerankerId": 272725718,
+                "mmrConfig": {"diversityBias": self._mmr_diversity_bias},
             }
-        )
 
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
-            data=data,
+            data=json.dumps(data),
             timeout=self._index.vectara_api_timeout,
         )
 
@@ -122,13 +136,13 @@ class VectaraRetriever(BaseRetriever):
             md.update(doc_md)
             metadatas.append(md)
 
-        top_k_nodes = []
+        top_nodes = []
         for x, md in zip(responses, metadatas):
             doc_inx = x["documentIndex"]
             doc_id = documents[doc_inx]["id"]
             node = NodeWithScore(
                 node=TextNode(text=x["text"], id_=doc_id, metadata=md), score=x["score"]
             )
-            top_k_nodes.append(node)
+            top_nodes.append(node)
 
-        return top_k_nodes
+        return top_nodes[: self._similarity_top_k]

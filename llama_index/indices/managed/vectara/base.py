@@ -128,9 +128,9 @@ class VectaraIndex(BaseManagedIndex):
             bool: True if deletion was successful, False otherwise.
         """
         body = {
-            "customer_id": self._vectara_customer_id,
-            "corpus_id": self._vectara_corpus_id,
-            "document_id": doc_id,
+            "customerId": self._vectara_customer_id,
+            "corpusId": self._vectara_corpus_id,
+            "documentId": doc_id,
         }
         response = self._session.post(
             "https://api.vectara.io/v1/delete-doc",
@@ -151,8 +151,8 @@ class VectaraIndex(BaseManagedIndex):
 
     def _index_doc(self, doc: dict) -> str:
         request: dict[str, Any] = {}
-        request["customer_id"] = self._vectara_customer_id
-        request["corpus_id"] = self._vectara_corpus_id
+        request["customerId"] = self._vectara_customer_id
+        request["corpusId"] = self._vectara_corpus_id
         request["document"] = doc
 
         response = self._session.post(
@@ -181,7 +181,7 @@ class VectaraIndex(BaseManagedIndex):
             metadata = node.metadata.copy()
             metadata["framework"] = "llama_index"
             doc = {
-                "document_id": node.id_,
+                "documentId": node.id_,
                 "metadataJson": json.dumps(node.metadata),
                 "section": [
                     {"text": node.get_content(metadata_mode=MetadataMode.NONE)}

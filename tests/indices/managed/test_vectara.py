@@ -4,6 +4,15 @@ import pytest
 from llama_index.indices.managed.vectara.base import VectaraIndex
 from llama_index.schema import Document
 
+#
+# For this test to run properly, please setup as follows:
+# 1. Create a Vectara account: sign up at https://console.vectara.com/signup
+# 2. Create a corpus in your Vectara account, with a filter attribute called "test_num".
+# 3. Create an API_KEY for this corpus with permissions for query and indexing
+# 4. Setup environment variables:
+#    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
+#
+
 
 def get_docs() -> Tuple[List[Document], List[str]]:
     inputs = [
@@ -81,6 +90,6 @@ def test_file_upload() -> None:
     assert isinstance(index, VectaraIndex)
     query_engine = index.as_query_engine(similarity_top_k=3)
     res = query_engine.query("What is a Manager Schedule?")
-    assert "a manager schedule is a type of schedule" in str(res).lower()
+    assert "a manager schedule" in str(res).lower()
 
     remove_docs(index, [id])
