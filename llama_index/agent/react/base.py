@@ -1,5 +1,3 @@
-# ReAct agent
-
 import asyncio
 from threading import Thread
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
@@ -39,7 +37,6 @@ class ReActAgent(BaseAgent):
     completion endpoints.
 
     Can take in a set of tools that require structured inputs.
-
     """
 
     def __init__(
@@ -54,12 +51,12 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
+        super().__init__(callback_manager=callback_manager or llm.callback_manager)
         self._llm = llm
         self._memory = memory
         self._max_iterations = max_iterations
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter()
         self._output_parser = output_parser or ReActOutputParser()
-        self.callback_manager = callback_manager or self._llm.callback_manager
         self._verbose = verbose
 
         if len(tools) > 0 and tool_retriever is not None:
@@ -88,16 +85,14 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActAgent":
-        tools = tools or []
-        chat_history = chat_history or []
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if callback_manager is not None:
             llm.callback_manager = callback_manager
-
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
-
+        memory = memory or memory_cls.from_defaults(
+            chat_history=chat_history or [], llm=llm
+        )
         return cls(
-            tools=tools,
+            tools=tools or [],
             tool_retriever=tool_retriever,
             llm=llm,
             memory=memory,
@@ -106,6 +101,7 @@ class ReActAgent(BaseAgent):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
+            **kwargs,
         )
 
     @property
