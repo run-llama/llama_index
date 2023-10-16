@@ -15,6 +15,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
     tokenizer_name: str = Field(description="Tokenizer name from HuggingFace.")
     max_length: int = Field(description="Maximum length of input.")
     pooling: str = Field(description="Pooling strategy. One of ['cls', 'mean'].")
+    normalize: str = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )
@@ -37,6 +38,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         max_length: Optional[int] = None,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
+        normalize: bool = True,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
@@ -100,6 +102,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
             tokenizer_name=tokenizer_name,
             max_length=max_length,
             pooling=pooling,
+            normalize=normalize,
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
@@ -161,11 +164,18 @@ class HuggingFaceEmbedding(BaseEmbedding):
         model_output = self._model(**encoded_input)
 
         if self.pooling == "cls":
-            return self._cls_pooling(model_output).tolist()
+            embeddings = self._cls_pooling(model_output)
         else:
-            return self._mean_pooling(
+            embeddings = self._mean_pooling(
                 model_output, encoded_input["attention_mask"]
-            ).tolist()
+            )
+
+        if self.normalize:
+            import torch
+
+            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+
+        return embeddings.tolist()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
@@ -182,7 +192,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
+        print(text)
         text = self._format_text(text)
+        print(text)
         return self._embed([text])[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
