@@ -23,7 +23,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
-from llama_index.tools import BaseTool, adapt_to_async_tool
+from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text
 
@@ -58,6 +58,7 @@ class ReActAgent(BaseAgent):
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter()
         self._output_parser = output_parser or ReActOutputParser()
         self._verbose = verbose
+        self.sources: List[ToolOutput] = []
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -168,6 +169,8 @@ class ReActAgent(BaseAgent):
             tool_output = tool.call(**reasoning_step.action_input)
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
+        self.sources.append(tool_output)
+
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -195,6 +198,9 @@ class ReActAgent(BaseAgent):
         ) as event:
             tool_output = await tool.acall(**reasoning_step.action_input)
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+
+        self.sources.append(tool_output)
+
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -214,7 +220,7 @@ class ReActAgent(BaseAgent):
         response_step = cast(ResponseReasoningStep, current_reasoning[-1])
 
         # TODO: add sources from reasoning steps
-        return AgentChatResponse(response=response_step.response, sources=[])
+        return AgentChatResponse(response=response_step.response, sources=self.sources)
 
     @trace_method("chat")
     def chat(
@@ -223,6 +229,7 @@ class ReActAgent(BaseAgent):
         """Chat."""
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
+        self.sources = []
         tools = self.get_tools(message)
 
         if chat_history is not None:
@@ -261,6 +268,7 @@ class ReActAgent(BaseAgent):
     ) -> AgentChatResponse:
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
+        self.sources = []
         tools = self.get_tools(message)
 
         if chat_history is not None:
@@ -299,6 +307,7 @@ class ReActAgent(BaseAgent):
     ) -> StreamingAgentChatResponse:
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
+        self.sources = []
         tools = self.get_tools(message)
 
         if chat_history is not None:
@@ -337,7 +346,9 @@ class ReActAgent(BaseAgent):
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
-        chat_stream_response = StreamingAgentChatResponse(chat_stream=chat_stream)
+        chat_stream_response = StreamingAgentChatResponse(
+            chat_stream=chat_stream, sources=self.sources
+        )
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
             args=(self._memory,),
@@ -351,6 +362,7 @@ class ReActAgent(BaseAgent):
     ) -> StreamingAgentChatResponse:
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
+        self.sources = []
         tools = self.get_tools(message)
 
         if chat_history is not None:
@@ -390,7 +402,9 @@ class ReActAgent(BaseAgent):
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
-        chat_stream_response = StreamingAgentChatResponse(achat_stream=chat_stream)
+        chat_stream_response = StreamingAgentChatResponse(
+            achat_stream=chat_stream, sources=self.sources
+        )
         # create task to write chat response to history
         asyncio.create_task(
             chat_stream_response.awrite_response_to_history(self._memory)
