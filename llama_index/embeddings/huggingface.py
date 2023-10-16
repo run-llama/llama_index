@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from langchain.schema.embeddings import Embeddings
 
@@ -14,8 +14,11 @@ from llama_index.embeddings.huggingface_utils import (
     format_query,
     format_text,
 )
-from llama_index.llms.huggingface import HuggingFaceInferenceAPI, Pooling
+from llama_index.llms.huggingface import HuggingFaceInferenceAPI
 from llama_index.utils import get_cache_dir, infer_torch_device
+
+if TYPE_CHECKING:
+    from llama_index.embeddings.utils import Pooling
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
@@ -194,7 +197,7 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, Embeddings):
     - Uses the feature extraction task: https://huggingface.co/tasks/feature-extraction
     """
 
-    pooling: Optional[Pooling] = Field(
+    pooling: "Optional[Pooling]" = Field(
         default=None,
         description=(
             "Optional pooling technique to use with embeddings capability, if"

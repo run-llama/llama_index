@@ -1,6 +1,10 @@
 """Embedding utils for LlamaIndex."""
+
 import os
+from enum import Enum
 from typing import List, Optional, Union
+
+import numpy as np
 
 from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.embeddings.base import BaseEmbedding
@@ -79,3 +83,31 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
         embed_model = MockEmbedding(embed_dim=1)
 
     return embed_model
+
+
+class Pooling(str, Enum):
+    """Enum of possible pooling choices with pooling behaviors."""
+
+    CLS = "cls"
+    MEAN = "mean"
+
+    def __call__(self, array: np.ndarray) -> np.ndarray:
+        if self == self.CLS:
+            return self.cls_pooling(array)
+        return self.mean_pooling(array)
+
+    @classmethod
+    def cls_pooling(cls, array: np.ndarray) -> np.ndarray:
+        if len(array.shape) == 3:
+            return array[:, 0]
+        if len(array.shape) == 2:
+            return array[0]
+        raise NotImplementedError(f"Unhandled shape {array.shape}.")
+
+    @classmethod
+    def mean_pooling(cls, array: np.ndarray) -> np.ndarray:
+        if len(array.shape) == 3:
+            return array.mean(axis=1)
+        if len(array.shape) == 2:
+            return array.mean(axis=0)
+        raise NotImplementedError(f"Unhandled shape {array.shape}.")
