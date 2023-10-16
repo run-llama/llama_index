@@ -233,6 +233,7 @@ class ReActAgent(BaseAgent):
         """Chat."""
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
+        self.sources = []
         tools = self.get_tools(message)
 
         if chat_history is not None:
@@ -271,6 +272,7 @@ class ReActAgent(BaseAgent):
     ) -> AgentChatResponse:
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
+        self.sources = []
         tools = self.get_tools(message)
 
         if chat_history is not None:
@@ -309,6 +311,7 @@ class ReActAgent(BaseAgent):
     ) -> StreamingAgentChatResponse:
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
+        self.sources = []
         tools = self.get_tools(message)
 
         if chat_history is not None:
@@ -363,6 +366,7 @@ class ReActAgent(BaseAgent):
     ) -> StreamingAgentChatResponse:
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
+        self.sources = []
         tools = self.get_tools(message)
 
         if chat_history is not None:
