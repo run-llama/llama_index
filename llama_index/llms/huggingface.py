@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence,
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms import ChatResponseAsyncGen, CompletionResponseAsyncGen
 from llama_index.llms.base import (
     LLM,
@@ -136,7 +137,7 @@ class HuggingFaceLLM(CustomLLM):
         except ImportError as exc:
             raise ImportError(
                 f"{type(self).__name__} requires torch and transformers packages.\n"
-                f"Please install both with `pip install transformers[torch]`."
+                "Please install both with `pip install transformers[torch]`."
             ) from exc
 
         model_kwargs = model_kwargs or {}
@@ -406,6 +407,34 @@ class HuggingFaceInferenceAPI(LLM):
     _sync_client: "InferenceClient" = PrivateAttr()
     _async_client: "AsyncInferenceClient" = PrivateAttr()
 
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description=(
+            LLMMetadata.__fields__["context_window"].field_info.description
+            + " This may be looked up in a model's `config.json`."
+        ),
+    )
+    num_output: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description=LLMMetadata.__fields__["num_output"].field_info.description,
+    )
+    is_chat_model: bool = Field(
+        default=False,
+        description=(
+            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            + " Unless chat templating is intentionally applied, Hugging Face models"
+            " are not chat models."
+        ),
+    )
+    is_function_calling_model: bool = Field(
+        default=False,
+        description=(
+            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            + " As of 10/17/2023, Hugging Face doesn't support function calling"
+            " messages."
+        ),
+    )
+
     def _get_inference_client_kwargs(self) -> Dict[str, Any]:
         """Extract the Hugging Face InferenceClient construction parameters."""
         return {
@@ -445,7 +474,7 @@ class HuggingFaceInferenceAPI(LLM):
         try:
             if self.model_name not in all_models[task]:
                 raise ValueError(
-                    f"The Inference API service doesn't have the model"
+                    "The Inference API service doesn't have the model"
                     f" {self.model_name!r} deployed."
                 )
         except KeyError as exc:
@@ -455,7 +484,13 @@ class HuggingFaceInferenceAPI(LLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        raise NotImplementedError
+        return LLMMetadata(
+            context_window=self.context_window,
+            num_output=self.num_output,
+            is_chat_model=self.is_chat_model,
+            is_function_calling_model=self.is_function_calling_model,
+            model_name=self.model_name,
+        )
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         return conversational_output_to_chat_response(
