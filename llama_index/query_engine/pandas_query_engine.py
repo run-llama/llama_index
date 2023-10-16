@@ -68,12 +68,12 @@ def default_output_processor(
         try:
             # str(pd.dataframe) will truncate output by display.max_colwidth
             # set width temporarily to extract more text
-            if 'max_colwidth' in output_kwargs:
-                pd.set_option('display.max_colwidth', output_kwargs['max_colwidth'])
+            if "max_colwidth" in output_kwargs:
+                pd.set_option("display.max_colwidth", output_kwargs["max_colwidth"])
             output_str = str(eval(module_end_str, {"np": np}, local_vars))
-            pd.reset_option('display.max_colwidth')
+            pd.reset_option("display.max_colwidth")
             return output_str
-        
+
         except Exception as e:
             raise
     except Exception as e:
