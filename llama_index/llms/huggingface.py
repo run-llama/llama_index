@@ -353,6 +353,10 @@ class HuggingFaceInferenceAPI(LLM):
     - chat uses the conversational task: https://huggingface.co/tasks/conversational
     - complete uses the text generation task: https://huggingface.co/tasks/text-generation
 
+    Note: some models that support the text generation task can leverage Hugging
+    Face's optimized deployment toolkit called text-generation-inference (TGI).
+    Use InferenceClient.get_model_status to check if TGI is being used.
+
     Relevant links:
     - General Docs: https://huggingface.co/docs/api-inference/index
     - API Docs: https://huggingface.co/docs/huggingface_hub/main/en/package_reference/inference_client
