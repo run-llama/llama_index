@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Add normalization to huggingface embeddings (#8145)
+
 ## [0.8.45] - 2023-10-13
 
 ### New Features
