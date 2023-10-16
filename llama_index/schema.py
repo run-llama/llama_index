@@ -532,7 +532,7 @@ class Document(TextNode):
             name = self._compat_fields[name]
         super().__setattr__(name, value)
 
-    def to_langchain_format(self) -> LCDocument:
+    def to_langchain_format(self) -> "LCDocument":
         """Convert struct to LangChain document format."""
         from llama_index.bridge.langchain import Document as LCDocument
 
@@ -544,7 +544,7 @@ class Document(TextNode):
         """Convert struct from LangChain document format."""
         return cls(text=doc.page_content, metadata=doc.metadata)
 
-    def to_haystack_format(self) -> HaystackDocument:
+    def to_haystack_format(self) -> "HaystackDocument":
         """Convert struct to Haystack document format."""
         from haystack.schema import Document as HaystackDocument
 
