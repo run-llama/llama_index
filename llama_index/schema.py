@@ -540,7 +540,7 @@ class Document(TextNode):
         return LCDocument(page_content=self.text, metadata=metadata)
 
     @classmethod
-    def from_langchain_format(cls, doc: LCDocument) -> "Document":
+    def from_langchain_format(cls, doc: "LCDocument") -> "Document":
         """Convert struct from LangChain document format."""
         return cls(text=doc.page_content, metadata=doc.metadata)
 
@@ -553,7 +553,7 @@ class Document(TextNode):
         )
 
     @classmethod
-    def from_haystack_format(cls, doc: HaystackDocument) -> "Document":
+    def from_haystack_format(cls, doc: "HaystackDocument") -> "Document":
         """Convert struct from Haystack document format."""
         return cls(
             text=doc.content, metadata=doc.meta, embedding=doc.embedding, id_=doc.id
