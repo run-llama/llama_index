@@ -95,9 +95,10 @@ class LLMMetadata(BaseModel):
         default=False,
         # SEE: https://openai.com/blog/function-calling-and-other-api-updates
         description=(
-            "Set True if the model supports function-calling conversions. For example,"
-            " converting 'Email Anya to see if she wants to get coffee next Friday' to"
-            " a function call like `send_email(to: string, body: string)`."
+            "Set True if the model supports function calling messages, similar to"
+            " OpenAI's function calling API. For example, converting 'Email Anya to"
+            " see if she wants to get coffee next Friday' to a function call like"
+            " `send_email(to: string, body: string)`."
         ),
     )
     model_name: str = Field(
