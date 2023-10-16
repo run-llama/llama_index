@@ -1,14 +1,20 @@
 from typing import Any, List, Optional
 
+from langchain.schema.embeddings import Embeddings
+
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.embeddings.base import (
+    DEFAULT_EMBED_BATCH_SIZE,
+    BaseEmbedding,
+    Embedding,
+)
 from llama_index.embeddings.huggingface_utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     format_query,
     format_text,
 )
-from llama_index.llms.huggingface import HuggingFaceInferenceAPI
+from llama_index.llms.huggingface import HuggingFaceInferenceAPI, Pooling
 from llama_index.utils import get_cache_dir, infer_torch_device
 
 
@@ -179,4 +185,44 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed(texts)
 
 
-HuggingFaceInferenceAPIEmbedding = HuggingFaceInferenceAPI
+class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, Embeddings):
+    """
+    Wrapper on the Hugging Face's Inference API for embeddings.
+
+    Overview of the design:
+    - Implemented against LangChain's embeddings.
+    - Uses the feature extraction task: https://huggingface.co/tasks/feature-extraction
+    """
+
+    pooling: Optional[Pooling] = Field(
+        default=None,
+        description=(
+            "Optional pooling technique to use with embeddings capability, if"
+            " the model's raw output needs pooling."
+        ),
+    )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "HuggingFaceInferenceAPIEmbeddings"
+
+    def embed_documents(self, texts: List[str]) -> List[Embedding]:
+        embeddings = self._sync_client.feature_extraction(texts).squeeze(axis=1)
+        if len(embeddings.shape) == 2:
+            return [list(e) for e in embeddings]
+        if self.pooling is None:
+            raise ValueError("Pooling is required, please specify pooling as not None.")
+        return [list(e) for e in self.pooling(embeddings)]
+
+    def embed_query(self, text: str) -> Embedding:
+        return self.embed_documents(texts=[text])[0]
+
+    async def aembed_documents(self, texts: List[str]) -> List[Embedding]:
+        raise NotImplementedError(
+            "Implement with AsyncInferenceClient.feature_extraction."
+        )
+
+    async def aembed_query(self, text: str) -> Embedding:
+        raise NotImplementedError(
+            "Implement with AsyncInferenceClient.feature_extraction."
+        )

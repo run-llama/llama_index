@@ -11,7 +11,7 @@ from llama_index.embeddings.google import GoogleUnivSentEncoderEmbedding
 from llama_index.embeddings.gradient import GradientEmbedding
 from llama_index.embeddings.huggingface import (
     HuggingFaceEmbedding,
-    HuggingFaceInferenceAPIEmbedding,
+    HuggingFaceInferenceAPIEmbeddings,
 )
 from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
 from llama_index.embeddings.huggingface_utils import DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
@@ -29,7 +29,7 @@ __all__ = [
     "ElasticsearchEmbeddings",
     "GoogleUnivSentEncoderEmbedding",
     "GradientEmbedding",
-    "HuggingFaceInferenceAPIEmbedding",
+    "HuggingFaceInferenceAPIEmbeddings",
     "HuggingFaceEmbedding",
     "InstructorEmbedding",
     "LangchainEmbedding",
