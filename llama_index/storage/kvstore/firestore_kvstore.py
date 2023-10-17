@@ -28,6 +28,9 @@ class FirestoreKVStore(BaseKVStore):
     ) -> None:
         try:
             from google.cloud import firestore_v1 as firestore
+            from google.cloud.firestore_v1.services.firestore.transports.base import (
+                DEFAULT_CLIENT_INFO,
+            )
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
