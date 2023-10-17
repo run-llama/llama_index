@@ -33,7 +33,7 @@ class Cohere(LLM):
         default=10, description="The maximum number of API retries."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the anthropic API."
+        default_factory=dict, description="Additional kwargs for the Cohere API."
     )
 
     _client: Any = PrivateAttr()
