@@ -25,6 +25,15 @@ repos:
     rev: 23.9.1
     hooks:
       - id: black-jupyter
+        name: black-src
+        exclude: docs/
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 23.9.1
+    hooks:
+      - id: black-jupyter
+        name: black-docs
+        files: docs/
+        args: [--line-length=79]
   - repo: https://github.com/pappasam/toml-sort
     rev: v0.23.1
     hooks:
