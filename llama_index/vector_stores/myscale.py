@@ -245,7 +245,8 @@ class MyScaleVectorStore(VectorStore):
 
         """
         self._client.command(
-            f"DELETE FROM {self.config.database}.{self.config.table} where doc_id='{ref_doc_id}'"
+            f"DELETE FROM {self.config.database}.{self.config.table} "
+            f"where doc_id='{ref_doc_id}'"
         )
 
     def drop(self) -> None:
