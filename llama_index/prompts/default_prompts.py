@@ -18,19 +18,25 @@ DEFAULT_SUMMARY_PROMPT_TMPL = (
     "\n"
     'SUMMARY:"""\n'
 )
-
 DEFAULT_SUMMARY_PROMPT = PromptTemplate(
     DEFAULT_SUMMARY_PROMPT_TMPL, prompt_type=PromptType.SUMMARY
 )
 
-# insert prompts
-DEFAULT_INSERT_PROMPT_TMPL = (
-    "Context information is below. It is provided in a numbered list "
-    "(1 to {num_chunks}), "
+
+NUM_LIST_BOILERPLATE = (
+    "It is provided in a numbered list "
+    "(1 to {limit_name}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
-    "---------------------\n"
+    "\n---------------------\n"
+)
+
+
+# insert prompts
+DEFAULT_INSERT_PROMPT_TMPL = (
+    "Context information is below. "
+    f"{NUM_LIST_BOILERPLATE.replace('limit_name', 'num_chunks')}"
     "Given the context information, here is a new piece of "
     "information: {new_chunk_text}\n"
     "Answer with the number corresponding to the summary that should be updated. "
@@ -43,12 +49,7 @@ DEFAULT_INSERT_PROMPT = PromptTemplate(
 
 
 CHOICES_BOILERPLATE = (
-    "Some choices are given below. It is provided in a numbered list "
-    "(1 to {limit_name}), "
-    "where each item in the list corresponds to a summary.\n"
-    "---------------------\n"
-    "{context_list}"
-    "\n---------------------\n"
+    f"Some choices are given below. {NUM_LIST_BOILERPLATE}"
     "Using only the choices above and not prior knowledge"
 )
 
