@@ -4,14 +4,15 @@ An index that that is built on top of an existing vector store.
 
 """
 
+import asyncio
 import logging
 from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
-import asyncio
-from llama_index.utils import iter_batch
+
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -100,12 +101,16 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     return filters
 
 
-async def async_upload(index, vectors, batch_size, semaphore):
-    async def send_batch(batch):
+async def async_upload(
+    index: Any, vectors: List[Dict], batch_size: int, semaphore: asyncio.Semaphore
+) -> None:
+    async def send_batch(batch: List[Dict]):  # type: ignore
         async with semaphore:
             return await asyncio.to_thread(index.upsert, batch, async_req=True)
-    
-    await asyncio.gather(*[send_batch(chunk) for chunk in iter_batch(vectors, size=batch_size)])
+
+    await asyncio.gather(
+        *[send_batch(chunk) for chunk in iter_batch(vectors, size=batch_size)]
+    )
 
 
 import_err_msg = (
@@ -250,12 +255,12 @@ class PineconeVectorStore(BasePydanticVectorStore):
             if self.add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
                     [node.get_content(metadata_mode=MetadataMode.EMBED)],
-                    self._tokenizer,
+                    self._tokenizer,  # type: ignore
                 )[0]
                 entry[SPARSE_VECTOR_KEY] = sparse_vector
 
             entries.append(entry)
-        
+
         return entries
 
     def add(
@@ -268,7 +273,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
-
         entries = self._prepare_entries_for_upsert(nodes)
 
         [
@@ -293,14 +297,12 @@ class PineconeVectorStore(BasePydanticVectorStore):
         Returns:
             List[str]: List of IDs of the added documents.
         """
-
         entries = self._prepare_entries_for_upsert(nodes)
 
         semaphore = asyncio.Semaphore(SEM_MAX_CONCURRENT)
         await async_upload(self._pinecone_index, entries, DEFAULT_BATCH_SIZE, semaphore)
 
         return [entry[ID_KEY] for entry in entries]
-
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
