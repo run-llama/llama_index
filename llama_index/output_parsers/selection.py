@@ -16,7 +16,7 @@ def _escape_curly_braces(input_string: str) -> str:
 
 FORMAT_STR = """The output should be ONLY JSON formatted as a JSON instance.
 
-Here's an example:
+Here is an example:
 [
     {
         choice: 1,
