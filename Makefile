@@ -5,6 +5,7 @@ help:	## Show all Makefile targets.
 
 format:	## Run code autoformatters (black).
 	black .
+	black docs/examples/* --preview -l 79
 
 lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 	pre-commit install && pre-commit run --all-files
