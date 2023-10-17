@@ -1,3 +1,4 @@
+import warnings
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from langchain.schema.embeddings import Embeddings
@@ -210,12 +211,28 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, Embeddings):
         return "HuggingFaceInferenceAPIEmbeddings"
 
     def embed_documents(self, texts: List[str]) -> List[Embedding]:
-        embeddings = self._sync_client.feature_extraction(texts).squeeze(axis=1)
-        if len(embeddings.shape) == 2:
-            return [list(e) for e in embeddings]
-        if self.pooling is None:
-            raise ValueError("Pooling is required, please specify pooling as not None.")
-        return [list(e) for e in self.pooling(embeddings)]
+        if len(texts) > 1:
+            warnings.warn(
+                "When embedding 2+ texts, prefer use of aembed_documents for speed"
+                " boost of asynchronous parallelism.",
+                RuntimeWarning,
+            )
+        # NOTE: even though the feature extraction endpoint directly supports
+        # being input a List[str], the Hugging Face Hub team encourages to use
+        # one query per str. This was discussed here:
+        # SEE: https://github.com/huggingface/huggingface_hub/pull/1746#issuecomment-1766640525
+        embeddings = []
+        for text in texts:
+            embedding = self._sync_client.feature_extraction(text).squeeze(axis=0)
+            if len(embedding.shape) == 1:  # Some models pool internally
+                embeddings.append(list(embedding))
+            if self.pooling is None:
+                raise ValueError(
+                    f"Pooling is required for {self.model_name} because it returned"
+                    " a > 1-D value, please specify pooling as not None."
+                )
+            embeddings.append(list(self.pooling(embedding)))
+        return embeddings
 
     def embed_query(self, text: str) -> Embedding:
         return self.embed_documents(texts=[text])[0]
