@@ -4,8 +4,8 @@ help:	## Show all Makefile targets.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
 format:	## Run code autoformatters (black).
-	black .
-	black docs/examples/* --preview --line-length 79
+	pre-commit install
+	pre-commit run black-jupyter
 
 lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 	pre-commit install && pre-commit run --all-files
