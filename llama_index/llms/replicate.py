@@ -1,7 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
@@ -15,11 +14,13 @@ from llama_index.llms.base import (
     llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import completion_response_to_chat_response
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.llms.generic_utils import stream_completion_response_to_chat_response
 
 
 class Replicate(CustomLLM):
@@ -30,7 +31,7 @@ class Replicate(CustomLLM):
     )
     prompt_key: str = Field(description="The key to use for the prompt in API calls.")
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal kwargs for the Replicate API."
+        default_factory=dict, description="Additional kwargs for the Replicate API."
     )
 
     _messages_to_prompt: Callable = PrivateAttr()
@@ -61,7 +62,6 @@ class Replicate(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Replicate_llm"
 
     @property
@@ -79,11 +79,10 @@ class Replicate(CustomLLM):
             "temperature": self.temperature,
             "max_length": self.context_window,
         }
-        model_kwargs = {
+        return {
             **base_kwargs,
             **self.additional_kwargs,
         }
-        return model_kwargs
 
     def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         return {self.prompt_key: prompt, **self._model_kwargs, **kwargs}

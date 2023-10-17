@@ -2,7 +2,6 @@
 
 Most commonly, node-postprocessors will be used in a query engine, where they are applied to the nodes returned from a retriever, and before the response synthesis step.
 
-
 ## Using with a Query Engine
 
 ```python
@@ -59,7 +58,7 @@ filtered_nodes = processor.postprocess_nodes(nodes)
 
 ## Custom Node PostProcessor
 
-The base class is `BaseNodePostprocessor`, and the API interface is very simple: 
+The base class is `BaseNodePostprocessor`, and the API interface is very simple:
 
 ```python
 class BaseNodePostprocessor:
@@ -84,7 +83,7 @@ class DummyNodePostprocessor:
     def postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:
-        
+
         # subtracts 1 from the score
         for n in nodes:
             n.score -= 1

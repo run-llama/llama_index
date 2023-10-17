@@ -1,9 +1,10 @@
+import os
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from llama_index.data_structs.data_structs import IndexStruct
-import os
 import fsspec
+
+from llama_index.data_structs.data_structs import IndexStruct
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "index_store.json"
@@ -35,4 +36,3 @@ class BaseIndexStore(ABC):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the index store to disk."""
-        pass

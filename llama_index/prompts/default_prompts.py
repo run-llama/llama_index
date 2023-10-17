@@ -184,32 +184,75 @@ DEFAULT_SCHEMA_EXTRACT_PROMPT = PromptTemplate(
 )
 
 # NOTE: taken from langchain and adapted
-# https://tinyurl.com/b772sd77
+# https://github.com/langchain-ai/langchain/blob/v0.0.303/libs/langchain/langchain/chains/sql_database/prompt.py
 DEFAULT_TEXT_TO_SQL_TMPL = (
     "Given an input question, first create a syntactically correct {dialect} "
     "query to run, then look at the results of the query and return the answer. "
     "You can order the results by a relevant column to return the most "
-    "interesting examples in the database.\n"
+    "interesting examples in the database.\n\n"
     "Never query for all the columns from a specific table, only ask for a "
-    "few relevant columns given the question.\n"
+    "few relevant columns given the question.\n\n"
     "Pay attention to use only the column names that you can see in the schema "
     "description. "
     "Be careful to not query for columns that do not exist. "
     "Pay attention to which column is in which table. "
-    "Also, qualify column names with the table name when needed.\n"
-    "Use the following format:\n"
+    "Also, qualify column names with the table name when needed. "
+    "You are required to use the following format, each taking one line:\n\n"
     "Question: Question here\n"
     "SQLQuery: SQL Query to run\n"
     "SQLResult: Result of the SQLQuery\n"
-    "Answer: Final answer here\n"
-    "Only use the tables listed below.\n"
-    "{schema}\n"
+    "Answer: Final answer here\n\n"
+    "Only use tables listed below.\n"
+    "{schema}\n\n"
     "Question: {query_str}\n"
     "SQLQuery: "
 )
 
 DEFAULT_TEXT_TO_SQL_PROMPT = PromptTemplate(
     DEFAULT_TEXT_TO_SQL_TMPL,
+    prompt_type=PromptType.TEXT_TO_SQL,
+)
+
+DEFAULT_TEXT_TO_SQL_PGVECTOR_TMPL = """\
+Given an input question, first create a syntactically correct {dialect} \
+query to run, then look at the results of the query and return the answer. \
+You can order the results by a relevant column to return the most \
+interesting examples in the database.
+
+Pay attention to use only the column names that you can see in the schema \
+description. Be careful to not query for columns that do not exist. \
+Pay attention to which column is in which table. Also, qualify column names \
+with the table name when needed.
+
+IMPORTANT NOTE: you can use specialized pgvector syntax (`<-->`) to do nearest \
+neighbors/semantic search to a given vector from an embeddings column in the table. \
+The embeddings value for a given row typically represents the semantic meaning of that row. \
+The vector represents an embedding representation \
+of the question, given below. Do NOT fill in the vector values directly, but rather specify a \
+`[query_vector]` placeholder. For instance, some select statement examples below \
+(the name of the embeddings column is `embedding`):
+SELECT * FROM items ORDER BY embedding <-> '[query_vector]' LIMIT 5;
+SELECT * FROM items WHERE id != 1 ORDER BY embedding <-> (SELECT embedding FROM items WHERE id = 1) LIMIT 5;
+SELECT * FROM items WHERE embedding <-> '[query_vector]' < 5;
+
+You are required to use the following format, \
+each taking one line:
+
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
+
+Only use tables listed below.
+{schema}
+
+
+Question: {query_str}
+SQLQuery: \
+"""
+
+DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT = PromptTemplate(
+    DEFAULT_TEXT_TO_SQL_PGVECTOR_TMPL,
     prompt_type=PromptType.TEXT_TO_SQL,
 )
 

@@ -17,8 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 async def read_channel(
-    discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool
-) -> str:
+    discord_token: str,
+    channel_id: int,
+    limit: Optional[int],
+    oldest_first: bool,
+) -> List[Document]:
     """Async read channel.
 
     Note: This is our hack to create a synchronous interface to the
@@ -26,7 +29,7 @@ async def read_channel(
     this function with `asyncio.get_event_loop().run_until_complete`.
 
     """
-    import discord  # noqa: F401
+    import discord
 
     messages: List[discord.Message] = []
 
@@ -45,7 +48,6 @@ async def read_channel(
                 thread_dict = {}
                 for thread in channel.threads:
                     thread_dict[thread.id] = thread
-
                 async for msg in channel.history(
                     limit=limit, oldest_first=oldest_first
                 ):
@@ -66,9 +68,20 @@ async def read_channel(
     client = CustomClient(intents=intents)
     await client.start(discord_token)
 
-    msg_txt_list = [m.content for m in messages]
-
-    return "\n\n".join(msg_txt_list)
+    ### Wraps each message in a Document containing the text \
+    # as well as some useful metadata properties.
+    return [
+        Document(
+            text=msg.content,
+            metadata={
+                "message_id": msg.id,
+                "username": msg.author.name,
+                "created_at": msg.created_at,
+                "edited_at": msg.edited_at,
+            },
+        )
+        for msg in messages
+    ]
 
 
 class DiscordReader(BasePydanticReader):
@@ -88,7 +101,7 @@ class DiscordReader(BasePydanticReader):
     def __init__(self, discord_token: Optional[str] = None) -> None:
         """Initialize with parameters."""
         try:
-            import discord  # noqa: F401
+            import discord
         except ImportError:
             raise ImportError(
                 "`discord.py` package not found, please run `pip install discord.py`"
@@ -105,19 +118,17 @@ class DiscordReader(BasePydanticReader):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name identifier of the class."""
         return "DiscordReader"
 
     def _read_channel(
         self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
-    ) -> str:
+    ) -> List[Document]:
         """Read channel."""
-        result = asyncio.get_event_loop().run_until_complete(
+        return asyncio.get_event_loop().run_until_complete(
             read_channel(
                 self.discord_token, channel_id, limit=limit, oldest_first=oldest_first
             )
         )
-        return result
 
     def load_data(
         self,
@@ -144,12 +155,10 @@ class DiscordReader(BasePydanticReader):
                     f"Channel id {channel_id} must be an integer, "
                     f"not {type(channel_id)}."
                 )
-            channel_content = self._read_channel(
+            channel_documents = self._read_channel(
                 channel_id, limit=limit, oldest_first=oldest_first
             )
-            results.append(
-                Document(text=channel_content, metadata={"channel": channel_id})
-            )
+            results += channel_documents
         return results
 
 

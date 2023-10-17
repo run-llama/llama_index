@@ -6,7 +6,6 @@ from typing import Any, Dict, Generator, List, Union
 
 import pandas as pd
 import pytest
-
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import ElasticsearchStore
 from llama_index.vector_stores.types import (
@@ -29,7 +28,7 @@ from llama_index.vector_stores.types import (
 logging.basicConfig(level=logging.DEBUG)
 
 try:
-    import elasticsearch  # noqa: F401
+    import elasticsearch
 
     es_client = elasticsearch.Elasticsearch("http://localhost:9200")
     es_client.info()
@@ -37,9 +36,7 @@ try:
     elasticsearch_not_available = False
 
     es_license = es_client.license.get()
-    # TODO: Fix hybrid search tests
-    # basic_license: bool = "basic" == es_license["license"]["type"]
-    basic_license = True
+    basic_license: bool = es_license["license"]["type"] == "basic"
 except (ImportError, Exception):
     elasticsearch_not_available = True
     basic_license = True
@@ -47,14 +44,12 @@ except (ImportError, Exception):
 
 @pytest.fixture(scope="session")
 def conn() -> Any:
-    import elasticsearch  # noqa: F401
+    import elasticsearch
 
-    es_client = elasticsearch.Elasticsearch("http://localhost:9200")
-
-    return es_client
+    return elasticsearch.Elasticsearch("http://localhost:9200")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def index_name() -> str:
     """Return the index name."""
     return f"test_{uuid.uuid4().hex}"
@@ -173,7 +168,7 @@ def test_instance_creation(index_name: str, elasticsearch_connection: Dict) -> N
     assert isinstance(es_store, ElasticsearchStore)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def es_store(index_name: str, elasticsearch_connection: Dict) -> ElasticsearchStore:
     return ElasticsearchStore(
         **elasticsearch_connection,
@@ -185,7 +180,7 @@ def es_store(index_name: str, elasticsearch_connection: Dict) -> ElasticsearchSt
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_query(
     es_store: ElasticsearchStore,
@@ -209,7 +204,7 @@ async def test_add_to_es_and_query(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query(
     es_store: ElasticsearchStore,
@@ -243,7 +238,7 @@ async def test_add_to_es_and_text_query(
     basic_license,
     reason="elasticsearch is not available or license is basic",
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_hybrid_query(
     es_store: ElasticsearchStore,
@@ -277,7 +272,7 @@ async def test_add_to_es_and_hybrid_query(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_with_filters(
     es_store: ElasticsearchStore,
@@ -304,7 +299,7 @@ async def test_add_to_es_query_with_filters(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_with_es_filters(
     es_store: ElasticsearchStore,
@@ -330,7 +325,7 @@ async def test_add_to_es_query_with_es_filters(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_and_delete(
     es_store: ElasticsearchStore,
@@ -363,7 +358,7 @@ async def test_add_to_es_query_and_delete(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_embed_query_ranked(
     es_store: ElasticsearchStore,
@@ -386,7 +381,7 @@ async def test_add_to_es_and_embed_query_ranked(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query_ranked(
     es_store: ElasticsearchStore,
@@ -408,6 +403,30 @@ async def test_add_to_es_and_text_query_ranked(
     )
     await check_top_match(
         es_store, node_embeddings, use_async, query_get_2_first, node2, node1
+    )
+
+
+@pytest.mark.skipif(
+    elasticsearch_not_available, reason="elasticsearch is not available"
+)
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_es_and_text_query_ranked_hybrid(
+    es_store: ElasticsearchStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    node1 = "f658de3b-8cef-4d1c-8bed-9a263c907251"
+    node2 = "0b31ae71-b797-4e88-8495-031371a7752e"
+
+    query_get_1_first = VectorStoreQuery(
+        query_str="I was",
+        query_embedding=[0.0, 0.0, 0.5],
+        mode=VectorStoreQueryMode.HYBRID,
+        similarity_top_k=2,
+    )
+    await check_top_match(
+        es_store, node_embeddings, use_async, query_get_1_first, node1, node2
     )
 
 
@@ -441,7 +460,9 @@ def test_check_user_agent(
 
     es_store.add(node_embeddings)
 
-    user_agent = es_client_instance.transport.requests[0]["headers"]["user-agent"]
+    user_agent = es_client_instance.transport.requests[0]["headers"][  # type: ignore
+        "user-agent"
+    ]
     pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+$"
     match = re.match(pattern, user_agent)
 

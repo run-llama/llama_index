@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr, Field
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
@@ -9,6 +9,7 @@ class OptimumEmbedding(BaseEmbedding):
     folder_name: str = Field(description="Folder name to load from.")
     max_length: int = Field(description="Maximum length of input.")
     pooling: str = Field(description="Pooling strategy. One of ['cls', 'mean'].")
+    normalize: str = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )
@@ -27,6 +28,7 @@ class OptimumEmbedding(BaseEmbedding):
         folder_name: str,
         pooling: str = "cls",
         max_length: Optional[int] = None,
+        normalize: bool = True,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
         model: Optional[Any] = None,
@@ -35,8 +37,8 @@ class OptimumEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
     ):
         try:
-            from transformers import AutoTokenizer
             from optimum.onnxruntime import ORTModelForFeatureExtraction
+            from transformers import AutoTokenizer
         except ImportError:
             raise ImportError(
                 "OptimumEmbedding requires transformers to be installed.\n"
@@ -65,13 +67,13 @@ class OptimumEmbedding(BaseEmbedding):
             folder_name=folder_name,
             max_length=max_length,
             pooling=pooling,
+            normalize=normalize,
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "OptimumEmbedding"
 
     @classmethod
@@ -82,8 +84,8 @@ class OptimumEmbedding(BaseEmbedding):
         export_kwargs: Optional[dict] = None,
     ) -> None:
         try:
-            from transformers import AutoTokenizer
             from optimum.onnxruntime import ORTModelForFeatureExtraction
+            from transformers import AutoTokenizer
         except ImportError:
             raise ImportError(
                 "OptimumEmbedding requires transformers to be installed.\n"
@@ -141,11 +143,18 @@ class OptimumEmbedding(BaseEmbedding):
         model_output = self._model(**encoded_input)
 
         if self.pooling == "cls":
-            return self._cls_pooling(model_output).tolist()
+            embeddings = self._cls_pooling(model_output)
         else:
-            return self._mean_pooling(
+            embeddings = self._mean_pooling(
                 model_output, encoded_input["attention_mask"]
-            ).tolist()
+            )
+
+        if self.normalize:
+            import torch
+
+            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+
+        return embeddings.tolist()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""

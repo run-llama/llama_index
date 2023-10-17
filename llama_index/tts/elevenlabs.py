@@ -1,6 +1,7 @@
 """ElevenLabs TTS."""
 
-from typing import Optional, Any
+from typing import Any, Optional
+
 from llama_index.tts.base import BaseTTS
 
 
@@ -13,8 +14,6 @@ class ElevenLabsTTS(BaseTTS):
     """
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        """ """
-
         super().__init__()
 
         self.api_key = api_key
@@ -30,7 +29,6 @@ class ElevenLabsTTS(BaseTTS):
             text (str): text to be turned into audio.
             voice (Optional[str]): voice in which audio is generated.
         """
-
         import_err_msg = "`elevenlabs` package not found, \
             please run `pip install elevenlabs`"
 

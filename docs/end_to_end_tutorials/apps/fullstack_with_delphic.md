@@ -417,8 +417,8 @@ can be broken down into the following steps:
 1. Initializing state variables:
 
 ```tsx
-const[collections, setCollections] = useState < CollectionModelSchema[] > ([]);
-const[loading, setLoading] = useState(true);
+const [collections, setCollections] = useState<CollectionModelSchema[]>([]);
+const [loading, setLoading] = useState(true);
 ```
 
 Here, we initialize two state variables: `collections` to store the list of collections and `loading` to track whether
@@ -555,34 +555,34 @@ handle different WebSocket events.
 Overall, the setupWebsocket function looks like this:
 
 ```tsx
-const setupWebsocket = () => {  
-  setConnecting(true);  
-  // Here, a new WebSocket object is created using the specified URL, which includes the   
-  // selected collection's ID and the user's authentication token.  
-    
-  websocket.current = new WebSocket(  
-    `ws://localhost:8000/ws/collections/${selectedCollection.id}/query/?token=${authToken}`  
-  );  
-  
-  websocket.current.onopen = (event) => {  
-    //...  
-  };  
-  
-  websocket.current.onmessage = (event) => {  
-    //...  
-  };  
-  
-  websocket.current.onclose = (event) => {  
-    //...  
-  };  
-  
-  websocket.current.onerror = (event) => {  
-    //...  
-  };  
-  
-  return () => {  
-    websocket.current?.close();  
-  };  
+const setupWebsocket = () => {
+  setConnecting(true);
+  // Here, a new WebSocket object is created using the specified URL, which includes the
+  // selected collection's ID and the user's authentication token.
+
+  websocket.current = new WebSocket(
+    `ws://localhost:8000/ws/collections/${selectedCollection.id}/query/?token=${authToken}`,
+  );
+
+  websocket.current.onopen = (event) => {
+    //...
+  };
+
+  websocket.current.onmessage = (event) => {
+    //...
+  };
+
+  websocket.current.onclose = (event) => {
+    //...
+  };
+
+  websocket.current.onerror = (event) => {
+    //...
+  };
+
+  return () => {
+    websocket.current?.close();
+  };
 };
 ```
 
@@ -593,12 +593,12 @@ callback, the component updates the states to reflect that the connection is est
 cleared, and no messages are awaiting responses:
 
 ```tsx
-websocket.current.onopen = (event) => {  
-  setError(false);  
-  setConnecting(false);  
-  setAwaitingMessage(false);  
-  
-  console.log("WebSocket connected:", event);  
+websocket.current.onopen = (event) => {
+  setError(false);
+  setConnecting(false);
+  setAwaitingMessage(false);
+
+  console.log("WebSocket connected:", event);
 };
 ```
 
@@ -606,22 +606,22 @@ websocket.current.onopen = (event) => {
 callback, the received data is parsed and the `messages` state is updated with the new message from the server:
 
 ```
-websocket.current.onmessage = (event) => {  
-  const data = JSON.parse(event.data);  
-  console.log("WebSocket message received:", data);  
-  setAwaitingMessage(false);  
-  
-  if (data.response) {  
-    // Update the messages state with the new message from the server  
-    setMessages((prevMessages) => [  
-      ...prevMessages,  
-      {  
-        sender_id: "server",  
-        message: data.response,  
-        timestamp: new Date().toLocaleTimeString(),  
-      },  
-    ]);  
-  }  
+websocket.current.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log("WebSocket message received:", data);
+  setAwaitingMessage(false);
+
+  if (data.response) {
+    // Update the messages state with the new message from the server
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      {
+        sender_id: "server",
+        message: data.response,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ]);
+  }
 };
 ```
 
@@ -630,16 +630,16 @@ close code (`4000`) to display a warning toast and update the component states a
 event:
 
 ```tsx
-websocket.current.onclose = (event) => {  
-  if (event.code === 4000) {  
-    toast.warning(  
-      "Selected collection's model is unavailable. Was it created properly?"  
-    );  
-    setError(true);  
-    setConnecting(false);  
-    setAwaitingMessage(false);  
-  }  
-  console.log("WebSocket closed:", event);  
+websocket.current.onclose = (event) => {
+  if (event.code === 4000) {
+    toast.warning(
+      "Selected collection's model is unavailable. Was it created properly?",
+    );
+    setError(true);
+    setConnecting(false);
+    setAwaitingMessage(false);
+  }
+  console.log("WebSocket closed:", event);
 };
 ```
 
@@ -647,14 +647,14 @@ Finally, `onerror` is triggered when an error occurs with the WebSocket connecti
 updates the states to reflect the error and logs the error event:
 
 ```tsx
-    websocket.current.onerror = (event) => {
-      setError(true);
-      setConnecting(false);
-      setAwaitingMessage(false);
+websocket.current.onerror = (event) => {
+  setError(true);
+  setConnecting(false);
+  setAwaitingMessage(false);
 
-      console.error("WebSocket error:", event);
-    };
-  ```
+  console.error("WebSocket error:", event);
+};
+```
 
 #### Rendering our Chat Messages
 
@@ -720,9 +720,9 @@ cd delphic
 Copy the sample environment files:
 
 ```commandline
-mkdir -p ./.envs/.local/  
-cp -a ./docs/sample_envs/local/.frontend ./frontend  
-cp -a ./docs/sample_envs/local/.django ./.envs/.local  
+mkdir -p ./.envs/.local/
+cp -a ./docs/sample_envs/local/.frontend ./frontend
+cp -a ./docs/sample_envs/local/.django ./.envs/.local
 cp -a ./docs/sample_envs/local/.postgres ./.envs/.local
 ```
 

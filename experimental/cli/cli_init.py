@@ -1,15 +1,16 @@
-from .configuration import load_config, save_config
 from argparse import Namespace, _SubParsersAction
+
+from .configuration import load_config, save_config
 
 
 def init_cli(args: Namespace) -> None:
-    """Handle subcommand "init" """
+    """Handle subcommand "init"."""
     config = load_config(args.directory)
     save_config(config, args.directory)
 
 
 def register_init_cli(subparsers: _SubParsersAction) -> None:
-    """Register subcommand "init" to ArgumentParser"""
+    """Register subcommand "init" to ArgumentParser."""
     parser = subparsers.add_parser("init")
     parser.add_argument(
         "directory",

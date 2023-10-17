@@ -1,10 +1,10 @@
+import logging
 from typing import Any, List, Optional, Sequence
+
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
 from llama_index.storage.storage_context import StorageContext
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def load_indices_from_storage(
     index_ids: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> List[BaseIndex]:
-    """Load multiple indices from storage context
+    """Load multiple indices from storage context.
 
     Args:
         storage_context (StorageContext): storage context containing
@@ -97,5 +97,4 @@ def load_graph_from_storage(
     """
     indices = load_indices_from_storage(storage_context, index_ids=None, **kwargs)
     all_indices = {index.index_id: index for index in indices}
-    graph = ComposableGraph(all_indices=all_indices, root_id=root_id)
-    return graph
+    return ComposableGraph(all_indices=all_indices, root_id=root_id)

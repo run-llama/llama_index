@@ -1,9 +1,8 @@
 from inspect import signature
 from typing import Any, Awaitable, Callable, Optional, Type
 
-from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.bridge.langchain import StructuredTool, Tool
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.tools.utils import create_schema_from_function
 

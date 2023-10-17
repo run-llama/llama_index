@@ -1,11 +1,11 @@
-from typing import List, Dict, Any, Union, Iterator, Generator, Mapping, Sequence, Tuple
+from typing import Any, Dict, Generator, Iterator, List, Mapping, Sequence, Tuple, Union
 
 import pytest
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
-    MessageRole,
     CompletionResponse,
+    MessageRole,
 )
 from llama_index.llms.xinference import Xinference
 
@@ -73,8 +73,7 @@ mock_chat_stream: List[Dict[str, Any]] = [
 
 
 def mock_chat_stream_iterator() -> Generator:
-    for i in mock_chat_stream:
-        yield i
+    yield from mock_chat_stream
 
 
 class MockXinferenceModel:

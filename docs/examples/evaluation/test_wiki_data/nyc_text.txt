@@ -90,8 +90,8 @@ The Bronx (Bronx County) is both New York City's northernmost borough, and the o
 ==== Staten Island ====
 Staten Island (Richmond County) is the most suburban in character of the five boroughs. Staten Island is connected to Brooklyn by the Verrazzano-Narrows Bridge, and to Manhattan by way of the free Staten Island Ferry, a daily commuter ferry that provides unobstructed views of the Statue of Liberty, Ellis Island, and Lower Manhattan. In central Staten Island, the Staten Island Greenbelt spans approximately 2,500 acres (10 km2), including 28 miles (45 km) of walking trails and one of the last undisturbed forests in the city. Designated in 1984 to protect the island's natural lands, the Greenbelt comprises seven city parks.
 
-		
-		
+
+
 
 
 === Architecture ===
@@ -195,7 +195,7 @@ New York City, like other large cities, has a high degree of income disparity, a
 
 == Economy ==
 
- 
+
 New York City is a global hub of business and commerce and an established safe haven for global investors, and is sometimes described as the capital of the world. The term global city was popularized by sociologist Saskia Sassen in her 1991 work, The Global City: New York, London, Tokyo. New York is a center for worldwide banking and finance, health care and life sciences, medical technology and research, retailing, world trade, transportation, tourism, real estate, new media, traditional media, advertising, legal services, accountancy, insurance, both musical and prose theater, fashion, and the arts in the United States; while Silicon Alley, metonymous for New York's broad-spectrum high technology sphere, continues to expand. The Port of New York and New Jersey is a major economic engine, handling a maritime cargo volume in the ten months through October 2022 of over 8.2 million TEUs, benefitting post-Panamax from the expansion of the Panama Canal, and accelerating ahead of California seaports in monthly cargo volumes.Many Fortune 500 corporations are headquartered in New York City, as are a large number of multinational corporations. New York City has been ranked first among cities across the globe in attracting capital, business, and tourists. New York City's role as the top global center for the advertising industry is metonymously reflected as Madison Avenue. The city's fashion industry provides approximately 180,000 employees with $11 billion in annual wages. The non-profit Partnership for New York City, currently headed by Kathryn Wylde, is the city's pre-eminent private business association, comprising approximately 330 corporate leaders in membership. The fashion industry is based in Midtown Manhattan and is represented by the Council of Fashion Designers of America (CDFA), headquartered in Lower Manhattan.
 Significant economic sectors also include non-profit institutions, and universities. Manufacturing declined over the 20th century but still accounts for significant employment. particularly in smaller operations. The city's apparel and garment industry, historically centered on the Garment District in Manhattan, peaked in 1950, when more than 323,000 workers were employed in the industry in New York. In 2015, fewer than 23,000 New York City residents were employed in the manufacture of garments, accessories, and finished textiles, although efforts to revive the industry were underway, and the American fashion industry continues to be metonymized as Seventh Avenue.Chocolate is New York City's leading specialty-food export, with up to $234 million worth of exports each year. Godiva, one of the world's largest chocolatiers, is headquartered in Manhattan, and an unofficial chocolate district in Brooklyn is home to several chocolate makers and retailers. Food processing is a $5 billion industry that employs more than 19,000 residents.
 
@@ -238,7 +238,7 @@ As an oceanic port city, New York City is vulnerable to the long-term manifestat
 
 == Education ==
 
- 
+
 
 New York City has the largest educational system of any city in the world. The city’s educational infrastructure spans primary education, secondary education, higher education, and research.
 
@@ -362,7 +362,7 @@ In terms of hosting multi-sport events, New York City hosted the 1984 Summer Par
 
 == Environment ==
 
- 
+
 Environmental issues in New York City are affected by the city's size, density, abundant public transportation infrastructure, and its location at the mouth of the Hudson River. For example, it is one of the country's biggest sources of pollution and has the lowest per-capita greenhouse gas emissions rate and electricity usage. Governors Island is planned to host a US$1 billion research and education center to make New York City the global leader in addressing the climate crisis.
 
 
@@ -485,7 +485,7 @@ Whitehead, Colson (2003). The Colossus of New York: A City in 13 Parts. New York
 
 == External links ==
 
-Official website 
+Official website
 NYC Go, official tourism website
 New York City at Curlie
  Geographic data related to New York City at OpenStreetMap

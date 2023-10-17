@@ -1,14 +1,14 @@
 # ChatGPT Plugin Integrations
 
-**NOTE**: This is a work-in-progress, stay tuned for more exciting updates on this front! 
+**NOTE**: This is a work-in-progress, stay tuned for more exciting updates on this front!
 
 ## ChatGPT Retrieval Plugin Integrations
 
 The [OpenAI ChatGPT Retrieval Plugin](https://github.com/openai/chatgpt-retrieval-plugin)
-offers a centralized API specification for any document storage system to interact 
+offers a centralized API specification for any document storage system to interact
 with ChatGPT. Since this can be deployed on any service, this means that more and more
 document retrieval services will implement this spec; this allows them to not only
-interact with ChatGPT, but also interact with any LLM toolkit that may use 
+interact with ChatGPT, but also interact with any LLM toolkit that may use
 a retrieval service.
 
 LlamaIndex provides a variety of integrations with the ChatGPT Retrieval Plugin.
@@ -50,7 +50,7 @@ def dump_docs_to_json(documents: List[Document], out_path: str) -> Dict:
             # "author": "Paul Graham",
         }
         result_json.append(cur_dict)
-    
+
     json.dump(result_json, open(out_path, 'w'))
 
 ```
@@ -86,14 +86,15 @@ query_engine = vector_index.as_query_engine(
 )
 response = query_engine.query(
     "Summarize the retrieved content and describe what the author did growing up",
-) 
+)
 
 ```
+
 For more details, check out the [full example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatgpt_plugin/ChatGPTRetrievalPluginReaderDemo.ipynb).
 
 ### ChatGPT Retrieval Plugin Index
 
-The ChatGPT Retrieval Plugin Index allows you to easily build a vector index over any documents, with storage backed by a document store implementing the 
+The ChatGPT Retrieval Plugin Index allows you to easily build a vector index over any documents, with storage backed by a document store implementing the
 ChatGPT endpoint.
 
 Note: this index is a vector index, allowing top-k retrieval.
@@ -112,7 +113,7 @@ documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 bearer_token = os.getenv("BEARER_TOKEN")
 # initialize without metadata filter
 index = ChatGPTRetrievalPluginIndex(
-    documents, 
+    documents,
     endpoint_url="http://localhost:8000",
     bearer_token=bearer_token,
 )

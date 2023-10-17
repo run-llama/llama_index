@@ -8,6 +8,9 @@ on:
       - main
   pull_request:
 
+env:
+  POETRY_VERSION: "1.6.1"
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -19,22 +22,24 @@ jobs:
         python-version: ["3.9"]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
       - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build
+        shell: bash
+        run: poetry install
       - name: Build
-        run: |
-          python -m build --sdist --wheel .
-      - name: Test installing package
-        run: |
-          python -m pip install .
+        shell: bash
+        run: poetry build
+      - name: Test installing built package
+        shell: bash
+        run: python -m pip install .
       - name: Test import
+        shell: bash
         working-directory: ${{ vars.RUNNER_TEMP }}
-        run: |
-          python -c "import llama_index"
-        
+        run: python -c "import llama_index"

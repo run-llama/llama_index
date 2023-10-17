@@ -1,4 +1,5 @@
 from typing import List
+
 from llama_index.prompts.base import BasePromptTemplate
 
 
@@ -13,8 +14,7 @@ def get_empty_prompt_txt(prompt: BasePromptTemplate) -> str:
     partial_kargs = prompt.kwargs
     empty_kwargs = {v: "" for v in prompt.template_vars if v not in partial_kargs}
     all_kwargs = {**partial_kargs, **empty_kwargs}
-    empty_prompt_txt = prompt.format(llm=None, **all_kwargs)
-    return empty_prompt_txt
+    return prompt.format(llm=None, **all_kwargs)
 
 
 def get_biggest_prompt(prompts: List[BasePromptTemplate]) -> BasePromptTemplate:
@@ -27,5 +27,4 @@ def get_biggest_prompt(prompts: List[BasePromptTemplate]) -> BasePromptTemplate:
     """
     empty_prompt_txts = [get_empty_prompt_txt(prompt) for prompt in prompts]
     empty_prompt_txt_lens = [len(txt) for txt in empty_prompt_txts]
-    biggest_prompt = prompts[empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))]
-    return biggest_prompt
+    return prompts[empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))]

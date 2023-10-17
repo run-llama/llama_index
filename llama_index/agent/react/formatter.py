@@ -3,16 +3,15 @@
 from abc import abstractmethod
 from typing import List, Optional, Sequence
 
-from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.agent.react.prompts import REACT_CHAT_SYSTEM_HEADER
 from llama_index.agent.react.types import BaseReasoningStep, ObservationReasoningStep
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.tools import BaseTool
 
 
 def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:
-    """Tool"""
+    """Tool."""
     tool_descs = []
     for tool in tools:
         tool_desc = (
@@ -28,14 +27,13 @@ def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:
 class BaseAgentChatFormatter(BaseModel):
     """Base chat formatter."""
 
-    tools: Sequence[BaseTool]
-
     class Config:
         arbitrary_types_allowed = True
 
     @abstractmethod
     def format(
         self,
+        tools: Sequence[BaseTool],
         chat_history: List[ChatMessage],
         current_reasoning: Optional[List[BaseReasoningStep]] = None,
     ) -> List[ChatMessage]:
@@ -49,17 +47,18 @@ class ReActChatFormatter(BaseAgentChatFormatter):
 
     def format(
         self,
+        tools: Sequence[BaseTool],
         chat_history: List[ChatMessage],
         current_reasoning: Optional[List[BaseReasoningStep]] = None,
     ) -> List[ChatMessage]:
         """Format chat history into list of ChatMessage."""
         current_reasoning = current_reasoning or []
 
-        tool_descs_str = "\n".join(get_react_tool_descriptions(self.tools))
+        tool_descs_str = "\n".join(get_react_tool_descriptions(tools))
 
         fmt_sys_header = self.system_header.format(
             tool_desc=tool_descs_str,
-            tool_names=", ".join([tool.metadata.get_name() for tool in self.tools]),
+            tool_names=", ".join([tool.metadata.get_name() for tool in tools]),
         )
 
         # format reasoning history as alternating user and assistant messages
@@ -79,9 +78,8 @@ class ReActChatFormatter(BaseAgentChatFormatter):
                 )
             reasoning_history.append(message)
 
-        formatted_chat = [
+        return [
             ChatMessage(role=MessageRole.SYSTEM, content=fmt_sys_header),
             *chat_history,
             *reasoning_history,
         ]
-        return formatted_chat

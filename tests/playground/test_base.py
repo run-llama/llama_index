@@ -3,7 +3,6 @@
 from typing import List
 
 import pytest
-
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.service_context import ServiceContext
@@ -16,7 +15,6 @@ from llama_index.schema import Document
 class MockEmbedding(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "MockEmbedding"
 
     async def _aget_query_embedding(self, query: str) -> List[float]:

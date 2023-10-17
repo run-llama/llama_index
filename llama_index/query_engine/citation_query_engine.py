@@ -136,7 +136,7 @@ class CitationQueryEngine(BaseQueryEngine):
         # class-specific args
         **kwargs: Any,
     ) -> "CitationQueryEngine":
-        """Initialize a CitationQueryEngine object."
+        """Initialize a CitationQueryEngine object.".
 
         Args:
             index: (BastGPTIndex): index to use for querying
@@ -219,12 +219,11 @@ class CitationQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         nodes = self._create_citation_nodes(nodes)
-        response = self._response_synthesizer.synthesize(
+        return self._response_synthesizer.synthesize(
             query=query_bundle,
             nodes=nodes,
             additional_source_nodes=additional_source_nodes,
         )
-        return response
 
     async def asynthesize(
         self,

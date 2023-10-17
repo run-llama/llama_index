@@ -1,15 +1,14 @@
 """Elasticsearch/Opensearch vector store."""
-from typing import Any, Dict, List, Optional, cast, Iterable, Union
-
 import json
 import uuid
+from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
@@ -73,7 +72,7 @@ def _bulk_ingest_embeddings(
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
-        mapping = dict()
+        mapping = {}
 
     bulk = _import_bulk()
     not_found_error = _import_not_found_error()
@@ -135,7 +134,6 @@ def _default_painless_scripting_query(
     vector_field: str = "embedding",
 ) -> Dict:
     """For Painless Scripting Search, this is the default query."""
-
     if not pre_filter:
         pre_filter = MATCH_ALL_QUERY
 
@@ -188,6 +186,7 @@ class OpensearchVectorClient:
         embedding_field: str = "embedding",
         text_field: str = "content",
         method: Optional[dict] = None,
+        max_chunk_bytes: int = 1 * 1024 * 1024,
         **kwargs: Any,
     ):
         """Init params."""
@@ -206,6 +205,7 @@ class OpensearchVectorClient:
         self._dim = dim
         self._index = index
         self._text_field = text_field
+        self._max_chunk_bytes = max_chunk_bytes
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -229,7 +229,6 @@ class OpensearchVectorClient:
 
     def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""
-
         embeddings: List[List[float]] = []
         texts: List[str] = []
         metadatas: List[dict] = []
@@ -239,8 +238,6 @@ class OpensearchVectorClient:
             embeddings.append(node.get_embedding())
             texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
             metadatas.append(node_to_metadata_dict(node, remove_text=True))
-
-        max_chunk_bytes = kwargs.get("max_chunk_bytes", 1 * 1024 * 1024)
 
         return _bulk_ingest_embeddings(
             self._os_client,
@@ -252,7 +249,7 @@ class OpensearchVectorClient:
             vector_field=self._embedding_field,
             text_field=self._text_field,
             mapping=None,
-            max_chunk_bytes=max_chunk_bytes,
+            max_chunk_bytes=self._max_chunk_bytes,
         )
 
     def delete_doc_id(self, doc_id: str) -> None:
@@ -287,7 +284,6 @@ class OpensearchVectorClient:
         Returns:
             Up to k docs closest to query_embedding
         """
-
         if filters is None:
             search_query = _default_approximate_search_query(
                 query_embedding, k, vector_field=self._embedding_field
@@ -370,7 +366,7 @@ class OpensearchVectorStore(VectorStore):
     ) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings.
 
         """

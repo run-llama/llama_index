@@ -1,6 +1,7 @@
 # Data Connectors (LlamaHub)
 
 ## Concept
+
 A data connector (i.e. `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
 ```{tip}
@@ -8,14 +9,16 @@ Once you've ingested your data, you can build an [Index](/core_modules/data_modu
 ```
 
 ## LlamaHub
-Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙. 
+
+Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙.
 LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any LlamaIndex application.
 
 ![](/_static/data_connectors/llamahub.png)
 
-
 ## Usage Pattern
+
 Get started with:
+
 ```python
 from llama_index import download_loader
 
@@ -31,10 +34,10 @@ maxdepth: 2
 usage_pattern.md
 ```
 
-
 ## Modules
 
 Some sample data connectors:
+
 - local file directory (`SimpleDirectoryReader`). Can support parsing a wide range of file types: `.pdf`, `.jpg`, `.png`, `.docx`, etc.
 - [Notion](https://developers.notion.com/) (`NotionPageReader`)
 - [Google Docs](https://developers.google.com/docs/api) (`GoogleDocsReader`)

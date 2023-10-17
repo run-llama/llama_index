@@ -1,11 +1,11 @@
-"""Tool mapping"""
+"""Tool mapping."""
 
-from typing import Sequence, Any, Optional
+from typing import Any, Optional, Sequence
 
 from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
-from llama_index.tools.types import BaseTool
-from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.schema import BaseNode, TextNode
+from llama_index.tools.query_engine import QueryEngineTool
+from llama_index.tools.types import BaseTool
 
 
 def convert_tool_to_node(tool: BaseTool) -> TextNode:

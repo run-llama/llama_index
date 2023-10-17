@@ -1,12 +1,12 @@
-from pathlib import Path
-import tempfile
 import os
-import pytest
+import tempfile
+from pathlib import Path
 
+import pytest
 from llama_index.readers.file.html_reader import HTMLTagReader
 
 
-@pytest.fixture
+@pytest.fixture()
 def html_str() -> str:
     return """
 <!DOCTYPE html>

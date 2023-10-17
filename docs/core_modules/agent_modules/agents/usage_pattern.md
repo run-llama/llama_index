@@ -27,10 +27,10 @@ agent = ReActAgent.from_tools([multiply_tool], llm=llm, verbose=True)
 An agent supports both `chat` and `query` endpoints, inheriting from our `ChatEngine` and `QueryEngine` respectively.
 
 Example usage:
+
 ```python
 agent.chat("What is 2123 * 215123")
 ```
-
 
 ## Query Engine Tools
 
@@ -72,7 +72,7 @@ agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ## Use other agents as Tools
 
 A nifty feature of our agents is that since they inherit from `BaseQueryEngine`, you can easily define other agents as tools
-through our `QueryEngineTool`. 
+through our `QueryEngineTool`.
 
 ```python
 from llama_index.tools import QueryEngineTool
@@ -146,10 +146,10 @@ from llama_index.schema import Document
 from llama_index.agent import ContextRetrieverOpenAIAgent
 
 
-# toy index - stores a list of abbreviations
+# toy index - stores a list of Abbreviations
 texts = [
-    "Abbrevation: X = Revenue",
-    "Abbrevation: YZ = Risk Factors",
+    "Abbreviation: X = Revenue",
+    "Abbreviation: YZ = Risk Factors",
     "Abbreviation: Z = Costs",
 ]
 docs = [Document(text=t) for t in texts]

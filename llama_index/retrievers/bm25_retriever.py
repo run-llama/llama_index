@@ -1,11 +1,11 @@
 import logging
-from typing import Callable, Optional, cast, List
+from typing import Callable, List, Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import Document, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.utils import globals_helper
 
@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class BM25Retriever(BaseRetriever):
     def __init__(
         self,
-        docstore: BaseDocumentStore,
-        tokenizer: Callable[[str], List[str]],
+        nodes: List[BaseNode],
+        tokenizer: Optional[Callable[[str], List[str]]],
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
         try:
@@ -24,27 +24,40 @@ class BM25Retriever(BaseRetriever):
         except ImportError:
             raise ImportError("Please install rank_bm25: pip install rank-bm25")
 
-        self._docstore = docstore
-        self._tokenizer = tokenizer
+        self._nodes = nodes
+        self._tokenizer = tokenizer or (lambda x: x.split(" "))
         self._similarity_top_k = similarity_top_k
-        self._documents = cast(
-            List[Document], [doc for doc in self._docstore.docs.values()]
-        )
-        self._corpus = [self._tokenizer(doc.text) for doc in self._documents]
+        self._corpus = [self._tokenizer(node.get_content()) for node in self._nodes]
 
         self.bm25 = BM25Okapi(self._corpus)
 
     @classmethod
     def from_defaults(
         cls,
-        index: VectorStoreIndex,
+        index: Optional[VectorStoreIndex] = None,
+        nodes: Optional[List[BaseNode]] = None,
+        docstore: Optional[BaseDocumentStore] = None,
         tokenizer: Optional[Callable[[str], List[str]]] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> "BM25Retriever":
+        # ensure only one of index, nodes, or docstore is passed
+        if sum(bool(val) for val in [index, nodes, docstore]) != 1:
+            raise ValueError("Please pass exactly one of index, nodes, or docstore.")
+
+        if index is not None:
+            docstore = index.docstore
+
+        if docstore is not None:
+            nodes = cast(List[BaseNode], list(docstore.docs.values()))
+
+        assert (
+            nodes is not None
+        ), "Please pass exactly one of index, nodes, or docstore."
+
         tokenizer = tokenizer or globals_helper.tokenizer
         return cls(
-            index.docstore,
-            tokenizer,
+            nodes=nodes,
+            tokenizer=tokenizer,
             similarity_top_k=similarity_top_k,
         )
 
@@ -53,8 +66,8 @@ class BM25Retriever(BaseRetriever):
         doc_scores = self.bm25.get_scores(tokenized_query)
 
         nodes: List[NodeWithScore] = []
-        for i, doc in enumerate(self._documents):
-            nodes.append(NodeWithScore(node=doc, score=doc_scores[i]))
+        for i, node in enumerate(self._nodes):
+            nodes.append(NodeWithScore(node=node, score=doc_scores[i]))
 
         return nodes
 
@@ -66,6 +79,4 @@ class BM25Retriever(BaseRetriever):
 
         # Sort and get top_k nodes, score range => 0..1, closer to 1 means more relevant
         nodes = sorted(scored_nodes, key=lambda x: x.score or 0.0, reverse=True)
-        top_k_nodes = nodes[: self._similarity_top_k]
-
-        return top_k_nodes
+        return nodes[: self._similarity_top_k]

@@ -1,8 +1,8 @@
 # Metadata Extraction
 
-
 ## Introduction
-In many cases, especially with long documents, a chunk of text may lack the context necessary to disambiguate the chunk from other similar chunks of text. 
+
+In many cases, especially with long documents, a chunk of text may lack the context necessary to disambiguate the chunk from other similar chunks of text.
 
 To combat this, we use LLMs to extract certain contextual information relevant to the document to better help the retrieval and language models disambiguate similar-looking passages.
 
@@ -13,6 +13,7 @@ We show this in an [example notebook](https://github.com/jerryjliu/llama_index/b
 First, we define a metadata extractor that takes in a list of feature extractors that will be processed in sequence.
 
 We then feed this to the node parser, which will add the additional metadata to each node.
+
 ```python
 from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.extractors import (
@@ -54,6 +55,7 @@ Here is an sample of extracted metadata:
 ## Custom Extractors
 
 If the provided extractors do not fit your needs, you can also define a custom extractor like so:
+
 ```python
 from llama_index.node_parser.extractors import MetadataFeatureExtractor
 

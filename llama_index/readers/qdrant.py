@@ -1,6 +1,6 @@
 """Qdrant reader."""
 
-from typing import List, Optional, cast, Dict
+from typing import Dict, List, Optional, cast
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
@@ -56,7 +56,7 @@ class QdrantReader(BaseReader):
             "`qdrant-client` package not found, please run `pip install qdrant-client`"
         )
         try:
-            import qdrant_client  # noqa: F401
+            import qdrant_client
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -98,6 +98,7 @@ class QdrantReader(BaseReader):
             rang_search_mapping (Optional[Dict[str, Dict[str, float]]]): Mapping from
                 field name to range query.
             limit (int): Number of results to return.
+
         Example:
             reader = QdrantReader()
             reader.load_data(
@@ -110,17 +111,18 @@ class QdrantReader(BaseReader):
                  rang_search_mapping={"text_field": {"gte": 0.1, "lte": 0.2}},
                  limit=10
              )
+
         Returns:
             List[Document]: A list of documents.
         """
-        from qdrant_client.http.models.models import Payload
         from qdrant_client.http.models import (
             FieldCondition,
+            Filter,
             MatchText,
             MatchValue,
             Range,
-            Filter,
         )
+        from qdrant_client.http.models.models import Payload
 
         should_search_mapping = should_search_mapping or {}
         must_search_mapping = must_search_mapping or {}

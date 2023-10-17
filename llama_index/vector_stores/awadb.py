@@ -64,7 +64,6 @@ class AwaDBVectorStore(VectorStore):
         Returns:
             None.
         """
-
         import_err_msg = "`awadb` package not found, please run `pip install awadb`"
         try:
             import awadb
@@ -132,7 +131,7 @@ class AwaDBVectorStore(VectorStore):
             None
         """
         if len(ref_doc_id) == 0:
-            return None
+            return
         ids: List[str] = []
         ids.append(ref_doc_id)
         self.awadb_client.Delete(ids)

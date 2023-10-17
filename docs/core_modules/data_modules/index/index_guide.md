@@ -1,11 +1,12 @@
 # How Each Index Works
 
-This guide describes how each index works with diagrams. 
+This guide describes how each index works with diagrams.
 
 Some terminology:
+
 - **Node**: Corresponds to a chunk of text from a Document. LlamaIndex takes in Document objects and internally parses/chunks them into Node objects.
-- **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to 
-    [specify different response modes](setting-response-mode) here. 
+- **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to
+  [specify different response modes](setting-response-mode) here.
 
 ## Summary Index (formerly List Index)
 
@@ -20,11 +21,10 @@ our Response Synthesis module.
 
 ![](/_static/indices/list_query.png)
 
-The summary index does offer numerous ways of querying a summary index, from an embedding-based query which 
+The summary index does offer numerous ways of querying a summary index, from an embedding-based query which
 will fetch the top-k neighbors, or with the addition of a keyword filter, as seen below:
 
 ![](/_static/indices/list_filter_query.png)
-
 
 ## Vector Store Index
 
@@ -47,7 +47,7 @@ The tree index builds a hierarchical tree from a set of Nodes (which become leaf
 
 ### Querying
 
-Querying a tree index involves traversing from root nodes down 
+Querying a tree index involves traversing from root nodes down
 to leaf nodes. By default, (`child_branch_factor=1`), a query
 chooses one child node given a parent node. If `child_branch_factor=2`, a query
 chooses two child nodes per level.
@@ -56,7 +56,7 @@ chooses two child nodes per level.
 
 ## Keyword Table Index
 
-The keyword table index extracts keywords from each Node and builds a mapping from 
+The keyword table index extracts keywords from each Node and builds a mapping from
 each keyword to the corresponding Nodes of that keyword.
 
 ![](/_static/indices/keyword.png)
@@ -64,7 +64,7 @@ each keyword to the corresponding Nodes of that keyword.
 ### Querying
 
 During query time, we extract relevant keywords from the query, and match those with pre-extracted
-Node keywords to fetch the corresponding Nodes. The extracted Nodes are passed to our 
+Node keywords to fetch the corresponding Nodes. The extracted Nodes are passed to our
 Response Synthesis module.
 
 ![](/_static/indices/keyword_query.png)

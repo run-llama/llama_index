@@ -3,11 +3,10 @@
 from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import BaseModel, Field
-
-from llama_index.bridge.langchain import print_text
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.tools.types import BaseTool, ToolMetadata, ToolOutput
+from llama_index.utils import print_text
 
 DEFAULT_NAME = "query_plan_tool"
 
@@ -132,9 +131,7 @@ class QueryPlanTool(BaseTool):
         {self._description_prefix}\n\n
         {tools_description}
         """
-        metadata = ToolMetadata(description, self._name, fn_schema=QueryPlan)
-
-        return metadata
+        return ToolMetadata(description, self._name, fn_schema=QueryPlan)
 
     def _execute_node(
         self, node: QueryNode, nodes_dict: Dict[int, QueryNode]
@@ -159,7 +156,7 @@ class QueryPlanTool(BaseTool):
             ):
                 node_text = (
                     f"Query: {child_query_node.query_str}\n"
-                    f"Response: {str(child_response)}\n"
+                    f"Response: {child_response!s}\n"
                 )
                 child_node = TextNode(text=node_text)
                 child_nodes.append(child_node)
@@ -186,7 +183,7 @@ class QueryPlanTool(BaseTool):
         print_text(
             "Executed query, got response.\n"
             f"Query: {node.query_str}\n"
-            f"Response: {str(response)}\n",
+            f"Response: {response!s}\n",
             color="blue",
         )
         return response
@@ -194,7 +191,7 @@ class QueryPlanTool(BaseTool):
     def _find_root_nodes(self, nodes_dict: Dict[int, QueryNode]) -> List[QueryNode]:
         """Find root node."""
         # the root node is the one that isn't a dependency of any other node
-        node_counts = {node_id: 0 for node_id in nodes_dict.keys()}
+        node_counts = {node_id: 0 for node_id in nodes_dict}
         for node in nodes_dict.values():
             for dep in node.dependencies:
                 node_counts[dep] += 1

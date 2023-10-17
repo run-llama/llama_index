@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 from uuid import uuid4
 
 from llama_index.llm_predictor.vellum.types import (
@@ -12,7 +12,7 @@ from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.base import PromptTemplate
 
 if TYPE_CHECKING:
-    import vellum  # noqa: F401
+    import vellum
 
 
 class VellumPromptRegistry:
@@ -28,7 +28,7 @@ class VellumPromptRegistry:
             "`vellum` package not found, please run `pip install vellum-ai`"
         )
         try:
-            from vellum.client import Vellum  # noqa: F401
+            from vellum.client import Vellum
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -49,7 +49,6 @@ class VellumPromptRegistry:
         `vellum_deployment_id` or `vellum_deployment_name` as key/value pairs within
         `BasePromptTemplate.metadata`.
         """
-
         from vellum.core import ApiError
 
         deployment_id = initial_prompt.metadata.get("vellum_deployment_id")
@@ -73,12 +72,11 @@ class VellumPromptRegistry:
         return registered_prompt
 
     def get_compiled_prompt(
-        self, registered_prompt: VellumRegisteredPrompt, input_values: dict[str, Any]
+        self, registered_prompt: VellumRegisteredPrompt, input_values: Dict[str, Any]
     ) -> VellumCompiledPrompt:
         """Retrieves the fully-compiled prompt from Vellum, after all variable
         substitutions, templating, etc.
         """
-
         result = self._vellum_client.model_versions.model_version_compile_prompt(
             registered_prompt.model_version_id, input_values=input_values
         )
@@ -90,7 +88,6 @@ class VellumPromptRegistry:
         self, deployment: vellum.DeploymentRead
     ) -> VellumRegisteredPrompt:
         """Retrieves a prompt from Vellum, keying off of the deployment's id/name."""
-
         # Assume that the deployment backing a registered prompt will always have a
         # single model version. Note that this may not be true in the future once
         # deployment-level A/B testing is supported and someone configures an A/B test.
@@ -123,7 +120,6 @@ class VellumPromptRegistry:
             update the prompt, LLM provider, model, and parameters via Vellum's UI
             without requiring code changes.
         """
-
         # Label represents a human-friendly name that'll be used for all created
         # entities within Vellum. If not provided, a default will be generated.
         label = prompt.metadata.get(
@@ -177,7 +173,6 @@ class VellumPromptRegistry:
         self, prompt: BasePromptTemplate, for_chat_model: bool = True
     ) -> vellum.RegisterPromptPromptInfoRequest:
         """Converts a LlamaIndex prompt into Vellum's prompt representation."""
-
         import vellum
 
         assert isinstance(prompt, PromptTemplate)
@@ -223,7 +218,6 @@ class VellumPromptRegistry:
         self, original_template: str, input_variables: List[str]
     ) -> str:
         """Converts a prompt template into a Jinja template."""
-
         prompt_template = original_template
         for input_variable in input_variables:
             prompt_template = prompt_template.replace(

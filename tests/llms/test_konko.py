@@ -1,8 +1,8 @@
-import pytest
+from typing import Any, Generator
 
+import pytest
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.konko import Konko
-from typing import Any, Generator
 from pytest import MonkeyPatch
 
 try:
@@ -90,8 +90,7 @@ def mock_chat_completion_stream(
             "object": "chat.completion.chunk",
         },
     ]
-    for response in responses:
-        yield response
+    yield from responses
 
 
 @pytest.mark.skipif(konko is None, reason="konko not installed")

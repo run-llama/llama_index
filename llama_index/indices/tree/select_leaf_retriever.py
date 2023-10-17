@@ -3,7 +3,6 @@
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.bridge.langchain import print_text
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.tree.base import TreeIndex
@@ -22,7 +21,7 @@ from llama_index.prompts.default_prompts import (
 from llama_index.response.schema import Response
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
-from llama_index.utils import truncate_text
+from llama_index.utils import print_text, truncate_text
 
 logger = logging.getLogger(__name__)
 

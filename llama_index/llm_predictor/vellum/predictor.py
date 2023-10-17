@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import Any, Optional, Tuple, cast
 
 from llama_index.bridge.pydantic import PrivateAttr
-
-from llama_index.prompts import BasePromptTemplate
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.base import LLM, BaseLLMPredictor, LLMMetadata
@@ -14,6 +12,7 @@ from llama_index.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
+from llama_index.prompts import BasePromptTemplate
 from llama_index.types import TokenAsyncGen, TokenGen
 
 
@@ -30,13 +29,13 @@ class VellumPredictor(BaseLLMPredictor):
     def __init__(
         self,
         vellum_api_key: str,
-        callback_manager: Optional[CallbackManager] = None,
+        callback_manager: CallbackManager | None = None,
     ) -> None:
         import_err_msg = (
             "`vellum` package not found, please run `pip install vellum-ai`"
         )
         try:
-            from vellum.client import AsyncVellum, Vellum  # noqa: F401
+            from vellum.client import AsyncVellum, Vellum
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -51,13 +50,11 @@ class VellumPredictor(BaseLLMPredictor):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "VellumPredictor"
 
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
-
         # Note: We use default values here, but ideally we would retrieve this metadata
         # via Vellum's API based on the LLM that backs the registered prompt's
         # deployment. This is not currently possible, so we use default values.
@@ -75,7 +72,6 @@ class VellumPredictor(BaseLLMPredictor):
 
     def predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Predict the answer to a query."""
-
         from vellum import GenerateRequest
 
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
@@ -91,15 +87,10 @@ class VellumPredictor(BaseLLMPredictor):
             requests=[GenerateRequest(input_values=input_values)],
         )
 
-        completion_text = self._process_generate_response(
-            result, compiled_prompt, event_id
-        )
-
-        return completion_text
+        return self._process_generate_response(result, compiled_prompt, event_id)
 
     def stream(self, prompt: BasePromptTemplate, **prompt_args: Any) -> TokenGen:
         """Stream the answer to a query."""
-
         from vellum import GenerateRequest, GenerateStreamResult
 
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
@@ -150,7 +141,6 @@ class VellumPredictor(BaseLLMPredictor):
 
     async def apredict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
         """Asynchronously predict the answer to a query."""
-
         from vellum import GenerateRequest
 
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
@@ -166,11 +156,7 @@ class VellumPredictor(BaseLLMPredictor):
             requests=[GenerateRequest(input_values=input_values)],
         )
 
-        completion_text = self._process_generate_response(
-            result, compiled_prompt, event_id
-        )
-
-        return completion_text
+        return self._process_generate_response(result, compiled_prompt, event_id)
 
     async def astream(
         self, prompt: BasePromptTemplate, **prompt_args: Any
@@ -186,7 +172,6 @@ class VellumPredictor(BaseLLMPredictor):
         self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> Tuple[VellumRegisteredPrompt, VellumCompiledPrompt, str]:
         """Prepare a generate call."""
-
         registered_prompt = self._prompt_registry.from_prompt(prompt)
         compiled_prompt = self._prompt_registry.get_compiled_prompt(
             registered_prompt, prompt_args
@@ -210,7 +195,6 @@ class VellumPredictor(BaseLLMPredictor):
         event_id: str,
     ) -> str:
         """Process the response from a generate call."""
-
         from vellum import GenerateResponse
 
         result = cast(GenerateResponse, result)

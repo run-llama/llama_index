@@ -1,14 +1,14 @@
 import logging
-from typing import Any, List, Optional, TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-from llama_index.schema import BaseNode, TextNode, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 
@@ -45,26 +45,25 @@ class ZepVectorStore(VectorStore):
         api_url: str,
         api_key: Optional[str] = None,
         collection_description: Optional[str] = None,
-        collection_metadata: Optional[dict] = None,
+        collection_metadata: Optional[Dict[str, Any]] = None,
         embedding_dimensions: Optional[int] = None,
         is_auto_embedded: bool = False,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         import_err_msg = (
             "`zep-python` package not found, please run `pip install zep-python`"
         )
         try:
-            import zep_python  # noqa: F401
+            import zep_python
         except ImportError:
             raise ImportError(import_err_msg)
 
-        from zep_python import ZepClient  # noqa: F401
-        from zep_python.document import Document as ZepDocument  # noqa: F401
-        from zep_python.document import DocumentCollection  # noqa: F401
+        from zep_python import ZepClient
+        from zep_python.document import DocumentCollection
 
         self._client = ZepClient(base_url=api_url, api_key=api_key)
+        self._collection: Union[DocumentCollection, None] = None
 
         try:
             self._collection = self._client.document.get_collection(
@@ -89,6 +88,11 @@ class ZepVectorStore(VectorStore):
                 metadata=collection_metadata,
             )
 
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        return self._client
+
     def _prepare_documents(
         self, nodes: List[BaseNode]
     ) -> Tuple[List["ZepDocument"], List[str]]:
@@ -98,7 +102,7 @@ class ZepVectorStore(VectorStore):
         ids: List[str] = []
 
         for node in nodes:
-            metadata_dict = node_to_metadata_dict(
+            metadata_dict: Dict[str, Any] = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=self.flat_metadata
             )
 
@@ -239,17 +243,14 @@ class ZepVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _to_zep_filters(self, filters: MetadataFilters) -> Any:
+    def _to_zep_filters(self, filters: MetadataFilters) -> Dict[str, Any]:
         """Convert filters to Zep filters. Filters are ANDed together."""
-
-        filter_conditions = []
+        filter_conditions: List[Dict[str, Any]] = []
 
         for f in filters.filters:
             filter_conditions.append({"jsonpath": f'$[*] ? (@.{f.key} == "{f.value}")'})
 
-        zep_filters = {"where": {"and": filter_conditions}}
-
-        return zep_filters
+        return {"where": {"and": filter_conditions}}
 
     def query(
         self,

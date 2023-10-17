@@ -1,21 +1,23 @@
 import logging
-from typing import List, Any, Type, Optional
-from collections import namedtuple
+from typing import Any, List, NamedTuple, Optional, Type
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
-DBEmbeddingRow = namedtuple(
-    "DBEmbeddingRow", ["node_id", "text", "metadata", "similarity"]
-)
+
+class DBEmbeddingRow(NamedTuple):
+    node_id: str  # FIXME: verify this type hint
+    text: str
+    metadata: dict
+    similarity: float
 
 
 _logger = logging.getLogger(__name__)
@@ -26,21 +28,21 @@ def get_data_model(
     index_name: str,
     hybrid_search: bool,
     text_search_config: str,
+    cache_okay: bool,
     embed_dim: int = 1536,
 ) -> Any:
     """
-    This part create a dynamic sqlalchemy model with a new table
+    This part create a dynamic sqlalchemy model with a new table.
     """
     from pgvector.sqlalchemy import Vector
     from sqlalchemy import Column, Computed
-    from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, JSON
+    from sqlalchemy.dialects.postgresql import BIGINT, JSON, TSVECTOR, VARCHAR
     from sqlalchemy.schema import Index
-
-    from sqlalchemy.dialects.postgresql import TSVECTOR
     from sqlalchemy.types import TypeDecorator
 
     class TSVector(TypeDecorator):
         impl = TSVECTOR
+        cache_ok = cache_okay
 
     tablename = "data_%s" % index_name  # dynamic table name
     class_name = "Data%s" % index_name  # dynamic class name
@@ -96,6 +98,7 @@ class PGVectorStore(BasePydanticVectorStore):
     embed_dim: int
     hybrid_search: bool
     text_search_config: str
+    cache_ok: bool
     debug: bool
 
     _base: Any = PrivateAttr()
@@ -114,14 +117,15 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        cache_ok: bool = False,
         debug: bool = False,
     ) -> None:
         try:
-            import sqlalchemy  # noqa: F401
-            import pgvector  # noqa: F401
-            import psycopg2  # noqa: F401
-            import asyncpg  # noqa: F401
-            import sqlalchemy.ext.asyncio  # noqa: F401
+            import asyncpg
+            import pgvector
+            import psycopg2
+            import sqlalchemy
+            import sqlalchemy.ext.asyncio
         except ImportError:
             raise ImportError(
                 "`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` "
@@ -145,6 +149,7 @@ class PGVectorStore(BasePydanticVectorStore):
             table_name,
             hybrid_search,
             text_search_config,
+            cache_ok,
             embed_dim=embed_dim,
         )
 
@@ -155,12 +160,13 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            cache_ok=cache_ok,
             debug=debug,
         )
 
     async def close(self) -> None:
         if not self._is_initialized:
-            return None
+            return
 
         self._session.close_all()
         self._engine.dispose()
@@ -185,6 +191,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
+        cache_ok: bool = False,
         debug: bool = False,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
@@ -202,6 +209,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
+            cache_ok=cache_ok,
             debug=debug,
         )
 
@@ -213,29 +221,26 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _connect(self) -> Any:
         from sqlalchemy import create_engine
+        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
-        from sqlalchemy.ext.asyncio import create_async_engine
-        from sqlalchemy.ext.asyncio import async_sessionmaker
 
         self._engine = create_engine(self.connection_string, echo=self.debug)
         self._session = sessionmaker(self._engine)
 
         self._async_engine = create_async_engine(self.async_connection_string)
-        self._async_session = async_sessionmaker(self._async_engine)
+        self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_tables_if_not_exists(self) -> None:
-        with self._session() as session:
-            with session.begin():
-                self._base.metadata.create_all(session.connection())
+        with self._session() as session, session.begin():
+            self._base.metadata.create_all(session.connection())
 
     def _create_extension(self) -> None:
         import sqlalchemy
 
-        with self._session() as session:
-            with session.begin():
-                statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
-                session.execute(statement)
-                session.commit()
+        with self._session() as session, session.begin():
+            statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+            session.execute(statement)
+            session.commit()
 
     def _initialize(self) -> None:
         if not self._is_initialized:
@@ -259,25 +264,23 @@ class PGVectorStore(BasePydanticVectorStore):
     def add(self, nodes: List[BaseNode]) -> List[str]:
         self._initialize()
         ids = []
-        with self._session() as session:
-            with session.begin():
-                for node in nodes:
-                    ids.append(node.node_id)
-                    item = self._node_to_table_row(node)
-                    session.add(item)
-                session.commit()
+        with self._session() as session, session.begin():
+            for node in nodes:
+                ids.append(node.node_id)
+                item = self._node_to_table_row(node)
+                session.add(item)
+            session.commit()
         return ids
 
     async def async_add(self, nodes: List[BaseNode]) -> List[str]:
         self._initialize()
         ids = []
-        async with self._async_session() as session:
-            async with session.begin():
-                for node in nodes:
-                    ids.append(node.node_id)
-                    item = self._node_to_table_row(node)
-                    session.add(item)
-                await session.commit()
+        async with self._async_session() as session, session.begin():
+            for node in nodes:
+                ids.append(node.node_id)
+                item = self._node_to_table_row(node)
+                session.add(item)
+            await session.commit()
         return ids
 
     def _apply_filters_and_limit(
@@ -320,20 +323,19 @@ class PGVectorStore(BasePydanticVectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters)
-        with self._session() as session:
-            with session.begin():
-                res = session.execute(
-                    stmt,
+        with self._session() as session, session.begin():
+            res = session.execute(
+                stmt,
+            )
+            return [
+                DBEmbeddingRow(
+                    node_id=item.node_id,
+                    text=item.text,
+                    metadata=item.metadata_,
+                    similarity=(1 - distance) if distance is not None else 0,
                 )
-                return [
-                    DBEmbeddingRow(
-                        node_id=item.node_id,
-                        text=item.text,
-                        metadata=item.metadata_,
-                        similarity=(1 - distance) if distance is not None else 0,
-                    )
-                    for item, distance in res.all()
-                ]
+                for item, distance in res.all()
+            ]
 
     async def _aquery_with_score(
         self,
@@ -342,19 +344,17 @@ class PGVectorStore(BasePydanticVectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters)
-        async with self._async_session() as async_session:
-            async with async_session.begin():
-                res = await async_session.execute(stmt)
-                results = [
-                    DBEmbeddingRow(
-                        node_id=item.node_id,
-                        text=item.text,
-                        metadata=item.metadata_,
-                        similarity=(1 - distance) if distance is not None else 0,
-                    )
-                    for item, distance in res.all()
-                ]
-                return results
+        async with self._async_session() as async_session, async_session.begin():
+            res = await async_session.execute(stmt)
+            return [
+                DBEmbeddingRow(
+                    node_id=item.node_id,
+                    text=item.text,
+                    metadata=item.metadata_,
+                    similarity=(1 - distance) if distance is not None else 0,
+                )
+                for item, distance in res.all()
+            ]
 
     def _build_sparse_query(
         self,
@@ -362,13 +362,20 @@ class PGVectorStore(BasePydanticVectorStore):
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
-        from sqlalchemy import select
+        from sqlalchemy import select, type_coerce
         from sqlalchemy.sql import func, text
+        from sqlalchemy.types import UserDefinedType
+
+        class REGCONFIG(UserDefinedType):
+            def get_col_spec(self, **kw: Any) -> str:
+                return "regconfig"
 
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(self.text_search_config, query_str)
+        ts_query = func.plainto_tsquery(
+            type_coerce(self.text_search_config, REGCONFIG), query_str
+        )
         stmt = (
             select(  # type: ignore
                 self._table_class,
@@ -388,18 +395,17 @@ class PGVectorStore(BasePydanticVectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_sparse_query(query_str, limit, metadata_filters)
-        async with self._async_session() as async_session:
-            async with async_session.begin():
-                res = await async_session.execute(stmt)
-                return [
-                    DBEmbeddingRow(
-                        node_id=item.node_id,
-                        text=item.text,
-                        metadata=item.metadata_,
-                        similarity=rank,
-                    )
-                    for item, rank in res.all()
-                ]
+        async with self._async_session() as async_session, async_session.begin():
+            res = await async_session.execute(stmt)
+            return [
+                DBEmbeddingRow(
+                    node_id=item.node_id,
+                    text=item.text,
+                    metadata=item.metadata_,
+                    similarity=rank,
+                )
+                for item, rank in res.all()
+            ]
 
     def _sparse_query_with_rank(
         self,
@@ -408,18 +414,17 @@ class PGVectorStore(BasePydanticVectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_sparse_query(query_str, limit, metadata_filters)
-        with self._session() as session:
-            with session.begin():
-                res = session.execute(stmt)
-                return [
-                    DBEmbeddingRow(
-                        node_id=item.node_id,
-                        text=item.text,
-                        metadata=item.metadata_,
-                        similarity=rank,
-                    )
-                    for item, rank in res.all()
-                ]
+        with self._session() as session, session.begin():
+            res = session.execute(stmt)
+            return [
+                DBEmbeddingRow(
+                    node_id=item.node_id,
+                    text=item.text,
+                    metadata=item.metadata_,
+                    similarity=rank,
+                )
+                for item, rank in res.all()
+            ]
 
     async def _async_hybrid_query(
         self, query: VectorStoreQuery
@@ -491,6 +496,8 @@ class PGVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
+        import sqlalchemy
+
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
             results = await self._async_hybrid_query(query)
@@ -536,15 +543,14 @@ class PGVectorStore(BasePydanticVectorStore):
         import sqlalchemy
 
         self._initialize()
-        with self._session() as session:
-            with session.begin():
-                stmt = sqlalchemy.text(
-                    f"DELETE FROM public.data_{self.table_name} where "
-                    f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
-                )
+        with self._session() as session, session.begin():
+            stmt = sqlalchemy.text(
+                f"DELETE FROM public.data_{self.table_name} where "
+                f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
+            )
 
-                session.execute(stmt)
-                session.commit()
+            session.execute(stmt)
+            session.commit()
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:

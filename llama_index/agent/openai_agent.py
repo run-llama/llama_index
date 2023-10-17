@@ -3,14 +3,14 @@ import json
 import logging
 from abc import abstractmethod
 from threading import Thread
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
-    trace_method,
     CBEventType,
     EventPayload,
+    trace_method,
 )
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
@@ -18,12 +18,11 @@ from llama_index.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)
@@ -54,7 +53,7 @@ def call_function(
     argument_dict = json.loads(arguments_str)
     output = tool(**argument_dict)
     if verbose:
-        print(f"Got output: {str(output)}")
+        print(f"Got output: {output!s}")
         print("========================")
     return (
         ChatMessage(
@@ -82,7 +81,7 @@ async def acall_function(
     argument_dict = json.loads(arguments_str)
     output = await async_tool.acall(**argument_dict)
     if verbose:
-        print(f"Got output: {str(output)}")
+        print(f"Got output: {output!s}")
         print("========================")
     return (
         ChatMessage(
@@ -141,9 +140,8 @@ class BaseOpenAIAgent(BaseAgent):
         self.memory.reset()
 
     @abstractmethod
-    def _get_tools(self, message: str) -> List[BaseTool]:
+    def get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
-        pass
 
     def _should_continue(
         self, function_call: Optional[dict], n_function_calls: int
@@ -161,7 +159,7 @@ class BaseOpenAIAgent(BaseAgent):
             self.memory.set(chat_history)
         self.sources = []
         self.memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        tools = self._get_tools(message)
+        tools = self.get_tools(message)
         functions = [tool.metadata.to_openai_function() for tool in tools]
         return tools, functions
 
@@ -244,7 +242,7 @@ class BaseOpenAIAgent(BaseAgent):
     def _get_llm_chat_kwargs(
         self, functions: List[dict], function_call: Union[str, dict] = "auto"
     ) -> Dict[str, Any]:
-        llm_chat_kwargs: dict = dict(messages=self.all_messages)
+        llm_chat_kwargs: dict = {"messages": self.all_messages}
         if functions:
             llm_chat_kwargs.update(
                 functions=functions, function_call=resolve_function_call(function_call)
@@ -404,6 +402,28 @@ class BaseOpenAIAgent(BaseAgent):
 
 
 class OpenAIAgent(BaseOpenAIAgent):
+    """OpenAI (function calling) Agent.
+
+    Uses the OpenAI function API to reason about whether to
+    use a tool, and returning the response to the user.
+
+    Supports both a flat list of tools as well as retrieval over the tools.
+
+    Args:
+        tools (List[BaseTool]): List of tools to use.
+        llm (OpenAI): OpenAI instance.
+        memory (BaseMemory): Memory to use.
+        prefix_messages (List[ChatMessage]): Prefix messages to use.
+        verbose (Optional[bool]): Whether to print verbose output. Defaults to False.
+        max_function_calls (Optional[int]): Maximum number of function calls.
+            Defaults to DEFAULT_MAX_FUNCTION_CALLS.
+        callback_manager (Optional[CallbackManager]): Callback manager to use.
+            Defaults to None.
+        tool_retriever (ObjectRetriever[BaseTool]): Object retriever to retrieve tools.
+
+
+    """
+
     def __init__(
         self,
         tools: List[BaseTool],
@@ -413,6 +433,7 @@ class OpenAIAgent(BaseOpenAIAgent):
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
         super().__init__(
             llm=llm,
@@ -422,12 +443,22 @@ class OpenAIAgent(BaseOpenAIAgent):
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
         )
-        self._tools = tools
+        if len(tools) > 0 and tool_retriever is not None:
+            raise ValueError("Cannot specify both tools and tool_retriever")
+        elif len(tools) > 0:
+            self._get_tools = lambda _: tools
+        elif tool_retriever is not None:
+            tool_retriever_c = cast(ObjectRetriever[BaseTool], tool_retriever)
+            self._get_tools = lambda message: tool_retriever_c.retrieve(message)
+        else:
+            # no tools
+            self._get_tools = lambda _: []
 
     @classmethod
     def from_tools(
         cls,
         tools: Optional[List[BaseTool]] = None,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
@@ -439,7 +470,15 @@ class OpenAIAgent(BaseOpenAIAgent):
         prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgent":
+        """Create an OpenAIAgent from a list of tools.
+
+        Similar to `from_defaults` in other classes, this method will
+        infer defaults for a variety of parameters, including the LLM,
+        if they are not specified.
+
+        """
         tools = tools or []
+
         chat_history = chat_history or []
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if not isinstance(llm, OpenAI):
@@ -466,6 +505,7 @@ class OpenAIAgent(BaseOpenAIAgent):
 
         return cls(
             tools=tools,
+            tool_retriever=tool_retriever,
             llm=llm,
             memory=memory,
             prefix_messages=prefix_messages,
@@ -474,104 +514,6 @@ class OpenAIAgent(BaseOpenAIAgent):
             callback_manager=callback_manager,
         )
 
-    def _get_tools(self, message: str) -> List[BaseTool]:
+    def get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
-        return self._tools
-
-
-class RetrieverOpenAIAgent(BaseOpenAIAgent):
-    """Retriever OpenAI Agent.
-
-    This agent specifically performs retrieval on top of functions
-    during query-time.
-
-    NOTE: this is a beta feature, function interfaces might change.
-    NOTE: this is also a too generally named, a better name is
-        FunctionRetrieverOpenAIAgent
-
-    TODO: add a native OpenAI Tool Index.
-
-    """
-
-    def __init__(
-        self,
-        retriever: BaseRetriever,
-        node_to_tool_fn: Callable[[BaseNode], BaseTool],
-        llm: OpenAI,
-        memory: BaseMemory,
-        prefix_messages: List[ChatMessage],
-        verbose: bool = False,
-        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
-        callback_manager: Optional[CallbackManager] = None,
-    ) -> None:
-        super().__init__(
-            llm=llm,
-            memory=memory,
-            prefix_messages=prefix_messages,
-            verbose=verbose,
-            max_function_calls=max_function_calls,
-            callback_manager=callback_manager,
-        )
-        self._retriever = retriever
-        self._node_to_tool_fn = node_to_tool_fn
-
-    @classmethod
-    def from_retriever(
-        cls,
-        retriever: BaseRetriever,
-        node_to_tool_fn: Callable[[BaseNode], BaseTool],
-        llm: Optional[OpenAI] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        memory: Optional[BaseMemory] = None,
-        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
-        verbose: bool = False,
-        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
-        callback_manager: Optional[CallbackManager] = None,
-        system_prompt: Optional[str] = None,
-        prefix_messages: Optional[List[ChatMessage]] = None,
-    ) -> "RetrieverOpenAIAgent":
-        chat_history = chat_history or []
-
-        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
-        if not isinstance(llm, OpenAI):
-            raise ValueError("llm must be a OpenAI instance")
-
-        if callback_manager is not None:
-            llm.callback_manager = callback_manager
-
-        memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
-
-        if not is_function_calling_model(llm.model):
-            raise ValueError(
-                f"Model name {llm.model} does not support function calling API. "
-            )
-
-        if system_prompt is not None:
-            if prefix_messages is not None:
-                raise ValueError(
-                    "Cannot specify both system_prompt and prefix_messages"
-                )
-            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
-
-        prefix_messages = prefix_messages or []
-
-        return cls(
-            retriever=retriever,
-            node_to_tool_fn=node_to_tool_fn,
-            llm=llm,
-            memory=memory,
-            prefix_messages=prefix_messages,
-            verbose=verbose,
-            max_function_calls=max_function_calls,
-            callback_manager=callback_manager,
-        )
-
-    def _get_tools(self, message: str) -> List[BaseTool]:
-        retrieved_nodes_w_scores: List[NodeWithScore] = self._retriever.retrieve(
-            message
-        )
-        retrieved_nodes = [node.node for node in retrieved_nodes_w_scores]
-        retrieved_tools: List[BaseTool] = [
-            self._node_to_tool_fn(n) for n in retrieved_nodes
-        ]
-        return retrieved_tools
+        return self._get_tools(message)

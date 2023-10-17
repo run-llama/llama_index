@@ -112,7 +112,7 @@ def as_dataframe(data: Iterable[BaseDataType]) -> "DataFrame":
 
 @dataclass
 class TraceData:
-    """Trace data"""
+    """Trace data."""
 
     query_data: QueryData = field(default_factory=QueryData)
     node_datas: List[NodeData] = field(default_factory=list)
@@ -187,6 +187,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         if payload is not None:

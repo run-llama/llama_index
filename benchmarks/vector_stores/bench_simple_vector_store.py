@@ -1,13 +1,13 @@
 import random
 import time
 from typing import List
-from llama_index.schema import TextNode
 
+from llama_index.schema import TextNode
+from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
-from llama_index.vector_stores.simple import SimpleVectorStore
 
 
 def generate_nodes(

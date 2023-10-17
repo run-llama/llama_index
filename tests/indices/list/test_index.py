@@ -3,10 +3,9 @@
 from typing import Dict, List, Tuple
 
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.list.base import SummaryIndex, ListRetrieverMode
+from llama_index.indices.list.base import ListRetrieverMode, SummaryIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import Document
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, Document
 
 
 def test_build_list(
@@ -32,7 +31,7 @@ def test_refresh_list(
 ) -> None:
     """Test build list."""
     # add extra document
-    more_documents = documents + [Document(text="Test document 2")]
+    more_documents = [*documents, Document(text="Test document 2")]
 
     # ensure documents have doc_id
     for i in range(len(more_documents)):
@@ -49,7 +48,7 @@ def test_refresh_list(
     assert refreshed_docs[1] is False
 
     # modify a document and test again
-    more_documents = documents + [Document(text="Test document 2, now with changes!")]
+    more_documents = [*documents, Document(text="Test document 2, now with changes!")]
     for i in range(len(more_documents)):
         more_documents[i].doc_id = str(i)  # type: ignore[misc]
 

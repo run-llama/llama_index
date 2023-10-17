@@ -1,6 +1,7 @@
 # Response Synthesizer
 
 ## Concept
+
 A `Response Synthesizer` is what generates a response from an LLM, using a user query and a given set of text chunks. The output of a response synthesizer is a `Response` object.
 
 The method for doing this can take many forms, from as simple as iterating over text chunks, to as complex as building a tree. The main idea here is to simplify the process of generating a response using an LLM across your data.
@@ -12,6 +13,7 @@ Confused about where response synthesizer fits in the pipeline? Read the [high-l
 ```
 
 ## Usage Pattern
+
 Use a response synthesizer on it's own:
 
 ```python
@@ -40,6 +42,7 @@ usage_pattern.md
 ```
 
 ## Modules
+
 Below you can find detailed API information for each response synthesis module.
 
 ```{toctree}

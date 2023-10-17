@@ -2,14 +2,13 @@
 
 LlamaIndex supports integrations with output parsing modules offered
 by other frameworks. These output parsing modules can be used in the following ways:
+
 - To provide formatting instructions for any prompt / query (through `output_parser.format`)
 - To provide "parsing" for LLM outputs (through `output_parser.parse`)
-
 
 ### Guardrails
 
 Guardrails is an open-source Python package for specification/validation/correction of output schemas. See below for a code example.
-
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
@@ -70,21 +69,21 @@ query_engine = index.as_query_engine(
     service_context=ServiceContext.from_defaults(
         llm_predictor=llm_predictor
     ),
-    text_qa_template=qa_prompt, 
-    refine_template=refine_prompt, 
+    text_qa_template=qa_prompt,
+    refine_template=refine_prompt,
 )
 response = query_engine.query(
-    "What are the three items the author did growing up?", 
+    "What are the three items the author did growing up?",
 )
 print(response)
 
 ```
 
 Output:
+
 ```
 {'points': [{'explanation': 'Writing short stories', 'explanation2': 'Programming on an IBM 1401', 'explanation3': 'Using microcomputers'}]}
 ```
-
 
 ### Langchain
 
@@ -125,11 +124,11 @@ query_engine = index.as_query_engine(
     service_context=ServiceContext.from_defaults(
         llm_predictor=llm_predictor
     ),
-    text_qa_template=qa_prompt, 
-    refine_template=refine_prompt, 
+    text_qa_template=qa_prompt,
+    refine_template=refine_prompt,
 )
 response = query_engine.query(
-    "What are a few things the author did growing up?", 
+    "What are a few things the author did growing up?",
 )
 print(str(response))
 ```

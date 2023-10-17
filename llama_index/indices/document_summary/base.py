@@ -14,6 +14,7 @@ from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.utils import embed_nodes
 from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
@@ -28,7 +29,9 @@ from llama_index.schema import (
     TextNode,
 )
 from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import get_tqdm_iterable
+from llama_index.vector_stores.types import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -40,20 +43,25 @@ DEFAULT_SUMMARY_QUERY = (
 
 
 class DocumentSummaryRetrieverMode(str, Enum):
-    DEFAULT = "default"
     EMBEDDING = "embedding"
+    LLM = "llm"
 
 
-DSRM = DocumentSummaryRetrieverMode
+_RetrieverMode = DocumentSummaryRetrieverMode
 
 
 class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     """Document Summary Index.
 
     Args:
-        summary_template (Optional[BasePromptTemplate]): A Summary Prompt
-            (see :ref:`Prompt-Templates`).
-        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+        response_synthesizer (BaseSynthesizer): A response synthesizer for generating
+            summaries.
+        summary_query (str): The query to use to generate the summary for each document.
+        show_progress (bool): Whether to show tqdm progress bars.
+            Defaults to False.
+        embed_summaries (bool): Whether to embed the summaries.
+            This is required for running the default embedding-based retriever.
+            Defaults to True.
 
     """
 
@@ -64,47 +72,64 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexDocumentSummary] = None,
         service_context: Optional[ServiceContext] = None,
+        storage_context: Optional[StorageContext] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         summary_query: str = DEFAULT_SUMMARY_QUERY,
         show_progress: bool = False,
+        embed_summaries: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
             service_context=service_context, response_mode=ResponseMode.TREE_SUMMARIZE
         )
-        self._summary_query = summary_query or "summarize:"
+        self._summary_query = summary_query
+        self._embed_summaries = embed_summaries
+
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
+            storage_context=storage_context,
             show_progress=show_progress,
             **kwargs,
         )
 
+    @property
+    def vector_store(self) -> VectorStore:
+        return self._vector_store
+
     def as_retriever(
         self,
-        retriever_mode: Union[str, DSRM] = DSRM.DEFAULT,
+        retriever_mode: Union[str, _RetrieverMode] = _RetrieverMode.EMBEDDING,
         **kwargs: Any,
     ) -> BaseRetriever:
         """Get retriever.
 
         Args:
             retriever_mode (Union[str, DocumentSummaryRetrieverMode]): A retriever mode.
+                Defaults to DocumentSummaryRetrieverMode.EMBEDDING.
 
         """
         from llama_index.indices.document_summary.retrievers import (
             DocumentSummaryIndexEmbeddingRetriever,
-            DocumentSummaryIndexRetriever,
+            DocumentSummaryIndexLLMRetriever,
         )
 
-        DSIR = DocumentSummaryIndexRetriever
-        DSIER = DocumentSummaryIndexEmbeddingRetriever
+        LLMRetriever = DocumentSummaryIndexLLMRetriever
+        EmbeddingRetriever = DocumentSummaryIndexEmbeddingRetriever
 
-        if retriever_mode == DSRM.DEFAULT:
-            return DSIR(self, **kwargs)
-        elif retriever_mode == DSRM.EMBEDDING:
-            return DSIER(self, **kwargs)
+        if retriever_mode == _RetrieverMode.EMBEDDING:
+            if not self._embed_summaries:
+                raise ValueError(
+                    "Cannot use embedding retriever if embed_summaries is False"
+                )
+
+            if "service_context" not in kwargs:
+                kwargs["service_context"] = self._service_context
+            return EmbeddingRetriever(self, **kwargs)
+        if retriever_mode == _RetrieverMode.LLM:
+            return LLMRetriever(self, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
@@ -164,6 +189,21 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
         for doc_id, nodes in doc_id_to_nodes.items():
             index_struct.add_summary_and_nodes(summary_node_dict[doc_id], nodes)
+
+        if self._embed_summaries:
+            embed_model = self._service_context.embed_model
+            summary_nodes = list(summary_node_dict.values())
+            id_to_embed_map = embed_nodes(
+                summary_nodes, embed_model, show_progress=show_progress
+            )
+
+            summary_nodes_with_embedding = []
+            for node in summary_nodes:
+                node_with_embedding = node.copy()
+                node_with_embedding.embedding = id_to_embed_map[node.node_id]
+                summary_nodes_with_embedding.append(node_with_embedding)
+
+            self._vector_store.add(summary_nodes_with_embedding)
 
     def _build_index_from_nodes(
         self, nodes: Sequence[BaseNode]

@@ -31,6 +31,6 @@ from trulens_eval import TruLlama
 
 ## Read more
 
-* [Build and Evaluate LLM Apps with LlamaIndex and TruLens](https://medium.com/llamaindex-blog/build-and-evaluate-llm-apps-with-llamaindex-and-trulens-6749e030d83c)
-* [More examples](https://github.com/truera/trulens/tree/main/trulens_eval/examples/frameworks/llama_index)
-* [trulens.org](https://www.trulens.org/)
+- [Build and Evaluate LLM Apps with LlamaIndex and TruLens](https://medium.com/llamaindex-blog/build-and-evaluate-llm-apps-with-llamaindex-and-trulens-6749e030d83c)
+- [More examples](https://github.com/truera/trulens/tree/main/trulens_eval/examples/frameworks/llama_index)
+- [trulens.org](https://www.trulens.org/)

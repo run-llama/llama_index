@@ -23,7 +23,6 @@ class MockEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "MockEmbedding"
 
     def _get_vector(self) -> List[float]:

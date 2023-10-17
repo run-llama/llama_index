@@ -1,4 +1,5 @@
 # Module Guides
+
 We are actively adding more tailored retrieval guides.
 In the meanwhile, please take a look at the [API References](/api_reference/query/retrievers.rst).
 
@@ -13,14 +14,16 @@ If you want to import the corresponding retrievers directly, please check out ou
 Check out our comprehensive guides on various retriever modules, many of which cover advanced concepts (auto-retrieval, routing, ensembling, and more).
 
 ## External Retrievers
+
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/retrievers/bm25_retriever.ipynb 
+/examples/retrievers/bm25_retriever.ipynb
 ```
 
 ## Knowledge Graph Retrievers
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -30,10 +33,13 @@ Knowledge Graph RAG Retriever </examples/query_engine/knowledge_graph_rag_query_
 ```
 
 ## Composed Retrievers
+
 ```{toctree}
 ---
 maxdepth: 1
 ---
+/examples/retrievers/simple_fusion.ipynb
+/examples/retrievers/reciprocal_rerank_fusion.ipynb
 Auto-Retrieval (with Chroma) </examples/vector_stores/chroma_auto_retriever.ipynb>
 Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/query_engine/pdf_tables/recursive_retriever.ipynb
@@ -41,4 +47,6 @@ Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/retrievers/ensemble_retrieval.ipynb
 /examples/retrievers/auto_merging_retriever.ipynb
 /examples/retrievers/recursive_retriever_nodes.ipynb
+/examples/retrievers/recurisve_retriever_nodes_braintrust.ipynb
+/examples/node_postprocessor/MetadataReplacementDemo.ipynb
 ```

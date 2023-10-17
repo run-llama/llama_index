@@ -115,7 +115,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "SentenceSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
@@ -161,7 +160,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return chunks
 
     def _split(self, text: str, chunk_size: int) -> List[_Split]:
-        """Break text into splits that are smaller than chunk size.
+        r"""Break text into splits that are smaller than chunk size.
 
         The order of splitting is:
         1. split by paragraph separator
@@ -189,8 +188,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
         chunks: List[str] = []
-        cur_chunk: List[tuple[str, int]] = []  # list of (text, length)
-        last_chunk: List[tuple[str, int]] = []
+        cur_chunk: List[Tuple[str, int]] = []  # list of (text, length)
+        last_chunk: List[Tuple[str, int]] = []
         cur_chunk_len = 0
         new_chunk = True
 
@@ -249,9 +248,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             chunks.append(chunk)
 
         # run postprocessing to remove blank spaces
-        chunks = self._postprocess_chunks(chunks)
-
-        return chunks
+        return self._postprocess_chunks(chunks)
 
     def _postprocess_chunks(self, chunks: List[str]) -> List[str]:
         """Post-process chunks.

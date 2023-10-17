@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr, Field
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.embeddings.huggingface_utils import (
@@ -30,6 +30,7 @@ class InstructorEmbedding(BaseEmbedding):
         text_instruction: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         cache_folder: Optional[str] = None,
+        device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
     ):
         try:
@@ -39,7 +40,7 @@ class InstructorEmbedding(BaseEmbedding):
                 "InstructorEmbedding requires instructor to be installed.\n"
                 "Please install transformers with `pip install InstructorEmbedding`."
             )
-        self._model = INSTRUCTOR(model_name, cache_folder=cache_folder)
+        self._model = INSTRUCTOR(model_name, cache_folder=cache_folder, device=device)
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -52,7 +53,6 @@ class InstructorEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "InstructorEmbedding"
 
     def _format_query_text(self, query_text: str) -> List[str]:

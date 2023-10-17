@@ -3,6 +3,7 @@
 We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 
 ## OpenAI
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -13,6 +14,7 @@ maxdepth: 1
 ```
 
 ## Anthropic
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -21,7 +23,19 @@ maxdepth: 1
 
 ```
 
+## Gradient
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/gradient_base_model.ipynb
+/examples/llm/gradient_model_adapter.ipynb
+
+```
+
 ## Hugging Face
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -32,7 +46,17 @@ maxdepth: 1
 
 ```
 
+## EverlyAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/everlyai.ipynb
+```
+
 ## LiteLLM
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -60,7 +84,6 @@ maxdepth: 1
 
 ```
 
-
 ## Replicate
 
 ```{toctree}
@@ -82,6 +105,7 @@ maxdepth: 1
 ```
 
 ## Llama API
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -117,6 +141,7 @@ maxdepth: 1
 ```
 
 ## RunGPT
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -125,6 +150,7 @@ maxdepth: 1
 ```
 
 ## Portkey
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -133,6 +159,7 @@ maxdepth: 1
 ```
 
 ## AnyScale
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -141,6 +168,7 @@ maxdepth: 1
 ```
 
 ## Ollama
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -149,10 +177,19 @@ maxdepth: 1
 ```
 
 ## Konko
+
 ```{toctree}
 ---
 maxdepth: 1
 ---
 /examples/llm/konko.ipynb
+```
 
+## Clarifai
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/clarifai.ipynb
 ```
