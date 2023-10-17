@@ -35,5 +35,5 @@ __all__ = [
     "ClarifaiEmbedding",
     "GradientEmbedding",
     "TextEmbeddingsInference",
-    "LLMRailsEmbeddings"
+    "LLMRailsEmbeddings",
 ]
