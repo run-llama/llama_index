@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
@@ -34,10 +34,10 @@ class TestHuggingFaceInferenceAPIEmbeddings:
 
         hf_inference_api_embeddings.pooling = Pooling.CLS
         with patch.object(
-            hf_inference_api_embeddings._sync_client,
+            hf_inference_api_embeddings._async_client,
             "feature_extraction",
-            return_value=raw_single_embedding,
-        ):
+            AsyncMock(return_value=raw_single_embedding),
+        ) as mock_feature_extraction:
             embedding = hf_inference_api_embeddings.embed_query(text="test")
         assert isinstance(embedding, list)
         assert len(embedding) == 1024
@@ -45,13 +45,14 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             np.array(embedding, dtype=raw_single_embedding.dtype)
             == raw_single_embedding[0, 0]
         )
+        mock_feature_extraction.assert_awaited_once_with("test")
 
         hf_inference_api_embeddings.pooling = Pooling.MEAN
         with patch.object(
-            hf_inference_api_embeddings._sync_client,
+            hf_inference_api_embeddings._async_client,
             "feature_extraction",
-            return_value=raw_single_embedding,
-        ):
+            AsyncMock(return_value=raw_single_embedding),
+        ) as mock_feature_extraction:
             embedding = hf_inference_api_embeddings.embed_query(text="test")
         assert isinstance(embedding, list)
         assert len(embedding) == 1024
@@ -59,3 +60,4 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             np.array(embedding, dtype=raw_single_embedding.dtype)
             == raw_single_embedding[0].mean(axis=0)
         )
+        mock_feature_extraction.assert_awaited_once_with("test")
