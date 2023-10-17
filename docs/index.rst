@@ -130,6 +130,7 @@ Associated projects
    module_guides/putting_it_all_together/putting_it_all_together.md
    module_guides/observability/observability.md
    module_guides/evaluating/evaluating.md
+   module_guides/supporting_modules/supporting_modules.md
 
 .. toctree::
    :maxdepth: 2

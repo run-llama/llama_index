@@ -1,87 +1,62 @@
 # Using LLMs
 
-## Concept
+```{tip}
+For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](/module_guides/using_llms/llms/root.md).
+```
 
-Picking the proper Large Language Model (LLM) is one of the first steps you need to consider when building any LLM application over your data.
+One of the first steps when building an LLM-based application is which LLM to use; you can also use more than one if you wish.
 
-LLMs are a core component of LlamaIndex. They can be used as standalone modules or plugged into other core LlamaIndex modules (indices, retrievers, query engines). They are always used during the response synthesis step (e.g. after retrieval). Depending on the type of index being used, LLMs may also be used during index construction, insertion, and query traversal.
+LLMs are used at multiple different stages of your pipeline:
+* During **Indexing** you may use an LLM to determine the relevance of data (whether to index it at all) or you may use an LLM to summarize the raw data and index the summaries instead.
+* During **Querying** LLMs can be used in two ways:
+  * During **Retrieval** (fetching data from your index) LLMs can be given an array of options (such as multiple different indices) and make decisions about where best to find the information you're looking for. An agentic LLM can also use *tools* at this stage to query different data sources.
+  * During **Response Synthesis** (turning the retrieved data into an answer) an LLM can combine answers to multiple sub-queries into a single coherent answer, or it can transform data, such as from unstructured text to JSON or another programmatic output format.
 
-LlamaIndex provides a unified interface for defining LLM modules, whether it's from OpenAI, Hugging Face, or LangChain, so that you
-don't have to write the boilerplate code of defining the LLM interface yourself. This interface consists of the following (more details below):
-
-- Support for **text completion** and **chat** endpoints (details below)
-- Support for **streaming** and **non-streaming** endpoints
-- Support for **synchronous** and **asynchronous** endpoints
-
-## Usage Pattern
-
-The following code snippet shows how you can get started using LLMs.
+LlamaIndex provides a single interface to a large number of different LLMs, allowing you to pass in any LLM you choose to any stage of the pipeline. It can be as simple as this:
 
 ```python
 from llama_index.llms import OpenAI
 
-# non-streaming
-resp = OpenAI().complete('Paul Graham is ')
-print(resp)
+response = OpenAI().complete('Paul Graham is ')
+print(response)
 ```
+
+Usually you will instantiate an LLM and pass it to a `ServiceContext`, which you then pass to other stages of the pipeline, as in this example:
+
+```python
+from llama_index.llms import OpenAI
+from llama_index import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
+
+llm = OpenAI(temperature=0.1, model="gpt-4")
+service_context = ServiceContext.from_defaults(llm=llm)
+
+documents = SimpleDirectoryReader('data').load_data()
+index = VectorStoreIndex.from_documents(documents,service_context=service_context)
+```
+
+In this case, you've instantiated OpenAI and customized it to use the `gpt-4` model instead of the default `gpt-3.5-turbo`, and also modified the `temperature`. The `VectorStoreIndex` will now use gpt-4 to encode or `embed` your documents for later querying.
+
+```{tip}
+A ServiceContext is a bundle of configuration data that you pass into different parts of LlamaIndex. You can [learn more about ServiceContext](/module_guides/supporting_modules/service_context.md) and how to customize it, including using multiple ServiceContexts to use multiple LLMs.
+```
+
+## Available LLMs
+
+We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our [module guide to LLMs](/module_guides/using_llms/llms/root.md) for a full list, including how to run a local model.
+
+### Using a local LLM
+
+LlamaIndex doesn't just supported hosted LLM APIs; you can also [run a local model such as Llama2 locally](https://replicate.com/blog/run-llama-locally).
+
+## Prompts
+
+By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](/module_guides/llms/prompts.md)
 
 ```{toctree}
 ---
 maxdepth: 1
+hidden: true
 ---
-usage_standalone.md
-usage_custom.md
+/understanding/using_llms/privacy.md
 ```
 
-## LLM Compatibility Tracking
-
-While LLMs are powerful, not every LLM is easy to set up. Furthermore, even with proper setup, some LLMs have trouble performning tasks that require strict instruction following.
-
-LlamaIndex offers integrations with nearly every LLM, but it can be often unclear if the LLM will work well out of the box, or if further customization is needed.
-
-The tables below attempt to validate the **initial** experience with various LlamaIndex features for various LLMs. These notebooks serve as a best attempt to gauge performance, as well as how much effort and tweaking is needed to get things to function properly.
-
-Generally, paid APIs such as OpenAI or Anthropic are viewed as more reliable. However, local open-source models have been gaining popularity due to their customizability and approach to transparency.
-
-**Contributing:** Anyone is welcome to contribute new LLMs to the documentation. Simply copy an existing notebook, setup and test your LLM, and open a PR with your resutls.
-
-If you have ways to improve the setup for existing notebooks, contributions to change this are welcome!
-
-**Legend**
-
-- ✅ = should work fine
-- ⚠️ = sometimes unreliable, may need prompt engineering to improve
-- 🛑 = usually unreliable, would need prompt engineering/fine-tuning to improve
-
-### Paid LLM APIs
-
-| Model Name                                                                                                               | Basic Query Engines | Router Query Engine | Sub Question Query Engine | Text2SQL | Pydantic Programs | Data Agents | <div style="width:290px">Notes</div>    |
-| ------------------------------------------------------------------------------------------------------------------------ | ------------------- | ------------------- | ------------------------- | -------- | ----------------- | ----------- | --------------------------------------- |
-| [gpt-3.5-turbo](https://colab.research.google.com/drive/1oVqUAkn0GCBG5OCs3oMUPlNQDdpDTH_c?usp=sharing) (openai)          | ✅                  | ✅                  | ✅                        | ✅       | ✅                | ✅          |                                         |
-| [gpt-3.5-turbo-instruct](https://colab.research.google.com/drive/1DrVdx-VZ3dXwkwUVZQpacJRgX7sOa4ow?usp=sharing) (openai) | ✅                  | ✅                  | ✅                        | ✅       | ✅                | ⚠️          | Tool usage in data-agents seems flakey. |
-| [gpt-4](https://colab.research.google.com/drive/1RsBoT96esj1uDID-QE8xLrOboyHKp65L?usp=sharing) (openai)                  | ✅                  | ✅                  | ✅                        | ✅       | ✅                | ✅          |                                         |
-| [claude-2](https://colab.research.google.com/drive/1os4BuDS3KcI8FCcUM_2cJma7oI2PGN7N?usp=sharing) (anthropic)            | ✅                  | ✅                  | ✅                        | ✅       | ✅                | ⚠️          | Prone to hallucinating tool inputs.     |
-| [claude-instant-1.2](https://colab.research.google.com/drive/1wt3Rt2OWBbqyeRYdiLfmB0_OIUOGit_D?usp=sharing) (anthropic)  | ✅                  | ✅                  | ✅                        | ✅       | ✅                | ⚠️          | Prone to hallucinating tool inputs.     |
-
-### Open Source LLMs
-
-Since open source LLMs require large amounts of resources, the quantization is reported. Quantization is just a method for reducing the size of an LLM by shrinking the accuracy of calculations within the model. Research has shown that up to 4Bit quantization can be achieved for large LLMs without impacting performance too severely.
-
-| Model Name                                                                                                                           | Basic Query Engines | Router Query Engine | SubQuestion Query Engine | Text2SQL | Pydantic Programs | Data Agents | <div style="width:290px">Notes</div>                                                                                                                                                |
-| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------- | ------------------- | ------------------------ | -------- | ----------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [llama2-chat-7b 4bit](https://colab.research.google.com/drive/14N-hmJ87wZsFqHktrw40OU6sVcsiSzlQ?usp=sharing) (huggingface)           | ✅                  | 🛑                  | 🛑                       | 🛑       | 🛑                | ⚠️          | Llama2 seems to be quite chatty, which makes parsing structured outputs difficult. Fine-tuning and prompt engineering likely required for better performance on structured outputs. |
-| [Mistral-7B-instruct-v0.1 4bit](https://colab.research.google.com/drive/1ZAdrabTJmZ_etDp10rjij_zME2Q3umAQ?usp=sharing) (huggingface) | ✅                  | 🛑                  | 🛑                       | ⚠️       | ⚠️                | ⚠️          | Mistral seems slightly more reliable for structured outputs compared to Llama2. Likely with some prompt engineering, it may do better.                                              |
-| [zephyr-7b-alpha](https://colab.research.google.com/drive/16Ygf2IyGNkb725ZqtRmFQjwWBuzFX_kl?usp=sharing) (huggingface)               | ✅                  | ✅                  | ✅                       | ✅       | ✅                | ⚠️          | Overall, `zyphyr-7b` is appears to be more reliable than other open-source models of this size. Although it still hallucinates a bit, especially as an agent.                       |
-
-## Modules
-
-We support integrations with OpenAI, Hugging Face, PaLM, and more.
-
-```{toctree}
----
-maxdepth: 1
----
-/understanding/llms/prompts.md
-Run Llama2 locally <https://replicate.com/blog/run-llama-locally>
-/understanding/llms/privacy.md
-```

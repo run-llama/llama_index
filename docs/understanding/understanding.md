@@ -16,16 +16,16 @@ There are a series of key steps involved in building any LLM-powered application
 
 * **[Indexing](/understanding/indexing/indexing.md)**: once you've got your data there are an infinite number of ways to structure access to that data to ensure your applications is always working with the most relevant data. LlamaIndex has a huge number of these strategies built-in and can help you select the best ones.
 
-* **[Storing](/storing/storing.md)**: you will probably find it more efficient to store your data in indexed form, or pre-processed summaries provided by an LLM, often in a specialized database known as a `Vector Store` (see below). You can also store your indexes, metadata and more.
+* **[Storing](/understanding/storing/storing.md)**: you will probably find it more efficient to store your data in indexed form, or pre-processed summaries provided by an LLM, often in a specialized database known as a `Vector Store` (see below). You can also store your indexes, metadata and more.
 
-* **[Querying](/querying/querying.md)**: every indexing strategy has a corresponding querying strategy and there are lots of ways to improve the relevance, speed and accuracy of what you retrieve and what the LLM does with it before returning it to you, including turning it into structured responses such as an API.
+* **[Querying](/understanding/querying/querying.md)**: every indexing strategy has a corresponding querying strategy and there are lots of ways to improve the relevance, speed and accuracy of what you retrieve and what the LLM does with it before returning it to you, including turning it into structured responses such as an API.
 
-* **[Putting it all together](/putting_it_all_together/putting_it_all_together.md)**: whether you are building question & answering, chatbots, an API, or an autonomous agent, we show you how to get your application into production.
+* **[Putting it all together](/understanding/putting_it_all_together/putting_it_all_together.md)**: whether you are building question & answering, chatbots, an API, or an autonomous agent, we show you how to get your application into production.
 
-* **[Tracing and debugging](/tracing_and_debugging/tracing_and_debugging.md)**: also called **observability**, it's especially important with LLM applications to be able to look into the inner workings of what's going on to help you debug problems and spot places to improve.
+* **[Tracing and debugging](/understanding/tracing_and_debugging/tracing_and_debugging.md)**: also called **observability**, it's especially important with LLM applications to be able to look into the inner workings of what's going on to help you debug problems and spot places to improve.
 
-* **[Evaluating](/evaluating/evaluating.md)**: every strategy has pros and cons and a key part of building, shipping and evolving your application is evaluating whether your change has improved your application in terms of accuracy, performance, clarity, cost and more. Reliably evaluating your changes is a big part of LLM application development.
+* **[Evaluating](/understanding/evaluating/evaluating.md)**: every strategy has pros and cons and a key part of building, shipping and evolving your application is evaluating whether your change has improved your application in terms of accuracy, performance, clarity, cost and more. Reliably evaluating your changes is a big part of LLM application development.
 
 ## Let's get started!
 
-Ready to dive in? Head to [using LLMs](/using_llms/using_llms.md).
+Ready to dive in? Head to [using LLMs](/understanding/using_llms/using_llms.md).

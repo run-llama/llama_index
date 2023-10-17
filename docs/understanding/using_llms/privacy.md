@@ -8,4 +8,4 @@ Regarding data privacy, when using LLamaIndex with OpenAI, the privacy details a
 
 ## Vector stores
 
-LLamaIndex offers modules to connect with other vector stores within indexes to store embeddings. It is worth noting that each vector store has its own privacy policies and practices, and LLamaIndex does not assume responsibility for how they handle or use your data. Also by default LLamaIndex have a default option to store your embeddings locally.
+LLamaIndex offers modules to connect with other vector stores within indexes to store embeddings. It is worth noting that each vector store has its own privacy policies and practices, and LLamaIndex does not assume responsibility for how they handle or use your data. Also by default LLamaIndex have a default option to store your embeddings locally. 

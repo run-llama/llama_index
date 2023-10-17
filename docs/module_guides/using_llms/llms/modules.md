@@ -1,4 +1,4 @@
-# Modules
+# Available LLM integrations
 
 We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 
