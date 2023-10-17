@@ -11,7 +11,7 @@ SLASH_REPLACEMENT = "_"
 IMPORT_ERROR_MSG = (
     "`firestore` package not found, please run `pip3 install google-cloud-firestore`"
 )
-CLIENT_INFO = "LlamaIndex"
+USER_AGENT = "LlamaIndex"
 DEFAULT_FIRESTORE_DATABASE = "(default)"
 
 
@@ -34,8 +34,10 @@ class FirestoreKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
+        client_info = DEFAULT_CLIENT_INFO
+        client_info.user_agent = USER_AGENT
         self._db = firestore.client.Client(
-            project=project, database=database, client_info=CLIENT_INFO
+            project=project, database=database, client_info=client_info
         )
 
     def firestore_collection(self, collection: str) -> str:
