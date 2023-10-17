@@ -64,8 +64,8 @@ class MyScaleVectorStore(VectorStore):
     stores_text: bool = True
     _index_existed: bool = False
     metadata_column: str = "metadata"
-    AMPLIFY_RATIO_LE5 = 60
-    AMPLIFY_RATIO_GT5 = 30
+    AMPLIFY_RATIO_LE5 = 100
+    AMPLIFY_RATIO_GT5 = 20
     AMPLIFY_RATIO_GT50 = 10
 
 
