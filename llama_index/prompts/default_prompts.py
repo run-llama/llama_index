@@ -26,7 +26,7 @@ DEFAULT_SUMMARY_PROMPT = PromptTemplate(
 # insert prompts
 DEFAULT_INSERT_PROMPT_TMPL = (
     "Context information is below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "(1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -42,16 +42,20 @@ DEFAULT_INSERT_PROMPT = PromptTemplate(
 )
 
 
-# # single choice
-DEFAULT_QUERY_PROMPT_TMPL = (
+CHOICES_BOILERPLATE = (
     "Some choices are given below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "(1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
     "\n---------------------\n"
-    "Using only the choices above and not prior knowledge, return "
-    "the choice that is most relevant to the question: '{query_str}'\n"
+    "Using only the choices above and not prior knowledge"
+)
+
+# # single choice
+DEFAULT_QUERY_PROMPT_TMPL = (
+    f"{CHOICES_BOILERPLATE}, "
+    "return the choice that is most relevant to the question: '{query_str}'\n"
     "Provide choice in the following format: 'ANSWER: <number>' and explain why "
     "this summary was selected in relation to the question.\n"
 )
@@ -61,13 +65,8 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
 
 # multiple choice
 DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
-    "Some choices are given below. It is provided in a numbered "
-    "list (1 to {num_chunks}), "
-    "where each item in the list corresponds to a summary.\n"
-    "---------------------\n"
-    "{context_list}"
-    "\n---------------------\n"
-    "Using only the choices above and not prior knowledge, return the top choices "
+    f"{CHOICES_BOILERPLATE}, "
+    "return the top choices "
     "(no more than {branching_factor}, ranked by most relevant to least) that "
     "are most relevant to the question: '{query_str}'\n"
     "Provide choices in the following format: 'ANSWER: <numbers>' and explain why "
