@@ -2,8 +2,31 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+
+- Add normalization to huggingface embeddings (#8145)
+
+## [0.8.45] - 2023-10-13
+
 ### New Features
 
+- Added support for fine-tuning cross encoders (#7705)
+- Added `QueryFusionRetriever` for merging multiple retrievers + query augmentation (#8100)
+- Added `nb-clean` to `pre-commit` to minimize PR diffs (#8108)
+- Support for `TextEmbeddingInference` embeddings (#8122)
+
+### Bug Fixes / Nits
+
+- Improved the `BM25Retriever` interface to accept `BaseNode` objects (#8096)
+- Fixed bug with `BM25Retriever` tokenizer not working as expected (#8096)
+- Brought mypy to pass in Python 3.8 (#8107)
+- `ReActAgent` adding missing `super().__init__` call (#8125)
+
+## [0.8.44] - 2023-10-12
+
+### New Features
+
+- add pgvector sql query engine (#8087)
 - Added HoneyHive one-click observability (#7944)
 - Add support for both SQLAlchemy V1 and V2 (#8060)
 

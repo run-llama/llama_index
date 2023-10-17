@@ -81,4 +81,6 @@ maxdepth: 1
 ---
 Define Custom Retriever </examples/query_engine/CustomRetrievers.ipynb>
 BM25 Hybrid Retriever </examples/retrievers/bm25_retriever.ipynb>
+/examples/retrievers/simple_fusion.ipynb
+/examples/retrievers/reciprocal_rerank_fusion.ipynb
 ```
