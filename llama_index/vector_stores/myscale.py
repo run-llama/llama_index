@@ -68,7 +68,6 @@ class MyScaleVectorStore(VectorStore):
     AMPLIFY_RATIO_GT5 = 20
     AMPLIFY_RATIO_GT50 = 10
 
-
     def __init__(
         self,
         myscale_client: Optional[Any] = None,
