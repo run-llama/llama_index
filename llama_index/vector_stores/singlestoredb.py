@@ -1,18 +1,21 @@
+import json
 import logging
-from typing import Any, List, Optional, Dict
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy.pool import QueuePool
+
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    BaseNode,
+    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    MetadataFilters,
-    BaseNode
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from sqlalchemy.pool import QueuePool
-import json
 
 logger = logging.getLogger(__name__)
+
 
 class SingleStoreVectorStore(VectorStore):
     """SingleStore vector store.
@@ -41,7 +44,7 @@ class SingleStoreVectorStore(VectorStore):
         timeout (float, optional): Specifies the maximum wait time in seconds for
             establishing a connection. Defaults to 30.
 
-        Following arguments pertain to the connection:    
+        Following arguments pertain to the connection:
 
         host (str, optional): Specifies the hostname, IP address, or URL for the
                 database connection. The default scheme is "mysql".
@@ -55,18 +58,18 @@ class SingleStoreVectorStore(VectorStore):
 
     stores_text: bool = True
     flat_metadata: bool = True
-    
+
     def __init__(
-            self, 
-            table_name: str = "embeddings",
-            content_field: str = "content",
-            metadata_field: str = "metadata",
-            vector_field: str = "vector",
-            pool_size: int = 5,
-            max_overflow: int = 10,
-            timeout: float = 30,
-            **kwargs: Any,
-        ) -> None:
+        self,
+        table_name: str = "embeddings",
+        content_field: str = "content",
+        metadata_field: str = "metadata",
+        vector_field: str = "vector",
+        pool_size: int = 5,
+        max_overflow: int = 10,
+        timeout: float = 30,
+        **kwargs: Any,
+    ) -> None:
         """Init params."""
         self.table_name = table_name
         self.content_field = content_field
@@ -83,9 +86,8 @@ class SingleStoreVectorStore(VectorStore):
             max_overflow=self.max_overflow,
             timeout=self.timeout,
         )
-        
-        self._create_table()
 
+        self._create_table()
 
     @property
     def client(self) -> Any:
@@ -105,10 +107,9 @@ class SingleStoreVectorStore(VectorStore):
                 "Please install it with `pip install singlestoredb`."
             )
         return s2.connect(**self.connection_kwargs)
-    
+
     def _create_table(self) -> None:
         conn = self.connection_pool.connect()
-        cursor = conn.cursor()
         try:
             cur = conn.cursor()
             try:
@@ -125,7 +126,7 @@ class SingleStoreVectorStore(VectorStore):
     def add(self, nodes: List[BaseNode]) -> List[str]:
         """Add nodes to index.
 
-        Args
+        Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
@@ -138,15 +139,15 @@ class SingleStoreVectorStore(VectorStore):
                     node, remove_text=True, flat_metadata=self.flat_metadata
                 )
                 cursor.execute(
-                        "INSERT INTO {} VALUES (%s, JSON_ARRAY_PACK(%s), %s)".format(
-                            self.table_name
-                        ),
-                        (
-                            node.get_content(metadata_mode=MetadataMode.NONE) or "",
-                            "[{}]".format(",".join(map(str, embedding))),
-                            json.dumps(metadata),
-                        ),
-                    )
+                    "INSERT INTO {} VALUES (%s, JSON_ARRAY_PACK(%s), %s)".format(
+                        self.table_name
+                    ),
+                    (
+                        node.get_content(metadata_mode=MetadataMode.NONE) or "",
+                        "[{}]".format(",".join(map(str, embedding))),
+                        json.dumps(metadata),
+                    ),
+                )
         finally:
             cursor.close()
             conn.close()
@@ -163,12 +164,17 @@ class SingleStoreVectorStore(VectorStore):
         conn = self.connection_pool.connect()
         cursor = conn.cursor()
         try:
-            cursor.execute(f"DELETE FROM {self.table_name} WHERE JSON_EXTRACT_JSON(metadata, 'ref_doc_id') = %s", ('\"' + ref_doc_id + '\"',))
+            cursor.execute(
+                f"DELETE FROM {self.table_name} WHERE JSON_EXTRACT_JSON(metadata, 'ref_doc_id') = %s",
+                ('"' + ref_doc_id + '"',),
+            )
         finally:
             cursor.close()
             conn.close()
 
-    def query(self, query: VectorStoreQuery, filter: Optional[dict] = None) -> VectorStoreQueryResult:
+    def query(
+        self, query: VectorStoreQuery, filter: Optional[dict] = None
+    ) -> VectorStoreQueryResult:
         """
         Query index for top k most similar nodes.
 
@@ -195,19 +201,19 @@ class SingleStoreVectorStore(VectorStore):
                 prefix_args: Optional[List[str]] = None,
             ) -> None:
                 prefix_args = prefix_args or []
-                for key in sub_filter.keys():
+                for key in sub_filter:
                     if isinstance(sub_filter[key], dict):
                         build_where_clause(
-                            where_clause_values, sub_filter[key], prefix_args + [key]
+                            where_clause_values, sub_filter[key], [*prefix_args, key]
                         )
                     else:
                         arguments.append(
                             "JSON_EXTRACT({}, {}) = %s".format(
-                                {self.metadata_field}, 
-                                ", ".join(["%s"] * (len(prefix_args) + 1))
+                                {self.metadata_field},
+                                ", ".join(["%s"] * (len(prefix_args) + 1)),
                             )
                         )
-                        where_clause_values += prefix_args + [key]
+                        where_clause_values += [*prefix_args, key]
                         where_clause_values.append(json.dumps(sub_filter[key]))
 
             build_where_clause(where_clause_values, filter)
@@ -217,14 +223,17 @@ class SingleStoreVectorStore(VectorStore):
         if query_embedding:
             try:
                 cur = conn.cursor()
-                formatted_vector = ("[{}]".format(",".join(map(str, query_embedding))))
+                formatted_vector = "[{}]".format(",".join(map(str, query_embedding)))
                 try:
                     logger.debug("vector field: %s", formatted_vector)
                     logger.debug("similarity_top_k: %s", similarity_top_k)
                     cur.execute(
-                        f"""SELECT {self.content_field}, {self.metadata_field}, DOT_PRODUCT({self.vector_field}, JSON_ARRAY_PACK(%s)) as similarity_score
-                        FROM {self.table_name} {where_clause}
-                        ORDER BY similarity_score DESC LIMIT {similarity_top_k}""", (formatted_vector,) + tuple(where_clause_values)
+                        f"SELECT {self.content_field}, {self.metadata_field}, "
+                        f"DOT_PRODUCT({self.vector_field}, "
+                        "JSON_ARRAY_PACK(%s)) as similarity_score "
+                        f"FROM {self.table_name} {where_clause} "
+                        f"ORDER BY similarity_score DESC LIMIT {similarity_top_k}",
+                        (formatted_vector, *tuple(where_clause_values)),
                     )
                     results = cur.fetchall()
                 finally:
