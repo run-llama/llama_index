@@ -30,7 +30,7 @@ def vector_search(
         distance_metric: distance function 'L2' for Euclidean, 'L1' for Nuclear, 'Max'
             l-infinity distance, 'cos' for cosine similarity, 'dot' for dot product
     returns:
-        nearest_indices: List, indices of nearest neighbors
+        nearest_indices: List, indices of nearest neighbors.
     """
     # Calculate the distance between the query_vector and all data_vectors
     if isinstance(query_vector, list):
@@ -62,7 +62,7 @@ class DeepLakeReader(BaseReader):
         self,
         token: Optional[str] = None,
     ):
-        """Initializing the deepLake reader"""
+        """Initializing the deepLake reader."""
         import_err_msg = (
             "`deeplake` package not found, please run `pip install deeplake`"
         )

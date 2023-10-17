@@ -49,7 +49,7 @@ class Konko(LLM):
         gte=0.0,
         lte=1.0,
     )
-    max_tokens: int = Field(
+    max_tokens: Optional[int] = Field(
         default=DEFAULT_NUM_OUTPUTS,
         description="The maximum number of tokens to generate.",
         gt=0,

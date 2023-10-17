@@ -9,27 +9,28 @@ The core of our toolkit revolves around in-context learning / retrieval augmenta
 While finetuning can be also used to "augment" a model with external data, finetuning can complement retrieval augmentation in a variety of ways:
 
 #### Embedding Finetuning Benefits
+
 - Finetuning the embedding model can allow for more meaningful embedding representations over a training distribution of data --> leads to better retrieval performance.
 
 #### LLM Finetuning Benefits
+
 - Allow it to learn a style over a given dataset
 - Allow it to learn a DSL that might be less represented in the training data (e.g. SQL)
 - Allow it to correct hallucinations/errors that might be hard to fix through prompt engineering
 - Allow it to distill a better model (e.g. GPT-4) into a simpler/cheaper model (e.g. gpt-3.5, Llama 2)
 
-
 ## Integrations with LlamaIndex
 
 This is an evolving guide, and there are currently three key integrations with LlamaIndex. Please check out the sections below for more details!
+
 - Finetuning embeddings for better retrieval performance
 - Finetuning Llama 2 for better text-to-SQL
 - Finetuning gpt-3.5-turbo to distill gpt-4
 
-
 ## Finetuning Embeddings
 
-
 We've created comprehensive guides showing you how to finetune embeddings in different ways, whether that's the model itself (in this case, `bge`) over an unstructured text corpus, or an adapter over any black-box embedding. It consists of the following steps:
+
 1. Generating a synthetic question/answer dataset using LlamaIndex over any unstructed context.
 2. Finetuning the model
 3. Evaluating the model.
@@ -45,6 +46,7 @@ Embedding Fine-tuning Guide </examples/finetuning/embeddings/finetune_embedding.
 ```
 
 **Old**
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -70,6 +72,7 @@ maxdepth: 1
 GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing>
 GPT-3.5 Fine-tuning Notebook (Notebook link) </examples/finetuning/openai_fine_tuning.ipynb>
 /examples/finetuning/react_agent/react_agent_finetune.ipynb
+[WIP] Function Calling Fine-tuning </examples/finetuning/openai_fine_tuning_functions.ipynb>
 ```
 
 **Old**
@@ -95,7 +98,6 @@ maxdepth: 1
 /examples/finetuning/knowledge/finetune_retrieval_aug.ipynb
 ```
 
-
 ### [WIP] Finetuning GPT-3.5 to Memorize Knowledge
 
 We have a guide experimenting with showing how to use OpenAI fine-tuning to memorize a body of text.
@@ -107,8 +109,6 @@ maxdepth: 1
 ---
 /examples/finetuning/knowledge/finetune_knowledge.ipynb
 ```
-
-
 
 ### Finetuning Llama 2 for Better Text-to-SQL
 
@@ -122,4 +122,20 @@ maxdepth: 1
 ---
 Llama 2 Text-to-SQL Fine-tuning (Repo) <https://github.com/run-llama/modal_finetune_sql>
 Llama 2 Text-to-SQL Fine-tuning (Notebook) <https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb>
+```
+
+## Finetuning Cross-Encoders for Re-Ranking
+
+By finetuning a cross encoder, we can attempt to improve re-ranking performance on our own private data.
+
+Re-ranking is key step in advanced retrieval, where retrieved nodes from many sources are re-ranked using a separate model, so that the most relevant nodes
+are first.
+
+In this example, we use the `sentence-transformers` package to help finetune a crossencoder model, using a dataset that is generated based on the `QASPER` dataset.
+
+```{toctree}
+---
+maxdepth: 1
+---
+Cross-Encoder Finetuning </examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb>
 ```

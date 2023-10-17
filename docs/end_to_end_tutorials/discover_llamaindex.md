@@ -15,7 +15,6 @@ We show you how to do this in a "bottoms-up" fashion - start by using the LLMs, 
 [[Part 4] Embeddings](https://www.youtube.com/watch?v=2c64G-iDJKQ)
 [[Part 5] Retrievers and Postprocessors](https://www.youtube.com/watch?v=mIyZ_9gqakE)
 
-
 ## SubQuestionQueryEngine + 10K Analysis
 
 This video covers the `SubQuestionQueryEngine` and how it can be applied to financial documents to help decompose complex queries into multiple sub-questions.
@@ -30,7 +29,7 @@ This video covers managing documents from a source that is consantly updating (i
 
 [Youtube](https://www.youtube.com/watch?v=j6dJcODLd_c)
 
-[Notebook + Supplimentary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/discover_llamaindex/document_management/)
+[Notebook + Supplementary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/discover_llamaindex/document_management/)
 
 [Reference Docs](../../core_modules/data_modules/index/document_management.md)
 

@@ -1,5 +1,5 @@
 """
-Portkey integration with Llama_index for enhanced monitoring
+Portkey integration with Llama_index for enhanced monitoring.
 """
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
 
@@ -40,7 +40,7 @@ DEFAULT_PORTKEY_MODEL = "gpt-3.5-turbo"
 
 
 class Portkey(CustomLLM):
-    """_summary_
+    """_summary_.
 
     Args:
         LLM (_type_): _description_

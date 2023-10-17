@@ -61,3 +61,6 @@ class ObjectIndex(Generic[OT]):
             retriever=self._index.as_retriever(**kwargs),
             object_node_mapping=self._object_node_mapping,
         )
+
+    def as_node_retriever(self, **kwargs: Any) -> BaseRetriever:
+        return self._index.as_retriever(**kwargs)

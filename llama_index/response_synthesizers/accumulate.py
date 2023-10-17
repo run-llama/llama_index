@@ -47,7 +47,7 @@ class Accumulate(BaseSynthesizer):
         separator: str = "\n---------------------\n",
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        """Apply the same prompt to text chunks and return async responses"""
+        """Apply the same prompt to text chunks and return async responses."""
         if self._streaming:
             raise ValueError("Unable to stream in Accumulate response mode")
 
@@ -68,7 +68,7 @@ class Accumulate(BaseSynthesizer):
         separator: str = "\n---------------------\n",
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        """Apply the same prompt to text chunks and return responses"""
+        """Apply the same prompt to text chunks and return responses."""
         if self._streaming:
             raise ValueError("Unable to stream in Accumulate response mode")
 

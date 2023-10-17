@@ -3,15 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.engine.interfaces import ReflectedIndex
 from sqlalchemy.exc import OperationalError, ProgrammingError
-
-
-def _format_index(index: ReflectedIndex) -> str:
-    return (
-        f'Name: {index["name"]}, Unique: {index["unique"]},'
-        f' Columns: {index["column_names"]!s}'
-    )
 
 
 class SQLDatabase:
@@ -188,9 +180,8 @@ class SQLDatabase:
         """Insert data into a table."""
         table = self._metadata.tables[table_name]
         stmt = insert(table).values(**data)
-        with self._engine.connect() as connection:
+        with self._engine.begin() as connection:
             connection.execute(stmt)
-            connection.commit()
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
@@ -198,7 +189,7 @@ class SQLDatabase:
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
         """
-        with self._engine.connect() as connection:
+        with self._engine.begin() as connection:
             try:
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:

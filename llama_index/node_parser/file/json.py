@@ -55,7 +55,7 @@ class JSONNodeParser(NodeParser):
         return all_nodes
 
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
-        """Get nodes from document"""
+        """Get nodes from document."""
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         try:
             data = json.loads(text)

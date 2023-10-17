@@ -241,7 +241,7 @@ class MyScaleVectorStore(VectorStore):
         raise NotImplementedError("Delete not yet implemented for MyScale index.")
 
     def drop(self) -> None:
-        """Drop MyScale Index and table"""
+        """Drop MyScale Index and table."""
         self._client.command(
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )

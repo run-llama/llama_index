@@ -52,7 +52,7 @@ index = VectorStoreIndex(nodes, storage_context=storage_context)
 index.storage_context.persist(persist_dir="<persist_dir>")
 
 # can also set index_id to save multiple indexes to the same folder
-index.set_index_id = "<index_id>"
+index.set_index_id("<index_id>")
 index.storage_context.persist(persist_dir="<persist_dir>")
 
 # to load index later, make sure you setup the storage context
@@ -79,7 +79,7 @@ For saving and loading a graph/composable index, see the [full guide here](../in
 
 ### Vector Store Integrations and Storage
 
-Most of our vector store integrations store the entire index (vectors + text) in the vector store itself. This comes with the major benefit of not having to exlicitly persist the index as shown above, since the vector store is already hosted and persisting the data in our index.
+Most of our vector store integrations store the entire index (vectors + text) in the vector store itself. This comes with the major benefit of not having to explicitly persist the index as shown above, since the vector store is already hosted and persisting the data in our index.
 
 The vector stores that support this practice are:
 

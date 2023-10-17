@@ -84,7 +84,7 @@ class MboxReader(BaseReader):
 
                 # Parse message HTML content and remove unneeded whitespace
                 soup = BeautifulSoup(content)
-                stripped_content = " ".join(soup.get_content().split())
+                stripped_content = " ".join(soup.get_text().split())
                 # Format message to include date, sender, receiver and subject
                 msg_string = self.message_format.format(
                     _date=msg["date"],

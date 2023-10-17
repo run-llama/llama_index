@@ -18,7 +18,7 @@ from llama_index.llms.custom import CustomLLM
 
 
 class PredibaseLLM(CustomLLM):
-    """Predibase LLM"""
+    """Predibase LLM."""
 
     model_name: str = Field(description="The Predibase model to use.")
     predibase_api_key: str = Field(description="The Predibase API key to use.")

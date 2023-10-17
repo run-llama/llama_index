@@ -47,7 +47,7 @@ class AdapterEmbeddingModel(BaseEmbedding):
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        """Init params"""
+        """Init params."""
         import torch
 
         from llama_index.embeddings.adapter_utils import BaseAdapter, LinearLayer

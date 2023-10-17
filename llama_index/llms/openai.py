@@ -45,8 +45,6 @@ DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 
 
 class OpenAI(LLM):
-    class_type = "openai"
-
     model: str = Field(
         default=DEFAULT_OPENAI_MODEL, description="The OpenAI model to use."
     )

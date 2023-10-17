@@ -87,7 +87,6 @@ service_context = ServiceContext.from_defaults(
 )
 ```
 
-
 ### LangChain Integrations
 
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/).

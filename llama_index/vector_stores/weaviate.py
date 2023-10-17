@@ -238,8 +238,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         if query.filters is not None and len(query.filters.filters) > 0:
             filter = _to_weaviate_filter(query.filters)
             query_builder = query_builder.with_where(filter)
-        else:
-            filter = kwargs.pop("filter", {})
+        elif "filter" in kwargs and kwargs["filter"] is not None:
+            query_builder = query_builder.with_where(kwargs["filter"])
 
         query_builder = query_builder.with_limit(query.similarity_top_k)
         logger.debug(f"Using limit of {query.similarity_top_k}")

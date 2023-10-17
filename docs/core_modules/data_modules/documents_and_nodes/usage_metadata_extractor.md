@@ -3,6 +3,7 @@
 You can use LLMs to automate metadata extraction with our `Metadata Extractor` modules.
 
 Our metadata extractor modules include the following "feature extractors":
+
 - `SummaryExtractor` - automatically extracts a summary over a set of Nodes
 - `QuestionsAnsweredExtractor` - extracts a set of questions that each Node can answer
 - `TitleExtractor` - extracts a title over the context of each Node
@@ -48,7 +49,6 @@ service_context = ServiceContext.from_defaults(
     ]
 )
 ```
-
 
 ```{toctree}
 ---

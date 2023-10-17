@@ -251,7 +251,7 @@ index = load_index_from_storage(storage_context)
 
 **NOTE**: If you had initialized the index with a custom
 `ServiceContext` object, you will also need to pass in the same
-ServiceContext during `load_index_from_storage` or ensure you have a global sevice context.
+ServiceContext during `load_index_from_storage` or ensure you have a global service context.
 
 ```python
 
@@ -350,7 +350,7 @@ An index can have a variety of index-specific retrieval modes.
 For instance, a summary index supports the default `SummaryIndexRetriever` that retrieves all nodes, and
 `SummaryIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
 
-For convienience, you can also use the following shorthand:
+For convenience, you can also use the following shorthand:
 
 ```python
     # SummaryIndexRetriever
@@ -371,6 +371,7 @@ The full list of retrievers for each index (and their shorthand) is documented i
 (setting-response-mode)=
 
 ### Configuring response synthesis
+
 After a retriever fetches relevant nodes, a `BaseSynthesizer` synthesizes the final response by combining the information.
 
 You can configure it via

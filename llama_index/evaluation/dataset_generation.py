@@ -1,4 +1,4 @@
-"""Dataset generation from documents"""
+"""Dataset generation from documents."""
 from __future__ import annotations
 
 import asyncio

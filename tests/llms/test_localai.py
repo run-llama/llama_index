@@ -77,7 +77,16 @@ def test_forgetting_kwarg() -> None:
 
     with patch(
         "llama_index.llms.openai.completion_with_retry", return_value={}
-    ) as mock_completion:
-        with pytest.raises(NotImplementedError, match="/chat/completions"):
-            llm.complete("A long time ago in a galaxy far, far away")
+    ) as mock_completion, pytest.raises(NotImplementedError, match="/chat/completions"):
+        llm.complete("A long time ago in a galaxy far, far away")
     mock_completion.assert_not_called()
+
+
+def test_serialization() -> None:
+    llm = LocalAI(model="models/placeholder.gguf", max_tokens=42, context_window=43)
+
+    serialized = llm.to_dict()
+    # Check OpenAI base class specifics
+    assert serialized["max_tokens"] == 42
+    # Check LocalAI subclass specifics
+    assert serialized["context_window"] == 43

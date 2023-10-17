@@ -112,7 +112,7 @@ def as_dataframe(data: Iterable[BaseDataType]) -> "DataFrame":
 
 @dataclass
 class TraceData:
-    """Trace data"""
+    """Trace data."""
 
     query_data: QueryData = field(default_factory=QueryData)
     node_datas: List[NodeData] = field(default_factory=list)

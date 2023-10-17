@@ -132,7 +132,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     batch_size: int
 
     _pinecone_index: Any = PrivateAttr()
-    _tokenizer: Callable = PrivateAttr()
+    _tokenizer: Optional[Callable] = PrivateAttr()
 
     def __init__(
         self,
@@ -168,7 +168,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         insert_kwargs = insert_kwargs or {}
 
-        if tokenizer is None:
+        if tokenizer is None and add_sparse_vector:
             tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
 
@@ -211,7 +211,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 VECTOR_KEY: node.get_embedding(),
                 METADATA_KEY: metadata,
             }
-            if self.add_sparse_vector:
+            if self.add_sparse_vector and self._tokenizer is not None:
                 sparse_vector = generate_sparse_vectors(
                     [node.get_content(metadata_mode=MetadataMode.EMBED)],
                     self._tokenizer,
@@ -257,7 +257,10 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         """
         sparse_vector = None
-        if query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID):
+        if (
+            query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID)
+            and self._tokenizer is not None
+        ):
             if query.query_str is None:
                 raise ValueError(
                     "query_str must be specified if mode is SPARSE or HYBRID."

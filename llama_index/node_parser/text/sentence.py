@@ -213,8 +213,8 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
         chunks: List[str] = []
-        cur_chunk: List[tuple[str, int]] = []  # list of (text, length)
-        last_chunk: List[tuple[str, int]] = []
+        cur_chunk: List[Tuple[str, int]] = []  # list of (text, length)
+        last_chunk: List[Tuple[str, int]] = []
         cur_chunk_len = 0
         new_chunk = True
 
