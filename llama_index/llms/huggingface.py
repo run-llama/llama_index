@@ -31,11 +31,13 @@ from llama_index.prompts.base import PromptTemplate
 if TYPE_CHECKING:
     try:
         from huggingface_hub import AsyncInferenceClient, InferenceClient
+        from huggingface_hub.hf_api import ModelInfo
         from huggingface_hub.inference._types import ConversationalOutput
     except ModuleNotFoundError:
         AsyncInferenceClient = Any
         InferenceClient = Any
         ConversationalOutput = dict
+        ModelInfo = Any
 
 logger = logging.getLogger(__name__)
 
@@ -406,6 +408,7 @@ class HuggingFaceInferenceAPI(LLM):
     )
     _sync_client: "InferenceClient" = PrivateAttr()
     _async_client: "AsyncInferenceClient" = PrivateAttr()
+    _get_model_info: "Callable[..., ModelInfo]" = PrivateAttr()
 
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
@@ -453,7 +456,11 @@ class HuggingFaceInferenceAPI(LLM):
         """
         super().__init__(**kwargs)  # Populate pydantic Fields
         try:
-            from huggingface_hub import AsyncInferenceClient, InferenceClient
+            from huggingface_hub import (
+                AsyncInferenceClient,
+                InferenceClient,
+                model_info,
+            )
         except ModuleNotFoundError as exc:
             raise ImportError(
                 f"{type(self).__name__} requires huggingface_hub with its inference"
@@ -461,6 +468,7 @@ class HuggingFaceInferenceAPI(LLM):
             ) from exc
         self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
+        self._get_model_info = model_info
 
     def validate_supported(self, task: str) -> None:
         """
@@ -481,6 +489,10 @@ class HuggingFaceInferenceAPI(LLM):
             raise KeyError(
                 f"Input task {task!r} not in possible tasks {list(all_models.keys())}."
             ) from exc
+
+    def get_model_info(self, **kwargs: Any) -> "ModelInfo":
+        """Get metadata on the current model from Hugging Face."""
+        return self._get_model_info(self.model_name, **kwargs)
 
     @property
     def metadata(self) -> LLMMetadata:
