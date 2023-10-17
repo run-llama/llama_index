@@ -24,7 +24,7 @@ MultiSelectPrompt = PromptTemplate
 
 # single select
 DEFAULT_SINGLE_SELECT_PROMPT_TMPL = (
-    f"{CHOICES_BOILERPLATE}, "
+    f"{CHOICES_BOILERPLATE.replace('limit_name', 'num_choices')}, "
     "return the choice that is most relevant to the question: '{query_str}'\n"
 )
 DEFAULT_SINGLE_SELECT_PROMPT = PromptTemplate(
@@ -34,7 +34,7 @@ DEFAULT_SINGLE_SELECT_PROMPT = PromptTemplate(
 
 # multiple select
 DEFAULT_MULTI_SELECT_PROMPT_TMPL = (
-    f"{CHOICES_BOILERPLATE}, "
+    f"{CHOICES_BOILERPLATE.replace('limit_name', 'num_choices')}, "
     "return the top choices "
     "(no more than {max_outputs}, but only select what is needed) that "
     "are most relevant to the question: '{query_str}'\n"
@@ -45,7 +45,7 @@ DEFAULT_MULTIPLE_SELECT_PROMPT = PromptTemplate(
 
 # single pydantic select
 DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL = (
-    f"{CHOICES_BOILERPLATE}, "
+    f"{CHOICES_BOILERPLATE.replace('limit_name', 'num_choices')}, "
     "generate the selection object and reason that is"
     "most relevant to the question: '{query_str}'\n"
 )
@@ -53,7 +53,7 @@ DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL = (
 
 # multiple pydantic select
 DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL = (
-    f"{CHOICES_BOILERPLATE}, "
+    f"{CHOICES_BOILERPLATE.replace('limit_name', 'num_choices')}, "
     "return the top choice(s) "
     "(no more than {max_outputs}, but only select what is needed)"
     "by generating the selection object and reasons"

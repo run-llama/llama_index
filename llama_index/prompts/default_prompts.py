@@ -44,7 +44,7 @@ DEFAULT_INSERT_PROMPT = PromptTemplate(
 
 CHOICES_BOILERPLATE = (
     "Some choices are given below. It is provided in a numbered list "
-    "(1 to {num_chunks}), "
+    "(1 to {limit_name}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -54,7 +54,7 @@ CHOICES_BOILERPLATE = (
 
 # # single choice
 DEFAULT_QUERY_PROMPT_TMPL = (
-    f"{CHOICES_BOILERPLATE}, "
+    f"{CHOICES_BOILERPLATE.replace('limit_name', 'num_chunks')}, "
     "return the choice that is most relevant to the question: '{query_str}'\n"
     "Provide choice in the following format: 'ANSWER: <number>' and explain why "
     "this summary was selected in relation to the question.\n"
@@ -65,7 +65,7 @@ DEFAULT_QUERY_PROMPT = PromptTemplate(
 
 # multiple choice
 DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
-    f"{CHOICES_BOILERPLATE}, "
+    f"{CHOICES_BOILERPLATE.replace('limit_name', 'num_chunks')}, "
     "return the top choices "
     "(no more than {branching_factor}, ranked by most relevant to least) that "
     "are most relevant to the question: '{query_str}'\n"
