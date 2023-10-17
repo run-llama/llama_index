@@ -6,6 +6,7 @@
 
 - Add normalization to huggingface embeddings (#8145)
 - Fixed duplicate `FORMAT_STR` being inside prompt (#8171)
+- Fixed inconsistently spaced prompt templates (#8168)
 
 ## [0.8.45] - 2023-10-13
 
