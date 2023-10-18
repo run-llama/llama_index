@@ -12,7 +12,8 @@ skip = "./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipyn
 
 [tool.mypy]
 disallow_untyped_defs = true
-exclude = ["build", "examples", "llama_index/ingestion/client", "notebooks", "venv"]
+# Remove venv skip when integrated with pre-commit
+exclude = ["build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 
 [tool.poetry]
@@ -37,7 +38,7 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.8.45.post1"
+version = "0.8.46"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -117,7 +118,6 @@ optional = true
 EbookLib = {optional = true, version = "^0.18"}
 Pillow = {optional = true, version = "<=9.5.0"}
 bark = {optional = true, version = "^0.1.5"}
-beautifulsoup4 = {optional = true, version = "^4.12.2"}
 "discord.py" = {optional = true, version = "^2.3.2"}
 elevenlabs = {optional = true, version = "^0.2.24"}
 feedparser = {optional = true, version = "^6.0.10"}
@@ -275,14 +275,7 @@ zep-python = {optional = true, version = "^1.2.1"}
 
 [tool.ruff]
 exclude = [
-    ".git",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".venv",
-    "__pycache__",
     "examples",
-    "llama_index/ingestion/client",
     "notebooks",
 ]
 ignore = [
