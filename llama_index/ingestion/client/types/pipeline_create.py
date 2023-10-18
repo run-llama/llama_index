@@ -5,7 +5,8 @@ import typing
 
 import pydantic
 
-from ..core.datetime_utils import serialize_datetime
+from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
+
 from .configured_transformation_item import ConfiguredTransformationItem
 from .data_sink_create import DataSinkCreate
 from .data_source_create import DataSourceCreate

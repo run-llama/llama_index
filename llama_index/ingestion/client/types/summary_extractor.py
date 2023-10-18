@@ -5,7 +5,8 @@ import typing
 
 import pydantic
 
-from ..core.datetime_utils import serialize_datetime
+from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
+
 from .llm_predictor import LlmPredictor
 from .metadata_mode import MetadataMode
 
@@ -18,7 +19,7 @@ class SummaryExtractor(pydantic.BaseModel):
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
-        prompt_template (str): template for summary extraction
+        prompt_template (str): template for summary extraction.
     """
 
     is_text_node_only: typing.Optional[bool]

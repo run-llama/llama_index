@@ -27,3 +27,4 @@ class TransformationCategoryNames(str, enum.Enum):
             return node_parser()
         if self is TransformationCategoryNames.EMBEDDING:
             return embedding()
+        return None

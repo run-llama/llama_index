@@ -35,7 +35,7 @@ class RawFile(BaseComponent):
 
 class DataSource(BaseModel):
     """
-    A class containing metadata for a type of data source
+    A class containing metadata for a type of data source.
     """
 
     name: str = Field(

@@ -6,14 +6,19 @@ from json.decoder import JSONDecodeError
 
 import pydantic
 
-from ...core.api_error import ApiError
-from ...core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from ...core.jsonable_encoder import jsonable_encoder
-from ...errors.unprocessable_entity_error import UnprocessableEntityError
-from ...types.http_validation_error import HttpValidationError
-from ...types.pipeline import Pipeline
-from ...types.pipeline_create import PipelineCreate
-from ...types.project import Project
+from llama_index.ingestion.client.core.api_error import ApiError
+from llama_index.ingestion.client.core.client_wrapper import (
+    AsyncClientWrapper,
+    SyncClientWrapper,
+)
+from llama_index.ingestion.client.core.jsonable_encoder import jsonable_encoder
+from llama_index.ingestion.client.errors.unprocessable_entity_error import (
+    UnprocessableEntityError,
+)
+from llama_index.ingestion.client.types.http_validation_error import HttpValidationError
+from llama_index.ingestion.client.types.pipeline import Pipeline
+from llama_index.ingestion.client.types.pipeline_create import PipelineCreate
+from llama_index.ingestion.client.types.project import Project
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)

@@ -14,7 +14,7 @@ from llama_index.vector_stores.types import BasePydanticVectorStore
 
 class DataSink(BaseModel):
     """
-    A class containing metadata for a type of data sink
+    A class containing metadata for a type of data sink.
     """
 
     name: str = Field(
