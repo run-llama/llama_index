@@ -1,4 +1,4 @@
-# Indexes
+# Indexing
 
 ## Concept
 
