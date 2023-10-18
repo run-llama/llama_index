@@ -1,8 +1,7 @@
 import asyncio
 from typing import Any, List, Optional
 
-from langchain.schema.embeddings import Embeddings
-
+from llama_index.bridge.langchain import Embeddings
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import (
