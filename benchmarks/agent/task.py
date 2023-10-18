@@ -1,7 +1,6 @@
 from typing import Callable, List
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.tools.types import BaseTool
 
 

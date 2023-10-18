@@ -7,11 +7,11 @@ import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.schema import BaseNode, MetadataMode
+from llama_index.vector_stores.types import VectorStore as VectorStoreBase
 from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.types import VectorStore as VectorStoreBase
 from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
@@ -33,7 +33,7 @@ class DeepLakeVectorStore(VectorStoreBase):
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a deeplake dataset. This implemnetation
     allows the use of an already existing deeplake dataset if it is one that was created
-    this vector store. It also supports creating a new one if the dataset doesnt
+    this vector store. It also supports creating a new one if the dataset doesn't
     exist or if `overwrite` is set to True.
     """
 

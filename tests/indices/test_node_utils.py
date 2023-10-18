@@ -4,20 +4,19 @@ from typing import List
 
 import pytest
 import tiktoken
-
 from llama_index.bridge.langchain import RecursiveCharacterTextSplitter
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.schema import Document, MetadataMode
 from llama_index.text_splitter import TokenTextSplitter
 
 
-@pytest.fixture
+@pytest.fixture()
 def text_splitter() -> TokenTextSplitter:
     """Get text splitter."""
     return TokenTextSplitter(chunk_size=20, chunk_overlap=0)
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now
@@ -68,10 +67,8 @@ def test_get_nodes_from_document_with_metadata(
         chunk_size <= text_splitter.chunk_size for chunk_size in actual_chunk_sizes
     )
     assert all(
-        [
-            "test_key: test_val" in n.get_content(metadata_mode=MetadataMode.ALL)
-            for n in nodes
-        ]
+        "test_key: test_val" in n.get_content(metadata_mode=MetadataMode.ALL)
+        for n in nodes
     )
 
 

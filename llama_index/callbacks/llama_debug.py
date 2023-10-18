@@ -1,14 +1,14 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import (
+    BASE_TRACE_EVENT,
+    TIMESTAMP_FORMAT,
     CBEvent,
     CBEventType,
     EventStats,
-    TIMESTAMP_FORMAT,
-    BASE_TRACE_EVENT,
 )
 
 
@@ -56,6 +56,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         """Store event start data by event type.
@@ -64,6 +65,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
             event_type (CBEventType): event type to store.
             payload (Optional[Dict[str, Any]]): payload to store.
             event_id (str): event id to store.
+            parent_id (str): parent event id.
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
@@ -106,33 +108,31 @@ class LlamaDebugHandler(BaseCallbackHandler):
         for event in events:
             event_pairs[event.id_].append(event)
 
-        sorted_events = sorted(
+        return sorted(
             event_pairs.values(),
             key=lambda x: datetime.strptime(x[0].time, TIMESTAMP_FORMAT),
         )
-        return sorted_events
 
     def _get_time_stats_from_event_pairs(
         self, event_pairs: List[List[CBEvent]]
     ) -> EventStats:
-        """Calculate time-based stats for a set of event pairs"""
+        """Calculate time-based stats for a set of event pairs."""
         total_secs = 0.0
         for event_pair in event_pairs:
             start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
             end_time = datetime.strptime(event_pair[-1].time, TIMESTAMP_FORMAT)
             total_secs += (end_time - start_time).total_seconds()
 
-        stats = EventStats(
+        return EventStats(
             total_secs=total_secs,
             average_secs=total_secs / len(event_pairs),
             total_count=len(event_pairs),
         )
-        return stats
 
     def get_event_pairs(
         self, event_type: Optional[CBEventType] = None
     ) -> List[List[CBEvent]]:
-        """Pair events by ID, either all events or a sepcific type."""
+        """Pair events by ID, either all events or a specific type."""
         if event_type is not None:
             return self._get_event_pairs(self._event_pairs_by_type[event_type])
 

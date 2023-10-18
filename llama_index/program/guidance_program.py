@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.guidance_utils import (
@@ -60,7 +59,12 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         if prompt is not None:
             prompt_template_str = prompt.template
         prompt_template_str = cast(str, prompt_template_str)
-        return cls(output_cls, prompt_template_str, guidance_llm=llm, **kwargs)
+        return cls(
+            output_cls,
+            prompt_template_str,
+            guidance_llm=llm,
+            **kwargs,
+        )
 
     @property
     def output_cls(self) -> Type[BaseModel]:
@@ -73,7 +77,6 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
     ) -> BaseModel:
         executed_program = self._guidance_program(**kwargs)
 
-        pydantic_obj = parse_pydantic_from_guidance_program(
+        return parse_pydantic_from_guidance_program(
             program=executed_program, cls=self._output_cls
         )
-        return pydantic_obj

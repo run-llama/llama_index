@@ -4,7 +4,6 @@ from tempfile import TemporaryDirectory
 from typing import Any, Dict
 
 import pytest
-
 from llama_index.readers.file.base import SimpleDirectoryReader
 
 
@@ -344,6 +343,5 @@ def test_error_if_not_dir_or_file() -> None:
         SimpleDirectoryReader("not_a_dir")
     with pytest.raises(ValueError, match="File"):
         SimpleDirectoryReader(input_files=["not_a_file"])
-    with TemporaryDirectory() as tmp_dir:
-        with pytest.raises(ValueError, match="No files"):
-            SimpleDirectoryReader(tmp_dir)
+    with TemporaryDirectory() as tmp_dir, pytest.raises(ValueError, match="No files"):
+        SimpleDirectoryReader(tmp_dir)

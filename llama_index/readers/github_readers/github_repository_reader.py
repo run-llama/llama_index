@@ -201,7 +201,7 @@ class GithubRepositoryReader(BaseReader):
         :param `current_path`: current path of the tree
         :param `current_depth`: current depth of the tree
         :return: list of tuples of
-            (tree object, file's full path realtive to the root of the repo)
+            (tree object, file's full path relative to the root of the repo)
         """
         blobs_and_full_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]] = []
         print_if_verbose(
@@ -255,7 +255,7 @@ class GithubRepositoryReader(BaseReader):
         Generate documents from a list of blobs and their full paths.
 
         :param `blobs_and_paths`: list of tuples of
-            (tree object, file's full path in the repo realtive to the root of the repo)
+            (tree object, file's full path in the repo relative to the root of the repo)
         :return: list of documents
         """
         buffered_iterator = BufferedGitBlobDataIterator(
@@ -348,44 +348,42 @@ class GithubRepositoryReader(BaseReader):
             + f"as {file_extension} with "
             + f"{reader.__class__.__name__}",
         )
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            with tempfile.NamedTemporaryFile(
-                dir=tmpdirname,
-                suffix=f".{file_extension}",
-                mode="w+b",
-                delete=False,
-            ) as tmpfile:
-                print_if_verbose(
-                    self._verbose,
-                    "created a temporary file"
-                    + f"{tmpfile.name} for parsing {file_path}",
+        with tempfile.TemporaryDirectory() as tmpdirname, tempfile.NamedTemporaryFile(
+            dir=tmpdirname,
+            suffix=f".{file_extension}",
+            mode="w+b",
+            delete=False,
+        ) as tmpfile:
+            print_if_verbose(
+                self._verbose,
+                "created a temporary file" + f"{tmpfile.name} for parsing {file_path}",
+            )
+            tmpfile.write(file_content)
+            tmpfile.flush()
+            tmpfile.close()
+            try:
+                docs = reader.load_data(pathlib.Path(tmpfile.name))
+                parsed_file = "\n\n".join([doc.get_content() for doc in docs])
+            except Exception as e:
+                print_if_verbose(self._verbose, f"error while parsing {file_path}")
+                logger.error(
+                    "Error while parsing "
+                    + f"{file_path} with "
+                    + f"{reader.__class__.__name__}:\n{e}"
                 )
-                tmpfile.write(file_content)
-                tmpfile.flush()
-                tmpfile.close()
-                try:
-                    docs = reader.load_data(pathlib.Path(tmpfile.name))
-                    parsed_file = "\n\n".join([doc.get_content() for doc in docs])
-                except Exception as e:
-                    print_if_verbose(self._verbose, f"error while parsing {file_path}")
-                    logger.error(
-                        "Error while parsing "
-                        + f"{file_path} with "
-                        + f"{reader.__class__.__name__}:\n{e}"
-                    )
-                    parsed_file = None
-                finally:
-                    os.remove(tmpfile.name)
-                if parsed_file is None:
-                    return None
-                return Document(
-                    text=parsed_file,
-                    id_=tree_sha,
-                    metadata={
-                        "file_path": file_path,
-                        "file_name": tree_path,
-                    },
-                )
+                parsed_file = None
+            finally:
+                os.remove(tmpfile.name)
+            if parsed_file is None:
+                return None
+            return Document(
+                text=parsed_file,
+                id_=tree_sha,
+                metadata={
+                    "file_path": file_path,
+                    "file_name": tree_path,
+                },
+            )
 
 
 if __name__ == "__main__":

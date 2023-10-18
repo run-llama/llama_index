@@ -2,7 +2,6 @@
 from typing import List
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.tools.utils import create_schema_from_function
 
 
@@ -11,7 +10,6 @@ def test_create_schema_from_function() -> None:
 
     def test_fn(x: int, y: int, z: List[str]) -> None:
         """Test function."""
-        pass
 
     SchemaCls = create_schema_from_function("test_schema", test_fn)
     schema = SchemaCls.schema()
@@ -25,8 +23,7 @@ def test_create_schema_from_function() -> None:
     assert schema["properties"]["a"]["type"] == "boolean"
 
     def test_fn2(x: int = 1) -> None:
-        """Optional input"""
-        pass
+        """Optional input."""
 
     SchemaCls = create_schema_from_function("test_schema", test_fn2)
     schema = SchemaCls.schema()

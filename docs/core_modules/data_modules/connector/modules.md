@@ -1,6 +1,5 @@
 # Module Guides
 
-
 ```{toctree}
 ---
 maxdepth: 1
@@ -29,4 +28,3 @@ maxdepth: 1
 ../../../examples/data_connectors/MakeDemo.ipynb
 ../../../examples/data_connectors/deplot/DeplotReader.ipynb
 ```
-

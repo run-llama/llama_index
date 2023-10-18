@@ -104,7 +104,7 @@ class SimpleGraphStore(GraphStore):
         """Get client.
         Not applicable for this store.
         """
-        return None
+        return
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""

@@ -6,7 +6,7 @@ whether it's question-answering, summarization, or a component in a chatbot.
 This section describes the different ways you can query your data with LlamaIndex, roughly in order
 of simplest (top-k semantic search), to more advanced capabilities.
 
-### Semantic Search 
+### Semantic Search
 
 The most basic example usage of LlamaIndex is through semantic search. We provide
 a simple in-memory vector store for you to get started, but you can also choose
@@ -23,17 +23,19 @@ print(response)
 ```
 
 **Tutorials**
+
 - [Starter Tutorial](/getting_started/starter_example.md)
 - [Basic Usage Pattern](/end_to_end_tutorials/usage_pattern.md)
 
 **Guides**
-- [Example](../examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores/SimpleIndexDemo.ipynb))
 
+- [Example](../examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores/SimpleIndexDemo.ipynb))
 
 ### Summarization
 
 A summarization query requires the LLM to iterate through many if not most documents in order to synthesize an answer.
-For instance, a summarization query could look like one of the following: 
+For instance, a summarization query could look like one of the following:
+
 - "What is a summary of this collection of text?"
 - "Give me a summary of person X's experience with the company."
 
@@ -61,9 +63,9 @@ Here are some relevant resources:
 - [Guide on Text-to-SQL](/guides/tutorials/sql_guide.md)
 
 **Guides**
+
 - [SQL Guide (Core)](../examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
 - [Pandas Demo](../examples/query_engine/pandas_query_engine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/pandas_query_engine.ipynb))
-
 
 ### Synthesis over Heterogeneous Data
 
@@ -85,16 +87,14 @@ response = query_engine.query("<query_str>")
 ```
 
 **Guides**
+
 - [Composability](/core_modules/data_modules/index/composability.md)
 - [City Analysis](/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
-
-
 ### Routing over Heterogeneous Data
 
-LlamaIndex also supports routing over heterogeneous data sources with `RouterQueryEngine` - for instance, if you want to "route" a query to an 
+LlamaIndex also supports routing over heterogeneous data sources with `RouterQueryEngine` - for instance, if you want to "route" a query to an
 underlying Document or a sub-index.
-
 
 To do this, first build the sub-indices over different data sources.
 Then construct the corresponding query engines, and give each query engine a description to obtain a `QueryEngineTool`.
@@ -111,11 +111,11 @@ index2 = VectorStoreIndex.from_documents(slack_docs)
 
 # define query engines and tools
 tool1 = QueryEngineTool.from_defaults(
-    query_engine=index1.as_query_engine(), 
+    query_engine=index1.as_query_engine(),
     description="Use this query engine to do...",
 )
 tool2 = QueryEngineTool.from_defaults(
-    query_engine=index2.as_query_engine(), 
+    query_engine=index2.as_query_engine(),
     description="Use this query engine for something else...",
 )
 ```
@@ -137,10 +137,12 @@ response = query_engine.query(
 ```
 
 **Guides**
+
 - [Router Query Engine Guide](../examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
 - [City Analysis Unified Query Interface](../examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 ### Compare/Contrast Queries
+
 You can explicitly perform compare/contrast queries with a **query transformation** module within a ComposableGraph.
 
 ```python
@@ -153,14 +155,15 @@ decompose_transform = DecomposeQueryTransform(
 This module will help break down a complex query into a simpler one over your existing index structure.
 
 **Guides**
+
 - [Query Transformations](/core_modules/query_modules/query_engine/advanced/query_transformations.md)
 - [City Analysis Compare/Contrast Example](/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
-You can also rely on the LLM to *infer* whether to perform compare/contrast queries (see Multi-Document Queries below).
+You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi-Document Queries below).
 
 ### Multi-Document Queries
 
-Besides the explicit synthesis/routing flows described above, LlamaIndex can support more general multi-document queries as well. 
+Besides the explicit synthesis/routing flows described above, LlamaIndex can support more general multi-document queries as well.
 It can do this through our `SubQuestionQueryEngine` class. Given a query, this query engine will generate a "query plan" containing
 sub-queries against sub-documents before synthesizing the final answer.
 
@@ -171,15 +174,15 @@ from llama_index.tools import QueryEngineTool, ToolMetadata
 
 query_engine_tools = [
     QueryEngineTool(
-        query_engine=sept_engine, 
+        query_engine=sept_engine,
         metadata=ToolMetadata(name='sept_22', description='Provides information about Uber quarterly financials ending September 2022')
     ),
     QueryEngineTool(
-        query_engine=june_engine, 
+        query_engine=june_engine,
         metadata=ToolMetadata(name='june_22', description='Provides information about Uber quarterly financials ending June 2022')
     ),
     QueryEngineTool(
-        query_engine=march_engine, 
+        query_engine=march_engine,
         metadata=ToolMetadata(name='march_22', description='Provides information about Uber quarterly financials ending March 2022')
     ),
 ]
@@ -198,10 +201,10 @@ This query engine can execute any number of sub-queries against any subset of qu
 This makes it especially well-suited for compare/contrast queries across documents as well as queries pertaining to a specific document.
 
 **Guides**
+
 - [Sub Question Query Engine (Intro)](../examples/query_engine/sub_question_query_engine.ipynb)
 - [10Q Analysis (Uber)](../examples/usecases/10q_sub_question.ipynb)
 - [10K Analysis (Uber and Lyft)](../examples/usecases/10k_sub_question.ipynb)
-
 
 ### Multi-Step Queries
 
@@ -213,22 +216,25 @@ the module will first decompose the query into a simpler initial question "What 
 query the index, and then ask followup questions.
 
 **Guides**
+
 - [Query Transformations](/core_modules/query_modules/query_engine/advanced/query_transformations.md)
 - [Multi-Step Query Decomposition](../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
-
 
 ### Temporal Queries
 
 LlamaIndex can support queries that require an understanding of time. It can do this in two ways:
+
 - Decide whether the query requires utilizing temporal relationships between nodes (prev/next relationships) in order to retrieve additional context to answer the question.
 - Sort by recency and filter outdated context.
 
 **Guides**
+
 - [Second-Stage Postprocessing Guide](/core_modules/query_modules/node_postprocessors/root.md)
 - [Prev/Next Postprocessing](/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
 - [Recency Postprocessing](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
 
 ### Additional Resources
+
 - [A Guide to Creating a Unified Query Framework over your ndexes](/end_to_end_tutorials/question_and_answer/unified_query.md)
 - [A Guide to Extracting Terms and Definitions](/end_to_end_tutorials/question_and_answer/terms_definitions_tutorial.md)
 - [SEC 10k Analysis](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d)

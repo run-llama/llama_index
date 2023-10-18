@@ -1,7 +1,8 @@
 from typing import Any, Dict, Optional
+
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
-# keyword "_" is reserved in Firestore but refered in llama_index/constants.py.
+# keyword "_" is reserved in Firestore but referred in llama_index/constants.py.
 FIELD_NAME_REPLACE_SET = {"__data__": "data", "__type__": "type"}
 FIELD_NAME_REPLACE_GET = {"data": "__data__", "type": "__type__"}
 
@@ -10,7 +11,7 @@ SLASH_REPLACEMENT = "_"
 IMPORT_ERROR_MSG = (
     "`firestore` package not found, please run `pip3 install google-cloud-firestore`"
 )
-CLIENT_INFO = "LlamaIndex"
+USER_AGENT = "LlamaIndex"
 DEFAULT_FIRESTORE_DATABASE = "(default)"
 
 
@@ -27,11 +28,16 @@ class FirestoreKVStore(BaseKVStore):
     ) -> None:
         try:
             from google.cloud import firestore_v1 as firestore
+            from google.cloud.firestore_v1.services.firestore.transports.base import (
+                DEFAULT_CLIENT_INFO,
+            )
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
+        client_info = DEFAULT_CLIENT_INFO
+        client_info.user_agent = USER_AGENT
         self._db = firestore.client.Client(
-            project=project, database=database, client_info=CLIENT_INFO
+            project=project, database=database, client_info=client_info
         )
 
     def firestore_collection(self, collection: str) -> str:
@@ -60,6 +66,7 @@ class FirestoreKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
         """Put a key-value pair into the Firestore collection.
+
         Args:
             key (str): key
             val (dict): value
@@ -72,6 +79,7 @@ class FirestoreKVStore(BaseKVStore):
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a key-value pair from the Firestore.
+
         Args:
             key (str): key
             collection (str): collection name
@@ -85,6 +93,7 @@ class FirestoreKVStore(BaseKVStore):
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the Firestore collection.
+
         Args:
             collection (str): collection name
         """
@@ -99,6 +108,7 @@ class FirestoreKVStore(BaseKVStore):
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the Firestore.
+
         Args:
             key (str): key
             collection (str): collection name

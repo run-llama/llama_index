@@ -7,6 +7,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import Document
+
 from tests.indices.list.test_index import _get_embeddings
 
 

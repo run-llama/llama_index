@@ -39,11 +39,11 @@ if __name__ == "__main__":
         os.makedirs(args.output)
 
     # Load the Spider dataset from the input directory.
-    with open(os.path.join(args.input, "train_spider.json"), "r") as f:
+    with open(os.path.join(args.input, "train_spider.json")) as f:
         train_spider = json.load(f)
-    with open(os.path.join(args.input, "train_others.json"), "r") as f:
+    with open(os.path.join(args.input, "train_others.json")) as f:
         train_others = json.load(f)
-    with open(os.path.join(args.input, "dev.json"), "r") as f:
+    with open(os.path.join(args.input, "dev.json")) as f:
         dev = json.load(f)
 
     # Randomly sample (without replacement) the indices using the sample factor.

@@ -1,9 +1,7 @@
 """Test pydantic output parser."""
 
 import pytest
-
 from llama_index.bridge.pydantic import BaseModel
-
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 
 
@@ -13,6 +11,7 @@ class AttrDict(BaseModel):
 
 
 class TestModel(BaseModel):
+    __test__ = False
     title: str
     attr_dict: AttrDict
 
@@ -20,7 +19,7 @@ class TestModel(BaseModel):
 def test_pydantic() -> None:
     """Test pydantic output parser."""
     output = """\
-    
+
     Here is the valid JSON:
     {
         "title": "TestModel",

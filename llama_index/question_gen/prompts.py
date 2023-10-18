@@ -13,8 +13,7 @@ def build_tools_text(tools: Sequence[ToolMetadata]) -> str:
     tools_dict = {}
     for tool in tools:
         tools_dict[tool.name] = tool.description
-    tools_str = json.dumps(tools_dict, indent=4)
-    return tools_str
+    return json.dumps(tools_dict, indent=4)
 
 
 PREFIX = """\
@@ -50,30 +49,26 @@ example_output = [
 ]
 example_output_str = json.dumps([x.dict() for x in example_output], indent=4)
 
-EXAMPLES = (
-    """\
+EXAMPLES = f"""\
 # Example 1
 <Tools>
 ```json
-{tools_str}
+{example_tools_str}
 ```
 
 <User Question>
-{query_str}
+{example_query_str}
 
 
 <Output>
 ```json
-{output_str}
+{example_output_str}
 ```
 
-""".format(
-        query_str=example_query_str,
-        tools_str=example_tools_str,
-        output_str=example_output_str,
-    )
-    .replace("{", "{{")
-    .replace("}", "}}")
+""".replace(
+    "{", "{{"
+).replace(
+    "}", "}}"
 )
 
 SUFFIX = """\

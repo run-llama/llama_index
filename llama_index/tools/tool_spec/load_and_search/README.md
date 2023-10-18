@@ -1,7 +1,6 @@
 # LoadAndSearch Tool
 
-This Tool Spec is intended to wrap other tools, allowing the Agent to perform seperate loading and reading of data. This is very useful for when tools return information larger than or closer to the size of the context window.
-
+This Tool Spec is intended to wrap other tools, allowing the Agent to perform separate loading and reading of data. This is very useful for when tools return information larger than or closer to the size of the context window.
 
 ## Usage
 
@@ -17,7 +16,7 @@ wiki_spec = WikipediaToolSpec()
 # Get the search_data tool from the wikipedia tool spec
 tool = wiki_spec.to_tool_list()[1]
 
-# Wrap the tool, spliting into a loader and a reader
+# Wrap the tool, splitting into a loader and a reader
 agent = OpenAIAgent.from_tools(
  LoadAndSearchToolSpec.from_defaults(
     tool
@@ -30,4 +29,3 @@ agent.chat('who is ben affleck married to')
 `read`: Searches the index for the specified query
 
 This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
-

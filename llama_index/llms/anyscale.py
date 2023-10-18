@@ -1,7 +1,4 @@
 from typing import Any, Dict, Optional
-from llama_index.llms.generic_utils import get_from_param_or_env
-
-from llama_index.llms.openai import OpenAI
 
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.anyscale_utils import (
@@ -10,6 +7,8 @@ from llama_index.llms.anyscale_utils import (
 from llama_index.llms.base import (
     LLMMetadata,
 )
+from llama_index.llms.generic_utils import get_from_param_or_env
+from llama_index.llms.openai import OpenAI
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-70b-chat-hf"
@@ -46,7 +45,6 @@ class Anyscale(OpenAI):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "Anyscale_LLM"
 
     @property

@@ -5,6 +5,7 @@ You can create custom LlamaHub Tool Specs and Tools or they can be imported from
 ## Using with our Agents
 
 To use with our OpenAIAgent,
+
 ```python
 from llama_index.agent import OpenAIAgent
 from llama_hub.tools.gmail.base import GmailToolSpec
@@ -32,8 +33,8 @@ agent.chat("Can you create a new email to helpdesk and support @example.com abou
 
 Full Tool details can be found on our [LlamaHub](llamahub.ai) page. Each tool contains a "Usage" section showing how that tool can be used.
 
-
 ## Using with LangChain
+
 To use with a LangChain agent, simply convert tools to LangChain tools with `to_langchain_tool()`.
 
 ```python

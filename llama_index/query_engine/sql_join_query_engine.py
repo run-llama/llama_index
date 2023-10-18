@@ -41,8 +41,8 @@ SQL query: {sql_query_str}
 SQL response: {sql_response_str}
 Transformed query: {query_engine_query_str}
 Query engine response: {query_engine_response_str}
-Response: 
-"""  # noqa
+Response:
+"""
 DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT = PromptTemplate(
     DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT_TMPL
 )
@@ -86,7 +86,7 @@ Original question: {query_str}
 SQL query: {sql_query_str}
 SQL response: {sql_response_str}
 New question: "
-"""  # noqa
+"""
 DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT = PromptTemplate(
     DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL
 )

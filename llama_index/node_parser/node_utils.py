@@ -27,7 +27,6 @@ def build_nodes_from_splits(
     ref_doc: Optional[BaseNode] = None,
 ) -> List[TextNode]:
     """Build nodes from splits."""
-
     ref_doc = ref_doc or document
 
     nodes: List[TextNode] = []
@@ -122,9 +121,18 @@ def get_nodes_from_node(
     """Get nodes from document."""
     if include_metadata:
         if isinstance(text_splitter, MetadataAwareTextSplitter):
+            embed_metadata_str = node.get_metadata_str(mode=MetadataMode.EMBED)
+            llm_metadata_str = node.get_metadata_str(mode=MetadataMode.LLM)
+
+            # use the longest metadata str for splitting
+            if len(embed_metadata_str) > len(llm_metadata_str):
+                metadata_str = embed_metadata_str
+            else:
+                metadata_str = llm_metadata_str
+
             text_splits = text_splitter.split_text_metadata_aware(
                 text=node.get_content(metadata_mode=MetadataMode.NONE),
-                metadata_str=node.get_metadata_str(),
+                metadata_str=metadata_str,
             )
         else:
             logger.warning(

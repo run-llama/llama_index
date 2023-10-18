@@ -5,14 +5,14 @@ import json
 import logging
 import os
 from typing import Dict, List, Optional
-from llama_index.llms.base import ChatMessage, MessageRole
 
-from llama_index.llms.openai import OpenAI
-from llama_index.response.schema import Response
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
 
-from llama_index.indices.struct_store.sql import SQLStructStoreIndex, SQLQueryMode
+from llama_index.indices.struct_store.sql import SQLQueryMode, SQLStructStoreIndex
+from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.openai import OpenAI
+from llama_index.response.schema import Response
 
 logging.getLogger("root").setLevel(logging.WARNING)
 
@@ -77,7 +77,7 @@ def _get_answers(
     use_cache: bool,
 ) -> List[dict]:
     if use_cache and os.path.exists(output_filename):
-        with open(output_filename, "r") as f:
+        with open(output_filename) as f:
             return json.load(f)
 
     results = []
@@ -219,9 +219,9 @@ if __name__ == "__main__":
     train, dev = load_examples(args.spider_dir)
 
     # Load all generated SQL queries.
-    with open(os.path.join(args.predict_dir, "train_pred.sql"), "r") as f:
+    with open(os.path.join(args.predict_dir, "train_pred.sql")) as f:
         train_pred_sqls = f.readlines()
-    with open(os.path.join(args.predict_dir, "dev_pred.sql"), "r") as f:
+    with open(os.path.join(args.predict_dir, "dev_pred.sql")) as f:
         dev_pred_sqls = f.readlines()
 
     # Load all gold SQL queries and database names.
@@ -229,12 +229,12 @@ if __name__ == "__main__":
     dev_dbs = []
     train_gold_sqls = []
     dev_gold_sqls = []
-    with open(os.path.join(args.spider_dir, "train_gold.sql"), "r") as f:
+    with open(os.path.join(args.spider_dir, "train_gold.sql")) as f:
         for line in f.readlines():
             line_tokens = line.strip().split("\t")
             train_gold_sqls.append(line_tokens[0])
             train_dbs.append(line_tokens[1])
-    with open(os.path.join(args.spider_dir, "dev_gold.sql"), "r") as f:
+    with open(os.path.join(args.spider_dir, "dev_gold.sql")) as f:
         for line in f.readlines():
             line_tokens = line.strip().split("\t")
             dev_gold_sqls.append(line_tokens[0])

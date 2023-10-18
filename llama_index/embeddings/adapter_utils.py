@@ -1,15 +1,14 @@
 """Adapter utils."""
 
-from typing import Dict, Callable
-from abc import abstractmethod
-
-import os
 import json
-
-from torch import nn, Tensor
-import torch.nn.functional as F
-import torch
 import logging
+import os
+from abc import abstractmethod
+from typing import Callable, Dict
+
+import torch
+import torch.nn.functional as F
+from torch import Tensor, nn
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class LinearLayer(BaseAdapter):
     """
 
     def __init__(self, in_features: int, out_features: int, bias: bool = False) -> None:
-        super(LinearLayer, self).__init__()
+        super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.bias = bias
@@ -129,7 +128,7 @@ class TwoLayerNN(BaseAdapter):
         activation_fn_str: str = "relu",
         add_residual: bool = False,
     ) -> None:
-        super(TwoLayerNN, self).__init__()
+        super().__init__()
         self.in_features = in_features
         self.hidden_features = hidden_features
         self.out_features = out_features

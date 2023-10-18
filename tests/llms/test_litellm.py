@@ -1,6 +1,5 @@
 from typing import Any, AsyncGenerator, Generator
 
-
 try:
     import litellm
 except ImportError:
@@ -16,8 +15,9 @@ sys.path.insert(
 
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.litellm import LiteLLM
+from pytest import MonkeyPatch
 
-from ..conftest import CachedOpenAIApiKeys
+from tests.conftest import CachedOpenAIApiKeys
 
 
 def mock_completion(*args: Any, **kwargs: Any) -> dict:
@@ -79,8 +79,7 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
             ],
         },
     ]
-    for response in responses:
-        yield response
+    yield from responses
 
 
 async def mock_async_completion_stream(
@@ -131,8 +130,7 @@ def mock_chat_completion_stream(
             "object": "chat.completion.chunk",
         },
     ]
-    for response in responses:
-        yield response
+    yield from responses
 
 
 @pytest.mark.skipif(litellm is None, reason="litellm not installed")

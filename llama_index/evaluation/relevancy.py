@@ -55,10 +55,10 @@ class RelevancyEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
+        service_context: ServiceContext | None = None,
         raise_error: bool = False,
-        eval_template: Optional[Union[str, BasePromptTemplate]] = None,
-        refine_template: Optional[Union[str, BasePromptTemplate]] = None,
+        eval_template: str | BasePromptTemplate | None = None,
+        refine_template: str | BasePromptTemplate | None = None,
     ) -> None:
         """Init params."""
         self._service_context = service_context or ServiceContext.from_defaults()
@@ -78,9 +78,9 @@ class RelevancyEvaluator(BaseEvaluator):
 
     async def aevaluate(
         self,
-        query: Optional[str] = None,
-        response: Optional[str] = None,
-        contexts: Optional[Sequence[str]] = None,
+        query: str | None = None,
+        response: str | None = None,
+        contexts: Sequence[str] | None = None,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the contexts and response are relevant to the query."""
@@ -113,6 +113,7 @@ class RelevancyEvaluator(BaseEvaluator):
             query=query,
             response=response,
             passing=passing,
+            score=1.0 if passing else 0.0,
             feedback=raw_response_txt,
         )
 

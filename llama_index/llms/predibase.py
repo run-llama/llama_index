@@ -2,7 +2,6 @@ import os
 from typing import Any, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.base import (
@@ -15,7 +14,7 @@ from llama_index.llms.custom import CustomLLM
 
 
 class PredibaseLLM(CustomLLM):
-    """Predibase LLM"""
+    """Predibase LLM."""
 
     model_name: str = Field(description="The Predibase model to use.")
     predibase_api_key: str = Field(description="The Predibase API key to use.")
@@ -59,8 +58,7 @@ class PredibaseLLM(CustomLLM):
         try:
             from predibase import PredibaseClient
 
-            pc = PredibaseClient(token=predibase_api_key)
-            return pc
+            return PredibaseClient(token=predibase_api_key)
         except ImportError as e:
             raise ImportError(
                 "Could not import Predibase Python package. "
@@ -71,7 +69,6 @@ class PredibaseLLM(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "PredibaseLLM"
 
     @property
@@ -97,4 +94,4 @@ class PredibaseLLM(CustomLLM):
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> "CompletionResponseGen":
-        raise NotImplementedError()
+        raise NotImplementedError

@@ -15,3 +15,8 @@ google-auth-oauthlib
 
 # vellum
 vellum-ai==0.0.15
+
+# elasticsearch
+elasticsearch==8.9.0
+
+tree_sitter_languages

@@ -1,15 +1,15 @@
 """Base object types."""
 
-from typing import TypeVar, Generic, Sequence, Type, Any, List, Optional
+from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
+
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.query.schema import QueryType
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.objects.base_node_mapping import (
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
-
-from llama_index.indices.query.schema import QueryType
 
 OT = TypeVar("OT")
 
@@ -61,3 +61,6 @@ class ObjectIndex(Generic[OT]):
             retriever=self._index.as_retriever(**kwargs),
             object_node_mapping=self._object_node_mapping,
         )
+
+    def as_node_retriever(self, **kwargs: Any) -> BaseRetriever:
+        return self._index.as_retriever(**kwargs)

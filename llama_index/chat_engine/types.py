@@ -18,12 +18,12 @@ logger.setLevel(logging.WARNING)
 
 
 def is_function(message: ChatMessage) -> bool:
-    """Utility for ChatMessage responses from OpenAI models"""
+    """Utility for ChatMessage responses from OpenAI models."""
     return "function_call" in message.additional_kwargs
 
 
 class ChatResponseMode(str, Enum):
-    """Flag toggling waiting/streaming in `Agent._chat`"""
+    """Flag toggling waiting/streaming in `Agent._chat`."""
 
     WAIT = "wait"
     STREAM = "stream"
@@ -181,35 +181,30 @@ class BaseChatEngine(ABC):
     @abstractmethod
     def reset(self) -> None:
         """Reset conversation state."""
-        pass
 
     @abstractmethod
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Main chat interface."""
-        pass
 
     @abstractmethod
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         """Stream chat interface."""
-        pass
 
     @abstractmethod
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Async version of main chat interface."""
-        pass
 
     @abstractmethod
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         """Async version of main chat interface."""
-        pass
 
     def chat_repl(self) -> None:
         """Enter interactive chat REPL."""
@@ -233,33 +228,33 @@ class ChatMode(str, Enum):
 
     SIMPLE = "simple"
     """Corresponds to `SimpleChatEngine`.
-    
+
     Chat with LLM, without making use of a knowledge base.
     """
 
     CONDENSE_QUESTION = "condense_question"
     """Corresponds to `CondenseQuestionChatEngine`.
-    
+
     First generate a standalone question from conversation context and last message,
     then query the query engine for a response.
     """
 
     CONTEXT = "context"
     """Corresponds to `ContextChatEngine`.
-    
+
     First retrieve text from the index using the user's message, then use the context
     in the system prompt to generate a response.
     """
 
     REACT = "react"
     """Corresponds to `ReActAgent`.
-    
-    Use a ReAct agent loop with query engine tools. 
+
+    Use a ReAct agent loop with query engine tools.
     """
 
     OPENAI = "openai"
     """Corresponds to `OpenAIAgent`.
-    
+
     Use an OpenAI function calling agent loop.
 
     NOTE: only works with OpenAI models that support function calling API.
@@ -268,6 +263,6 @@ class ChatMode(str, Enum):
     BEST = "best"
     """Select the best chat engine based on the current LLM.
 
-    Corresponds to `OpenAIAgent` if using an OpenAI model that supports 
+    Corresponds to `OpenAIAgent` if using an OpenAI model that supports
     function calling API, otherwise, corresponds to `ReActAgent`.
     """

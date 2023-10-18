@@ -2,6 +2,22 @@
 
 from typing import Any, Dict, List, Tuple
 
+from llama_index.indices.list.base import SummaryIndex
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.struct_store.sql import (
+    SQLContextContainerBuilder,
+    SQLStructStoreIndex,
+)
+from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
+from llama_index.schema import (
+    BaseNode,
+    Document,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
+from llama_index.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import (
     Column,
     Integer,
@@ -13,26 +29,14 @@ from sqlalchemy import (
     select,
 )
 
-from llama_index.indices.list.base import SummaryIndex
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.struct_store.sql import (
-    SQLStructStoreIndex,
-    SQLContextContainerBuilder,
-)
-from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
-from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-from llama_index.schema import Document
-from llama_index.schema import BaseNode, NodeRelationship, TextNode, RelatedNodeInfo
 from tests.mock_utils.mock_prompts import MOCK_TABLE_CONTEXT_PROMPT
 
 
 def _delete_table_items(engine: Any, table: Table) -> None:
     """Delete items from a table."""
     delete_stmt = delete(table)
-    with engine.connect() as connection:
+    with engine.begin() as connection:
         connection.execute(delete_stmt)
-        connection.commit()
 
 
 def test_sql_index(
@@ -64,7 +68,7 @@ def test_sql_index(
     assert isinstance(index, SQLStructStoreIndex)
 
     # test that the document is inserted
-    stmt = select(test_table.c["user_id", "foo"])
+    stmt = select(test_table.c.user_id, test_table.c.foo)
     engine = index.sql_database.engine
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
@@ -79,11 +83,10 @@ def test_sql_index(
     )
     assert isinstance(index, SQLStructStoreIndex)
     # test that the document is inserted
-    stmt = select(test_table.c["user_id", "foo"])
+    stmt = select(test_table.c.user_id, test_table.c.foo)
     engine = index.sql_database.engine
-    with engine.connect() as connection:
+    with engine.begin() as connection:
         results = connection.execute(stmt).fetchall()
-        connection.commit()
         assert results == [(8, "hello")]
 
 
@@ -127,7 +130,7 @@ def test_sql_index_nodes(
     assert isinstance(index, SQLStructStoreIndex)
 
     # test that both nodes are inserted
-    stmt = select(test_table.c["user_id", "foo"])
+    stmt = select(test_table.c.user_id, test_table.c.foo)
     engine = index.sql_database.engine
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
@@ -158,7 +161,7 @@ def test_sql_index_nodes(
     assert isinstance(index, SQLStructStoreIndex)
 
     # test that only one node (the last one) is inserted
-    stmt = select(test_table.c["user_id", "foo"])
+    stmt = select(test_table.c.user_id, test_table.c.foo)
     engine = index.sql_database.engine
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()

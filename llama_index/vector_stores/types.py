@@ -4,19 +4,19 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import (
     Any,
+    Dict,
     List,
     Optional,
     Protocol,
     Sequence,
     Union,
     runtime_checkable,
-    Dict,
 )
 
 import fsspec
 
 from llama_index.bridge.pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
-from llama_index.schema import BaseNode, BaseComponent, TextNode
+from llama_index.schema import BaseComponent, BaseNode, TextNode
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
@@ -58,7 +58,8 @@ class ExactMatchFilter(BaseModel):
     Value uses Strict* types, as int, float and str are compatible types and were all
     converted to string before.
 
-    See: https://docs.pydantic.dev/latest/usage/types/#strict-types"""
+    See: https://docs.pydantic.dev/latest/usage/types/#strict-types
+    """
 
     key: str
     value: Union[StrictInt, StrictFloat, StrictStr]

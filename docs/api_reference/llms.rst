@@ -6,7 +6,7 @@ LLMs
 ====
 
 A large language model (LLM) is a reasoning engine that can complete text,
-chat with users, and follow instructions. 
+chat with users, and follow instructions.
 
 LLM Implementations
 ^^^^^^^^^^^^^^^^^^^

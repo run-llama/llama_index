@@ -2,8 +2,8 @@
 import logging
 import re
 from typing import Dict, List, Optional, Sequence, Set, Tuple
-from llama_index.embeddings.base import BaseEmbedding
 
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
@@ -85,7 +85,7 @@ def default_format_node_batch_fn(
 
 def default_parse_choice_select_answer_fn(
     answer: str, num_choices: int, raise_error: bool = False
-) -> Tuple[List[int], Optional[List[float]]]:
+) -> Tuple[List[int], List[float]]:
     """Default parse choice select answer function."""
     answer_lines = answer.split("\n")
     answer_nums = []

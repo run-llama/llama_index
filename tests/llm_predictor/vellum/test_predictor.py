@@ -2,7 +2,6 @@ from typing import Callable, Iterator
 from unittest import mock
 
 import pytest
-
 from llama_index.llm_predictor.vellum import VellumPredictor
 from llama_index.prompts import BasePromptTemplate
 
@@ -12,8 +11,7 @@ def test_predict__basic(
     vellum_predictor_factory: Callable[..., VellumPredictor],
     dummy_prompt: BasePromptTemplate,
 ) -> None:
-    """When the Vellum API returns expected values, so should our predictor"""
-
+    """When the Vellum API returns expected values, so should our predictor."""
     vellum_client = mock_vellum_client_factory(
         compiled_prompt_text="What's you're favorite greeting?",
         completion_text="Hello, world!",
@@ -31,8 +29,7 @@ def test_stream__basic(
     vellum_predictor_factory: Callable[..., VellumPredictor],
     dummy_prompt: BasePromptTemplate,
 ) -> None:
-    """When the Vellum API streams expected values, so should our predictor"""
-
+    """When the Vellum API streams expected values, so should our predictor."""
     import vellum
 
     vellum_client = mock_vellum_client_factory(

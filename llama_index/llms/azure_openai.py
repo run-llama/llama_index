@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional
 
 from llama_index.bridge.pydantic import Field, root_validator
-
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import resolve_from_aliases
@@ -11,7 +10,7 @@ AZURE_OPENAI_API_TYPE = "azure"
 
 class AzureOpenAI(OpenAI):
     """
-    Azure OpenAI
+    Azure OpenAI.
 
     To use this, you must first deploy a model on Azure OpenAI.
     Unlike OpenAI, you need to specify a `engine` parameter to identify
@@ -107,5 +106,4 @@ class AzureOpenAI(OpenAI):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "azure_openai_llm"

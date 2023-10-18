@@ -1,7 +1,8 @@
 from typing import Any, Callable, Optional, Sequence
+
+from llama_index.embeddings.base import SimilarityMode, similarity
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.service_context import ServiceContext
-from llama_index.embeddings.base import SimilarityMode, similarity
 
 
 class SemanticSimilarityEvaluator(BaseEvaluator):

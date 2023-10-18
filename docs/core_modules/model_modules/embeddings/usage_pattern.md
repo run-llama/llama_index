@@ -87,7 +87,6 @@ service_context = ServiceContext.from_defaults(
 )
 ```
 
-
 ### LangChain Integrations
 
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/).
@@ -116,7 +115,7 @@ from llama_index.embeddings.base import BaseEmbedding
 
 class InstructorEmbeddings(BaseEmbedding):
   def __init__(
-    self, 
+    self,
     instructor_model_name: str = "hkunlp/instructor-large",
     instruction: str = "Represent the Computer Science documentation or question:",
     **kwargs: Any,
@@ -131,7 +130,7 @@ class InstructorEmbeddings(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
       embeddings = self._model.encode([[self._instruction, text]])
-      return embeddings[0] 
+      return embeddings[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
       embeddings = self._model.encode([[self._instruction, text] for text in texts])

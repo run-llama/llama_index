@@ -13,19 +13,18 @@ Under the hood, LlamaIndex also supports swappable **storage components** that a
 
 The Document/Index stores rely on a common Key-Value store abstraction, which is also detailed below.
 
-LlamaIndex supports persisting data to any storage backend supported by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/index.html). 
+LlamaIndex supports persisting data to any storage backend supported by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/index.html).
 We have confirmed support for the following storage backends:
 
 - Local filesystem
 - AWS S3
 - Cloudflare R2
 
-
 ![](/_static/storage/storage.png)
 
 ## Usage Pattern
 
-Many vector stores (except FAISS) will store both the data as well as the index (embeddings). This means that you will not need to use a separate document store or index store. This *also* means that you will not need to explicitly persist this data - this happens automatically. Usage would look something like the following to build a new index / reload an existing one.
+Many vector stores (except FAISS) will store both the data as well as the index (embeddings). This means that you will not need to use a separate document store or index store. This _also_ means that you will not need to explicitly persist this data - this happens automatically. Usage would look something like the following to build a new index / reload an existing one.
 
 ```python
 
@@ -47,7 +46,6 @@ index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 
 See our [Vector Store Module Guide](vector_stores.md) below for more details.
 
-
 Note that in general to use storage abstractions, you need to define a `StorageContext` object:
 
 ```python
@@ -66,7 +64,6 @@ storage_context = StorageContext.from_defaults(
 
 More details on customization/persistence can be found in the guides below.
 
-
 ```{toctree}
 ---
 maxdepth: 1
@@ -74,8 +71,6 @@ maxdepth: 1
 customization.md
 save_load.md
 ```
-
-
 
 ## Modules
 

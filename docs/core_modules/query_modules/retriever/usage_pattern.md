@@ -1,12 +1,15 @@
 # Usage Pattern
 
 ## Get Started
+
 Get a retriever from index:
+
 ```python
 retriever = index.as_retriever()
 ```
 
 Retrieve relevant context for a question:
+
 ```python
 nodes = retriever.retrieve('Who is Paul Graham?')
 ```
@@ -17,13 +20,15 @@ nodes = retriever.retrieve('Who is Paul Graham?')
 
 ### Selecting a Retriever
 
-You can select the index-specific retriever class via `retriever_mode`. 
+You can select the index-specific retriever class via `retriever_mode`.
 For example, with a `SummaryIndex`:
+
 ```python
 retriever = summary_index.as_retriever(
     retriever_mode='llm',
 )
 ```
+
 This creates a [SummaryIndexLLMRetriever](/api_reference/query/retrievers/list.rst) on top of the summary index.
 
 See [**Retriever Modes**](/core_modules/query_modules/retriever/retriever_modes.md) for a full list of (index-specific) retriever modes
@@ -38,10 +43,13 @@ retriever_modes.md
 ```
 
 ### Configuring a Retriever
+
 In the same way, you can pass kwargs to configure the selected retriever.
+
 > Note: take a look at the API reference for the selected retriever class' constructor parameters for a list of valid kwargs.
 
 For example, if we selected the "llm" retriever mode, we might do the following:
+
 ```python
 retriever = summary_index.as_retriever(
     retriever_mode='llm',
@@ -51,9 +59,11 @@ retriever = summary_index.as_retriever(
 ```
 
 ## Low-Level Composition API
-You can use the low-level composition API if you need more granular control.  
+
+You can use the low-level composition API if you need more granular control.
 
 To achieve the same outcome as above, you can directly import and construct the desired retriever class:
+
 ```python
 from llama_index.indices.list import SummaryIndexLLMRetriever
 
@@ -63,7 +73,6 @@ retriever = SummaryIndexLLMRetriever(
 )
 ```
 
-
 ## Advanced
 
 ```{toctree}
@@ -72,4 +81,6 @@ maxdepth: 1
 ---
 Define Custom Retriever </examples/query_engine/CustomRetrievers.ipynb>
 BM25 Hybrid Retriever </examples/retrievers/bm25_retriever.ipynb>
+/examples/retrievers/simple_fusion.ipynb
+/examples/retrievers/reciprocal_rerank_fusion.ipynb
 ```

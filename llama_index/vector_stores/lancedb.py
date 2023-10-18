@@ -1,6 +1,9 @@
 """LanceDB vector store."""
 from typing import Any, List, Optional
 
+import numpy as np
+from pandas import DataFrame
+
 from llama_index.schema import (
     BaseNode,
     MetadataMode,
@@ -15,8 +18,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict
-from pandas import DataFrame
-import numpy as np
 
 
 def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
@@ -81,7 +82,7 @@ class LanceDBVectorStore(VectorStore):
         """Init params."""
         import_err_msg = "`lancedb` package not found, please run `pip install lancedb`"
         try:
-            import lancedb  # noqa: F401
+            import lancedb
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -94,7 +95,7 @@ class LanceDBVectorStore(VectorStore):
     @property
     def client(self) -> None:
         """Get client."""
-        return None
+        return
 
     def add(
         self,
