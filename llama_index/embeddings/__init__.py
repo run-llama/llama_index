@@ -46,6 +46,6 @@ __all__ = [
 
 # Since embeddings.utils uses Hugging Face, and embeddings.huggingface uses
 # Pooling, Hugging Face uses a TYPE_CHECKING block. Consequently, when not type
-# checking we have to inform HuggingFaceInferenceAPIEmbeddings of the type
+# checking we have to inform HuggingFaceInferenceAPIEmbeddings of Pooling's type
 # SEE: https://stackoverflow.com/a/72667747
 HuggingFaceInferenceAPIEmbeddings.update_forward_refs(Pooling=Pooling)
