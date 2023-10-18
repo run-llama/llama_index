@@ -13,7 +13,7 @@ skip = "./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipyn
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
-exclude = ["build", "examples", "notebooks", "venv"]
+exclude = ["build", "examples", "llama_index/ingestion/client", "notebooks", "venv"]
 ignore_missing_imports = true
 
 [tool.poetry]
@@ -63,7 +63,6 @@ dataloaders = [
     "EbookLib",
     "Pillow",
     "bark",
-    "beautifulsoup4",
     "discord.py",
     "elevenlabs",
     "feedparser",
