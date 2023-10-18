@@ -2,9 +2,9 @@
 
 Before your chosen LLM can act on your data you need to load it. The way LlamaIndex does this is via data connectors, also called `Reader`. Data connectors ingest data from different data sources and format the data into `Document` objects. A `Document` is a collection of data (currently text, and in future, images and audio) and metadata about that data.
 
-## Loading using built-in Readers
+## Loading using SimpleDirectoryReader
 
-The easiest reader is our SimpleDirectoryReader which creates one document per file in a given directory. It is built in to LlamaIndex:
+The easiest reader to use is our SimpleDirectoryReader, which creates documents out of every file in a given directory. It is built in to LlamaIndex and can read a variety of formats including Markdown, PDFs, Word documents, PowerPoint decks, images, audio and video.
 
 ```python
 from llama_index import SimpleDirectoryReader
