@@ -9,7 +9,6 @@ from tqdm import tqdm
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.openai import LLM, OpenAI
-from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.response.schema import PydanticResponse
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
@@ -148,6 +147,8 @@ def _get_nodes_from_buffer(
 
 def get_nodes_from_elements(elements: List[Element]) -> List[BaseNode]:
     """Get nodes and mappings."""
+    from llama_index.node_parser import SentenceAwareNodeParser
+
     node_parser = SentenceAwareNodeParser()
 
     nodes = []
