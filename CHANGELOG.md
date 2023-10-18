@@ -1,11 +1,19 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.46] - 2023-10-18
+
+### New Features
+
+- Add fine-tuning router support + embedding selector (#8174)
+- add more document converters (#8156)
 
 ### Bug Fixes / Nits
 
 - Add normalization to huggingface embeddings (#8145)
 - Fixed duplicate `FORMAT_STR` being inside prompt (#8171)
+- Added: support for output_kwargs={'max_colwidth': xx} for PandasQueryEngine (#8110)
+- Minor fix in the description for an argument in cohere llm (#8163)
+- Fix Firestore client info (#8166)
 
 ## [0.8.45] - 2023-10-13
 
