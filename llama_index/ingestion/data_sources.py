@@ -18,7 +18,7 @@ from llama_index.readers import (
 from llama_index.readers.base import BasePydanticReader, ReaderConfig
 from llama_index.readers.google_readers.gdocs import GoogleDocsReader
 from llama_index.readers.google_readers.gsheets import GoogleSheetsReader
-from llama_index.schema import BaseComponent, Document
+from llama_index.schema import BaseComponent, Document, TextNode
 
 
 class RawFile(BaseComponent):
@@ -35,7 +35,7 @@ class RawFile(BaseComponent):
 
 class DataSource(BaseModel):
     """
-    A class containing metadata for a type of data source
+    A class containing metadata for a type of data source.
     """
 
     name: str = Field(
@@ -54,6 +54,11 @@ class ConfigurableDataSources(Enum):
     DOCUMENT = DataSource(
         name="Document",
         component_type=Document,
+    )
+
+    TextNode = DataSource(
+        name="TextNode",
+        component_type=TextNode,
     )
 
     RAW_FILE = DataSource(
