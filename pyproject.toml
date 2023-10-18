@@ -45,6 +45,7 @@ SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
 beautifulsoup4 = "^4.12.2"
 dataclasses-json = "^0.5.7"
 fsspec = ">=2023.5.0"
+httpx = "*"
 langchain = ">=0.0.303"
 nest-asyncio = "^1.5.8"
 nltk = "^3.8.1"
