@@ -12,7 +12,7 @@ class ConfigurableDataSourceNames(str, enum.Enum):
     """
 
     DOCUMENT = "DOCUMENT"
-    TEXT_NODE = "TextNode"
+    TEXT_NODE = "TEXT_NODE"
     RAW_FILE = "RAW_FILE"
     DISCORD = "DISCORD"
     ELASTICSEARCH = "ELASTICSEARCH"

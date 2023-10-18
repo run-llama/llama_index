@@ -56,7 +56,7 @@ class ConfigurableDataSources(Enum):
         component_type=Document,
     )
 
-    TextNode = DataSource(
+    TEXT_NODE = DataSource(
         name="TextNode",
         component_type=TextNode,
     )
