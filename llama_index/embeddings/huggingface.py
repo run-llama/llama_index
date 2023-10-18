@@ -195,8 +195,8 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, Embeddings):
     - Uses the feature extraction task: https://huggingface.co/tasks/feature-extraction
     """
 
-    pooling: "Optional[Pooling]" = Field(
-        default=None,
+    pooling: Optional[Pooling] = Field(
+        default=Pooling.CLS,
         description=(
             "Optional pooling technique to use with embeddings capability, if"
             " the model's raw output needs pooling."
