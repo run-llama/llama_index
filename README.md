@@ -66,7 +66,7 @@ pip install llama-index
 
 Examples are in the `examples` folder. Indices are in the `indices` folder (see list of indices below).
 
-To build a simple vector store index:
+To build a simple vector store index using OpenAI:
 
 ```python
 import os
@@ -75,6 +75,26 @@ os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
 index = VectorStoreIndex.from_documents(documents)
+```
+
+To build a simple vector store index using Llama 2 hosted on [Replicate](https://replicate.com/), where you can easily create a free trial API token:
+
+```python
+import os
+from langchain.llms import Replicate
+from llama_index import ServiceContext
+
+os.environ["REPLICATE_API_TOKEN"] = 'YOUR_REPLICATE_API_TOKEN'
+llama2_7b_chat = "meta/llama-2-7b-chat:8e6975e5ed6174911a6ff3d60540dfd4844201974602551e10e9e87ab143d81e"
+llm = Replicate(
+    model=llama2_7b_chat,
+    model_kwargs={"temperature": 0.01, "top_p": 1, "max_new_tokens":300}
+)
+service_context = ServiceContext.from_defaults(llm=llm)
+
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
+documents = SimpleDirectoryReader('data').load_data()
+index = VectorStoreIndex.from_documents(documents, service_context=service_context)
 ```
 
 To query:
