@@ -8,14 +8,13 @@ T_Result = typing.TypeVar("T_Result")
 
 class StatusEnum(str, enum.Enum):
     """
-    An enumeration.
+    Enum for representing the status of a job.
     """
 
     PENDING = "PENDING"
     SUCCESS = "SUCCESS"
     ERROR = "ERROR"
     CANCELED = "CANCELED"
-    FINISHED = "FINISHED"
 
     def visit(
         self,
@@ -23,7 +22,6 @@ class StatusEnum(str, enum.Enum):
         success: typing.Callable[[], T_Result],
         error: typing.Callable[[], T_Result],
         canceled: typing.Callable[[], T_Result],
-        finished: typing.Callable[[], T_Result],
     ) -> T_Result:
         if self is StatusEnum.PENDING:
             return pending()
@@ -33,6 +31,4 @@ class StatusEnum(str, enum.Enum):
             return error()
         if self is StatusEnum.CANCELED:
             return canceled()
-        if self is StatusEnum.FINISHED:
-            return finished()
         return None

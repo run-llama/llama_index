@@ -7,13 +7,13 @@ import pydantic
 
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
+from .etl_job_names import EtlJobNames
 from .status_enum import StatusEnum
-from .text_node import TextNode
 
 
 class ConfiguredTransformationExecution(pydantic.BaseModel):
     """
-    Schema for a configured transformation execution.
+    Schema for a job that executes a transform step in a pipeline.
     """
 
     id: typing.Optional[str] = pydantic.Field(description="Unique identifier")
@@ -23,12 +23,15 @@ class ConfiguredTransformationExecution(pydantic.BaseModel):
     updated_at: typing.Optional[dt.datetime] = pydantic.Field(
         description="Update datetime"
     )
+    job_name: EtlJobNames
     status: StatusEnum
-    started_at: dt.datetime
+    started_at: typing.Optional[dt.datetime]
     ended_at: typing.Optional[dt.datetime]
-    pipeline_execution_id: str
+    partitions: typing.Optional[typing.Dict[str, str]] = pydantic.Field(
+        description="Partition information"
+    )
+    pipeline_id: str
     configured_transformation_id: str
-    nodes: typing.Optional[typing.List[TextNode]]
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

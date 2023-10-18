@@ -12,6 +12,7 @@ class ConfigurableDataSourceNames(str, enum.Enum):
     """
 
     DOCUMENT = "DOCUMENT"
+    TEXT_NODE = "TextNode"
     RAW_FILE = "RAW_FILE"
     DISCORD = "DISCORD"
     ELASTICSEARCH = "ELASTICSEARCH"
@@ -31,6 +32,7 @@ class ConfigurableDataSourceNames(str, enum.Enum):
     def visit(
         self,
         document: typing.Callable[[], T_Result],
+        text_node: typing.Callable[[], T_Result],
         raw_file: typing.Callable[[], T_Result],
         discord: typing.Callable[[], T_Result],
         elasticsearch: typing.Callable[[], T_Result],
@@ -49,6 +51,8 @@ class ConfigurableDataSourceNames(str, enum.Enum):
     ) -> T_Result:
         if self is ConfigurableDataSourceNames.DOCUMENT:
             return document()
+        if self is ConfigurableDataSourceNames.TEXT_NODE:
+            return text_node()
         if self is ConfigurableDataSourceNames.RAW_FILE:
             return raw_file()
         if self is ConfigurableDataSourceNames.DISCORD:

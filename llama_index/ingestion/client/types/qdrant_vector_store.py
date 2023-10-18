@@ -30,6 +30,7 @@ class QdrantVectorStore(pydantic.BaseModel):
     url: typing.Optional[str]
     api_key: typing.Optional[str]
     batch_size: int
+    prefer_grpc: bool
     client_kwargs: typing.Optional[typing.Dict[str, typing.Any]]
     class_name: typing.Optional[str]
 

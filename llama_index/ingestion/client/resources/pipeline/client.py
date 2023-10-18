@@ -12,6 +12,9 @@ from llama_index.ingestion.client.core.client_wrapper import (
     SyncClientWrapper,
 )
 from llama_index.ingestion.client.core.jsonable_encoder import jsonable_encoder
+from llama_index.ingestion.client.core.remove_none_from_dict import (
+    remove_none_from_dict,
+)
 from llama_index.ingestion.client.errors.unprocessable_entity_error import (
     UnprocessableEntityError,
 )
@@ -25,7 +28,7 @@ from llama_index.ingestion.client.types.data_sink_create import DataSinkCreate
 from llama_index.ingestion.client.types.data_source_create import DataSourceCreate
 from llama_index.ingestion.client.types.http_validation_error import HttpValidationError
 from llama_index.ingestion.client.types.pipeline import Pipeline
-from llama_index.ingestion.client.types.pipeline_execution import PipelineExecution
+from llama_index.ingestion.client.types.text_node import TextNode
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -123,11 +126,11 @@ class PipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def get_all_pipeline_executions_for_pipeline(
+    def get_all_configured_transformation_executions(
         self, pipeline_id: str
-    ) -> typing.List[PipelineExecution]:
+    ) -> typing.List[ConfiguredTransformationExecution]:
         """
-        Get all pipeline executions for a given pipeline.
+        Get all ConfiguredTransformationExecutions for a given pipeline.
 
         Parameters:
             - pipeline_id: str.
@@ -136,13 +139,13 @@ class PipelineClient:
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/execution",
+                f"api/pipeline/{pipeline_id}/configured_transformation_execution",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(typing.List[PipelineExecution], _response.json())  # type: ignore
+            return pydantic.parse_obj_as(typing.List[ConfiguredTransformationExecution], _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -151,24 +154,40 @@ class PipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def create_pipeline_execution(self, pipeline_id: str) -> PipelineExecution:
+    def create_configured_transformation_execution(
+        self,
+        pipeline_id: str,
+        *,
+        configured_transformation_execution_id: typing.Optional[str] = None,
+    ) -> ConfiguredTransformationExecution:
         """
-        Kick off a new pipeline execution.
+        Kick off a new ConfiguredTransformation execution.
+        Can optionally supply a configured_transformation_execution_id to run a specific execution.
+        In absence of a configured_transformation_execution_id, the last
+        configured_transformation_execution will be run (which may end up triggering runs
+        for it's prior steps as well).
 
         Parameters:
             - pipeline_id: str.
+
+            - configured_transformation_execution_id: typing.Optional[str].
         """
         _response = self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/execution",
+                f"api/pipeline/{pipeline_id}/configured_transformation_execution",
+            ),
+            params=remove_none_from_dict(
+                {
+                    "configured_transformation_execution_id": configured_transformation_execution_id
+                }
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(PipelineExecution, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(ConfiguredTransformationExecution, _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -177,49 +196,14 @@ class PipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def get_pipeline_execution_for_pipeline(
-        self, pipeline_id: str, pipeline_execution_id: str
-    ) -> typing.List[PipelineExecution]:
-        """
-        Get status of a single pipeline execution for a given pipeline.
-
-        Parameters:
-            - pipeline_id: str.
-
-            - pipeline_execution_id: str.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "GET",
-            urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/execution/{pipeline_execution_id}",
-            ),
-            headers=self._client_wrapper.get_headers(),
-            timeout=60,
-        )
-        if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(typing.List[PipelineExecution], _response.json())  # type: ignore
-        if _response.status_code == 422:
-            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
-        try:
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, body=_response.text)
-        raise ApiError(status_code=_response.status_code, body=_response_json)
-
-    def get_execution_result(
-        self,
-        pipeline_id: str,
-        pipeline_execution_id: str,
-        configured_transformation_execution_id: str,
+    def get_configured_transformation_execution(
+        self, pipeline_id: str, configured_transformation_execution_id: str
     ) -> ConfiguredTransformationExecution:
         """
-        Get the result of an execution step.
+        Get status of a single pipeline ConfiguredTransformationExecution for a given pipeline.
 
         Parameters:
             - pipeline_id: str.
-
-            - pipeline_execution_id: str.
 
             - configured_transformation_execution_id: str.
         """
@@ -227,13 +211,43 @@ class PipelineClient:
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/execution/{pipeline_execution_id}/transformation/{configured_transformation_execution_id}/result",
+                f"api/pipeline/{pipeline_id}/configured_transformation_execution/{configured_transformation_execution_id}",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
             return pydantic.parse_obj_as(ConfiguredTransformationExecution, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def get_configured_transformation_execution_result(
+        self, pipeline_id: str, configured_transformation_execution_id: str
+    ) -> typing.List[TextNode]:
+        """
+        Get the result of an ConfiguredTransformationExecution step.
+
+        Parameters:
+            - pipeline_id: str.
+
+            - configured_transformation_execution_id: str.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/configured_transformation_execution/{configured_transformation_execution_id}/result",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[TextNode], _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -335,11 +349,11 @@ class AsyncPipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def get_all_pipeline_executions_for_pipeline(
+    async def get_all_configured_transformation_executions(
         self, pipeline_id: str
-    ) -> typing.List[PipelineExecution]:
+    ) -> typing.List[ConfiguredTransformationExecution]:
         """
-        Get all pipeline executions for a given pipeline.
+        Get all ConfiguredTransformationExecutions for a given pipeline.
 
         Parameters:
             - pipeline_id: str.
@@ -348,13 +362,13 @@ class AsyncPipelineClient:
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/execution",
+                f"api/pipeline/{pipeline_id}/configured_transformation_execution",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(typing.List[PipelineExecution], _response.json())  # type: ignore
+            return pydantic.parse_obj_as(typing.List[ConfiguredTransformationExecution], _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -363,24 +377,40 @@ class AsyncPipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def create_pipeline_execution(self, pipeline_id: str) -> PipelineExecution:
+    async def create_configured_transformation_execution(
+        self,
+        pipeline_id: str,
+        *,
+        configured_transformation_execution_id: typing.Optional[str] = None,
+    ) -> ConfiguredTransformationExecution:
         """
-        Kick off a new pipeline execution.
+        Kick off a new ConfiguredTransformation execution.
+        Can optionally supply a configured_transformation_execution_id to run a specific execution.
+        In absence of a configured_transformation_execution_id, the last
+        configured_transformation_execution will be run (which may end up triggering runs
+        for it's prior steps as well).
 
         Parameters:
             - pipeline_id: str.
+
+            - configured_transformation_execution_id: typing.Optional[str].
         """
         _response = await self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/execution",
+                f"api/pipeline/{pipeline_id}/configured_transformation_execution",
+            ),
+            params=remove_none_from_dict(
+                {
+                    "configured_transformation_execution_id": configured_transformation_execution_id
+                }
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(PipelineExecution, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(ConfiguredTransformationExecution, _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -389,49 +419,14 @@ class AsyncPipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def get_pipeline_execution_for_pipeline(
-        self, pipeline_id: str, pipeline_execution_id: str
-    ) -> typing.List[PipelineExecution]:
-        """
-        Get status of a single pipeline execution for a given pipeline.
-
-        Parameters:
-            - pipeline_id: str.
-
-            - pipeline_execution_id: str.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "GET",
-            urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/execution/{pipeline_execution_id}",
-            ),
-            headers=self._client_wrapper.get_headers(),
-            timeout=60,
-        )
-        if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(typing.List[PipelineExecution], _response.json())  # type: ignore
-        if _response.status_code == 422:
-            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
-        try:
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, body=_response.text)
-        raise ApiError(status_code=_response.status_code, body=_response_json)
-
-    async def get_execution_result(
-        self,
-        pipeline_id: str,
-        pipeline_execution_id: str,
-        configured_transformation_execution_id: str,
+    async def get_configured_transformation_execution(
+        self, pipeline_id: str, configured_transformation_execution_id: str
     ) -> ConfiguredTransformationExecution:
         """
-        Get the result of an execution step.
+        Get status of a single pipeline ConfiguredTransformationExecution for a given pipeline.
 
         Parameters:
             - pipeline_id: str.
-
-            - pipeline_execution_id: str.
 
             - configured_transformation_execution_id: str.
         """
@@ -439,13 +434,43 @@ class AsyncPipelineClient:
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/execution/{pipeline_execution_id}/transformation/{configured_transformation_execution_id}/result",
+                f"api/pipeline/{pipeline_id}/configured_transformation_execution/{configured_transformation_execution_id}",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
             return pydantic.parse_obj_as(ConfiguredTransformationExecution, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def get_configured_transformation_execution_result(
+        self, pipeline_id: str, configured_transformation_execution_id: str
+    ) -> typing.List[TextNode]:
+        """
+        Get the result of an ConfiguredTransformationExecution step.
+
+        Parameters:
+            - pipeline_id: str.
+
+            - configured_transformation_execution_id: str.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/configured_transformation_execution/{configured_transformation_execution_id}/result",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[TextNode], _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:

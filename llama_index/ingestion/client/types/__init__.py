@@ -40,6 +40,7 @@ from .document import Document
 from .document_relationships_value import DocumentRelationshipsValue
 from .elasticsearch_reader import ElasticsearchReader
 from .entity_extractor import EntityExtractor
+from .etl_job_names import EtlJobNames
 from .google_docs_reader import GoogleDocsReader
 from .google_sheets_reader import GoogleSheetsReader
 from .hierarchical_node_parser import HierarchicalNodeParser
@@ -60,7 +61,6 @@ from .pg_vector_store import PgVectorStore
 from .pinecone_vector_store import PineconeVectorStore
 from .pipeline import Pipeline
 from .pipeline_create import PipelineCreate
-from .pipeline_execution import PipelineExecution
 from .project import Project
 from .qdrant_vector_store import QdrantVectorStore
 from .questions_answered_extractor import QuestionsAnsweredExtractor
@@ -125,6 +125,7 @@ __all__ = [
     "DocumentRelationshipsValue",
     "ElasticsearchReader",
     "EntityExtractor",
+    "EtlJobNames",
     "GoogleDocsReader",
     "GoogleSheetsReader",
     "HierarchicalNodeParser",
@@ -145,7 +146,6 @@ __all__ = [
     "PineconeVectorStore",
     "Pipeline",
     "PipelineCreate",
-    "PipelineExecution",
     "Project",
     "QdrantVectorStore",
     "QuestionsAnsweredExtractor",
