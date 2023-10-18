@@ -27,7 +27,7 @@ class SimilarityMode(str, Enum):
     EUCLIDEAN = "euclidean"
 
 
-def mean_agg(embeddings: List[List[float]]) -> List[float]:
+def mean_agg(embeddings: List[Embedding]) -> Embedding:
     """Mean aggregation for embeddings."""
     return list(np.array(embeddings).mean(axis=0))
 
@@ -121,7 +121,7 @@ class BaseEmbedding(BaseComponent):
     def get_agg_embedding_from_queries(
         self,
         queries: List[str],
-        agg_fn: Optional[Callable[..., List[float]]] = None,
+        agg_fn: Optional[Callable[..., Embedding]] = None,
     ) -> Embedding:
         """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
@@ -131,7 +131,7 @@ class BaseEmbedding(BaseComponent):
     async def aget_agg_embedding_from_queries(
         self,
         queries: List[str],
-        agg_fn: Optional[Callable[..., List[float]]] = None,
+        agg_fn: Optional[Callable[..., Embedding]] = None,
     ) -> Embedding:
         """Async get aggregated embedding from multiple queries."""
         query_embeddings = [await self.aget_query_embedding(query) for query in queries]
@@ -211,7 +211,7 @@ class BaseEmbedding(BaseComponent):
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
         cur_batch: List[str] = []
-        result_embeddings: List[List[float]] = []
+        result_embeddings: List[Embedding] = []
 
         queue_with_progress = enumerate(
             get_tqdm_iterable(texts, show_progress, "Generating embeddings")
@@ -243,7 +243,7 @@ class BaseEmbedding(BaseComponent):
         """Asynchronously get a list of text embeddings, with batching."""
         cur_batch: List[str] = []
         callback_payloads: List[Tuple[str, List[str]]] = []
-        result_embeddings: List[List[float]] = []
+        result_embeddings: List[Embedding] = []
         embeddings_coroutines: List[Coroutine] = []
         for idx, text in enumerate(texts):
             cur_batch.append(text)
