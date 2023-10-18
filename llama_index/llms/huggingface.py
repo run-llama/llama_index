@@ -339,14 +339,6 @@ def chat_messages_to_conversational_kwargs(
     return kwargs
 
 
-def conversational_output_to_chat_response(
-    output: "ConversationalOutput", role: MessageRole = MessageRole.ASSISTANT
-) -> ChatResponse:
-    return ChatResponse(
-        message=ChatMessage(role=role, content=output["generated_text"])
-    )
-
-
 class HuggingFaceInferenceAPI(LLM):
     """
     Wrapper on the Hugging Face's Inference API.
@@ -505,9 +497,12 @@ class HuggingFaceInferenceAPI(LLM):
         )
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        return conversational_output_to_chat_response(
-            output=self._sync_client.conversational(
-                **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
+        output: "ConversationalOutput" = self._sync_client.conversational(
+            **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
+        )
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output["generated_text"]
             )
         )
 
