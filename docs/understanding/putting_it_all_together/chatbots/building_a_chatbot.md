@@ -1,4 +1,4 @@
-# 💬🤖 How to Build a Chatbot
+# How to Build a Chatbot
 
 LlamaIndex serves as a bridge between your data and Language Learning Models (LLMs), providing a toolkit that enables you to establish a query interface around your data for a variety of tasks, such as question-answering and summarization.
 

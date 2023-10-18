@@ -140,24 +140,3 @@ Right now, we support the following options:
   chunk while accumulating the responses into an array. Returns a concatenated string of all
   responses. Good for when you need to run the same query separately against each text
   chunk.
-
-```python
-index = SummaryIndex.from_documents(documents)
-retriever = index.as_retriever()
-
-# default
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='default')
-response = query_engine.query("What did the author do growing up?")
-
-# compact
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='compact')
-response = query_engine.query("What did the author do growing up?")
-
-# tree summarize
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='tree_summarize')
-response = query_engine.query("What did the author do growing up?")
-
-# no text
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='no_text')
-response = query_engine.query("What did the author do growing up?")
-```
