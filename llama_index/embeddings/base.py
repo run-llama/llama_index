@@ -76,20 +76,32 @@ class BaseEmbedding(BaseComponent):
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> Embedding:
-        """Get query embedding impl.
+        """
+        Embed the input query synchronously.
 
-        Sub-classes should implement this method.
+        Subclasses should implement this method. Reference get_query_embedding's
+        docstring for more information.
         """
 
     @abstractmethod
     async def _aget_query_embedding(self, query: str) -> Embedding:
-        """Async get query embedding impl.
+        """
+        Embed the input query asynchronously.
 
-        Sub-classes should implement this method.
+        Subclasses should implement this method. Reference get_query_embedding's
+        docstring for more information.
         """
 
     def get_query_embedding(self, query: str) -> Embedding:
-        """Get query embedding."""
+        """
+        Embed the input query.
+
+        When embedding a query, depending on the model, a special instruction
+        can be prepended to the raw query string. For example, "Represent the
+        question for retrieving supporting documents: ". If you're curious,
+        other examples of predefined instructions can be found in
+        embeddings/huggingface_utils.py.
+        """
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -140,42 +152,52 @@ class BaseEmbedding(BaseComponent):
 
     @abstractmethod
     def _get_text_embedding(self, text: str) -> Embedding:
-        """Get text embedding impl.
+        """
+        Embed the input text synchronously.
 
-        Sub-classes should implement this method.
+        Subclasses should implement this method. Reference get_text_embedding's
+        docstring for more information.
         """
 
     async def _aget_text_embedding(self, text: str) -> Embedding:
-        """Asynchronously get text embedding.
-
-        By default, this falls back to _get_text_embedding.
-        Meant to be overridden if there is a true async implementation.
-
         """
+        Embed the input text asynchronously.
+
+        Subclasses can implement this method if there is a true async
+        implementation. Reference get_text_embedding's docstring for more
+        information.
+        """
+        # Default implementation just falls back on _get_text_embedding
         return self._get_text_embedding(text)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        """Get a list of text embeddings.
-
-        By default, this is a wrapper around _get_text_embedding.
-        Meant to be overridden for batch queries.
-
         """
+        Embed the input sequence of text synchronously.
+
+        Subclasses can implement this method if batch queries are supported.
+        """
+        # Default implementation just loops over _get_text_embedding
         return [self._get_text_embedding(text) for text in texts]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        """Async get a list of text embeddings.
+        """
+        Embed the input sequence of text asynchronously.
 
-        By default, this is a wrapper around _aget_text_embedding.
-        Meant to be overridden for batch queries.
-
+        Subclasses can implement this method if batch queries are supported.
         """
         return await asyncio.gather(
             *[self._aget_text_embedding(text) for text in texts]
         )
 
     def get_text_embedding(self, text: str) -> Embedding:
-        """Get text embedding."""
+        """
+        Embed the input text.
+
+        When embedding text, depending on the model, a special instruction
+        can be prepended to the raw text string. For example, "Represent the
+        document for retrieval: ". If you're curious, other examples of
+        predefined instructions can be found in embeddings/huggingface_utils.py.
+        """
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
