@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Added support for `LLMRailsEmbeddings` (#8169)
+
 ### Bug Fixes / Nits
 
 - Add normalization to huggingface embeddings (#8145)

@@ -1,7 +1,6 @@
 import logging
 from typing import Any, List
 
-import httpx
 import requests
 
 from llama_index.embeddings.base import BaseEmbedding
@@ -67,6 +66,14 @@ class LLMRailsEmbeddings(BaseEmbedding):
         Returns:
             List[float]: The embedding for the input query text.
         """
+        try:
+            import httpx
+        except ImportError:
+            raise ImportError(
+                "The httpx library is required to use the async version of "
+                "this function. Install it with `pip install httpx`."
+            )
+
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
