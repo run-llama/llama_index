@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import numpy as np
 import pytest
 from llama_index.embeddings.huggingface import HuggingFaceInferenceAPIEmbeddings
-from llama_index.embeddings.utils import Pooling
+from llama_index.embeddings.pooling import Pooling
 
 from tests.llms.test_huggingface import STUB_MODEL_NAME
 

@@ -19,8 +19,9 @@ from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.llm_rails import LLMRailsEmbeddings
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.pooling import Pooling
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
-from llama_index.embeddings.utils import Pooling, resolve_embed_model
+from llama_index.embeddings.utils import resolve_embed_model
 
 __all__ = [
     "AdapterEmbeddingModel",
@@ -42,10 +43,3 @@ __all__ = [
     "TextEmbeddingsInference",
     "resolve_embed_model",
 ]
-
-
-# Since embeddings.utils uses Hugging Face, and embeddings.huggingface uses
-# Pooling, Hugging Face uses a TYPE_CHECKING block. Consequently, when not type
-# checking we have to inform HuggingFaceInferenceAPIEmbeddings of Pooling's type
-# SEE: https://stackoverflow.com/a/72667747
-HuggingFaceInferenceAPIEmbeddings.update_forward_refs(Pooling=Pooling)
