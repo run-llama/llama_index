@@ -9,6 +9,11 @@ except ImportError:
 import pytest
 from pytest import MonkeyPatch
 
+import sys, os
+sys.path.insert(
+    0, os.path.abspath("../..")
+)  # Adds the parent directory to the system path for testing
+
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.litellm import LiteLLM
 
@@ -179,3 +184,15 @@ def test_openai():
     print(chat_response)
 
 
+def test_tg_ai():
+    from llama_index.llms import LiteLLM, ChatMessage
+    # # deep infra call
+    llm = LiteLLM(
+        model="together_ai/togethercomputer/Llama-2-7B-32K-Instruct", 
+        max_tokens=10,
+        api_key=""
+    )
+    message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
+    chat_response = llm.chat([message])
+    print("\ntogetherai Chat response\n")
+    print(chat_response)
