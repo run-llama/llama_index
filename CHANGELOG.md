@@ -3,6 +3,7 @@
 ## [0.8.46] - 2023-10-18
 
 ### New Features
+
 - Add fine-tuning router support + embedding selector (#8174)
 - add more document converters (#8156)
 
