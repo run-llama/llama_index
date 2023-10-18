@@ -14,6 +14,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    DEFAULT_DOC_ID_KEY,
     DEFAULT_TEXT_KEY,
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
@@ -112,7 +113,12 @@ class DashVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._collection.delete(ids=ref_doc_id)
+        filter = f"{DEFAULT_DOC_ID_KEY}='{ref_doc_id}'"
+        resp = self._collection.query(filter=filter)
+        if not resp:
+            raise Exception(f"Failed to query doc by {filter}")
+
+        self._collection.delete(ids=[doc.id for doc in resp])
 
     def query(
         self,

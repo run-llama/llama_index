@@ -79,5 +79,5 @@ maxdepth: 1
 /examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 /examples/vector_stores/EpsillaIndexDemo.ipynb
 /examples/vector_stores/Timescalevector.ipynb
-/examples/vector_stores/DashVectorDemo.ipynb
+/examples/vector_stores/DashvectorIndexDemo.ipynb
 ```
