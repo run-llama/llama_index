@@ -41,6 +41,7 @@ version = "0.8.45.post1"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
+beautifulsoup4 = "^4.12.2"
 dataclasses-json = "^0.5.7"
 fsspec = ">=2023.5.0"
 langchain = ">=0.0.303"
@@ -140,7 +141,6 @@ wikipedia = {optional = true, version = "^1.4.0"}
 youtube-transcript-api = {optional = true, version = "^0.6.1"}
 
 [tool.poetry.group.dev.dependencies]
-beautifulsoup4 = "^4.12.2"  # needed for tests
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 google-generativeai = {python = ">=3.9,<3.12", version = "^0.2.1"}
