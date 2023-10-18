@@ -100,7 +100,7 @@ def test_get_nodes_from_document_with_node_relationship(
     # check whether next and provious node_id is set properly
     rel_node = nodes[0].relationships[NodeRelationship.NEXT]
     if isinstance(rel_node, RelatedNodeInfo):
-        assert rel_node == nodes[1].node_id
+        assert rel_node.node_id == nodes[1].node_id
     rel_node = nodes[1].relationships[NodeRelationship.NEXT]
     if isinstance(rel_node, RelatedNodeInfo):
         assert rel_node.node_id == nodes[2].node_id
