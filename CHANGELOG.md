@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Added support for `LLMRailsEmbeddings` (#8169)
+
 ## [0.8.46] - 2023-10-18
 
 ### New Features
