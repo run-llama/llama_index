@@ -513,7 +513,9 @@ class HuggingFaceInferenceAPI(LLM):
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         return CompletionResponse(
-            text=self._sync_client.text_generation(prompt, **kwargs)
+            text=self._sync_client.text_generation(
+                prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
+            )
         )
 
     def stream_chat(

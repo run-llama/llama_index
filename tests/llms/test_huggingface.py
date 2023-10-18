@@ -79,5 +79,5 @@ class TestHuggingFaceInferenceAPI:
             return_value=generated_text,
         ) as mock_text_generation:
             response = hf_inference_api.complete(prompt)
-        mock_text_generation.assert_called_once_with(prompt)
+        mock_text_generation.assert_called_once_with(prompt, max_new_tokens=256)
         assert response.text == generated_text
