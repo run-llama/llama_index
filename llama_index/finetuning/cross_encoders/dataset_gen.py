@@ -9,9 +9,8 @@ from tqdm.auto import tqdm
 from llama_index import VectorStoreIndex
 from llama_index.llms import ChatMessage, OpenAI
 from llama_index.llms.base import LLM
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import TokenAwareNodeParser
 from llama_index.schema import Document, MetadataMode
-from llama_index.text_splitter import TokenTextSplitter
 
 
 @dataclass
@@ -42,7 +41,7 @@ def generate_synthetic_queries_over_documents(
     qa_generate_user_msg: str = DEFAULT_QUERY_GEN_USER_PROMPT,
 ) -> List[str]:
     questions = []
-    text_splitter = TokenTextSplitter(
+    node_parser = TokenAwareNodeParser(
         separator=" ",
         chunk_size=max_chunk_length,
         chunk_overlap=0,
@@ -51,7 +50,6 @@ def generate_synthetic_queries_over_documents(
     )
 
     llm = llm or OpenAI(model="gpt-3.5-turbo-16k", temperature=0.3)
-    node_parser = SimpleNodeParser(text_splitter=text_splitter)
     nodes = node_parser.get_nodes_from_documents(documents, show_progress=False)
 
     node_dict = {
@@ -120,7 +118,7 @@ def generate_ce_fine_tuning_dataset(
 ) -> List[CrossEncoderFinetuningDatasetSample]:
     ce_dataset_list = []
 
-    text_splitter = TokenTextSplitter(
+    node_parser = TokenAwareNodeParser(
         separator=" ",
         chunk_size=max_chunk_length,
         chunk_overlap=0,
@@ -134,7 +132,6 @@ def generate_ce_fine_tuning_dataset(
         model="gpt-3.5-turbo-16k", temperature=0.1, logit_bias={9642: 1, 2822: 1}
     )
 
-    node_parser = SimpleNodeParser(text_splitter=text_splitter)
     nodes = node_parser.get_nodes_from_documents(documents, show_progress=False)
 
     index = VectorStoreIndex(nodes)

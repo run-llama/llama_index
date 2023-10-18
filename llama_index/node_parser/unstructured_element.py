@@ -10,7 +10,7 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llms.openai import LLM, OpenAI
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.response.schema import PydanticResponse
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
@@ -149,7 +149,7 @@ def _get_nodes_from_buffer(
 
 def get_nodes_from_elements(elements: List[Element]) -> List[BaseNode]:
     """Get nodes and mappings."""
-    node_parser = SimpleNodeParser.from_defaults()
+    node_parser = SentenceAwareNodeParser()
 
     nodes = []
     cur_text_el_buffer: List[str] = []
