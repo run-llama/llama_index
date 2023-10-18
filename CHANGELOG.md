@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed missing spaces in prompt templates (#8190)
+
 ## [0.8.47] - 2023-10-19
 
 ### New Features
