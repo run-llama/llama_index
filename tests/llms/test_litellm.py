@@ -160,8 +160,8 @@ def test_metadata() -> None:
 # message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
 
 # # # deep infra call
-# os.environ["DEEPINFRA_API_KEY"] = "60UsYw6vmDkYMLVLIZ9vRzHhqOmibo0b" # api key
-# os.environ["OPENAI_API_KEY"] = "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"
+# os.environ["DEEPINFRA_API_KEY"] = "" # api key
+# os.environ["OPENAI_API_KEY"] = ""
 
 # llm = LiteLLM(model="gpt-3.5-turbo")
 # chat_response = llm.chat([message])
@@ -187,7 +187,7 @@ def test_metadata() -> None:
 # # for r in resp:
 # #     print(r.delta, end="")
 
-# os.environ["HUGGINGFACE_API_KEY"] = "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" # api key
+# os.environ["HUGGINGFACE_API_KEY"] = "" # api key
 # llm = LiteLLM(
 #     model="huggingface/glaiveai/glaive-coder-7b", 
 #     api_base="https://wjiegasee9bmqke2.us-east-1.aws.endpoints.huggingface.cloud"
