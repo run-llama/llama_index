@@ -4,20 +4,20 @@ An index that that is built on top of an existing vector store.
 
 """
 import logging
-from typing import Any, Optional, List, cast
+from typing import Any, List, Optional, cast
 
-from llama_index.schema import TextNode, BaseNode
+from llama_index.schema import BaseNode, TextNode
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
 from llama_index.vector_stores.utils import (
-    node_to_metadata_dict,
-    metadata_dict_to_node,
     DEFAULT_TEXT_KEY,
     legacy_metadata_dict_to_node,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
 )
 
 DEFAULT_BATCH_SIZE = 100
@@ -66,7 +66,7 @@ class DashVectorStore(VectorStore):
             "`dashvector` package not found, please run `pip install dashvector`"
         )
         try:
-            import dashvector  # noqa: F401
+            import dashvector
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -82,7 +82,6 @@ class DashVectorStore(VectorStore):
         Args:
             nodes (List[BaseNode]): list of nodes with embeddings
         """
-
         from dashvector import Doc
 
         for i in range(0, len(nodes), DEFAULT_BATCH_SIZE):
@@ -121,7 +120,6 @@ class DashVectorStore(VectorStore):
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query vector store."""
-
         query_embedding = (
             [float(e) for e in query.query_embedding] if query.query_embedding else []
         )

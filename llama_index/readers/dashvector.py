@@ -16,7 +16,7 @@ class DashVectorReader(BaseReader):
     def __init__(self, api_key: str):
         """Initialize with parameters."""
         try:
-            import dashvector  # noqa: F401
+            import dashvector
         except ImportError:
             raise ImportError(
                 "`dashvector` package not found, please run `pip install dashvector`"
@@ -52,7 +52,6 @@ class DashVectorReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
-
         collection = self._client.get(collection_name)
         if not collection:
             raise ValueError(

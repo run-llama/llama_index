@@ -496,7 +496,7 @@ from llama_index.vector_stores import DashVectorStore
 # init dashvector client
 client = dashvector.Client(api_key='your-dashvector-api-key')
 
-# creating a DashVector collection 
+# creating a DashVector collection
 client.create("quickstart", dimension=1536)
 collection = client.get("quickstart")
 
