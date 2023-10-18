@@ -43,6 +43,7 @@ maxdepth: 1
 ---
 Fine-tuning an Adapter </examples/finetuning/embeddings/finetune_embedding_adapter.ipynb>
 Embedding Fine-tuning Guide </examples/finetuning/embeddings/finetune_embedding.ipynb>
+Router Fine-tuning </examples/finetuning/router/router_finetune.ipynb>
 ```
 
 **Old**

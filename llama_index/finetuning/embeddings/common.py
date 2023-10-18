@@ -2,7 +2,7 @@
 import json
 import re
 import uuid
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from tqdm import tqdm
 
@@ -25,6 +25,14 @@ class EmbeddingQAFinetuneDataset(BaseModel):
     queries: Dict[str, str]  # dict id -> query
     corpus: Dict[str, str]  # dict id -> string
     relevant_docs: Dict[str, List[str]]  # query id -> list of doc ids
+
+    @property
+    def query_docid_pairs(self) -> List[Tuple[str, List[str]]]:
+        """Get query, relevant doc ids."""
+        return [
+            (query, self.relevant_docs[query_id])
+            for query_id, query in self.queries.items()
+        ]
 
     def save_json(self, path: str) -> None:
         """Save json."""
