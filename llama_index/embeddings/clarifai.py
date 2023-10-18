@@ -115,7 +115,6 @@ class ClarifaiEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        query = self._format_query_text(query)
         return self._embed([query])[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
