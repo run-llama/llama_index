@@ -1,7 +1,7 @@
 # LlamaHub
 
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙.
-LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any LlamaIndex application.
+LlamaHub is a registry of open-source data connectors that you can easily plug into any LlamaIndex application.
 
 ![](/_static/data_connectors/llamahub.png)
 
@@ -17,15 +17,22 @@ loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=[...])
 ```
 
-## Modules
+## Built-in connector: SimpleDirectoryReader
 
-Some sample data connectors:
+`SimpleDirectoryReader`. Can support parsing a wide range of file types including `.md`, `.pdf`, `.jpg`, `.png`, `.docx`, as well as audio and video types. It is available directly as part of LlamaIndex:
 
-- local file directory (`SimpleDirectoryReader`). Can support parsing a wide range of file types: `.pdf`, `.jpg`, `.png`, `.docx`, etc.
+```python
+from llama_index import SimpleDirectoryReader
+
+documents = SimpleDirectoryReader('./data').load_data()
+```
+
+## Available connectors
+
+Browse [LlamaHub](https://llamahub.ai/) directly to see the hundreds of connectors available, including:
+
 - [Notion](https://developers.notion.com/) (`NotionPageReader`)
 - [Google Docs](https://developers.google.com/docs/api) (`GoogleDocsReader`)
 - [Slack](https://api.slack.com/) (`SlackReader`)
 - [Discord](https://discord.com/developers/docs/intro) (`DiscordReader`)
 - [Apify Actors](https://llamahub.ai/l/apify-actor) (`ApifyActor`). Can crawl the web, scrape webpages, extract text content, download files including `.pdf`, `.jpg`, `.png`, `.docx`, etc.
-
-See below for detailed guides.

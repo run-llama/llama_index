@@ -1,3 +1,0 @@
-# Using Vector Stores
-
-// TODO

@@ -48,6 +48,18 @@ We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our
 
 LlamaIndex doesn't just supported hosted LLM APIs; you can also [run a local model such as Llama2 locally](https://replicate.com/blog/run-llama-locally).
 
+Once you have a local LLM such as Llama 2 installed, you can use it like this:
+
+```python
+from llama_index import ServiceContext
+service_context = ServiceContext.from_defaults(llm="local")
+```
+
+This will use llama2-chat-13B from with LlamaCPP, and assumes you have `llama-cpp-python` installed. A [full LlamaCPP usage guide is available](/examples/llm/llama_2_llama_cpp.ipynb).
+
+See the [custom LLM's How-To](/module_guides/using_llms/llms/usage_custom.md) for more details.
+
+
 ## Prompts
 
 By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](/module_guides/llms/prompts.md)

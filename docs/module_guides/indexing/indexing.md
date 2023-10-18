@@ -18,6 +18,7 @@ For a more in-depth explanation, check out our guide below:
 maxdepth: 1
 ---
 index_guide.md
+embeddings.md
 ```
 
 ## Usage Pattern

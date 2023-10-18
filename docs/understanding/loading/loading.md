@@ -81,6 +81,23 @@ node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 index = VectorStoreIndex([node1,node2])
 ```
 
+## Customizing Documents
+
+When creating documents, you can also attach useful metadata that can be used at the querying stage. Any metadata added to a Document will be copied to the Nodes that get created from that document.
+
+```python
+document = Document(
+    text='text',
+    metadata={
+        'filename': '<doc_file_name>',
+        'category': '<category>'
+    }
+)
+```
+
+More about this can be found in [customizing Documents](/module_guides/loading/documents_and_nodes/usage_documents.md).
+
+
 ```{toctree}
 ---
 maxdepth: 1

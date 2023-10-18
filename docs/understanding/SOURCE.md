@@ -9,91 +9,8 @@ The general usage pattern of LlamaIndex is as follows:
 5. Query the index
 6. Parsing the response
 
-## 1. Load in Documents
 
-The first step is to load in data. This data is represented in the form of `Document` objects.
-We provide a variety of [data loaders](/core_modules/data_modules/connector/root.md) which will load in Documents
-through the `load_data` function, e.g.:
 
-```python
-from llama_index import SimpleDirectoryReader
-
-documents = SimpleDirectoryReader('./data').load_data()
-```
-
-You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
-
-```python
-from llama_index import Document
-
-text_list = [text1, text2, ...]
-documents = [Document(text=t) for t in text_list]
-```
-
-A Document represents a lightweight container around the data source. You can now choose to proceed with one of the
-following steps:
-
-1. Feed the Document object directly into the index (see section 3).
-2. First convert the Document into Node objects (see section 2).
-
-## 2. Parse the Documents into Nodes
-
-The next step is to parse these Document objects into Node objects. Nodes represent "chunks" of source Documents,
-whether that is a text chunk, an image, or more. They also contain metadata and relationship information
-with other nodes and index structures.
-
-Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes and all its attributes directly. You may also choose to "parse" source Documents into Nodes through our `NodeParser` classes.
-
-For instance, you can do
-
-```python
-from llama_index.node_parser import SimpleNodeParser
-
-parser = SimpleNodeParser.from_defaults()
-
-nodes = parser.get_nodes_from_documents(documents)
-```
-
-You can also choose to construct Node objects manually and skip the first section. For instance,
-
-```python
-from llama_index.schema import TextNode, NodeRelationship, RelatedNodeInfo
-
-node1 = TextNode(text="<text_chunk>", id_="<node_id>")
-node2 = TextNode(text="<text_chunk>", id_="<node_id>")
-# set relationships
-node1.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=node2.node_id)
-node2.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=node1.node_id)
-nodes = [node1, node2]
-```
-
-The `RelatedNodeInfo` class can also store additional `metadata` if needed:
-
-```python
-node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=node1.node_id, metadata={"key": "val"})
-```
-
-## 3. Index Construction
-
-We can now build an index over these Document objects. The simplest high-level abstraction is to load-in the Document objects during index initialization (this is relevant if you came directly from step 1 and skipped step 2).
-
-`from_documents` also takes an optional argument `show_progress`. Set it to `True` to display a progress bar during index construction.
-
-```python
-from llama_index import VectorStoreIndex
-
-index = VectorStoreIndex.from_documents(documents)
-```
-
-You can also choose to build an index over a set of Node objects directly (this is a continuation of step 2).
-
-```python
-from llama_index import VectorStoreIndex
-
-index = VectorStoreIndex(nodes)
-```
-
-Depending on which index you use, LlamaIndex may make LLM calls in order to build the index.
 
 ### Reusing Nodes across Index Structures
 
@@ -143,79 +60,13 @@ index.insert_nodes(nodes)
 
 See the [Document Management How-To](/core_modules/data_modules/index/document_management.md) for more details on managing documents and an example notebook.
 
-### Customizing Documents
 
-When creating documents, you can also attach useful metadata. Any metadata added to a document will be copied to the nodes that get created from their respective source document.
 
-```python
-document = Document(
-    text='text',
-    metadata={
-        'filename': '<doc_file_name>',
-        'category': '<category>'
-    }
-)
-```
-
-More information and approaches to this are discussed in the section [Customizing Documents](/core_modules/data_modules/documents_and_nodes/usage_documents.md).
-
-### Customizing LLM's
-
-By default, we use OpenAI's `text-davinci-003` model. You may choose to use another LLM when constructing
-an index.
-
-```python
-from llama_index import VectorStoreIndex, ServiceContext, set_global_service_context
-from llama_index.llms import OpenAI
-
-...
-
-# define LLM
-llm = OpenAI(model="gpt-4", temperature=0, max_tokens=256)
-
-# configure service context
-service_context = ServiceContext.from_defaults(llm=llm)
-set_global_service_context(service_context)
-
-# build index
-index = VectorStoreIndex.from_documents(
-    documents
-)
-```
-
-To save costs, you may want to use a local model.
-
-```python
-from llama_index import ServiceContext
-service_context = ServiceContext.from_defaults(llm="local")
-```
-
-This will use llama2-chat-13B from with LlamaCPP, and assumes you have `llama-cpp-python` installed. Full LlamaCPP usage guide is available in a [notebook here](/examples/llm/llama_2_llama_cpp.ipynb).
-
-See the [Custom LLM's How-To](/core_modules/model_modules/llms/usage_custom.md) for more details.
-
-### Global ServiceContext
-
-If you wanted the service context from the last section to always be the default, you can configure one like so:
-
-```python
-from llama_index import set_global_service_context
-set_global_service_context(service_context)
-```
-
-This service context will always be used as the default if not specified as a keyword argument in LlamaIndex functions.
-
-For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/core_modules/supporting_modules/service_context.md).
 
 ### Customizing Prompts
 
 Depending on the index used, we used default prompt templates for constructing the index (and also insertion/querying).
 See [Custom Prompts How-To](/core_modules/model_modules/prompts.md) for more details on how to customize your prompt.
-
-### Customizing embeddings
-
-For embedding-based indices, you can choose to pass in a custom embedding model. See
-[Custom Embeddings How-To](/core_modules/model_modules/embeddings/usage_pattern.md) for more details.
 
 ### Cost Analysis
 
@@ -225,59 +76,6 @@ the token usage will be printed.
 
 You can also fetch the token usage through `TokenCountingCallback` handler.
 See [Cost Analysis How-To](/core_modules/supporting_modules/cost_analysis/usage_pattern.md) for more details.
-
-### [Optional] Save the index for future use
-
-By default, data is stored in-memory.
-To persist to disk:
-
-```python
-index.storage_context.persist(persist_dir="<persist_dir>")
-```
-
-You may omit persist_dir to persist to `./storage` by default.
-
-To reload from disk:
-
-```python
-from llama_index import StorageContext, load_index_from_storage
-
-# rebuild storage context
-storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
-
-# load index
-index = load_index_from_storage(storage_context)
-```
-
-**NOTE**: If you had initialized the index with a custom
-`ServiceContext` object, you will also need to pass in the same
-ServiceContext during `load_index_from_storage` or ensure you have a global service context.
-
-```python
-
-service_context = ServiceContext.from_defaults(llm=llm)
-set_global_service_context(service_context)
-
-# when first building the index
-index = VectorStoreIndex.from_documents(
-    documents, # service_context=service_context -> optional if not using global
-)
-
-...
-
-# when loading the index from disk
-index = load_index_from_storage(
-    StorageContext.from_defaults(persist_dir="<persist_dir>")
-    # service_context=service_context -> optional if not using global
-)
-
-```
-
-## 4. [Optional, Advanced] Building indices on top of other indices
-
-You can build indices on top of other indices!
-Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
-see our [Query Use Cases](/end_to_end_tutorials/question_and_answer.md). For technical details and examples, see our [Composability How-To](/core_modules/data_modules/index/composability.md).
 
 ## 5. Query the index.
 
