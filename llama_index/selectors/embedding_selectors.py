@@ -1,15 +1,17 @@
 from typing import Any, List, Optional, Sequence, cast
 
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.selectors.types import BaseSelector, SelectorResult, SingleSelection, MultiSelection
-from llama_index.tools.types import ToolMetadata
-from llama_index.types import BaseOutputParser
-
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.indices.query.embedding_utils import (
-    get_top_k_embeddings
+from llama_index.indices.query.embedding_utils import get_top_k_embeddings
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.selectors.types import (
+    BaseSelector,
+    MultiSelection,
+    SelectorResult,
+    SingleSelection,
 )
+from llama_index.tools.types import ToolMetadata
+from llama_index.types import BaseOutputParser
 
 
 class EmbeddingSingleSelector(BaseSelector):
@@ -41,7 +43,7 @@ class EmbeddingSingleSelector(BaseSelector):
     def _select(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
-        query_embedding = self._embed_model.get_query_embedding(query)
+        query_embedding = self._embed_model.get_query_embedding(query.query_str)
         text_embeddings = [
             self._embed_model.get_text_embedding(choice.description)
             for choice in choices
@@ -56,14 +58,14 @@ class EmbeddingSingleSelector(BaseSelector):
         # get top choice
         top_selection_reason = f"Top similarity match: {top_similarities[0]:.2f}, {choices[top_ids[0]].name}"
         top_selection = SingleSelection(index=top_ids[0], reason=top_selection_reason)
-        
+
         # parse output
         return SelectorResult(selections=[top_selection])
 
     async def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
-        query_embedding = await self._embed_model.aget_query_embedding(query)
+        query_embedding = await self._embed_model.aget_query_embedding(query.query_str)
         text_embeddings = [
             await self._embed_model.aget_text_embedding(choice.description)
             for choice in choices
@@ -78,6 +80,6 @@ class EmbeddingSingleSelector(BaseSelector):
         # get top choice
         top_selection_reason = f"Top similarity match: {top_similarities[0]:.2f}, {choices[top_ids[0]].name}"
         top_selection = SingleSelection(index=top_ids[0], reason=top_selection_reason)
-        
+
         # parse output
         return SelectorResult(selections=[top_selection])
