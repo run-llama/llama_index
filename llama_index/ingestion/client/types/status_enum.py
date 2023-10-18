@@ -35,3 +35,4 @@ class StatusEnum(str, enum.Enum):
             return canceled()
         if self is StatusEnum.FINISHED:
             return finished()
+        return None

@@ -6,15 +6,24 @@ from json.decoder import JSONDecodeError
 
 import pydantic
 
-from ...core.api_error import ApiError
-from ...core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from ...core.jsonable_encoder import jsonable_encoder
-from ...errors.unprocessable_entity_error import UnprocessableEntityError
-from ...types.configurable_data_sink_names import ConfigurableDataSinkNames
-from ...types.data_sink import DataSink
-from ...types.data_sink_create import DataSinkCreate
-from ...types.data_sink_update_component import DataSinkUpdateComponent
-from ...types.http_validation_error import HttpValidationError
+from llama_index.ingestion.client.core.api_error import ApiError
+from llama_index.ingestion.client.core.client_wrapper import (
+    AsyncClientWrapper,
+    SyncClientWrapper,
+)
+from llama_index.ingestion.client.core.jsonable_encoder import jsonable_encoder
+from llama_index.ingestion.client.errors.unprocessable_entity_error import (
+    UnprocessableEntityError,
+)
+from llama_index.ingestion.client.types.configurable_data_sink_names import (
+    ConfigurableDataSinkNames,
+)
+from llama_index.ingestion.client.types.data_sink import DataSink
+from llama_index.ingestion.client.types.data_sink_create import DataSinkCreate
+from llama_index.ingestion.client.types.data_sink_update_component import (
+    DataSinkUpdateComponent,
+)
+from llama_index.ingestion.client.types.http_validation_error import HttpValidationError
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)

@@ -14,14 +14,14 @@ from llama_index.node_parser.relational.hierarchical import (
     get_leaf_nodes,
     get_root_nodes,
 )
+from llama_index.node_parser.relational.unstructured_element import (
+    UnstructuredElementNodeParser,
+)
 from llama_index.node_parser.text.code import CodeNodeParser
 from llama_index.node_parser.text.langchain import LangchainNodeParser
 from llama_index.node_parser.text.sentence import SentenceAwareNodeParser
 from llama_index.node_parser.text.sentence_window import SentenceWindowNodeParser
 from llama_index.node_parser.text.token import TokenAwareNodeParser
-from llama_index.node_parser.unstructured_element import (
-    UnstructuredElementNodeParser,
-)
 
 __all__ = [
     "TokenAwareNodeParser",

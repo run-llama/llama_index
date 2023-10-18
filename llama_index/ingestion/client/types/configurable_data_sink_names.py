@@ -35,3 +35,4 @@ class ConfigurableDataSinkNames(str, enum.Enum):
             return qdrant()
         if self is ConfigurableDataSinkNames.WEAVIATE:
             return weaviate()
+        return None
