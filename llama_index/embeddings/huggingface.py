@@ -192,9 +192,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        print(text)
         text = self._format_text(text)
-        print(text)
         return self._embed([text])[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
