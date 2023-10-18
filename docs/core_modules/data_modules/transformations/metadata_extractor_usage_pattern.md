@@ -1,4 +1,4 @@
-# Automated Metadata Extraction for Nodes
+# Metadata Extraction Usage Pattern
 
 You can use LLMs to automate metadata extraction with our `Metadata Extractor` modules.
 

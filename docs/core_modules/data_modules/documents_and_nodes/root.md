@@ -60,5 +60,5 @@ maxdepth: 1
 ---
 usage_documents.md
 usage_nodes.md
-usage_metadata_extractor.md
+/core_modules/data_modules/transformations/root.md
 ```

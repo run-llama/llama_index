@@ -8,9 +8,7 @@ from tqdm import tqdm
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llms.openai import LLM, OpenAI
-from llama_index.node_parser import SimpleNodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.response.schema import PydanticResponse
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
@@ -149,7 +147,9 @@ def _get_nodes_from_buffer(
 
 def get_nodes_from_elements(elements: List[Element]) -> List[BaseNode]:
     """Get nodes and mappings."""
-    node_parser = SimpleNodeParser.from_defaults()
+    from llama_index.node_parser import SentenceAwareNodeParser
+
+    node_parser = SentenceAwareNodeParser()
 
     nodes = []
     cur_text_el_buffer: List[str] = []
@@ -267,30 +267,18 @@ class UnstructuredElementNodeParser(NodeParser):
         # will return a list of Nodes and Index Nodes
         return get_nodes_from_elements(elements)
 
-    def get_nodes_from_documents(
+    def _parse_nodes(
         self,
-        documents: Sequence[TextNode],
+        nodes: Sequence[BaseNode],
         show_progress: bool = False,
+        **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse document into nodes.
+        all_nodes: List[BaseNode] = []
+        nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
 
-        Args:
-            documents (Sequence[TextNode]): TextNodes or Documents to parse
-
-        """
-        with self.callback_manager.event(
-            CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
-        ) as event:
-            all_nodes: List[BaseNode] = []
-            documents_with_progress = get_tqdm_iterable(
-                documents, show_progress, "Parsing documents into nodes"
-            )
-
-            for document in documents_with_progress:
-                nodes = self.get_nodes_from_node(document)
-                all_nodes.extend(nodes)
-
-            event.on_end(payload={EventPayload.NODES: all_nodes})
+        for node in nodes_with_progress:
+            nodes = self.get_nodes_from_node(node)
+            all_nodes.extend(nodes)
 
         return all_nodes
 

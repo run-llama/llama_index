@@ -6,13 +6,18 @@ from json.decoder import JSONDecodeError
 
 import pydantic
 
-from ...core.api_error import ApiError
-from ...core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from ...types.configurable_transformation_definition import (
+from llama_index.ingestion.client.core.api_error import ApiError
+from llama_index.ingestion.client.core.client_wrapper import (
+    AsyncClientWrapper,
+    SyncClientWrapper,
+)
+from llama_index.ingestion.client.types.configurable_transformation_definition import (
     ConfigurableTransformationDefinition,
 )
-from ...types.data_sink_definition import DataSinkDefinition
-from ...types.data_source_definition import DataSourceDefinition
+from llama_index.ingestion.client.types.data_sink_definition import DataSinkDefinition
+from llama_index.ingestion.client.types.data_source_definition import (
+    DataSourceDefinition,
+)
 
 
 class ComponentDefinitionClient:
