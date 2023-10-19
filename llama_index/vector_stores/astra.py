@@ -10,16 +10,12 @@ import os
 
 from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
 
-from llama_index.indices.query.embedding_utils import (
-    get_top_k_mmr_embeddings,
-)
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
-    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
@@ -29,7 +25,6 @@ from llama_index.vector_stores.utils import (
 
 _logger = logging.getLogger(__name__)
 
-DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 DEFAULT_INSERTION_BATCH_SIZE = 20
 
 T = TypeVar("T")
@@ -79,13 +74,15 @@ class AstraVectorStore(VectorStore):
         ttl_seconds: Optional[int] = None,
         insertion_batch_size: int = DEFAULT_INSERTION_BATCH_SIZE,
     ) -> None:
-        import_err_msg = "`cassio` package not found, please run `pip install cassio`"
+        import_err_msg = "`astrapy` package not found, please run `pip install astrapy`"
+
+        # Try to import astrapy for use
         try:
             from astrapy.base import AstraClient
-            from astrapy.vector import AstraVectorClient
         except ImportError:
             raise ImportError(import_err_msg)
 
+        # Set all the required class parameters
         self._session = session
         self._keyspace = keyspace
         self._table = table
@@ -95,14 +92,17 @@ class AstraVectorStore(VectorStore):
 
         _logger.debug("Creating the Astra table")
 
+        # Create the AstraClient object
         self.astra_client = AstraClient(
-            db_id=os.environ.get("ASTRA_DB_ID"),
-            token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN"),
+            db_id=os.environ.get("ASTRA_DB_ID"), 
+            token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
         )
 
+        # Initialize our vector database and create the collection if needed
         self.astra_client_vectordb = self.astra_client.vector_database()
         self.astra_client_vectordb.create_vector_collection(
-            name=table, size=embedding_dimension
+            name=table,
+            size=embedding_dimension
         )
 
     def add(
@@ -115,67 +115,60 @@ class AstraVectorStore(VectorStore):
             nodes: List[BaseNode]: list of node with embeddings
 
         """
-        node_ids = []
-        node_contents = []
-        node_metadatas = []
-        node_embeddings = []
+        # Initialize list of objects to track
+        nodes_list = []
+
+        # Process each node individually
         for node in nodes:
+            # Get the metadata
             metadata = node_to_metadata_dict(
                 node,
                 remove_text=True,
                 flat_metadata=self.flat_metadata,
             )
-            node_ids.append(node.node_id)
-            node_contents.append(node.get_content(metadata_mode=MetadataMode.NONE))
-            node_metadatas.append(metadata)
-            node_embeddings.append(node.get_embedding())
 
-        _logger.debug(f"Adding {len(node_ids)} rows to table")
+            # One dictionary of node data per node
+            nodes_list.append(
+                {
+                    "_id": node.node_id,
+                    "content": node.get_content(metadata_mode=MetadataMode.NONE),
+                    "metadata": metadata,
+                    "$vector": node.get_embedding()
+                }
+            )
+
+        _logger.debug(f"Adding {len(nodes_list)} rows to table")
+        
         # Concurrent batching of inserts:
-        insertion_tuples = zip(node_ids, node_contents, node_metadatas, node_embeddings)
         for insertion_batch in _batch_iterable(
-            insertion_tuples, batch_size=self._insertion_batch_size
+            nodes_list, batch_size=self._insertion_batch_size
         ):
             futures = []
-            for (
-                node_id,
-                node_content,
-                node_metadata,
-                node_embedding,
-            ) in insertion_batch:
-                node_ref_doc_id = node_metadata["ref_doc_id"]
-                futures.append(
-                    self.vector_table.put_async(
-                        row_id=node_id,
-                        body_blob=node_content,
-                        vector=node_embedding,
-                        metadata=node_metadata,
-                        partition_id=node_ref_doc_id,
-                        ttl_seconds=self._ttl_seconds,
-                    )
-                )
+            for document in insertion_batch:
+                self.astra_client_vectordb.create(document)
             for future in futures:
                 _ = future.result()
 
-        return node_ids
+        return [n["_id"] for n in nodes_list]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document to delete.
+            ref_doc_id (str): The id of the document to delete.
 
         """
-        _logger.debug("Deleting a document from the Cassandra table")
-        self.vector_table.delete_partition(
-            partition_id=ref_doc_id,
+        _logger.debug("Deleting a document from the Astra table")
+        self.astra_client_vectordb.delete(
+            id=ref_doc_id,
+            **delete_kwargs
         )
 
     @property
     def client(self) -> Any:
-        """Return the underlying cassIO vector table object."""
-        return self.vector_table
+        """Return the underlying Astra vector table object."""
+        return self.astra_client_vectordb
 
     @staticmethod
     def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
@@ -184,115 +177,38 @@ class AstraVectorStore(VectorStore):
         return {f.key: f.value for f in query_filters.filters}
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """Query index for top k most similar nodes."""
 
-        Supported query modes: 'default' (most similar vectors) and 'mmr'.
-
-        Args:
-            query (VectorStoreQuery): the basic query definition. Defines:
-                mode (VectorStoreQueryMode): one of the supported modes
-                query_embedding (List[float]): query embedding to search against
-                similarity_top_k (int): top k most similar nodes
-                mmr_threshold (Optional[float]): this is the 0-to-1 MMR lambda.
-                    If present, takes precedence over the kwargs parameter.
-                    Ignored unless for MMR queries.
-
-        Args for query.mode == 'mmr' (ignored otherwise):
-            mmr_threshold (Optional[float]): this is the 0-to-1 lambda for MMR.
-                Note that in principle mmr_threshold could come in the query
-            mmr_prefetch_factor (Optional[float]): factor applied to top_k
-                for prefetch pool size. Defaults to 4.0
-            mmr_prefetch_k (Optional[int]): prefetch pool size. This cannot be
-                passed together with mmr_prefetch_factor
-
-        """
-        _available_query_modes = [
-            VectorStoreQueryMode.DEFAULT,
-            VectorStoreQueryMode.MMR,
-        ]
-        if query.mode not in _available_query_modes:
-            raise NotImplementedError(f"Query mode {query.mode} not available.")
-        #
+        # Get the query embedding
         query_embedding = cast(List[float], query.query_embedding)
 
-        # metadata filtering
-        if query.filters is not None:
-            # raise NotImplementedError("No metadata filtering yet")
-            query_metadata = self._query_filters_to_dict(query.filters)
-        else:
-            query_metadata = {}
+        # Set the parameters accordingly
+        sort = {"$vector": query_embedding}
+        options = {"limit": query.similarity_top_k}
+        projection = {"$vector": 1, "$similarity": 1}
 
-        _logger.debug(
-            f"Running ANN search on the Cassandra table (query mode: {query.mode})"
+        # Call the find method of the Astra API
+        matches = self.astra_client_vectordb.find(
+            sort=sort,
+            options=options,
+            projection=projection
         )
-        if query.mode == VectorStoreQueryMode.DEFAULT:
-            matches = list(
-                self.vector_table.metric_ann_search(
-                    vector=query_embedding,
-                    n=query.similarity_top_k,
-                    metric="cos",
-                    metric_threshold=None,
-                    metadata=query_metadata,
-                )
-            )
-            top_k_scores = [match["distance"] for match in matches]
-        elif query.mode == VectorStoreQueryMode.MMR:
-            # Querying a larger number of vectors and then doing MMR on them.
-            if (
-                kwargs.get("mmr_prefetch_factor") is not None
-                and kwargs.get("mmr_prefetch_k") is not None
-            ):
-                raise ValueError(
-                    "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
-                    "cannot coexist in a call to query()"
-                )
-            else:
-                if kwargs.get("mmr_prefetch_k") is not None:
-                    prefetch_k0 = int(kwargs["mmr_prefetch_k"])
-                else:
-                    prefetch_k0 = int(
-                        query.similarity_top_k
-                        * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
-                    )
-            prefetch_k = max(prefetch_k0, query.similarity_top_k)
-            #
-            prefetch_matches = list(
-                self.vector_table.metric_ann_search(
-                    vector=query_embedding,
-                    n=prefetch_k,
-                    metric="cos",
-                    metric_threshold=None,  # this is not `mmr_threshold`
-                    metadata=query_metadata,
-                )
-            )
-            #
-            mmr_threshold = query.mmr_threshold or kwargs.get("mmr_threshold")
-            if prefetch_matches:
-                pf_match_indices, pf_match_embeddings = zip(
-                    *enumerate(match["vector"] for match in prefetch_matches)
-                )
-            else:
-                pf_match_indices, pf_match_embeddings = [], []
-            pf_match_indices = list(pf_match_indices)
-            pf_match_embeddings = list(pf_match_embeddings)
-            mmr_similarities, mmr_indices = get_top_k_mmr_embeddings(
-                query_embedding,
-                pf_match_embeddings,
-                similarity_top_k=query.similarity_top_k,
-                embedding_ids=pf_match_indices,
-                mmr_threshold=mmr_threshold,
-            )
-            #
-            matches = [prefetch_matches[mmr_index] for mmr_index in mmr_indices]
-            top_k_scores = mmr_similarities
 
+        # We have three lists to return
         top_k_nodes = []
         top_k_ids = []
-        for match in matches:
+        top_k_scores = []
+
+        # Get every match
+        for match in matches["data"]["documents"]:
+            # Grab the node information
             node = metadata_dict_to_node(match["metadata"])
-            node.set_content(match["body_blob"])
+            node.set_content(match["content"])
+
+            # Append to the respective lists
             top_k_nodes.append(node)
-            top_k_ids.append(match["row_id"])
+            top_k_ids.append(match["_id"])
+            top_k_scores.append(match["$similarity"])
 
         return VectorStoreQueryResult(
             nodes=top_k_nodes,
