@@ -4,21 +4,13 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    stop_after_delay,
-    stop_all,
-    wait_random_exponential,
-)
-
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from llama_index.llms.openai_utils import (
-    resolve_from_aliases,
-    resolve_openai_credentials,
-)
+from llama_index.llms.openai_utils import (resolve_from_aliases,
+                                           resolve_openai_credentials)
+from tenacity import (retry, stop_after_attempt, stop_after_delay, stop_all,
+                      wait_random_exponential)
 
 
 class OpenAIEmbeddingMode(str, Enum):
@@ -281,10 +273,15 @@ class OpenAIEmbedding(BaseEmbedding):
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
 
+        if "model_name" in kwargs:
+            model_name = kwargs.pop("model_name")
+        else:
+            model_name = model
+
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
-            model_name=model,
+            model_name=model_name,
             deployment_name=deployment_name,
             additional_kwargs=additional_kwargs,
             api_key=api_key,
