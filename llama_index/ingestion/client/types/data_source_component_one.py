@@ -14,6 +14,7 @@ from .reader_config import ReaderConfig
 from .rss_reader import RssReader
 from .simple_web_page_reader import SimpleWebPageReader
 from .slack_reader import SlackReader
+from .text_node import TextNode
 from .trafilatura_web_reader import TrafilaturaWebReader
 from .twitter_tweet_reader import TwitterTweetReader
 from .wikipedia_reader import WikipediaReader
@@ -21,6 +22,7 @@ from .youtube_transcript_reader import YoutubeTranscriptReader
 
 DataSourceComponentOne = typing.Union[
     Document,
+    TextNode,
     RawFile,
     DiscordReader,
     ElasticsearchReader,
