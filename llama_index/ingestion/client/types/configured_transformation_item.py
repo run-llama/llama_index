@@ -23,7 +23,7 @@ class ConfiguredTransformationItem(pydantic.BaseModel):
 
     id: typing.Optional[str]
     configurable_transformation_type: ConfigurableTransformationNames = pydantic.Field(
-        description="Name for the type of transformation this is (e.g. SIMPLE_NODE_PARSER)"
+        description="Name for the type of transformation this is (e.g. SIMPLE_NODE_PARSER). Can also be an enum instance of llama_index.ingestion.transformations.ConfigurableTransformations. This will be converted to ConfigurableTransformationNames."
     )
     component: ConfiguredTransformationItemComponent = pydantic.Field(
         description="Component that implements the transformation"
