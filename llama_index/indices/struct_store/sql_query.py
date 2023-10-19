@@ -55,7 +55,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL_V2 = (
 )
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2 = PromptTemplate(
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL_V2,
-    prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
+    prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS_V2,
 )
 
 
@@ -329,7 +329,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 nodes=[NodeWithScore(node=TextNode(text=raw_response_str))],
             )
             cast(Dict, response.metadata).update(metadata)
-            return response
+            return cast(Response, response)
         else:
             response_str = raw_response_str
             return Response(response=response_str, metadata=metadata)
@@ -364,10 +364,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             )
             response = await response_synthesizer.asynthesize(
                 query=query_bundle.query_str,
-                nodes=[NodeWithScore(node=TextNode(raw_response_str))],
+                nodes=[NodeWithScore(node=TextNode(text=raw_response_str))],
             )
             cast(Dict, response.metadata).update(metadata)
-            return response
+            return cast(Response, response)
         else:
             response_str = raw_response_str
             return Response(response=response_str, metadata=metadata)
