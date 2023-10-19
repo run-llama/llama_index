@@ -15,11 +15,12 @@ class SummaryExtractor(pydantic.BaseModel):
     """
     Summary extractor. Node-level extractor with adjacent sharing.
     Extracts `section_summary`, `prev_section_summary`, `next_section_summary`
-    metadata fields
+    metadata fields.
+
     Args:
         llm_predictor (Optional[LLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
-        prompt_template (str): template for summary extraction.
+        prompt_template (str): template for summary extraction
     """
 
     is_text_node_only: typing.Optional[bool]

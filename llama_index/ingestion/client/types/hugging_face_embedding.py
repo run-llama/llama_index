@@ -21,9 +21,14 @@ class HuggingFaceEmbedding(pydantic.BaseModel):
     )
     callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
     tokenizer_name: str = pydantic.Field(description="Tokenizer name from HuggingFace.")
-    max_length: int = pydantic.Field(description="Maximum length of input.")
-    pooling: str = pydantic.Field(
+    max_length: typing.Optional[int] = pydantic.Field(
+        description="Maximum length of input."
+    )
+    pooling: typing.Optional[str] = pydantic.Field(
         description="Pooling strategy. One of ['cls', 'mean']."
+    )
+    normalize: typing.Optional[str] = pydantic.Field(
+        description="Normalize embeddings or not."
     )
     query_instruction: typing.Optional[str] = pydantic.Field(
         description="Instruction to prepend to query text."

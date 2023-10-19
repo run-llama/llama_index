@@ -5,25 +5,22 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
+from llama_index.ingestion.client.generated_client.core.datetime_utils import (
+    serialize_datetime,
+)
 
-from .status_enum import StatusEnum
+from .configurable_data_sink_names import ConfigurableDataSinkNames
+from .data_sink_create_component import DataSinkCreateComponent
 
 
-class PipelineExecution(pydantic.BaseModel):
+class DataSinkCreate(pydantic.BaseModel):
     """
-    Schema for a pipeline execution.
+    Schema for creating a data sink.
     """
 
-    id: typing.Optional[str] = pydantic.Field(description="Unique identifier")
-    created_at: typing.Optional[dt.datetime] = pydantic.Field(
-        description="Creation datetime"
-    )
-    updated_at: typing.Optional[dt.datetime] = pydantic.Field(
-        description="Update datetime"
-    )
-    pipeline_id: str
-    status: StatusEnum
+    sink_type: ConfigurableDataSinkNames
+    component: DataSinkCreateComponent
+    name: str
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
