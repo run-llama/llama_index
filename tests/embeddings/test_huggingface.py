@@ -38,7 +38,7 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             "feature_extraction",
             AsyncMock(return_value=raw_single_embedding),
         ) as mock_feature_extraction:
-            embedding = hf_inference_api_embeddings.embed_query(text="test")
+            embedding = hf_inference_api_embeddings.get_query_embedding("test")
         assert isinstance(embedding, list)
         assert len(embedding) == 1024
         assert np.all(
@@ -53,7 +53,7 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             "feature_extraction",
             AsyncMock(return_value=raw_single_embedding),
         ) as mock_feature_extraction:
-            embedding = hf_inference_api_embeddings.embed_query(text="test")
+            embedding = hf_inference_api_embeddings.get_query_embedding("test")
         assert isinstance(embedding, list)
         assert len(embedding) == 1024
         assert np.all(

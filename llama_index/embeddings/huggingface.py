@@ -1,7 +1,6 @@
 import asyncio
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
-from llama_index.bridge.langchain import Embeddings
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import (
@@ -186,7 +185,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed(texts)
 
 
-class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, Embeddings):
+class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):  # type: ignore[misc]
     """
     Wrapper on the Hugging Face's Inference API for embeddings.
 
@@ -202,40 +201,28 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, Embeddings):
             " the model's raw output needs pooling."
         ),
     )
+    query_instruction: Optional[str] = Field(
+        default=None,
+        description=(
+            "Instruction to prepend during query embedding."
+            " Use of None means infer the instruction based on the model."
+            " Use of empty string will defeat instruction prepending entirely."
+        ),
+    )
+    text_instruction: Optional[str] = Field(
+        default=None,
+        description=(
+            "Instruction to prepend during text embedding."
+            " Use of None means infer the instruction based on the model."
+            " Use of empty string will defeat instruction prepending entirely."
+        ),
+    )
 
     @classmethod
     def class_name(cls) -> str:
         return "HuggingFaceInferenceAPIEmbeddings"
 
-    def embed_documents(self, texts: List[str]) -> List[Embedding]:
-        """
-        Embed a bunch of texts, in parallel.
-
-        Note: a new event loop is created internally for the embeddings.
-        """
-        loop = asyncio.new_event_loop()
-        try:
-            tasks = [loop.create_task(self.aembed_query(text)) for text in texts]
-            loop.run_until_complete(asyncio.wait(tasks))
-        finally:
-            loop.close()
-        return [task.result() for task in tasks]
-
-    def embed_query(self, text: str) -> Embedding:
-        return self.embed_documents(texts=[text])[0]
-
-    async def aembed_documents(self, texts: List[str]) -> List[Embedding]:
-        """
-        Embed a bunch of texts, in parallel and asynchronously.
-
-        Note: embeddings are done within an externally created event loop.
-        """
-        loop = asyncio.get_event_loop()
-        tasks = [loop.create_task(self.aembed_query(text)) for text in texts]
-        await asyncio.wait(tasks)
-        return [task.result() for task in tasks]
-
-    async def aembed_query(self, text: str) -> Embedding:
+    async def _aembed_single(self, text: str) -> Embedding:
         embedding = (await self._async_client.feature_extraction(text)).squeeze(axis=0)
         if len(embedding.shape) == 1:  # Some models pool internally
             return list(embedding)
@@ -246,3 +233,64 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, Embeddings):
                 f"Pooling is required for {self.model_name} because it returned"
                 " a > 1-D value, please specify pooling as not None."
             ) from exc
+
+    async def _aembed_bulk(self, texts: Sequence[str]) -> List[Embedding]:
+        """
+        Embed a sequence of text, in parallel and asynchronously.
+
+        NOTE: this uses an externally created asyncio event loop.
+        """
+        loop = asyncio.get_event_loop()
+        tasks = [loop.create_task(self._aembed(text)) for text in texts]
+        await asyncio.wait(tasks)
+        return [task.result() for task in tasks]
+
+    def _get_query_embedding(self, query: str) -> Embedding:
+        """
+        Embed the input query synchronously.
+
+        NOTE: a new asyncio event loop is created internally for this.
+        """
+        return asyncio.run(self._aget_query_embedding(query))
+
+    def _get_text_embedding(self, text: str) -> Embedding:
+        """
+        Embed the text query synchronously.
+
+        NOTE: a new asyncio event loop is created internally for this.
+        """
+        return asyncio.run(self._aget_text_embedding(text))
+
+    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        """
+        Embed the input sequence of text synchronously and in parallel.
+
+        NOTE: a new asyncio event loop is created internally for this.
+        """
+        loop = asyncio.new_event_loop()
+        try:
+            tasks = [
+                loop.create_task(self._aget_text_embedding(text)) for text in texts
+            ]
+            loop.run_until_complete(asyncio.wait(tasks))
+        finally:
+            loop.close()
+        return [task.result() for task in tasks]
+
+    async def _aget_query_embedding(self, query: str) -> Embedding:
+        return await self._aembed_single(
+            text=format_query(query, self.model_name, self.query_instruction)
+        )
+
+    async def _aget_text_embedding(self, text: str) -> Embedding:
+        return await self._aembed_single(
+            text=format_text(text, self.model_name, self.text_instruction)
+        )
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        return await self._aembed_bulk(
+            texts=[
+                format_text(text, self.model_name, self.text_instruction)
+                for text in texts
+            ]
+        )
