@@ -224,7 +224,7 @@ description. Be careful to not query for columns that do not exist. \
 Pay attention to which column is in which table. Also, qualify column names \
 with the table name when needed.
 
-IMPORTANT NOTE: you can use specialized pgvector syntax (`<-->`) to do nearest \
+IMPORTANT NOTE: you can use specialized pgvector syntax (`<->`) to do nearest \
 neighbors/semantic search to a given vector from an embeddings column in the table. \
 The embeddings value for a given row typically represents the semantic meaning of that row. \
 The vector represents an embedding representation \
