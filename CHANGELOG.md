@@ -1,9 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.47] - 2023-10-19
 
 ### New Features
-
+- add response synthesis to text-to-SQL  (#8196)
 - Added support for `LLMRailsEmbeddings` (#8169)
 
 ## [0.8.46] - 2023-10-18
