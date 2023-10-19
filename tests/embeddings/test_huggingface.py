@@ -61,3 +61,13 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             == raw_single_embedding[0].mean(axis=0)
         )
         mock_feature_extraction.assert_awaited_once_with("test")
+
+    def test_serialization(
+        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbeddings
+    ) -> None:
+        serialized = hf_inference_api_embeddings.to_dict()
+        # Check Hugging Face Inference API base class specifics
+        assert serialized["model_name"] == STUB_MODEL_NAME
+        assert isinstance(serialized["context_window"], int)
+        # Check Hugging Face Inference API Embeddings derived class specifics
+        assert serialized["pooling"] == Pooling.CLS
