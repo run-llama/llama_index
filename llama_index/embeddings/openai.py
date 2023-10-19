@@ -281,10 +281,15 @@ class OpenAIEmbedding(BaseEmbedding):
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
 
+        if "model_name" in kwargs:
+            model_name = kwargs.pop("model_name")
+        else:
+            model_name = model
+
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
-            model_name=model,
+            model_name=model_name,
             deployment_name=deployment_name,
             additional_kwargs=additional_kwargs,
             api_key=api_key,
