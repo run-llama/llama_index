@@ -124,14 +124,9 @@ You can use these modules to do joint question-answering and summarization, or e
 
 **Core Module Resources**
 
-```{toctree}
----
-maxdepth: 1
----
-/core_modules/query_modules/query_engine/root.md
-/core_modules/query_modules/router/root.md
-/core_modules/agent_modules/agents/root.md
-```
+* [Query engine](/module_guides/putting_it_all_together/query_engine/root.md)
+* [Agents](/module_guides/putting_it_all_together/agents/root.md)
+* [Router](/module_guides/querying/router/root.md)
 
 **Detailed Guide Resources**
 

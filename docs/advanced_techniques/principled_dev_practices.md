@@ -8,8 +8,7 @@ Here we provide some general guidance to help you better anticipate the challeng
 ---
 maxdepth: 1
 ---
-/end_to_end_tutorials/dev_practices/development_pathway.md
-
+/advanced_techniques/development_pathway.md
 ```
 
 We've also accumulated some techniques for creating more performant RAG applications.
@@ -18,8 +17,7 @@ We've also accumulated some techniques for creating more performant RAG applicat
 ---
 maxdepth: 1
 ---
-/end_to_end_tutorials/dev_practices/production_rag.md
-
+/advanced_techniques/production_rag.md
 ```
 
 With that said, we want to establish some general pillars of principled development for LLM and RAG applications.
@@ -34,9 +32,9 @@ With that said, we want to establish some general pillars of principled developm
 ---
 maxdepth: 1
 ---
-/end_to_end_tutorials/dev_practices/observability.md
-/end_to_end_tutorials/dev_practices/evaluation.md
-/end_to_end_tutorials/dev_practices/monitoring.md
+/advanced_techniques/dev_practices/observability.md
+/advanced_techniques/dev_practices/evaluation.md
+/advanced_techniques/dev_practices/monitoring.md
 ```
 
 ## Contribute Your Insights!

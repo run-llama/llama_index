@@ -10,6 +10,5 @@ We have two configuration modules that can be configured separately and passed t
 maxdepth: 1
 hidden: true
 ---
-storage_context.md
 service_context.md
 ```

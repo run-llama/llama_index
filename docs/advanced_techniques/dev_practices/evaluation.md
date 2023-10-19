@@ -22,8 +22,8 @@ The analogy with software testing is integration tests and unit tests. You shoul
 ---
 maxdepth: 1
 ---
-/end_to_end_tutorials/dev_practices/e2e_evaluation.md
-/end_to_end_tutorials/dev_practices/component_wise_evaluation.md
+/optimizing/evaluation/e2e_evaluation.md
+/optimizing/evaluation/component_wise_evaluation.md
 ```
 
 Here is an overview of the existing modules for evaluation. We will be adding more modules and support over time.
@@ -32,7 +32,7 @@ Here is an overview of the existing modules for evaluation. We will be adding mo
 ---
 maxdepth: 1
 ---
-/core_modules/supporting_modules/evaluation/root.md
+/module_guides/evaluation/root.md
 ```
 
 ### E2E or Component-Wise - Which Do I Start With?

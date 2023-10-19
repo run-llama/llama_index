@@ -26,7 +26,7 @@ LlamaIndex provides the following tools:
 - **Application integrations** tie LlamaIndex back into the rest of your ecosystem. This could be LangChain, Flask, Docker, ChatGPT, or… anything else!
 
 👨‍👩‍👧‍👦 Who is LlamaIndex for?
-*************************
+*******************************************
 
 LlamaIndex provides tools for beginners, advanced users, and everyone in between.
 
@@ -140,26 +140,8 @@ Associated projects
    module_guides/querying/querying.md
    module_guides/putting_it_all_together/putting_it_all_together.md
    module_guides/observability/observability.md
-   module_guides/evaluating/evaluating.md
+   module_guides/evaluating/root.md
    module_guides/supporting_modules/supporting_modules.md
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Development
-   :hidden:
-
-   development/contributing.rst
-   development/documentation.rst
-   development/privacy.md
-   development/changelog.rst
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Community
-   :hidden:
-
-   community/integrations.md
-   community/app_showcase.md
 
 .. toctree::
    :maxdepth: 1
@@ -169,7 +151,24 @@ Associated projects
    api_reference/index.rst
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+   :caption: Community
    :hidden:
 
-   deprecated_terms.md
+   community/integrations.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contributing
+   :hidden:
+
+   contributing/contributing.rst
+   contributing/documentation.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Changes
+   :hidden:
+
+   changes/changelog.rst
+   changes/deprecated_terms.md

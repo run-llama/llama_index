@@ -29,8 +29,8 @@ print(resp)
 ---
 maxdepth: 1
 ---
-usage_standalone.md
-usage_custom.md
+llms/usage_standalone.md
+llms/usage_custom.md
 ```
 
 ## LLM Compatibility Tracking
@@ -90,7 +90,7 @@ llms/modules.md
 ---
 maxdepth: 1
 ---
-/module_guides/using_llms/embeddings/root.md
+/module_guides/indexing/embeddings.md
 /module_guides/using_llms/prompts.md
 /module_guides/using_llms/local.md
 Run Llama2 locally <https://replicate.com/blog/run-llama-locally>

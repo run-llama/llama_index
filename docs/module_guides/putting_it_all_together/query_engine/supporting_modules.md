@@ -4,5 +4,5 @@
 ---
 maxdepth: 1
 ---
-advanced/query_transformations.md
+/optimizing/advanced_retrieval/query_transformations.md
 ```

@@ -128,7 +128,7 @@ maxdepth: 1
 ---
 maxdepth: 1
 ---
-/examples/llm/XinferenceLocalDeployment.ipynb
+/examples/llm/xinference_local_deployment.ipynb
 ```
 
 ## MonsterAPI
