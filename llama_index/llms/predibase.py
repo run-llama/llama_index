@@ -87,7 +87,8 @@ class PredibaseLLM(CustomLLM):
             "temperature": self.temperature,
             "max_new_tokens": self.max_new_tokens,
         }
-        results = self._client.prompt(prompt, self.model_name, options=model_kwargs)
+        llm = self._client.LLM(f"pb://deployments/{self.model_name}")
+        results = llm.prompt(prompt, options=model_kwargs)
         return CompletionResponse(
             text=results.loc[0, "response"], additional_kwargs=model_kwargs
         )
