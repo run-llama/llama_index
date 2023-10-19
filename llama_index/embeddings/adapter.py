@@ -6,6 +6,7 @@ from typing import Any, List, Optional, Type, cast
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.utils import infer_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class AdapterEmbeddingModel(BaseEmbedding):
         from llama_index.embeddings.adapter_utils import BaseAdapter, LinearLayer
 
         if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = infer_torch_device()
             logger.info(f"Use pytorch device: {device}")
         self._target_device = torch.device(device)
 
