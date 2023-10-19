@@ -364,7 +364,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             )
             response = await response_synthesizer.asynthesize(
                 query=query_bundle.query_str,
-                nodes=[NodeWithScore(node=TextNode(raw_response_str))],
+                nodes=[NodeWithScore(node=TextNode(text=raw_response_str))],
             )
             cast(Dict, response.metadata).update(metadata)
             return cast(Response, response)
