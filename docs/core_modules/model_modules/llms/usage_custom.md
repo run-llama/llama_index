@@ -203,7 +203,7 @@ context_window = 2048
 # set number of output tokens
 num_output = 256
 
-# store the pipeline/model outisde of the LLM class to avoid memory issues
+# store the pipeline/model outside of the LLM class to avoid memory issues
 model_name = "facebook/opt-iml-max-30b"
 pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
 

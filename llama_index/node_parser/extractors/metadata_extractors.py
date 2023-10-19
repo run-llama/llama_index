@@ -403,7 +403,8 @@ class SummaryExtractor(MetadataFeatureExtractor):
     """
     Summary extractor. Node-level extractor with adjacent sharing.
     Extracts `section_summary`, `prev_section_summary`, `next_section_summary`
-    metadata fields
+    metadata fields.
+
     Args:
         llm_predictor (Optional[BaseLLMPredictor]): LLM predictor
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'

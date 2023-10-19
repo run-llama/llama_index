@@ -38,6 +38,8 @@ Knowledge Graph RAG Retriever </examples/query_engine/knowledge_graph_rag_query_
 ---
 maxdepth: 1
 ---
+/examples/retrievers/simple_fusion.ipynb
+/examples/retrievers/reciprocal_rerank_fusion.ipynb
 Auto-Retrieval (with Chroma) </examples/vector_stores/chroma_auto_retriever.ipynb>
 Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/query_engine/pdf_tables/recursive_retriever.ipynb

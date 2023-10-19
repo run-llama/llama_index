@@ -29,7 +29,7 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
 
 
 def extract_final_response(input_text: str) -> Tuple[str, str]:
-    pattern = r"\s*Thought:(.*?)Answer:(.*?)(?:\n|$)"
+    pattern = r"\s*Thought:(.*?)Answer:(.*?)(?:$)"
 
     match = re.search(pattern, input_text, re.DOTALL)
     if not match:

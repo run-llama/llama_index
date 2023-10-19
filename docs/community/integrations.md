@@ -7,11 +7,12 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
 
 ## Agent Tools
+
 The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
 ## LLMs
-The full set of supported LLMs are found [here](/core_modules/model_modules/llms/modules.md).
 
+The full set of supported LLMs are found [here](/core_modules/model_modules/llms/modules.md).
 
 ## Observability/Tracing/Evaluation
 
@@ -30,6 +31,7 @@ integrations/deepeval.md
 ```
 
 ## Structured Outputs
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -40,6 +42,7 @@ OpenAI Function Calling </examples/output_parsing/openai_pydantic_program.ipynb>
 ```
 
 ## Storage and Managed Indexes
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -50,6 +53,7 @@ integrations/managed_indices.md
 ```
 
 ## Application Frameworks
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -60,6 +64,7 @@ Chainlit <https://docs.chainlit.io/integrations/llama-index>
 ```
 
 ## Distributed Compute
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -69,6 +74,7 @@ LlamaIndex + Ray <https://www.anyscale.com/blog/build-and-scale-a-powerful-query
 ```
 
 ## Other
+
 ```{toctree}
 ---
 maxdepth: 1

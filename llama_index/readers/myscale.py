@@ -21,7 +21,7 @@ def format_list_to_string(lst: List) -> str:
 
 
 class MyScaleSettings:
-    """MyScale Client Configuration
+    """MyScale Client Configuration.
 
     Attribute:
         table (str) : Table name to operate on.

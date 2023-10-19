@@ -14,7 +14,7 @@ from llama_index.node_parser import SimpleNodeParser
 node_parser = SimpleNodeParser.from_defaults(chunk_size=1024, chunk_overlap=20)
 ```
 
-You can find more usage details and availbale customization options below.
+You can find more usage details and available customization options below.
 
 ```{toctree}
 ---

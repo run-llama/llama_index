@@ -11,10 +11,11 @@ LlamaIndex allows you to use any data loader within the LlamaIndex core repo or 
 The Tool will 1) load data using the data loader, 2) index the data, and 3) query the data and return the response in an ad-hoc manner.
 
 **Resources**
+
 - [OnDemandLoaderTool Tutorial](/examples/tools/OnDemandLoaderTool.ipynb)
 
-
 ### Use a query engine as a Langchain Tool
+
 LlamaIndex provides Tool abstractions so that you can use a LlamaIndex query engine along with a Langchain agent.
 
 For instance, you can choose to create a "Tool" from an `QueryEngine` directly as follows:
@@ -36,6 +37,7 @@ tool = LlamaIndexTool.from_tool_config(tool_config)
 ### Llama Demo Notebook: Tool + Memory module
 
 We provide another demo notebook showing how you can build a chat agent with the following components.
+
 - Using LlamaIndex as a generic callable tool with a Langchain agent
 - Using LlamaIndex as a memory module; this allows you to insert arbitrary amounts of conversation history with a Langchain chatbot!
 

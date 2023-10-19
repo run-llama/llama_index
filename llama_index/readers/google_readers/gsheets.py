@@ -104,8 +104,7 @@ class GoogleSheetsReader(BasePydanticReader):
                 .execute()
             )
             sheet_text += (
-                "\n".join(map(lambda row: "\t".join(row), response.get("values", [])))
-                + "\n"
+                "\n".join("\t".join(row) for row in response.get("values", [])) + "\n"
             )
         return sheet_text
 

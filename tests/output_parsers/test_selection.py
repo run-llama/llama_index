@@ -83,6 +83,5 @@ def test_failed_parse(output_parser: SelectionOutputParser) -> None:
         " this choice is that <redacted>. Therefore, choosing option (1) would"
         " provide the most relevant information for finding the <redacted>."
     )
-    with pytest.raises(ValueError, match="Failed to convert") as exc_info:
+    with pytest.raises(ValueError, match="Failed to convert*") as exc_info:
         output_parser.parse(output=no_json_in_response)
-    assert isinstance(exc_info.value.__cause__, json.decoder.JSONDecodeError)

@@ -47,7 +47,7 @@ class BaseRetriever(ABC):
     def get_service_context(self) -> Optional[ServiceContext]:
         """Attempts to resolve a service context.
         Short-circuits at self.service_context, self._service_context,
-        or self._index.service_context
+        or self._index.service_context.
         """
         if hasattr(self, "service_context"):
             return self.service_context
