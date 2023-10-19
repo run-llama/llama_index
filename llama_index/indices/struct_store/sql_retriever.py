@@ -1,5 +1,7 @@
 """SQL Retriever."""
 
+from abc import ABC, abstractmethod
+from enum import Enum
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import NodeWithScore, TextNode
@@ -16,32 +18,6 @@ from sqlalchemy import Table
 import logging
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
-
-# **NOTE**: deprecated (for older versions of sql query engine)
-DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
-    "Given an input question, synthesize a response from the query results.\n"
-    "Query: {query_str}\n"
-    "SQL: {sql_query}\n"
-    "SQL Response: {sql_response_str}\n"
-    "Response: "
-)
-DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
-    DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL,
-    prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
-)
-
-# **NOTE**: newer version of sql query engine
-DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL_V2 = (
-    "Given an input question, synthesize a response from the query results.\n"
-    "Query: {query_str}\n"
-    "SQL: {sql_query}\n"
-    "SQL Response: {context_str}\n"
-    "Response: "
-)
-DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2 = PromptTemplate(
-    DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL_V2,
-    prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -93,13 +69,62 @@ class SQLRetriever(BaseRetriever):
             return self._format_node_results(results, col_keys)
 
 
-def _validate_prompt(response_synthesis_prompt: BasePromptTemplate) -> None:
-    """Validate prompt."""
-    if response_synthesis_prompt.template_vars != DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2.template_vars:
-        raise ValueError(
-            "response_synthesis_prompt must have the following template variables: "
-            "query_str, sql_query, context_str"
+class SQLParserMode(str, Enum):
+    """SQL Parser Mode."""
+    DEFAULT = "default"
+    PGVECTOR = "pgvector"
+
+
+class BaseSQLParser(ABC):
+    """Base SQL Parser."""
+    @abstractmethod
+    def parse_response_to_sql(self, response: str, query_bundle: QueryBundle) -> str:
+        """Parse response to SQL."""
+
+
+class DefaultSQLParser(BaseSQLParser):
+    """Default SQL Parser."""
+
+    def parse_response_to_sql(self, response: str, query_bundle: QueryBundle) -> str:
+        """Parse response to SQL."""
+        sql_query_start = response.find("SQLQuery:")
+        if sql_query_start != -1:
+            response = response[sql_query_start:]
+            # TODO: move to removeprefix after Python 3.9+
+            if response.startswith("SQLQuery:"):
+                response = response[len("SQLQuery:") :]
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
+            response = response[:sql_result_start]
+        return response.strip().strip("```").strip()
+
+
+class PGVectorSQLParser(BaseSQLParser):
+    """PGVector SQL Parser."""
+
+    def __init__(self, embed_model: str) -> None:
+        """Initialize params."""
+        self._embed_model = embed_model
+
+    def parse_response_to_sql(self, response: str, query_bundle: QueryBundle) -> str:
+        """Parse response to SQL."""
+        sql_query_start = response.find("SQLQuery:")
+        if sql_query_start != -1:
+            response = response[sql_query_start:]
+            # TODO: move to removeprefix after Python 3.9+
+            if response.startswith("SQLQuery:"):
+                response = response[len("SQLQuery:") :]
+        sql_result_start = response.find("SQLResult:")
+        if sql_result_start != -1:
+            response = response[:sql_result_start]
+
+        # this gets you the sql string with [query_vector] placeholders
+        raw_sql_str = response.strip().strip("```").strip()
+        query_embedding = self._service_context.embed_model.get_query_embedding(
+            query_bundle.query_str
         )
+        query_embedding_str = str(query_embedding)
+        return raw_sql_str.replace("[query_vector]", query_embedding_str)
 
 
 class NLSQLRetriever(BaseRetriever):
@@ -113,10 +138,6 @@ class NLSQLRetriever(BaseRetriever):
             Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
         context_query_kwargs (dict): Mapping from table name to context query.
             Defaults to None.
-        synthesize_response (bool): Whether to synthesize response from SQL query.
-            Defaults to True.
-        response_synthesis_prompt (BasePromptTemplate): Prompt template for response
-            synthesis. Defaults to DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2.
         tables (Union[List[str], List[Table]]): List of table names or Table objects.
         table_retriever (ObjectRetriever[SQLTableSchema]): Object retriever for
             SQLTableSchema objects. Defaults to None.
@@ -129,11 +150,10 @@ class NLSQLRetriever(BaseRetriever):
         sql_database: SQLDatabase,
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
-        synthesize_response: bool = True,
-        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         table_retriever: Optional[ObjectRetriever[SQLTableSchema]] = None,
         context_str_prefix: Optional[str] = None,
+        sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
@@ -146,12 +166,17 @@ class NLSQLRetriever(BaseRetriever):
         self._context_str_prefix = context_str_prefix
         self._service_context = service_context or ServiceContext.from_defaults()
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
-        self._response_synthesis_prompt = (
-            response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2
-        )
-        # do some basic prompt validation
-        _validate_prompt(self._response_synthesis_prompt)
-        self._synthesize_response = synthesize_response
+        self._sql_parser_mode = sql_parser_mode
+        self._sql_parser = self._load_sql_parser(sql_parser_mode, self._service_context)
+
+    def _load_sql_parser(self, sql_parser_mode: SQLParserMode, service_context: ServiceContext) -> BaseSQLParser:
+        """Load SQL parser."""
+        if sql_parser_mode == SQLParserMode.DEFAULT:
+            return DefaultSQLParser()
+        elif sql_parser_mode == SQLParserMode.PGVECTOR:
+            return PGVectorSQLParser(embed_model=service_context.embed_model)
+        else:
+            raise ValueError(f"Unknown SQL parser mode: {sql_parser_mode}")
 
     def _load_get_tables_fn(
         self,
@@ -175,19 +200,6 @@ class NLSQLRetriever(BaseRetriever):
             ]
             return lambda _: table_schemas
 
-    def _parse_response_to_sql(self, response: str, query_bundle: QueryBundle) -> str:
-        """Parse response to SQL."""
-        sql_query_start = response.find("SQLQuery:")
-        if sql_query_start != -1:
-            response = response[sql_query_start:]
-            # TODO: move to removeprefix after Python 3.9+
-            if response.startswith("SQLQuery:"):
-                response = response[len("SQLQuery:") :]
-        sql_result_start = response.find("SQLResult:")
-        if sql_result_start != -1:
-            response = response[:sql_result_start]
-        return response.strip().strip("```").strip()
-
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes given query."""
         table_desc_str = self._get_table_context(query_bundle)
@@ -200,11 +212,27 @@ class NLSQLRetriever(BaseRetriever):
             dialect=self._sql_database.dialect,
         )
 
-        sql_query_str = self._parse_response_to_sql(response_str, query_bundle)
+        sql_query_str = self._sql_parser.parse_response_to_sql(response_str, query_bundle)
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
         return self._sql_retriever.retrieve(sql_query_str)
-        
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Async retrieve nodes given query."""
+        table_desc_str = self._get_table_context(query_bundle)
+        logger.info(f"> Table desc str: {table_desc_str}")
+
+        response_str = await self._service_context.llm_predictor.apredict(
+            self._text_to_sql_prompt,
+            query_str=query_bundle.query_str,
+            schema=table_desc_str,
+            dialect=self._sql_database.dialect,
+        )
+
+        sql_query_str = self._sql_parser.parse_response_to_sql(response_str, query_bundle)
+        # assume that it's a valid SQL query
+        logger.debug(f"> Predicted SQL query: {sql_query_str}")
+        return self._sql_retriever.aretrieve(sql_query_str)
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
         """Get table context.
