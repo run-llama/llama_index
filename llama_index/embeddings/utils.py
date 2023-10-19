@@ -1,5 +1,4 @@
 """Embedding utils for LlamaIndex."""
-
 import os
 from typing import List, Optional, Union
 
