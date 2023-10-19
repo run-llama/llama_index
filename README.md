@@ -70,10 +70,10 @@ To build a simple vector store index using OpenAI:
 
 ```python
 import os
-os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
+os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_API_KEY"
 
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
 index = VectorStoreIndex.from_documents(documents)
 ```
 
@@ -81,19 +81,22 @@ To build a simple vector store index using Llama 2 hosted on [Replicate](https:/
 
 ```python
 import os
-from langchain.llms import Replicate
-from llama_index import ServiceContext
+os.environ["REPLICATE_API_TOKEN"] = "YOUR_REPLICATE_API_TOKEN"
 
-os.environ["REPLICATE_API_TOKEN"] = 'YOUR_REPLICATE_API_TOKEN'
+from langchain.llms import Replicate
 llama2_7b_chat = "meta/llama-2-7b-chat:8e6975e5ed6174911a6ff3d60540dfd4844201974602551e10e9e87ab143d81e"
 llm = Replicate(
     model=llama2_7b_chat,
     model_kwargs={"temperature": 0.01, "top_p": 1, "max_new_tokens":300}
 )
-service_context = ServiceContext.from_defaults(llm=llm)
+
+from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index import ServiceContext
+embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model)
 
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
 index = VectorStoreIndex.from_documents(documents, service_context=service_context)
 ```
 
@@ -101,7 +104,7 @@ To query:
 
 ```python
 query_engine = index.as_query_engine()
-query_engine.query("<question_text>?")
+query_engine.query("YOUR_QUESTION")
 ```
 
 By default, data is stored in-memory.
