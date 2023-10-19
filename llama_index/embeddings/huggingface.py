@@ -8,7 +8,7 @@ from llama_index.embeddings.huggingface_utils import (
     get_query_instruct_for_model_name,
     get_text_instruct_for_model_name,
 )
-from llama_index.utils import get_cache_dir
+from llama_index.utils import get_cache_dir, infer_torch_device
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
@@ -54,14 +54,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 "Please install transformers with `pip install transformers`."
             )
 
-        if device is None:
-            import torch
-
-            if torch.cuda.is_available():
-                device = "cuda"
-            else:
-                device = "cpu"
-        self._device = device
+        self._device = device or infer_torch_device()
 
         cache_folder = cache_folder or get_cache_dir()
 
@@ -69,7 +62,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
             model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             self._model = AutoModel.from_pretrained(
                 model_name, cache_dir=cache_folder
-            ).to(device)
+            ).to(self._device)
         else:
             self._model = model
 
