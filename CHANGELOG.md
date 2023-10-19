@@ -5,6 +5,7 @@
 ### New Features
 
 - Added support for `LLMRailsEmbeddings` (#8169)
+- Deprecate some functions for GuardrailsOutputParser (#8016)
 
 ## [0.8.46] - 2023-10-18
 
