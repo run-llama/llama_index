@@ -256,7 +256,9 @@ class IngestionPipeline(BaseModel):
 
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
-        pipeline_execution = client.pipeline.create_pipeline_execution(pipeline_id)
+        pipeline_execution = client.pipeline.create_configured_transformation_execution(
+            pipeline_id
+        )
 
         assert (
             pipeline_execution.id is not None
