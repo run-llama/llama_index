@@ -5,8 +5,8 @@ powered by the astrapy library
 
 """
 
-import logging
 import os
+import logging
 
 from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
 
@@ -78,7 +78,7 @@ class AstraVectorStore(VectorStore):
 
         # Try to import astrapy for use
         try:
-            from astrapy.base import AstraClient
+            from astrapy.collections import AstraDbCollection, AstraDb
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -92,17 +92,18 @@ class AstraVectorStore(VectorStore):
 
         _logger.debug("Creating the Astra table")
 
-        # Create the AstraClient object
-        self.astra_client = AstraClient(
+        self.astra_db = AstraDb(
             db_id=os.environ.get("ASTRA_DB_ID"), 
             token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
         )
 
-        # Initialize our vector database and create the collection if needed
-        self.astra_client_vectordb = self.astra_client.vector_database()
-        self.astra_client_vectordb.create_vector_collection(
-            name=table,
-            size=embedding_dimension
+        self.astra_db.create_collection(name=table, size=embedding_dimension)
+
+        # Create the AstraClient object
+        self.astra_db_collection = AstraDbCollection(
+            collection=table,
+            db_id=os.environ.get("ASTRA_DB_ID"),
+            token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
         )
 
     def add(
@@ -145,7 +146,7 @@ class AstraVectorStore(VectorStore):
         ):
             futures = []
             for document in insertion_batch:
-                self.astra_client_vectordb.create(document)
+                self.astra_db_collection.insert_one(document)
             for future in futures:
                 _ = future.result()
 
@@ -160,7 +161,7 @@ class AstraVectorStore(VectorStore):
 
         """
         _logger.debug("Deleting a document from the Astra table")
-        self.astra_client_vectordb.delete(
+        self.astra_db_collection.delete(
             id=ref_doc_id,
             **delete_kwargs
         )
@@ -168,7 +169,7 @@ class AstraVectorStore(VectorStore):
     @property
     def client(self) -> Any:
         """Return the underlying Astra vector table object."""
-        return self.astra_client_vectordb
+        return self.astra_db_collection
 
     @staticmethod
     def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
@@ -188,7 +189,7 @@ class AstraVectorStore(VectorStore):
         projection = {"$vector": 1, "$similarity": 1}
 
         # Call the find method of the Astra API
-        matches = self.astra_client_vectordb.find(
+        matches = self.astra_db_collection.find(
             sort=sort,
             options=options,
             projection=projection
