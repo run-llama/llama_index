@@ -4,13 +4,21 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    stop_after_delay,
+    stop_all,
+    wait_random_exponential,
+)
+
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from llama_index.llms.openai_utils import (resolve_from_aliases,
-                                           resolve_openai_credentials)
-from tenacity import (retry, stop_after_attempt, stop_after_delay, stop_all,
-                      wait_random_exponential)
+from llama_index.llms.openai_utils import (
+    resolve_from_aliases,
+    resolve_openai_credentials,
+)
 
 
 class OpenAIEmbeddingMode(str, Enum):
