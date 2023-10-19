@@ -77,7 +77,7 @@ documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
 index = VectorStoreIndex.from_documents(documents)
 ```
 
-To build a simple vector store index using Llama 2 hosted on [Replicate](https://replicate.com/), where you can easily create a free trial API token:
+To build a simple vector store index using non-OpenAI LLMs, e.g. Llama 2 hosted on [Replicate](https://replicate.com/), where you can easily create a free trial API token:
 
 ```python
 import os
