@@ -1,7 +1,7 @@
 """Default query for SQLStructStoreIndex."""
 import logging
 from abc import abstractmethod
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from sqlalchemy import Table
 
@@ -21,13 +21,13 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
-from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,
     get_response_synthesizer,
 )
-from llama_index.schema import TextNode, NodeWithScore
+from llama_index.schema import NodeWithScore, TextNode
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -234,7 +234,10 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
 def _validate_prompt(response_synthesis_prompt: BasePromptTemplate) -> None:
     """Validate prompt."""
-    if response_synthesis_prompt.template_vars != DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2.template_vars:
+    if (
+        response_synthesis_prompt.template_vars
+        != DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2.template_vars
+    ):
         raise ValueError(
             "response_synthesis_prompt must have the following template variables: "
             "query_str, sql_query, context_str"
@@ -319,13 +322,13 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             response_synthesizer = get_response_synthesizer(
                 service_context=self._service_context,
                 callback_manager=self._service_context.callback_manager,
-                text_qa_template=partial_synthesis_prompt
+                text_qa_template=partial_synthesis_prompt,
             )
             response = response_synthesizer.synthesize(
                 query=query_bundle.query_str,
                 nodes=[NodeWithScore(node=TextNode(text=raw_response_str))],
             )
-            response.metadata.update(metadata)
+            cast(Dict, response.metadata).update(metadata)
             return response
         else:
             response_str = raw_response_str
@@ -357,13 +360,13 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             response_synthesizer = get_response_synthesizer(
                 service_context=self._service_context,
                 callback_manager=self._service_context.callback_manager,
-                text_qa_template=partial_synthesis_prompt
+                text_qa_template=partial_synthesis_prompt,
             )
             response = await response_synthesizer.asynthesize(
                 query=query_bundle.query_str,
                 nodes=[NodeWithScore(node=TextNode(raw_response_str))],
             )
-            response.metadata.update(metadata)
+            cast(Dict, response.metadata).update(metadata)
             return response
         else:
             response_str = raw_response_str
