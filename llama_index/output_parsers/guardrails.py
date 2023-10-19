@@ -40,7 +40,7 @@ class GuardrailsOutputParser(BaseOutputParser):
         self.llm = llm
         self.format_key = format_key
 
-    @deprecated(version='0.8.46')
+    @deprecated(version="0.8.46")
     def from_rail(
         cls, rail: str, llm: Optional[BaseLLM] = None
     ) -> "GuardrailsOutputParser":
@@ -52,7 +52,7 @@ class GuardrailsOutputParser(BaseOutputParser):
 
         return cls(Guard.from_rail(rail), llm=llm)
 
-    @deprecated(version='0.8.46')
+    @deprecated(version="0.8.46")
     def from_rail_string(
         cls, rail_string: str, llm: Optional[BaseLLM] = None
     ) -> "GuardrailsOutputParser":
