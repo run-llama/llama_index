@@ -9,6 +9,7 @@
 ### Bug Fixes / Nits
 
 - Fixed missing spaces in prompt templates (#8190)
+- Remove auto-download of llama2-13B on exception (#8225)
 
 ## [0.8.47] - 2023-10-19
 
