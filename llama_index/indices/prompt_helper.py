@@ -20,7 +20,7 @@ from llama_index.node_parser.text.utils import truncate_text
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.prompt_utils import get_empty_prompt_txt
 from llama_index.schema import BaseComponent
-from llama_index.utils import globals_helper
+from llama_index.utils import get_tokenizer
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
@@ -84,7 +84,7 @@ class PromptHelper(BaseComponent):
             raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
 
         # TODO: make configurable
-        self._tokenizer = tokenizer or globals_helper.tokenizer
+        self._tokenizer = tokenizer or get_tokenizer()
 
         super().__init__(
             context_window=context_window,

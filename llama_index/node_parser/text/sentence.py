@@ -13,7 +13,7 @@ from llama_index.node_parser.text.utils import (
     split_by_sentence_tokenizer,
     split_by_sep,
 )
-from llama_index.utils import globals_helper
+from llama_index.utils import get_tokenizer
 
 SENTENCE_CHUNK_OVERLAP = 200
 CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?"
@@ -55,9 +55,7 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
     )
 
     _chunking_tokenizer_fn: Callable[[str], List[str]] = PrivateAttr()
-
-    _tokenizer: Callable = PrivateAttr()
-
+    _tokenizer: Callable = PrivateAttr(default_factory=get_tokenizer)
     _split_fns: List[Callable] = PrivateAttr()
     _sub_sentence_split_fns: List[Callable] = PrivateAttr()
 
@@ -85,7 +83,7 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
         self._chunking_tokenizer_fn = (
             chunking_tokenizer_fn or split_by_sentence_tokenizer()
         )
-        self._tokenizer = tokenizer or globals_helper.tokenizer
+        self._tokenizer = tokenizer or get_tokenizer()
 
         self._split_fns = [
             split_by_sep(paragraph_separator),

@@ -23,7 +23,7 @@ from llama_index.callbacks.schema import (
     EventPayload,
 )
 from llama_index.callbacks.token_counting import get_llm_token_counts
-from llama_index.utils import globals_helper
+from llama_index.utils import get_tokenizer
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
@@ -160,7 +160,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self._cur_trace_id: Optional[str] = None
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
-        self.tokenizer = tokenizer or globals_helper.tokenizer
+        self.tokenizer = tokenizer or get_tokenizer()
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )

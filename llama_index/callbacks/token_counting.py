@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utils import globals_helper
+from llama_index.utils import get_tokenizer
 
 
 @dataclass
@@ -74,7 +74,7 @@ class TokenCountingHandler(BaseCallbackHandler):
     ) -> None:
         self.llm_token_counts: List[TokenCountingEvent] = []
         self.embedding_token_counts: List[TokenCountingEvent] = []
-        self.tokenizer = tokenizer or globals_helper.tokenizer
+        self.tokenizer = tokenizer or get_tokenizer()
         self._verbose = verbose
 
         super().__init__(
