@@ -3,9 +3,9 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.schema import NodeWithScore, TextNode
-from typing import List, Optional, Any, Union, Callable
+from typing import List, Optional, Any, Union, Callable, Dict, Tuple
 from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.indices.service_context import ServiceContext
@@ -61,7 +61,7 @@ class SQLRetriever(BaseRetriever):
         """Retrieve nodes given query."""
         raw_response_str, metadata = self._sql_database.run_sql(query_bundle.query_str)
         if self._return_raw:
-            return raw_response_str
+            return NodeWithScore(node=TextNode(text=raw_response_str))
         else:
             # return formatted 
             results = metadata["result"]
@@ -200,8 +200,12 @@ class NLSQLRetriever(BaseRetriever):
             ]
             return lambda _: table_schemas
 
-    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Retrieve nodes given query."""
+    def retrieve_with_metadata(self, str_or_query_bundle: QueryType) -> Tuple[List[NodeWithScore], Dict]:
+        """Retrieve with metadata."""
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
@@ -215,10 +219,15 @@ class NLSQLRetriever(BaseRetriever):
         sql_query_str = self._sql_parser.parse_response_to_sql(response_str, query_bundle)
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
-        return self._sql_retriever.retrieve(sql_query_str)
+        retrieved_nodes = self._sql_retriever.retrieve(sql_query_str)
+        return retrieved_nodes, {"sql_query": sql_query_str}
 
-    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Async retrieve nodes given query."""
+    async def aretrieve_with_metadata(self, str_or_query_bundle: QueryType) -> Tuple[List[NodeWithScore], Dict]:
+        """Async retrieve with metadata."""
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
@@ -232,7 +241,19 @@ class NLSQLRetriever(BaseRetriever):
         sql_query_str = self._sql_parser.parse_response_to_sql(response_str, query_bundle)
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
-        return self._sql_retriever.aretrieve(sql_query_str)
+        retrieved_nodes = await self._sql_retriever.aretrieve(sql_query_str)
+        return retrieved_nodes, {"sql_query": sql_query_str}
+        
+
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Retrieve nodes given query."""
+        retrieved_nodes, _ = self.retrieve_with_metadata(query_bundle)
+        return retrieved_nodes
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Async retrieve nodes given query."""
+        retrieved_nodes, _ = await self.aretrieve_with_metadata(query_bundle)
+        return retrieved_nodes
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
         """Get table context.
