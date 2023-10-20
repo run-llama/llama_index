@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+### New Features
+
+- Add `DELETE` for MyScale vector store (#8159)
+
 ### Bug Fixes / Nits
 
 - Add normalization to huggingface embeddings (#8145)
+- Improve MyScale Hybrid Search (#8159)
 
 ## [0.8.45] - 2023-10-13
 
