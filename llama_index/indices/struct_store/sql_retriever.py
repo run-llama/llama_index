@@ -13,12 +13,10 @@ from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.indices.service_context import ServiceContext
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
-from llama_index.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
-    DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
     DEFAULT_TEXT_TO_SQL_PROMPT,
 )
-from llama_index.prompts.prompt_type import PromptType
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.utilities.sql_wrapper import SQLDatabase
 

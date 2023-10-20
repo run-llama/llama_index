@@ -23,11 +23,8 @@ from llama_index.prompts.default_prompts import (
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
-    BaseSynthesizer,
-    ResponseMode,
     get_response_synthesizer,
 )
-from llama_index.schema import NodeWithScore, TextNode
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)
