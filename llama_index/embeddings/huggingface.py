@@ -5,10 +5,10 @@ from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.embeddings.huggingface_utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
-    get_query_instruct_for_model_name,
-    get_text_instruct_for_model_name,
+    format_query,
+    format_text,
 )
-from llama_index.utils import get_cache_dir
+from llama_index.utils import get_cache_dir, infer_torch_device
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
@@ -54,14 +54,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 "Please install transformers with `pip install transformers`."
             )
 
-        if device is None:
-            import torch
-
-            if torch.cuda.is_available():
-                device = "cuda"
-            else:
-                device = "cpu"
-        self._device = device
+        self._device = device or infer_torch_device()
 
         cache_folder = cache_folder or get_cache_dir()
 
@@ -69,7 +62,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
             model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             self._model = AutoModel.from_pretrained(
                 model_name, cache_dir=cache_folder
-            ).to(device)
+            ).to(self._device)
         else:
             self._model = model
 
@@ -110,24 +103,6 @@ class HuggingFaceEmbedding(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
-
-    def _format_query_text(self, query_text: str) -> str:
-        """Format query text."""
-        instruction = self.text_instruction
-
-        if instruction is None:
-            instruction = get_query_instruct_for_model_name(self.model_name)
-
-        return f"{instruction} {query_text}".strip()
-
-    def _format_text(self, text: str) -> str:
-        """Format text."""
-        instruction = self.text_instruction
-
-        if instruction is None:
-            instruction = get_text_instruct_for_model_name(self.model_name)
-
-        return f"{instruction} {text}".strip()
 
     def _mean_pooling(self, model_output: Any, attention_mask: Any) -> Any:
         """Mean Pooling - Take attention mask into account for correct averaging."""
@@ -179,7 +154,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        query = self._format_query_text(query)
+        query = format_query(query, self.model_name, self.query_instruction)
         return self._embed([query])[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
@@ -192,12 +167,12 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        print(text)
-        text = self._format_text(text)
-        print(text)
+        text = format_text(text, self.model_name, self.text_instruction)
         return self._embed([text])[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        texts = [self._format_text(text) for text in texts]
+        texts = [
+            format_text(text, self.model_name, self.text_instruction) for text in texts
+        ]
         return self._embed(texts)

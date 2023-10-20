@@ -195,5 +195,6 @@ maxdepth: 1
 /examples/embeddings/huggingface.ipynb
 /examples/embeddings/elasticsearch.ipynb
 /examples/embeddings/clarifai.ipynb
+/examples/embeddings/llm_rails.ipynb
 /examples/embeddings/text_embedding_inference.ipynb
 ```
