@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Add `DELETE` for MyScale vector store (#8159)
+
 ### Bug Fixes / Nits
 
 - Fixed missing spaces in prompt templates (#8190)
@@ -25,6 +29,7 @@
 ### Bug Fixes / Nits
 
 - Add normalization to huggingface embeddings (#8145)
+- Improve MyScale Hybrid Search (#8159)
 - Fixed duplicate `FORMAT_STR` being inside prompt (#8171)
 - Added: support for output_kwargs={'max_colwidth': xx} for PandasQueryEngine (#8110)
 - Minor fix in the description for an argument in cohere llm (#8163)
