@@ -163,6 +163,7 @@ class NLSQLRetriever(BaseRetriever):
             SQLTableSchema objects. Defaults to None.
         context_str_prefix (str): Prefix for context string. Defaults to None.
         service_context (ServiceContext): Service context. Defaults to None.
+        return_raw (bool): Whether to return plain-text dump of SQL results, or parsed into Nodes.
 
     """
 
@@ -176,10 +177,11 @@ class NLSQLRetriever(BaseRetriever):
         context_str_prefix: Optional[str] = None,
         sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
         service_context: Optional[ServiceContext] = None,
+        return_raw: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._sql_retriever = SQLRetriever(sql_database)
+        self._sql_retriever = SQLRetriever(sql_database, return_raw=return_raw)
         self._sql_database = sql_database
         self._get_tables = self._load_get_tables_fn(
             sql_database, tables, context_query_kwargs, table_retriever
