@@ -272,7 +272,10 @@ class BaseNode(BaseComponent):
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
         return RelatedNodeInfo(
-            node_id=self.node_id, metadata=self.metadata, hash=self.hash
+            node_id=self.node_id,
+            node_type=self.get_type(),
+            metadata=self.metadata,
+            hash=self.hash,
         )
 
 

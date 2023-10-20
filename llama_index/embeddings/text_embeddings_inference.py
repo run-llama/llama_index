@@ -7,10 +7,7 @@ from llama_index.embeddings.base import (
     BaseEmbedding,
     Embedding,
 )
-from llama_index.embeddings.huggingface_utils import (
-    get_query_instruct_for_model_name,
-    get_text_instruct_for_model_name,
-)
+from llama_index.embeddings.huggingface_utils import format_query, format_text
 
 DEFAULT_URL = "http://127.0.0.1:8080"
 
@@ -95,49 +92,35 @@ class TextEmbeddingsInference(BaseEmbedding):
 
         return response.json()
 
-    def _format_query_text(self, query_text: str) -> str:
-        """Format query text."""
-        instruction = self.text_instruction
-
-        if instruction is None:
-            instruction = get_query_instruct_for_model_name(self.model_name)
-
-        return f"{instruction} {query_text}".strip()
-
-    def _format_text(self, text: str) -> str:
-        """Format text."""
-        instruction = self.text_instruction
-
-        if instruction is None:
-            instruction = get_text_instruct_for_model_name(self.model_name)
-
-        return f"{instruction} {text}".strip()
-
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        query = self._format_query_text(query)
+        query = format_query(query, self.model_name, self.query_instruction)
         return self._call_api([query])[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        text = self._format_text(text)
+        text = format_text(text, self.model_name, self.text_instruction)
         return self._call_api([text])[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        texts = [self._format_text(text) for text in texts]
+        texts = [
+            format_text(text, self.model_name, self.text_instruction) for text in texts
+        ]
         return self._call_api(texts)
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """Get query embedding async."""
-        query = self._format_query_text(query)
+        query = format_query(query, self.model_name, self.query_instruction)
         return (await self._acall_api([query]))[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Get text embedding async."""
-        text = self._format_text(text)
+        text = format_text(text, self.model_name, self.text_instruction)
         return (await self._acall_api([text]))[0]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        texts = [self._format_text(text) for text in texts]
+        texts = [
+            format_text(text, self.model_name, self.text_instruction) for text in texts
+        ]
         return await self._acall_api(texts)

@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.embeddings.huggingface_utils import format_query, format_text
 
 
 class OptimumEmbedding(BaseEmbedding):
@@ -106,14 +107,6 @@ class OptimumEmbedding(BaseEmbedding):
             f"`embed_model = OptimumEmbedding(folder_name='{output_path}')`."
         )
 
-    def _format_query_text(self, query_text: str) -> str:
-        """Format query text."""
-        return f"{self.query_instruction} {query_text}".strip()
-
-    def _format_text(self, text: str) -> str:
-        """Format text."""
-        return f"{self.text_instruction} {text}".strip()
-
     def _mean_pooling(self, model_output: Any, attention_mask: Any) -> Any:
         """Mean Pooling - Take attention mask into account for correct averaging."""
         import torch
@@ -158,7 +151,7 @@ class OptimumEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        query = self._format_query_text(query)
+        query = format_query(query, self.model_name, self.query_instruction)
         return self._embed([query])[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
@@ -171,10 +164,12 @@ class OptimumEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        text = self._format_text(text)
+        text = format_text(text, self.model_name, self.text_instruction)
         return self._embed([text])[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        texts = [self._format_text(text) for text in texts]
+        texts = [
+            format_text(text, self.model_name, self.text_instruction) for text in texts
+        ]
         return self._embed(texts)

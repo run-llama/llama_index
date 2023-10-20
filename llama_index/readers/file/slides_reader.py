@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
+from llama_index.utils import infer_torch_device
 
 
 class PptxReader(BaseReader):
@@ -55,14 +56,13 @@ class PptxReader(BaseReader):
 
     def caption_image(self, tmp_image_file: str) -> str:
         """Generate text caption of image."""
-        import torch
         from PIL import Image
 
         model = self.parser_config["model"]
         feature_extractor = self.parser_config["feature_extractor"]
         tokenizer = self.parser_config["tokenizer"]
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = infer_torch_device()
         model.to(device)
 
         max_length = 16
