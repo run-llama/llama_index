@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import Table
 
@@ -213,12 +213,14 @@ class NLSQLRetriever(BaseRetriever):
         """Load get_tables function."""
         context_query_kwargs = context_query_kwargs or {}
         if table_retriever is not None:
-            return lambda query_str: table_retriever.retrieve(query_str)
+            return lambda query_str: cast(Any, table_retriever).retrieve(query_str)
         else:
             if tables is not None:
-                table_names = [t.name if isinstance(t, Table) else t for t in tables]
+                table_names: List[str] = [
+                    t.name if isinstance(t, Table) else t for t in tables
+                ]
             else:
-                table_names = sql_database.get_usable_table_names()
+                table_names = list(sql_database.get_usable_table_names())
             context_strs = [context_query_kwargs.get(t, None) for t in table_names]
             table_schemas = [
                 SQLTableSchema(table_name=t, context_str=c)
