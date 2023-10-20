@@ -12,6 +12,7 @@ from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
+from llama_index.indices.struct_store.sql_retriever import NLSQLRetriever, SQLParserMode
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
@@ -28,7 +29,6 @@ from llama_index.response_synthesizers import (
 )
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.utilities.sql_wrapper import SQLDatabase
-from llama_index.indices.struct_store.sql_retriever import NLSQLRetriever, SQLParserMode
 
 logger = logging.getLogger(__name__)
 
@@ -275,7 +275,9 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(query_bundle)
+        retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(
+            query_bundle
+        )
 
         sql_query_str = metadata["sql_query"]
         if self._synthesize_response:
@@ -299,7 +301,9 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        retrieved_nodes, metadata = await self.sql_retriever.aretrieve_with_metadata(query_bundle)
+        retrieved_nodes, metadata = await self.sql_retriever.aretrieve_with_metadata(
+            query_bundle
+        )
 
         sql_query_str = metadata["sql_query"]
         if self._synthesize_response:
@@ -384,7 +388,6 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        
         text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT
         self._sql_retriever = NLSQLRetriever(
             sql_database,
@@ -423,7 +426,6 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-
         self._sql_retriever = NLSQLRetriever(
             sql_database,
             text_to_sql_prompt=text_to_sql_prompt,
