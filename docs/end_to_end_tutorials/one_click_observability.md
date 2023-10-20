@@ -40,7 +40,7 @@ And that's it! Executions will get seamlessly piped to downstream service (e.g. 
 
 ## Simple (LLM Inputs/Outputs)
 
-This simpe obvservability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
+This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
 
 #### Usage Pattern
 
