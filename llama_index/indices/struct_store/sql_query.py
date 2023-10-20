@@ -263,8 +263,8 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         self._synthesize_response = synthesize_response
         super().__init__(self._service_context.callback_manager, **kwargs)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def sql_retriever(self) -> NLSQLRetriever:
         """Get SQL retriever."""
 
@@ -273,17 +273,9 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         """Get service context."""
         return self._service_context
 
-    @abstractmethod
-    def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
-
-        Get tables schema + optional context as a single string.
-
-        """
-
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        retrieved_nodes, metadata = self.sql_retriever.retrieve(query_bundle)
+        retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(query_bundle)
 
         sql_query_str = metadata["sql_query"]
         if self._synthesize_response:
@@ -307,7 +299,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        retrieved_nodes, metadata = await self.sql_retriever.aretrieve(query_bundle)
+        retrieved_nodes, metadata = await self.sql_retriever.aretrieve_with_metadata(query_bundle)
 
         sql_query_str = metadata["sql_query"]
         if self._synthesize_response:
@@ -370,7 +362,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         return self._sql_retriever
 
 
-class PGVectorSQLQueryEngine(NLSQLTableQueryEngine):
+class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
     """PGvector SQL query engine.
 
     A modified version of the normal text-to-SQL query engine because
