@@ -78,7 +78,7 @@ class AstraVectorStore(VectorStore):
 
         # Try to import astrapy for use
         try:
-            from astrapy.collections import AstraDbCollection, AstraDb
+            from astrapy.collections import AstraDBCollection, AstraDB
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -92,7 +92,7 @@ class AstraVectorStore(VectorStore):
 
         _logger.debug("Creating the Astra table")
 
-        self.astra_db = AstraDb(
+        self.astra_db = AstraDB(
             db_id=os.environ.get("ASTRA_DB_ID"), 
             token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
         )
@@ -100,7 +100,7 @@ class AstraVectorStore(VectorStore):
         self.astra_db.create_collection(name=table, size=embedding_dimension)
 
         # Create the AstraClient object
-        self.astra_db_collection = AstraDbCollection(
+        self.astra_db_collection = AstraDBCollection(
             collection=table,
             db_id=os.environ.get("ASTRA_DB_ID"),
             token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
