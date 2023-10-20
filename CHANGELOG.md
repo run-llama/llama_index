@@ -8,8 +8,32 @@
 
 ### Bug Fixes / Nits
 
+- Fixed missing spaces in prompt templates (#8190)
+
+## [0.8.47] - 2023-10-19
+
+### New Features
+
+- add response synthesis to text-to-SQL (#8196)
+- Added support for `LLMRailsEmbeddings` (#8169)
+- Inferring MPS device with PyTorch (#8195)
+- Consolidated query/text prepending (#8189)
+
+## [0.8.46] - 2023-10-18
+
+### New Features
+
+- Add fine-tuning router support + embedding selector (#8174)
+- add more document converters (#8156)
+
+### Bug Fixes / Nits
+
 - Add normalization to huggingface embeddings (#8145)
 - Improve MyScale Hybrid Search (#8159)
+- Fixed duplicate `FORMAT_STR` being inside prompt (#8171)
+- Added: support for output_kwargs={'max_colwidth': xx} for PandasQueryEngine (#8110)
+- Minor fix in the description for an argument in cohere llm (#8163)
+- Fix Firestore client info (#8166)
 
 ## [0.8.45] - 2023-10-13
 

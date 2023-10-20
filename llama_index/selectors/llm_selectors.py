@@ -73,9 +73,6 @@ class LLMSingleSelector(BaseSelector):
         prompt_template_str = prompt_template_str or DEFAULT_SINGLE_SELECT_PROMPT_TMPL
         output_parser = output_parser or SelectionOutputParser()
 
-        # add output formatting to prompt template
-        prompt_template_str = output_parser.format(prompt_template_str)
-
         # construct prompt
         prompt = SingleSelectPrompt(
             template=prompt_template_str,

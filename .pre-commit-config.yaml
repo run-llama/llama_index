@@ -16,15 +16,24 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.292
+    rev: v0.1.0
 
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.9.1
+    rev: 23.10.0
     hooks:
       - id: black-jupyter
+        name: black-src
+        exclude: docs/
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 23.10.0
+    hooks:
+      - id: black-jupyter
+        name: black-docs
+        files: docs/
+        args: [--line-length=79]
   - repo: https://github.com/pappasam/toml-sort
     rev: v0.23.1
     hooks:
