@@ -12,6 +12,7 @@ from llama_index.llms.base import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.llms.bedrock import Bedrock
 from llama_index.llms.clarifai import Clarifai
 from llama_index.llms.cohere import Cohere
 from llama_index.llms.custom import CustomLLM
@@ -37,6 +38,7 @@ __all__ = [
     "Anthropic",
     "Anyscale",
     "AzureOpenAI",
+    "Bedrock",
     "ChatMessage",
     "ChatResponse",
     "ChatResponseAsyncGen",

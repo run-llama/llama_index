@@ -193,3 +193,12 @@ maxdepth: 1
 ---
 /examples/llm/clarifai.ipynb
 ```
+
+## Bedrock
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/bedrock.ipynb
+```
