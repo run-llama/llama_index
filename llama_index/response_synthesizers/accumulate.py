@@ -52,7 +52,7 @@ class Accumulate(BaseSynthesizer):
             raise ValueError("Unable to stream in Accumulate response mode")
 
         tasks = [
-            self._give_responses(query_str, text_chunk, use_async=True)
+            self._give_responses(query_str, text_chunk, use_async=True, **response_kwargs)
             for text_chunk in text_chunks
         ]
 
@@ -73,7 +73,7 @@ class Accumulate(BaseSynthesizer):
             raise ValueError("Unable to stream in Accumulate response mode")
 
         tasks = [
-            self._give_responses(query_str, text_chunk, use_async=self._use_async)
+            self._give_responses(query_str, text_chunk, use_async=self._use_async, **response_kwargs)
             for text_chunk in text_chunks
         ]
 
@@ -85,7 +85,7 @@ class Accumulate(BaseSynthesizer):
         return self._format_response(outputs, separator)
 
     def _give_responses(
-        self, query_str: str, text_chunk: str, use_async: bool = False
+        self, query_str: str, text_chunk: str, use_async: bool = False, **response_kwargs: Any
     ) -> List[Any]:
         """Give responses given a query and a corresponding text chunk."""
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
@@ -105,6 +105,7 @@ class Accumulate(BaseSynthesizer):
                 text_qa_template,
                 context_str=cur_text_chunk,
                 output_cls=self._output_cls,
+                **response_kwargs
             )
             for cur_text_chunk in text_chunks
         ]

@@ -100,27 +100,26 @@ class Refine(BaseSynthesizer):
         self,
         query_str: str,
         text_chunks: Sequence[str],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
-        prev_response_obj = cast(
-            Optional[RESPONSE_TEXT_TYPE], response_kwargs.get("prev_response", None)
-        )
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
-            if prev_response_obj is None:
+            if prev_response is None:
                 # if this is the first chunk, and text chunk already
                 # is an answer, then return it
                 response = self._give_response_single(
                     query_str,
                     text_chunk,
+                    **response_kwargs
                 )
             else:
                 # refine response if possible
                 response = self._refine_response_single(
-                    prev_response_obj, query_str, text_chunk
+                    prev_response, query_str, text_chunk, **response_kwargs
                 )
-            prev_response_obj = response
+            prev_response = response
         if isinstance(response, str):
             if self._output_cls is not None:
                 response = self._output_cls.parse_raw(response)
@@ -168,7 +167,8 @@ class Refine(BaseSynthesizer):
                     structured_response = cast(
                         StructuredRefineResponse,
                         program(
-                            context_str=cur_text_chunk, output_cls=self._output_cls
+                            context_str=cur_text_chunk, output_cls=self._output_cls,
+                            **response_kwargs
                         ),
                     )
                     query_satisfied = structured_response.query_satisfied
@@ -183,6 +183,7 @@ class Refine(BaseSynthesizer):
                     text_qa_template,
                     context_str=cur_text_chunk,
                     output_cls=self._output_cls,
+                    **response_kwargs
                 )
                 query_satisfied = True
             else:
@@ -190,6 +191,7 @@ class Refine(BaseSynthesizer):
                     cast(RESPONSE_TEXT_TYPE, response),
                     query_str,
                     cur_text_chunk,
+                    **response_kwargs
                 )
         if response is None:
             response = "Empty Response"
@@ -248,7 +250,8 @@ class Refine(BaseSynthesizer):
                     structured_response = cast(
                         StructuredRefineResponse,
                         program(
-                            context_msg=cur_text_chunk, output_cls=self._output_cls
+                            context_msg=cur_text_chunk, output_cls=self._output_cls,
+                            **response_kwargs
                         ),
                     )
                     query_satisfied = structured_response.query_satisfied
@@ -271,6 +274,7 @@ class Refine(BaseSynthesizer):
                     refine_template,
                     context_msg=cur_text_chunk,
                     output_cls=self._output_cls,
+                    **response_kwargs
                 )
 
         return response
@@ -279,25 +283,25 @@ class Refine(BaseSynthesizer):
         self,
         query_str: str,
         text_chunks: Sequence[str],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        prev_response_obj = cast(
-            Optional[RESPONSE_TEXT_TYPE], response_kwargs.get("prev_response", None)
-        )
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
-            if prev_response_obj is None:
+            if prev_response is None:
                 # if this is the first chunk, and text chunk already
                 # is an answer, then return it
                 response = await self._agive_response_single(
                     query_str,
                     text_chunk,
+                    **response_kwargs
                 )
             else:
                 response = await self._arefine_response_single(
-                    prev_response_obj, query_str, text_chunk
+                    prev_response, query_str, text_chunk
+                    **response_kwargs
                 )
-            prev_response_obj = response
+            prev_response = response
         if response is None:
             response = "Empty Response"
         if isinstance(response, str):
@@ -354,7 +358,9 @@ class Refine(BaseSynthesizer):
             if not self._streaming:
                 try:
                     structured_response = await program.acall(
-                        context_msg=cur_text_chunk
+                        context_msg=cur_text_chunk,
+                        output_cls=self._output_cls,
+                        **response_kwargs
                     )
                     structured_response = cast(
                         StructuredRefineResponse, structured_response
@@ -373,6 +379,8 @@ class Refine(BaseSynthesizer):
                 refine_template = self._refine_template.partial_format(
                     query_str=query_str, existing_answer=response
                 )
+            else:
+                raise ValueError("Streaming not supported for async")
 
         return response
 
@@ -395,7 +403,9 @@ class Refine(BaseSynthesizer):
             if response is None and not self._streaming:
                 try:
                     structured_response = await program.acall(
-                        context_str=cur_text_chunk
+                        context_str=cur_text_chunk,
+                        output_cls=self._output_cls,
+                        **response_kwargs
                     )
                     structured_response = cast(
                         StructuredRefineResponse, structured_response
@@ -414,6 +424,7 @@ class Refine(BaseSynthesizer):
                     cast(RESPONSE_TEXT_TYPE, response),
                     query_str,
                     cur_text_chunk,
+                    **response_kwargs
                 )
         if response is None:
             response = "Empty Response"
