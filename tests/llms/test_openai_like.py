@@ -1,3 +1,4 @@
+from typing import List
 from unittest.mock import patch
 
 from llama_index.llms import OpenAILike
@@ -5,7 +6,7 @@ from llama_index.llms.base import ChatMessage
 
 
 class MockTokenizer:
-    def encode(self, text: str) -> list[str]:
+    def encode(self, text: str) -> List[str]:
         return text.split(" ")
 
 
