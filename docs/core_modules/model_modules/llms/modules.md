@@ -13,6 +13,15 @@ maxdepth: 1
 
 ```
 
+## AI21
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/ai21.ipynb
+```
+
 ## Anthropic
 
 ```{toctree}
