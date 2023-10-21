@@ -83,11 +83,12 @@ To build a simple vector store index using non-OpenAI LLMs, e.g. Llama 2 hosted 
 import os
 os.environ["REPLICATE_API_TOKEN"] = "YOUR_REPLICATE_API_TOKEN"
 
-from langchain.llms import Replicate
+from llama_index.llms import Replicate
 llama2_7b_chat = "meta/llama-2-7b-chat:8e6975e5ed6174911a6ff3d60540dfd4844201974602551e10e9e87ab143d81e"
 llm = Replicate(
     model=llama2_7b_chat,
-    model_kwargs={"temperature": 0.01, "top_p": 1, "max_new_tokens":300}
+    temperature=0.01,
+    additional_kwargs={"top_p": 1, "max_new_tokens":300}
 )
 
 from llama_index.embeddings import HuggingFaceEmbedding
