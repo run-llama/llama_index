@@ -25,8 +25,10 @@ class CompactAndAccumulate(Accumulate):
             )
 
             return await super().aget_response(
-                query_str=query_str, text_chunks=new_texts, separator=separator,
-                **response_kwargs
+                query_str=query_str,
+                text_chunks=new_texts,
+                separator=separator,
+                **response_kwargs,
             )
 
     def get_response(
@@ -46,5 +48,8 @@ class CompactAndAccumulate(Accumulate):
             )
 
             return super().get_response(
-                query_str=query_str, text_chunks=new_texts, separator=separator, **response_kwargs
+                query_str=query_str,
+                text_chunks=new_texts,
+                separator=separator,
+                **response_kwargs,
             )
