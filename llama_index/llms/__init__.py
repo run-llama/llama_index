@@ -1,3 +1,4 @@
+from llama_index.llms.ai21 import AI21
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anyscale import Anyscale
 from llama_index.llms.azure_openai import AzureOpenAI
@@ -34,6 +35,7 @@ from llama_index.llms.replicate import Replicate
 from llama_index.llms.xinference import Xinference
 
 __all__ = [
+    "AI21",
     "Anthropic",
     "Anyscale",
     "AzureOpenAI",
