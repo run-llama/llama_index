@@ -156,7 +156,7 @@ class TencentVectorDB(VectorStore):
     """
 
     stores_text: bool = True
-    filter_fields: list[FilterField] = []
+    filter_fields: List[FilterField] = []
 
     def __init__(
         self,
@@ -454,7 +454,7 @@ class TencentVectorDB(VectorStore):
         delete_ids = ref_doc_id if isinstance(ref_doc_id, list) else [ref_doc_id]
         self.collection.delete(filter=Filter(Filter.In(DEFAULT_DOC_ID_KEY, delete_ids)))
 
-    def query_by_ids(self, ids: list[str]) -> list[Dict]:
+    def query_by_ids(self, ids: List[str]) -> List[Dict]:
         return self.collection.query(document_ids=ids, limit=len(ids))
 
     def truncate(self) -> None:
