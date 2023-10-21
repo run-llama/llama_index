@@ -22,7 +22,7 @@ Find all embedding model integrations here:
 ---
 maxdepth: 1
 ---
-/core_modules/model_modules/embeddings/root.md
+/module_guides/indexing/embeddings.md
 ```
 
 ## Chunk Sizes
@@ -69,7 +69,7 @@ Embeddings are not perfect, and may fail to return text chunks with matching key
 
 The solution to this issue is often hybrid search. In LlamaIndex, there are two main ways to achieve this:
 
-1. Use a vector database that has a hybrid search functionality (see [here](/core_modules/data_modules/storage/vector_stores.md) for a complete list).
+1. Use a vector database that has a hybrid search functionality (see [our complete list of supported vector stores](/module_guides/storing/vector_stores.md)).
 2. Set up a local hybrid search mechanism with BM25.
 
 Relevant guides with both approaches can be found below:
@@ -107,13 +107,13 @@ index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine(filters=filters)
 ```
 
-If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](/Users/loganmarkewich/platform/backend/llama_index_next/docs/core_modules/data_modules/storage/vector_stores.md), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
+If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](/module_guides/storing/vector_stores.md), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/core_modules/data_modules/index/vector_store_guide.ipynb
+/module_guides/indexing/vector_store_guide.ipynb
 ```
 
 ## Document/Node Usage
@@ -124,7 +124,7 @@ Take a look at our in-depth guides for more details on how to use Documents/Node
 ---
 maxdepth: 1
 ---
-/core_modules/data_modules/documents_and_nodes/usage_documents.md
-/core_modules/data_modules/documents_and_nodes/usage_nodes.md
-/core_modules/data_modules/documents_and_nodes/usage_metadata_extractor.md
+/module_guides/loading/documents_and_nodes/usage_documents.md
+/module_guides/loading/documents_and_nodes/usage_nodes.md
+/module_guides/loading/documents_and_nodes/usage_metadata_extractor.md
 ```

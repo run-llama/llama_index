@@ -27,14 +27,19 @@ Qualitative eval is more useful when generating long-form responses that are mea
 
 There is a spectrum of evaluation options ranging from metrics, cheaper models, more expensive models (GPT4), and human evaluation.
 
-Below is some example usage of the [evaluation modules](evaluation):
+Below is some example usage of the [evaluation modules](evaluation.md):
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/evaluation/TestNYC-Evaluation-Query.ipynb
-/examples/evaluation/TestNYC-Evaluation.ipynb
+/examples/evaluation/batch_eval.ipynb
+/examples/evaluation/correctness_eval.ipynb
+/examples/evaluation/faithfulness_eval.ipynb
+/examples/evaluation/guideline_eval.ipynb
+/examples/evaluation/pairwise_eval.ipynb
+/examples/evaluation/relevancy_eval.ipynb
+/examples/evaluation/semantic_similarity_eval.ipynb
 ```
 
 ## Discovery - Sensitivity Testing

@@ -1,5 +1,3 @@
-(Evaluation)=
-
 # Evaluation
 
 ## Setting the Stage
@@ -32,7 +30,7 @@ Here is an overview of the existing modules for evaluation. We will be adding mo
 ---
 maxdepth: 1
 ---
-/module_guides/evaluation/root.md
+/module_guides/evaluating/root.md
 ```
 
 ### E2E or Component-Wise - Which Do I Start With?

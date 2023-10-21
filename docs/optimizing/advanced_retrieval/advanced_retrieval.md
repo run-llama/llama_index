@@ -11,5 +11,5 @@
 ---
 maxdepth: 1
 ---
-/optimizing_rag/advanced_retrieval/query_transformations.md
+/optimizing/advanced_retrieval/query_transformations.md
 ```

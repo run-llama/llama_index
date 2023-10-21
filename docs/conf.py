@@ -50,7 +50,7 @@ myst_heading_anchors = 4
 suppress_warnings = ["myst.header"]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store","DOCS_README.md"]
 
 
 # -- Options for HTML output -------------------------------------------------
