@@ -10,6 +10,8 @@ from typing import (
     runtime_checkable,
 )
 
+import tiktoken
+
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
@@ -48,7 +50,7 @@ from llama_index.llms.openai_utils import (
 
 
 @runtime_checkable
-class _Tokenizer(Protocol):
+class Tokenizer(Protocol):
     """Tokenizers support an encode function that returns a list of ints"""
 
     def encode(self, text: str) -> List[int]:
@@ -120,19 +122,19 @@ class OpenAI(LLM):
     def class_name(cls) -> str:
         return "openai_llm"
 
-    def _get_context_window(self) -> int:
-        return openai_modelname_to_contextsize(self._get_model_name())
-
-    def _get_is_function_calling_model(self):
-        return (is_function_calling_model(self._get_model_name()),)
+    @property
+    def _tokenizer(self) -> Tokenizer:
+        return tiktoken.encoding_for_model(self._get_model_name())
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=self._get_context_window(),
+            context_window=openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
-            is_chat_model=self._is_chat_model,
-            is_function_calling_model=self._get_is_function_calling_model(),
+            is_chat_model=is_chat_model(model=self._get_model_name()),
+            is_function_calling_model=is_function_calling_model(
+                model=self._get_model_name()
+            ),
             model_name=self.model,
         )
 
@@ -170,15 +172,10 @@ class OpenAI(LLM):
             stream_complete_fn = self._stream_complete
         return stream_complete_fn(prompt, **kwargs)
 
-    @property
-    def _is_chat_model(self) -> bool:
-        """Infer if the OpenAI model supports the /chat/completions endpoint."""
-        return is_chat_model(model=self._get_model_name())
-
     def _use_chat_completions(self, kwargs: Dict[str, Any]) -> bool:
         if "use_chat_completions" in kwargs:
             return kwargs["use_chat_completions"]
-        return self._is_chat_model
+        return self.metadata.is_chat_model
 
     @property
     def _credential_kwargs(self) -> Dict[str, Any]:
@@ -332,22 +329,12 @@ class OpenAI(LLM):
 
         return gen()
 
-    def _get_encoding_for_model(self) -> _Tokenizer:
-        try:
-            import tiktoken
-        except ImportError as exc:
-            raise ImportError(
-                "Please install tiktoken to use the max_tokens=None feature."
-            ) from exc
-        return tiktoken.encoding_for_model(self._get_model_name())
-
     def _update_max_tokens(self, all_kwargs: Dict[str, Any], prompt: str) -> None:
         if self.max_tokens is not None:
             return
         # NOTE: non-chat completion endpoint requires max_tokens to be set
         context_window = self.metadata.context_window
-        encoding = self._get_encoding_for_model()
-        tokens = encoding.encode(prompt)
+        tokens = self._tokenizer.encode(prompt)
         max_tokens = context_window - len(tokens)
         if max_tokens <= 0:
             raise ValueError(
