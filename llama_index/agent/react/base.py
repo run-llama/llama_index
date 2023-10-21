@@ -86,6 +86,16 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActAgent":
+        """Convenience constructor method from set of of BaseTools (Optional).
+
+        NOTE: kwargs should have been exhausted by this point. In other words
+        the various upstream components such as BaseSynthesizer (response synthesizer)
+        or BaseRetriver should have picked up off their respective kwargs in their
+        constructions.
+
+        Returns:
+            ReActAgent
+        """
         llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
         if callback_manager is not None:
             llm.callback_manager = callback_manager
@@ -102,7 +112,6 @@ class ReActAgent(BaseAgent):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
-            **kwargs,
         )
 
     @property
