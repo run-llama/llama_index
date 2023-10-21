@@ -83,7 +83,9 @@ class PredibaseLLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> "CompletionResponse":
         llm = self._client.LLM(f"pb://deployments/{self.model_name}")
-        results = llm.prompt(prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature)
+        results = llm.prompt(
+            prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature
+        )
         return CompletionResponse(text=results.response)
 
     @llm_completion_callback()
