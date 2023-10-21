@@ -404,7 +404,7 @@ class ElasticsearchStore(VectorStore):
             async with self.client as client:
                 res = await client.delete_by_query(
                     index=self.index_name,
-                    query={"term": {"metadata.ref_doc_id": ref_doc_id}},
+                    query={"term": {"metadata.ref_doc_id.keyword": ref_doc_id}},
                     refresh=True,
                     **delete_kwargs,
                 )
