@@ -127,6 +127,7 @@ class BaseSynthesizer(ABC):
         query: QueryTextType,
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
             return Response("Empty Response")
@@ -142,6 +143,7 @@ class BaseSynthesizer(ABC):
                 text_chunks=[
                     n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
                 ],
+                **response_kwargs,
             )
 
             additional_source_nodes = additional_source_nodes or []
@@ -158,6 +160,7 @@ class BaseSynthesizer(ABC):
         query: QueryTextType,
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
             return Response("Empty Response")
@@ -173,6 +176,7 @@ class BaseSynthesizer(ABC):
                 text_chunks=[
                     n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
                 ],
+                **response_kwargs,
             )
 
             additional_source_nodes = additional_source_nodes or []

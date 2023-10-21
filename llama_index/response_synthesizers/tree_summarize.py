@@ -61,14 +61,14 @@ class TreeSummarize(BaseSynthesizer):
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
                 response = self._service_context.llm_predictor.stream(
-                    summary_template,
-                    context_str=text_chunks[0],
+                    summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
                 response = await self._service_context.llm_predictor.apredict(
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunks[0],
+                    **response_kwargs,
                 )
 
             # return pydantic object if output_cls is specified
@@ -85,6 +85,7 @@ class TreeSummarize(BaseSynthesizer):
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunk,
+                    **response_kwargs,
                 )
                 for text_chunk in text_chunks
             ]
@@ -95,6 +96,7 @@ class TreeSummarize(BaseSynthesizer):
             return await self.aget_response(
                 query_str=query_str,
                 text_chunks=summaries,
+                **response_kwargs,
             )
 
     def get_response(
@@ -118,14 +120,14 @@ class TreeSummarize(BaseSynthesizer):
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
                 response = self._service_context.llm_predictor.stream(
-                    summary_template,
-                    context_str=text_chunks[0],
+                    summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
                 response = self._service_context.llm_predictor.predict(
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunks[0],
+                    **response_kwargs,
                 )
 
             # return pydantic object if output_cls is specified
@@ -143,6 +145,7 @@ class TreeSummarize(BaseSynthesizer):
                         summary_template,
                         output_cls=self._output_cls,
                         context_str=text_chunk,
+                        **response_kwargs,
                     )
                     for text_chunk in text_chunks
                 ]
@@ -154,12 +157,12 @@ class TreeSummarize(BaseSynthesizer):
                         summary_template,
                         output_cls=self._output_cls,
                         context_str=text_chunk,
+                        **response_kwargs,
                     )
                     for text_chunk in text_chunks
                 ]
 
             # recursively summarize the summaries
             return self.get_response(
-                query_str=query_str,
-                text_chunks=summaries,
+                query_str=query_str, text_chunks=summaries, **response_kwargs
             )

@@ -139,3 +139,38 @@ response_synthesizer = get_response_synthesizer(structured_answer_filtering=True
 With `structured_answer_filtering` set to `True`, our refine module is able to filter out any input nodes that are not relevant to the question being asked. This is particularly useful for RAG-based Q&A systems that involve retrieving chunks of text from external vector store for a given user query.
 
 This option is particularly useful if you're using an [OpenAI model that supports function calling](https://openai.com/blog/function-calling-and-other-api-updates). Other LLM providers or models that don't have native function calling support may be less reliable in producing the structured response this feature relies on.
+
+## Using Custom Prompt Templates (with additional variables)
+
+You may want to customize the prompts used in our response synthesizer, and also add additional variables during query-time.
+
+You can specify these additional variables in the `**kwargs` for `get_response`.
+
+For example,
+
+```python
+
+from llama_index import PromptTemplate
+from llama_index.response_synthesizers import TreeSummarize
+
+# NOTE: we add an extra tone_name variable here
+qa_prompt_tmpl = (
+    "Context information is below.\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Given the context information and not prior knowledge, "
+    "answer the query.\n"
+    "Please also write the answer in the tone of {tone_name}.\n"
+    "Query: {query_str}\n"
+    "Answer: "
+)
+qa_prompt = PromptTemplate(qa_prompt_tmpl)
+
+# initialize response synthesizer
+summarizer = TreeSummarize(verbose=True, summary_template=qa_prompt)
+
+# get response
+response = summarizer.get_response("who is Paul Graham?", [text], tone_name="a Shakespeare play")
+
+```
