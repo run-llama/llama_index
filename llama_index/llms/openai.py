@@ -51,7 +51,7 @@ from llama_index.llms.openai_utils import (
 
 @runtime_checkable
 class Tokenizer(Protocol):
-    """Tokenizers support an encode function that returns a list of ints"""
+    """Tokenizers support an encode function that returns a list of ints."""
 
     def encode(self, text: str) -> List[int]:
         ...

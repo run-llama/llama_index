@@ -8,8 +8,8 @@ from llama_index.llms.openai import OpenAI, Tokenizer
 
 class OpenAILike(OpenAI):
     """
-    OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with
-    3rd party tools that provide an openai-compatible api
+    OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with \
+    3rd party tools that provide an openai-compatible api.
 
     Currently, llama_index prevents using custom models with their OpenAI class
     because they need to be able to infer some metadata from the model name.
