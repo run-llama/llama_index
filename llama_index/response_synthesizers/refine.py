@@ -376,8 +376,6 @@ class Refine(BaseSynthesizer):
                 refine_template = self._refine_template.partial_format(
                     query_str=query_str, existing_answer=response
                 )
-            else:
-                raise ValueError("Streaming not supported for async")
 
         return response
 
