@@ -1,21 +1,16 @@
-.. LlamaIndex documentation master file, created by
-   sphinx-quickstart on Sun Dec 11 14:30:34 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to LlamaIndex 🦙 !
 ##########################
 
-LlamaIndex (formerly GPT Index) is a data framework for LLM applications to ingest, structure, and access private or domain-specific data.
+LlamaIndex (formerly GPT Index) is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_language_model>`_-based applications to ingest, structure, and access private or domain-specific data. It's available in Python (these docs) and `Typescript <https://ts.llamaindex.ai/>`_.
 
 🚀 Why LlamaIndex?
 ******************
 
-At their core, LLMs offer a natural language interface between humans and inferred data. Widely available models come pre-trained on huge amounts of publicly available data, from Wikipedia and mailing lists to textbooks and source code.
+LLMs offer a natural language interface between humans and data. Widely available models come pre-trained on huge amounts of publicly available data like Wikipedia, mailing lists, textbooks, source code and more.
 
-Applications built on top of LLMs often require augmenting these models with private or domain-specific data. Unfortunately, that data can be distributed across siloed applications and data stores. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
+However, while LLMs are trained on a great deal of data, they are not trained on **your** data, which may private or specific to the problem you're trying to solve. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
 
-That's where **LlamaIndex** comes in.
+LlamaIndex solves this problem by connecting to these data sources and adding your data to the data LLMs already have. This is often called Retrieval-Augmented Generation (RAG). RAG enables you to use LLMs to query your data, transform it, and generate new insights. You can ask questions about your data, create chatbots, build semi-autonomous agents, and more. To learn more, see our `Use Cases <./end_to_end_tutorials/use_cases.html>`_.
 
 🦙 How can LlamaIndex help?
 ***************************
@@ -25,14 +20,13 @@ LlamaIndex provides the following tools:
 - **Data connectors** ingest your existing data from their native source and format. These could be APIs, PDFs, SQL, and (much) more.
 - **Data indexes** structure your data in intermediate representations that are easy and performant for LLMs to consume.
 - **Engines** provide natural language access to your data. For example:
-
   - Query engines are powerful retrieval interfaces for knowledge-augmented output.
   - Chat engines are conversational interfaces for multi-message, "back and forth" interactions with your data.
 - **Data agents** are LLM-powered knowledge workers augmented by tools, from simple helper functions to API integrations and more.
 - **Application integrations** tie LlamaIndex back into the rest of your ecosystem. This could be LangChain, Flask, Docker, ChatGPT, or… anything else!
 
 👨‍👩‍👧‍👦 Who is LlamaIndex for?
-*************************
+*******************************************
 
 LlamaIndex provides tools for beginners, advanced users, and everyone in between.
 
@@ -88,89 +82,66 @@ Associated projects
    getting_started/starter_example.md
    getting_started/concepts.md
    getting_started/customization.rst
+   getting_started/discover_llamaindex.md
 
 .. toctree::
    :maxdepth: 2
-   :caption: End-to-End Tutorials
+   :caption: Use Cases
    :hidden:
 
-   end_to_end_tutorials/usage_pattern.md
-   end_to_end_tutorials/one_click_observability.md
-   end_to_end_tutorials/principled_dev_practices.md
-   end_to_end_tutorials/discover_llamaindex.md
-   end_to_end_tutorials/finetuning.md
-   end_to_end_tutorials/low_level/root.md
-   end_to_end_tutorials/use_cases.md
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Index/Data Modules
-   :hidden:
-
-   core_modules/data_modules/connector/root.md
-   core_modules/data_modules/documents_and_nodes/root.md
-   core_modules/data_modules/node_parsers/root.md
-   core_modules/data_modules/storage/root.md
-   core_modules/data_modules/index/root.md
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Query Modules
-   :hidden:
-
-   core_modules/query_modules/query_engine/root.md
-   core_modules/query_modules/chat_engines/root.md
-   core_modules/query_modules/retriever/root.md
-   core_modules/query_modules/router/root.md
-   core_modules/query_modules/node_postprocessors/root.md
-   core_modules/query_modules/response_synthesizers/root.md
-   core_modules/query_modules/structured_outputs/root.md
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Agent Modules
-   :hidden:
-
-   core_modules/agent_modules/agents/root.md
-   core_modules/agent_modules/tools/root.md
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Model Modules
-   :hidden:
-
-   core_modules/model_modules/llms/root.md
-   core_modules/model_modules/embeddings/root.md
-   core_modules/model_modules/prompts.md
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Supporting Modules
-   :hidden:
-
-   core_modules/supporting_modules/service_context.md
-   core_modules/supporting_modules/callbacks/root.md
-   core_modules/supporting_modules/evaluation/root.md
-   core_modules/supporting_modules/cost_analysis/root.md
-   core_modules/supporting_modules/playground/root.md
+   use_cases/q_and_a.md
+   use_cases/chatbots.md
+   use_cases/agents.md
 
 .. toctree::
    :maxdepth: 2
-   :caption: Development
+   :caption: Understanding
    :hidden:
 
-   development/contributing.rst
-   development/documentation.rst
-   development/privacy.md
-   development/changelog.rst
+   understanding/understanding.md
+   understanding/using_llms/using_llms.md
+   understanding/loading/loading.md
+   understanding/indexing/indexing.md
+   understanding/storing/storing.md
+   understanding/querying/querying.md
+   understanding/putting_it_all_together/putting_it_all_together.md
+   understanding/tracing_and_debugging/tracing_and_debugging.md
+   understanding/evaluating/evaluating.md
 
 .. toctree::
    :maxdepth: 2
-   :caption: Community
+   :caption: Optimizing
    :hidden:
 
-   community/integrations.md
-   community/app_showcase.md
+   optimizing/basic_strategies/basic_strategies.md
+   optimizing/advanced_retrieval/advanced_retrieval.md
+   optimizing/evaluation/evaluation.md
+   optimizing/fine-tuning/fine-tuning.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Advanced techniques
+   :hidden:
+
+   advanced_techniques/development_pathway.md  
+   advanced_techniques/production_rag.md 
+   advanced_techniques/building_rag_from_scratch.md
+   advanced_techniques/finetuning.md   
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Module Guides
+   :hidden:
+
+   module_guides/using_llms/using_llms.md
+   module_guides/loading/loading.md
+   module_guides/indexing/indexing.md
+   module_guides/storing/storing.md
+   module_guides/querying/querying.md
+   module_guides/putting_it_all_together/putting_it_all_together.md
+   module_guides/observability/observability.md
+   module_guides/evaluating/root.md
+   module_guides/supporting_modules/supporting_modules.md
 
 .. toctree::
    :maxdepth: 1
@@ -180,7 +151,24 @@ Associated projects
    api_reference/index.rst
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+   :caption: Community
    :hidden:
 
-   deprecated_terms.md
+   community/integrations.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contributing
+   :hidden:
+
+   contributing/contributing.rst
+   contributing/documentation.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Changes
+   :hidden:
+
+   changes/changelog.rst
+   changes/deprecated_terms.md
