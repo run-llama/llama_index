@@ -90,7 +90,7 @@ class ReActAgent(BaseAgent):
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
-        or BaseRetriver should have picked up off their respective kwargs in their
+        or BaseRetriever should have picked up off their respective kwargs in their
         constructions.
 
         Returns:
