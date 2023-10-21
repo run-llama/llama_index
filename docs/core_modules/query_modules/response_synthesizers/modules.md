@@ -61,4 +61,5 @@ maxdepth: 1
 /examples/response_synthesizers/refine.ipynb
 /examples/response_synthesizers/structured_refine.ipynb
 /examples/response_synthesizers/tree_summarize.ipynb
+/examples/response_synthesizers/custom_prompt_synthesizer.ipynb
 ```
