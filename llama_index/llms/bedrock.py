@@ -36,7 +36,7 @@ class Bedrock(LLM):
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     context_size: int = Field("The maximum number of tokens available for input.")
     profile_name: Optional[str] = Field(
-        description="he name of aws profile to use. If not given, then the default profile is used."
+        description="The name of aws profile to use. If not given, then the default profile is used."
     )
     aws_access_key_id: Optional[str] = Field(description="AWS Access Key ID to use")
     aws_secret_access_key: Optional[str] = Field(
@@ -78,8 +78,6 @@ class Bedrock(LLM):
         try:
             import boto3
 
-            aws_access_key_id
-            aws_secret_access_key
             if not profile_name and aws_access_key_id:
                 session = boto3.Session(
                     aws_access_key_id=aws_access_key_id,
