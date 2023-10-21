@@ -71,7 +71,7 @@ class DocxReader(BaseReader):
 
 
 class HWPReader(BaseReader):
-    """Hwp Parser"""
+    """Hwp Parser."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

@@ -25,7 +25,7 @@ MultiSelectPrompt = PromptTemplate
 # single select
 DEFAULT_SINGLE_SELECT_PROMPT_TMPL = (
     "Some choices are given below. It is provided in a numbered list "
-    "(1 to {num_choices}),"
+    "(1 to {num_choices}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -61,7 +61,7 @@ DEFAULT_MULTIPLE_SELECT_PROMPT = PromptTemplate(
 # single pydantic select
 DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL = (
     "Some choices are given below. It is provided in a numbered list "
-    "(1 to {num_choices}),"
+    "(1 to {num_choices}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"

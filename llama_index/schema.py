@@ -5,13 +5,19 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
 
-from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.utils import SAMPLE_TEXT, truncate_text
+
+if TYPE_CHECKING:
+    from haystack.schema import Document as HaystackDocument
+    from semantic_kernel.memory.memory_record import MemoryRecord
+
+    from llama_index.bridge.langchain import Document as LCDocument
+
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
@@ -267,7 +273,10 @@ class BaseNode(BaseComponent):
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
         return RelatedNodeInfo(
-            node_id=self.node_id, metadata=self.metadata, hash=self.hash
+            node_id=self.node_id,
+            node_type=self.get_type(),
+            metadata=self.metadata,
+            hash=self.hash,
         )
 
 
@@ -527,15 +536,70 @@ class Document(TextNode):
             name = self._compat_fields[name]
         super().__setattr__(name, value)
 
-    def to_langchain_format(self) -> LCDocument:
+    def to_langchain_format(self) -> "LCDocument":
         """Convert struct to LangChain document format."""
+        from llama_index.bridge.langchain import Document as LCDocument
+
         metadata = self.metadata or {}
         return LCDocument(page_content=self.text, metadata=metadata)
 
     @classmethod
-    def from_langchain_format(cls, doc: LCDocument) -> "Document":
+    def from_langchain_format(cls, doc: "LCDocument") -> "Document":
         """Convert struct from LangChain document format."""
         return cls(text=doc.page_content, metadata=doc.metadata)
+
+    def to_haystack_format(self) -> "HaystackDocument":
+        """Convert struct to Haystack document format."""
+        from haystack.schema import Document as HaystackDocument
+
+        return HaystackDocument(
+            content=self.text, meta=self.metadata, embedding=self.embedding, id=self.id_
+        )
+
+    @classmethod
+    def from_haystack_format(cls, doc: "HaystackDocument") -> "Document":
+        """Convert struct from Haystack document format."""
+        return cls(
+            text=doc.content, metadata=doc.meta, embedding=doc.embedding, id_=doc.id
+        )
+
+    def to_embedchain_format(self) -> Dict[str, Any]:
+        """Convert struct to EmbedChain document format."""
+        return {
+            "doc_id": self.id_,
+            "data": {"content": self.text, "meta_data": self.metadata},
+        }
+
+    @classmethod
+    def from_embedchain_format(cls, doc: Dict[str, Any]) -> "Document":
+        """Convert struct from EmbedChain document format."""
+        return cls(
+            text=doc["data"]["content"],
+            metadata=doc["data"]["meta_data"],
+            id_=doc["doc_id"],
+        )
+
+    def to_semantic_kernel_format(self) -> "MemoryRecord":
+        """Convert struct to Semantic Kernel document format."""
+        import numpy as np
+        from semantic_kernel.memory.memory_record import MemoryRecord
+
+        return MemoryRecord(
+            id=self.id_,
+            text=self.text,
+            additional_metadata=self.get_metadata_str(),
+            embedding=np.array(self.embedding) if self.embedding else None,
+        )
+
+    @classmethod
+    def from_semantic_kernel_format(cls, doc: "MemoryRecord") -> "Document":
+        """Convert struct from Semantic Kernel document format."""
+        return cls(
+            text=doc._text,
+            metadata={"additional_metadata": doc._additional_metadata},
+            embedding=doc._embedding.tolist() if doc._embedding is not None else None,
+            id_=doc._id,
+        )
 
     @classmethod
     def example(cls) -> "Document":

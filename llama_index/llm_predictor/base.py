@@ -263,7 +263,7 @@ class LLMPredictor(BaseLLMPredictor):
         self,
         formatted_prompt: str,
     ) -> str:
-        """Add system and query wrapper prompts to base prompt"""
+        """Add system and query wrapper prompts to base prompt."""
         extended_prompt = formatted_prompt
         if self.system_prompt:
             extended_prompt = self.system_prompt + "\n\n" + extended_prompt
@@ -276,7 +276,7 @@ class LLMPredictor(BaseLLMPredictor):
         return extended_prompt
 
     def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
-        """Add system prompt to chat message list"""
+        """Add system prompt to chat message list."""
         if self.system_prompt:
             messages = [
                 ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt),

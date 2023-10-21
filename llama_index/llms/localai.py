@@ -6,10 +6,10 @@ from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 
-DEFAULT_KEY = "fake"
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8080
-DEFAULT_API_BASE = f"{DEFAULT_HOST}{DEFAULT_PORT}"
+DEFAULT_API_KEY = "fake"
+DEFAULT_API_HOST = "localhost"
+DEFAULT_API_PORT = 8080
+DEFAULT_API_BASE = f"{DEFAULT_API_HOST}{DEFAULT_API_PORT}"
 
 
 class LocalAI(OpenAI):
@@ -36,7 +36,7 @@ class LocalAI(OpenAI):
 
     def __init__(
         self,
-        api_key: Optional[str] = DEFAULT_KEY,
+        api_key: Optional[str] = DEFAULT_API_KEY,
         api_base: Optional[str] = DEFAULT_API_BASE,
         **kwargs: Any,
     ) -> None:

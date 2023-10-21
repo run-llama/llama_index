@@ -30,11 +30,13 @@ class Generation(BaseSynthesizer):
             return await self._service_context.llm_predictor.apredict(
                 self._input_prompt,
                 query_str=query_str,
+                **response_kwargs,
             )
         else:
             return self._service_context.llm_predictor.stream(
                 self._input_prompt,
                 query_str=query_str,
+                **response_kwargs,
             )
 
     def get_response(
@@ -50,9 +52,11 @@ class Generation(BaseSynthesizer):
             return self._service_context.llm_predictor.predict(
                 self._input_prompt,
                 query_str=query_str,
+                **response_kwargs,
             )
         else:
             return self._service_context.llm_predictor.stream(
                 self._input_prompt,
                 query_str=query_str,
+                **response_kwargs,
             )

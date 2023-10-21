@@ -371,6 +371,7 @@ The full list of retrievers for each index (and their shorthand) is documented i
 (setting-response-mode)=
 
 ### Configuring response synthesis
+
 After a retriever fetches relevant nodes, a `BaseSynthesizer` synthesizes the final response by combining the information.
 
 You can configure it via

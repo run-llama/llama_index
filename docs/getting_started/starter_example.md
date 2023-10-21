@@ -3,6 +3,7 @@
 ```{tip}
 Make sure you've followed the [installation](installation.md) steps first.
 ```
+
 Here is a starter example for using LlamaIndex.
 
 ### Download
@@ -86,6 +87,7 @@ index.storage_context.persist()
 ```
 
 To reload from disk:
+
 ```python
 from llama_index import StorageContext, load_index_from_storage
 
@@ -94,8 +96,6 @@ storage_context = StorageContext.from_defaults(persist_dir="./storage")
 # load index
 index = load_index_from_storage(storage_context)
 ```
-
-
 
 ```{admonition} Next Steps
 * learn more about the [high-level concepts](/getting_started/concepts.md).

@@ -1,4 +1,5 @@
 # End-to-End Evaluation
+
 End-to-End evaluation should be the guiding signal for your RAG application - will my pipeline generate the right responses given the data sources and a set of queries?
 
 While it helps initially to individually inspect queries and responses, as you deal with more failure and corner cases, it may stop being feasible to look at each query individually, and rather it may help instead to define a set of summary metrics or automated evaluation, and gain an intuition for what they might be telling you and where you might dive deeper.
@@ -8,7 +9,6 @@ While it helps initially to individually inspect queries and responses, as you d
 It is helpful to start off with a small but diverse set of queries, and build up more examples as one discovers problematic queries or interactions.
 
 We've created some tools that automatically generate a dataset for you given a set of documents to query. (See example below).
-
 
 ```{toctree}
 ---
@@ -23,7 +23,7 @@ In the future, we will also be able to create datasets automatically against too
 
 Quantitative eval is more useful when evaluating applications where there is a correct answer - for instance, validating that the choice of tools and their inputs are correct given the plan, or retrieving specific pieces of information, or attempting to produce intermediate output of a certain schema (e.g. JSON fields).
 
-Qualitative eval is more useful when generating long-form responses that are meant to be *helpful* but not necessarily completely accurate.
+Qualitative eval is more useful when generating long-form responses that are meant to be _helpful_ but not necessarily completely accurate.
 
 There is a spectrum of evaluation options ranging from metrics, cheaper models, more expensive models (GPT4), and human evaluation.
 
@@ -36,7 +36,6 @@ maxdepth: 1
 /examples/evaluation/TestNYC-Evaluation-Query.ipynb
 /examples/evaluation/TestNYC-Evaluation.ipynb
 ```
-
 
 ## Discovery - Sensitivity Testing
 

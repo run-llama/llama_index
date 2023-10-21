@@ -7,7 +7,7 @@ from llama_index.schema import Document
 
 
 class FlatReader(BaseReader):
-    """Flat reader
+    """Flat reader.
 
     Extract raw text from a file and save the file type in the metadata
     """

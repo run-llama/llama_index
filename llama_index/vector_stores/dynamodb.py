@@ -109,7 +109,7 @@ class DynamoDBVectorStore(VectorStore):
             )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Get nodes for response"""
+        """Get nodes for response."""
         if query.filters is not None:
             raise ValueError(
                 "Metadata filters not implemented for SimpleVectorStore yet."

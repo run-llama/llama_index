@@ -1,6 +1,7 @@
 # Query Engine
 
 ## Concept
+
 Query engine is a generic interface that allows you to ask question over your data.
 
 A query engine takes in a natural language query, and returns a rich response.
@@ -12,13 +13,16 @@ If you want to have a conversation with your data (multiple back-and-forth inste
 ```
 
 ## Usage Pattern
+
 Get started with:
+
 ```python
 query_engine = index.as_query_engine()
 response = query_engine.query("Who is Paul Graham.")
 ```
 
 To stream response:
+
 ```python
 query_engine = index.as_query_engine(streaming=True)
 streaming_response = query_engine.query("Who is Paul Graham.")
@@ -32,8 +36,8 @@ maxdepth: 2
 usage_pattern.md
 ```
 
-
 ## Modules
+
 ```{toctree}
 ---
 maxdepth: 3
@@ -41,8 +45,8 @@ maxdepth: 3
 modules.md
 ```
 
-
 ## Supporting Modules
+
 ```{toctree}
 ---
 maxdepth: 2

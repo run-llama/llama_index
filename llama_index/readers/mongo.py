@@ -14,7 +14,7 @@ class SimpleMongoReader(BaseReader):
     Args:
         host (str): Mongo host.
         port (int): Mongo port.
-        max_docs (int): Maximum number of documents to load.
+        max_docs (int): Maximum number of documents to load. Defaults to 0 (no limit).
 
     """
 
@@ -23,7 +23,7 @@ class SimpleMongoReader(BaseReader):
         host: Optional[str] = None,
         port: Optional[int] = None,
         uri: Optional[str] = None,
-        max_docs: int = 1000,
+        max_docs: int = 0,
     ) -> None:
         """Initialize with parameters."""
         try:
@@ -74,10 +74,7 @@ class SimpleMongoReader(BaseReader):
         """
         documents = []
         db = self.client[db_name]
-        if query_dict is None:
-            cursor = db[collection_name].find()
-        else:
-            cursor = db[collection_name].find(query_dict)
+        cursor = db[collection_name].find(filter=query_dict or {}, limit=self.max_docs)
 
         for item in cursor:
             texts = []

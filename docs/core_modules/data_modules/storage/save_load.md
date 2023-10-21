@@ -1,10 +1,13 @@
 # Persisting & Loading Data
 
 ## Persisting Data
+
 By default, LlamaIndex stores data in-memory, and this data can be explicitly persisted if desired:
+
 ```python
 storage_context.persist(persist_dir="<persist_dir>")
 ```
+
 This will persist data to disk, under the specified `persist_dir` (or `./storage` by default).
 
 Multiple indexes can be persisted and loaded from the same directory, assuming you keep track of index ID's for loading.
@@ -13,6 +16,7 @@ User can also configure alternative storage backends (e.g. `MongoDB`) that persi
 In this case, calling `storage_context.persist()` will do nothing.
 
 ## Loading Data
+
 To load data, user simply needs to re-create the storage context using the same configuration (e.g. pass in the same `persist_dir` or vector store client).
 
 ```python
@@ -24,7 +28,6 @@ storage_context = StorageContext.from_defaults(
 ```
 
 We can then load specific indices from the `StorageContext` through some convenience functions below.
-
 
 ```python
 from llama_index import load_index_from_storage, load_indices_from_storage, load_graph_from_storage
@@ -51,6 +54,7 @@ Here's the full [API Reference on saving and loading](/api_reference/storage/ind
 By default, LlamaIndex uses a local filesystem to load and save files. However, you can override this by passing a `fsspec.AbstractFileSystem` object.
 
 Here's a simple example, instantiating a vector store:
+
 ```python
 import dotenv
 import s3fs
@@ -80,14 +84,19 @@ s3 = s3fs.S3FileSystem(
    s3_additional_kwargs={'ACL': 'public-read'}
 )
 
-# save index to remote blob storage
+# If you're using 2+ indexes with the same StorageContext,
+# run this to save the index to remote blob storage
 index.set_index_id("vector_index")
-# this is {bucket_name}/{index_name}
-index.storage_context.persist('llama-index/storage_demo', fs=s3)
+
+# persist index to s3
+s3_bucket_name = 'llama-index/storage_demo'  # {bucket_name}/{index_name}
+index.storage_context.persist(persist_dir=s3_bucket_name, fs=s3)
 
 # load index from s3
-sc = StorageContext.from_defaults(persist_dir='llama-index/storage_demo', fs=s3)
-index2 = load_index_from_storage(sc, 'vector_index')
+index_from_s3 = load_index_from_storage(
+    StorageContext.from_defaults(persist_dir=s3_bucket_name, fs=s3),
+    index_id='vector_index'
+)
 ```
 
 By default, if you do not pass a filesystem, we will assume a local filesystem.

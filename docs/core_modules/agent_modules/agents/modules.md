@@ -5,6 +5,7 @@ These guide provide an overview of how to use our agent classes.
 For more detailed guides on how to use specific tools, check out our [tools module guides]().
 
 ## OpenAI Agent
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -20,6 +21,7 @@ maxdepth: 1
 ```
 
 ## ReAct Agent
+
 ```{toctree}
 ---
 maxdepth: 1
