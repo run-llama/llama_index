@@ -8,6 +8,7 @@
 
 ### Bug Fixes / Nits
 
+- Fixed additional kwargs in ReActAgent.from_tools() (#8206)
 - Fixed missing spaces in prompt templates (#8190)
 
 ## [0.8.47] - 2023-10-19
