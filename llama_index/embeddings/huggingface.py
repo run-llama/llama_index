@@ -221,7 +221,7 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):
     def class_name(cls) -> str:
         return "HuggingFaceInferenceAPIEmbeddings"
 
-    async def _aembed_single(self, text: str) -> Embedding:
+    async def _async_embed_single(self, text: str) -> Embedding:
         embedding = (await self._async_client.feature_extraction(text)).squeeze(axis=0)
         if len(embedding.shape) == 1:  # Some models pool internally
             return list(embedding)
@@ -233,16 +233,14 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):
                 " a > 1-D value, please specify pooling as not None."
             ) from exc
 
-    async def _aembed_bulk(self, texts: Sequence[str]) -> List[Embedding]:
+    async def _async_embed_bulk(self, texts: Sequence[str]) -> List[Embedding]:
         """
         Embed a sequence of text, in parallel and asynchronously.
 
         NOTE: this uses an externally created asyncio event loop.
         """
-        loop = asyncio.get_event_loop()
-        tasks = [loop.create_task(self._aembed(text)) for text in texts]
-        await asyncio.wait(tasks)
-        return [task.result() for task in tasks]
+        tasks = [self._async_embed_single(text) for text in texts]
+        return await asyncio.gather(*tasks)
 
     def _get_query_embedding(self, query: str) -> Embedding:
         """
@@ -277,17 +275,17 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):
         return [task.result() for task in tasks]
 
     async def _aget_query_embedding(self, query: str) -> Embedding:
-        return await self._aembed_single(
+        return await self._async_embed_single(
             text=format_query(query, self.model_name, self.query_instruction)
         )
 
     async def _aget_text_embedding(self, text: str) -> Embedding:
-        return await self._aembed_single(
+        return await self._async_embed_single(
             text=format_text(text, self.model_name, self.text_instruction)
         )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        return await self._aembed_bulk(
+        return await self._async_embed_bulk(
             texts=[
                 format_text(text, self.model_name, self.text_instruction)
                 for text in texts
