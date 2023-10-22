@@ -9,7 +9,6 @@ pytest-mock==3.11.1
 # third-party (libraries)
 rake_nltk==1.0.6
 ipython==8.10.0
-deprecated==1.2.9.3
 
 # linting stubs
 types-PyYAML
