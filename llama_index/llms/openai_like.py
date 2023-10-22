@@ -1,7 +1,7 @@
 from typing import Optional
 
 from llama_index.bridge.pydantic import Field
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI, Tokenizer
 
@@ -23,6 +23,11 @@ class OpenAILike(OpenAI):
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=LLMMetadata.__fields__["context_window"].field_info.description,
+    )
+    num_output: Optional[int] = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description=LLMMetadata.__fields__["num_output"].field_info.description
+        + " Set to 0 or None to fall back on max_tokens.",
     )
     is_chat_model: bool = Field(
         default=False,
@@ -47,7 +52,7 @@ class OpenAILike(OpenAI):
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
             context_window=self.context_window,
-            num_output=self.max_tokens or -1,
+            num_output=self.num_output or self.max_tokens,
             is_chat_model=self.is_chat_model,
             is_function_calling_model=self.is_function_calling_model,
             model_name=self.model,
