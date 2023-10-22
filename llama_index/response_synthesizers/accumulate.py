@@ -1,6 +1,7 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Tuple
 
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate

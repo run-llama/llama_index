@@ -1,5 +1,6 @@
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Tuple
 
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT

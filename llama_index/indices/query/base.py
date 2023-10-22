@@ -2,17 +2,19 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Dict
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
+from llama_index.prompts.base import BasePromptTemplate
+from llama_index.prompts.mixin import PromptMixin
 
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(ABC):
+class BaseQueryEngine(PromptMixin):
     def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
 

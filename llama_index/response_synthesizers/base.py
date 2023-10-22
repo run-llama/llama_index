@@ -23,13 +23,14 @@ from llama_index.response.schema import (
 )
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.types import RESPONSE_TEXT_TYPE
+from llama_index.prompts.mixin import PromptMixin
 
 logger = logging.getLogger(__name__)
 
 QueryTextType = Union[str, QueryBundle]
 
 
-class BaseSynthesizer(ABC):
+class BaseSynthesizer(PromptMixin):
     """Response builder class."""
 
     def __init__(

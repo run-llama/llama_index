@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Tuple
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
@@ -9,6 +9,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
@@ -47,6 +48,11 @@ class RetrieverQueryEngine(BaseQueryEngine):
             node_postprocessor.callback_manager = callback_manager
 
         super().__init__(callback_manager)
+
+    def _get_prompts(self) -> Tuple[PromptDictType, PromptMixinType]:
+        prompts_dict = {}
+        module_dict = {"response_synthesizer": self._response_synthesizer}
+        return prompts_dict, module_dict
 
     @classmethod
     def from_args(

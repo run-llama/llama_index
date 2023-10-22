@@ -1,6 +1,7 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Tuple
 
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
@@ -39,6 +40,15 @@ class TreeSummarize(BaseSynthesizer):
         self._summary_template = summary_template or DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
         self._use_async = use_async
         self._verbose = verbose
+
+    def _get_prompts(self) -> Tuple[PromptDictType, PromptMixinType]:
+        """Get prompts."""
+        return {"summary_template": self._summary_template}, {}
+    
+    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+        """Update prompts."""
+        if "summary_template" in prompts:
+            self._summary_template = prompts["summary_template"]
 
     async def aget_response(
         self,
