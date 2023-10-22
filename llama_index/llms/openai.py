@@ -68,10 +68,16 @@ class OpenAI(LLM):
     )
     max_retries: int = Field(description="The maximum number of API retries.")
 
-    api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
-    api_type: str = Field(default=None, description="The OpenAI API type.")
-    api_base: str = Field(description="The base URL for OpenAI API.")
-    api_version: str = Field(description="The API version for OpenAI API.")
+    api_key: str = Field(
+        default="placeholder", description="The OpenAI API key.", exclude=True
+    )
+    api_type: str = Field(default="placeholder", description="The OpenAI API type.")
+    api_base: str = Field(
+        default="placeholder", description="The base URL for OpenAI API."
+    )
+    api_version: str = Field(
+        default="placeholder", description="The API version for OpenAI API."
+    )
 
     def __init__(
         self,
