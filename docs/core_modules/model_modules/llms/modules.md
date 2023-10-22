@@ -13,6 +13,15 @@ maxdepth: 1
 
 ```
 
+## AI21
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/ai21.ipynb
+```
+
 ## Anthropic
 
 ```{toctree}
@@ -192,4 +201,13 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/clarifai.ipynb
+```
+
+## Bedrock
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/bedrock.ipynb
 ```

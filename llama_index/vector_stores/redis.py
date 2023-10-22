@@ -96,7 +96,6 @@ class RedisVectorStore(VectorStore):
                 "distance_metric": "cosine"},
             >>>     redis_url="redis://localhost:6379/",
             >>>     overwrite=True)
-
         """
         try:
             import redis

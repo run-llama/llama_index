@@ -1,12 +1,34 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.48] - 2023-10-20
 
 ### New Features
 
+- Add `DELETE` for MyScale vector store (#8159)
+- Add SQL Retriever (#8197)
+- add semantic kernel document format (#8226)
+- Improve MyScale Hybrid Search and Add `DELETE` for MyScale vector store (#8159)
+
+### New Features
+
+- Support for Hugging Face Inference API's `conversational`, `text_generation`,
+  and `feature_extraction` endpoints via `huggingface_hub[inference]` (#8098)
+
+### Bug Fixes / Nits
+
+- Fixed additional kwargs in ReActAgent.from_tools() (#8206)
+- Fixed missing spaces in prompt templates (#8190)
+- Remove auto-download of llama2-13B on exception (#8225)
+
+## [0.8.47] - 2023-10-19
+
+### New Features
+
+- add response synthesis to text-to-SQL (#8196)
 - Added support for `LLMRailsEmbeddings` (#8169)
 - Inferring MPS device with PyTorch (#8195)
 - Deprecate some functions for GuardrailsOutputParser (#8016)
+- Consolidated query/text prepending (#8189)
 
 ## [0.8.46] - 2023-10-18
 
@@ -18,6 +40,7 @@
 ### Bug Fixes / Nits
 
 - Add normalization to huggingface embeddings (#8145)
+- Improve MyScale Hybrid Search (#8159)
 - Fixed duplicate `FORMAT_STR` being inside prompt (#8171)
 - Added: support for output_kwargs={'max_colwidth': xx} for PandasQueryEngine (#8110)
 - Minor fix in the description for an argument in cohere llm (#8163)

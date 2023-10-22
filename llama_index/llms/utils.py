@@ -19,13 +19,13 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
         try:
             llm = OpenAI()
         except ValueError as e:
-            llm = "local"
-            print(
+            raise ValueError(
                 "******\n"
-                "Could not load OpenAI model. Using default LlamaCPP=llama2-13b-chat. "
+                "Could not load OpenAI model. "
                 "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
                 "Original error:\n"
                 f"{e!s}"
+                "\nTo disable the LLM entirely, set llm=None."
                 "\n******"
             )
 

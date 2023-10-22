@@ -27,7 +27,8 @@ class MockRefineProgram(BasePydanticProgram):
         self,
         *args: Any,
         context_str: Optional[str] = None,
-        context_msg: Optional[str] = None
+        context_msg: Optional[str] = None,
+        **kwargs: Any
     ) -> StructuredRefineResponse:
         input_str = context_str or context_msg
         input_str = cast(str, input_str)
@@ -40,7 +41,8 @@ class MockRefineProgram(BasePydanticProgram):
         self,
         *args: Any,
         context_str: Optional[str] = None,
-        context_msg: Optional[str] = None
+        context_msg: Optional[str] = None,
+        **kwargs: Any
     ) -> StructuredRefineResponse:
         input_str = context_str or context_msg
         input_str = cast(str, input_str)

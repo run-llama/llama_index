@@ -14,6 +14,7 @@ from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 if TYPE_CHECKING:
     from haystack.schema import Document as HaystackDocument
+    from semantic_kernel.memory.memory_record import MemoryRecord
 
     from llama_index.bridge.langchain import Document as LCDocument
 
@@ -576,6 +577,28 @@ class Document(TextNode):
             text=doc["data"]["content"],
             metadata=doc["data"]["meta_data"],
             id_=doc["doc_id"],
+        )
+
+    def to_semantic_kernel_format(self) -> "MemoryRecord":
+        """Convert struct to Semantic Kernel document format."""
+        import numpy as np
+        from semantic_kernel.memory.memory_record import MemoryRecord
+
+        return MemoryRecord(
+            id=self.id_,
+            text=self.text,
+            additional_metadata=self.get_metadata_str(),
+            embedding=np.array(self.embedding) if self.embedding else None,
+        )
+
+    @classmethod
+    def from_semantic_kernel_format(cls, doc: "MemoryRecord") -> "Document":
+        """Convert struct from Semantic Kernel document format."""
+        return cls(
+            text=doc._text,
+            metadata={"additional_metadata": doc._additional_metadata},
+            embedding=doc._embedding.tolist() if doc._embedding is not None else None,
+            id_=doc._id,
         )
 
     @classmethod

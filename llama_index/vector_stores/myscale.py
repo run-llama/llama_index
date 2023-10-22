@@ -64,6 +64,9 @@ class MyScaleVectorStore(VectorStore):
     stores_text: bool = True
     _index_existed: bool = False
     metadata_column: str = "metadata"
+    AMPLIFY_RATIO_LE5 = 100
+    AMPLIFY_RATIO_GT5 = 20
+    AMPLIFY_RATIO_GT50 = 10
 
     def __init__(
         self,
@@ -238,7 +241,10 @@ class MyScaleVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        raise NotImplementedError("Delete not yet implemented for MyScale index.")
+        self._client.command(
+            f"DELETE FROM {self.config.database}.{self.config.table} "
+            f"where doc_id='{ref_doc_id}'"
+        )
 
     def drop(self) -> None:
         """Drop MyScale Index and table."""
@@ -271,11 +277,16 @@ class MyScaleVectorStore(VectorStore):
             limit=query.similarity_top_k,
         )
         if query.mode == VectorStoreQueryMode.HYBRID and query.query_str is not None:
+            amplify_ratio = self.AMPLIFY_RATIO_LE5
+            if 5 < query.similarity_top_k < 50:
+                amplify_ratio = self.AMPLIFY_RATIO_GT5
+            if query.similarity_top_k > 50:
+                amplify_ratio = self.AMPLIFY_RATIO_GT50
             query_statement = self._build_hybrid_search_statement(
                 self.config.build_query_statement(
                     query_embed=query_embedding,
                     where_str=where_str,
-                    limit=query.similarity_top_k * 100,
+                    limit=query.similarity_top_k * amplify_ratio,
                 ),
                 query.query_str,
                 query.similarity_top_k,

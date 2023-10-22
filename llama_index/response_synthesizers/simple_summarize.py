@@ -35,11 +35,13 @@ class SimpleSummarize(BaseSynthesizer):
             response = await self._service_context.llm_predictor.apredict(
                 text_qa_template,
                 context_str=node_text,
+                **response_kwargs,
             )
         else:
             response = self._service_context.llm_predictor.stream(
                 text_qa_template,
                 context_str=node_text,
+                **response_kwargs,
             )
 
         if isinstance(response, str):
@@ -67,11 +69,13 @@ class SimpleSummarize(BaseSynthesizer):
             response = self._service_context.llm_predictor.predict(
                 text_qa_template,
                 context_str=node_text,
+                **kwargs,
             )
         else:
             response = self._service_context.llm_predictor.stream(
                 text_qa_template,
                 context_str=node_text,
+                **kwargs,
             )
 
         if isinstance(response, str):
