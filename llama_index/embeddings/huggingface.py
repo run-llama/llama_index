@@ -190,7 +190,6 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):
     Wrapper on the Hugging Face's Inference API for embeddings.
 
     Overview of the design:
-    - Implemented against LangChain's embeddings
     - Uses the feature extraction task: https://huggingface.co/tasks/feature-extraction
     """
 
