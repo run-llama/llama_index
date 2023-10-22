@@ -1,5 +1,16 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Support for Hugging Face Inference API's `conversational`, `text_generation`,
+  and `feature_extraction` endpoints via `huggingface_hub[inference]` (#8098)
+
+### Bug Fixes / Nits
+
+- Deprecate some functions for GuardrailsOutputParser (#8016)
+
 ## [0.8.48] - 2023-10-20
 
 ### New Features
@@ -8,11 +19,6 @@
 - Add SQL Retriever (#8197)
 - add semantic kernel document format (#8226)
 - Improve MyScale Hybrid Search and Add `DELETE` for MyScale vector store (#8159)
-
-### New Features
-
-- Support for Hugging Face Inference API's `conversational`, `text_generation`,
-  and `feature_extraction` endpoints via `huggingface_hub[inference]` (#8098)
 
 ### Bug Fixes / Nits
 
