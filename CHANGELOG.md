@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Consolidates `LocalAI` into a parameterization of `OpenAILike` (#8241)
+
 ## [0.8.61] - 2023-11-05
 
 ### New Features
