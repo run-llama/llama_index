@@ -254,6 +254,7 @@ betabageldb = {optional = true, version = "^0.2.34"}
 cassio = {optional = true, version = "^0.1.3"}
 chromadb = {optional = true, version = ">=0.4.0"}
 clickhouse-connect = {optional = true, version = "^0.6.14"}
+dashvector = {optional = true, version = "^1.0.5"}
 deeplake = {optional = true, version = "^3.7.3"}
 docarray = {optional = true, version = "^0.39.0"}
 elasticsearch = {optional = true, version = "^8.10.0"}

@@ -53,6 +53,9 @@ class IndexStructType(str, Enum):
         SQL ("SQL"): SQL Structured Store Index.
             See :ref:`Ref-Indices-StructStore`
             for more information on the SQL vector store index.
+        DASHVECTOR ("dashvector"): DashVector Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Dashvecotor vector store index.
         KG ("kg"): Knowledge Graph index.
             See :ref:`Ref-Indices-Knowledge-Graph` for KG indices.
         DOCUMENT_SUMMARY ("document_summary"): Document Summary Index.
@@ -80,6 +83,7 @@ class IndexStructType(str, Enum):
     MYSCALE = "myscale"
     VECTOR_STORE = "vector_store"
     OPENSEARCH = "opensearch"
+    DASHVECTOR = "dashvector"
     CHATGPT_RETRIEVAL_PLUGIN = "chatgpt_retrieval_plugin"
     DEEPLAKE = "deeplake"
     EPSILLA = "epsilla"
