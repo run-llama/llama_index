@@ -1,5 +1,5 @@
 from types import MappingProxyType
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Union
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -28,7 +28,8 @@ class OpenAILike(OpenAI):
     num_output: Optional[int] = Field(
         default=DEFAULT_NUM_OUTPUTS,
         description=LLMMetadata.__fields__["num_output"].field_info.description
-        + " Set to 0 or None to fall back on max_tokens.",
+        + " Set to 0 or None to fall back first on max_tokens, then if max_tokens is 0"
+        " or None then fall back on -1.",
     )
     is_chat_model: bool = Field(
         default=False,
@@ -40,12 +41,12 @@ class OpenAILike(OpenAI):
             "is_function_calling_model"
         ].field_info.description,
     )
-    tokenizer: Optional[Tokenizer] = Field(
+    tokenizer: Optional[Union[Tokenizer, str]] = Field(
         default=None,
         description=(
-            "An instance of a tokenizer object that has an encode method. If not"
-            " provided, will default to the huggingface tokenizer corresponding"
-            " with the model's name."
+            "An instance of a tokenizer object that has an encode method, or the name"
+            " of a tokenizer model from Hugging Face. If left as None, then this"
+            " disables inference of max_tokens."
         ),
     )
 
@@ -53,15 +54,15 @@ class OpenAILike(OpenAI):
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
             context_window=self.context_window,
-            num_output=self.num_output or self.max_tokens,
+            num_output=self.num_output or self.max_tokens or -1,
             is_chat_model=self.is_chat_model,
             is_function_calling_model=self.is_function_calling_model,
             model_name=self.model,
         )
 
     @property
-    def _tokenizer(self) -> Tokenizer:
-        if not self.tokenizer:
+    def _tokenizer(self) -> Optional[Tokenizer]:
+        if isinstance(self.tokenizer, str):
             try:
                 from transformers import AutoTokenizer
             except ImportError as exc:
@@ -70,7 +71,7 @@ class OpenAILike(OpenAI):
                     "huggingface tokenizers with OpenAILike."
                 ) from exc
 
-            return AutoTokenizer.from_pretrained(self._get_model_name())
+            return AutoTokenizer.from_pretrained(self.tokenizer)
         return self.tokenizer
 
     @classmethod

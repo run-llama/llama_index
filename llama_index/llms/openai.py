@@ -129,7 +129,7 @@ class OpenAI(LLM):
         return "openai_llm"
 
     @property
-    def _tokenizer(self) -> Tokenizer:
+    def _tokenizer(self) -> Optional[Tokenizer]:
         return tiktoken.encoding_for_model(self._get_model_name())
 
     @property
@@ -336,7 +336,7 @@ class OpenAI(LLM):
         return gen()
 
     def _update_max_tokens(self, all_kwargs: Dict[str, Any], prompt: str) -> None:
-        if self.max_tokens is not None:
+        if self.max_tokens is not None or self._tokenizer is None:
             return
         # NOTE: non-chat completion endpoint requires max_tokens to be set
         context_window = self.metadata.context_window
