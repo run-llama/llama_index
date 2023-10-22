@@ -1,18 +1,21 @@
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import pytest
 from llama_index.llms import ChatMessage
 from pytest import MonkeyPatch
 
+if TYPE_CHECKING:
+    from ai21.ai21_object import AI21Object
+
 try:
     import ai21
-    from ai21.ai21_object import AI21Object, construct_ai21_object
+    from ai21.ai21_object import construct_ai21_object
 except ImportError:
     ai21 = None  # type: ignore
 from llama_index.llms.ai21 import AI21
 
 
-def mock_completion(*args: Any, **kwargs: Any) -> Union[Any, AI21Object]:
+def mock_completion(*args: Any, **kwargs: Any) -> Union[Any, "AI21Object"]:
     return construct_ai21_object(
         {
             "id": "f6adacef-0e94-6353-244f-df8d38954b19",
@@ -152,7 +155,7 @@ def mock_completion(*args: Any, **kwargs: Any) -> Union[Any, AI21Object]:
     )
 
 
-def mock_chat(*args: Any, **kwargs: Any) -> Union[Any, AI21Object]:
+def mock_chat(*args: Any, **kwargs: Any) -> Union[Any, "AI21Object"]:
     return construct_ai21_object(
         {
             "id": "f8d0cd0a-7c85-deb2-16b3-491c7ffdd4f2",
