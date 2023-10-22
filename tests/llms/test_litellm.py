@@ -151,7 +151,7 @@ def test_metadata() -> None:
 
 
 @pytest.mark.skipif(litellm is None, reason="litellm not installed")
-def test_deep_infra():
+def test_deep_infra() -> None:
     # deep infra call
     llm = LiteLLM(
         model="deepinfra/meta-llama/Llama-2-70b-chat-hf", max_tokens=10, api_key=""
@@ -163,7 +163,7 @@ def test_deep_infra():
 
 
 @pytest.mark.skipif(litellm is None, reason="litellm not installed")
-def test_openai():
+def test_openai() -> None:
     llm = LiteLLM(model="gpt-3.5-turbo", api_key="")
     message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
     chat_response = llm.chat([message])
@@ -172,7 +172,7 @@ def test_openai():
 
 
 @pytest.mark.skipif(litellm is None, reason="litellm not installed")
-def test_tg_ai():
+def test_tg_ai() -> None:
     # deep infra call
     llm = LiteLLM(
         model="together_ai/togethercomputer/Llama-2-7B-32K-Instruct",
