@@ -6,13 +6,6 @@ except ImportError:
     litellm = None  # type: ignore
 
 import pytest
-from pytest import MonkeyPatch
-
-import sys, os
-sys.path.insert(
-    0, os.path.abspath("../..")
-)  # Adds the parent directory to the system path for testing
-
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.litellm import LiteLLM
 from pytest import MonkeyPatch
@@ -157,38 +150,34 @@ def test_metadata() -> None:
     assert isinstance(llm.metadata.context_window, int)
 
 
+@pytest.mark.skipif(litellm is None, reason="litellm not installed")
 def test_deep_infra():
-    from llama_index.llms import LiteLLM, ChatMessage
-    # # deep infra call
+    # deep infra call
     llm = LiteLLM(
-        model="deepinfra/meta-llama/Llama-2-70b-chat-hf", 
-        max_tokens=10,
-        api_key=""
+        model="deepinfra/meta-llama/Llama-2-70b-chat-hf", max_tokens=10, api_key=""
     )
     message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
     chat_response = llm.chat([message])
     print("\ndeepinfra Chat response\n")
     print(chat_response)
 
+
+@pytest.mark.skipif(litellm is None, reason="litellm not installed")
 def test_openai():
-    from llama_index.llms import LiteLLM, ChatMessage
-    llm = LiteLLM(
-        model="gpt-3.5-turbo",
-        api_key=""
-    )
+    llm = LiteLLM(model="gpt-3.5-turbo", api_key="")
     message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
     chat_response = llm.chat([message])
     print("gpt-3.5-turbo Chat response\n")
     print(chat_response)
 
 
+@pytest.mark.skipif(litellm is None, reason="litellm not installed")
 def test_tg_ai():
-    from llama_index.llms import LiteLLM, ChatMessage
-    # # deep infra call
+    # deep infra call
     llm = LiteLLM(
-        model="together_ai/togethercomputer/Llama-2-7B-32K-Instruct", 
+        model="together_ai/togethercomputer/Llama-2-7B-32K-Instruct",
         max_tokens=10,
-        api_key=""
+        api_key="",
     )
     message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
     chat_response = llm.chat([message])
