@@ -106,4 +106,3 @@ maxdepth: 1
 ---
 /examples/low_level/fusion_retriever.ipynb
 ```
-
