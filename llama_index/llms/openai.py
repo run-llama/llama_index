@@ -338,8 +338,9 @@ class OpenAI(LLM):
         max_tokens = context_window - len(tokens)
         if max_tokens <= 0:
             raise ValueError(
-                f"The prompt is too long for the model. "
-                f"Please use a prompt that is less than {context_window} tokens."
+                f"The prompt has {len(tokens)} tokens, which is too long for"
+                " the model. Please use a prompt that fits within"
+                f" {context_window} tokens."
             )
         all_kwargs["max_tokens"] = max_tokens
 
