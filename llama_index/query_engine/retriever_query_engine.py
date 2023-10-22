@@ -49,7 +49,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         super().__init__(callback_manager)
 
-    def _get_prompts(self) -> Tuple[PromptDictType, PromptMixinType]:
+    def _get_prompts_and_modules(self) -> Tuple[PromptDictType, PromptMixinType]:
         prompts_dict = {}
         module_dict = {"response_synthesizer": self._response_synthesizer}
         return prompts_dict, module_dict

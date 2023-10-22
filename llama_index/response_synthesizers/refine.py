@@ -97,7 +97,7 @@ class Refine(BaseSynthesizer):
             )
         self._program_factory = program_factory or self._default_program_factory
 
-    def _get_prompts(self) -> Tuple[PromptDictType, PromptMixinType]:
+    def _get_prompts_and_modules(self) -> Tuple[PromptDictType, PromptMixinType]:
         """Get prompts."""
         return {
             "text_qa_template": self._text_qa_template,

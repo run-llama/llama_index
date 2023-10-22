@@ -41,7 +41,7 @@ class TreeSummarize(BaseSynthesizer):
         self._use_async = use_async
         self._verbose = verbose
 
-    def _get_prompts(self) -> Tuple[PromptDictType, PromptMixinType]:
+    def _get_prompts_and_modules(self) -> Tuple[PromptDictType, PromptMixinType]:
         """Get prompts."""
         return {"summary_template": self._summary_template}, {}
     
