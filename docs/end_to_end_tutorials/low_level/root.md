@@ -70,17 +70,6 @@ maxdepth: 1
 /examples/low_level/response_synthesis.ipynb
 ```
 
-## Building a Router from Scratch
-
-Beyond the standard RAG pipeline, this takes you one step towards automated decision making with LLMs by showing you how to build a router module from scratch.
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/low_level/router.ipynb
-```
-
 ## Building Evaluation from Scratch
 
 Learn how to build common LLM-based eval modules (correctness, faithfulness) using LLMs and prompt modules; this will help you define your own custom evals!
@@ -91,3 +80,30 @@ maxdepth: 1
 ---
 /examples/low_level/evaluation.ipynb
 ```
+
+## Building Advanced RAG from Scratch
+
+These tutorials will show you how to build advanced functionality beyond the basic RAG pipeline. Especially helpful for advanced users with custom workflows / production needs.
+
+### Building a Router from Scratch
+
+Beyond the standard RAG pipeline, this takes you one step towards automated decision making with LLMs by showing you how to build a router module from scratch.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/router.ipynb
+```
+
+### Building RAG Fusion Retriever from Scratch
+
+Here we show you how to build an advanced retriever capable of query-rewriting, ensembling, dynamic retrieval.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/low_level/fusion_retriever.ipynb
+```
+
