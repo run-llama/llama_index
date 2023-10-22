@@ -65,8 +65,7 @@ class OpenAILike(OpenAI):
                 ) from exc
 
             return AutoTokenizer.from_pretrained(self._get_model_name())
-        else:
-            return self.tokenizer
+        return self.tokenizer
 
     @classmethod
     def class_name(cls) -> str:
