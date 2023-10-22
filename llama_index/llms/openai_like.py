@@ -1,4 +1,5 @@
-from typing import Optional
+from types import MappingProxyType
+from typing import Any, Mapping, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -75,3 +76,13 @@ class OpenAILike(OpenAI):
     @classmethod
     def class_name(cls) -> str:
         return "OpenAILike"
+
+
+# Use these as kwargs for OpenAILike to connect to LocalAIs
+localai_defaults: Mapping[str, Any] = MappingProxyType(
+    {
+        "api_key": "localai_fake",
+        "api_type": "localai_fake",
+        "api_base": "localhost:8080",
+    }
+)
