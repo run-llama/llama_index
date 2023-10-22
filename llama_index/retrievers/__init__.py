@@ -13,6 +13,11 @@ from llama_index.indices.list.retrievers import (
     SummaryIndexRetriever,
 )
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
+from llama_index.indices.struct_store.sql_retriever import (
+    NLSQLRetriever,
+    SQLParserMode,
+    SQLRetriever,
+)
 from llama_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
 from llama_index.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
@@ -54,6 +59,10 @@ __all__ = [
     "VectaraRetriever",
     "YouRetriever",
     "QueryFusionRetriever",
+    # SQL
+    "SQLRetriever",
+    "NLSQLRetriever",
+    "SQLParserMode",
     # legacy
     "ListIndexEmbeddingRetriever",
     "ListIndexRetriever",

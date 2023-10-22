@@ -1,7 +1,7 @@
 """Default query for SQLStructStoreIndex."""
 import logging
 from abc import abstractmethod
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from sqlalchemy import Table
 
@@ -12,6 +12,7 @@ from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
+from llama_index.indices.struct_store.sql_retriever import NLSQLRetriever, SQLParserMode
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
@@ -21,11 +22,15 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
+from llama_index.response_synthesizers import (
+    get_response_synthesizer,
+)
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)
 
 
+# **NOTE**: deprecated (for older versions of sql query engine)
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
     "Given an input question, synthesize a response from the query results.\n"
     "Query: {query_str}\n"
@@ -36,6 +41,19 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL,
     prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
+)
+
+# **NOTE**: newer version of sql query engine
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL_V2 = (
+    "Given an input question, synthesize a response from the query results.\n"
+    "Query: {query_str}\n"
+    "SQL: {sql_query}\n"
+    "SQL Response: {context_str}\n"
+    "Response: "
+)
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2 = PromptTemplate(
+    DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL_V2,
+    prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS_V2,
 )
 
 
@@ -212,105 +230,97 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         return Response(response=response_str, metadata=metadata)
 
 
+def _validate_prompt(response_synthesis_prompt: BasePromptTemplate) -> None:
+    """Validate prompt."""
+    if (
+        response_synthesis_prompt.template_vars
+        != DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2.template_vars
+    ):
+        raise ValueError(
+            "response_synthesis_prompt must have the following template variables: "
+            "query_str, sql_query, context_str"
+        )
+
+
 class BaseSQLTableQueryEngine(BaseQueryEngine):
     def __init__(
         self,
-        sql_database: SQLDatabase,
-        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
-        context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._sql_database = sql_database
         self._service_context = service_context or ServiceContext.from_defaults()
-
-        self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._response_synthesis_prompt = (
-            response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
+            response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2
         )
-        self._context_query_kwargs = context_query_kwargs or {}
+        # do some basic prompt validation
+        _validate_prompt(self._response_synthesis_prompt)
         self._synthesize_response = synthesize_response
         super().__init__(self._service_context.callback_manager, **kwargs)
+
+    @property
+    @abstractmethod
+    def sql_retriever(self) -> NLSQLRetriever:
+        """Get SQL retriever."""
 
     @property
     def service_context(self) -> ServiceContext:
         """Get service context."""
         return self._service_context
 
-    def _parse_response_to_sql(self, response: str, query_bundle: QueryBundle) -> str:
-        """Parse response to SQL."""
-        sql_query_start = response.find("SQLQuery:")
-        if sql_query_start != -1:
-            response = response[sql_query_start:]
-            # TODO: move to removeprefix after Python 3.9+
-            if response.startswith("SQLQuery:"):
-                response = response[len("SQLQuery:") :]
-        sql_result_start = response.find("SQLResult:")
-        if sql_result_start != -1:
-            response = response[:sql_result_start]
-        return response.strip().strip("```").strip()
-
-    @abstractmethod
-    def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
-
-        Get tables schema + optional context as a single string.
-
-        """
-
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        table_desc_str = self._get_table_context(query_bundle)
-        logger.info(f"> Table desc str: {table_desc_str}")
-
-        response_str = self._service_context.llm_predictor.predict(
-            self._text_to_sql_prompt,
-            query_str=query_bundle.query_str,
-            schema=table_desc_str,
-            dialect=self._sql_database.dialect,
+        retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(
+            query_bundle
         )
 
-        sql_query_str = self._parse_response_to_sql(response_str, query_bundle)
-        # assume that it's a valid SQL query
-        logger.debug(f"> Predicted SQL query: {sql_query_str}")
-
-        raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
-        metadata["sql_query"] = sql_query_str
-
+        sql_query_str = metadata["sql_query"]
         if self._synthesize_response:
-            response_str = self._service_context.llm_predictor.predict(
-                self._response_synthesis_prompt,
-                query_str=query_bundle.query_str,
+            partial_synthesis_prompt = self._response_synthesis_prompt.partial_format(
                 sql_query=sql_query_str,
-                sql_response_str=raw_response_str,
             )
+            response_synthesizer = get_response_synthesizer(
+                service_context=self._service_context,
+                callback_manager=self._service_context.callback_manager,
+                text_qa_template=partial_synthesis_prompt,
+            )
+            response = response_synthesizer.synthesize(
+                query=query_bundle.query_str,
+                nodes=retrieved_nodes,
+            )
+            cast(Dict, response.metadata).update(metadata)
+            return cast(Response, response)
         else:
-            response_str = raw_response_str
-
-        return Response(response=response_str, metadata=metadata)
+            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        table_desc_str = self._get_table_context(query_bundle)
-        logger.info(f"> Table desc str: {table_desc_str}")
-
-        response_str = await self._service_context.llm_predictor.apredict(
-            self._text_to_sql_prompt,
-            query_str=query_bundle.query_str,
-            schema=table_desc_str,
-            dialect=self._sql_database.dialect,
+        retrieved_nodes, metadata = await self.sql_retriever.aretrieve_with_metadata(
+            query_bundle
         )
 
-        sql_query_str = self._parse_response_to_sql(response_str, query_bundle)
-        # assume that it's a valid SQL query
-        logger.debug(f"> Predicted SQL query: {sql_query_str}")
-
-        response_str, metadata = self._sql_database.run_sql(sql_query_str)
-        metadata["sql_query"] = sql_query_str
-        return Response(response=response_str, metadata=metadata)
+        sql_query_str = metadata["sql_query"]
+        if self._synthesize_response:
+            partial_synthesis_prompt = self._response_synthesis_prompt.partial_format(
+                sql_query=sql_query_str,
+            )
+            response_synthesizer = get_response_synthesizer(
+                service_context=self._service_context,
+                callback_manager=self._service_context.callback_manager,
+                text_qa_template=partial_synthesis_prompt,
+            )
+            response = await response_synthesizer.asynthesize(
+                query=query_bundle.query_str,
+                nodes=retrieved_nodes,
+            )
+            cast(Dict, response.metadata).update(metadata)
+            return cast(Response, response)
+        else:
+            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            return Response(response=response_str, metadata=metadata)
 
 
 class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
@@ -332,58 +342,28 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._tables = tables
-        super().__init__(
+        # self._tables = tables
+        self._sql_retriever = NLSQLRetriever(
             sql_database,
             text_to_sql_prompt=text_to_sql_prompt,
             context_query_kwargs=context_query_kwargs,
+            tables=tables,
+            service_context=service_context,
+        )
+        super().__init__(
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
             service_context=service_context,
             **kwargs,
         )
 
-    def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
-
-        Get tables schema + optional context as a single string.
-
-        """
-        context_strs = []
-        if self._tables:
-            for table in self._tables:
-                if isinstance(table, Table):
-                    table_str = str(table.name)
-                if isinstance(table, str):
-                    table_str = table
-                else:
-                    raise ValueError(f"Unknown table type: {table}")
-                table_info = self._sql_database.get_single_table_info(table_str)
-
-                if self._context_query_kwargs.get(table_str, None) is not None:
-                    table_opt_context = " The table description is: "
-                    table_opt_context += self._context_query_kwargs[table_str]
-                    table_info += table_opt_context
-
-                context_strs.append(table_info)
-
-        else:
-            # get all tables
-            table_names = self._sql_database.get_usable_table_names()
-            for table_name in table_names:
-                table_info = self._sql_database.get_single_table_info(table_name)
-
-                if self._context_query_kwargs.get(table_name, None) is not None:
-                    table_opt_context = " The table description is: "
-                    table_opt_context += self._context_query_kwargs[table_name]
-                    table_info += table_opt_context
-
-                context_strs.append(table_info)
-
-        return "\n\n".join(context_strs)
+    @property
+    def sql_retriever(self) -> NLSQLRetriever:
+        """Get SQL retriever."""
+        return self._sql_retriever
 
 
-class PGVectorSQLQueryEngine(NLSQLTableQueryEngine):
+class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
     """PGvector SQL query engine.
 
     A modified version of the normal text-to-SQL query engine because
@@ -405,37 +385,26 @@ class PGVectorSQLQueryEngine(NLSQLTableQueryEngine):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._tables = tables
         text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT
-        super().__init__(
+        self._sql_retriever = NLSQLRetriever(
             sql_database,
             text_to_sql_prompt=text_to_sql_prompt,
             context_query_kwargs=context_query_kwargs,
+            tables=tables,
+            sql_parser_mode=SQLParserMode.PGVECTOR,
+            service_context=service_context,
+        )
+        super().__init__(
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
             service_context=service_context,
             **kwargs,
         )
 
-    def _parse_response_to_sql(self, response: str, query_bundle: QueryBundle) -> str:
-        """Parse response to SQL."""
-        sql_query_start = response.find("SQLQuery:")
-        if sql_query_start != -1:
-            response = response[sql_query_start:]
-            # TODO: move to removeprefix after Python 3.9+
-            if response.startswith("SQLQuery:"):
-                response = response[len("SQLQuery:") :]
-        sql_result_start = response.find("SQLResult:")
-        if sql_result_start != -1:
-            response = response[:sql_result_start]
-
-        # this gets you the sql string with [query_vector] placeholders
-        raw_sql_str = response.strip().strip("```").strip()
-        query_embedding = self._service_context.embed_model.get_query_embedding(
-            query_bundle.query_str
-        )
-        query_embedding_str = str(query_embedding)
-        return raw_sql_str.replace("[query_vector]", query_embedding_str)
+    @property
+    def sql_retriever(self) -> NLSQLRetriever:
+        """Get SQL retriever."""
+        return self._sql_retriever
 
 
 class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
@@ -454,42 +423,25 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._table_retriever = table_retriever
-        self._context_str_prefix = context_str_prefix
-        super().__init__(
+        self._sql_retriever = NLSQLRetriever(
             sql_database,
             text_to_sql_prompt=text_to_sql_prompt,
             context_query_kwargs=context_query_kwargs,
+            table_retriever=table_retriever,
+            context_str_prefix=context_str_prefix,
+            service_context=service_context,
+        )
+        super().__init__(
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
             service_context=service_context,
             **kwargs,
         )
 
-    def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
-
-        Get tables schema + optional context as a single string.
-
-        """
-        context_strs = []
-        if self._context_str_prefix is not None:
-            context_strs = [self._context_str_prefix]
-
-        table_schema_objs = self._table_retriever.retrieve(query_bundle)
-        for table_schema_obj in table_schema_objs:
-            table_info = self._sql_database.get_single_table_info(
-                table_schema_obj.table_name
-            )
-
-            if table_schema_obj.context_str:
-                table_opt_context = " The table description is: "
-                table_opt_context += table_schema_obj.context_str
-                table_info += table_opt_context
-
-            context_strs.append(table_info)
-
-        return "\n\n".join(context_strs)
+    @property
+    def sql_retriever(self) -> NLSQLRetriever:
+        """Get SQL retriever."""
+        return self._sql_retriever
 
 
 # legacy

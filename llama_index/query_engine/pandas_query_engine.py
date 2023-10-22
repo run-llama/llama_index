@@ -102,6 +102,9 @@ class PandasQueryEngine(BaseQueryEngine):
         output_processor (Optional[Callable[[str], str]]): Output processor.
             A callable that takes in the output string, pandas DataFrame,
             and any output kwargs and returns a string.
+            eg.kwargs["max_colwidth"] = [int] is used to set the length of text
+            that each column can display during str(df). Set it to a higher number
+            if there is possibly long text in the dataframe.
         pandas_prompt (Optional[BasePromptTemplate]): Pandas prompt to use.
         head (int): Number of rows to show in the table context.
 

@@ -20,6 +20,7 @@ Retriever Query Engine </examples/query_engine/CustomRetrievers.ipynb>
 ---
 maxdepth: 1
 ---
+/examples/index_structs/struct_indices/SQLIndexDemo.ipynb
 /examples/query_engine/json_query_engine.ipynb
 /examples/query_engine/pandas_query_engine.ipynb
 /examples/query_engine/knowledge_graph_query_engine.ipynb

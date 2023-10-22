@@ -36,12 +36,13 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
-| MyScale                  | cloud               | ✓                  | ✓             |        | ✓               |       |
+| MyScale                  | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Tair                     | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Simple                   | in-memory           | ✓                  |               | ✓      |                 |       |
 | FAISS                    | in-memory           |                    |               |        |                 |       |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
+| TencentVectorDB          | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 
@@ -80,4 +81,5 @@ maxdepth: 1
 /examples/vector_stores/EpsillaIndexDemo.ipynb
 /examples/vector_stores/Timescalevector.ipynb
 /examples/vector_stores/DashvectorIndexDemo.ipynb
+/examples/vector_stores/TencentVectorDBIndexDemo.ipynb
 ```

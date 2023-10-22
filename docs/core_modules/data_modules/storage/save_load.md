@@ -84,14 +84,19 @@ s3 = s3fs.S3FileSystem(
    s3_additional_kwargs={'ACL': 'public-read'}
 )
 
-# save index to remote blob storage
+# If you're using 2+ indexes with the same StorageContext,
+# run this to save the index to remote blob storage
 index.set_index_id("vector_index")
-# this is {bucket_name}/{index_name}
-index.storage_context.persist('llama-index/storage_demo', fs=s3)
+
+# persist index to s3
+s3_bucket_name = 'llama-index/storage_demo'  # {bucket_name}/{index_name}
+index.storage_context.persist(persist_dir=s3_bucket_name, fs=s3)
 
 # load index from s3
-sc = StorageContext.from_defaults(persist_dir='llama-index/storage_demo', fs=s3)
-index2 = load_index_from_storage(sc, 'vector_index')
+index_from_s3 = load_index_from_storage(
+    StorageContext.from_defaults(persist_dir=s3_bucket_name, fs=s3),
+    index_id='vector_index'
+)
 ```
 
 By default, if you do not pass a filesystem, we will assume a local filesystem.

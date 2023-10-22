@@ -109,32 +109,47 @@ If you wanted to use embeddings not offered by LlamaIndex or Langchain, you can 
 The example below uses Instructor Embeddings ([install/setup details here](https://huggingface.co/hkunlp/instructor-large)), and implements a custom embeddings class. Instructor embeddings work by providing text, as well as "instructions" on the domain of the text to embed. This is helpful when embedding text from a very specific and specialized topic.
 
 ```python
+from pydantic import PrivateAttr
 from typing import Any, List
 from InstructorEmbedding import INSTRUCTOR
 from llama_index.embeddings.base import BaseEmbedding
 
 class InstructorEmbeddings(BaseEmbedding):
+  _model: Any = PrivateAttr()
+  _instruction: str = PrivateAttr()
+
   def __init__(
     self,
-    instructor_model_name: str = "hkunlp/instructor-large",
+    model_name: str = "hkunlp/instructor-large",
     instruction: str = "Represent the Computer Science documentation or question:",
+    embed_batch_size: int = 2,
     **kwargs: Any,
   ) -> None:
-    self._model = INSTRUCTOR(instructor_model_name)
+    self._model = INSTRUCTOR(model_name)
     self._instruction = instruction
-    super().__init__(**kwargs)
+    super().__init__(model_name=model_name, embed_batch_size=embed_batch_size, **kwargs)
 
-    def _get_query_embedding(self, query: str) -> List[float]:
-      embeddings = self._model.encode([[self._instruction, query]])
-      return embeddings[0]
+  @classmethod
+  def class_name(cls) -> str:
+    return "InstructorEmbedding"
 
-    def _get_text_embedding(self, text: str) -> List[float]:
-      embeddings = self._model.encode([[self._instruction, text]])
-      return embeddings[0]
+  def _get_query_embedding(self, query: str) -> List[float]:
+    embeddings = self._model.encode([[self._instruction, query]])
+    return embeddings[0]
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-      embeddings = self._model.encode([[self._instruction, text] for text in texts])
-      return embeddings
+  def _get_text_embedding(self, text: str) -> List[float]:
+    embeddings = self._model.encode([[self._instruction, text]])
+    return embeddings[0]
+
+  def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+    embeddings = self._model.encode([[self._instruction, text] for text in texts])
+    return embeddings
+
+  async def _aget_query_embedding(self, query: str) -> List[float]:
+    return self._get_query_embedding(query)
+
+  async def _aget_text_embedding(self, text: str) -> List[float]:
+    return self._get_text_embedding(text)
 ```
 
 ## Standalone Usage

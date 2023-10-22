@@ -40,7 +40,7 @@ LLM infra improvements are progressing quickly and we expect cost and latency to
 Here are some additional concerns:
 
 1. **Evaluation** - Once I start diving deeper into improving quality, how can I evaluate individual components? How can I keep track of issues and track whether / how they are being improved over time as I change my application?
-2. **Data-Driven** - How can I automate more of my evaluation and iteration process? How do I start small and add useful data points over time? How can I organize different datasets and metrics which serving different purposes? How can I manage the complexity while keeping track of my guiding light of providing the best user experience?
+2. **Data-Driven** - How can I automate more of my evaluation and iteration process? How do I start small and add useful data points over time? How can I organize different datasets and metrics which serve different purposes? How can I manage the complexity while keeping track of my guiding light of providing the best user experience?
 3. **Customization / Complexity Tradeoff** - How do I improve each stage of the pipeline - preprocessing and feature extraction, retrieval, generation? Does this involve adding additional structure or processing? How can I break down this goal into more measurable and trackable sub-goals?
 
 Differences between **Evaluation** and being **Data-Driven**:
