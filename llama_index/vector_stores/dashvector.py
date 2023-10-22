@@ -1,8 +1,4 @@
-"""DashVector Vector store index.
-
-An index that that is built on top of an existing vector store.
-
-"""
+"""DashVector Vector Store."""
 import logging
 from typing import Any, List, Optional, cast
 
