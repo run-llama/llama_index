@@ -9,6 +9,12 @@ try:
     from ai21.ai21_object import AI21Object, construct_ai21_object
 except ImportError:
     ai21 = None  # type: ignore
+    AI21Object = None
+
+    def construct_ai21_object(obj: Any) -> None:
+        return None
+
+
 from llama_index.llms.ai21 import AI21
 
 
