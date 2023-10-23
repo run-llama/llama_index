@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import openai
 from tenacity import (
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     stop_after_delay,
     stop_all,
@@ -103,6 +104,13 @@ _TEXT_MODE_MODEL_DICT = {
 @retry(
     wait=wait_random_exponential(min=1, max=20),
     stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
+    retry=(
+        retry_if_exception_type(openai.error.Timeout)
+        | retry_if_exception_type(openai.error.APIError)
+        | retry_if_exception_type(openai.error.APIConnectionError)
+        | retry_if_exception_type(openai.error.RateLimitError)
+        | retry_if_exception_type(openai.error.ServiceUnavailableError)
+    ),
 )
 def get_embedding(
     text: str, engine: Optional[str] = None, **kwargs: Any
@@ -126,6 +134,13 @@ def get_embedding(
 @retry(
     wait=wait_random_exponential(min=1, max=20),
     stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
+    retry=(
+        retry_if_exception_type(openai.error.Timeout)
+        | retry_if_exception_type(openai.error.APIError)
+        | retry_if_exception_type(openai.error.APIConnectionError)
+        | retry_if_exception_type(openai.error.RateLimitError)
+        | retry_if_exception_type(openai.error.ServiceUnavailableError)
+    ),
 )
 async def aget_embedding(
     text: str, engine: Optional[str] = None, **kwargs: Any
@@ -149,6 +164,13 @@ async def aget_embedding(
 @retry(
     wait=wait_random_exponential(min=1, max=20),
     stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
+    retry=(
+        retry_if_exception_type(openai.error.Timeout)
+        | retry_if_exception_type(openai.error.APIError)
+        | retry_if_exception_type(openai.error.APIConnectionError)
+        | retry_if_exception_type(openai.error.RateLimitError)
+        | retry_if_exception_type(openai.error.ServiceUnavailableError)
+    ),
 )
 def get_embeddings(
     list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
@@ -173,6 +195,13 @@ def get_embeddings(
 @retry(
     wait=wait_random_exponential(min=1, max=20),
     stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
+    retry=(
+        retry_if_exception_type(openai.error.Timeout)
+        | retry_if_exception_type(openai.error.APIError)
+        | retry_if_exception_type(openai.error.APIConnectionError)
+        | retry_if_exception_type(openai.error.RateLimitError)
+        | retry_if_exception_type(openai.error.ServiceUnavailableError)
+    ),
 )
 async def aget_embeddings(
     list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
