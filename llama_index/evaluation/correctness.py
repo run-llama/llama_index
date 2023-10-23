@@ -28,10 +28,10 @@ On a separate line provide your reasoning for the score as well.
 Follow these guidelines for scoring:
 - Your score has to be between 1 and 5, where 1 is the worst and 5 is the best.
 - If the generated answer is not relevant to the user query, you should give a score of 1.
-- If the generated answer is relevant but there are discrepancies in the names, dates, years, places, concepts or organizations mentioned, and these do not align with either the query or the reference answer, you should assign a score between 2 and 2.5
+- If the generated answer is relevant but there are discrepancies in the names, dates, years, places, concepts or organizations mentioned, and these do not align with either the query or the reference answer, you should give a score between 2 and 2.5
 - If the answer is mostly relevant but lacks some details, give it a score between 2.5 and 3.5 based on how much and how important the missing details are.
 - If the generated answer is relevant and has all the necessary information but has extra details that are not needed, give it a score between 3.5 and 4.
-- If the generated answer is factually similar to the reference answer, is accurate, and doesn't include extra details, it should receive a score of 4 to 5.
+- If the generated answer is factually similar to the reference answer, is accurate, and doesn't include extra details, give it a score between 4 and 5.
 
 Example Response:
 4.0
