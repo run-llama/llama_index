@@ -33,7 +33,7 @@ class PromptMixin(ABC):
             all_prompt_keys[key] += 1
         # add keys from each prompt module
         for module in module_dict.values():
-            for key in module.get_prompts().keys():
+            for key in module.get_prompts():
                 all_prompt_keys[key] += 1
         # check for duplicates
         for key, count in all_prompt_keys.items():
@@ -62,7 +62,7 @@ class PromptMixin(ABC):
         prompt_modules = self._get_prompt_modules()
 
         # update prompts for current module
-        self._update_prompts(**{key: prompts[key] for key in prompt_dict.keys()})
+        self._update_prompts(**{key: prompts[key] for key in prompt_dict})
 
         # now update prompts for submodules
         for module in prompt_modules.values():

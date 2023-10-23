@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Sequence, Any
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.schema import QueryBundle, QueryType
@@ -21,14 +21,13 @@ class BaseQueryEngine(PromptMixin):
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
         return {}
-    
+
     def _get_prompt_modules(self) -> Dict[str, Any]:
         """Get prompt modules."""
         return {}
 
     def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
         """Update prompts."""
-        pass
 
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         with self.callback_manager.as_trace("query"):
