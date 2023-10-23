@@ -121,6 +121,7 @@ The stack includes `sql-create-context` as the training dataset, OpenLLaMa as th
 ---
 maxdepth: 1
 ---
+Fine-tuning Text-to-SQL with Gradient.ai </examples/finetuning/gradient/gradient_text2sql.ipynb>
 Llama 2 Text-to-SQL Fine-tuning (Repo) <https://github.com/run-llama/modal_finetune_sql>
 Llama 2 Text-to-SQL Fine-tuning (Notebook) <https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb>
 ```

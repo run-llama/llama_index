@@ -339,6 +339,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
+        context_str_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -348,6 +349,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             text_to_sql_prompt=text_to_sql_prompt,
             context_query_kwargs=context_query_kwargs,
             tables=tables,
+            context_str_prefix=context_str_prefix,
             service_context=service_context,
         )
         super().__init__(
@@ -382,6 +384,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
+        context_str_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -392,6 +395,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             context_query_kwargs=context_query_kwargs,
             tables=tables,
             sql_parser_mode=SQLParserMode.PGVECTOR,
+            context_str_prefix=context_str_prefix,
             service_context=service_context,
         )
         super().__init__(
