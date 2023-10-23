@@ -232,3 +232,6 @@ in_place = true
 spaces_before_inline_comment = 2  # Match Python PEP 8
 spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
+
+[tool.tomlsort.overrides."tool.poetry.dependencies"]
+table_keys = false
