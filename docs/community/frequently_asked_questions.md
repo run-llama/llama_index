@@ -6,17 +6,44 @@
 
 Discover how to tailor LLMs, explore available models, understand cost implications, and switch between languages.
 
+```{toctree}
+---
+maxdepth: 1
+hidden: true
+---
+faq/llms.md
+
+```
+
 ---
 
 ##### [Embeddings](./faq/embeddings.md)
 
 How to customize the embedding, Which embeddings model choose, their pros and cons
 
+```{toctree}
+---
+maxdepth: 1
+hidden: true
+---
+faq/embeddings.md
+
+```
+
 ---
 
-##### [Vector Database](./faq/vector_databases.md)
+##### [Vector Database](./faq/vector_database.md)
 
 Get insights on personalizing vector databases, delve into database options
+
+```{toctree}
+---
+maxdepth: 1
+hidden: true
+---
+faq/vector_database.md
+
+```
 
 ---
 
@@ -24,18 +51,27 @@ Get insights on personalizing vector databases, delve into database options
 
 Know more about query engines and their possibilities
 
+```{toctree}
+---
+maxdepth: 1
+---
+faq/query_engines.md
+
+```
+
 ---
 
 ##### [Chat Engines](./faq/chat_engines.md)
 
 Know more about chat engines and their possibilities
 
----
-
 ```{toctree}
 ---
 maxdepth: 1
+hidden: true
 ---
-faq/llms.md
+faq/chat_engines.md
 
 ```
+
+---
