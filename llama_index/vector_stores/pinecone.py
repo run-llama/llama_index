@@ -120,7 +120,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata: bool = True
+    flat_metadata: bool = False
 
     api_key: Optional[str]
     index_name: Optional[str]
