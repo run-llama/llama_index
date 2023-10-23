@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import Dict, Optional, Tuple, Union
 
 from llama_index.prompts.base import BasePromptTemplate
+from copy import deepcopy
 
 HasPromptType = Union["PromptMixin", BasePromptTemplate]
 PromptDictType = Dict[str, BasePromptTemplate]
@@ -46,7 +47,8 @@ class PromptMixin(ABC):
         module_dict = self._get_prompt_modules()
         self._validate_prompts(prompts_dict, module_dict)
 
-        all_prompts = prompts_dict
+        # avoid modifying the original dict
+        all_prompts = deepcopy(prompts_dict)
         for prompt_module in module_dict.values():
             all_prompts.update(prompt_module.get_prompts())
 
@@ -58,11 +60,10 @@ class PromptMixin(ABC):
         Other prompts will remain in place.
 
         """
-        prompt_dict = self._get_prompts()
         prompt_modules = self._get_prompt_modules()
 
         # update prompts for current module
-        self._update_prompts(**{key: prompts[key] for key in prompt_dict})
+        self._update_prompts(**{key: v for key, v in prompts.items()})
 
         # now update prompts for submodules
         for module in prompt_modules.values():
