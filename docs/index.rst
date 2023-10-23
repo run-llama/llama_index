@@ -169,8 +169,10 @@ Associated projects
    :caption: Community
    :hidden:
 
+   community/frequently_asked_questions.md
    community/integrations.md
    community/app_showcase.md
+
 
 .. toctree::
    :maxdepth: 1
