@@ -47,11 +47,16 @@ class GradientFinetuneEngine(BaseLLMFinetuneEngine):
         name: Optional[str] = None,
         rank: Optional[int] = None,
         workspace_id: Optional[str] = None,
+        verbose: bool = True,
+        max_steps: Optional[int] = None,
+        batch_size: int = 1,
     ) -> None:
         self._access_token = access_token
         self._host = host
         self._workspace_id = workspace_id
         self._data_path = data_path
+        self._max_steps = max_steps
+        self._batch_size = batch_size
 
         if (base_model_slug is None and model_adapter_id is None) or (
             isinstance(base_model_slug, str) and isinstance(model_adapter_id, str)
@@ -83,6 +88,7 @@ class GradientFinetuneEngine(BaseLLMFinetuneEngine):
                 "Could not import Gradient Python package. "
                 "Please install it with `pip install gradientai`."
             ) from e
+        self._verbose = verbose
 
     def close(self) -> None:
         self._gradient.close()
@@ -90,8 +96,11 @@ class GradientFinetuneEngine(BaseLLMFinetuneEngine):
     def finetune(self) -> None:
         from gradientai import Sample
 
+        cur_batch = []
         with open(self._data_path) as f:
             for [i, line] in enumerate(f):
+                if self._max_steps is not None and i >= self._max_steps:
+                    break
                 parsedLine = json.loads(line)
                 if not isinstance(parsedLine, dict):
                     raise ValueError(
@@ -101,7 +110,30 @@ class GradientFinetuneEngine(BaseLLMFinetuneEngine):
                     inputs=parsedLine["inputs"],
                     multiplier=parsedLine.get("multiplier", None),
                 )
-                self._model_adapter.fine_tune(samples=[sample])
+                cur_batch.append(sample)
+                if len(cur_batch) == self._batch_size:
+                    ft_response = self._model_adapter.fine_tune(samples=cur_batch)
+                    cur_batch = []
+                else:
+                    ft_response = None
+
+                if self._verbose and ft_response is not None:
+                    print(
+                        f"fine-tuning step {i + 1}: loss={ft_response.sum_loss}, "
+                        f"trainable tokens={ft_response.number_of_trainable_tokens}"
+                    )
+
+        if len(cur_batch) > 0:
+            ft_response = self._model_adapter.fine_tune(samples=cur_batch)
+            cur_batch = []
+
+    @property
+    def model_adapter_id(self) -> str:
+        return self._model_adapter.id
+
+    @property
+    def model_adapter(self) -> Any:
+        return self._model_adapter
 
     def get_finetuned_model(self, **model_kwargs: Any) -> GradientModelAdapterLLM:
         return GradientModelAdapterLLM(
