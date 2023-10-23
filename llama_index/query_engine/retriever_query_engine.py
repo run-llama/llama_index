@@ -49,10 +49,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         super().__init__(callback_manager)
 
-    def _get_prompts_and_modules(self) -> Tuple[PromptDictType, PromptMixinType]:
-        prompts_dict = {}
-        module_dict = {"response_synthesizer": self._response_synthesizer}
-        return prompts_dict, module_dict
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {"response_synthesizer": self._response_synthesizer}
 
     @classmethod
     def from_args(
@@ -217,3 +216,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
     def retriever(self) -> BaseRetriever:
         """Get the retriever object."""
         return self._retriever
+
+    @property
+    def response_synthesizer(self) -> BaseSynthesizer:
+        """Get the response synthesizer object."""
+        return self._response_synthesizer

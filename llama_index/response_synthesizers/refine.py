@@ -1,7 +1,6 @@
 import logging
-from typing import Any, Callable, Generator, Optional, Sequence, Type, cast, Tuple
+from typing import Any, Callable, Generator, Optional, Sequence, Tuple, Type, cast
 
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import truncate_text
@@ -11,6 +10,7 @@ from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
     DEFAULT_TEXT_QA_PROMPT_SEL,
 )
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
@@ -97,13 +97,13 @@ class Refine(BaseSynthesizer):
             )
         self._program_factory = program_factory or self._default_program_factory
 
-    def _get_prompts_and_modules(self) -> Tuple[PromptDictType, PromptMixinType]:
+    def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
         return {
             "text_qa_template": self._text_qa_template,
-            "refine_template": self._refine_template
-        }, {}
-    
+            "refine_template": self._refine_template,
+        }
+
     def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
         """Update prompts."""
         if "text_qa_template" in prompts:

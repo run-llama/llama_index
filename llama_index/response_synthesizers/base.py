@@ -15,6 +15,7 @@ from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.mixin import PromptMixin
 from llama_index.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
@@ -23,7 +24,7 @@ from llama_index.response.schema import (
 )
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 from llama_index.types import RESPONSE_TEXT_TYPE
-from llama_index.prompts.mixin import PromptMixin
+from llama_index.prompts.base import BasePromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,18 @@ class BaseSynthesizer(PromptMixin):
         self._callback_manager = self._service_context.callback_manager
         self._streaming = streaming
         self._output_cls = output_cls
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {}
+    
+    def _get_prompt_modules(self) -> Dict[str, Any]:
+        """Get prompt modules."""
+        return {}
+
+    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+        """Update prompts."""
+        pass
 
     @property
     def service_context(self) -> ServiceContext:
