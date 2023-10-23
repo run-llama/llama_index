@@ -36,7 +36,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 )
 
 
-def default_output_processor(llm_output: str, json_value: JSONType) -> Dict[str, Any]:
+def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
     """Default output processor that extracts values based on JSON Path expressions."""
     # Split the given string into separate JSON Path expressions
     expressions = [expr.strip() for expr in llm_output.split(",")]
