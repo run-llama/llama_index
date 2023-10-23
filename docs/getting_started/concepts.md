@@ -26,11 +26,11 @@ Let's explore each stage in detail.
 
 ### Indexing Stage
 
-LlamaIndex help you prepare the knowledge base with a suite of data connectors and indexes.
+LlamaIndex helps you prepare the knowledge base with a suite of data connectors and indexes.
 ![](/_static/getting_started/indexing.jpg)
 
 [**Data Connectors**](/core_modules/data_modules/connector/root.md):
-A data connector (i.e. `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
+A data connector (i.e. `Reader`) ingests data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
 [**Documents / Nodes**](/core_modules/data_modules/documents_and_nodes/root.md): A `Document` is a generic container around any data source - for instance, a PDF, an API output, or retrieved data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. It's a rich representation that includes metadata and relationships (to other nodes) to enable accurate and expressive retrieval operations.
 
