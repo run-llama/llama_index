@@ -45,7 +45,7 @@ class TreeSummarize(BaseSynthesizer):
         """Get prompts."""
         return {"summary_template": self._summary_template}
 
-    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+    def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "summary_template" in prompts:
             self._summary_template = prompts["summary_template"]

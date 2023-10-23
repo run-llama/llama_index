@@ -18,6 +18,15 @@ class Generation(BaseSynthesizer):
         super().__init__(service_context=service_context, streaming=streaming)
         self._input_prompt = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"simple_template": self._input_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "simple_template" in prompts:
+            self._input_prompt = prompts["simple_template"]
+
     async def aget_response(
         self,
         query_str: str,

@@ -18,7 +18,7 @@ class MockObject2(PromptMixin):
     def _get_prompt_modules(self) -> PromptMixinType:
         return {}
 
-    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+    def _update_prompts(self, prompts: PromptDictType) -> None:
         if "abc" in prompts:
             self._prompt_dict_2["abc"] = prompts["abc"]
 
@@ -37,20 +37,20 @@ class MockObject1(PromptMixin):
     def _get_prompt_modules(self) -> PromptMixinType:
         return {"mock_object_2": self.mock_object_2}
 
-    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+    def _update_prompts(self, prompts: PromptDictType) -> None:
         if "summary" in prompts:
             self._prompt_dict_1["summary"] = prompts["summary"]
         if "foo" in prompts:
             self._prompt_dict_1["foo"] = prompts["foo"]
 
 
-def test_prompt_mixin():
+def test_prompt_mixin() -> None:
     mock_obj1 = MockObject1()
     prompts = mock_obj1.get_prompts()
     assert prompts == {
         "summary": PromptTemplate("{summary}"),
         "foo": PromptTemplate("{foo} {bar}"),
-        "abc": PromptTemplate("{abc} {def}"),
+        "mock_object_2:abc": PromptTemplate("{abc} {def}"),
     }
 
     assert mock_obj1.mock_object_2.get_prompts() == {
@@ -59,11 +59,13 @@ def test_prompt_mixin():
 
     # update prompts
     mock_obj1.update_prompts(
-        summary=PromptTemplate("{summary} testing"),
-        abc=PromptTemplate("{abc} {def} ghi"),
+        {
+            "summary": PromptTemplate("{summary} testing"),
+            "mock_object_2:abc": PromptTemplate("{abc} {def} ghi"),
+        }
     )
     assert mock_obj1.get_prompts() == {
         "summary": PromptTemplate("{summary} testing"),
         "foo": PromptTemplate("{foo} {bar}"),
-        "abc": PromptTemplate("{abc} {def} ghi"),
+        "mock_object_2:abc": PromptTemplate("{abc} {def} ghi"),
     }

@@ -16,7 +16,7 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import BasePromptTemplate
-from llama_index.prompts.mixin import PromptMixin
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
@@ -54,7 +54,7 @@ class BaseSynthesizer(PromptMixin):
         """Get prompt modules."""
         return {}
 
-    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+    def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
 
     @property

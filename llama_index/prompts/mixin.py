@@ -2,10 +2,10 @@
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Dict, Optional, Tuple, Union
+from copy import deepcopy
+from typing import Dict, List, Optional, Tuple, Union
 
 from llama_index.prompts.base import BasePromptTemplate
-from copy import deepcopy
 
 HasPromptType = Union["PromptMixin", BasePromptTemplate]
 PromptDictType = Dict[str, BasePromptTemplate]
@@ -22,24 +22,35 @@ class PromptMixin(ABC):
     """
 
     def _validate_prompts(
-        self, prompts_dict: PromptDictType, module_dict: PromptMixinType
+        self,
+        prompts_dict: PromptDictType,
+        module_dict: PromptMixinType,
     ) -> None:
         """Validate prompts."""
-        # validate each prompt module to make sure there's no overlapping keys
-        # (otherwise update will fail)
-        # start a counter of keys
-        all_prompt_keys = defaultdict(int)
-        # add keys from prompt dict
+        # check if prompts_dict, module_dict has restricted ":" token
         for key in prompts_dict:
-            all_prompt_keys[key] += 1
-        # add keys from each prompt module
-        for module in module_dict.values():
-            for key in module.get_prompts():
-                all_prompt_keys[key] += 1
-        # check for duplicates
-        for key, count in all_prompt_keys.items():
-            if count > 1:
-                raise ValueError(f"Duplicate prompt key {key} found.")
+            if ":" in key:
+                raise ValueError(f"Prompt key {key} cannot contain ':'.")
+
+        for key in module_dict:
+            if ":" in key:
+                raise ValueError(f"Prompt key {key} cannot contain ':'.")
+
+        # # validate each prompt module to make sure there's no overlapping keys
+        # # (otherwise update will fail)
+        # # start a counter of keys
+        # all_prompt_keys = defaultdict(int)
+        # # add keys from prompt dict
+        # for key in prompts_dict:
+        #     all_prompt_keys[key] += 1
+        # # add keys from each prompt module
+        # for module in module_dict.values():
+        #     for key in module.get_prompts():
+        #         all_prompt_keys[key] += 1
+        # # check for duplicates
+        # for key, count in all_prompt_keys.items():
+        #     if count > 1:
+        #         raise ValueError(f"Duplicate prompt key {key} found.")
 
     def get_prompts(self) -> Dict[str, BasePromptTemplate]:
         """Get a prompt."""
@@ -49,12 +60,13 @@ class PromptMixin(ABC):
 
         # avoid modifying the original dict
         all_prompts = deepcopy(prompts_dict)
-        for prompt_module in module_dict.values():
-            all_prompts.update(prompt_module.get_prompts())
-
+        for module_name, prompt_module in module_dict.items():
+            # append module name to each key in sub-modules by ":"
+            for key, prompt in prompt_module.get_prompts().items():
+                all_prompts[f"{module_name}:{key}"] = prompt
         return all_prompts
 
-    def update_prompts(self, **prompts: BasePromptTemplate) -> None:
+    def update_prompts(self, prompts_dict: Dict[str, BasePromptTemplate]) -> None:
         """Update prompts.
 
         Other prompts will remain in place.
@@ -63,11 +75,22 @@ class PromptMixin(ABC):
         prompt_modules = self._get_prompt_modules()
 
         # update prompts for current module
-        self._update_prompts(**{key: v for key, v in prompts.items()})
+        self._update_prompts(prompts_dict)
+
+        # get sub-module keys
+        # mapping from module name to sub-module prompt keys
+        sub_prompt_dicts: Dict[str, PromptDictType] = defaultdict(dict)
+        for key in prompts_dict:
+            if ":" in key:
+                module_name, sub_key = key.split(":")
+                sub_prompt_dicts[module_name][sub_key] = prompts_dict[key]
 
         # now update prompts for submodules
-        for module in prompt_modules.values():
-            module.update_prompts(**prompts)
+        for module_name, sub_prompt_dict in sub_prompt_dicts.items():
+            if module_name not in prompt_modules:
+                raise ValueError(f"Module {module_name} not found.")
+            module = prompt_modules[module_name]
+            module.update_prompts(sub_prompt_dict)
 
     @abstractmethod
     def _get_prompts(self) -> PromptDictType:
@@ -85,6 +108,5 @@ class PromptMixin(ABC):
         """
 
     @abstractmethod
-    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+    def _update_prompts(self, prompts_dict: PromptDictType) -> None:
         """Update prompts."""
-        # TODO: make abstractmethod, implement in all subclasses

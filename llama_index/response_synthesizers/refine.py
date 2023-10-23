@@ -104,7 +104,7 @@ class Refine(BaseSynthesizer):
             "refine_template": self._refine_template,
         }
 
-    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+    def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "text_qa_template" in prompts:
             self._text_qa_template = prompts["text_qa_template"]

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.prompts.base import BasePromptTemplate
-from llama_index.prompts.mixin import PromptMixin
+from llama_index.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
 
@@ -26,7 +26,7 @@ class BaseQueryEngine(PromptMixin):
         """Get prompt modules."""
         return {}
 
-    def _update_prompts(self, **prompts: BasePromptTemplate) -> None:
+    def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
 
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
