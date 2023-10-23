@@ -23,6 +23,7 @@ PARAMS: Dict[str, Union[str, int]] = {
 }
 TEST_DB = "test_vector_db"
 TEST_TABLE_NAME = "lorem_ipsum"
+TEST_SCHEMA_NAME = "test"
 TEST_EMBED_DIM = 2
 
 
@@ -77,6 +78,7 @@ def pg(db: None) -> Any:
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
         embed_dim=TEST_EMBED_DIM,
     )
 
@@ -91,6 +93,7 @@ def pg_hybrid(db: None) -> Any:
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
         hybrid_search=True,
         embed_dim=TEST_EMBED_DIM,
     )
@@ -158,6 +161,7 @@ async def test_instance_creation(db: None) -> None:
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
     )
     assert isinstance(pg, PGVectorStore)
     assert not hasattr(pg, "_engine")

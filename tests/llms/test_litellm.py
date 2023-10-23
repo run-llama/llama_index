@@ -148,3 +148,38 @@ def test_chat_model_basic(monkeypatch: MonkeyPatch) -> None:
 def test_metadata() -> None:
     llm = LiteLLM(model="gpt-3.5-turbo")
     assert isinstance(llm.metadata.context_window, int)
+
+
+@pytest.mark.skipif(litellm is None, reason="litellm not installed")
+def test_deep_infra() -> None:
+    # deep infra call
+    llm = LiteLLM(
+        model="deepinfra/meta-llama/Llama-2-70b-chat-hf", max_tokens=10, api_key=""
+    )
+    message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
+    chat_response = llm.chat([message])
+    print("\ndeepinfra Chat response\n")
+    print(chat_response)
+
+
+@pytest.mark.skipif(litellm is None, reason="litellm not installed")
+def test_openai() -> None:
+    llm = LiteLLM(model="gpt-3.5-turbo", api_key="")
+    message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
+    chat_response = llm.chat([message])
+    print("gpt-3.5-turbo Chat response\n")
+    print(chat_response)
+
+
+@pytest.mark.skipif(litellm is None, reason="litellm not installed")
+def test_tg_ai() -> None:
+    # deep infra call
+    llm = LiteLLM(
+        model="together_ai/togethercomputer/Llama-2-7B-32K-Instruct",
+        max_tokens=10,
+        api_key="",
+    )
+    message = ChatMessage(role="user", content="why does LiteLLM love LlamaIndex")
+    chat_response = llm.chat([message])
+    print("\ntogetherai Chat response\n")
+    print(chat_response)

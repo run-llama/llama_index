@@ -1,5 +1,28 @@
 # ChangeLog
 
+## [0.8.49] - 2023-10-23
+
+### New Features
+
+- New LLM integrations
+  - Support for Hugging Face Inference API's `conversational`, `text_generation`,
+    and `feature_extraction` endpoints via `huggingface_hub[inference]` (#8098)
+  - Add Amazon Bedrock LLMs (#8223)
+  - Add AI21 Labs LLMs (#8233)
+  - Add OpenAILike LLM class for OpenAI-compatible api servers (#7973)
+- New / updated vector store integrations
+  - Add DashVector (#7772)
+  - Add Tencent VectorDB (#8173)
+  - Add option for custom Postgres schema on PGVectorStore instead of only allowing public schema (#8080)
+- Add Gradient fine tuning engine (#8208)
+
+### Bug Fixes / Nits
+
+- Deprecate some functions for GuardrailsOutputParser (#8016)
+- Simplify dependencies (#8236)
+- Bug fixes for LiteLLM (#7885)
+- Update for Predibase LLM (#8211)
+
 ## [0.8.48] - 2023-10-20
 
 ### New Features
