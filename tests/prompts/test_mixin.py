@@ -2,9 +2,8 @@
 
 
 import pytest
-
-from llama_index.prompts.mixin import PromptMixin, PromptDictType, PromptMixinType
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 
 
 class MockObject2(PromptMixin):
@@ -12,9 +11,10 @@ class MockObject2(PromptMixin):
         self._prompt_dict_2 = {
             "abc": PromptTemplate("{abc} {def}"),
         }
+
     def _get_prompts(self) -> PromptDictType:
         return self._prompt_dict_2
-    
+
     def _get_prompt_modules(self) -> PromptMixinType:
         return {}
 
@@ -28,12 +28,12 @@ class MockObject1(PromptMixin):
         self.mock_object_2 = MockObject2()
         self._prompt_dict_1 = {
             "summary": PromptTemplate("{summary}"),
-            "foo": PromptTemplate("{foo} {bar}")
+            "foo": PromptTemplate("{foo} {bar}"),
         }
 
     def _get_prompts(self) -> PromptDictType:
         return self._prompt_dict_1
-    
+
     def _get_prompt_modules(self) -> PromptMixinType:
         return {"mock_object_2": self.mock_object_2}
 
@@ -56,16 +56,14 @@ def test_prompt_mixin():
     assert mock_obj1.mock_object_2.get_prompts() == {
         "abc": PromptTemplate("{abc} {def}"),
     }
-    
+
     # update prompts
     mock_obj1.update_prompts(
-        summary=PromptTemplate("{summary} testing"), 
-        abc=PromptTemplate("{abc} {def} ghi")
+        summary=PromptTemplate("{summary} testing"),
+        abc=PromptTemplate("{abc} {def} ghi"),
     )
     assert mock_obj1.get_prompts() == {
         "summary": PromptTemplate("{summary} testing"),
         "foo": PromptTemplate("{foo} {bar}"),
         "abc": PromptTemplate("{abc} {def} ghi"),
     }
-
-    
