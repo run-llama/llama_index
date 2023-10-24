@@ -22,6 +22,7 @@
 - Simplify dependencies (#8236)
 - Bug fixes for LiteLLM (#7885)
 - Update for Predibase LLM (#8211)
+- docs(FAQ): frequently asked questions (#8249)
 
 ## [0.8.48] - 2023-10-20
 
