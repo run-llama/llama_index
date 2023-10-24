@@ -3,18 +3,7 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from enum import Enum
 from itertools import chain
-from typing import (
-    Any,
-    AsyncGenerator,
-    Callable,
-    Generator,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
-
-from aiostream.core import Stream
+from typing import Any, AsyncGenerator, Callable, Generator, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field, validator
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
@@ -56,8 +45,8 @@ class ChatResponse(BaseModel):
         return str(self.message)
 
 
-ChatResponseGen = Union[Generator[ChatResponse, None, None], chain[ChatResponse]]
-ChatResponseAsyncGen = Union[AsyncGenerator[ChatResponse, None], Stream[ChatResponse]]
+ChatResponseGen = Generator[ChatResponse, None, None]
+ChatResponseAsyncGen = AsyncGenerator[ChatResponse, None]
 
 
 # ===== Generic Model Output - Completion =====

@@ -1,7 +1,18 @@
 import asyncio
 from itertools import chain
 from threading import Thread
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    cast,
+)
 
 from aiostream import stream as async_stream
 from aiostream.core import Stream
@@ -379,17 +390,20 @@ class ReActAgent(BaseAgent):
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
-        response_stream: chain[
-            ChatResponse
-        ] = chain.from_iterable(  # need to add back partial response chunk
-            [
-                unit_generator(latest_chunk),
-                chat_stream,
-            ]
+        response_stream = (
+            chain.from_iterable(  # need to add back partial response chunk
+                [
+                    unit_generator(latest_chunk),
+                    chat_stream,
+                ]
+            )
+        )
+        response_stream_c: Generator[ChatResponse, None, None] = cast(
+            Generator[ChatResponse, None, None], response_stream
         )
 
         chat_stream_response = StreamingAgentChatResponse(
-            chat_stream=response_stream,
+            chat_stream=response_stream_c,
             sources=self.sources,
         )
         thread = Thread(
@@ -456,15 +470,18 @@ class ReActAgent(BaseAgent):
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
-        response_stream: Stream[
-            ChatResponse
-        ] = async_stream.combine.merge(  # need to add back partial response chunk
-            async_unit_generator(latest_chunk),
-            chat_stream,
+        response_stream = (
+            async_stream.combine.merge(  # need to add back partial response chunk
+                async_unit_generator(latest_chunk),
+                chat_stream,
+            )
+        )
+        response_stream_c: AsyncGenerator[ChatResponse, None] = cast(
+            AsyncGenerator[ChatResponse, None], response_stream
         )
 
         chat_stream_response = StreamingAgentChatResponse(
-            achat_stream=response_stream, sources=self.sources
+            achat_stream=response_stream_c, sources=self.sources
         )
         # create task to write chat response to history
         asyncio.create_task(
