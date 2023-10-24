@@ -40,7 +40,7 @@ Once you've ingested your data, LlamaIndex will help you index the data into a f
 ### Querying Stage
 
 In the querying stage, the RAG pipeline retrieves the most relevant context given a user query,
-and pass that to the LLM (along with the query) to synthesize a response.
+and passes that to the LLM (along with the query) to synthesize a response.
 This gives the LLM up-to-date knowledge that is not in its original training data,
 (also reducing hallucination).
 The key challenge in the querying stage is retrieval, orchestration, and reasoning over (potentially many) knowledge bases.
