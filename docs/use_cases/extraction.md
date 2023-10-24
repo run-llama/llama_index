@@ -6,6 +6,8 @@ Using LlamaIndex, you can get an LLM to read natural language and identify seman
 
 This can be especially useful when you have unstructured source material like chat logs and conversation transcripts.
 
+Once you have structured data you can send them to a database, or you can parse structured outputs in code to automate workflows.
+
 Examples:
 * [Extracting names and locations from descriptions of people](/examples/output_parsing/df_program.ipynb)
 * [Extracting album data from music reviews](/examples/llm/llama_api.ipynb)

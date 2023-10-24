@@ -118,17 +118,9 @@ Associated projects
    optimizing/advanced_retrieval/advanced_retrieval.md
    optimizing/evaluation/evaluation.md
    optimizing/fine-tuning/fine-tuning.md
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Advanced techniques
-   :hidden:
-
-   advanced_techniques/development_pathway.md  
-   advanced_techniques/production_rag.md 
-   advanced_techniques/building_rag_from_scratch.md
-   advanced_techniques/finetuning.md   
-
+   optimizing/production_rag.md 
+   optimizing/building_rag_from_scratch.md
+   
 .. toctree::
    :maxdepth: 2
    :caption: Module Guides
