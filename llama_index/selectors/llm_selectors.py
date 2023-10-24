@@ -177,6 +177,15 @@ class LLMMultiSelector(BaseSelector):
         )
         return cls(service_context.llm_predictor, prompt, max_outputs)
 
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {"prompt": self._prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "prompt" in prompts:
+            self._prompt = prompts["prompt"]
+
     def _select(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
