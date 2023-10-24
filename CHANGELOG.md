@@ -21,6 +21,7 @@
   - Add Tencent VectorDB (#8173)
   - Add option for custom Postgres schema on PGVectorStore instead of only allowing public schema (#8080)
 - Add Gradient fine tuning engine (#8208)
+- docs(FAQ): frequently asked questions (#8249)
 
 ### Bug Fixes / Nits
 

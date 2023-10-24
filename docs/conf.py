@@ -44,7 +44,7 @@ extensions = [
     "sphinxcontrib.autodoc_pydantic",
 ]
 
-myst_heading_anchors = 4
+myst_heading_anchors = 5
 # TODO: Fix the non-consecutive header level in our docs, until then
 # disable the sphinx/myst warnings
 suppress_warnings = ["myst.header"]
