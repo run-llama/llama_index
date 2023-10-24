@@ -20,7 +20,7 @@ A3: You can access [Prompts](../../core_modules/model_modules/prompts.md) to lea
 
 ---
 
-##### Q4: Is it require to fine-tune my model?
+##### Q4: Is it required to fine-tune my model?
 
 A4: No. there's isolated modules which might provide better results, but isn't required, you can you can use llamapidnex without needing to fine-tune the model.
 
