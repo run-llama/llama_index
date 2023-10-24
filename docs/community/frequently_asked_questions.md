@@ -54,6 +54,7 @@ Know more about query engines and their possibilities
 ```{toctree}
 ---
 maxdepth: 1
+hidden: true
 ---
 faq/query_engines.md
 
