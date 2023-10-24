@@ -36,13 +36,12 @@ For more complex applications, our lower-level APIs allow advanced users to cust
 
 Getting Started
 ****************
+
+To install the library:
+
 ``pip install llama-index``
 
-Our documentation includes detailed `Installation Instructions <./getting_started/installation.html>`_ and a `Starter Tutorial <./getting_started/starter_example.html>`_ to build your first application (in five lines of code!)
-
-Once you're up and running, `High-Level Concepts <./getting_started/concepts.html>`_ has an overview of LlamaIndex's modular architecture. For more hands-on practical examples, look through our `End-to-End Tutorials <./end_to_end_tutorials/use_cases.html>`_ or learn how to `customize <./getting_started/customization.html>`_ components to fit your specific needs.
-
-**NOTE**: We have a Typescript package too! `Repo <https://github.com/run-llama/LlamaIndexTS>`_, `Docs <https://ts.llamaindex.ai/>`_
+We recommend starting at `how to read these docs </getting_started/reading.html>`_, which will point you to the right place based on your experience level.
 
 🗺️ Ecosystem
 ************
@@ -78,6 +77,7 @@ Associated projects
    :caption: Getting Started
    :hidden:
 
+   getting_started/reading.md
    getting_started/installation.md
    getting_started/starter_example.md
    getting_started/concepts.md
@@ -92,6 +92,7 @@ Associated projects
    use_cases/q_and_a.md
    use_cases/chatbots.md
    use_cases/agents.md
+   use_cases/extraction.md
 
 .. toctree::
    :maxdepth: 2
