@@ -128,7 +128,7 @@ As you know by now, metadata is injected into the actual text of each document/n
 
 1. `Document.metadata_seperator` -> default = `"\n"`
 
-When concatenating all key/value fields of your metadata, this field controls the separator bewtween each key/value pair.
+When concatenating all key/value fields of your metadata, this field controls the separator between each key/value pair.
 
 2. `Document.metadata_template` -> default = `"{key}: {value}"`
 
