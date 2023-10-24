@@ -19,7 +19,7 @@ print(response)
 However, there is more to querying than initially meets the eye. Querying consists of three distinct stages:
 
 * **Retrieval** is when you find and return the most relevant documents for your query from your `Index`. As previously discussed in [indexing](/understanding/indexing/indexing.md), the most common type of retrieval is "top-k" semantic retrieval, but there are many other retrieval strategies.
-* **Postprocessing** is when the `Node`s retrieved are optionally transformed or filtered, for instance by requiring that they have specific metadata such as keywords attached.
+* **Postprocessing** is when the `Node`s retrieved are optionally reranked, transformed, or filtered, for instance by requiring that they have specific metadata such as keywords attached.
 * **Response synthesis** is when your query, your most-relevant data and your prompt are combined and sent to your LLM to return a response.
 
 ```{tip}
@@ -83,7 +83,7 @@ retriever = VectorIndexRetriever(
 )
 ```
 
-The full list of retrievers for each index is documented in the [Query Reference](/api_reference/query.rst).
+There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](/module_guides/querying/retrievers.md).
 
 ### Configuring node postprocessors
 
