@@ -1,14 +1,15 @@
 """Answer inserter."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.query_engine.flare.schema import QueryTask
 
 
-class BaseLookaheadAnswerInserter(ABC):
+class BaseLookaheadAnswerInserter(PromptMixin):
     """Lookahead answer inserter.
 
     These are responsible for insert answers into a lookahead answer template.
@@ -23,6 +24,10 @@ class BaseLookaheadAnswerInserter(ABC):
         struggle for independence, green for forests, and gold for mineral wealth.
 
     """
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {}
 
     @abstractmethod
     def insert(
@@ -143,6 +148,17 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
             answer_insert_prompt or DEFAULT_ANSWER_INSERT_PROMPT
         )
 
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {
+            "answer_insert_prompt": self._answer_insert_prompt,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "answer_insert_prompt" in prompts:
+            self._answer_insert_prompt = prompts["answer_insert_prompt"]
+
     def insert(
         self,
         response: str,
@@ -175,6 +191,13 @@ class DirectLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
         service_context (ServiceContext): Service context.
 
     """
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
 
     def insert(
         self,

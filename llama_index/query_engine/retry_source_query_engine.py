@@ -7,6 +7,7 @@ from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import Document
@@ -31,6 +32,10 @@ class RetrySourceQueryEngine(BaseQueryEngine):
         self._service_context = service_context
         self.max_retries = max_retries
         super().__init__(callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {"query_engine": self._query_engine, "evaluator": self._evaluator}
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         response = self._query_engine._query(query_bundle)

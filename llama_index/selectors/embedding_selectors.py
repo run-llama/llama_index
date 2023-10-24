@@ -1,9 +1,10 @@
-from typing import Any, List, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.selectors.types import (
     BaseSelector,
     MultiSelection,
@@ -39,6 +40,13 @@ class EmbeddingSingleSelector(BaseSelector):
 
         # construct prompt
         return cls(embed_model)
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
 
     def _select(
         self, choices: Sequence[ToolMetadata], query: QueryBundle

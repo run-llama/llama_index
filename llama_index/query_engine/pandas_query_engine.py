@@ -19,6 +19,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import Response
 from llama_index.utils import print_text
 
@@ -134,6 +135,10 @@ class PandasQueryEngine(BaseQueryEngine):
         self._service_context = service_context or ServiceContext.from_defaults()
 
         super().__init__(self._service_context.callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {"pandas_prompt": self._pandas_prompt}
 
     @classmethod
     def from_index(cls, index: PandasIndex, **kwargs: Any) -> "PandasQueryEngine":

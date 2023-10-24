@@ -9,6 +9,7 @@ from llama_index.indices.query.query_transform.feedback_transform import (
     FeedbackQueryTransformation,
 )
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,10 @@ class RetryQueryEngine(BaseQueryEngine):
         self._evaluator = evaluator
         self.max_retries = max_retries
         super().__init__(callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {"query_engine": self._query_engine, "evaluator": self._evaluator}
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""

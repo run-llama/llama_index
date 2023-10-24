@@ -46,16 +46,10 @@ class BaseSynthesizer(PromptMixin):
         self._streaming = streaming
         self._output_cls = output_cls
 
-    def _get_prompts(self) -> Dict[str, Any]:
-        """Get prompts."""
-        return {}
-
     def _get_prompt_modules(self) -> Dict[str, Any]:
         """Get prompt modules."""
+        # TODO: keep this for now since response synthesizers don't generally have sub-modules
         return {}
-
-    def _update_prompts(self, prompts: PromptDictType) -> None:
-        """Update prompts."""
 
     @property
     def service_context(self) -> ServiceContext:

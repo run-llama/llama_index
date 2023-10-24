@@ -13,6 +13,7 @@ from llama_index.objects.base import ObjectRetriever
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
@@ -114,6 +115,11 @@ class RouterQueryEngine(BaseQueryEngine):
         )
 
         super().__init__(self.service_context.callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        # NOTE: don't include tools for now
+        return {"summarizer": self._summarizer, "selector": self._selector}
 
     @classmethod
     def from_defaults(
@@ -257,6 +263,11 @@ class RetrieverRouterQueryEngine(BaseQueryEngine):
         self._node_to_query_engine_fn = node_to_query_engine_fn
         super().__init__(callback_manager)
 
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        # NOTE: don't include tools for now
+        return {"retriever": self._retriever}
+
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         nodes_with_score = self._retriever.retrieve(query_bundle)
         # TODO: for now we only support retrieving one node
@@ -298,6 +309,11 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         self._retriever = retriever
 
         super().__init__(self.service_context.callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        # NOTE: don't include tools for now
+        return {"retriever": self._retriever, "summarizer": self._summarizer}
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         with self.callback_manager.event(
