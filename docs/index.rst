@@ -131,7 +131,7 @@ Associated projects
    module_guides/indexing/indexing.md
    module_guides/storing/storing.md
    module_guides/querying/querying.md
-   module_guides/putting_it_all_together/putting_it_all_together.md
+   module_guides/deploying/deploying.md
    module_guides/observability/observability.md
    module_guides/evaluating/root.md
    module_guides/supporting_modules/supporting_modules.md
