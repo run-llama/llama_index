@@ -4,8 +4,7 @@
 
 ### New Features
 
-- Expose prompts in different modules (query engines, synthesizers, and more)  (#8275)
-
+- Expose prompts in different modules (query engines, synthesizers, and more) (#8275)
 
 ## [0.8.49] - 2023-10-23
 
