@@ -98,6 +98,13 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
         )
         super().__init__(callback_manager)
 
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {
+            "query_engine": self._query_engine,
+            "guideline_evalator": self._guideline_evaluator,
+        }
+
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         response = self._query_engine._query(query_bundle)

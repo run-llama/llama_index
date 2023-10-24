@@ -3,11 +3,23 @@ from typing import List, Optional
 
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore
 
 
-class BaseRetriever(ABC):
+class BaseRetriever(PromptMixin):
     """Base retriever."""
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
 
     def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         """Retrieve nodes given query.

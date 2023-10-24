@@ -313,7 +313,7 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
         # NOTE: don't include tools for now
-        return {"retriever": self._retriever, "summarizer": self._summarizer}
+        return {"summarizer": self._summarizer}
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         with self.callback_manager.event(

@@ -29,6 +29,15 @@ class Accumulate(BaseSynthesizer):
         self._use_async = use_async
         self._output_cls = output_cls
 
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"text_qa_template": self._text_qa_template}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "text_qa_template" in prompts:
+            self._text_qa_template = prompts["text_qa_template"]
+
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
         return [item for sublist in md_array for item in sublist]
 

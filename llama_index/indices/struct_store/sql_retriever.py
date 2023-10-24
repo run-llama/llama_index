@@ -17,6 +17,7 @@ from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PROMPT,
 )
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
@@ -147,7 +148,7 @@ class PGVectorSQLParser(BaseSQLParser):
         return raw_sql_str.replace("[query_vector]", query_embedding_str)
 
 
-class NLSQLRetriever(BaseRetriever):
+class NLSQLRetriever(BaseRetriever, PromptMixin):
     """Text-to-SQL Retriever.
 
     Retrieves via text.
@@ -194,6 +195,21 @@ class NLSQLRetriever(BaseRetriever):
         self._sql_parser_mode = sql_parser_mode
         self._sql_parser = self._load_sql_parser(sql_parser_mode, self._service_context)
         self._handle_sql_errors = handle_sql_errors
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {
+            "text_to_sql_prompt": self._text_to_sql_prompt,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "text_to_sql_prompt" in prompts:
+            self._text_to_sql_prompt = prompts["text_to_sql_prompt"]
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
 
     def _load_sql_parser(
         self, sql_parser_mode: SQLParserMode, service_context: ServiceContext

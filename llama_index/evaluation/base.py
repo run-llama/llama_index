@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.response.schema import Response
 
 
@@ -25,8 +26,19 @@ class EvaluationResult(BaseModel):
     score: Optional[float] = Field(None, description="Score for the response")
 
 
-class BaseEvaluator(ABC):
+class BaseEvaluator(PromptMixin):
     """Base Evaluator class."""
+
+    # def _get_prompts(self) -> PromptDictType:
+    #     """Get prompts."""
+    #     return {}
+
+    # def _update_prompts(self, prompts: PromptDictType) -> None:
+    #     """Update prompts."""
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
 
     def evaluate(
         self,
