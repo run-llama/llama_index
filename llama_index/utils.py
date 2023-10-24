@@ -418,6 +418,8 @@ def infer_torch_device() -> str:
         has_cuda = torch.cuda.is_available()
     if has_cuda:
         return "cuda"
-    if torch.backends.mps.is_available():
+    # Set LLAMA_INDEX_NO_MPS_BACKEND to a truthy value to disable inference of MPS
+    dont_use_mps = os.getenv("LLAMA_INDEX_NO_MPS_BACKEND", default="")
+    if not dont_use_mps and torch.backends.mps.is_available():
         return "mps"
     return "cpu"

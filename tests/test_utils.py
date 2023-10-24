@@ -1,6 +1,8 @@
 """Test utils."""
 
+import os
 from typing import Optional, Type, Union
+from unittest.mock import MagicMock, patch
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -11,6 +13,7 @@ from llama_index.utils import (
     _get_colored_text,
     get_color_mapping,
     globals_helper,
+    infer_torch_device,
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
@@ -175,3 +178,14 @@ def test_print_text(capsys: CaptureFixture) -> None:
     print_text(text, end=" ")
     captured = capsys.readouterr()
     assert captured.out == f"{text} "
+
+
+def test_infer_torch_device() -> None:
+    mock_torch = MagicMock()
+    with patch.dict("sys.modules", torch=mock_torch):
+        mock_torch.backends.mps.is_available.return_value = True
+        mock_torch.cuda.is_available.return_value = False
+        assert infer_torch_device() == "mps"
+
+        with patch.dict(os.environ, {"LLAMA_INDEX_NO_MPS_BACKEND": "1"}):
+            assert infer_torch_device() == "cpu"
