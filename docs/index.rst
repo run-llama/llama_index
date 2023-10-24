@@ -116,10 +116,12 @@ Associated projects
 
    optimizing/basic_strategies/basic_strategies.md
    optimizing/advanced_retrieval/advanced_retrieval.md
+   optimizing/agentic_strategies/agentic_strategies.md
    optimizing/evaluation/evaluation.md
    optimizing/fine-tuning/fine-tuning.md
    optimizing/production_rag.md 
    optimizing/building_rag_from_scratch.md
+   optimizing/monitoring.md
    
 .. toctree::
    :maxdepth: 2

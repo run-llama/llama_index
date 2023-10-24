@@ -16,14 +16,7 @@ A great resource to check on the current best overall embeddings models is the [
 
 **NOTE:** Unlike an LLM (which you can change at any time), if you change your embedding model, you must re-index your data. Furthermore, you should ensure the same embedding model is used for both indexing and querying.
 
-Find all embedding model integrations here:
-
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/indexing/embeddings.md
-```
+We have a list of [all supported embedding model integrations](/module_guides/indexing/embeddings.md).
 
 ## Chunk Sizes
 

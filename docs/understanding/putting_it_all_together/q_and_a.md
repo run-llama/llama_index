@@ -17,11 +17,11 @@ print(response)
 **Tutorials**
 
 - [Starter Tutorial](/getting_started/starter_example.md)
-- [Basic Usage Pattern](/end_to_end_tutorials/usage_pattern.md)
+- [Basic Usage Pattern](/understanding/querying/querying.md)
 
 **Guides**
 
-- [Example](../examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores/SimpleIndexDemo.ipynb))
+- [Example](/examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/run-llama/llama_index/tree/main/docs/examples/vector_stores/SimpleIndexDemo.ipynb))
 
 ## Summarization
 
@@ -52,12 +52,12 @@ Here are some relevant resources:
 
 **Tutorials**
 
-- [Guide on Text-to-SQL](/guides/tutorials/sql_guide.md)
+- [Guide on Text-to-SQL](/understanding/putting_it_all_together/structured_data.md)
 
 **Guides**
 
-- [SQL Guide (Core)](../examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
-- [Pandas Demo](../examples/query_engine/pandas_query_engine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/pandas_query_engine.ipynb))
+- [SQL Guide (Core)](/examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
+- [Pandas Demo](/examples/query_engine/pandas_query_engine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/pandas_query_engine.ipynb))
 
 ## Synthesis over Heterogeneous Data
 
@@ -80,7 +80,6 @@ response = query_engine.query("<query_str>")
 
 **Guides**
 
-- [Composability](/core_modules/data_modules/index/composability.md)
 - [City Analysis](/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 ## Routing over Heterogeneous Data
@@ -130,8 +129,8 @@ response = query_engine.query(
 
 **Guides**
 
-- [Router Query Engine Guide](../examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
-- [City Analysis Unified Query Interface](../examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
+- [Router Query Engine Guide](/examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
+- [City Analysis Unified Query Interface](/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 ## Compare/Contrast Queries
 
@@ -148,7 +147,7 @@ This module will help break down a complex query into a simpler one over your ex
 
 **Guides**
 
-- [Query Transformations](/core_modules/query_modules/query_engine/advanced/query_transformations.md)
+- [Query Transformations](/optimizing/advanced_retrieval/query_transformations.md)
 - [City Analysis Compare/Contrast Example](/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
 You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi-Document Queries below).
@@ -194,9 +193,9 @@ This makes it especially well-suited for compare/contrast queries across documen
 
 **Guides**
 
-- [Sub Question Query Engine (Intro)](../examples/query_engine/sub_question_query_engine.ipynb)
-- [10Q Analysis (Uber)](../examples/usecases/10q_sub_question.ipynb)
-- [10K Analysis (Uber and Lyft)](../examples/usecases/10k_sub_question.ipynb)
+- [Sub Question Query Engine (Intro)](/examples/query_engine/sub_question_query_engine.ipynb)
+- [10Q Analysis (Uber)](/examples/usecases/10q_sub_question.ipynb)
+- [10K Analysis (Uber and Lyft)](/examples/usecases/10k_sub_question.ipynb)
 
 ## Multi-Step Queries
 
@@ -209,8 +208,8 @@ query the index, and then ask followup questions.
 
 **Guides**
 
-- [Query Transformations](/core_modules/query_modules/query_engine/advanced/query_transformations.md)
-- [Multi-Step Query Decomposition](../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
+- [Query Transformations](/optimizing/advanced_retrieval/query_transformations.md)
+- [Multi-Step Query Decomposition](/examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 ## Temporal Queries
 
@@ -221,14 +220,24 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 
 **Guides**
 
-- [Second-Stage Postprocessing Guide](/core_modules/query_modules/node_postprocessors/root.md)
+- [Second-Stage Postprocessing Guide](/module_guides/querying/node_postprocessors.md)
 - [Prev/Next Postprocessing](/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
 - [Recency Postprocessing](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
 
 ## Additional Resources
 
-- [A Guide to Creating a Unified Query Framework over your indexes](/end_to_end_tutorials/question_and_answer/unified_query.md)
-- [A Guide to Extracting Terms and Definitions](/end_to_end_tutorials/question_and_answer/terms_definitions_tutorial.md)
+- [A Guide to Creating a Unified Query Framework over your indexes](/understanding/putting_it_all_together/q_and_a/unified_query.md)
+- [A Guide to Extracting Terms and Definitions](/understanding/putting_it_all_together/q_and_a/terms_definitions_tutorial.md)
 - [SEC 10k Analysis](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d)
 
-
+```{toctree}
+---
+maxdepth: 1
+hidden: true
+---
+/understanding/putting_it_all_together/q_and_a/terms_definitions_tutorial.md
+/understanding/putting_it_all_together/q_and_a/unified_query.md
+/understanding/putting_it_all_together/graphs.md
+/understanding/putting_it_all_together/structured_data.md
+/understanding/putting_it_all_together/structured_data/Airbyte_demo.ipynb
+```
