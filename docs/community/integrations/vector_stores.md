@@ -278,7 +278,7 @@ from cassandra.cluster import Cluster
 cluster = Cluster(["127.0.0.1"])
 cassio.init(session=cluster.connect(), keyspace="my_keyspace")
 
-# After the abive `cassio.init(...)`, create a vector store:
+# After the above `cassio.init(...)`, create a vector store:
 vector_store = CassandraVectorStore(table="cass_v_table", embedding_dimension=1536)
 ```
 
