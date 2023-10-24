@@ -1,10 +1,11 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -27,6 +28,15 @@ class Accumulate(BaseSynthesizer):
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         self._output_cls = output_cls
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"text_qa_template": self._text_qa_template}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "text_qa_template" in prompts:
+            self._text_qa_template = prompts["text_qa_template"]
 
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
         return [item for sublist in md_array for item in sublist]

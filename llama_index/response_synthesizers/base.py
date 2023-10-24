@@ -15,6 +15,8 @@ from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.base import BasePromptTemplate
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
@@ -29,7 +31,7 @@ logger = logging.getLogger(__name__)
 QueryTextType = Union[str, QueryBundle]
 
 
-class BaseSynthesizer(ABC):
+class BaseSynthesizer(PromptMixin):
     """Response builder class."""
 
     def __init__(
@@ -43,6 +45,11 @@ class BaseSynthesizer(ABC):
         self._callback_manager = self._service_context.callback_manager
         self._streaming = streaming
         self._output_cls = output_cls
+
+    def _get_prompt_modules(self) -> Dict[str, Any]:
+        """Get prompt modules."""
+        # TODO: keep this for now since response synthesizers don't generally have sub-modules
+        return {}
 
     @property
     def service_context(self) -> ServiceContext:

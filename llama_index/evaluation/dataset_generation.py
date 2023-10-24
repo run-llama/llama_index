@@ -14,6 +14,7 @@ from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 from llama_index.llms.openai import OpenAI
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
@@ -93,7 +94,7 @@ class QueryResponseDataset(BaseModel):
         return cls(**data)
 
 
-class DatasetGenerator:
+class DatasetGenerator(PromptMixin):
     """Generate dataset (question/ question-answer pairs) \
     based on the given documents.
 
@@ -291,3 +292,21 @@ class DatasetGenerator:
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
         return asyncio.run(self.agenerate_dataset_from_nodes(num=num))
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {
+            "text_question_template": self.text_question_template,
+            "text_qa_template": self.text_qa_template,
+        }
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "text_question_template" in prompts:
+            self.text_question_template = prompts["text_question_template"]
+        if "text_qa_template" in prompts:
+            self.text_qa_template = prompts["text_qa_template"]
