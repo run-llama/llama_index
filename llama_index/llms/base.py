@@ -3,7 +3,16 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from enum import Enum
 from itertools import chain
-from typing import Any, AsyncGenerator, Callable, Generator, Optional, Sequence, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Generator,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from aiostream.core import Stream
 
@@ -47,8 +56,8 @@ class ChatResponse(BaseModel):
         return str(self.message)
 
 
-ChatResponseGen = Generator[ChatResponse, None, None] | chain[ChatResponse]
-ChatResponseAsyncGen = AsyncGenerator[ChatResponse, None] | Stream[ChatResponse]
+ChatResponseGen = Union[Generator[ChatResponse, None, None], chain[ChatResponse]]
+ChatResponseAsyncGen = Union[AsyncGenerator[ChatResponse, None], Stream[ChatResponse]]
 
 
 # ===== Generic Model Output - Completion =====
