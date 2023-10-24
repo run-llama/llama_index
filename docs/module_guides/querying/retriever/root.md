@@ -4,8 +4,8 @@
 
 Retrievers are responsible for fetching the most relevant context given a user query (or chat message).
 
-It can be built on top of [Indices](/core_modules/data_modules/index/root.md), but can also be defined independently.
-It is used as a key building block in [Query Engines](/core_modules/query_modules/query_engine/root.md) (and [Chat Engines](/core_modules/query_modules/chat_engines/root.md)) for retrieving relevant context.
+It can be built on top of [indexes](/module_guides/indexing/indexing.md), but can also be defined independently.
+It is used as a key building block in [query engines](/module_guides/deploying/query_engine/root.md) (and [Chat Engines](/module_guides/deploying/chat_engines/root.md)) for retrieving relevant context.
 
 ```{tip}
 Confused about where retriever fits in the pipeline? Read about [high-level concepts](/getting_started/concepts.md)
@@ -34,7 +34,7 @@ Retrieve relevant context for a question:
 nodes = retriever.retrieve('Who is Paul Graham?')
 ```
 
-> Note: To learn how to build an index, see [Index](/core_modules/data_modules/index/root.md)
+> Note: To learn how to build an index, see [Indexing](/module_guides/indexing/indexing.md)
 
 ## High-Level API
 
@@ -91,4 +91,13 @@ retriever = SummaryIndexLLMRetriever(
     index=summary_index,
     choice_batch_size=5,
 )
+```
+
+## Examples
+
+```{toctree}
+---
+maxdepth: 1
+---
+retrievers.md
 ```

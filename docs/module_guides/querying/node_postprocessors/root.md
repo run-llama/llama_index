@@ -122,3 +122,11 @@ class DummyNodePostprocessor:
 
         return nodes
 ```
+
+## Modules
+```{toctree}
+---
+maxdepth: 2
+---
+/module_guides/querying/node_postprocessors/node_postprocessors.md
+```

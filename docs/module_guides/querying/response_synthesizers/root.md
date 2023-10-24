@@ -60,7 +60,7 @@ response = query_engine.query("query_text")
 ```
 
 ```{tip}
-To learn how to build an index, see [Index](/core_modules/data_modules/index/root.md)
+To learn how to build an index, see [Indexing](/module_guides/indexing/indexing.md)
 ```
 
 ## Configuring the Response Mode
@@ -175,3 +175,11 @@ response_synthesizer = get_response_synthesizer(structured_answer_filtering=True
 With `structured_answer_filtering` set to `True`, our refine module is able to filter out any input nodes that are not relevant to the question being asked. This is particularly useful for RAG-based Q&A systems that involve retrieving chunks of text from external vector store for a given user query.
 
 This option is particularly useful if you're using an [OpenAI model that supports function calling](https://openai.com/blog/function-calling-and-other-api-updates). Other LLM providers or models that don't have native function calling support may be less reliable in producing the structured response this feature relies on.
+
+## Modules
+```{toctree}
+---
+maxdepth: 2
+---
+/module_guides/querying/response_synthesizers/response_synthesizers.md
+```
