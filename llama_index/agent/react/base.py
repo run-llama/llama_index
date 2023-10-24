@@ -4,6 +4,7 @@ from threading import Thread
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from aiostream import stream as async_stream
+from aiostream.core import Stream
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
@@ -378,14 +379,14 @@ class ReActAgent(BaseAgent):
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
-        response_stream = (
-            chain.from_iterable(  # need to add back partial response chunk
-                chain(
-                    [
-                        unit_generator(latest_chunk),
-                        chat_stream,
-                    ]
-                )
+        response_stream: chain[
+            ChatResponse
+        ] = chain.from_iterable(  # need to add back partial response chunk
+            chain(
+                [
+                    unit_generator(latest_chunk),
+                    chat_stream,
+                ]
             )
         )
 
@@ -457,11 +458,11 @@ class ReActAgent(BaseAgent):
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
-        response_stream = (
-            async_stream.combine.merge(  # need to add back partial response chunk
-                async_unit_generator(latest_chunk),
-                chat_stream,
-            )
+        response_stream: Stream[
+            ChatResponse
+        ] = async_stream.combine.merge(  # need to add back partial response chunk
+            async_unit_generator(latest_chunk),
+            chat_stream,
         )
 
         chat_stream_response = StreamingAgentChatResponse(
