@@ -31,7 +31,7 @@ A4: No. there's isolated modules which might provide better results, but isn't r
 A5: To the LLM answer in another language more accurate you can update the prompts to enforce more the output language
 
 ```py
-response = query_engine.query(input_text = "\nRespond in Italian")
+response = query_engine.query("Rest of your query... \nRespond in Italian")
 ```
 
 Alternatively
