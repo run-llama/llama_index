@@ -411,7 +411,10 @@ class ReActAgent(BaseAgent):
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
-        for _ in range(self._max_iterations):
+        is_done, ix = False, 0
+        while (not is_done) and (ix < self._max_iterations):
+            ix += 1
+
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
@@ -426,23 +429,42 @@ class ReActAgent(BaseAgent):
             full_response = ChatResponse(
                 message=ChatMessage(content=None, role="assistant")
             )
-            async for r in chat_stream:
-                if "Answer: " in (r.message.content or ""):
-                    is_done = True
-                    break
-                full_response = r
-            if is_done:
-                break
+            async for latest_chunk in chat_stream:
+                latest_content = latest_chunk.message.content
+                if latest_content:
+                    if not latest_content.startswith(
+                        "Thought"
+                    ):  # doesn't follow thought-action format
+                        is_done = True
+                        full_response = latest_chunk
+                        break
+                    else:
+                        if "Answer: " in latest_content:
+                            is_done = True
+                            full_response = latest_chunk
+                            break
+                    full_response = latest_chunk
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                tools=tools, output=full_response
+                tools=tools, output=await full_response
             )
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
+        response_stream = (
+            chain.from_iterable(  # need to add back partial response chunk
+                chain(
+                    [
+                        unit_generator(latest_chunk),
+                        chat_stream,
+                    ]
+                )
+            )
+        )
+
         chat_stream_response = StreamingAgentChatResponse(
-            achat_stream=chat_stream, sources=self.sources
+            achat_stream=response_stream, sources=self.sources
         )
         # create task to write chat response to history
         asyncio.create_task(
