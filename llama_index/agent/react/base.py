@@ -382,12 +382,10 @@ class ReActAgent(BaseAgent):
         response_stream: chain[
             ChatResponse
         ] = chain.from_iterable(  # need to add back partial response chunk
-            chain(
-                [
-                    unit_generator(latest_chunk),
-                    chat_stream,
-                ]
-            )
+            [
+                unit_generator(latest_chunk),
+                chat_stream,
+            ]
         )
 
         chat_stream_response = StreamingAgentChatResponse(
