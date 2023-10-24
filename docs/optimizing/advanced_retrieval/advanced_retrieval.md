@@ -1,12 +1,14 @@
 # Advanced Retrieval Strategies
 
-// TODO
+There are a variety of more advanced retrieval strategies you may wish to try, each with different benefits:
 
-* Reranking
-* Recursive retrieval
-* Embedded tables
-* Small-to-big retrieval
+* {ref}`Reranking <cohere_rerank>`
+* [Recursive retrieval](/examples/query_engine/pdf_tables/recursive_retriever.ipynb)
+* [Embedded tables](/examples/query_engine/sec_tables/tesla_10q_table.ipynb)
+* [Small-to-big retrieval](/examples/node_postprocessor/MetadataReplacementDemo.ipynb)
 
+
+More resources:
 ```{toctree}
 ---
 maxdepth: 1

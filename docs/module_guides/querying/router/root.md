@@ -181,3 +181,14 @@ selector_result = selector.select(choices, query="What's revenue growth for IBM 
 print(selector_result.selections)
 
 ```
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/query_engine/RouterQueryEngine.ipynb
+/examples/query_engine/RetrieverRouterQueryEngine.ipynb
+/examples/query_engine/SQLRouterQueryEngine.ipynb
+/examples/retrievers/router_retriever.ipynb
+```
+
