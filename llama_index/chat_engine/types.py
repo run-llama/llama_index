@@ -138,7 +138,7 @@ class StreamingAgentChatResponse:
             if self._is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text  # final message
+                chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
@@ -164,7 +164,7 @@ class StreamingAgentChatResponse:
         while not self._is_done or not self._aqueue.empty():
             if not self._aqueue.empty():
                 delta = self._aqueue.get_nowait()
-                self.unformatted_response += delta
+                self._unformatted_response += delta
                 yield delta
             else:
                 await self._new_item_event.wait()  # Wait until a new item is added
@@ -173,6 +173,10 @@ class StreamingAgentChatResponse:
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:
+            print(token, end="", flush=True)
+
+    async def aprint_response_stream(self) -> None:
+        async for token in self.async_response_gen():
             print(token, end="", flush=True)
 
 

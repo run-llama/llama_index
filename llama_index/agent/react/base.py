@@ -1,9 +1,9 @@
 import asyncio
-import copy
-import itertools
 from itertools import chain
 from threading import Thread
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
+
+from aiostream import stream as async_stream
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
@@ -28,7 +28,7 @@ from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text, unit_generator
+from llama_index.utils import async_unit_generator, print_text, unit_generator
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -195,10 +195,15 @@ class ReActAgent(BaseAgent):
         return current_reasoning, False
 
     async def _aprocess_actions(
-        self, tools: Sequence[AsyncBaseTool], output: ChatResponse
+        self,
+        tools: Sequence[AsyncBaseTool],
+        output: ChatResponse,
+        is_streaming: bool = False,
     ) -> Tuple[List[BaseReasoningStep], bool]:
         tools_dict = {tool.metadata.name: tool for tool in tools}
-        _, current_reasoning, is_done = self._extract_reasoning_step(output)
+        _, current_reasoning, is_done = self._extract_reasoning_step(
+            output, is_streaming
+        )
 
         if is_done:
             return current_reasoning, True
@@ -447,19 +452,15 @@ class ReActAgent(BaseAgent):
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                tools=tools, output=await full_response
+                tools=tools, output=full_response, is_streaming=True
             )
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
         response_stream = (
-            chain.from_iterable(  # need to add back partial response chunk
-                chain(
-                    [
-                        unit_generator(latest_chunk),
-                        chat_stream,
-                    ]
-                )
+            async_stream.combine.merge(  # need to add back partial response chunk
+                async_unit_generator(latest_chunk),
+                chat_stream,
             )
         )
 
