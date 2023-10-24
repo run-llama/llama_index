@@ -29,13 +29,6 @@ class EvaluationResult(BaseModel):
 class BaseEvaluator(PromptMixin):
     """Base Evaluator class."""
 
-    # def _get_prompts(self) -> PromptDictType:
-    #     """Get prompts."""
-    #     return {}
-
-    # def _update_prompts(self, prompts: PromptDictType) -> None:
-    #     """Update prompts."""
-
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
         return {}

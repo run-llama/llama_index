@@ -216,8 +216,3 @@ class RetrieverQueryEngine(BaseQueryEngine):
     def retriever(self) -> BaseRetriever:
         """Get the retriever object."""
         return self._retriever
-
-    @property
-    def response_synthesizer(self) -> BaseSynthesizer:
-        """Get the response synthesizer object."""
-        return self._response_synthesizer

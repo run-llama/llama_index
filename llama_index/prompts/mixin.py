@@ -36,22 +36,6 @@ class PromptMixin(ABC):
             if ":" in key:
                 raise ValueError(f"Prompt key {key} cannot contain ':'.")
 
-        # # validate each prompt module to make sure there's no overlapping keys
-        # # (otherwise update will fail)
-        # # start a counter of keys
-        # all_prompt_keys = defaultdict(int)
-        # # add keys from prompt dict
-        # for key in prompts_dict:
-        #     all_prompt_keys[key] += 1
-        # # add keys from each prompt module
-        # for module in module_dict.values():
-        #     for key in module.get_prompts():
-        #         all_prompt_keys[key] += 1
-        # # check for duplicates
-        # for key, count in all_prompt_keys.items():
-        #     if count > 1:
-        #         raise ValueError(f"Duplicate prompt key {key} found.")
-
     def get_prompts(self) -> Dict[str, BasePromptTemplate]:
         """Get a prompt."""
         prompts_dict = self._get_prompts()

@@ -22,10 +22,6 @@ class BaseQueryEngine(PromptMixin):
         """Get prompts."""
         return {}
 
-    # def _get_prompt_modules(self) -> Dict[str, Any]:
-    #     """Get prompt modules."""
-    #     return {}
-
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
 

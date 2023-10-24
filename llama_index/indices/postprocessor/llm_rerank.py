@@ -58,7 +58,6 @@ class LLMRerank(BaseNodePostprocessor):
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
-        # set by default since most postprocessors don't require prompts
         return {"choice_select_prompt": self.choice_select_prompt}
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
