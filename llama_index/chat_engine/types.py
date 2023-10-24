@@ -56,6 +56,7 @@ class StreamingAgentChatResponse:
     chat_stream: Optional[ChatResponseGen] = None
     achat_stream: Optional[ChatResponseAsyncGen] = None
     source_nodes: List[NodeWithScore] = field(default_factory=list)
+    _unformatted_response: str = ""
     _queue: queue.Queue = field(default_factory=queue.Queue)
     _aqueue: asyncio.Queue = field(default_factory=asyncio.Queue)
     # flag when chat message is a function call
@@ -80,7 +81,8 @@ class StreamingAgentChatResponse:
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
             for delta in self._queue.queue:
-                self.response += delta
+                self._unformatted_response += delta
+            self.response = self._unformatted_response.strip()
         return self.response
 
     def put_in_queue(self, delta: Optional[str]) -> None:
@@ -107,7 +109,7 @@ class StreamingAgentChatResponse:
             if self._is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text  # final message
+                chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
@@ -151,21 +153,23 @@ class StreamingAgentChatResponse:
         while not self._is_done or not self._queue.empty():
             try:
                 delta = self._queue.get(block=False)
-                self.response += delta
+                self._unformatted_response += delta
                 yield delta
             except queue.Empty:
                 # Queue is empty, but we're not done yet
                 continue
+        self.response = self._unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
         while not self._is_done or not self._aqueue.empty():
             if not self._aqueue.empty():
                 delta = self._aqueue.get_nowait()
-                self.response += delta
+                self.unformatted_response += delta
                 yield delta
             else:
                 await self._new_item_event.wait()  # Wait until a new item is added
                 self._new_item_event.clear()  # Clear the event for the next wait
+        self.response = self._unformatted_response.strip()
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:

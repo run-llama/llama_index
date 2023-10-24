@@ -1,4 +1,7 @@
 import asyncio
+import copy
+import itertools
+from itertools import chain
 from threading import Thread
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
@@ -25,7 +28,7 @@ from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text
+from llama_index.utils import print_text, unit_generator
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -123,7 +126,7 @@ class ReActAgent(BaseAgent):
         self._memory.reset()
 
     def _extract_reasoning_step(
-        self, output: ChatResponse
+        self, output: ChatResponse, is_streaming: bool = False
     ) -> Tuple[str, List[BaseReasoningStep], bool]:
         """
         Extracts the reasoning step from the given output.
@@ -138,7 +141,7 @@ class ReActAgent(BaseAgent):
         message_content = output.message.content
         current_reasoning = []
         try:
-            reasoning_step = self._output_parser.parse(message_content)
+            reasoning_step = self._output_parser.parse(message_content, is_streaming)
         except BaseException as exc:
             raise ValueError(f"Could not parse output: {message_content}") from exc
         if self._verbose:
@@ -155,12 +158,17 @@ class ReActAgent(BaseAgent):
         return message_content, current_reasoning, False
 
     def _process_actions(
-        self, tools: Sequence[AsyncBaseTool], output: ChatResponse
+        self,
+        tools: Sequence[AsyncBaseTool],
+        output: ChatResponse,
+        is_streaming: bool = False,
     ) -> Tuple[List[BaseReasoningStep], bool]:
         tools_dict: Dict[str, AsyncBaseTool] = {
             tool.metadata.get_name(): tool for tool in tools
         }
-        _, current_reasoning, is_done = self._extract_reasoning_step(output)
+        _, current_reasoning, is_done = self._extract_reasoning_step(
+            output, is_streaming
+        )
 
         if is_done:
             return current_reasoning, True
@@ -325,7 +333,10 @@ class ReActAgent(BaseAgent):
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
-        for _ in range(self._max_iterations):
+        is_done, ix = False, 0
+        while (not is_done) and (ix < self._max_iterations):
+            ix += 1
+
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
@@ -336,27 +347,46 @@ class ReActAgent(BaseAgent):
             chat_stream = self._llm.stream_chat(input_chat)
 
             # iterate over stream, break out if is final answer after the "Answer: "
-            is_done = False
             full_response = ChatResponse(
                 message=ChatMessage(content=None, role="assistant")
             )
-            for r in chat_stream:
-                if "Answer: " in (r.message.content or ""):
-                    is_done = True
-                    break
-                full_response = r
-            if is_done:
-                break
+            for latest_chunk in chat_stream:
+                latest_content = latest_chunk.message.content
+                if latest_content:
+                    if not latest_content.startswith(
+                        "Thought"
+                    ):  # doesn't follow thought-action format
+                        is_done = True
+                        full_response = latest_chunk
+                        break
+                    else:
+                        if "Answer: " in latest_content:
+                            is_done = True
+                            full_response = latest_chunk
+                            break
+                    full_response = latest_chunk
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                tools=tools, output=full_response
+                tools=tools, output=full_response, is_streaming=True
             )
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
+        response_stream = (
+            chain.from_iterable(  # need to add back partial response chunk
+                chain(
+                    [
+                        unit_generator(latest_chunk),
+                        chat_stream,
+                    ]
+                )
+            )
+        )
+
         chat_stream_response = StreamingAgentChatResponse(
-            chat_stream=chat_stream, sources=self.sources
+            chat_stream=response_stream,
+            sources=self.sources,
         )
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
