@@ -28,6 +28,23 @@ A4: No. there's isolated modules which might provide better results, but isn't r
 
 ##### Q5: I want to the LLM answer in Chinese/Italian/French but only answers in English, how to proceed?
 
-A5: To the LLM answer in another language more accurate, you can set the request on `system_prompt` and on the user query requesting the LLM to answer on your desired language.
+A5: To the LLM answer in another language more accurate you can update the prompts to enforce more the output language
+
+```py
+response = query_engine.query(input_text = "\nRespond in Italian")
+```
+
+Alternatively
+
+```py
+from llama_index import LLMPredictor, ServiceContext
+from llama_index.llms import OpenAI
+
+llm_predictor = LLMPredictor(system_prompt="Always respond in Italian.")
+
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+
+query_engine = load_index_from_storage(storage_context, service_context=service_context).as_query_engine()
+```
 
 ---
