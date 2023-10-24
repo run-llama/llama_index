@@ -1,5 +1,12 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- New env var `LLAMA_INDEX_NO_MPS_BACKEND` to disable inference of when to use
+  the MPS backend (#8274)
+
 ## [0.8.49] - 2023-10-23
 
 ### New Features
