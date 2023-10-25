@@ -23,10 +23,10 @@ maxdepth: 1
 ```
 
 With that said, we want to establish some general pillars of principled development for LLM and RAG applications.
+
 - The first pillar is **observability**: setting up initial tools to observe, debug your system and evaluate it on ad-hoc examples.
 - The next pillar is **evaluation**: being able to evaluate different components of your system so that you can experiment and improve it in a more systematic fashion.
 - The last pillar is **monitoring**: after the application is deployed, we want to continuously monitor and test that it is performing well in production.
-
 
 % TODO: also add UX patterns doc
 
@@ -40,4 +40,5 @@ maxdepth: 1
 ```
 
 ## Contribute Your Insights!
+
 If you have thoughts on sections to add or how to improve, please make a contribution ([link](https://github.com/jerryjliu/llama_index/blob/main/CONTRIBUTING.md))

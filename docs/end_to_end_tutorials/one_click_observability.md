@@ -10,9 +10,9 @@ your system - both as a whole and for each component.
 This feature allows you to seamlessly integrate the LlamaIndex library with powerful observability/evaluation tools offered by our partners.
 Configure a variable once, and you'll be able to do things like the following:
 
--   View LLM/prompt inputs/outputs
--   Ensure that the outputs of any component (LLMs, embeddings) are performing as expected
--   View call traces for both indexing and querying
+- View LLM/prompt inputs/outputs
+- Ensure that the outputs of any component (LLMs, embeddings) are performing as expected
+- View call traces for both indexing and querying
 
 Each provider has similarities and differences. Take a look below for the full set of guides for each one!
 
@@ -40,7 +40,7 @@ And that's it! Executions will get seamlessly piped to downstream service (e.g. 
 
 ## Simple (LLM Inputs/Outputs)
 
-This simpe obvservability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
+This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
 
 #### Usage Pattern
 
@@ -99,8 +99,8 @@ maxdepth: 1
 
 Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
 
--   LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
--   LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
+- LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
+- LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
 
 #### Usage Pattern
 
@@ -201,4 +201,47 @@ maxdepth: 1
 /community/integrations/trulens.md
 Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
 Colab <https://colab.research.google.com/github/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
+```
+
+### HoneyHive
+
+HoneyHive allows users to trace the execution flow of any LLM pipeline. Users can then debug and analyze their traces, or customize feedback on specific trace events to create evaluation or fine-tuning datasets from production.
+
+#### Usage Pattern
+
+```python
+from llama_index import set_global_handler
+set_global_handler(
+    "honeyhive",
+    project="My HoneyHive Project",
+    name="My LLM Pipeline Name",
+    api_key="MY HONEYHIVE API KEY",
+)
+
+# NOTE: No need to do the following
+# from llama_index import ServiceContext
+# from llama_index.callbacks import CallbackManager
+# from honeyhive.sdk.llamaindex_tracer import HoneyHiveLlamaIndexTracer
+# hh_tracer = HoneyHiveLlamaIndexTracer(
+#     project="My HoneyHive Project",
+#     name="My LLM Pipeline Name",
+#     api_key="MY HONEYHIVE API KEY",
+# )
+# callback_manager = CallbackManager([hh_tracer])
+# service_context = ServiceContext.from_defaults(
+#     callback_manager=callback_manager
+# )
+```
+
+![](/_static/integrations/honeyhive.png)
+![](/_static/integrations/perfetto.png)
+_Use Perfetto to debug and analyze your HoneyHive traces_
+
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
 ```

@@ -4,6 +4,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
 
@@ -34,6 +35,13 @@ class TransformQueryEngine(BaseQueryEngine):
         self._query_transform = query_transform
         self._transform_metadata = transform_metadata
         super().__init__(callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {
+            "query_transform": self._query_transform,
+            "query_engine": self._query_engine,
+        }
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query_bundle = self._query_transform.run(

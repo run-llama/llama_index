@@ -3,6 +3,7 @@
 ## Get Started
 
 Build a chat engine from index:
+
 ```python
 chat_engine = index.as_chat_engine()
 ```
@@ -12,35 +13,41 @@ To learn how to build an index, see [Index](/core_modules/data_modules/index/roo
 ```
 
 Have a conversation with your data:
+
 ```python
 response = chat_engine.chat("Tell me a joke.")
 ```
 
 Reset chat history to start a new conversation:
+
 ```python
 chat_engine.reset()
 ```
 
 Enter an interactive chat REPL:
+
 ```python
 chat_engine.chat_repl()
 ```
 
-
 ## Configuring a Chat Engine
+
 Configuring a chat engine is very similar to configuring a query engine.
 
 ### High-Level API
+
 You can directly build and configure a chat engine from an index in 1 line of code:
+
 ```python
 chat_engine = index.as_chat_engine(
     chat_mode='condense_question',
     verbose=True
 )
 ```
+
 > Note: you can access different chat engines by specifying the `chat_mode` as a kwarg. `condense_question` corresponds to `CondenseQuestionChatEngine`, `react` corresponds to `ReActChatEngine`, `context` corresponds to a `ContextChatEngine`.
 
-> Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.
+> Note: While the high-level API optimizes for ease-of-use, it does _NOT_ expose full range of configurability.
 
 #### Available Chat Modes
 
@@ -55,12 +62,14 @@ chat_engine = index.as_chat_engine(
 
 You can use the low-level composition API if you need more granular control.
 Concretely speaking, you would explicitly construct `ChatEngine` object instead of calling `index.as_chat_engine(...)`.
+
 > Note: You may need to look at API references or example notebooks.
 
 Here's an example where we configure the following:
-* configure the condense question prompt,
-* initialize the conversation with some existing history,
-* print verbose debug message.
+
+- configure the condense question prompt,
+- initialize the conversation with some existing history,
+- print verbose debug message.
 
 ```python
 from llama_index.prompts  import PromptTemplate
@@ -102,6 +111,7 @@ chat_engine = CondenseQuestionChatEngine.from_defaults(
 ```
 
 ### Streaming
+
 To enable streaming, you simply need to call the `stream_chat` endpoint instead of the `chat` endpoint.
 
 ```{warning}

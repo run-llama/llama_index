@@ -32,6 +32,7 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
+- DashVector(`DashVectorStore`).[Installation](https://help.aliyun.com/document_detail/2510230.html).
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -195,7 +196,7 @@ Zep stores texts, metadata, and embeddings. All are returned in search results.
 
 ```python
 
-from llama_index.vector_stores import ZepVectorStore
+from llama_index.vector_stores.zep import ZepVectorStore
 
 vector_store = ZepVectorStore(
     api_url="<api_url>",
@@ -486,6 +487,23 @@ vector_store = CognitiveSearchVectorStore(
 )
 ```
 
+**DashVector**
+
+```python
+import dashvector
+from llama_index.vector_stores import DashVectorStore
+
+# init dashvector client
+client = dashvector.Client(api_key='your-dashvector-api-key')
+
+# creating a DashVector collection
+client.create("quickstart", dimension=1536)
+collection = client.get("quickstart")
+
+# construct vector store
+vector_store = DashVectorStore(collection)
+```
+
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 ## Loading Data from Vector Stores using Data Connector
@@ -625,4 +643,5 @@ maxdepth: 1
 ../../examples/vector_stores/Neo4jVectorDemo.ipynb
 ../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ../../examples/vector_stores/Timescalevector.ipynb
+../../examples/vector_stores/DashvectorIndexDemo.ipynb
 ```

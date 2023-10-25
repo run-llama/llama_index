@@ -1,9 +1,11 @@
 # Usage Pattern (Response Evaluation)
 
 ## Using `BaseEvaluator`
+
 All of the evaluation modules in LlamaIndex implement the `BaseEvaluator` class, with two main methods:
 
 1. The `evaluate` method takes in `query`, `contexts`, `response`, and additional keyword arguments.
+
 ```python
     def evaluate(
         self,
@@ -15,6 +17,7 @@ All of the evaluation modules in LlamaIndex implement the `BaseEvaluator` class,
 ```
 
 2. The `evaluate_response` method provide an alternative interface that takes in a llamaindex `Response` object (which contains response string and source nodes) instead of separate `contexts` and `response`.
+
 ```python
 def evaluate_response(
     self,
@@ -23,16 +26,20 @@ def evaluate_response(
     **kwargs: Any,
 ) -> EvaluationResult:
 ```
+
 It's functionally the same as `evaluate`, just simpler to use when working with llamaindex objects directly.
 
 ## Using `EvaluationResult`
+
 Each evaluator outputs a `EvaluationResult` when executed:
+
 ```python
 eval_result = evaluator.evaluate(query=..., contexts=..., response=...)
 eval_result.passing  # binary pass/fail
 eval_result.score  # numerical score
 eval_result.feedback  # string feedback
 ```
+
 Different evaluators may populate a subset of the result fields.
 
 ## Evaluating Response Faithfulness (i.e. Hallucination)
@@ -60,7 +67,6 @@ response = query_engine.query("What battles took place in New York City in the A
 eval_result = evaluator.evaluate_response(response=response)
 print(str(eval_result.passing))
 ```
-
 
 ![](/_static/evaluation/eval_response_context.png)
 
@@ -124,7 +130,6 @@ print(str(eval_result))
 ```
 
 ![](/_static/evaluation/eval_query_response_context.png)
-
 
 Similarly, you can also evaluate on a specific source node.
 
@@ -202,4 +207,4 @@ eval_results = await runner.aevaluate_queries(
 We also integrate with community evaluation tools.
 
 - [DeepEval](../../../community/integrations/deepeval.md)
-- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/integrations/llamaindex.ipynb)
+- [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)

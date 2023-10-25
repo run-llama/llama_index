@@ -89,6 +89,7 @@ response = query_engine.query(
 )
 
 ```
+
 For more details, check out the [full example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatgpt_plugin/ChatGPTRetrievalPluginReaderDemo.ipynb).
 
 ### ChatGPT Retrieval Plugin Index

@@ -41,6 +41,10 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         callback_manager = self._graph.service_context.callback_manager
         super().__init__(callback_manager)
 
+    def _get_prompt_modules(self) -> Dict[str, Any]:
+        """Get prompt modules."""
+        return {}
+
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query_index(query_bundle, index_id=None, level=0)
 

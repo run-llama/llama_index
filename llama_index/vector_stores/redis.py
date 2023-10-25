@@ -96,7 +96,6 @@ class RedisVectorStore(VectorStore):
                 "distance_metric": "cosine"},
             >>>     redis_url="redis://localhost:6379/",
             >>>     overwrite=True)
-
         """
         try:
             import redis
@@ -124,7 +123,7 @@ class RedisVectorStore(VectorStore):
 
     @property
     def client(self) -> "RedisType":
-        """Return the redis client instance"""
+        """Return the redis client instance."""
         return self._redis_client
 
     def add(self, nodes: List[BaseNode]) -> List[str]:

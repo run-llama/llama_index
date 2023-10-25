@@ -70,7 +70,7 @@ def get_redis_query(
     sort: bool = True,
     filters: str = "*",
 ) -> "Query":
-    """Create a vector query for use with a SearchIndex
+    """Create a vector query for use with a SearchIndex.
 
     Args:
         return_fields (t.List[str]): A list of fields to return in the query results

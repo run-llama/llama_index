@@ -11,6 +11,7 @@ from llama_index.prompts import (
     MessageRole,
     PromptTemplate,
 )
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
@@ -84,6 +85,17 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
         self._enforce_consensus = enforce_consensus
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {
+            "eval_template": self._eval_template,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "eval_template" in prompts:
+            self._eval_template = prompts["eval_template"]
 
     async def _get_eval_result(
         self,

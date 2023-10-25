@@ -241,7 +241,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     """
     Args:
         model_name(str): the model name of the tokenizer.
-                        For instance, fxmarty/tiny-llama-fast-tokenizer
+                        For instance, fxmarty/tiny-llama-fast-tokenizer.
     """
     try:
         from transformers import AutoTokenizer
@@ -255,7 +255,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
 
 def get_cache_dir() -> str:
     """Locate a platform-appropriate cache directory for llama_index,
-    and create it if it doesn't yet exist
+    and create it if it doesn't yet exist.
     """
     # User override
     if "LLAMA_INDEX_CACHE_DIR" in os.environ:
@@ -406,3 +406,18 @@ def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
     """
     text_to_print = _get_colored_text(text, color) if color is not None else text
     print(text_to_print, end=end)
+
+
+def infer_torch_device() -> str:
+    """Infer the input to torch.device."""
+    try:
+        has_cuda = torch.cuda.is_available()
+    except NameError:
+        import torch
+
+        has_cuda = torch.cuda.is_available()
+    if has_cuda:
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"

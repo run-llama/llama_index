@@ -1,6 +1,5 @@
 # Defining and Customizing Documents
 
-
 ## Defining Documents
 
 Documents can either be created automatically via data loaders, or constructed manually.
@@ -129,7 +128,7 @@ As you know by now, metadata is injected into the actual text of each document/n
 
 1. `Document.metadata_seperator` -> default = `"\n"`
 
-When concatenating all key/value fields of your metadata, this field controls the separator bewtween each key/value pair.
+When concatenating all key/value fields of your metadata, this field controls the separator between each key/value pair.
 
 2. `Document.metadata_template` -> default = `"{key}: {value}"`
 
@@ -163,7 +162,6 @@ document = Document(
 print("The LLM sees this: \n", document.get_content(metadata_mode=MetadataMode.LLM))
 print("The Embedding model sees this: \n", document.get_content(metadata_mode=MetadataMode.EMBED))
 ```
-
 
 ### Advanced - Automatic Metadata Extraction
 

@@ -417,8 +417,8 @@ can be broken down into the following steps:
 1. Initializing state variables:
 
 ```tsx
-const[collections, setCollections] = useState < CollectionModelSchema[] > ([]);
-const[loading, setLoading] = useState(true);
+const [collections, setCollections] = useState<CollectionModelSchema[]>([]);
+const [loading, setLoading] = useState(true);
 ```
 
 Here, we initialize two state variables: `collections` to store the list of collections and `loading` to track whether
@@ -561,7 +561,7 @@ const setupWebsocket = () => {
   // selected collection's ID and the user's authentication token.
 
   websocket.current = new WebSocket(
-    `ws://localhost:8000/ws/collections/${selectedCollection.id}/query/?token=${authToken}`
+    `ws://localhost:8000/ws/collections/${selectedCollection.id}/query/?token=${authToken}`,
   );
 
   websocket.current.onopen = (event) => {
@@ -633,7 +633,7 @@ event:
 websocket.current.onclose = (event) => {
   if (event.code === 4000) {
     toast.warning(
-      "Selected collection's model is unavailable. Was it created properly?"
+      "Selected collection's model is unavailable. Was it created properly?",
     );
     setError(true);
     setConnecting(false);
@@ -647,14 +647,14 @@ Finally, `onerror` is triggered when an error occurs with the WebSocket connecti
 updates the states to reflect the error and logs the error event:
 
 ```tsx
-    websocket.current.onerror = (event) => {
-      setError(true);
-      setConnecting(false);
-      setAwaitingMessage(false);
+websocket.current.onerror = (event) => {
+  setError(true);
+  setConnecting(false);
+  setAwaitingMessage(false);
 
-      console.error("WebSocket error:", event);
-    };
-  ```
+  console.error("WebSocket error:", event);
+};
+```
 
 #### Rendering our Chat Messages
 

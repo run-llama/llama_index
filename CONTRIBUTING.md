@@ -126,6 +126,7 @@ These serve as the main data store and retrieval engine for our vector index.
 - [Pinecone](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/pinecone.py)
 - [Faiss](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/faiss.py)
 - [Chroma](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/chroma.py)
+- [DashVector](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/dashvector.py)
 
 **Ideas**:
 
@@ -278,26 +279,11 @@ First, create a fork of LlamaIndex, by clicking the "Fork" button on the [LlamaI
 Following [these steps](https://docs.github.com/en/get-started/quickstart/fork-a-repo) for more details
 on how to fork the repo and clone the forked repo.
 
-Then, create a new Python virtual environment. The command below creates an environment in `.venv`,
-and activates it:
+Then, create a new Python virtual environment using poetry.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-if you are in windows, use the following to activate your virtual environment:
-
-```bash
-.venv\scripts\activate
-```
-
-Install the required dependencies (this will also install LlamaIndex through `pip install -e .`
-so that you can start developing on it):
-
-```bash
-pip install -r requirements.txt
-```
+- [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
+- `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
+- `poetry install --with dev,docs` - this will install all dependencies needed for most local development
 
 Now you should be set!
 
