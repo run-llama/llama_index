@@ -20,6 +20,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
     DEFAULT_TEXT_TO_SQL_PROMPT,
 )
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
@@ -79,6 +80,10 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
             sql_context_container or index.sql_context_container
         )
         super().__init__(index.service_context.callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
@@ -146,6 +151,10 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
     def service_context(self) -> ServiceContext:
         """Get service context."""
         return self._service_context
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
@@ -260,6 +269,19 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         self._synthesize_response = synthesize_response
         super().__init__(self._service_context.callback_manager, **kwargs)
 
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {"response_synthesis_prompt": self._response_synthesis_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "response_synthesis_prompt" in prompts:
+            self._response_synthesis_prompt = prompts["response_synthesis_prompt"]
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {"sql_retriever": self.sql_retriever}
+
     @property
     @abstractmethod
     def sql_retriever(self) -> NLSQLRetriever:
@@ -339,6 +361,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
+        context_str_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -348,6 +371,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             text_to_sql_prompt=text_to_sql_prompt,
             context_query_kwargs=context_query_kwargs,
             tables=tables,
+            context_str_prefix=context_str_prefix,
             service_context=service_context,
         )
         super().__init__(
@@ -382,6 +406,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
+        context_str_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -392,6 +417,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             context_query_kwargs=context_query_kwargs,
             tables=tables,
             sql_parser_mode=SQLParserMode.PGVECTOR,
+            context_str_prefix=context_str_prefix,
             service_context=service_context,
         )
         super().__init__(

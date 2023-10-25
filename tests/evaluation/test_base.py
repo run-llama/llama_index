@@ -2,6 +2,7 @@ from typing import Any, Optional, Sequence
 
 from llama_index.evaluation import BaseEvaluator
 from llama_index.evaluation.base import EvaluationResult
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.response.schema import NodeWithScore, Response
 from llama_index.schema import TextNode
 
@@ -16,6 +17,13 @@ class MockEvaluator(BaseEvaluator):
         self._mock_score = mock_score
         self._mock_passing = mock_passing
         self._mock_feedback = mock_feedback
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
 
     async def aevaluate(
         self,

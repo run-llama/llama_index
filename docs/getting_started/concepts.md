@@ -45,6 +45,7 @@ A data connector (often called a `Reader`) ingests data from different data sour
 
 ### Indexing Stage
 
+<<<<<<< HEAD
 [**Indexes**](/module_guides/indexing/indexing.md):
 Once you've ingested your data, LlamaIndex will help you index the data into a structure that's easy to retrieve. This usually involves generating `vector embeddings` which are stored in a specialized database called a `vector store`. Indexes can also store a variety of metadata about your data.
 
@@ -54,6 +55,26 @@ Once you've ingested your data, LlamaIndex will help you index the data into a s
 
 [**Retrievers**](/module_guides/querying/retriever/root.md):
 A retriever defines how to efficiently retrieve relevant context from an index when given a query. Your retrieval strategy is key to the relevancy of the data retrieved and the efficiency with which it's done.
+=======
+LlamaIndex helps you prepare the knowledge base with a suite of data connectors and indexes.
+![](/_static/getting_started/indexing.jpg)
+
+[**Data Connectors**](/core_modules/data_modules/connector/root.md):
+A data connector (i.e. `Reader`) ingests data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
+
+[**Documents / Nodes**](/core_modules/data_modules/documents_and_nodes/root.md): A `Document` is a generic container around any data source - for instance, a PDF, an API output, or retrieved data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. It's a rich representation that includes metadata and relationships (to other nodes) to enable accurate and expressive retrieval operations.
+
+[**Data Indexes**](/core_modules/data_modules/index/root.md):
+Once you've ingested your data, LlamaIndex will help you index the data into a format that's easy to retrieve. Under the hood, LlamaIndex parses the raw documents into intermediate representations, calculates vector embeddings, and infers metadata. The most commonly used index is the [VectorStoreIndex](/core_modules/data_modules/index/vector_store_guide.ipynb)
+
+### Querying Stage
+
+In the querying stage, the RAG pipeline retrieves the most relevant context given a user query,
+and passes that to the LLM (along with the query) to synthesize a response.
+This gives the LLM up-to-date knowledge that is not in its original training data,
+(also reducing hallucination).
+The key challenge in the querying stage is retrieval, orchestration, and reasoning over (potentially many) knowledge bases.
+>>>>>>> 32aa54f285baed6fba8961c6688711fe9164a0c6
 
 [**Node Postprocessors**](/module_guides/querying/node_postprocessors/root.md):
 A node postprocessor takes in a set of retrieved nodes and applies transformations, filtering, or re-ranking logic to them.

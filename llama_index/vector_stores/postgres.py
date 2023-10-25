@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 def get_data_model(
     base: Type,
     index_name: str,
+    schema_name: str,
     hybrid_search: bool,
     text_search_config: str,
     cache_okay: bool,
@@ -64,7 +65,11 @@ def get_data_model(
                 ),
             )
 
-        model = type(class_name, (HybridAbstractData,), {"__tablename__": tablename})
+        model = type(
+            class_name,
+            (HybridAbstractData,),
+            {"__tablename__": tablename, "__table_args__": {"schema": schema_name}},
+        )
 
         Index(
             indexname,
@@ -81,7 +86,11 @@ def get_data_model(
             node_id = Column(VARCHAR)
             embedding = Column(Vector(embed_dim))  # type: ignore
 
-        model = type(class_name, (AbstractData,), {"__tablename__": tablename})
+        model = type(
+            class_name,
+            (AbstractData,),
+            {"__tablename__": tablename, "__table_args__": {"schema": schema_name}},
+        )
 
     return model
 
@@ -95,6 +104,7 @@ class PGVectorStore(BasePydanticVectorStore):
     connection_string: str
     async_connection_string: str
     table_name: str
+    schema_name: str
     embed_dim: int
     hybrid_search: bool
     text_search_config: str
@@ -114,6 +124,7 @@ class PGVectorStore(BasePydanticVectorStore):
         connection_string: str,
         async_connection_string: str,
         table_name: str,
+        schema_name: str,
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
@@ -133,6 +144,7 @@ class PGVectorStore(BasePydanticVectorStore):
             )
 
         table_name = table_name.lower()
+        schema_name = schema_name.lower()
 
         if hybrid_search and text_search_config is None:
             raise ValueError(
@@ -147,6 +159,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._table_class = get_data_model(
             self._base,
             table_name,
+            schema_name,
             hybrid_search,
             text_search_config,
             cache_ok,
@@ -157,6 +170,7 @@ class PGVectorStore(BasePydanticVectorStore):
             connection_string=connection_string,
             async_connection_string=async_connection_string,
             table_name=table_name,
+            schema_name=schema_name,
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
@@ -186,6 +200,7 @@ class PGVectorStore(BasePydanticVectorStore):
         user: Optional[str] = None,
         password: Optional[str] = None,
         table_name: str = "llamaindex",
+        schema_name: str = "public",
         connection_string: Optional[str] = None,
         async_connection_string: Optional[str] = None,
         hybrid_search: bool = False,
@@ -206,6 +221,7 @@ class PGVectorStore(BasePydanticVectorStore):
             connection_string=conn_str,
             async_connection_string=async_conn_str,
             table_name=table_name,
+            schema_name=schema_name,
             hybrid_search=hybrid_search,
             text_search_config=text_search_config,
             embed_dim=embed_dim,
@@ -230,6 +246,14 @@ class PGVectorStore(BasePydanticVectorStore):
         self._async_engine = create_async_engine(self.async_connection_string)
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
+    def _create_schema_if_not_exists(self) -> None:
+        with self._session() as session, session.begin():
+            from sqlalchemy import text
+
+            statement = text(f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}")
+            session.execute(statement)
+            session.commit()
+
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
             self._base.metadata.create_all(session.connection())
@@ -246,6 +270,7 @@ class PGVectorStore(BasePydanticVectorStore):
         if not self._is_initialized:
             self._connect()
             self._create_extension()
+            self._create_schema_if_not_exists()
             self._create_tables_if_not_exists()
             self._is_initialized = True
 
@@ -545,7 +570,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         with self._session() as session, session.begin():
             stmt = sqlalchemy.text(
-                f"DELETE FROM public.data_{self.table_name} where "
+                f"DELETE FROM {self.schema_name}.data_{self.table_name} where "
                 f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
             )
 

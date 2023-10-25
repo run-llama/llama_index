@@ -3,6 +3,7 @@ from typing import Any, Generator, Optional, Sequence, cast
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import DEFAULT_TEXT_QA_PROMPT_SEL
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -16,6 +17,15 @@ class SimpleSummarize(BaseSynthesizer):
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"text_qa_template": self._text_qa_template}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "text_qa_template" in prompts:
+            self._text_qa_template = prompts["text_qa_template"]
 
     async def aget_response(
         self,
@@ -35,11 +45,13 @@ class SimpleSummarize(BaseSynthesizer):
             response = await self._service_context.llm_predictor.apredict(
                 text_qa_template,
                 context_str=node_text,
+                **response_kwargs,
             )
         else:
             response = self._service_context.llm_predictor.stream(
                 text_qa_template,
                 context_str=node_text,
+                **response_kwargs,
             )
 
         if isinstance(response, str):
@@ -67,11 +79,13 @@ class SimpleSummarize(BaseSynthesizer):
             response = self._service_context.llm_predictor.predict(
                 text_qa_template,
                 context_str=node_text,
+                **kwargs,
             )
         else:
             response = self._service_context.llm_predictor.stream(
                 text_qa_template,
                 context_str=node_text,
+                **kwargs,
             )
 
         if isinstance(response, str):

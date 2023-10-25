@@ -17,6 +17,7 @@ from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PROMPT,
 )
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore, TextNode
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
@@ -147,7 +148,7 @@ class PGVectorSQLParser(BaseSQLParser):
         return raw_sql_str.replace("[query_vector]", query_embedding_str)
 
 
-class NLSQLRetriever(BaseRetriever):
+class NLSQLRetriever(BaseRetriever, PromptMixin):
     """Text-to-SQL Retriever.
 
     Retrieves via text.
@@ -164,6 +165,7 @@ class NLSQLRetriever(BaseRetriever):
         context_str_prefix (str): Prefix for context string. Defaults to None.
         service_context (ServiceContext): Service context. Defaults to None.
         return_raw (bool): Whether to return plain-text dump of SQL results, or parsed into Nodes.
+        handle_sql_errors (bool): Whether to handle SQL errors. Defaults to True.
 
     """
 
@@ -178,6 +180,7 @@ class NLSQLRetriever(BaseRetriever):
         sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
         service_context: Optional[ServiceContext] = None,
         return_raw: bool = True,
+        handle_sql_errors: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -191,6 +194,22 @@ class NLSQLRetriever(BaseRetriever):
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._sql_parser_mode = sql_parser_mode
         self._sql_parser = self._load_sql_parser(sql_parser_mode, self._service_context)
+        self._handle_sql_errors = handle_sql_errors
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {
+            "text_to_sql_prompt": self._text_to_sql_prompt,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "text_to_sql_prompt" in prompts:
+            self._text_to_sql_prompt = prompts["text_to_sql_prompt"]
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
 
     def _load_sql_parser(
         self, sql_parser_mode: SQLParserMode, service_context: ServiceContext
@@ -251,9 +270,19 @@ class NLSQLRetriever(BaseRetriever):
         )
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
-        retrieved_nodes, metadata = self._sql_retriever.retrieve_with_metadata(
-            sql_query_str
-        )
+        try:
+            retrieved_nodes, metadata = self._sql_retriever.retrieve_with_metadata(
+                sql_query_str
+            )
+        except BaseException as e:
+            # if handle_sql_errors is True, then return error message
+            if self._handle_sql_errors:
+                err_node = TextNode(text=f"Error: {e!s}")
+                retrieved_nodes = [NodeWithScore(node=err_node)]
+                metadata = {}
+            else:
+                raise
+
         return retrieved_nodes, {"sql_query": sql_query_str, **metadata}
 
     async def aretrieve_with_metadata(
@@ -279,9 +308,19 @@ class NLSQLRetriever(BaseRetriever):
         )
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
-        retrieved_nodes, metadata = await self._sql_retriever.aretrieve_with_metadata(
-            sql_query_str
-        )
+        try:
+            (
+                retrieved_nodes,
+                metadata,
+            ) = await self._sql_retriever.aretrieve_with_metadata(sql_query_str)
+        except BaseException as e:
+            # if handle_sql_errors is True, then return error message
+            if self._handle_sql_errors:
+                err_node = TextNode(text=f"Error: {e!s}")
+                retrieved_nodes = [NodeWithScore(node=err_node)]
+                metadata = {}
+            else:
+                raise
         return retrieved_nodes, {"sql_query": sql_query_str, **metadata}
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:

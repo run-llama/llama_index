@@ -34,10 +34,6 @@ repos:
         name: black-docs
         files: docs/
         args: [--line-length=79]
-  - repo: https://github.com/pappasam/toml-sort
-    rev: v0.23.1
-    hooks:
-      - id: toml-sort-fix
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.3
     hooks:
@@ -52,3 +48,8 @@ repos:
     hooks:
       - id: nb-clean
         args: [--preserve-cell-outputs, --remove-empty-cells]
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.23.1
+    hooks:
+      - id: toml-sort-fix
+        exclude: poetry.lock

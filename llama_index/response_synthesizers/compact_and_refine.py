@@ -1,4 +1,4 @@
-from typing import Any, List, Sequence
+from typing import Any, List, Optional, Sequence
 
 from llama_index.prompts.prompt_utils import get_biggest_prompt
 from llama_index.response_synthesizers.refine import Refine
@@ -12,17 +12,22 @@ class CompactAndRefine(Refine):
         self,
         query_str: str,
         text_chunks: Sequence[str],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         compact_texts = self._make_compact_text_chunks(query_str, text_chunks)
         return await super().aget_response(
-            query_str=query_str, text_chunks=compact_texts, **response_kwargs
+            query_str=query_str,
+            text_chunks=compact_texts,
+            prev_response=prev_response,
+            **response_kwargs,
         )
 
     def get_response(
         self,
         query_str: str,
         text_chunks: Sequence[str],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get compact response."""
@@ -31,7 +36,10 @@ class CompactAndRefine(Refine):
         # the refine template does not account for size of previous answer.
         new_texts = self._make_compact_text_chunks(query_str, text_chunks)
         return super().get_response(
-            query_str=query_str, text_chunks=new_texts, **response_kwargs
+            query_str=query_str,
+            text_chunks=new_texts,
+            prev_response=prev_response,
+            **response_kwargs,
         )
 
     def _make_compact_text_chunks(

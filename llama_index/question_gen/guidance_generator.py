@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, cast
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.program.guidance_program import GuidancePydanticProgram
 from llama_index.prompts.guidance_utils import convert_to_handlebars
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.question_gen.prompts import (
     DEFAULT_SUB_QUESTION_PROMPT_TMPL,
     build_tools_text,
@@ -46,6 +47,13 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
         )
 
         return cls(program, verbose)
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
 
     def generate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle

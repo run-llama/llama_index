@@ -1,5 +1,50 @@
 # ChangeLog
 
+## [0.8.51] - 2023-10-25
+
+### New Features
+
+- Add Llava MultiModal QA examples for Tesla 10k RAG (#8271)
+- fix bug streaming on react chat agent not working as expected (#8459)
+
+## Bug Fixes / Nits
+
+- add Jina AI embeddings notebook + huggingface embedding fix (#8478)
+- add `is_chat_model` to replicate (#8469)
+- Brought back `toml-sort` to `pre-commit` (#8267)
+- Added `LocationConstraint` for local `test_s3_kvstore` (#8263)
+
+## [0.8.50] - 2023-10-24
+
+### New Features
+
+- Expose prompts in different modules (query engines, synthesizers, and more) (#8275)
+
+## [0.8.49] - 2023-10-23
+
+### New Features
+
+- New LLM integrations
+  - Support for Hugging Face Inference API's `conversational`, `text_generation`,
+    and `feature_extraction` endpoints via `huggingface_hub[inference]` (#8098)
+  - Add Amazon Bedrock LLMs (#8223)
+  - Add AI21 Labs LLMs (#8233)
+  - Add OpenAILike LLM class for OpenAI-compatible api servers (#7973)
+- New / updated vector store integrations
+  - Add DashVector (#7772)
+  - Add Tencent VectorDB (#8173)
+  - Add option for custom Postgres schema on PGVectorStore instead of only allowing public schema (#8080)
+- Add Gradient fine tuning engine (#8208)
+- docs(FAQ): frequently asked questions (#8249)
+
+### Bug Fixes / Nits
+
+- Fix inconsistencies with `ReActAgent.stream_chat` (#8147)
+- Deprecate some functions for GuardrailsOutputParser (#8016)
+- Simplify dependencies (#8236)
+- Bug fixes for LiteLLM (#7885)
+- Update for Predibase LLM (#8211)
+
 ## [0.8.48] - 2023-10-20
 
 ### New Features

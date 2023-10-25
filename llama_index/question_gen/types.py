@@ -3,6 +3,7 @@ from typing import List, Sequence
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts.mixin import PromptMixin, PromptMixinType
 from llama_index.tools.types import ToolMetadata
 
 
@@ -20,7 +21,11 @@ class SubQuestionList(BaseModel):
     items: List[SubQuestion]
 
 
-class BaseQuestionGenerator(ABC):
+class BaseQuestionGenerator(PromptMixin):
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
+
     @abstractmethod
     def generate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle

@@ -1,10 +1,11 @@
-from typing import Any, List, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.output_parsers.base import StructuredOutput
 from llama_index.output_parsers.selection import Answer, SelectionOutputParser
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.selectors.prompts import (
     DEFAULT_MULTI_SELECT_PROMPT_TMPL,
@@ -80,6 +81,15 @@ class LLMSingleSelector(BaseSelector):
             prompt_type=PromptType.SINGLE_SELECT,
         )
         return cls(service_context.llm_predictor, prompt)
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {"prompt": self._prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "prompt" in prompts:
+            self._prompt = prompts["prompt"]
 
     def _select(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
@@ -166,6 +176,15 @@ class LLMMultiSelector(BaseSelector):
             prompt_type=PromptType.MULTI_SELECT,
         )
         return cls(service_context.llm_predictor, prompt, max_outputs)
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {"prompt": self._prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "prompt" in prompts:
+            self._prompt = prompts["prompt"]
 
     def _select(
         self, choices: Sequence[ToolMetadata], query: QueryBundle

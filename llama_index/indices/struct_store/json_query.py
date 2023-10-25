@@ -7,6 +7,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
 from llama_index.utils import print_text
@@ -37,15 +38,31 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 
 
 def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
-    """Default output processor that executes the JSON Path query."""
+    """Default output processor that extracts values based on JSON Path expressions."""
+    # Split the given string into separate JSON Path expressions
+    expressions = [expr.strip() for expr in llm_output.split(",")]
+
     try:
         from jsonpath_ng.ext import parse
         from jsonpath_ng.jsonpath import DatumInContext
     except ImportError as exc:
+        IMPORT_ERROR_MSG = "You need to install jsonpath-ng to use this function!"
         raise ImportError(IMPORT_ERROR_MSG) from exc
 
-    datum: List[DatumInContext] = parse(llm_output).find(json_value)
-    return [d.value for d in datum]
+    results = {}
+
+    for expression in expressions:
+        try:
+            datum: List[DatumInContext] = parse(expression).find(json_value)
+            if datum:
+                key = expression.split(".")[
+                    -1
+                ]  # Extracting "title" from "$.title", for example
+                results[key] = datum[0].value
+        except Exception as exc:
+            raise ValueError(f"Invalid JSON Path: {expression}") from exc
+
+    return results
 
 
 class JSONQueryEngine(BaseQueryEngine):
@@ -92,6 +109,24 @@ class JSONQueryEngine(BaseQueryEngine):
         )
 
         super().__init__(self._service_context.callback_manager)
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {
+            "json_path_prompt": self._json_path_prompt,
+            "response_synthesis_prompt": self._response_synthesis_prompt,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "json_path_prompt" in prompts:
+            self._json_path_prompt = prompts["json_path_prompt"]
+        if "response_synthesis_prompt" in prompts:
+            self._response_synthesis_prompt = prompts["response_synthesis_prompt"]
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {}
 
     def _get_schema_context(self) -> str:
         """Get JSON schema context."""

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
@@ -7,6 +7,7 @@ from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE, BaseModel
 
@@ -40,6 +41,15 @@ class TreeSummarize(BaseSynthesizer):
         self._use_async = use_async
         self._verbose = verbose
 
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"summary_template": self._summary_template}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "summary_template" in prompts:
+            self._summary_template = prompts["summary_template"]
+
     async def aget_response(
         self,
         query_str: str,
@@ -61,14 +71,14 @@ class TreeSummarize(BaseSynthesizer):
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
                 response = self._service_context.llm_predictor.stream(
-                    summary_template,
-                    context_str=text_chunks[0],
+                    summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
                 response = await self._service_context.llm_predictor.apredict(
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunks[0],
+                    **response_kwargs,
                 )
 
             # return pydantic object if output_cls is specified
@@ -85,6 +95,7 @@ class TreeSummarize(BaseSynthesizer):
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunk,
+                    **response_kwargs,
                 )
                 for text_chunk in text_chunks
             ]
@@ -95,6 +106,7 @@ class TreeSummarize(BaseSynthesizer):
             return await self.aget_response(
                 query_str=query_str,
                 text_chunks=summaries,
+                **response_kwargs,
             )
 
     def get_response(
@@ -118,14 +130,14 @@ class TreeSummarize(BaseSynthesizer):
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
                 response = self._service_context.llm_predictor.stream(
-                    summary_template,
-                    context_str=text_chunks[0],
+                    summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
                 response = self._service_context.llm_predictor.predict(
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunks[0],
+                    **response_kwargs,
                 )
 
             # return pydantic object if output_cls is specified
@@ -143,6 +155,7 @@ class TreeSummarize(BaseSynthesizer):
                         summary_template,
                         output_cls=self._output_cls,
                         context_str=text_chunk,
+                        **response_kwargs,
                     )
                     for text_chunk in text_chunks
                 ]
@@ -154,12 +167,12 @@ class TreeSummarize(BaseSynthesizer):
                         summary_template,
                         output_cls=self._output_cls,
                         context_str=text_chunk,
+                        **response_kwargs,
                     )
                     for text_chunk in text_chunks
                 ]
 
             # recursively summarize the summaries
             return self.get_response(
-                query_str=query_str,
-                text_chunks=summaries,
+                query_str=query_str, text_chunks=summaries, **response_kwargs
             )

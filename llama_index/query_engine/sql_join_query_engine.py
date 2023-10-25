@@ -15,6 +15,7 @@ from llama_index.indices.struct_store.sql_query import (
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
@@ -130,6 +131,15 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         )
         self._check_stop_parser = check_stop_parser or _default_check_stop
 
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"sql_augment_transform_prompt": self._sql_augment_transform_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "sql_augment_transform_prompt" in prompts:
+            self._sql_augment_transform_prompt = prompts["sql_augment_transform_prompt"]
+
     def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         """Run query transform."""
         query_str = query_bundle.query_str
@@ -220,6 +230,22 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         )
         self._use_sql_join_synthesis = use_sql_join_synthesis
         self._verbose = verbose
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {
+            "selector": self._selector,
+            "sql_augment_query_transform": self._sql_augment_query_transform,
+        }
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"sql_join_synthesis_prompt": self._sql_join_synthesis_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "sql_join_synthesis_prompt" in prompts:
+            self._sql_join_synthesis_prompt = prompts["sql_join_synthesis_prompt"]
 
     def _query_sql_other(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Query SQL database + other query engine in sequence."""
