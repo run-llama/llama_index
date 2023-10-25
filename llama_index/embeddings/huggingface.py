@@ -50,6 +50,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         tokenizer: Optional[Any] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         cache_folder: Optional[str] = None,
+        trust_remote_code: bool = False,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
     ):
@@ -68,7 +69,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         if model is None:
             model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             self._model = AutoModel.from_pretrained(
-                model_name, cache_dir=cache_folder
+                model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
             ).to(self._device)
         else:
             self._model = model
