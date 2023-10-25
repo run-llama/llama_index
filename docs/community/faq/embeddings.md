@@ -23,7 +23,7 @@ To use a local HuggingFace embedding model you can follow [Local Embeddings with
 
 ##### 3. How to use embedding model to generate embeddings for text?
 
-You can generate embeddings for texts with the follwoing piece of code.
+You can generate embeddings for texts with the following piece of code.
 
 ```py
 text_embedding = embed_model.get_text_embedding("YOUR_TEXT")
