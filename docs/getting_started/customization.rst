@@ -92,7 +92,7 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
     from llama_index.llms import PaLM
     service_context = ServiceContext.from_defaults(llm=PaLM())
 
-You can learn more about `customizing LLMs </module_guides/using_llms/using_llms.html>`_.
+You can learn more about `customizing LLMs </module_guides/models/llms.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 5

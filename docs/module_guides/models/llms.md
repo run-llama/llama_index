@@ -90,9 +90,9 @@ llms/modules.md
 ---
 maxdepth: 1
 ---
-/module_guides/indexing/embeddings.md
-/module_guides/using_llms/prompts.md
-/module_guides/using_llms/local.md
+/module_guides/models/embeddings.md
+/module_guides/models/prompts.md
+/module_guides/models/llms/local.md
 Run Llama2 locally <https://replicate.com/blog/run-llama-locally>
 ```
 

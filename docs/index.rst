@@ -128,7 +128,7 @@ Associated projects
    :caption: Module Guides
    :hidden:
 
-   module_guides/using_llms/using_llms.md
+   module_guides/models/models.md
    module_guides/loading/loading.md
    module_guides/indexing/indexing.md
    module_guides/storing/storing.md

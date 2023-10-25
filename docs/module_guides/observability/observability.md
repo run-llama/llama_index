@@ -243,3 +243,12 @@ maxdepth: 1
 ---
 /examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
 ```
+
+## More observability
+
+```{toctree}
+---
+maxdepth: 1
+---
+callbacks/root.md
+```

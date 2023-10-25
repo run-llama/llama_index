@@ -7,7 +7,7 @@ Data Agents are LLM-powered knowledge workers in LlamaIndex that can intelligent
 - Perform automated search and retrieval over different types of data - unstructured, semi-structured, and structured.
 - Calling any external service API in a structured fashion, and processing the response + storing it for later.
 
-In that sense, agents are a step beyond our [query engines](/core_modules/query_modules/query_engine/root.md) in that they can not only "read" from a static source of data, but can dynamically ingest and modify data from a variety of different tools.
+In that sense, agents are a step beyond our [query engines](/module_guides/deploying/query_engine/root.md) in that they can not only "read" from a static source of data, but can dynamically ingest and modify data from a variety of different tools.
 
 Building a data agent requires the following core components:
 
@@ -25,7 +25,7 @@ The reasoning loop depends on the type of agent. We have support for the followi
 
 ### Tool Abstractions
 
-You can learn more about our Tool abstractions in our [Tools section](/core_modules/agent_modules/tools/root.md).
+You can learn more about our Tool abstractions in our [Tools section](/module_guides/deploying/agents/tools/root.md).
 
 ### Blog Post
 
@@ -62,11 +62,12 @@ usage_pattern.md
 
 Learn more about our different agent types in our module guides below.
 
-Also take a look at our [tools section](/core_modules/agent_modules/tools/root.md)!
+Also take a look at our [tools section](/module_guides/deploying/agents/tools/root.md)!
 
 ```{toctree}
 ---
 maxdepth: 2
 ---
 modules.md
+/module_guides/deploying/agents/tools/root.md
 ```
