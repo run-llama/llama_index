@@ -48,7 +48,7 @@ A data connector (often called a `Reader`) ingests data from different data sour
 [**Indexes**](/module_guides/indexing/indexing.md):
 Once you've ingested your data, LlamaIndex will help you index the data into a structure that's easy to retrieve. This usually involves generating `vector embeddings` which are stored in a specialized database called a `vector store`. Indexes can also store a variety of metadata about your data.
 
-[**Embeddings**](/module_guides/storing/embeddings.md) LLMs generate numerical representations of data called `embeddings`. When filtering your data for relevance, LlamaIndex will convert queries into embeddings, and your vector store will find data which is numerically similar to the embedding of your query. 
+[**Embeddings**](/module_guides/models/embeddings.md) LLMs generate numerical representations of data called `embeddings`. When filtering your data for relevance, LlamaIndex will convert queries into embeddings, and your vector store will find data which is numerically similar to the embedding of your query. 
 
 ### Querying Stage
 
@@ -65,17 +65,17 @@ A response synthesizer generates a response from an LLM, using a user query and 
 
 There are endless use cases for data-backed LLM applications but they can be roughly grouped into three categories:
 
-[**Query Engines**](/module_guides/putting_it_all_together/query_engine/root.md):
+[**Query Engines**](/module_guides/deploying/query_engine/root.md):
 A query engine is an end-to-end pipeline that allow you to ask question over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
 
-[**Chat Engines**](/module_guides/putting_it_all_together/chat_engines/root.md):
+[**Chat Engines**](/module_guides/deploying/chat_engines/root.md):
 A chat engine is an end-to-end pipeline for having a conversation with your data (multiple back-and-forth instead of a single question & answer).
 
-[**Agents**](/module_guides/putting_it_all_together/agents/root.md):
-An agent is an automated decision maker powered by an LLM that interacts with the world via a set of [tools](/module_guides/putting_it_all_together/agents/tools/llamahub_tools_guide.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
+[**Agents**](/module_guides/deploying/agents/root.md):
+An agent is an automated decision maker powered by an LLM that interacts with the world via a set of [tools](/module_guides/deploying/agents/tools/llamahub_tools_guide.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
 
 ```{admonition} Next Steps
 * Tell me how to [customize things](/getting_started/customization.rst)
-* Continue learning with our [understanding LlamaIndex](/understanding/introduction.md) guide
-* Ready to dig deep? Check out the [module guides](/module_guides/)
+* Continue learning with our [understanding LlamaIndex](/understanding/understanding.md) guide
+* Ready to dig deep? Check out the module guides on the left
 ```

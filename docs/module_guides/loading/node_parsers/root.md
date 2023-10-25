@@ -2,7 +2,7 @@
 
 ## Concept
 
-Node parsers are a simple abstraction that take a list of documents, and chunk them into `Node` objects, such that each node is a specific size. When a document is broken into nodes, all of it's attributes are inherited to the children nodes (i.e. `metadata`, text and metadata templates, etc.). You can read more about `Node` and `Document` properties [here](/core_modules/data_modules/documents_and_nodes/root.md).
+Node parsers are a simple abstraction that take a list of documents, and chunk them into `Node` objects, such that each node is a specific size. When a document is broken into nodes, all of it's attributes are inherited to the children nodes (i.e. `metadata`, text and metadata templates, etc.). You can read more about [`Node` and `Document` properties](/module_guides/loading/documents_and_nodes/root.md).
 
 A node parser can configure the chunk size (in tokens) as well as any overlap between chunked nodes. The chunking is done by using a `TokenTextSplitter`, which default to a chunk size of 1024 and a default chunk overlap of 20 tokens.
 
@@ -50,7 +50,7 @@ There are several options available to customize:
 - `text_splitter` (defaults to `TokenTextSplitter`) - the text splitter used to split text into chunks.
 - `include_metadata` (defaults to `True`) - whether or not `Node`s should inherit the document metadata.
 - `include_prev_next_rel` (defaults to `True`) - whether or not to include previous/next relationships between chunked `Node`s
-- `metadata_extractor` (defaults to `None`) - extra processing to extract helpful metadata. See [here for details](/core_modules/data_modules/documents_and_nodes/usage_metadata_extractor.md).
+- `metadata_extractor` (defaults to `None`) - extra processing to extract helpful metadata. See [more about our metadata extractor](/module_guides/loading/documents_and_nodes/usage_metadata_extractor.md).
 
 If you don't want to change the `text_splitter`, you can use `SimpleNodeParser.from_defaults()` to easily change the chunk size and chunk overlap. The defaults are 1024 and 20 respectively.
 

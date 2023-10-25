@@ -31,7 +31,7 @@ agent = OpenAIAgent.from_tools(tools, verbose=True)
 agent.chat("Can you create a new email to helpdesk and support @example.com about a service outage")
 ```
 
-Full Tool details can be found on our [LlamaHub](llamahub.ai) page. Each tool contains a "Usage" section showing how that tool can be used.
+Full Tool details can be found on our [LlamaHub](https://llamahub.ai) page. Each tool contains a "Usage" section showing how that tool can be used.
 
 ## Using with LangChain
 

@@ -135,6 +135,7 @@ embed_model = HuggingFaceBgeEmbeddings(model_name="BAAI/bge-base-en")
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 ```
 
+(custom_embeddings)=
 ### Custom Embedding Model
 
 If you wanted to use embeddings not offered by LlamaIndex or Langchain, you can also extend our base embeddings class and implement your own!

@@ -10,24 +10,24 @@ This has been renamed to `VectorStoreIndex`, as well as unifying all vector inde
 
 Please see the following links for more details on usage.
 
-- [Index Usage Pattern](/core_modules/data_modules/index/usage_pattern.md)
-- [Vector Store Guide](/core_modules/data_modules/index/vector_store_guide.ipynb)
+- [Index Usage Pattern](/module_guides/indexing/usage_pattern.md)
+- [Vector Store Guide](/module_guides/indexing/vector_store_guide.ipynb)
 - [Vector Store Integrations](/community/integrations/vector_stores.md)
 
 ## GPTVectorStoreIndex
 
 This has been renamed to `VectorStoreIndex`, but it is only a cosmetic change. Please see the following links for more details on usage.
 
-- [Index Usage Pattern](/core_modules/data_modules/index/usage_pattern.md)
-- [Vector Store Guide](/core_modules/data_modules/index/vector_store_guide.ipynb)
+- [Index Usage Pattern](/module_guides/indexing/usage_pattern.md)
+- [Vector Store Guide](/module_guides/indexing/vector_store_guide.ipynb)
 - [Vector Store Integrations](/community/integrations/vector_stores.md)
 
 ## LLMPredictor
 
 The `LLMPredictor` object is no longer intended to be used by users. Instead, you can setup an LLM directly and pass it into the `ServiceContext`.
 
-- [LLMs in LlamaIndex](/core_modules/model_modules/llms/root.md)
-- [Setting LLMs in the ServiceContext](/core_modules/supporting_modules/service_context.md)
+- [LLMs in LlamaIndex](/module_guides/models/llms.md)
+- [Setting LLMs in the ServiceContext](/module_guides/supporting_modules/service_context.md)
 
 ## PromptHelper and max_input_size/
 
@@ -37,5 +37,5 @@ The `PromptHelper` in general has been deprecated in favour of specifying parame
 
 See the following links for more details.
 
-- [Configuring settings in the Service Context](/core_modules/supporting_modules/service_context.md)
-- [Parsing Documents into Nodes](/core_modules/data_modules/node_parsers/root.md)
+- [Configuring settings in the Service Context](/module_guides/supporting_modules/service_context.md)
+- [Parsing Documents into Nodes](/module_guides/loading/node_parsers/root.md)

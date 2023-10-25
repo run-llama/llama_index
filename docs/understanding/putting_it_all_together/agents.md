@@ -19,7 +19,7 @@ Some of these core modules are shown below along with example tutorials (not com
 
 **Routing**
 
-- [Usage](/module_guides)
+- [Usage](/module_guides/querying/router/root.md)
 - [Router Query Engine Guide](/examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
 
 **LLM Reranking**
@@ -29,7 +29,7 @@ Some of these core modules are shown below along with example tutorials (not com
 
 **Chat Engines**
 
-- [Chat Engines How-To](/module_guides/putting_it_all_together/chat_engines/root.md)
+- [Chat Engines How-To](/module_guides/deploying/chat_engines/root.md)
 
 ### Using LlamaIndex as as Tool within an Agent Framework
 

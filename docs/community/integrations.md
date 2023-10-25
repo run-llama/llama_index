@@ -12,7 +12,7 @@ The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
 ## LLMs
 
-We support [a huge number of LLMs](/using_llms/llms/modules.md).
+We support [a huge number of LLMs](/module_guides/models/llms/modules.md).
 
 ## Observability/Tracing/Evaluation
 

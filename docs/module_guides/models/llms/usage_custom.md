@@ -112,7 +112,7 @@ service_context = ServiceContext.from_defaults(
 
 ## Example: Using a HuggingFace LLM
 
-LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model as in [this example](embeddings.md#custom-embeddings).
+LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a {ref}`local embedding model <custom_embeddings>`.
 
 Many open-source models from HuggingFace require either some preamble before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
 
@@ -174,7 +174,7 @@ Several example notebooks are also listed below:
 To use a custom LLM model, you only need to implement the `LLM` class (or `CustomLLM` for a simpler interface)
 You will be responsible for passing the text to the model and returning the newly generated tokens.
 
-Note that for a completely private experience, also setup a local embedding model (example [here](embeddings.md#custom-embeddings)).
+Note that for a completely private experience, also setup a {ref}`local embedding model <custom_embeddings>`.
 
 Here is a small example using locally running facebook/OPT model and Huggingface's pipeline abstraction:
 
@@ -257,4 +257,4 @@ The decorator is optional, but provides observability via callbacks on the LLM c
 
 Note that you may have to adjust the internal prompts to get good performance. Even then, you should be using a sufficiently large LLM to ensure it's capable of handling the complex queries that LlamaIndex uses internally, so your mileage may vary.
 
-A list of all default internal prompts is available [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py). You can also implement your own custom prompts, as described [here](/core_modules/service_modules/prompts.md).
+A list of all default internal prompts is available [here](https://github.com/run-llama/llama_index/blob/main/llama_index/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/run-llama/llama_index/blob/main/llama_index/prompts/chat_prompts.py). You can also implement [your own custom prompts](/module_guides/models/prompts.md).

@@ -75,7 +75,7 @@ loaded_indicies = load_index_from_storage(storage_context, index_ids=["<index_id
 You can customize the underlying storage with a one-line change to instantiate different document stores, index stores, and vector stores.
 See [Document Stores](./docstores.md), [Vector Stores](./vector_stores.md), [Index Stores](./index_stores.md) guides for more details.
 
-For saving and loading a graph/composable index, see the [full guide here](../index/composability.md).
+For saving and loading a graph/composable index, see the [full guide](/module_guides/indexing/composability.md).
 
 ### Vector Store Integrations and Storage
 

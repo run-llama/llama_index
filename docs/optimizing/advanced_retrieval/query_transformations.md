@@ -55,7 +55,7 @@ If your query is complex, different parts of your knowledge base may answer diff
 
 Our single-step query decomposition feature transforms a **complicated** question into a simpler one over the data collection to help provide a sub-answer to the original question.
 
-This is especially helpful over a [composed graph](../../index/composability.md). Within a composed graph, a query can be routed to multiple subindexes, each representing a subset of the overall knowledge corpus. Query decomposition allows us to transform the query into a more suitable question over any given index.
+This is especially helpful over a [composed graph](/module_guides/indexing/composability.md). Within a composed graph, a query can be routed to multiple subindexes, each representing a subset of the overall knowledge corpus. Query decomposition allows us to transform the query into a more suitable question over any given index.
 
 An example image is shown below.
 

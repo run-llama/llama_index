@@ -9,7 +9,7 @@ chat_engine = index.as_chat_engine()
 ```
 
 ```{tip}
-To learn how to build an index, see [Index](/core_modules/data_modules/index/root.md)
+To learn how to build an index, see [Indexing](/module_guides/indexing/indexing.md)
 ```
 
 Have a conversation with your data:

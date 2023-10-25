@@ -490,7 +490,7 @@ vector_store = CognitiveSearchVectorStore(
 
 ## Loading Data from Vector Stores using Data Connector
 
-LlamaIndex supports loading data from the following sources. See [Data Connectors](../connector/root.md) for more details and API documentation.
+LlamaIndex supports loading data from a huge number of sources. See [Data Connectors](/module_guides/loading/connector/modules.md) for more details and API documentation.
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 

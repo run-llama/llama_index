@@ -40,10 +40,9 @@ class ServiceContext:
 
 ```{tip}
 Learn how to configure specific modules:
-- [LLM](/core_modules/model_modules/llms/usage_custom.md)
-- [Embedding Model](/core_modules/model_modules/embeddings/usage_pattern.md)
-- [Node Parser](/core_modules/data_modules/node_parsers/usage_pattern.md)
-
+- [LLM](/module_guides/models/llms/usage_custom.md)
+- [Embedding Model](/module_guides/models/embeddings.md)
+- [Node Parser](/module_guides/loading/node_parsers/root.md)
 ```
 
 We also expose some common kwargs (of the above components) via the `ServiceContext.from_defaults` method

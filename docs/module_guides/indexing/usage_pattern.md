@@ -11,7 +11,7 @@ index = VectorStoreIndex.from_documents(docs)
 ```
 
 ```{tip}
-To learn how to load documents, see [Data Connectors](/core_modules/data_modules/connector/root.md)
+To learn how to load documents, see [data connectors](/module_guides/loading/connector/root.md)
 ```
 
 ### What is happening under the hood?

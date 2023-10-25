@@ -20,7 +20,7 @@ A `vector embedding`, often just called an embedding, is a **numerical represent
 
 This mathematical relationship enables **semantic search**, where a user provides query terms and LlamaIndex can locate text that is related to the **meaning of the query terms** rather than simple keyword matching. This is a big part of how Retrieval-Augmented Generation works, and how LLMs function in general.
 
-There are [many types of embeddings](/module_guides/indexing/embeddings.md), and they vary in efficiency, effectiveness and computational cost. By default LlamaIndex uses `text-embedding-ada-002`, which is the default embedding used by OpenAI. If you are using different LLMs you will often want to use different embeddings.
+There are [many types of embeddings](/module_guides/models/embeddings.md), and they vary in efficiency, effectiveness and computational cost. By default LlamaIndex uses `text-embedding-ada-002`, which is the default embedding used by OpenAI. If you are using different LLMs you will often want to use different embeddings.
 
 ### Vector Store Index embeds your documents
 

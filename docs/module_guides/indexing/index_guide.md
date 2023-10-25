@@ -6,7 +6,7 @@ Some terminology:
 
 - **Node**: Corresponds to a chunk of text from a Document. LlamaIndex takes in Document objects and internally parses/chunks them into Node objects.
 - **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to
-  [specify different response modes](setting-response-mode) here.
+  [specify different response modes](/module_guides/deploying/query_engine/response_modes.md).
 
 ## Summary Index (formerly List Index)
 
