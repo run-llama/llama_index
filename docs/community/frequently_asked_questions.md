@@ -76,3 +76,18 @@ faq/chat_engines.md
 ```
 
 ---
+
+##### [Documents and Nodes](./faq/documents_and_nodes.md)
+
+Know more about documents and nodes and their possibilities.
+
+```{toctree}
+---
+maxdepth: 1
+hidden: true
+---
+faq/documents_and_nodes.md
+
+```
+
+---
