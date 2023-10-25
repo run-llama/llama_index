@@ -114,7 +114,6 @@ Associated projects
    :caption: Optimizing
    :hidden:
 
-<<<<<<< HEAD
    optimizing/basic_strategies/basic_strategies.md
    optimizing/advanced_retrieval/advanced_retrieval.md
    optimizing/agentic_strategies/agentic_strategies.md
@@ -138,11 +137,6 @@ Associated projects
    module_guides/observability/observability.md
    module_guides/evaluating/root.md
    module_guides/supporting_modules/supporting_modules.md
-=======
-   community/frequently_asked_questions.md
-   community/integrations.md
-   community/app_showcase.md
->>>>>>> 32aa54f285baed6fba8961c6688711fe9164a0c6
 
 
 .. toctree::
