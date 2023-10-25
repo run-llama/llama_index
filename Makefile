@@ -8,7 +8,7 @@ format:	## Run code autoformatters (black).
 	pre-commit run black-jupyter --all-files
 
 lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
-	pre-commit install && pre-commit run --all-files
+	pre-commit install && pre-commit run --all-files --show-diff-on-failure
 	mypy .
 
 test:	## Run tests via pytest.

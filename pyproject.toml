@@ -57,7 +57,7 @@ tiktoken = ">=0.3.3"
 typing-extensions = ">=4.5.0"
 typing-inspect = ">=0.8.0"
 urllib3 = "<2"
-asyncpg = {version = "^0.28.0", optional = true}
+asyncpg = {optional = true, version = "^0.28.0"}
 pgvector = {optional = true, version = "^0.1.0"}
 psycopg-binary = {optional = true, version = "^3.1.12"}
 optimum = {extras = ["onnxruntime"], optional = true, version = "^1.13.2"}
@@ -88,13 +88,13 @@ query_tools = [
     "spacy",
 ]
 
-
 [tool.poetry.group.dev.dependencies]
 beautifulsoup4 = "^4.12.2"  # needed for tests
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 google-generativeai = {python = ">=3.9,<3.12", version = "^0.2.1"}
 ipython = "8.10.0"
+jupyter = "^1.0.0"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
@@ -111,7 +111,6 @@ types-redis = "4.5.5.0"
 types-requests = "2.28.11.8"
 types-setuptools = "67.1.0.0"
 vellum-ai = "^0.0.42"
-jupyter = "^1.0.0"
 
 [tool.poetry.group.docs]
 optional = true
@@ -232,3 +231,6 @@ in_place = true
 spaces_before_inline_comment = 2  # Match Python PEP 8
 spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
+
+[tool.tomlsort.overrides."tool.poetry.dependencies"]
+table_keys = false
