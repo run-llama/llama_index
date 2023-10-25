@@ -66,32 +66,35 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
         cache_folder = cache_folder or get_cache_dir()
 
-        if model is None:
-            model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
-            self._model = AutoModel.from_pretrained(
-                model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
-            ).to(self._device)
-        else:
-            self._model = model
+        if model is None:  # Use model_name with AutoModel
+            model_name = (
+                model_name
+                if model_name is not None
+                else DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+            )
+            model = AutoModel.from_pretrained(model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code)
+        elif model_name is None:  # Extract model_name from model
+            model_name = model.name_or_path
+        self._model = model.to(self._device)
 
-        if tokenizer is None:
+        if tokenizer is None:  # Use tokenizer_name with AutoTokenizer
             tokenizer_name = (
                 model_name or tokenizer_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
-            self._tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer = AutoTokenizer.from_pretrained(
                 tokenizer_name, cache_dir=cache_folder
             )
-        else:
-            self._tokenizer = tokenizer
+        elif tokenizer_name is None:  # Extract tokenizer_name from model
+            tokenizer_name = tokenizer.name_or_path
+        self._tokenizer = tokenizer
 
         if max_length is None:
             try:
                 max_length = int(self._model.config.max_position_embeddings)
-            except Exception:
+            except AttributeError as exc:
                 raise ValueError(
-                    "Unable to find max_length from model config. "
-                    "Please provide max_length."
-                )
+                    "Unable to find max_length from model config. Please specify max_length."
+                ) from exc
 
         if pooling not in ["cls", "mean"]:
             raise ValueError(f"Pooling {pooling} not supported.")
