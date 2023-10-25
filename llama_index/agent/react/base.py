@@ -256,6 +256,28 @@ class ReActAgent(BaseAgent):
         # TODO: add sources from reasoning steps
         return AgentChatResponse(response=response_step.response, sources=self.sources)
 
+    def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
+        """Infers if a chunk from a live stream is the start of the final
+        reasoning step. (i.e., and should eventually become
+        ResponseReasoningStep — not part of this function's logic tho.).
+
+        Args:
+            chunk (ChatResponse): the current chunk stream to check
+
+        Returns:
+            bool: Boolean on whether the chunk is the start of the final response
+        """
+        latest_content = chunk.message.content
+        if latest_content:
+            if not latest_content.startswith(
+                "Thought"
+            ):  # doesn't follow thought-action format
+                return True
+            else:
+                if "Answer: " in latest_content:
+                    return True
+        return False
+
     @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -368,18 +390,10 @@ class ReActAgent(BaseAgent):
                 message=ChatMessage(content=None, role="assistant")
             )
             for latest_chunk in chat_stream:
-                latest_content = latest_chunk.message.content
-                if latest_content:
-                    full_response = latest_chunk
-                    if not latest_content.startswith(
-                        "Thought"
-                    ):  # doesn't follow thought-action format
-                        is_done = True
-                        break
-                    else:
-                        if "Answer: " in latest_content:
-                            is_done = True
-                            break
+                full_response = latest_chunk
+                is_done = self._infer_stream_chunk_is_final(latest_chunk)
+                if is_done:
+                    break
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
@@ -446,18 +460,10 @@ class ReActAgent(BaseAgent):
                 message=ChatMessage(content=None, role="assistant")
             )
             async for latest_chunk in chat_stream:
-                latest_content = latest_chunk.message.content
-                if latest_content:
-                    full_response = latest_chunk
-                    if not latest_content.startswith(
-                        "Thought"
-                    ):  # doesn't follow thought-action format
-                        is_done = True
-                        break
-                    else:
-                        if "Answer: " in latest_content:
-                            is_done = True
-                            break
+                full_response = latest_chunk
+                is_done = self._infer_stream_chunk_is_final(latest_chunk)
+                if is_done:
+                    break
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
