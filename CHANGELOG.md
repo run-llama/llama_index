@@ -25,6 +25,7 @@
 
 ### Bug Fixes / Nits
 
+- Fix inconsistencies with `ReActAgent.stream_chat` (#8147)
 - Deprecate some functions for GuardrailsOutputParser (#8016)
 - Simplify dependencies (#8236)
 - Bug fixes for LiteLLM (#7885)
