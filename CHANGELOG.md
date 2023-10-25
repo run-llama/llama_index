@@ -3,10 +3,12 @@
 ## [0.8.51] - 2023-10-25
 
 ### New Features
+
 - Add Llava MultiModal QA examples for Tesla 10k RAG (#8271)
 - fix bug streaming on react chat agent not working as expected (#8459)
 
-##  Bug Fixes / Nits
+## Bug Fixes / Nits
+
 - add Jina AI embeddings notebook + huggingface embedding fix (#8478)
 - add `is_chat_model` to replicate (#8469)
 - Brought back `toml-sort` to `pre-commit` (#8267)
