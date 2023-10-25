@@ -42,6 +42,7 @@ extensions = [
     "m2r2",
     "myst_nb",
     "sphinxcontrib.autodoc_pydantic",
+    "sphinx_reredirects",
 ]
 
 myst_heading_anchors = 4
@@ -77,3 +78,9 @@ html_js_files = [
 nb_execution_mode = "off"
 autodoc_pydantic_model_show_json_error_strategy = "coerce"
 nitpicky = True
+
+## Redirects
+
+redirects = {
+    "end_to_end_tutorials/usage_pattern": "/understanding/understanding.html"
+}

@@ -1,7 +1,7 @@
 Welcome to LlamaIndex 🦙 !
 ##########################
 
-LlamaIndex (formerly GPT Index) is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_language_model>`_-based applications to ingest, structure, and access private or domain-specific data. It's available in Python (these docs) and `Typescript <https://ts.llamaindex.ai/>`_.
+LlamaIndex is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_language_model>`_-based applications to ingest, structure, and access private or domain-specific data. It's available in Python (these docs) and `Typescript <https://ts.llamaindex.ai/>`_.
 
 🚀 Why LlamaIndex?
 ******************
@@ -10,7 +10,7 @@ LLMs offer a natural language interface between humans and data. Widely availabl
 
 However, while LLMs are trained on a great deal of data, they are not trained on **your** data, which may private or specific to the problem you're trying to solve. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
 
-LlamaIndex solves this problem by connecting to these data sources and adding your data to the data LLMs already have. This is often called Retrieval-Augmented Generation (RAG). RAG enables you to use LLMs to query your data, transform it, and generate new insights. You can ask questions about your data, create chatbots, build semi-autonomous agents, and more. To learn more, see our `Use Cases <./end_to_end_tutorials/use_cases.html>`_.
+LlamaIndex solves this problem by connecting to these data sources and adding your data to the data LLMs already have. This is often called Retrieval-Augmented Generation (RAG). RAG enables you to use LLMs to query your data, transform it, and generate new insights. You can ask questions about your data, create chatbots, build semi-autonomous agents, and more. To learn more, check out our Use Cases on the left.
 
 🦙 How can LlamaIndex help?
 ***************************
@@ -77,8 +77,8 @@ Associated projects
    :caption: Getting Started
    :hidden:
 
-   getting_started/reading.md
    getting_started/installation.md
+   getting_started/reading.md
    getting_started/starter_example.md
    getting_started/concepts.md
    getting_started/customization.rst
