@@ -50,7 +50,7 @@ class Replicate(CustomLLM):
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
-        is_chat_model: bool = False
+        is_chat_model: bool = False,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
@@ -62,7 +62,7 @@ class Replicate(CustomLLM):
             context_window=context_window,
             prompt_key=prompt_key,
             callback_manager=callback_manager,
-            is_chat_model=is_chat_model
+            is_chat_model=is_chat_model,
         )
 
     @classmethod
@@ -76,7 +76,7 @@ class Replicate(CustomLLM):
             context_window=self.context_window,
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
-            is_chat_model=self.is_chat_model
+            is_chat_model=self.is_chat_model,
         )
 
     @property
