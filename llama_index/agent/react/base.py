@@ -370,18 +370,16 @@ class ReActAgent(BaseAgent):
             for latest_chunk in chat_stream:
                 latest_content = latest_chunk.message.content
                 if latest_content:
+                    full_response = latest_chunk
                     if not latest_content.startswith(
                         "Thought"
                     ):  # doesn't follow thought-action format
                         is_done = True
-                        full_response = latest_chunk
                         break
                     else:
                         if "Answer: " in latest_content:
                             is_done = True
-                            full_response = latest_chunk
                             break
-                    full_response = latest_chunk
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
@@ -450,18 +448,16 @@ class ReActAgent(BaseAgent):
             async for latest_chunk in chat_stream:
                 latest_content = latest_chunk.message.content
                 if latest_content:
+                    full_response = latest_chunk
                     if not latest_content.startswith(
                         "Thought"
                     ):  # doesn't follow thought-action format
                         is_done = True
-                        full_response = latest_chunk
                         break
                     else:
                         if "Answer: " in latest_content:
                             is_done = True
-                            full_response = latest_chunk
                             break
-                    full_response = latest_chunk
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(

@@ -2,7 +2,6 @@ import asyncio
 from abc import abstractmethod
 from contextlib import contextmanager
 from enum import Enum
-from itertools import chain
 from typing import Any, AsyncGenerator, Callable, Generator, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field, validator
