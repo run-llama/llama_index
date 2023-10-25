@@ -33,9 +33,10 @@ from llama_index.query_engine.sub_question_query_engine import (
     SubQuestionQueryEngine,
 )
 from llama_index.query_engine.transform_query_engine import TransformQueryEngine
-
+from llama_index.query_engine.cogniswitchQueryEngine import CogniswitchQueryEngine
 __all__ = [
     "CitationQueryEngine",
+    "CogniswitchQueryEngine",
     "ComposableGraphQueryEngine",
     "RetrieverQueryEngine",
     "TransformQueryEngine",
