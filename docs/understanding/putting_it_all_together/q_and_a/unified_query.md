@@ -1,6 +1,6 @@
 # A Guide to Creating a Unified Query Framework over your Indexes
 
-LlamaIndex offers a variety of different [use cases](/end_to_end_tutorials/use_cases.md).
+LlamaIndex offers a variety of different use cases.
 
 For simple queries, we may want to use a single index data structure, such as a `VectorStoreIndex` for semantic search, or `SummaryIndex` for summarization.
 
@@ -106,7 +106,7 @@ The sports teams in Toronto are the Toronto Maple Leafs (NHL), Toronto Blue Jays
 
 ### Defining a Graph for Compare/Contrast Queries
 
-We will now define a composed graph in order to run **compare/contrast** queries (see [use cases doc](/use_cases/queries.md)).
+We will now define a composed graph in order to run **compare/contrast** queries (see [use cases](/use_cases/q_and_a.md)).
 This graph contains a keyword table composed on top of existing vector indexes.
 
 To do this, we first want to set the "summary text" for each vector index.
@@ -196,7 +196,7 @@ There are a few ways to do this, both within our framework as well as outside of
 - Define each index/graph as a Tool within an agent framework (e.g. LangChain).
 
 For the purposes of this tutorial, we follow the former approach. If you want to take a look at how the latter approach works,
-take a look at [our example tutorial here](/guides/tutorials/building_a_chatbot.md).
+take a look at [our example tutorial here](/understanding/putting_it_all_together/chatbots/building_a_chatbot.md).
 
 Let's take a look at an example of building a router query engine to automatically "route" any query to the set of indexes/graphs that you have define under the hood.
 

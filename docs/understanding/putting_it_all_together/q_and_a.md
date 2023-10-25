@@ -220,7 +220,7 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 
 **Guides**
 
-- [Second-Stage Postprocessing Guide](/module_guides/querying/node_postprocessors.md)
+- [Postprocessing Guide](/module_guides/querying/node_postprocessors/node_postprocessors.md)
 - [Prev/Next Postprocessing](/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
 - [Recency Postprocessing](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
 

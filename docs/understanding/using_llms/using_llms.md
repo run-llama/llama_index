@@ -1,7 +1,7 @@
 # Using LLMs
 
 ```{tip}
-For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](/module_guides/using_llms/llms/root.md).
+For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](/module_guides/models/llms.md).
 ```
 
 One of the first steps when building an LLM-based application is which LLM to use; you can also use more than one if you wish.
@@ -42,7 +42,7 @@ A ServiceContext is a bundle of configuration data that you pass into different 
 
 ## Available LLMs
 
-We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our [module guide to LLMs](/module_guides/using_llms/llms/root.md) for a full list, including how to run a local model.
+We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our [module guide to LLMs](/module_guides/models/llms.md) for a full list, including how to run a local model.
 
 ### Using a local LLM
 
@@ -57,12 +57,12 @@ service_context = ServiceContext.from_defaults(llm="local")
 
 This will use llama2-chat-13B from with LlamaCPP, and assumes you have `llama-cpp-python` installed. A [full LlamaCPP usage guide is available](/examples/llm/llama_2_llama_cpp.ipynb).
 
-See the [custom LLM's How-To](/module_guides/using_llms/llms/usage_custom.md) for more details.
+See the [custom LLM's How-To](/module_guides/models/llms/usage_custom.md) for more details.
 
 
 ## Prompts
 
-By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](/module_guides/llms/prompts.md)
+By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](/module_guides/models/prompts.md)
 
 ```{toctree}
 ---

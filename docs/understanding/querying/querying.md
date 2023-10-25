@@ -83,7 +83,7 @@ retriever = VectorIndexRetriever(
 )
 ```
 
-There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](/module_guides/querying/retrievers.md).
+There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](/module_guides/querying/retriever/root.md).
 
 ### Configuring node postprocessors
 
