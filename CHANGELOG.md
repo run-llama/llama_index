@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [0.8.51] - 2023-10-25
+
+### New Features
+
+- Add Llava MultiModal QA examples for Tesla 10k RAG (#8271)
+- fix bug streaming on react chat agent not working as expected (#8459)
+
+## Bug Fixes / Nits
+
+- add Jina AI embeddings notebook + huggingface embedding fix (#8478)
+- add `is_chat_model` to replicate (#8469)
+- Brought back `toml-sort` to `pre-commit` (#8267)
+- Added `LocationConstraint` for local `test_s3_kvstore` (#8263)
+
 ## [0.8.50] - 2023-10-24
 
 ### New Features
@@ -25,6 +39,7 @@
 
 ### Bug Fixes / Nits
 
+- Fix inconsistencies with `ReActAgent.stream_chat` (#8147)
 - Deprecate some functions for GuardrailsOutputParser (#8016)
 - Simplify dependencies (#8236)
 - Bug fixes for LiteLLM (#7885)

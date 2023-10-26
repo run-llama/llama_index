@@ -1,6 +1,21 @@
 import asyncio
+from itertools import chain
 from threading import Thread
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    cast,
+)
+
+from aiostream import stream as async_stream
+from aiostream.core import Stream
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
@@ -25,7 +40,7 @@ from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text
+from llama_index.utils import async_unit_generator, print_text, unit_generator
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -123,7 +138,7 @@ class ReActAgent(BaseAgent):
         self._memory.reset()
 
     def _extract_reasoning_step(
-        self, output: ChatResponse
+        self, output: ChatResponse, is_streaming: bool = False
     ) -> Tuple[str, List[BaseReasoningStep], bool]:
         """
         Extracts the reasoning step from the given output.
@@ -138,7 +153,7 @@ class ReActAgent(BaseAgent):
         message_content = output.message.content
         current_reasoning = []
         try:
-            reasoning_step = self._output_parser.parse(message_content)
+            reasoning_step = self._output_parser.parse(message_content, is_streaming)
         except BaseException as exc:
             raise ValueError(f"Could not parse output: {message_content}") from exc
         if self._verbose:
@@ -155,12 +170,17 @@ class ReActAgent(BaseAgent):
         return message_content, current_reasoning, False
 
     def _process_actions(
-        self, tools: Sequence[AsyncBaseTool], output: ChatResponse
+        self,
+        tools: Sequence[AsyncBaseTool],
+        output: ChatResponse,
+        is_streaming: bool = False,
     ) -> Tuple[List[BaseReasoningStep], bool]:
         tools_dict: Dict[str, AsyncBaseTool] = {
             tool.metadata.get_name(): tool for tool in tools
         }
-        _, current_reasoning, is_done = self._extract_reasoning_step(output)
+        _, current_reasoning, is_done = self._extract_reasoning_step(
+            output, is_streaming
+        )
 
         if is_done:
             return current_reasoning, True
@@ -187,10 +207,15 @@ class ReActAgent(BaseAgent):
         return current_reasoning, False
 
     async def _aprocess_actions(
-        self, tools: Sequence[AsyncBaseTool], output: ChatResponse
+        self,
+        tools: Sequence[AsyncBaseTool],
+        output: ChatResponse,
+        is_streaming: bool = False,
     ) -> Tuple[List[BaseReasoningStep], bool]:
         tools_dict = {tool.metadata.name: tool for tool in tools}
-        _, current_reasoning, is_done = self._extract_reasoning_step(output)
+        _, current_reasoning, is_done = self._extract_reasoning_step(
+            output, is_streaming
+        )
 
         if is_done:
             return current_reasoning, True
@@ -230,6 +255,80 @@ class ReActAgent(BaseAgent):
 
         # TODO: add sources from reasoning steps
         return AgentChatResponse(response=response_step.response, sources=self.sources)
+
+    def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
+        """Infers if a chunk from a live stream is the start of the final
+        reasoning step. (i.e., and should eventually become
+        ResponseReasoningStep — not part of this function's logic tho.).
+
+        Args:
+            chunk (ChatResponse): the current chunk stream to check
+
+        Returns:
+            bool: Boolean on whether the chunk is the start of the final response
+        """
+        latest_content = chunk.message.content
+        if latest_content:
+            if not latest_content.startswith(
+                "Thought"
+            ):  # doesn't follow thought-action format
+                return True
+            else:
+                if "Answer: " in latest_content:
+                    return True
+        return False
+
+    def _add_back_chunk_to_stream(
+        self, chunk: ChatResponse, chat_stream: Generator[ChatResponse, None, None]
+    ) -> Generator[ChatResponse, None, None]:
+        """Helper method for adding back initial chunk stream of final response
+        back to the rest of the chat_stream.
+
+        Args:
+            chunk (ChatResponse): the chunk to add back to the beginning of the
+                                    chat_stream.
+
+        Return:
+            Generator[ChatResponse, None, None]: the updated chat_stream
+        """
+        updated_stream = chain.from_iterable(  # need to add back partial response chunk
+            [
+                unit_generator(chunk),
+                chat_stream,
+            ]
+        )
+        # use cast to avoid mypy issue with chain and Generator
+        updated_stream_c: Generator[ChatResponse, None, None] = cast(
+            Generator[ChatResponse, None, None], updated_stream
+        )
+        return updated_stream_c
+
+    def _async_add_back_chunk_to_stream(
+        self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
+    ) -> AsyncGenerator[ChatResponse, None]:
+        """Helper method for adding back initial chunk stream of final response
+        back to the rest of the chat_stream.
+
+        NOTE: this itself is not an async function.
+
+        Args:
+            chunk (ChatResponse): the chunk to add back to the beginning of the
+                                    chat_stream.
+
+        Return:
+            AsyncGenerator[ChatResponse, None]: the updated async chat_stream
+        """
+        updated_stream = (
+            async_stream.combine.merge(  # need to add back partial response chunk
+                async_unit_generator(chunk),
+                chat_stream,
+            )
+        )
+        # use cast to avoid mypy issue with Stream and AsyncGenerator
+        updated_stream_c: AsyncGenerator[ChatResponse, None] = cast(
+            AsyncGenerator[ChatResponse, None], updated_stream
+        )
+        return updated_stream_c
 
     @trace_method("chat")
     def chat(
@@ -325,7 +424,10 @@ class ReActAgent(BaseAgent):
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
-        for _ in range(self._max_iterations):
+        is_done, ix = False, 0
+        while (not is_done) and (ix < self._max_iterations):
+            ix += 1
+
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
@@ -336,27 +438,29 @@ class ReActAgent(BaseAgent):
             chat_stream = self._llm.stream_chat(input_chat)
 
             # iterate over stream, break out if is final answer after the "Answer: "
-            is_done = False
             full_response = ChatResponse(
                 message=ChatMessage(content=None, role="assistant")
             )
-            for r in chat_stream:
-                if "Answer: " in (r.message.content or ""):
-                    is_done = True
+            for latest_chunk in chat_stream:
+                full_response = latest_chunk
+                is_done = self._infer_stream_chunk_is_final(latest_chunk)
+                if is_done:
                     break
-                full_response = r
-            if is_done:
-                break
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                tools=tools, output=full_response
+                tools=tools, output=full_response, is_streaming=True
             )
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
+        response_stream = self._add_back_chunk_to_stream(
+            chunk=latest_chunk, chat_stream=chat_stream
+        )
+
         chat_stream_response = StreamingAgentChatResponse(
-            chat_stream=chat_stream, sources=self.sources
+            chat_stream=response_stream,
+            sources=self.sources,
         )
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
@@ -381,7 +485,10 @@ class ReActAgent(BaseAgent):
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
-        for _ in range(self._max_iterations):
+        is_done, ix = False, 0
+        while (not is_done) and (ix < self._max_iterations):
+            ix += 1
+
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
@@ -396,23 +503,25 @@ class ReActAgent(BaseAgent):
             full_response = ChatResponse(
                 message=ChatMessage(content=None, role="assistant")
             )
-            async for r in chat_stream:
-                if "Answer: " in (r.message.content or ""):
-                    is_done = True
+            async for latest_chunk in chat_stream:
+                full_response = latest_chunk
+                is_done = self._infer_stream_chunk_is_final(latest_chunk)
+                if is_done:
                     break
-                full_response = r
-            if is_done:
-                break
 
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                tools=tools, output=full_response
+                tools=tools, output=full_response, is_streaming=True
             )
             current_reasoning.extend(reasoning_steps)
 
         # Get the response in a separate thread so we can yield the response
+        response_stream = self._async_add_back_chunk_to_stream(
+            chunk=latest_chunk, chat_stream=chat_stream
+        )
+
         chat_stream_response = StreamingAgentChatResponse(
-            achat_stream=chat_stream, sources=self.sources
+            achat_stream=response_stream, sources=self.sources
         )
         # create task to write chat response to history
         asyncio.create_task(

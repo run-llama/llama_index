@@ -7,6 +7,7 @@
 3. [How can I customize my prompt](#3-how-can-i-customize-my-prompt)
 4. [Is it required to fine-tune my model?](#4-is-it-required-to-fine-tune-my-model)
 5. [I want to the LLM answer in Chinese/Italian/French but only answers in English, how to proceed?](#5-i-want-to-the-llm-answer-in-chineseitalianfrench-but-only-answers-in-english-how-to-proceed)
+6. [Is LlamaIndex GPU accelerated?](#6-is-llamaindex-gpu-accelerated)
 
 ---
 
@@ -54,5 +55,11 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 query_engine = load_index_from_storage(storage_context, service_context=service_context).as_query_engine()
 ```
+
+---
+
+##### 6. Is LlamaIndex GPU accelerated?
+
+Yes, you can run a language model (LLM) on a GPU when running it locally. You can find an example of setting up LLMs with GPU support in the [llama2 setup](../../examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb) documentation.
 
 ---
