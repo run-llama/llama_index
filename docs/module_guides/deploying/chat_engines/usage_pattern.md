@@ -74,6 +74,7 @@ Here's an example where we configure the following:
 ```python
 from llama_index.prompts  import PromptTemplate
 from llama_index.llms import ChatMessage, MessageRole
+from llama_index.chat_engine.condense_question import CondenseQuestionChatEngine
 
 custom_prompt = PromptTemplate("""\
 Given a conversation (between Human and Assistant) and a follow up message from Human, \
