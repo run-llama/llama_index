@@ -1,6 +1,6 @@
 """Mongo client."""
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
@@ -45,6 +45,12 @@ class SimpleMongoReader(BaseReader):
         self.client = client
         self.max_docs = max_docs
 
+    def _flatten(self, texts: List[str | List[str]]) -> List[str]:
+        result = []
+        for text in texts:
+            result += text if isinstance(text, list) else [text]
+        return result
+
     def load_data(
         self,
         db_name: str,
@@ -77,26 +83,25 @@ class SimpleMongoReader(BaseReader):
         cursor = db[collection_name].find(filter=query_dict or {}, limit=self.max_docs)
 
         for item in cursor:
-            texts = []
-            for field_name in field_names:
-                if field_name not in item:
-                    raise ValueError(
-                        f"`{field_name}` field not found in Mongo document."
-                    )
-                field = item[field_name]
-                texts += [field] if isinstance(field, str) else field
+            try:
+                texts = [item[name] for name in field_names]
+            except KeyError as err:
+                raise ValueError(
+                    f"{err.args[0]} field not found in Mongo document."
+                ) from err
+
+            texts = self._flatten(texts)
             text = separator.join(texts)
 
             if metadata_names is None:
                 documents.append(Document(text=text))
             else:
-                metadata = {}
-                for metadata_name in metadata_names:
-                    if metadata_name not in item:
-                        raise ValueError(
-                            f"`{metadata_name}` field not found in Mongo document."
-                        )
-                    metadata[metadata_name] = item[metadata_name]
+                try:
+                    metadata = {name: item[name] for name in metadata_names}
+                except KeyError as err:
+                    raise ValueError(
+                        f"{err.args[0]} field not found in Mongo document."
+                    ) from err
                 documents.append(Document(text=text, metadata=metadata))
 
         return documents
