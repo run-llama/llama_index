@@ -10,6 +10,9 @@ You can learn about the [query engine](/module_guides/deploying/query_engine/roo
 ---
 maxdepth: 1
 ---
+/module_guides/deploying/query_engine/root.md
+/module_guides/deploying/chat_engines/root.md
+/module_guides/deploying/agents/root.md
 /module_guides/querying/retriever/root.md
 /module_guides/querying/response_synthesizers/root.md
 /module_guides/querying/router/root.md

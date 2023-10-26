@@ -208,8 +208,10 @@ summarizer = TreeSummarize(verbose=True, summary_template=qa_prompt)
 
 # get response
 response = summarizer.get_response("who is Paul Graham?", [text], tone_name="a Shakespeare play")
+```
 
 ## Modules
+
 ```{toctree}
 ---
 maxdepth: 2
