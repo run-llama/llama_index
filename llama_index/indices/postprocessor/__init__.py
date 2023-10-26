@@ -24,6 +24,7 @@ from llama_index.indices.postprocessor.pii import (
     PIINodePostprocessor,
 )
 from llama_index.indices.postprocessor.sbert_rerank import SentenceTransformerRerank
+from llama_index.indices.postprocessor.longllmlingua import LongLLMLinguaPostprocessor
 
 __all__ = [
     "SimilarityPostprocessor",
@@ -41,4 +42,5 @@ __all__ = [
     "SentenceTransformerRerank",
     "MetadataReplacementPostProcessor",
     "LongContextReorder",
+    "LongLLMLinguaPostprocessor"
 ]
