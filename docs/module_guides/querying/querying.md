@@ -1,8 +1,6 @@
 # Querying
 
-```{tip}
-You can learn about the [query engine](/module_guides/deploying/query_engine/root.md) in the [deploying](/module_guides/deploying/deploying.md) section.
-```
+Querying is the most important part of your LLM application. To learn more about getting a final product that you can deploy, check out the [query engine](/module_guides/deploying/query_engine/root.md), [chat engine](/module_guides/deploying/chat_engines/root.md) and [agents](/module_guides/deploying/agents/root.md) sections.
 
 ## Modules in this section
 
