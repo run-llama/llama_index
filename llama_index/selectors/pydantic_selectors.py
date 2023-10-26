@@ -115,6 +115,14 @@ class PydanticMultiSelector(BaseSelector):
 
         return cls(selector_program=program, max_outputs=max_outputs)
 
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        # TODO: no accessible prompts for a base pydantic program
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+
     def _select(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:

@@ -16,19 +16,19 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.0
+    rev: v0.1.2
 
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.10.0
+    rev: 23.10.1
     hooks:
       - id: black-jupyter
         name: black-src
         exclude: docs/
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.10.0
+    rev: 23.10.1
     hooks:
       - id: black-jupyter
         name: black-docs
@@ -44,7 +44,7 @@ repos:
       - id: codespell
         additional_dependencies: [tomli]
   - repo: https://github.com/srstevenson/nb-clean
-    rev: 3.0.1
+    rev: 3.1.0
     hooks:
       - id: nb-clean
         args: [--preserve-cell-outputs, --remove-empty-cells]

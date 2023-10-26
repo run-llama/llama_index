@@ -1,6 +1,6 @@
 # ChangeLog
 
-## [0.8.51] - 2023-10-25
+## [0.8.51.post1] - 2023-10-25
 
 ### New Features
 
@@ -9,6 +9,7 @@
 
 ## Bug Fixes / Nits
 
+- patch: add selected result to response metadata for router query engines, fix bug (#8483)
 - add Jina AI embeddings notebook + huggingface embedding fix (#8478)
 - add `is_chat_model` to replicate (#8469)
 - Brought back `toml-sort` to `pre-commit` (#8267)
