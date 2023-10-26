@@ -130,7 +130,13 @@ index = load_index_from_storage(storage_context)
 
 The main third-party package requirements are `tiktoken`, `openai`, and `langchain`.
 
-All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`.
+All requirements should be contained within the `setup.py` file.
+To run the package locally without building the wheel, simply run:
+
+```bash
+pip install poetry
+poetry install --with dev
+```
 
 ## 📖 Citation
 
