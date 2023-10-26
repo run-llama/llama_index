@@ -51,7 +51,7 @@ myst_heading_anchors = 5
 suppress_warnings = ["myst.header"]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store","DOCS_README.md"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "DOCS_README.md"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -110,5 +110,5 @@ redirects = {
     "core_modules/supporting_modules/service_context": "/module_guides/supporting_modules/service_context.html",
     "core_modules/supporting_modules/callbacks/root": "/module_guides/observability/callbacks/root.html",
     "core_modules/supporting_modules/evaluation/root": "/module_guides/evaluating/root.html",
-    "core_modules/supporting_modules/cost_analysis/root": "/understanding/evaluating/cost_analysis/root.html",    
+    "core_modules/supporting_modules/cost_analysis/root": "/understanding/evaluating/cost_analysis/root.html",
 }

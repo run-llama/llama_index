@@ -78,6 +78,7 @@ postprocessor.postprocess_nodes(nodes)
 A full notebook guide can be found [here](/examples/node_postprocessor/OptimizerDemo.ipynb)
 
 (cohere_rerank)=
+
 ## CohereRerank
 
 Uses the "Cohere ReRank" functionality to re-order nodes, and returns the top N nodes.

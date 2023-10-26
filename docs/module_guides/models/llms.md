@@ -97,4 +97,3 @@ maxdepth: 1
 /module_guides/models/llms/local.md
 Run Llama2 locally <https://replicate.com/blog/run-llama-locally>
 ```
-

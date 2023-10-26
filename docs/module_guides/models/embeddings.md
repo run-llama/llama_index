@@ -136,6 +136,7 @@ service_context = ServiceContext.from_defaults(embed_model=embed_model)
 ```
 
 (custom_embeddings)=
+
 ### Custom Embedding Model
 
 If you wanted to use embeddings not offered by LlamaIndex or Langchain, you can also extend our base embeddings class and implement your own!
@@ -178,7 +179,6 @@ You can also use embeddings as a standalone module for your project, existing ap
 ```python
 embeddings = embed_model.get_text_embedding("It is raining cats and dogs here!")
 ```
-
 
 ## Modules
 

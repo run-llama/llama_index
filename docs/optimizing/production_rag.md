@@ -124,9 +124,9 @@ You can use these modules to do joint question-answering and summarization, or e
 
 **Core Module Resources**
 
-* [Query engine](/module_guides/deploying/query_engine/root.md)
-* [Agents](/module_guides/deploying/agents/root.md)
-* [Router](/module_guides/querying/router/root.md)
+- [Query engine](/module_guides/deploying/query_engine/root.md)
+- [Agents](/module_guides/deploying/agents/root.md)
+- [Router](/module_guides/querying/router/root.md)
 
 **Detailed Guide Resources**
 

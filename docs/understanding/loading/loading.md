@@ -97,7 +97,6 @@ document = Document(
 
 More about this can be found in [customizing Documents](/module_guides/loading/documents_and_nodes/usage_documents.md).
 
-
 ```{toctree}
 ---
 maxdepth: 1

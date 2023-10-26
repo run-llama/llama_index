@@ -7,10 +7,11 @@ For a list of our supported LLMs and a comparison of their functionality, check 
 One of the first steps when building an LLM-based application is which LLM to use; you can also use more than one if you wish.
 
 LLMs are used at multiple different stages of your pipeline:
-* During **Indexing** you may use an LLM to determine the relevance of data (whether to index it at all) or you may use an LLM to summarize the raw data and index the summaries instead.
-* During **Querying** LLMs can be used in two ways:
-  * During **Retrieval** (fetching data from your index) LLMs can be given an array of options (such as multiple different indices) and make decisions about where best to find the information you're looking for. An agentic LLM can also use *tools* at this stage to query different data sources.
-  * During **Response Synthesis** (turning the retrieved data into an answer) an LLM can combine answers to multiple sub-queries into a single coherent answer, or it can transform data, such as from unstructured text to JSON or another programmatic output format.
+
+- During **Indexing** you may use an LLM to determine the relevance of data (whether to index it at all) or you may use an LLM to summarize the raw data and index the summaries instead.
+- During **Querying** LLMs can be used in two ways:
+  - During **Retrieval** (fetching data from your index) LLMs can be given an array of options (such as multiple different indices) and make decisions about where best to find the information you're looking for. An agentic LLM can also use _tools_ at this stage to query different data sources.
+  - During **Response Synthesis** (turning the retrieved data into an answer) an LLM can combine answers to multiple sub-queries into a single coherent answer, or it can transform data, such as from unstructured text to JSON or another programmatic output format.
 
 LlamaIndex provides a single interface to a large number of different LLMs, allowing you to pass in any LLM you choose to any stage of the pipeline. It can be as simple as this:
 
@@ -59,7 +60,6 @@ This will use llama2-chat-13B from with LlamaCPP, and assumes you have `llama-cp
 
 See the [custom LLM's How-To](/module_guides/models/llms/usage_custom.md) for more details.
 
-
 ## Prompts
 
 By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](/module_guides/models/prompts.md)
@@ -71,4 +71,3 @@ hidden: true
 ---
 /understanding/using_llms/privacy.md
 ```
-

@@ -32,7 +32,7 @@ ServiceContext during `load_index_from_storage`, or have it set as the [global s
 
 As discussed in [indexing](/understanding/indexing/indexing.md), one of the most common types of Index is the VectorStoreIndex. The API calls to create the {ref}`embeddings <what-is-an-embedding>` in a VectorStoreIndex can be expensive in terms of time and money, so you will want to store them to avoid having to constantly re-index things.
 
-LlamaIndex supports a [huge number of vector stores](/module_guides/storing/vector_stores.md) which vary in architecture, complexity and cost. In this example we'll be using Chroma, an open-source vectore store.
+LlamaIndex supports a [huge number of vector stores](/module_guides/storing/vector_stores.md) which vary in architecture, complexity and cost. In this example we'll be using Chroma, an open-source vector store.
 
 First you will need to install chroma:
 
@@ -42,10 +42,10 @@ pip install chromadb
 
 To use Chroma to store the embeddings from a VectorStoreIndex, you need to:
 
-* initialize the Chroma client
-* create a Collection to store your data in Chroma
-* assign Chroma as the `vector_store` in a `StorageContext`
-* initialize your VectorStoreIndex using that StorageContext
+- initialize the Chroma client
+- create a Collection to store your data in Chroma
+- assign Chroma as the `vector_store` in a `StorageContext`
+- initialize your VectorStoreIndex using that StorageContext
 
 Here's what that looks like, with a sneak peek at actually querying the data:
 

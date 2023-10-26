@@ -40,6 +40,7 @@ index = VectorStoreIndex.from_documents(documents)
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text, but could contain many documents).
 
 Your directory structure should look like this:
+
 <pre>
 ├── starter.py
 └── data

@@ -128,5 +128,5 @@ Check out the [reference documentation](/api_reference/prompts.rst) for a full s
 
 ## Examples
 
-* [Completion prompts](/examples/customization/prompts/completion_prompts.ipynb)
-* [Chat prompts](/examples/customization/prompts/chat_prompts.ipynb)
+- [Completion prompts](/examples/customization/prompts/completion_prompts.ipynb)
+- [Chat prompts](/examples/customization/prompts/chat_prompts.ipynb)

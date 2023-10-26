@@ -1,7 +1,7 @@
 # Agentic strategies
 
-You can build agents on top of your existing LlamaIndex RAG pipeline to empower it with automated decision capabilities. 
-A lot of modules (routing, query transformations, and more) are already agentic in nature in that they use LLMs for decision making. 
+You can build agents on top of your existing LlamaIndex RAG pipeline to empower it with automated decision capabilities.
+A lot of modules (routing, query transformations, and more) are already agentic in nature in that they use LLMs for decision making.
 
 This section shows you how to deploy a full agent loop, capable of chain-of-thought and query planning, on top of existing RAG query engines as tools for more advanced decision making.
 
