@@ -1,6 +1,6 @@
 """Mongo client."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
@@ -45,7 +45,7 @@ class SimpleMongoReader(BaseReader):
         self.client = client
         self.max_docs = max_docs
 
-    def _flatten(self, texts: List[str | List[str]]) -> List[str]:
+    def _flatten(self, texts: List[Union[str, List[str]]]) -> List[str]:
         result = []
         for text in texts:
             result += text if isinstance(text, list) else [text]
