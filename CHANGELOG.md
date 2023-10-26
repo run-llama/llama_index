@@ -3,12 +3,13 @@
 ## [0.8.53] - 2023-10-27
 
 ### New Features
+
 - Docs refactor (#8500)
   An overhaul of the docs organization. Major changes
-  * Added a big new "understanding" section
-  * Added a big new "optimizing" section
-  * Overhauled Getting Started content
-  * Categorized and moved module guides to a single section
+  - Added a big new "understanding" section
+  - Added a big new "optimizing" section
+  - Overhauled Getting Started content
+  - Categorized and moved module guides to a single section
 
 ## [0.8.52] - 2023-10-26
 
