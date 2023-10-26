@@ -24,13 +24,15 @@ class BasePromptTemplate(BaseModel, ABC):
     template_vars: List[str]
     kwargs: Dict[str, str]
     output_parser: Optional[BaseOutputParser]
-    template_var_mappings: Dict[str, Any] = Field(
+    template_var_mappings: Optional[Dict[str, Any]] = Field(
         default_factory=dict, description="Template variable mappings (Optional)."
     )
 
     def _map_template_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """For keys in template_var_mappings, swap in the right keys."""
+        template_var_mappings = self.template_var_mappings or {}
         return {
-            k: kwargs.get(v, v) for k, v in self.template_var_mappings.items()
+            template_var_mappings.get(k, k): v for k, v in kwargs.items()
         }
 
     class Config:
@@ -72,7 +74,6 @@ class PromptTemplate(BasePromptTemplate):
         metadata["prompt_type"] = prompt_type
 
         template_vars = get_template_vars(template)
-        template_var_mappings = template_var_mappings or {}
 
         super().__init__(
             template=template,
@@ -176,14 +177,14 @@ class ChatPromptTemplate(BasePromptTemplate):
         messages: List[ChatMessage] = []
         for message_template in self.message_templates:
             template_vars = get_template_vars(message_template.content or "")
+            mapped_all_kwargs = self._map_template_vars(all_kwargs)
             relevant_kwargs = {
-                k: v for k, v in all_kwargs.items() if k in template_vars
+                k: v for k, v in mapped_all_kwargs.items() if k in template_vars
             }
             content_template = message_template.content or ""
             
             # if there's mappings specified, make sure those are used
-            mapped_relevant_kwargs = self._map_template_vars(relevant_kwargs)
-            content = content_template.format(**mapped_relevant_kwargs)
+            content = content_template.format(**relevant_kwargs)
 
             message: ChatMessage = message_template.copy()
             message.content = content
