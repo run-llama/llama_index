@@ -10,6 +10,18 @@ storage_context.persist(persist_dir="<persist_dir>")
 
 This will persist data to disk, under the specified `persist_dir` (or `./storage` by default).
 
+Example to store an Index:
+
+```python
+index.storage_context.persist(persist_dir="<persist_dir>") # saves index with the specified persist_dir
+```
+
+Here is another example for Composable Graph:
+
+```python
+graph.root_index.storage_context.persist(persist_dir="<persist_dir>") # saves graph with the specified persist_dir
+```
+
 Multiple indexes can be persisted and loaded from the same directory, assuming you keep track of index ID's for loading.
 
 User can also configure alternative storage backends (e.g. `MongoDB`) that persist data by default.
