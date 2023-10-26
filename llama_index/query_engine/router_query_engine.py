@@ -177,6 +177,10 @@ class RouterQueryEngine(BaseQueryEngine):
 
                 final_response = selected_query_engine.query(query_bundle)
 
+            # add selected result
+            final_response.metadata = final_response.metadata or {}
+            final_response.metadata["selector_result"] = result
+
             query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
         return final_response
@@ -213,6 +217,10 @@ class RouterQueryEngine(BaseQueryEngine):
                     raise ValueError("Failed to select query engine") from e
 
                 final_response = await selected_query_engine.aquery(query_bundle)
+
+            # add selected result
+            final_response.metadata = final_response.metadata or {}
+            final_response.metadata["selector_result"] = result
 
             query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
@@ -332,6 +340,10 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
             else:
                 final_response = responses[0]
 
+            # add selected result
+            final_response.metadata = final_response.metadata or {}
+            final_response.metadata["retrieved_tools"] = query_engine_tools
+
             query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
         return final_response
@@ -352,6 +364,10 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
                 )
             else:
                 final_response = responses[0]
+
+            # add selected result
+            final_response.metadata = final_response.metadata or {}
+            final_response.metadata["retrieved_tools"] = query_engine_tools
 
             query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
