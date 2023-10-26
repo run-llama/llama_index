@@ -264,31 +264,22 @@ vector_store = QdrantVectorStore(
 )
 ```
 
-**Cassandra** (covering DataStax Astra DB as well, which is built on Cassandra)
+**Cassandra** (covering DataStax Astra DB cloud instances as well)
 
 ```python
-from cassandra.cluster import Cluster
-from cassandra.auth import PlainTextAuthProvider
 from llama_index.vector_stores import CassandraVectorStore
+import cassio
 
-# for a Cassandra cluster:
+# For an Astra DB cloud instance:
+cassio.init(database_id="1234abcd-...", token="AstraCS:...")
+
+# For a Cassandra cluster:
+from cassandra.cluster import Cluster
 cluster = Cluster(["127.0.0.1"])
-# for an Astra DB cloud instance:
-cluster = Cluster(
-  cloud={"secure_connect_bundle": "/home/USER/secure-bundle.zip"},
-  auth_provider=PlainTextAuthProvider("token", "AstraCS:...")
-)
-#
-session = cluster.connect()
-keyspace = "my_cassandra_keyspace"
+cassio.init(session=cluster.connect(), keyspace="my_keyspace")
 
-vector_store = CassandraVectorStore(
-    session=session,
-    keyspace=keyspace,
-    table="llamaindex_vector_test_1",
-    embedding_dimension=1536,
-    #insertion_batch_size=50,  # optional
-)
+# After the above `cassio.init(...)`, create a vector store:
+vector_store = CassandraVectorStore(table="cass_v_table", embedding_dimension=1536)
 ```
 
 **Chroma**

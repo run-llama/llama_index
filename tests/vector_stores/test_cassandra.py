@@ -27,10 +27,10 @@ class TestCassandraVectorStore(unittest.TestCase):
             sys.modules["cassio"] = mock_cassio
         #
         vector_store = CassandraVectorStore(
-            session=mock_db_session,
-            keyspace="keyspace",
             table="table",
             embedding_dimension=2,
+            session=mock_db_session,
+            keyspace="keyspace",
             ttl_seconds=123,
         )
 
@@ -62,10 +62,10 @@ class TestCassandraVectorStore(unittest.TestCase):
             sys.modules["cassio"] = mock_cassio
         #
         vector_store = CassandraVectorStore(
-            session=mock_db_session,
-            keyspace="keyspace",
             table="table",
             embedding_dimension=2,
+            session=mock_db_session,
+            keyspace="keyspace",
             ttl_seconds=123,
         )
         # q1: default
