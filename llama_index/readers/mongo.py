@@ -1,6 +1,6 @@
 """Mongo client."""
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
@@ -27,12 +27,11 @@ class SimpleMongoReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            import pymongo
             from pymongo import MongoClient
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "`pymongo` package not found, please run `pip install pymongo`"
-            )
+            ) from err
 
         client: MongoClient
         if uri:
@@ -45,7 +44,7 @@ class SimpleMongoReader(BaseReader):
         self.client = client
         self.max_docs = max_docs
 
-    def load_data(
+    def lazy_load_data(
         self,
         db_name: str,
         collection_name: str,
@@ -53,7 +52,7 @@ class SimpleMongoReader(BaseReader):
         separator: str = "",
         query_dict: Optional[Dict] = None,
         metadata_names: Optional[List[str]] = None,
-    ) -> List[Document]:
+    ) -> Iterable[Document]:
         """Load data from the input directory.
 
         Args:
@@ -72,7 +71,6 @@ class SimpleMongoReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        documents = []
         db = self.client[db_name]
         cursor = db[collection_name].find(filter=query_dict or {}, limit=self.max_docs)
 
@@ -88,7 +86,7 @@ class SimpleMongoReader(BaseReader):
             text = separator.join(texts)
 
             if metadata_names is None:
-                documents.append(Document(text=text))
+                yield Document(text=text)
             else:
                 metadata = {}
                 for metadata_name in metadata_names:
@@ -97,6 +95,4 @@ class SimpleMongoReader(BaseReader):
                             f"`{metadata_name}` field not found in Mongo document."
                         )
                     metadata[metadata_name] = item[metadata_name]
-                documents.append(Document(text=text, metadata=metadata))
-
-        return documents
+                yield Document(text=text, metadata=metadata)
