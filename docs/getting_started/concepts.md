@@ -1,85 +1,81 @@
 # High-Level Concepts
 
+This is a quick guide to the high-level concepts you'll encounter frequently when building LLM applications.
+
 ```{tip}
-If you haven't, [install](/getting_started/installation.md) and complete [starter tutorial](/getting_started/starter_example.md) before you read this. It will make a lot more sense!
+If you haven't, [install LlamaIndex](/getting_started/installation.md) and complete the [starter tutorial](/getting_started/starter_example.md) before you read this. It will help ground these steps in your experience.
 ```
-
-LlamaIndex helps you build LLM-powered applications (e.g. Q&A, chatbot, and agents) over custom data.
-
-In this high-level concepts guide, you will learn:
-
-- the retrieval augmented generation (RAG) paradigm for combining LLM with custom data,
-- key concepts and modules in LlamaIndex for composing your own RAG pipeline.
 
 ## Retrieval Augmented Generation (RAG)
 
-Retrieval augmented generation (RAG) is a paradigm for augmenting LLM with custom data.
-It generally consists of two stages:
+LLMs are trained on enormous bodies of data but they aren't trained on **your** data. Retrieval-Augmented Generation (RAG) solves this problem by adding your data to the data LLMs already have access to. You will see references to RAG frequently in this documentation.
 
-1. **indexing stage**: preparing a knowledge base, and
-2. **querying stage**: retrieving relevant context from the knowledge to assist the LLM in responding to a question
+In RAG, your data is loaded and and prepared for queries or "indexed". User queries act on the index, which filters your data down to the most relevant context. This context and your query then go to the LLM along with a prompt, and the LLM provides a response.
 
-![](/_static/getting_started/rag.jpg)
+Even if what you're building is a chatbot or an agent, you'll want to know RAG techniques for getting data into your application.
 
-LlamaIndex provides the essential toolkit for making both steps super easy.
-Let's explore each stage in detail.
+![](/_static/getting_started/basic_rag.png)
+
+## Stages within RAG
+
+There are five key stages within RAG, which in turn will be a part of any larger application you build. These are:
+
+- **Loading**: this refers to getting your data from where it lives -- whether it's text files, PDFs, another website, a database, or an API -- into your pipeline. [LlamaHub](https://llamahub.ai/) provides hundreds of connectors to choose from.
+
+- **Indexing**: this means creating a data structure that allows for querying the data. For LLMs this nearly always means creating `vector embeddings`, numerical representations of the meaning of your data, as well as numerous other metadata strategies to make it easy to accurately find contextually relevant data.
+
+- **Storing**: once your data is indexed you will almost always want to store your index, as well as other metadata, to avoid having to re-index it.
+
+- **Querying**: for any given indexing strategy there are many ways you can utilize LLMs and LlamaIndex data structures to query, including sub-queries, multi-step queries and hybrid strategies.
+
+- **Evaluation**: a critical step in any pipeline is checking how effective it is relative to other strategies, or when you make changes. Evaluation provides objective measures of how accurate, faithful and fast your responses to queries are.
+
+![](/_static/getting_started/stages.png)
+
+## Important concepts within each step
+
+There are also some terms you'll encounter that refer to steps within each of these stages.
+
+### Loading stage
+
+[**Nodes and Documents**](/module_guides/loading/documents_and_nodes/root.md): A `Document` is a container around any data source - for instance, a PDF, an API output, or retrieved data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. Nodes have metadata that relate them to the document they are in and to other nodes.
+
+[**Connectors**](/module_guides/loading/connector/root.md):
+A data connector (often called a `Reader`) ingests data from different data sources and data formats into `Document`s and `Nodes`.
 
 ### Indexing Stage
 
-LlamaIndex helps you prepare the knowledge base with a suite of data connectors and indexes.
-![](/_static/getting_started/indexing.jpg)
+[**Indexes**](/module_guides/indexing/indexing.md):
+Once you've ingested your data, LlamaIndex will help you index the data into a structure that's easy to retrieve. This usually involves generating `vector embeddings` which are stored in a specialized database called a `vector store`. Indexes can also store a variety of metadata about your data.
 
-[**Data Connectors**](/core_modules/data_modules/connector/root.md):
-A data connector (i.e. `Reader`) ingests data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
-
-[**Documents / Nodes**](/core_modules/data_modules/documents_and_nodes/root.md): A `Document` is a generic container around any data source - for instance, a PDF, an API output, or retrieved data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. It's a rich representation that includes metadata and relationships (to other nodes) to enable accurate and expressive retrieval operations.
-
-[**Data Indexes**](/core_modules/data_modules/index/root.md):
-Once you've ingested your data, LlamaIndex will help you index the data into a format that's easy to retrieve. Under the hood, LlamaIndex parses the raw documents into intermediate representations, calculates vector embeddings, and infers metadata. The most commonly used index is the [VectorStoreIndex](/core_modules/data_modules/index/vector_store_guide.ipynb)
+[**Embeddings**](/module_guides/models/embeddings.md) LLMs generate numerical representations of data called `embeddings`. When filtering your data for relevance, LlamaIndex will convert queries into embeddings, and your vector store will find data which is numerically similar to the embedding of your query.
 
 ### Querying Stage
 
-In the querying stage, the RAG pipeline retrieves the most relevant context given a user query,
-and passes that to the LLM (along with the query) to synthesize a response.
-This gives the LLM up-to-date knowledge that is not in its original training data,
-(also reducing hallucination).
-The key challenge in the querying stage is retrieval, orchestration, and reasoning over (potentially many) knowledge bases.
+[**Retrievers**](/module_guides/querying/retriever/root.md):
+A retriever defines how to efficiently retrieve relevant context from an index when given a query. Your retrieval strategy is key to the relevancy of the data retrieved and the efficiency with which it's done.
 
-LlamaIndex provides composable modules that help you build and integrate RAG pipelines for Q&A (query engine), chatbot (chat engine), or as part of an agent.
-These building blocks can be customized to reflect ranking preferences, as well as composed to reason over multiple knowledge bases in a structured way.
+[**Node Postprocessors**](/module_guides/querying/node_postprocessors/root.md):
+A node postprocessor takes in a set of retrieved nodes and applies transformations, filtering, or re-ranking logic to them.
 
-![](/_static/getting_started/querying.jpg)
-
-#### Building Blocks
-
-[**Retrievers**](/core_modules/query_modules/retriever/root.md):
-A retriever defines how to efficiently retrieve relevant context from a knowledge base (i.e. index) when given a query.
-The specific retrieval logic differs for different indices, the most popular being dense retrieval against a vector index.
-
-[**Node Postprocessors**](/core_modules/query_modules/node_postprocessors/root.md):
-A node postprocessor takes in a set of nodes, then apply transformation, filtering, or re-ranking logic to them.
-
-[**Response Synthesizers**](/core_modules/query_modules/response_synthesizers/root.md):
+[**Response Synthesizers**](/module_guides/querying/response_synthesizers/root.md):
 A response synthesizer generates a response from an LLM, using a user query and a given set of retrieved text chunks.
 
-#### Pipelines
+### Putting it all together
 
-[**Query Engines**](/core_modules/query_modules/query_engine/root.md):
-A query engine is an end-to-end pipeline that allow you to ask question over your data.
-It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
+There are endless use cases for data-backed LLM applications but they can be roughly grouped into three categories:
 
-[**Chat Engines**](/core_modules/query_modules/chat_engines/root.md):
-A chat engine is an end-to-end pipeline for having a conversation with your data
-(multiple back-and-forth instead of a single question & answer).
+[**Query Engines**](/module_guides/deploying/query_engine/root.md):
+A query engine is an end-to-end pipeline that allow you to ask question over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
 
-[**Agents**](/core_modules/agent_modules/agents/root.md):
-An agent is an automated decision maker (powered by an LLM) that interacts with the world via a set of tools.
-Agent may be used in the same fashion as query engines or chat engines.
-The main distinction is that an agent dynamically decides the best sequence of actions, instead of following a predetermined logic.
-This gives it additional flexibility to tackle more complex tasks.
+[**Chat Engines**](/module_guides/deploying/chat_engines/root.md):
+A chat engine is an end-to-end pipeline for having a conversation with your data (multiple back-and-forth instead of a single question & answer).
+
+[**Agents**](/module_guides/deploying/agents/root.md):
+An agent is an automated decision maker powered by an LLM that interacts with the world via a set of [tools](/module_guides/deploying/agents/tools/llamahub_tools_guide.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
 
 ```{admonition} Next Steps
-* tell me how to [customize things](/getting_started/customization.rst).
-* curious about a specific module? Check out the module guides 👈
-* have a use case in mind? Check out the [end-to-end tutorials](/end_to_end_tutorials/use_cases.md)
+* Tell me how to [customize things](/getting_started/customization.rst)
+* Continue learning with our [understanding LlamaIndex](/understanding/understanding.md) guide
+* Ready to dig deep? Check out the module guides on the left
 ```

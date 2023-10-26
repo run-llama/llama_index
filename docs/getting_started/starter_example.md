@@ -4,39 +4,31 @@
 Make sure you've followed the [installation](installation.md) steps first.
 ```
 
-Here is a starter example for using LlamaIndex.
+This is our famous "5 lines of code" starter example.
 
-### Download
+## Download data
 
-LlamaIndex examples can be found in the `examples` folder of the LlamaIndex repository.
-We first want to download this `examples` folder. An easy way to do this is to just clone the repo:
+This example uses the text of Paul Graham's essay, ["What I Worked On"](http://paulgraham.com/worked.html). This and many other examples can be found in the `examples` folder of our repo.
 
-```bash
-$ git clone https://github.com/jerryjliu/llama_index.git
+The easiest way to get it is to [download it via this link](https://raw.githubusercontent.com/run-llama/llama_index/main/examples/paul_graham_essay/data/paul_graham_essay.txt) and save it in a folder called `data`.
+
+## Set your OpenAI API key
+
+LlamaIndex uses OpenAI's `gpt-3.5-turbo` by default. Make sure your API key is available to your code by setting it as an environment variable. In MacOS and Linux, this is the command:
+
+```
+export OPENAI_API_KEY=XXXXX
 ```
 
-Next, navigate to your newly-cloned repository, and verify the contents:
+and on windows it is
 
-```bash
-$ cd llama_index
-$ ls
-LICENSE                data_requirements.txt  tests/
-MANIFEST.in            examples/              pyproject.toml
-Makefile               experimental/          requirements.txt
-README.md              llama_index/             setup.py
+```
+set OPENAI_API_KEY=XXXXX
 ```
 
-We now want to navigate to the following folder:
+## Load data and build an index
 
-```bash
-$ cd examples/paul_graham_essay
-```
-
-This contains LlamaIndex examples around Paul Graham's essay, ["What I Worked On"](http://paulgraham.com/worked.html). A comprehensive set of examples are already provided in `TestEssay.ipynb`. For the purposes of this tutorial, we can focus on a simple example of getting LlamaIndex up and running.
-
-### Build and Query Index
-
-Create a new `.py` file with the following:
+In the same folder where you created the `data` folder, create a file called `starter.py` file with the following:
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
@@ -45,7 +37,19 @@ documents = SimpleDirectoryReader('data').load_data()
 index = VectorStoreIndex.from_documents(documents)
 ```
 
-This builds an index over the documents in the `data` folder (which in this case just consists of the essay text). We then run the following
+This builds an index over the documents in the `data` folder (which in this case just consists of the essay text, but could contain many documents).
+
+Your directory structure should look like this:
+
+<pre>
+├── starter.py
+└── data
+    └── paul_graham_essay.txt
+</pre>
+
+## Query your data
+
+Add the following lines to `starter.py`
 
 ```python
 query_engine = index.as_query_engine()
@@ -53,11 +57,11 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-You should get back a response similar to the following: `The author wrote short stories and tried to program on an IBM 1401.`
+This creates an engine for Q&A over your index and asks a simple question. You should get back a response similar to the following: `The author wrote short stories and tried to program on an IBM 1401.`
 
-### Viewing Queries and Events Using Logging
+## Viewing Queries and Events Using Logging
 
-In a Jupyter notebook, you can view info and/or debugging logging using the following snippet:
+Want to see what's happening under the hood? Let's add some logging. Add these lines to the top of `starter.py`:
 
 ```python
 import logging
@@ -69,37 +73,44 @@ logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 You can set the level to `DEBUG` for verbose output, or use `level=logging.INFO` for less.
 
-To view all requests made to your LLMs, you can set the `openai` logging flag:
+## Storing your index
 
-```python
-openai.log = "debug"
-```
-
-This will print out every request and response made via `openai`. Change it back to `None` to turn off.
-
-### Saving and Loading
-
-By default, data is stored in-memory.
-To persist to disk (under `./storage`):
+By default, the data you just loaded is stored in memory as a series of vector embeddings. You can save time (and requests to OpenAI) by saving the embeddings to disk. That can be done with this line:
 
 ```python
 index.storage_context.persist()
 ```
 
-To reload from disk:
+By default, this will save the data to the directory `storage`, but you can change that by passing a `persist_dir` parameter.
+
+Of course, you don't get the benefits of persisting unless you load the data. So let's modify `starter.py` to generate and store the index if it doesn't exist, but load it if it does:
 
 ```python
-from llama_index import StorageContext, load_index_from_storage
+import os.path
+from llama_index import VectorStoreIndex, SimpleDirectoryReader, StorageContext, load_index_from_storage
 
-# rebuild storage context
-storage_context = StorageContext.from_defaults(persist_dir="./storage")
-# load index
-index = load_index_from_storage(storage_context)
+# check if storage already exists
+if (not os.path.exists('./storage')):
+    # load the documents and create the index
+    documents = SimpleDirectoryReader('data').load_data()
+    index = VectorStoreIndex.from_documents(documents)
+    # store it for later
+    index.storage_context.persist()
+else:
+    # load the existing index
+    storage_context = StorageContext.from_defaults(persist_dir='./storage')
+    index = load_index_from_storage(storage_context)
+
+# either way we can now query the index
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
+print(response)
 ```
+
+Now you can efficiently query to your heart's content! But this is just the beginning of what you can do with LlamaIndex.
 
 ```{admonition} Next Steps
 * learn more about the [high-level concepts](/getting_started/concepts.md).
 * tell me how to [customize things](/getting_started/customization.rst).
-* curious about a specific module? check out the guides 👈
-* have a use case in mind? check out the [end-to-end tutorials](/end_to_end_tutorials/use_cases.md)
+* curious about a specific module? check out the guides on the left 👈
 ```

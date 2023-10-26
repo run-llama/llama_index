@@ -1,9 +1,9 @@
 Customization Tutorial
 ======================
 .. tip::
-    If you haven't, `install <installation.html>`_, complete `starter tutorial <starter_example.html>`_, and learn the `high-level concepts <concepts.html>`_ before you read this. It will make a lot more sense!
+    If you haven't already, `install LlamaIndex <installation.html>`_ and complete the `starter tutorial <starter_example.html>`_. If you run into terms you don't recognize, check out the `high-level concepts <concepts.html>`_.
 
-In this tutorial, we show the most common customizations with the `starter example <starter_example.html>`_:
+In this tutorial, we start with the code you wrote for the `starter example <starter_example.html>`_ and show you the most common ways you might want to customize it for your use case:
 
 .. code-block:: python
 
@@ -24,9 +24,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     from llama_index import ServiceContext
     service_context = ServiceContext.from_defaults(chunk_size=1000)
 
-.. tip::
-    `ServiceContext` is a bundle of services and configurations used across a LlamaIndex pipeline,
-    Learn more `here <../core_modules/supporting_modules/service_context.html>`_.
+The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ is a bundle of services and configurations used across a LlamaIndex pipeline.
 
 .. code-block:: python
     :emphasize-lines: 4
@@ -54,9 +52,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-.. tip::
-    `StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored.
-    Learn more `here <../core_modules/data_modules/storage/customization.html>`_.
+`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about `storage </module_guides/storing/storing.html>`_ and `how to customize it </module_guides/storing/customization.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 4
@@ -84,11 +80,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
-.. tip::
-    `as_query_engine` builds a default retriever and query engine on top of the index.
-    You can configure the retriever and query engine by passing in keyword arguments.
-    Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2).
-    Learn more about vector index `here <../core_modules/data_modules/index/vector_store_guide.html>`_.
+`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about `retrievers </module_guides/querying/retrievers.html>_` and `query engines </module_guides/putting_it_all_together/query_engine/root.html>_`
 
 -----------------
 
@@ -100,8 +92,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     from llama_index.llms import PaLM
     service_context = ServiceContext.from_defaults(llm=PaLM())
 
-.. tip::
-    Learn more about customizing LLMs `here <../core_modules/model_modules/llms/usage_custom.html>`_.
+You can learn more about `customizing LLMs </module_guides/models/llms.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 5
@@ -130,8 +121,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
-.. tip::
-    Learn more about query engine usage pattern `here <../core_modules/query_modules/query_engine/usage_pattern.html>`_ and available response modes `here <../core_modules/query_modules/query_engine/response_modes.html>`_.
+You can learn more about `query engines <../core_modules/query_modules/query_engine/usage_pattern.html>`_ and `response modes </module_guides/putting_it_all_together/query_engine/response_modes.html>`_.
 
 -----------------
 
@@ -149,8 +139,7 @@ In this tutorial, we show the most common customizations with the `starter examp
     response = query_engine.query("What did the author do growing up?")
     response.print_response_stream()
 
-.. tip::
-    Learn more about streaming `here <../core_modules/query_modules/query_engine/streaming.html>`_.
+You can learn more about `streaming responses </module_guides/putting_it_all_together/query_engine/streaming.html>`_.
 
 -----------------
 
@@ -170,12 +159,11 @@ In this tutorial, we show the most common customizations with the `starter examp
     response = query_engine.chat("Oh interesting, tell me more.")
     print(response)
 
-.. tip::
-    Learn more about chat engine usage pattern `here <../core_modules/query_modules/chat_engines/usage_pattern.html>`_.
+Learn more about the `chat engine </module_guides/putting_it_all_together/chat_engines/usage_pattern.html>`_.
 
 -----------------
 
 .. admonition:: Next Steps
 
-    * want a thorough walkthrough of (almost) everything you can configure? Try the `end-to-end tutorial on basic usage pattern <../end_to_end_tutorials/usage_pattern.html>`_.
-    * want more in-depth understanding of specific modules? Check out the module guides 👈
+    * want a thorough walkthrough of (almost) everything you can configure? Get started with `Understanding LlamaIndex </understanding/understanding.html>`_.
+    * want more in-depth understanding of specific modules? Check out the module guides in the left nav 👈
