@@ -194,22 +194,28 @@ Given the context, please answer the final question:
         qa_prompt_tmpl, template_var_mappings=template_var_mappings
     )
     fmt_prompt = qa_prompt.format(query_str="abc", context_str="def")
-    assert fmt_prompt == """\
+    assert (
+        fmt_prompt
+        == """\
 Here's some context:
 def
 Given the context, please answer the final question:
 abc
 """
+    )
     # try partial format
     qa_prompt_partial = qa_prompt.partial_format(query_str="abc2")
     fmt_prompt_partial = qa_prompt_partial.format(context_str="def2")
-    assert fmt_prompt_partial == """\
+    assert (
+        fmt_prompt_partial
+        == """\
 Here's some context:
 def2
 Given the context, please answer the final question:
 abc2
 """
-    
+    )
+
     # try chat prompt template
     # partial template var mapping
     template_var_mappings = {
@@ -235,4 +241,3 @@ abc2
         "user: hello def abc\n"
         "assistant: "
     )
-        

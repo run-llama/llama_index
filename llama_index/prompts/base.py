@@ -31,9 +31,7 @@ class BasePromptTemplate(BaseModel, ABC):
     def _map_template_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """For keys in template_var_mappings, swap in the right keys."""
         template_var_mappings = self.template_var_mappings or {}
-        return {
-            template_var_mappings.get(k, k): v for k, v in kwargs.items()
-        }
+        return {template_var_mappings.get(k, k): v for k, v in kwargs.items()}
 
     class Config:
         arbitrary_types_allowed = True
@@ -182,7 +180,7 @@ class ChatPromptTemplate(BasePromptTemplate):
                 k: v for k, v in mapped_all_kwargs.items() if k in template_vars
             }
             content_template = message_template.content or ""
-            
+
             # if there's mappings specified, make sure those are used
             content = content_template.format(**relevant_kwargs)
 
