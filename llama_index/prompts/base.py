@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from pydantic import Field
+
 from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
 from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
 from llama_index.bridge.pydantic import BaseModel
@@ -22,6 +24,14 @@ class BasePromptTemplate(BaseModel, ABC):
     template_vars: List[str]
     kwargs: Dict[str, str]
     output_parser: Optional[BaseOutputParser]
+    template_var_mappings: Dict[str, Any] = Field(
+        default_factory=dict, description="Template variable mappings (Optional)."
+    )
+
+    def _map_template_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            k: kwargs.get(v, v) for k, v in self.template_var_mappings.items()
+        }
 
     class Config:
         arbitrary_types_allowed = True
@@ -54,6 +64,7 @@ class PromptTemplate(BasePromptTemplate):
         prompt_type: str = PromptType.CUSTOM,
         output_parser: Optional[BaseOutputParser] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        template_var_mappings: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         if metadata is None:
@@ -61,6 +72,7 @@ class PromptTemplate(BasePromptTemplate):
         metadata["prompt_type"] = prompt_type
 
         template_vars = get_template_vars(template)
+        template_var_mappings = template_var_mappings or {}
 
         super().__init__(
             template=template,
@@ -68,6 +80,7 @@ class PromptTemplate(BasePromptTemplate):
             kwargs=kwargs,
             metadata=metadata,
             output_parser=output_parser,
+            template_var_mappings=template_var_mappings,
         )
 
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
@@ -91,7 +104,10 @@ class PromptTemplate(BasePromptTemplate):
             **kwargs,
         }
 
-        prompt = self.template.format(**all_kwargs)
+        # if there's mappings specified, make sure those are used
+        mapped_kwargs = self._map_template_vars(all_kwargs)
+
+        prompt = self.template.format(**mapped_kwargs)
         if self.output_parser is not None:
             prompt = self.output_parser.format(prompt)
         return prompt
@@ -117,6 +133,7 @@ class ChatPromptTemplate(BasePromptTemplate):
         prompt_type: str = PromptType.CUSTOM,
         output_parser: Optional[BaseOutputParser] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        template_var_mappings: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
         if metadata is None:
@@ -133,6 +150,7 @@ class ChatPromptTemplate(BasePromptTemplate):
             metadata=metadata,
             output_parser=output_parser,
             template_vars=template_vars,
+            template_var_mappings=template_var_mappings,
         )
 
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
@@ -162,7 +180,10 @@ class ChatPromptTemplate(BasePromptTemplate):
                 k: v for k, v in all_kwargs.items() if k in template_vars
             }
             content_template = message_template.content or ""
-            content = content_template.format(**relevant_kwargs)
+            
+            # if there's mappings specified, make sure those are used
+            mapped_relevant_kwargs = self._map_template_vars(relevant_kwargs)
+            content = content_template.format(**mapped_relevant_kwargs)
 
             message: ChatMessage = message_template.copy()
             message.content = content
@@ -259,6 +280,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
         output_parser: Optional[BaseOutputParser] = None,
         prompt_type: str = PromptType.CUSTOM,
         metadata: Optional[Dict[str, Any]] = None,
+        template_var_mappings: Optional[Dict[str, Any]] = None,
     ) -> None:
         if selector is None:
             if template is None:
@@ -282,6 +304,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
             kwargs=kwargs,
             template_vars=template_vars,
             output_parser=output_parser,
+            template_var_mappings=template_var_mappings,
         )
 
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
@@ -305,7 +328,9 @@ class LangchainPromptTemplate(BasePromptTemplate):
         else:
             lc_template = self.selector.default_prompt
 
-        return lc_template.format(**kwargs)
+        # if there's mappings specified, make sure those are used
+        mapped_kwargs = self._map_template_vars(kwargs)
+        return lc_template.format(**mapped_kwargs)
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
