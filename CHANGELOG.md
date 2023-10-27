@@ -1,5 +1,28 @@
 # ChangeLog
 
+## [0.8.53] - 2023-10-27
+
+### New Features
+
+- Docs refactor (#8500)
+  An overhaul of the docs organization. Major changes
+  - Added a big new "understanding" section
+  - Added a big new "optimizing" section
+  - Overhauled Getting Started content
+  - Categorized and moved module guides to a single section
+
+## [0.8.52] - 2023-10-26
+
+### New Features
+
+- Add longllmlingua (#8485)
+- Add google colab support for notebooks (#7560)
+
+### Bug Fixes / Nits
+
+- Adapt Cassandra VectorStore constructor DB connection through cassio.init (#8255)
+- Allow configuration of service context and storage context in managed index (#8487)
+
 ## [0.8.51.post1] - 2023-10-25
 
 ### New Features
@@ -7,7 +30,7 @@
 - Add Llava MultiModal QA examples for Tesla 10k RAG (#8271)
 - fix bug streaming on react chat agent not working as expected (#8459)
 
-## Bug Fixes / Nits
+### Bug Fixes / Nits
 
 - patch: add selected result to response metadata for router query engines, fix bug (#8483)
 - add Jina AI embeddings notebook + huggingface embedding fix (#8478)
