@@ -50,6 +50,7 @@ class ClarifaiEmbedding(BaseEmbedding):
 
         if model_url is not None:
             self._model = Model(model_url)
+            model_name = self._model.id
 
         if model_name is not None:
             if app_id is None or user_id is None:
