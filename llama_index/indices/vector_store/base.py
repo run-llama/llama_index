@@ -145,7 +145,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             return
 
         nodes = await self._aget_node_with_embedding(nodes, show_progress)
-        new_ids = self._vector_store.add(nodes)
+        new_ids = await self._vector_store.async_add(nodes)
 
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
