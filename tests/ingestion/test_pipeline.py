@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.extractors import KeywordExtractor
 from llama_index.ingestion.pipeline import IngestionPipeline
@@ -43,3 +45,35 @@ def test_run_local_pipeline() -> None:
 
     assert len(nodes) == 2
     assert len(nodes[0].metadata) > 0
+
+@pytest.mark.integration()
+def test_register() -> None:
+    pipeline = IngestionPipeline(
+        name="Test",
+        reader=ReaderConfig(
+            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
+        ),
+        documents=[Document.example()],
+        transformations=[
+            SentenceAwareNodeParser(),
+            KeywordExtractor(llm=MockLLM()),
+        ],
+    )
+
+    pipeline_id = pipeline.register()
+
+    # update pipeline
+    updated_pipeline = IngestionPipeline(
+        name="Test",
+        reader=ReaderConfig(
+            reader=StringIterableReader(), reader_kwargs={"texts": ["This is another test."]}
+        ),
+        documents=[Document.example()],
+        transformations=[
+            SentenceAwareNodeParser(),
+            KeywordExtractor(llm=MockLLM()),
+        ],
+    )
+
+    new_pipeline_id = updated_pipeline.register()
+    assert pipeline_id == new_pipeline_id

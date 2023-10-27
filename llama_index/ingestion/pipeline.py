@@ -298,9 +298,6 @@ class IngestionPipeline(BaseModel):
                 )
             )
 
-        import pdb
-
-        pdb.set_trace()
         project = client.project.upsert_project_api_project_put(
             request=ProjectCreate(name=self.project_name)
         )
