@@ -13,7 +13,7 @@
 
 ##### 1. How to define a custom LLM?
 
-You can access [Usage Custom](../../core_modules//model_modules/llms/usage_custom.md#example-using-a-custom-llm-model---advanced) to define a custom LLM.
+You can access [Usage Custom](../../module_guides/models/llms/usage_custom.md#example-using-a-custom-llm-model---advanced) to define a custom LLM.
 
 ---
 
@@ -25,13 +25,13 @@ To use a different OpenAI model you can access [Configure Model](../../examples/
 
 ##### 3. How can I customize my prompt?
 
-You can access [Prompts](../../core_modules/model_modules/prompts.md) to learn how to customize your prompts.
+You can access [Prompts](../../module_guides/models/prompts.md) to learn how to customize your prompts.
 
 ---
 
 ##### 4. Is it required to fine-tune my model?
 
-No. there's isolated modules which might provide better results, but isn't required, you can you can use llamapidnex without needing to fine-tune the model.
+No. there's isolated modules which might provide better results, but isn't required, you can use llamaindex without needing to fine-tune the model.
 
 ---
 
