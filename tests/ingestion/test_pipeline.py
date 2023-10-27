@@ -1,5 +1,4 @@
 import pytest
-
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.extractors import KeywordExtractor
 from llama_index.ingestion.pipeline import IngestionPipeline
@@ -46,6 +45,7 @@ def test_run_local_pipeline() -> None:
     assert len(nodes) == 2
     assert len(nodes[0].metadata) > 0
 
+
 @pytest.mark.integration()
 def test_register() -> None:
     pipeline = IngestionPipeline(
@@ -66,7 +66,8 @@ def test_register() -> None:
     updated_pipeline = IngestionPipeline(
         name="Test",
         reader=ReaderConfig(
-            reader=StringIterableReader(), reader_kwargs={"texts": ["This is another test."]}
+            reader=StringIterableReader(),
+            reader_kwargs={"texts": ["This is another test."]},
         ),
         documents=[Document.example()],
         transformations=[
@@ -76,4 +77,6 @@ def test_register() -> None:
     )
 
     new_pipeline_id = updated_pipeline.register()
+
+    # make sure we are updating the same pipeline instead of creating a new one
     assert pipeline_id == new_pipeline_id
