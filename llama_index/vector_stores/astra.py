@@ -7,6 +7,7 @@ powered by the astrapy library
 
 import os
 import logging
+import cassio
 
 from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
 
@@ -81,6 +82,8 @@ class AstraVectorStore(VectorStore):
             from astrapy.collections import AstraDBCollection, AstraDB
         except ImportError:
             raise ImportError(import_err_msg)
+        
+        cassio.init()
 
         # Set all the required class parameters
         self._session = session
@@ -92,18 +95,24 @@ class AstraVectorStore(VectorStore):
 
         _logger.debug("Creating the Astra table")
 
+        database_id = os.environ.get("ASTRA_DB_ID")
+        database_region = os.environ.get("ASTRA_DB_REGION")
+        database_base_url = "apps.astra.datastax.com"
+
+        # Build the endpoint URL:
+        api_endpoint = f"https://{database_id}-{database_region}.{database_base_url}"
+
         self.astra_db = AstraDB(
-            db_id=os.environ.get("ASTRA_DB_ID"), 
+            api_endpoint=api_endpoint,
             token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
         )
 
-        self.astra_db.create_collection(name=table, size=embedding_dimension)
+        self.astra_db.create_collection(collection_name=table, size=embedding_dimension)
 
         # Create the AstraClient object
         self.astra_db_collection = AstraDBCollection(
-            collection=table,
-            db_id=os.environ.get("ASTRA_DB_ID"),
-            token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
+            collection_name=table,
+            astra_db=self.astra_db
         )
 
     def add(
