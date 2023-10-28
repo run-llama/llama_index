@@ -1,6 +1,6 @@
 import json
-from typing import Any, Dict, List, Optional, Type
 from abc import abstractmethod
+from typing import Any, Dict, List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -199,9 +199,7 @@ class GradientAIFineTuningHandler(BaseFinetuningHandler):
             # TODO: come up with model-specific message->prompt serialization format
             prompt_str = messages_to_history_str(all_messages)
 
-            input_dict = {
-                "inputs": prompt_str
-            }
+            input_dict = {"inputs": prompt_str}
             json_strs.append(json.dumps(input_dict))
 
         with open(path, "w") as f:

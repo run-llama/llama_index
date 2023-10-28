@@ -18,7 +18,7 @@ from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
-from llama_index.types import TokenAsyncGen, TokenGen, PydanticProgramMode
+from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +95,9 @@ class LLMPredictor(BaseLLMPredictor):
             self._llm.callback_manager = callback_manager
 
         super().__init__(
-            system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt,
-            pydantic_program_mode=pydantic_program_mode
+            system_prompt=system_prompt,
+            query_wrapper_prompt=query_wrapper_prompt,
+            pydantic_program_mode=pydantic_program_mode,
         )
 
     @classmethod
@@ -146,8 +147,10 @@ class LLMPredictor(BaseLLMPredictor):
         from llama_index.program.utils import get_program_for_llm
 
         program = get_program_for_llm(
-            output_cls, prompt, self._llm,
-            pydantic_program_mode=self.pydantic_program_mode
+            output_cls,
+            prompt,
+            self._llm,
+            pydantic_program_mode=self.pydantic_program_mode,
         )
 
         chat_response = program(**prompt_args)
@@ -162,8 +165,10 @@ class LLMPredictor(BaseLLMPredictor):
         from llama_index.program.utils import get_program_for_llm
 
         program = get_program_for_llm(
-            output_cls, prompt, self._llm,
-            pydantic_program_mode=self.pydantic_program_mode 
+            output_cls,
+            prompt,
+            self._llm,
+            pydantic_program_mode=self.pydantic_program_mode,
         )
 
         chat_response = await program.acall(**prompt_args)
