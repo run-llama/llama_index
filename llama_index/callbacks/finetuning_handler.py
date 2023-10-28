@@ -185,24 +185,24 @@ class GradientAIFineTuningHandler(BaseFinetuningHandler):
         This saved format can be used for fine-tuning with OpenAI's API.
         The structure for each json line is as follows:
         {
-          messages: [
-            { rol: "system", content: "Text"},
-            { role: "user", content: "Text" },
-          ]
+          "inputs": "<full_prompt_str>"
         },
         ...
         """
-        # from llama_index.llms.openai_utils import to_openai_message_dicts
+        from llama_index.llms.generic_utils import messages_to_history_str
 
         events_dict = self.get_finetuning_events()
         json_strs = []
-        for event_id, event in events_dict.items():
+        for _, event in events_dict.items():
             all_messages = event["messages"] + [event["response"]]
-            message_dicts = to_openai_message_dicts(all_messages, drop_none=True)
-            event_dict = {"messages": message_dicts}
-            if event_id in self._function_calls:
-                event_dict["functions"] = self._function_calls[event_id]
-            json_strs.append(json.dumps(event_dict))
+
+            # TODO: come up with model-specific message->prompt serialization format
+            prompt_str = messages_to_history_str(all_messages)
+
+            input_dict = {
+                "inputs": prompt_str
+            }
+            json_strs.append(json.dumps(input_dict))
 
         with open(path, "w") as f:
             f.write("\n".join(json_strs))

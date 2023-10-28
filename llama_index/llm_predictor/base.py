@@ -86,7 +86,7 @@ class LLMPredictor(BaseLLMPredictor):
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         query_wrapper_prompt: Optional[BasePromptTemplate] = None,
-        pydanctic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         """Initialize params."""
         self._llm = resolve_llm(llm)
@@ -96,7 +96,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         super().__init__(
             system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt,
-            pydantic_program_mode=pydanctic_program_mode
+            pydantic_program_mode=pydantic_program_mode
         )
 
     @classmethod
