@@ -3,9 +3,10 @@
 ## [0.8.54] - 2023-10-28
 
 ### New Features
+
 - notebook showing how to fine-tune llama2 on structured outputs (#8540)
   - added GradientAIFineTuningHandler
-  - added pydantic_program_mode to ServiceContext 
+  - added pydantic_program_mode to ServiceContext
 - Initialize MultiModal Retrieval using LlamaIndex (#8507)
 
 ### Bug Fixes / Nits
@@ -13,7 +14,7 @@
 - Add missing import to `ChatEngine` usage pattern `.md` doc (#8518)
 - :bug: fixed async add (#8531)
 - fix: add the needed CondenseQuestionChatEngine import in the usage_pa… (#8518)
-- Add import LongLLMLinguaPostprocessor  for LongLLMLingua.ipynb (#8519)
+- Add import LongLLMLinguaPostprocessor for LongLLMLingua.ipynb (#8519)
 
 ## [0.8.53] - 2023-10-27
 
