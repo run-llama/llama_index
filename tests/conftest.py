@@ -1,7 +1,7 @@
 import os
 
 # import socket
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import openai
 import pytest
@@ -135,7 +135,7 @@ class CachedOpenAIApiKeys:
         openai.api_type = self.openai_api_type_was
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--integration",
         action="store_true",
@@ -144,11 +144,13 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "integration: mark test as integration")
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: List[pytest.Item]
+) -> None:
     if config.getoption("--integration"):
         # --integration given in cli: do not skip integration tests
         return

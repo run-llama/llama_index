@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
@@ -36,29 +36,24 @@ BASE_URL = "http://localhost:8000"
 
 
 def deserialize_transformation_component(
-    component_dict, component_type: str
+    component_dict: dict, component_type: ConfigurableTransformationNames
 ) -> BaseComponent:
-    if isinstance(component_dict, BaseComponent):
-        return component_dict
-
-    component_type = ConfigurableTransformations[component_type].value.component_type
-    return component_type.from_dict(component_dict)
+    component_cls = ConfigurableTransformations[component_type].value.component_type
+    return component_cls.from_dict(component_dict)
 
 
-def deserialize_source_component(component_dict, component_type: str) -> BaseComponent:
-    if isinstance(component_dict, BaseComponent):
-        return component_dict
+def deserialize_source_component(
+    component_dict: dict, component_type: ConfigurableDataSourceNames
+) -> BaseComponent:
+    component_cls = ConfigurableDataSources[component_type].value.component_type
+    return component_cls.from_dict(component_dict)
 
-    component_type = ConfigurableDataSources[component_type].value.component_type
-    return component_type.from_dict(component_dict)
 
-
-def deserialize_sink_component(component_dict, component_type: str) -> BaseComponent:
-    if isinstance(component_dict, BaseComponent):
-        return component_dict
-
-    component_type = ConfigurableDataSinks[component_type].value.component_type
-    return component_type.from_dict(component_dict)
+def deserialize_sink_component(
+    component_dict: dict, component_type: ConfigurableDataSinkNames
+) -> BaseComponent:
+    component_cls = ConfigurableDataSinks[component_type].value.component_type
+    return component_cls.from_dict(component_dict)
 
 
 def run_transformations(
@@ -219,20 +214,22 @@ class IngestionPipeline(BaseModel):
 
         transformations: List[TransformComponent] = []
         for configured_transformation in pipeline.configured_transformations:
-            component_dict = configured_transformation.component
-            component_type = configured_transformation.configurable_transformation_type
+            component_dict = cast(dict, configured_transformation.component)
+            transformation_component_type = (
+                configured_transformation.configurable_transformation_type
+            )
             transformation = deserialize_transformation_component(
-                component_dict, component_type
+                component_dict, transformation_component_type
             )
             transformations.append(transformation)
 
         documents = []
         readers = []
         for data_source in pipeline.data_sources:
-            component_dict = data_source.component
-            component_type = data_source.source_type
+            component_dict = cast(dict, data_source.component)
+            source_component_type = data_source.source_type
             source_component = deserialize_source_component(
-                component_dict, component_type
+                component_dict, source_component_type
             )
 
             if data_source.source_type == ConfigurableDataSourceNames.READER:
@@ -243,10 +240,10 @@ class IngestionPipeline(BaseModel):
         vector_stores = []
         for data_sink in pipeline.data_sinks:
             if data_sink.sink_type in ConfigurableDataSinkNames:
-                component_dict = data_sink.component
-                component_type = data_sink.sink_type
+                component_dict = cast(dict, data_sink.component)
+                sink_component_type = data_sink.sink_type
                 sink_component = deserialize_sink_component(
-                    component_dict, component_type
+                    component_dict, sink_component_type
                 )
                 vector_stores.append(sink_component)
 
@@ -274,9 +271,9 @@ class IngestionPipeline(BaseModel):
     ) -> str:
         client = PlatformApi(base_url=BASE_URL)
 
-        input_nodes: List[BaseNode] = self.documents or []
+        input_nodes: List[BaseNode] = cast(List[BaseNode], self.documents) or []
         if documents is not None:
-            input_nodes += documents
+            input_nodes += cast(List[BaseNode], documents)
         if nodes is not None:
             input_nodes += nodes
 
@@ -385,7 +382,7 @@ class IngestionPipeline(BaseModel):
         if self.documents is not None:
             input_nodes += self.documents
 
-        pipeline_id = self.register(project_name=self.project_name, verbose=False)
+        pipeline_id = self.register(verbose=False)
 
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
