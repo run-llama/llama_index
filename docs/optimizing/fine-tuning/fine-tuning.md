@@ -99,6 +99,19 @@ maxdepth: 1
 /examples/finetuning/knowledge/finetune_retrieval_aug.ipynb
 ```
 
+### Fine-tuning for Better Structured Outputs
+
+Another use case for fine-tuning is to make the model better at outputting structured data.
+We can do this for both OpenAI and Llama2.
+
+```{toctree}
+---
+maxdepth: 1
+---
+OpenAI Function Calling Fine-tuning </examples/finetuning/openai_fine_tuning_functions.ipynb>
+Llama2 Structured Output Fine-tuning </examples/finetuning/gradient/gradient_structured.ipynb>
+```
+
 ### [WIP] Finetuning GPT-3.5 to Memorize Knowledge
 
 We have a guide experimenting with showing how to use OpenAI fine-tuning to memorize a body of text.
