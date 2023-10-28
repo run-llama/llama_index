@@ -82,6 +82,7 @@ def test_register() -> None:
     assert pipeline_id == new_pipeline_id
 
 
+@pytest.mark.integration()
 def test_from_pipeline_name() -> None:
     pipeline = IngestionPipeline(
         name="Test",
@@ -97,4 +98,7 @@ def test_from_pipeline_name() -> None:
 
     pipeline.register()
 
-    IngestionPipeline.from_pipeline_name("Test")
+    new_pipeline = IngestionPipeline.from_pipeline_name("Test")
+    nodes = new_pipeline.run_local()
+    assert len(nodes) == 2
+    assert len(nodes[0].metadata) > 0

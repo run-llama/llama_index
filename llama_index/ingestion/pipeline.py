@@ -328,10 +328,7 @@ class IngestionPipeline(BaseModel):
                 )
             else:
                 documents = self.reader.read()
-                if self.documents is not None:
-                    documents += self.documents
-                else:
-                    self.documents = documents
+                input_nodes += documents
 
         for node in input_nodes:
             configured_data_source = ConfiguredDataSource.from_component(node)
@@ -366,8 +363,7 @@ class IngestionPipeline(BaseModel):
         # Print playground URL if not running remote
         if verbose:
             print(
-                "Pipeline available at: https://llamalink.llamaindex.ai/"
-                f"playground?id={pipeline.id}"
+                f"Pipeline available at: http://localhost:3000/playground/{pipeline.id}"
             )
 
         return pipeline.id
