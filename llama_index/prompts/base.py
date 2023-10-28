@@ -17,7 +17,6 @@ from llama_index.llms.langchain_utils import from_lc_messages
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser
-from copy import deepcopy
 
 
 class BasePromptTemplate(BaseModel, ABC):
@@ -29,11 +28,12 @@ class BasePromptTemplate(BaseModel, ABC):
         default_factory=dict, description="Template variable mappings (Optional)."
     )
     function_mappings: Optional[Dict[str, Callable]] = Field(
-        default_factory=dict, description=(
+        default_factory=dict,
+        description=(
             "Function mappings (Optional). This is a mapping from template "
             "variable names to functions that take in the current kwargs and "
             "return a string."
-        )
+        ),
     )
 
     def _map_template_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
@@ -55,17 +55,17 @@ class BasePromptTemplate(BaseModel, ABC):
         """For keys in function_mappings, compute values and combine w/ kwargs.
 
         Users can pass in functions instead of fixed values as format variables.
-        For each function, we call the function with the current kwargs, 
+        For each function, we call the function with the current kwargs,
         get back the value, and then use that value in the template
         for the corresponding format variable.
-        
+
         """
         # first generate the values for the functions
         new_kwargs = {}
         for k, v in self.function_mappings.items():
             # TODO: figure out what variables to pass into each function
             # is it the kwargs specified during query time? just the fixed kwargs?
-            # all kwargs? 
+            # all kwargs?
             new_kwargs[k] = v(**self.function_mappings, **kwargs)
 
         # then, add the fixed variables only if not in new_kwargs already
@@ -81,14 +81,13 @@ class BasePromptTemplate(BaseModel, ABC):
 
         We (1) first call function mappings to compute functions,
         and then (2) call the template_var_mappings.
-        
+
         """
         # map function
         new_kwargs = self._map_function_vars(kwargs)
         # map template vars (to point to existing format vars in string template)
         new_kwargs = self._map_template_vars(new_kwargs)
         return new_kwargs
-        
 
     # def _format_template(self, template: str, kwargs: Any) -> str:
     #     """Format template.
