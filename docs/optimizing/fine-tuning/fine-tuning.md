@@ -99,6 +99,19 @@ maxdepth: 1
 /examples/finetuning/knowledge/finetune_retrieval_aug.ipynb
 ```
 
+### Fine-tuning for Better Structured Outputs
+
+Another use case for fine-tuning is to make the model better at outputting structured data.
+We can do this for both OpenAI and Llama2.
+
+```{toctree}
+---
+maxdepth: 1
+---
+OpenAI Function Calling Fine-tuning </examples/finetuning/openai_fine_tuning_functions.ipynb>
+Llama2 Structured Output Fine-tuning </examples/finetuning/gradient/gradient_structured.ipynb>
+```
+
 ### [WIP] Finetuning GPT-3.5 to Memorize Knowledge
 
 We have a guide experimenting with showing how to use OpenAI fine-tuning to memorize a body of text.
@@ -121,8 +134,9 @@ The stack includes `sql-create-context` as the training dataset, OpenLLaMa as th
 ---
 maxdepth: 1
 ---
-Llama 2 Text-to-SQL Fine-tuning (Repo) <https://github.com/run-llama/modal_finetune_sql>
-Llama 2 Text-to-SQL Fine-tuning (Notebook) <https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb>
+Llama 2 Text-to-SQL Fine-tuning (w/ Gradient.AI) </examples/finetuning/gradient/gradient_fine_tuning.ipynb>
+Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Repo) <https://github.com/run-llama/modal_finetune_sql>
+Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Notebook) <https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb>
 ```
 
 ## Finetuning Cross-Encoders for Re-Ranking
