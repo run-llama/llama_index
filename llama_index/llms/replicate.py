@@ -36,6 +36,9 @@ class Replicate(CustomLLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Replicate API."
     )
+    is_chat_model: bool = Field(
+        default=False, description="Whether the model is a chat model."
+    )
 
     _messages_to_prompt: Callable = PrivateAttr()
     _completion_to_prompt: Callable = PrivateAttr()
@@ -51,6 +54,7 @@ class Replicate(CustomLLM):
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_chat_model: bool = False,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
@@ -63,6 +67,7 @@ class Replicate(CustomLLM):
             context_window=context_window,
             prompt_key=prompt_key,
             callback_manager=callback_manager,
+            is_chat_model=is_chat_model,
         )
 
     @classmethod
@@ -76,6 +81,7 @@ class Replicate(CustomLLM):
             context_window=self.context_window,
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
+            is_chat_model=self.is_chat_model,
         )
 
     @property
@@ -87,8 +93,8 @@ class Replicate(CustomLLM):
         if self.image != "":
             try:
                 base_kwargs["image"] = open(self.image, "rb")
-            except ImportError:
-                raise ImportError(
+            except FileNotFoundError:
+                raise FileNotFoundError(
                     "Could not load image file. Please check whether the file exists"
                 )
         return {
