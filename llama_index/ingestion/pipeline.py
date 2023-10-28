@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
@@ -10,20 +10,50 @@ from llama_index.ingestion.client import (
     ConfiguredTransformationItem,
     DataSinkCreate,
     DataSourceCreate,
+    Pipeline,
     PipelineCreate,
+    Project,
+    ProjectCreate,
 )
 from llama_index.ingestion.client.client import PlatformApi
-from llama_index.ingestion.data_sinks import ConfiguredDataSink
-from llama_index.ingestion.data_sources import ConfiguredDataSource
-from llama_index.ingestion.transformations import ConfiguredTransformation
+from llama_index.ingestion.data_sinks import ConfigurableDataSinks, ConfiguredDataSink
+from llama_index.ingestion.data_sources import (
+    ConfigurableDataSources,
+    ConfiguredDataSource,
+)
+from llama_index.ingestion.transformations import (
+    ConfigurableTransformations,
+    ConfiguredTransformation,
+)
 from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.readers.base import ReaderConfig
-from llama_index.schema import BaseNode, Document, TransformComponent
+from llama_index.schema import BaseComponent, BaseNode, Document, TransformComponent
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "pipeline"
 DEFAULT_PROJECT_NAME = "project"
 BASE_URL = "http://localhost:8000"
+
+
+def deserialize_transformation_component(
+    component_dict: dict, component_type: ConfigurableTransformationNames
+) -> BaseComponent:
+    component_cls = ConfigurableTransformations[component_type].value.component_type
+    return component_cls.from_dict(component_dict)
+
+
+def deserialize_source_component(
+    component_dict: dict, component_type: ConfigurableDataSourceNames
+) -> BaseComponent:
+    component_cls = ConfigurableDataSources[component_type].value.component_type
+    return component_cls.from_dict(component_dict)
+
+
+def deserialize_sink_component(
+    component_dict: dict, component_type: ConfigurableDataSinkNames
+) -> BaseComponent:
+    component_cls = ConfigurableDataSinks[component_type].value.component_type
+    return component_cls.from_dict(component_dict)
 
 
 def run_transformations(
@@ -77,7 +107,13 @@ async def arun_transformations(
 class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
-    name: str = Field(description="Unique name of the ingestion pipeline")
+    name: str = Field(
+        default=DEFAULT_PIPELINE_NAME,
+        description="Unique name of the ingestion pipeline",
+    )
+    project_name: str = Field(
+        default=DEFAULT_PROJECT_NAME, description="Unique name of the project"
+    )
     base_url: str = Field(default=BASE_URL, description="Base URL for the platform")
 
     configured_transformations: List[ConfiguredTransformation] = Field(
@@ -97,15 +133,13 @@ class IngestionPipeline(BaseModel):
     def __init__(
         self,
         name: str = DEFAULT_PIPELINE_NAME,
+        project_name: str = DEFAULT_PROJECT_NAME,
         transformations: Optional[List[TransformComponent]] = None,
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         base_url: str = BASE_URL,
     ) -> None:
-        if documents is None and reader is None:
-            raise ValueError("Must provide either documents or a reader")
-
         if transformations is None:
             transformations = self._get_default_transformations()
 
@@ -117,6 +151,7 @@ class IngestionPipeline(BaseModel):
 
         super().__init__(
             name=name,
+            project_name=project_name,
             configured_transformations=configured_transformations,
             transformations=transformations,
             reader=reader,
@@ -130,6 +165,7 @@ class IngestionPipeline(BaseModel):
         cls,
         service_context: ServiceContext,
         name: str = DEFAULT_PIPELINE_NAME,
+        project_name: str = DEFAULT_PROJECT_NAME,
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
@@ -141,10 +177,84 @@ class IngestionPipeline(BaseModel):
 
         return cls(
             name=name,
+            project_name=project_name,
             transformations=transformations,
             reader=reader,
             documents=documents,
             vector_store=vector_store,
+        )
+
+    @classmethod
+    def from_pipeline_name(
+        cls,
+        name: str,
+        project_name: str = DEFAULT_PROJECT_NAME,
+        base_url: str = BASE_URL,
+    ) -> "IngestionPipeline":
+        client = PlatformApi(base_url=base_url)
+
+        projects: List[Project] = client.project.get_project_by_name_api_project_get(
+            project_name=project_name
+        )
+        if len(projects) < 0:
+            raise ValueError(f"Project with name {project_name} not found")
+
+        project = projects[0]
+        assert project.id is not None, "Project ID should not be None"
+
+        pipelines: List[
+            Pipeline
+        ] = client.pipeline.get_pipeline_by_name_api_pipeline_get(
+            pipeline_name=name, project_name=project_name
+        )
+        if len(pipelines) < 0:
+            raise ValueError(f"Pipeline with name {name} not found")
+
+        pipeline = pipelines[0]
+
+        transformations: List[TransformComponent] = []
+        for configured_transformation in pipeline.configured_transformations:
+            component_dict = cast(dict, configured_transformation.component)
+            transformation_component_type = (
+                configured_transformation.configurable_transformation_type
+            )
+            transformation = deserialize_transformation_component(
+                component_dict, transformation_component_type
+            )
+            transformations.append(transformation)
+
+        documents = []
+        readers = []
+        for data_source in pipeline.data_sources:
+            component_dict = cast(dict, data_source.component)
+            source_component_type = data_source.source_type
+            source_component = deserialize_source_component(
+                component_dict, source_component_type
+            )
+
+            if data_source.source_type == ConfigurableDataSourceNames.READER:
+                readers.append(source_component)
+            else:
+                documents.append(source_component)
+
+        vector_stores = []
+        for data_sink in pipeline.data_sinks:
+            if data_sink.sink_type in ConfigurableDataSinkNames:
+                component_dict = cast(dict, data_sink.component)
+                sink_component_type = data_sink.sink_type
+                sink_component = deserialize_sink_component(
+                    component_dict, sink_component_type
+                )
+                vector_stores.append(sink_component)
+
+        return cls(
+            name=name,
+            project_name=project_name,
+            transformations=transformations,
+            reader=readers[0] if len(readers) > 0 else None,
+            documents=documents,
+            vector_store=vector_stores[0] if len(vector_stores) > 0 else None,
+            base_url=base_url,
         )
 
     def _get_default_transformations(self) -> List[TransformComponent]:
@@ -154,9 +264,18 @@ class IngestionPipeline(BaseModel):
         ]
 
     def register(
-        self, project_name: str = DEFAULT_PROJECT_NAME, verbose: bool = True
+        self,
+        verbose: bool = True,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[List[BaseNode]] = None,
     ) -> str:
         client = PlatformApi(base_url=BASE_URL)
+
+        input_nodes: List[BaseNode] = cast(List[BaseNode], self.documents) or []
+        if documents is not None:
+            input_nodes += cast(List[BaseNode], documents)
+        if nodes is not None:
+            input_nodes += nodes
 
         configured_transformations: List[ConfiguredTransformationItem] = []
         for item in self.configured_transformations:
@@ -206,26 +325,24 @@ class IngestionPipeline(BaseModel):
                 )
             else:
                 documents = self.reader.read()
-                if self.documents is not None:
-                    documents += self.documents
-                else:
-                    self.documents = documents
+                input_nodes += documents
 
-        if self.documents is not None:
-            for document in self.documents:
-                configured_data_source = ConfiguredDataSource.from_component(document)
-                source_type = ConfigurableDataSourceNames[
-                    configured_data_source.configurable_data_source_type.name
-                ]
-                data_sources.append(
-                    DataSourceCreate(
-                        name=configured_data_source.name,
-                        source_type=source_type,
-                        component=document,
-                    )
+        for node in input_nodes:
+            configured_data_source = ConfiguredDataSource.from_component(node)
+            source_type = ConfigurableDataSourceNames[
+                configured_data_source.configurable_data_source_type.name
+            ]
+            data_sources.append(
+                DataSourceCreate(
+                    name=configured_data_source.name,
+                    source_type=source_type,
+                    component=node,
                 )
+            )
 
-        project = client.project.create_project_api_project_post(name=project_name)
+        project = client.project.upsert_project_api_project_put(
+            request=ProjectCreate(name=self.project_name)
+        )
         assert project.id is not None, "Project ID should not be None"
 
         # upload
@@ -243,16 +360,29 @@ class IngestionPipeline(BaseModel):
         # Print playground URL if not running remote
         if verbose:
             print(
-                "Pipeline available at: https://llamalink.llamaindex.ai/"
-                f"playground?id={pipeline.id}"
+                f"Pipeline available at: http://localhost:3000/playground/{pipeline.id}"
             )
 
         return pipeline.id
 
-    def run_remote(self, project_name: str = DEFAULT_PROJECT_NAME) -> str:
+    def run_remote(
+        self,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[List[BaseNode]] = None,
+    ) -> str:
         client = PlatformApi(base_url=BASE_URL)
 
-        pipeline_id = self.register(project_name=project_name, verbose=False)
+        input_nodes: List[BaseNode] = []
+        if documents is not None:
+            input_nodes += documents
+
+        if nodes is not None:
+            input_nodes += nodes
+
+        if self.documents is not None:
+            input_nodes += self.documents
+
+        pipeline_id = self.register(verbose=False)
 
         # start pipeline?
         # the `PipeLineExecution` object should likely generate a URL at some point
@@ -272,9 +402,19 @@ class IngestionPipeline(BaseModel):
         return pipeline_execution.id
 
     def run_local(
-        self, show_progress: bool = False, **kwargs: Any
+        self,
+        show_progress: bool = False,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[List[BaseNode]] = None,
+        **kwargs: Any,
     ) -> Sequence[BaseNode]:
         input_nodes: List[BaseNode] = []
+        if documents is not None:
+            input_nodes += documents
+
+        if nodes is not None:
+            input_nodes += nodes
+
         if self.documents is not None:
             input_nodes += self.documents
 
