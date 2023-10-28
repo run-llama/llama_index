@@ -80,3 +80,21 @@ def test_register() -> None:
 
     # make sure we are updating the same pipeline instead of creating a new one
     assert pipeline_id == new_pipeline_id
+
+
+def test_from_pipeline_name() -> None:
+    pipeline = IngestionPipeline(
+        name="Test",
+        reader=ReaderConfig(
+            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
+        ),
+        documents=[Document.example()],
+        transformations=[
+            SentenceAwareNodeParser(),
+            KeywordExtractor(llm=MockLLM()),
+        ],
+    )
+
+    pipeline.register()
+
+    IngestionPipeline.from_pipeline_name("Test")

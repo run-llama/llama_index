@@ -55,7 +55,7 @@ class PipelineClient:
         _response = self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/pipeline"
+                f"{self._client_wrapper.get_base_url()}/", "api/pipeline/"
             ),
             params=remove_none_from_dict(
                 {"pipeline_name": pipeline_name, "project_name": project_name}

@@ -16,17 +16,49 @@ from llama_index.ingestion.client import (
     ProjectCreate,
 )
 from llama_index.ingestion.client.client import PlatformApi
-from llama_index.ingestion.data_sinks import ConfiguredDataSink
-from llama_index.ingestion.data_sources import ConfiguredDataSource
-from llama_index.ingestion.transformations import ConfiguredTransformation
+from llama_index.ingestion.data_sinks import ConfigurableDataSinks, ConfiguredDataSink
+from llama_index.ingestion.data_sources import (
+    ConfigurableDataSources,
+    ConfiguredDataSource,
+)
+from llama_index.ingestion.transformations import (
+    ConfigurableTransformations,
+    ConfiguredTransformation,
+)
 from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.readers.base import ReaderConfig
-from llama_index.schema import BaseNode, Document, TransformComponent
+from llama_index.schema import BaseComponent, BaseNode, Document, TransformComponent
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "pipeline"
 DEFAULT_PROJECT_NAME = "project"
 BASE_URL = "http://localhost:8000"
+
+
+def deserialize_transformation_component(
+    component_dict, component_type: str
+) -> BaseComponent:
+    if isinstance(component_dict, BaseComponent):
+        return component_dict
+
+    component_type = ConfigurableTransformations[component_type].value.component_type
+    return component_type.from_dict(component_dict)
+
+
+def deserialize_source_component(component_dict, component_type: str) -> BaseComponent:
+    if isinstance(component_dict, BaseComponent):
+        return component_dict
+
+    component_type = ConfigurableDataSources[component_type].value.component_type
+    return component_type.from_dict(component_dict)
+
+
+def deserialize_sink_component(component_dict, component_type: str) -> BaseComponent:
+    if isinstance(component_dict, BaseComponent):
+        return component_dict
+
+    component_type = ConfigurableDataSinks[component_type].value.component_type
+    return component_type.from_dict(component_dict)
 
 
 def run_transformations(
@@ -169,7 +201,7 @@ class IngestionPipeline(BaseModel):
         projects: List[Project] = client.project.get_project_by_name_api_project_get(
             project_name=project_name
         )
-        if len(project) < 0:
+        if len(projects) < 0:
             raise ValueError(f"Project with name {project_name} not found")
 
         project = projects[0]
@@ -178,7 +210,7 @@ class IngestionPipeline(BaseModel):
         pipelines: List[
             Pipeline
         ] = client.pipeline.get_pipeline_by_name_api_pipeline_get(
-            pipeline_name=name, project_id=project.id
+            pipeline_name=name, project_name=project_name
         )
         if len(pipelines) < 0:
             raise ValueError(f"Pipeline with name {name} not found")
@@ -187,20 +219,36 @@ class IngestionPipeline(BaseModel):
 
         transformations: List[TransformComponent] = []
         for configured_transformation in pipeline.configured_transformations:
-            transformations.append(configured_transformation.component)
+            component_dict = configured_transformation.component
+            component_type = configured_transformation.configurable_transformation_type
+            transformation = deserialize_transformation_component(
+                component_dict, component_type
+            )
+            transformations.append(transformation)
 
         documents = []
         readers = []
         for data_source in pipeline.data_sources:
+            component_dict = data_source.component
+            component_type = data_source.source_type
+            source_component = deserialize_source_component(
+                component_dict, component_type
+            )
+
             if data_source.source_type == ConfigurableDataSourceNames.READER:
-                readers.append(data_source.component)
+                readers.append(source_component)
             else:
-                documents.append(data_source.component)
+                documents.append(source_component)
 
         vector_stores = []
         for data_sink in pipeline.data_sinks:
             if data_sink.sink_type in ConfigurableDataSinkNames:
-                vector_stores.append(data_sink.component)
+                component_dict = data_sink.component
+                component_type = data_sink.sink_type
+                sink_component = deserialize_sink_component(
+                    component_dict, component_type
+                )
+                vector_stores.append(sink_component)
 
         return cls(
             name=name,

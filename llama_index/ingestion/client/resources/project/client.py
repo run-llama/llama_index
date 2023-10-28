@@ -44,7 +44,7 @@ class ProjectClient:
         _response = self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/project"
+                f"{self._client_wrapper.get_base_url()}/", "api/project/"
             ),
             params=remove_none_from_dict({"project_name": project_name}),
             headers=self._client_wrapper.get_headers(),
