@@ -86,7 +86,7 @@ class Replicate(CustomLLM):
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
-        base_kwargs = {
+        base_kwargs: Dict[str, Any] = {
             "temperature": self.temperature,
             "max_length": self.context_window,
         }
