@@ -25,6 +25,9 @@ from llama_index.llms.generic_utils import (
 
 class Replicate(CustomLLM):
     model: str = Field(description="The Replicate model to use.")
+    image: str = Field(
+        description="The image file for multimodal model to use. (optional)"
+    )
     temperature: float = Field(description="The temperature to use for sampling.")
     context_window: int = Field(
         description="The maximum number of context tokens for the model."
@@ -33,9 +36,6 @@ class Replicate(CustomLLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Replicate API."
     )
-    is_chat_model: bool = Field(
-        default=False, description="Whether the model is a chat model."
-    )
 
     _messages_to_prompt: Callable = PrivateAttr()
     _completion_to_prompt: Callable = PrivateAttr()
@@ -43,6 +43,7 @@ class Replicate(CustomLLM):
     def __init__(
         self,
         model: str,
+        image: Optional[str] = "",
         temperature: float = 0.75,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -50,7 +51,6 @@ class Replicate(CustomLLM):
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
-        is_chat_model: bool = False,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
@@ -58,11 +58,11 @@ class Replicate(CustomLLM):
         super().__init__(
             model=model,
             temperature=temperature,
+            image=image,
             additional_kwargs=additional_kwargs or {},
             context_window=context_window,
             prompt_key=prompt_key,
             callback_manager=callback_manager,
-            is_chat_model=is_chat_model,
         )
 
     @classmethod
@@ -76,7 +76,6 @@ class Replicate(CustomLLM):
             context_window=self.context_window,
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
-            is_chat_model=self.is_chat_model,
         )
 
     @property
@@ -85,6 +84,13 @@ class Replicate(CustomLLM):
             "temperature": self.temperature,
             "max_length": self.context_window,
         }
+        if self.image != "":
+            try:
+                base_kwargs["image"] = open(self.image, "rb")
+            except ImportError:
+                raise ImportError(
+                    "Could not load image file. Please check whether the file exists"
+                )
         return {
             **base_kwargs,
             **self.additional_kwargs,
