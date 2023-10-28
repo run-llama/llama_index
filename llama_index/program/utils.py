@@ -1,5 +1,6 @@
 """Program utils."""
 
+from enum import Enum
 from typing import Any, List, Type
 
 from llama_index.bridge.pydantic import BaseModel, Field, create_model
@@ -7,7 +8,6 @@ from llama_index.llms.base import LLM
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.prompts.base import PromptTemplate
 from llama_index.types import BasePydanticProgram, PydanticProgramMode
-from enum import Enum
 
 
 def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
@@ -81,4 +81,3 @@ def get_program_for_llm(
         )
     else:
         raise ValueError(f"Unsupported pydantic program mode: {pydantic_program_mode}")
-        

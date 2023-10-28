@@ -154,7 +154,9 @@ class ServiceContext:
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
             llm = resolve_llm(llm)
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm, pydantic_program_mode=pydantic_program_mode)
+        llm_predictor = llm_predictor or LLMPredictor(
+            llm=llm, pydantic_program_mode=pydantic_program_mode
+        )
         if isinstance(llm_predictor, LLMPredictor):
             llm_predictor.llm.callback_manager = callback_manager
             if system_prompt:

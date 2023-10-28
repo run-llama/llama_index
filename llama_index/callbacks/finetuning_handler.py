@@ -193,7 +193,7 @@ class GradientAIFineTuningHandler(BaseFinetuningHandler):
 
         events_dict = self.get_finetuning_events()
         json_strs = []
-        for _, event in events_dict.items():
+        for event in events_dict.values():
             all_messages = event["messages"] + [event["response"]]
 
             # TODO: come up with model-specific message->prompt serialization format

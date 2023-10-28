@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import (
     Any,
     AsyncGenerator,
@@ -11,7 +12,6 @@ from typing import (
     Union,
     runtime_checkable,
 )
-from enum import Enum
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage, MessageRole
@@ -67,7 +67,6 @@ class BasePydanticProgram(ABC, Generic[Model]):
 
     async def acall(self, *args: Any, **kwds: Any) -> Model:
         return self(*args, **kwds)
-
 
 
 class PydanticProgramMode(str, Enum):
