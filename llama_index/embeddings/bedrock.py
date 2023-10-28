@@ -178,7 +178,7 @@ class BedrockEmbeddings(BaseEmbedding):
         raise NotImplementedError("Use _get_embedding ")
 
     def _get_text_embedding(self, text: str) -> Embedding:
-        return _get_embedding(text)
+        return _get_query_embedding(text)
 
     def _aget_text_embedding(self, text: str) -> Embedding:
         raise NotImplementedError("Use _get_test_embedding ")
