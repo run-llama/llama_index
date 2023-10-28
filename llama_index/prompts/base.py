@@ -41,16 +41,6 @@ class BasePromptTemplate(BaseModel, ABC):
         template_var_mappings = self.template_var_mappings or {}
         return {template_var_mappings.get(k, k): v for k, v in kwargs.items()}
 
-    # def _get_function_and_fixed_kwargs(self, **kwargs: Any) -> Tuple[Dict[str, Callable], Dict[str, Any]]:
-    #     """Get the function kwargs and fixed (regular) kwargs given kwargs."""
-    #     fn_kwargs = {
-    #         k: v for k, v in kwargs.items() if isinstance(v, Callable)
-    #     }
-    #     fixed_kwargs = {
-    #         k: v for k, v in kwargs.items() if not isinstance(v, Callable)
-    #     }
-    #     return fn_kwargs, fixed_kwargs
-
     def _map_function_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """For keys in function_mappings, compute values and combine w/ kwargs.
 
@@ -60,13 +50,14 @@ class BasePromptTemplate(BaseModel, ABC):
         for the corresponding format variable.
 
         """
+        function_mappings = self.function_mappings or {}
         # first generate the values for the functions
         new_kwargs = {}
-        for k, v in self.function_mappings.items():
+        for k, v in function_mappings.items():
             # TODO: figure out what variables to pass into each function
             # is it the kwargs specified during query time? just the fixed kwargs?
             # all kwargs?
-            new_kwargs[k] = v(**self.function_mappings, **kwargs)
+            new_kwargs[k] = v(**kwargs)
 
         # then, add the fixed variables only if not in new_kwargs already
         # (implying that function mapping will override fixed variables)
@@ -86,14 +77,7 @@ class BasePromptTemplate(BaseModel, ABC):
         # map function
         new_kwargs = self._map_function_vars(kwargs)
         # map template vars (to point to existing format vars in string template)
-        new_kwargs = self._map_template_vars(new_kwargs)
-        return new_kwargs
-
-    # def _format_template(self, template: str, kwargs: Any) -> str:
-    #     """Format template.
-    #     """
-    #     kwargs = self._map_all_vars(kwargs)
-    #     return template.format(**new_kwargs)
+        return self._map_template_vars(new_kwargs)
 
     class Config:
         arbitrary_types_allowed = True
@@ -127,6 +111,7 @@ class PromptTemplate(BasePromptTemplate):
         output_parser: Optional[BaseOutputParser] = None,
         metadata: Optional[Dict[str, Any]] = None,
         template_var_mappings: Optional[Dict[str, Any]] = None,
+        function_mappings: Optional[Dict[str, Callable]] = None,
         **kwargs: Any,
     ) -> None:
         if metadata is None:
@@ -142,6 +127,7 @@ class PromptTemplate(BasePromptTemplate):
             metadata=metadata,
             output_parser=output_parser,
             template_var_mappings=template_var_mappings,
+            function_mappings=function_mappings,
         )
 
     def partial_format(self, **kwargs: Any) -> "PromptTemplate":
@@ -195,6 +181,7 @@ class ChatPromptTemplate(BasePromptTemplate):
         output_parser: Optional[BaseOutputParser] = None,
         metadata: Optional[Dict[str, Any]] = None,
         template_var_mappings: Optional[Dict[str, Any]] = None,
+        function_mappings: Optional[Dict[str, Callable]] = None,
         **kwargs: Any,
     ):
         if metadata is None:
@@ -212,6 +199,7 @@ class ChatPromptTemplate(BasePromptTemplate):
             output_parser=output_parser,
             template_vars=template_vars,
             template_var_mappings=template_var_mappings,
+            function_mappings=function_mappings,
         )
 
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
@@ -342,6 +330,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
         prompt_type: str = PromptType.CUSTOM,
         metadata: Optional[Dict[str, Any]] = None,
         template_var_mappings: Optional[Dict[str, Any]] = None,
+        function_mappings: Optional[Dict[str, Callable]] = None,
     ) -> None:
         if selector is None:
             if template is None:
@@ -366,6 +355,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
             template_vars=template_vars,
             output_parser=output_parser,
             template_var_mappings=template_var_mappings,
+            function_mappings=function_mappings,
         )
 
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
