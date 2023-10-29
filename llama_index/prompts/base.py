@@ -77,8 +77,7 @@ class BasePromptTemplate(BaseModel, ABC):
         # map function
         new_kwargs = self._map_function_vars(kwargs)
         # map template vars (to point to existing format vars in string template)
-        new_kwargs = self._map_template_vars(new_kwargs)
-        return new_kwargs
+        return self._map_template_vars(new_kwargs)
 
     class Config:
         arbitrary_types_allowed = True
