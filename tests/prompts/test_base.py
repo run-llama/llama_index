@@ -153,6 +153,13 @@ def test_langchain_template() -> None:
         ChatMessage(content="hello world bar", role=MessageRole.USER)
     ]
 
+    ## check with more fields set + partial format
+    template_2 = LangchainPromptTemplate(
+        lc_template, template_var_mappings={"text2": "text"}
+    )
+    template_2_partial = template_2.partial_format(foo="bar")
+    assert template_2_partial.format(text2="world2") == "hello world2 bar"
+
 
 def test_langchain_selector_template() -> None:
     lc_llm = FakeListLLM(responses=["test"])

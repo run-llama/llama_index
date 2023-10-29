@@ -77,7 +77,8 @@ class BasePromptTemplate(BaseModel, ABC):
         # map function
         new_kwargs = self._map_function_vars(kwargs)
         # map template vars (to point to existing format vars in string template)
-        return self._map_template_vars(new_kwargs)
+        new_kwargs = self._map_template_vars(new_kwargs)
+        return new_kwargs
 
     class Config:
         arbitrary_types_allowed = True
@@ -321,6 +322,7 @@ class SelectorPromptTemplate(BasePromptTemplate):
 
 class LangchainPromptTemplate(BasePromptTemplate):
     selector: LangchainSelector
+    requires_langchain_llm: bool = False
 
     def __init__(
         self,
@@ -331,6 +333,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
         metadata: Optional[Dict[str, Any]] = None,
         template_var_mappings: Optional[Dict[str, Any]] = None,
         function_mappings: Optional[Dict[str, Callable]] = None,
+        requires_langchain_llm: bool = False,
     ) -> None:
         if selector is None:
             if template is None:
@@ -356,26 +359,38 @@ class LangchainPromptTemplate(BasePromptTemplate):
             output_parser=output_parser,
             template_var_mappings=template_var_mappings,
             function_mappings=function_mappings,
+            requires_langchain_llm=requires_langchain_llm,
         )
 
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         """Partially format the prompt."""
-        default_prompt = self.selector.default_prompt.partial(**kwargs)
+        mapped_kwargs = self._map_all_vars(kwargs)
+        default_prompt = self.selector.default_prompt.partial(**mapped_kwargs)
         conditionals = [
-            (condition, prompt.partial(**kwargs))
+            (condition, prompt.partial(**mapped_kwargs))
             for condition, prompt in self.selector.conditionals
         ]
         lc_selector = LangchainSelector(
             default_prompt=default_prompt, conditionals=conditionals
         )
-        return LangchainPromptTemplate(selector=lc_selector)
+
+        # copy full prompt object, replace selector
+        lc_prompt = deepcopy(self)
+        lc_prompt.selector = lc_selector
+        return lc_prompt
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
         if llm is not None:
-            if not isinstance(llm, LangChainLLM):
+            # if llamaindex LLM is provided, and we require a langchain LLM,
+            # then error. but otherwise if `requires_langchain_llm` is False,
+            # then we can just use the default prompt
+            if not isinstance(llm, LangChainLLM) and self.requires_langchain_llm:
                 raise ValueError("Must provide a LangChainLLM.")
-            lc_template = self.selector.get_prompt(llm=llm.llm)
+            elif not isinstance(llm, LangChainLLM):
+                lc_template = self.selector.default_prompt
+            else:
+                lc_template = self.selector.get_prompt(llm=llm.llm)
         else:
             lc_template = self.selector.default_prompt
 
@@ -388,9 +403,15 @@ class LangchainPromptTemplate(BasePromptTemplate):
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
         if llm is not None:
-            if not isinstance(llm, LangChainLLM):
+            # if llamaindex LLM is provided, and we require a langchain LLM,
+            # then error. but otherwise if `requires_langchain_llm` is False,
+            # then we can just use the default prompt
+            if not isinstance(llm, LangChainLLM) and self.requires_langchain_llm:
                 raise ValueError("Must provide a LangChainLLM.")
-            lc_template = self.selector.get_prompt(llm=llm.llm)
+            elif not isinstance(llm, LangChainLLM):
+                lc_template = self.selector.default_prompt
+            else:
+                lc_template = self.selector.get_prompt(llm=llm.llm)
         else:
             lc_template = self.selector.default_prompt
 
@@ -402,9 +423,15 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
     def get_template(self, llm: Optional[LLM] = None) -> str:
         if llm is not None:
-            if not isinstance(llm, LangChainLLM):
+            # if llamaindex LLM is provided, and we require a langchain LLM,
+            # then error. but otherwise if `requires_langchain_llm` is False,
+            # then we can just use the default prompt
+            if not isinstance(llm, LangChainLLM) and self.requires_langchain_llm:
                 raise ValueError("Must provide a LangChainLLM.")
-            lc_template = self.selector.get_prompt(llm=llm.llm)
+            elif not isinstance(llm, LangChainLLM):
+                lc_template = self.selector.default_prompt
+            else:
+                lc_template = self.selector.get_prompt(llm=llm.llm)
         else:
             lc_template = self.selector.default_prompt
 
