@@ -1,5 +1,17 @@
 # ChangeLog
 
+## [0.8.55] - 2023-10-29
+
+### New Features
+
+- allow prompts to take in functions with `function_mappings` (#8548)
+- add advanced prompt + "prompt engineering for RAG" notebook (#8555)
+- Leverage Replicate API for serving LLaVa modal (#8539)
+
+### Bug Fixes / Nits
+
+- Update pull request template with google colab support inclusion (#8525)
+
 ## [0.8.54] - 2023-10-28
 
 ### New Features
