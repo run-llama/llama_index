@@ -8,7 +8,7 @@ from llama_index.embeddings.base import BaseEmbedding
 logger = logging.getLogger(__name__)
 
 
-class LLMRailsEmbeddings(BaseEmbedding):
+class LLMRailsEmbedding(BaseEmbedding):
     """LLMRails embedding models.
 
     This class provides an interface to generate embeddings using a model deployed
@@ -22,7 +22,7 @@ class LLMRailsEmbeddings(BaseEmbedding):
 
     @classmethod
     def class_name(self) -> str:
-        return "LLMRailsEmbeddings"
+        return "LLMRailsEmbedding"
 
     def __init__(
         self,
@@ -101,3 +101,6 @@ class LLMRailsEmbeddings(BaseEmbedding):
 
     async def _aget_text_embedding(self, query: str) -> List[float]:
         return await self._aget_embedding(query)
+
+
+LLMRailsEmbeddings = LLMRailsEmbedding
