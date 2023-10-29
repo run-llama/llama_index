@@ -109,7 +109,7 @@ logger = logging.getLogger(__name__)
 CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
 
 
-def _create_retry_decorator(
+def create_retry_decorator(
     max_retries: int, exponential=True, stop_after_delay_seconds=None
 ) -> Callable[[Any], Any]:
     min_seconds = 4
@@ -145,7 +145,7 @@ def _create_retry_decorator(
 
 def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(max_retries=max_retries)
+    retry_decorator = create_retry_decorator(max_retries=max_retries)
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
@@ -159,7 +159,7 @@ async def acompletion_with_retry(
     is_chat_model: bool, max_retries: int, **kwargs: Any
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(max_retries=max_retries)
+    retry_decorator = create_retry_decorator(max_retries=max_retries)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:

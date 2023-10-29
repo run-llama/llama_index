@@ -9,12 +9,12 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import (
-    _create_retry_decorator,
+    create_retry_decorator,
     resolve_from_aliases,
     resolve_openai_credentials,
 )
 
-embedding_retry_decorator = _create_retry_decorator(
+embedding_retry_decorator = create_retry_decorator(
     max_retries=6, exponential=False, stop_after_delay_seconds=60
 )
 
