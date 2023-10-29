@@ -10,6 +10,7 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_attempt,
     stop_after_delay,
+    stop_any,
     wait_exponential,
     wait_random_exponential,
 )
@@ -110,7 +111,9 @@ CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
 
 
 def create_retry_decorator(
-    max_retries: int, exponential=True, stop_after_delay_seconds=None
+    max_retries: int,
+    exponential: bool = True,
+    stop_after_delay_seconds: Union[int, None] = None,
 ) -> Callable[[Any], Any]:
     min_seconds = 4
     max_seconds = 10
@@ -120,7 +123,7 @@ def create_retry_decorator(
         else wait_random_exponential(min=1, max=20)
     )
 
-    stop_strategy = stop_after_attempt(max_retries)
+    stop_strategy: stop_any = stop_after_attempt(max_retries)
     if stop_after_delay_seconds is not None:
         stop_strategy = stop_strategy | stop_after_delay(stop_after_delay_seconds)
 
