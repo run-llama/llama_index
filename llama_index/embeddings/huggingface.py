@@ -220,7 +220,7 @@ class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding): 
 
     @classmethod
     def class_name(cls) -> str:
-        return "HuggingFaceInferenceAPIEmbeddings"
+        return "HuggingFaceInferenceAPIEmbedding"
 
     async def _async_embed_single(self, text: str) -> Embedding:
         embedding = (await self._async_client.feature_extraction(text)).squeeze(axis=0)

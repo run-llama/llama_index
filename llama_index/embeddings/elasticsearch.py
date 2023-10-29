@@ -24,7 +24,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(self) -> str:
-        return "ElasticsearchEmbeddings"
+        return "ElasticsearchEmbedding"
 
     def __init__(
         self,
@@ -46,10 +46,10 @@ class ElasticsearchEmbedding(BaseEmbedding):
         """
         Instantiate embeddings from an existing Elasticsearch connection.
 
-        This method provides a way to create an instance of the ElasticsearchEmbeddings
+        This method provides a way to create an instance of the ElasticsearchEmbedding
         class using an existing Elasticsearch connection. The connection object is used
         to create an MlClient, which is then used to initialize the
-        ElasticsearchEmbeddings instance.
+        ElasticsearchEmbedding instance.
 
         Args:
         model_id (str): The model_id of the model deployed in the Elasticsearch cluster.
@@ -59,14 +59,14 @@ class ElasticsearchEmbedding(BaseEmbedding):
             in the document. Defaults to 'text_field'.
 
         Returns:
-        ElasticsearchEmbeddings: An instance of the ElasticsearchEmbeddings class.
+        ElasticsearchEmbedding: An instance of the ElasticsearchEmbedding class.
 
         Example:
             .. code-block:: python
 
                 from elasticsearch import Elasticsearch
 
-                from llama_index.embeddings import ElasticsearchEmbeddings
+                from llama_index.embeddings import ElasticsearchEmbedding
 
                 # Define the model ID and input field name (if different from default)
                 model_id = "your_model_id"
@@ -78,8 +78,8 @@ class ElasticsearchEmbedding(BaseEmbedding):
                     hosts=["localhost:9200"], basic_auth=("user", "password")
                 )
 
-                # Instantiate ElasticsearchEmbeddings using the existing connection
-                embeddings = ElasticsearchEmbeddings.from_es_connection(
+                # Instantiate ElasticsearchEmbedding using the existing connection
+                embeddings = ElasticsearchEmbedding.from_es_connection(
                     model_id,
                     es_connection,
                     input_field=input_field,
@@ -119,14 +119,14 @@ class ElasticsearchEmbedding(BaseEmbedding):
         Example:
             .. code-block:: python
 
-                from llama_index.embeddings import ElasticsearchEmbeddings
+                from llama_index.embeddings import ElasticsearchEmbedding
 
                 # Define the model ID and input field name (if different from default)
                 model_id = "your_model_id"
                 # Optional, only if different from 'text_field'
                 input_field = "your_input_field"
 
-                embeddings = ElasticsearchEmbeddings.from_credentials(
+                embeddings = ElasticsearchEmbedding.from_credentials(
                     model_id,
                     input_field=input_field,
                     es_url="foo",
