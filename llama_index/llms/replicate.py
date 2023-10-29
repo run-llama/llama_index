@@ -25,6 +25,9 @@ from llama_index.llms.generic_utils import (
 
 class Replicate(CustomLLM):
     model: str = Field(description="The Replicate model to use.")
+    image: str = Field(
+        description="The image file for multimodal model to use. (optional)"
+    )
     temperature: float = Field(description="The temperature to use for sampling.")
     context_window: int = Field(
         description="The maximum number of context tokens for the model."
@@ -43,6 +46,7 @@ class Replicate(CustomLLM):
     def __init__(
         self,
         model: str,
+        image: Optional[str] = "",
         temperature: float = 0.75,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -58,6 +62,7 @@ class Replicate(CustomLLM):
         super().__init__(
             model=model,
             temperature=temperature,
+            image=image,
             additional_kwargs=additional_kwargs or {},
             context_window=context_window,
             prompt_key=prompt_key,
@@ -81,10 +86,17 @@ class Replicate(CustomLLM):
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
-        base_kwargs = {
+        base_kwargs: Dict[str, Any] = {
             "temperature": self.temperature,
             "max_length": self.context_window,
         }
+        if self.image != "":
+            try:
+                base_kwargs["image"] = open(self.image, "rb")
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    "Could not load image file. Please check whether the file exists"
+                )
         return {
             **base_kwargs,
             **self.additional_kwargs,
