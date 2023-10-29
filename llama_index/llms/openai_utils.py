@@ -123,7 +123,7 @@ def create_retry_decorator(
         else wait_random_exponential(min=1, max=20)
     )
 
-    stop_strategy: stop_any = stop_after_attempt(max_retries)
+    stop_strategy: Union[stop_after_attempt, stop_any] = stop_after_attempt(max_retries)
     if stop_after_delay_seconds is not None:
         stop_strategy = stop_strategy | stop_after_delay(stop_after_delay_seconds)
 
