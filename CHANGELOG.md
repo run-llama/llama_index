@@ -117,7 +117,7 @@
 ### New Features
 
 - add response synthesis to text-to-SQL (#8196)
-- Added support for `LLMRailsEmbeddings` (#8169)
+- Added support for `LLMRailsEmbedding` (#8169)
 - Inferring MPS device with PyTorch (#8195)
 - Consolidated query/text prepending (#8189)
 

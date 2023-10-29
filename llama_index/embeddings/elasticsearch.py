@@ -4,7 +4,7 @@ from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.embeddings.base import BaseEmbedding
 
 
-class ElasticsearchEmbeddings(BaseEmbedding):
+class ElasticsearchEmbedding(BaseEmbedding):
     """Elasticsearch embedding models.
 
     This class provides an interface to generate embeddings using a model deployed
@@ -176,3 +176,6 @@ class ElasticsearchEmbeddings(BaseEmbedding):
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         return self._get_query_embedding(query)
+
+
+ElasticsearchEmbeddings = ElasticsearchEmbedding

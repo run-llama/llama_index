@@ -186,7 +186,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed(texts)
 
 
-class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):  # type: ignore[misc]
+class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding):  # type: ignore[misc]
     """
     Wrapper on the Hugging Face's Inference API for embeddings.
 
@@ -292,3 +292,6 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):
                 for text in texts
             ]
         )
+
+
+HuggingFaceInferenceAPIEmbeddings = HuggingFaceInferenceAPIEmbedding
