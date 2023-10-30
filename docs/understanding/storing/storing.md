@@ -10,6 +10,12 @@ The simplest way to store your indexed data is to use the built-in `.persist()` 
 index.storage_context.persist(persist_dir="<persist_dir>")
 ```
 
+Here is an example for Composable Graph:
+
+```python
+graph.root_index.storage_context.persist(persist_dir="<persist_dir>")
+```
+
 You can then avoid re-loading and re-indexing your data by loading the persisted index like this:
 
 ```python
