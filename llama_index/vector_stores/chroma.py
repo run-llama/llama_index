@@ -71,6 +71,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     port: Optional[str]
     ssl: bool
     headers: Optional[Dict[str, str]]
+    persist_dir: Optional[str]
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     _collection: Any = PrivateAttr()
