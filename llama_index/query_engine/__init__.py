@@ -7,6 +7,7 @@ from llama_index.indices.struct_store.sql_query import (
     SQLTableRetrieverQueryEngine,
 )
 from llama_index.query_engine.citation_query_engine import CitationQueryEngine
+from llama_index.query_engine.cogniswitchQueryEngine import CogniswitchQueryEngine
 from llama_index.query_engine.custom import CustomQueryEngine
 from llama_index.query_engine.flare.base import FLAREInstructQueryEngine
 from llama_index.query_engine.graph_query_engine import ComposableGraphQueryEngine
@@ -33,7 +34,7 @@ from llama_index.query_engine.sub_question_query_engine import (
     SubQuestionQueryEngine,
 )
 from llama_index.query_engine.transform_query_engine import TransformQueryEngine
-from llama_index.query_engine.cogniswitchQueryEngine import CogniswitchQueryEngine
+
 __all__ = [
     "CitationQueryEngine",
     "CogniswitchQueryEngine",

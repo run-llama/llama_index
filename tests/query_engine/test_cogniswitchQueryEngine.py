@@ -1,11 +1,12 @@
+from typing import Any
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from llama_index.query_engine.cogniswitchQueryEngine import CogniswitchQueryEngine
 from llama_index.response.schema import Response
-from typing import Any
 
 
-@pytest.fixture
+@pytest.fixture()
 def query_engine() -> CogniswitchQueryEngine:
     return CogniswitchQueryEngine(
         cs_token="cs_token", OAI_token="OAI_token", apiKey="api_key"

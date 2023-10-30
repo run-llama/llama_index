@@ -1,17 +1,18 @@
-from llama_index.indices.query.base import BaseQueryEngine
 import requests
+
+from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.response.schema import Response
+from llama_index.response.schema import RESPONSE_TYPE, Response
 
 
 class CogniswitchQueryEngine(BaseQueryEngine):
-    def __init__(self, cs_token: str, OAI_token: str, apiKey: str):
-        """
+    def __init__(self, cs_token: str, OAI_token: str, apiKey: str) -> None:
+        """The required fields.
+
         Args:
             cs_token (str): Cogniswitch token.
             OAI_token (str): OpenAI token.
-            apiKey (str): Oauth token
+            apiKey (str): Oauth token.
         """
         self.cs_token = cs_token
         self.OAI_token = OAI_token
@@ -46,10 +47,10 @@ class CogniswitchQueryEngine(BaseQueryEngine):
             resp = response.json()
             answer = resp["data"]["answer"]
 
-            return Response(response=answer, metadata=dict())
+            return Response(response=answer)
         else:
             error_message = response.json()["message"]
-            return Response(response=error_message, metadata=dict())
+            return Response(response=error_message)
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         return self.query_knowledge(query_bundle.query_str)
