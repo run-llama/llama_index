@@ -1,7 +1,8 @@
-from typing import Any, List, Optional
-import warnings
 import json
 import os
+import warnings
+from typing import Any, List, Optional
+
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.embeddings.base import BaseEmbedding
 
@@ -17,13 +18,12 @@ class Models(str):
 # TITAN_EMBEDDING = {"inputText":""}
 
 
-class BedrockEmbeddings(BaseEmbedding):
+class BedrockEmbedding(BaseEmbedding):
     _client: Any = PrivateAttr()
 
     def __init__(
         self,
         model_name: str = Models.TITAN_EMBEDDING,
-        max_length: int = 8000,
         client: Any = None,
     ):
         self._client = client
@@ -32,7 +32,7 @@ class BedrockEmbeddings(BaseEmbedding):
 
     @classmethod
     def class_name(self) -> str:
-        return "BedrockEmbeddings"
+        return "BedrockEmbedding"
 
     def set_credentials(
         self,
@@ -43,7 +43,6 @@ class BedrockEmbeddings(BaseEmbedding):
         aws_session_token: Optional[str] = None,
         aws_profile: str = "default",
     ):
-
         aws_region = aws_region or os.getenv("AWS_REGION")
         aws_access_key_id = aws_access_key_id or os.getenv("AWS_ACCESS_KEY_ID")
         aws_secret_access_key = aws_secret_access_key or os.getenv(
@@ -138,7 +137,7 @@ class BedrockEmbeddings(BaseEmbedding):
         aws_secret_access_key (str): AWS secret access key
         aws_session_token (str): AWS session token
         aws_region (str): AWS region where the service is located
-        aws_profile (str): AWS profile 
+        aws_profile (str): AWS profile
 
     Example:
             .. code-block:: python
@@ -156,7 +155,7 @@ class BedrockEmbeddings(BaseEmbedding):
                     aws_region,
                     aws_profile,
                 )
-    
+
     """
 
     def _get_query_embedding(self, query: str) -> Embedding:
@@ -171,8 +170,7 @@ class BedrockEmbeddings(BaseEmbedding):
             accept="application/json",
             contentType="application/json",
         )
-        embeddings = json.loads(response.get("body").read())["embedding"]
-        return embeddings
+        return json.loads(response.get("body").read())["embedding"]
 
     def _aget_query_embedding(self, query: str) -> Embedding:
         raise NotImplementedError("Use _get_embedding ")
