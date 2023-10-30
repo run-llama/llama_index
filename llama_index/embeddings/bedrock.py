@@ -47,7 +47,7 @@ class BedrockEmbedding(BaseEmbedding):
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
         aws_profile: str = "default",
-    ):
+    ) -> None:
         aws_region = aws_region or os.getenv("AWS_REGION")
         aws_access_key_id = aws_access_key_id or os.getenv("AWS_ACCESS_KEY_ID")
         aws_secret_access_key = aws_secret_access_key or os.getenv(
@@ -111,7 +111,7 @@ class BedrockEmbedding(BaseEmbedding):
         aws_profile: str = "default",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
-    ):
+    ) -> "BedrockEmbedding":
         """
         Instantiate using AWS credentials.
 
@@ -173,6 +173,9 @@ class BedrockEmbedding(BaseEmbedding):
         if self._client is None:
             self.set_credentials(self.model_name)
 
+        if self._client is None:
+            raise ValueError("Client not set")
+
         body = json.dumps({"inputText": text})
         response = self._client.invoke_model(
             body=body,
@@ -188,11 +191,8 @@ class BedrockEmbedding(BaseEmbedding):
     def _get_text_embedding(self, text: str) -> Embedding:
         return self._get_embedding(text)
 
-    def _aget_query_embedding(self, query: str) -> Embedding:
-        raise NotImplementedError("Use _get_query_embedding ")
+    async def _aget_query_embedding(self, query: str) -> Embedding:
+        return self._get_embedding(query)
 
-    def _aget_text_embedding(self, text: str) -> Embedding:
-        raise NotImplementedError("Use _get_text_embedding ")
-
-    def _aget_text_embedding(self, text: str) -> Embedding:
-        raise NotImplementedError("Use _get_text_embedding ")
+    async def _aget_text_embedding(self, text: str) -> Embedding:
+        return self._get_embedding(text)
