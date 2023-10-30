@@ -141,13 +141,11 @@ from llama_index.token_counter.mock_embed_model import MockEmbedding
 # sql wrapper
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
-from llama_index.tools.tool_spec.cogniswitch.base import CogniswitchToolSpec
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
 
 __all__ = [
-    "CogniswitchToolSpec",
     "StorageContext",
     "ServiceContext",
     "ComposableGraph",
