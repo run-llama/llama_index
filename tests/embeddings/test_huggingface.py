@@ -2,33 +2,33 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
-from llama_index.embeddings.huggingface import HuggingFaceInferenceAPIEmbeddings
+from llama_index.embeddings.huggingface import HuggingFaceInferenceAPIEmbedding
 from llama_index.embeddings.pooling import Pooling
 
 from tests.llms.test_huggingface import STUB_MODEL_NAME
 
 
 @pytest.fixture(name="hf_inference_api_embeddings")
-def fixture_hf_inference_api_embeddings() -> HuggingFaceInferenceAPIEmbeddings:
+def fixture_hf_inference_api_embeddings() -> HuggingFaceInferenceAPIEmbedding:
     with patch.dict("sys.modules", huggingface_hub=MagicMock()):
-        return HuggingFaceInferenceAPIEmbeddings(model_name=STUB_MODEL_NAME)
+        return HuggingFaceInferenceAPIEmbedding(model_name=STUB_MODEL_NAME)
 
 
 class TestHuggingFaceInferenceAPIEmbeddings:
     def test_class_name(
-        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbeddings
+        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbedding
     ) -> None:
         assert (
-            HuggingFaceInferenceAPIEmbeddings.class_name()
-            == HuggingFaceInferenceAPIEmbeddings.__name__
+            HuggingFaceInferenceAPIEmbedding.class_name()
+            == HuggingFaceInferenceAPIEmbedding.__name__
         )
         assert (
             hf_inference_api_embeddings.class_name()
-            == HuggingFaceInferenceAPIEmbeddings.__name__
+            == HuggingFaceInferenceAPIEmbedding.__name__
         )
 
     def test_embed_query(
-        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbeddings
+        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbedding
     ) -> None:
         raw_single_embedding = np.random.rand(1, 3, 1024)
 
@@ -63,7 +63,7 @@ class TestHuggingFaceInferenceAPIEmbeddings:
         mock_feature_extraction.assert_awaited_once_with("test")
 
     def test_serialization(
-        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbeddings
+        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbedding
     ) -> None:
         serialized = hf_inference_api_embeddings.to_dict()
         # Check Hugging Face Inference API base class specifics
