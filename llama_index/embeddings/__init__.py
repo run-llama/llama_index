@@ -5,6 +5,7 @@ from llama_index.embeddings.adapter import (
     LinearAdapterEmbeddingModel,
 )
 from llama_index.embeddings.base import SimilarityMode
+from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
 from llama_index.embeddings.elasticsearch import ElasticsearchEmbeddings
 from llama_index.embeddings.google import GoogleUnivSentEncoderEmbedding
@@ -22,11 +23,10 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.embeddings.bedrock import BedrockEmbeddings
 
 __all__ = [
     "AdapterEmbeddingModel",
-    "BedrockEmbeddings",
+    "BedrockEmbedding",
     "ClarifaiEmbedding",
     "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
     "ElasticsearchEmbeddings",
