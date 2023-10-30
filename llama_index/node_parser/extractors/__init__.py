@@ -12,13 +12,12 @@ from llama_index.node_parser.extractors.metadata_extractors import (
 )
 
 __all__ = [
-    "MetadataExtractor",
-    "MetadataExtractorBase",
-    "SummaryExtractor",
-    "QuestionsAnsweredExtractor",
-    "TitleExtractor",
-    "KeywordExtractor",
-    "EntityExtractor",
-    "MetadataFeatureExtractor",
     "MarvinMetadataExtractor",
+    "EntityExtractor",
+    "KeywordExtractor",
+    "MetadataExtractor",
+    "MetadataFeatureExtractor",
+    "QuestionsAnsweredExtractor",
+    "SummaryExtractor",
+    "TitleExtractor",
 ]
