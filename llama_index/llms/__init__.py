@@ -34,6 +34,7 @@ from llama_index.llms.palm import PaLM
 from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
+from llama_index.llms.watsonx import WatsonX
 from llama_index.llms.xinference import Xinference
 
 __all__ = [
@@ -73,5 +74,6 @@ __all__ = [
     "Portkey",
     "PredibaseLLM",
     "Replicate",
+    "WatsonX",
     "Xinference",
 ]
