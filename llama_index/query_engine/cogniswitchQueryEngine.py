@@ -7,32 +7,41 @@ from llama_index.response.schema import Response
 
 class CogniswitchQueryEngine(BaseQueryEngine):
     def __init__(self, cs_token: str, OAI_token: str, apiKey: str):
+        """
+        Args:
+            cs_token (str): Cogniswitch token.
+            OAI_token (str): OpenAI token.
+            apiKey (str): Oauth token
+        """
         self.cs_token = cs_token
         self.OAI_token = OAI_token
         self.apiKey = apiKey
+        self.knowledge_request_endpoint = (
+            "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeRequest"
+        )
+        self.headers = {
+            "apiKey": self.apiKey,
+            "platformToken": self.cs_token,
+            "openAIToken": self.OAI_token,
+        }
 
     def query_knowledge(self, query: str) -> Response:
         """
         Send a query to the Cogniswitch service and retrieve the response.
 
         Args:
-            cs_token (str): Cogniswitch token.
-            OAI_token (str): OpenAI token.
             query (str): Query to be answered.
 
         Returns:
             dict: Response JSON from the Cogniswitch service.
         """
-        api_url = "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeRequest"
-
-        headers = {
-            "apiKey": self.apiKey,
-            "platformToken": self.cs_token,
-            "openAIToken": self.OAI_token,
-        }
-
         data = {"query": query}
-        response = requests.post(api_url, headers=headers, verify=False, data=data)
+        response = requests.post(
+            self.knowledge_request_endpoint,
+            headers=self.headers,
+            verify=False,
+            data=data,
+        )
         if response.status_code == 200:
             resp = response.json()
             answer = resp["data"]["answer"]
