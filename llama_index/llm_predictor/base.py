@@ -193,6 +193,7 @@ class LLMPredictor(BaseLLMPredictor):
         else:
             formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             formatted_prompt = self._extend_prompt(formatted_prompt)
+            logger.info(formatted_prompt)
             response = self._llm.complete(formatted_prompt)
             output = response.text
 

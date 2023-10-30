@@ -7,6 +7,7 @@ import re
 import uuid
 from typing import Dict, List, Tuple
 
+import nest_asyncio
 from pydantic import BaseModel, Field
 
 from llama_index import Document, ServiceContext, SummaryIndex
@@ -122,6 +123,7 @@ class DatasetGenerator(PromptMixin):
         show_progress: bool = False,
     ) -> None:
         """Init params."""
+        nest_asyncio.apply()
         if service_context is None:
             service_context = _get_default_service_context()
         self.service_context = service_context
@@ -285,7 +287,9 @@ class DatasetGenerator(PromptMixin):
 
     def generate_questions_from_nodes(self, num: int | None = None) -> List[str]:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_questions_from_nodes(num=num))
+        return asyncio.get_event_loop().run_until_complete(
+            self.agenerate_questions_from_nodes(num=num)
+        )
 
     def generate_dataset_from_nodes(
         self, num: int | None = None
