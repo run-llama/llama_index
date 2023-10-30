@@ -1,6 +1,6 @@
 """Mongo client."""
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
@@ -27,12 +27,11 @@ class SimpleMongoReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            import pymongo
             from pymongo import MongoClient
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "`pymongo` package not found, please run `pip install pymongo`"
-            )
+            ) from err
 
         client: MongoClient
         if uri:
@@ -51,7 +50,7 @@ class SimpleMongoReader(BaseReader):
             result += text if isinstance(text, list) else [text]
         return result
 
-    def load_data(
+    def lazy_load_data(
         self,
         db_name: str,
         collection_name: str,
@@ -59,7 +58,7 @@ class SimpleMongoReader(BaseReader):
         separator: str = "",
         query_dict: Optional[Dict] = None,
         metadata_names: Optional[List[str]] = None,
-    ) -> List[Document]:
+    ) -> Iterable[Document]:
         """Load data from the input directory.
 
         Args:
@@ -78,7 +77,6 @@ class SimpleMongoReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        documents = []
         db = self.client[db_name]
         cursor = db[collection_name].find(filter=query_dict or {}, limit=self.max_docs)
 
@@ -94,7 +92,7 @@ class SimpleMongoReader(BaseReader):
             text = separator.join(texts)
 
             if metadata_names is None:
-                documents.append(Document(text=text))
+                yield Document(text=text)
             else:
                 try:
                     metadata = {name: item[name] for name in metadata_names}
@@ -102,6 +100,4 @@ class SimpleMongoReader(BaseReader):
                     raise ValueError(
                         f"{err.args[0]} field not found in Mongo document."
                     ) from err
-                documents.append(Document(text=text, metadata=metadata))
-
-        return documents
+                yield Document(text=text, metadata=metadata)
