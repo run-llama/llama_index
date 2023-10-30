@@ -1,7 +1,7 @@
 """Response schema."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.schema import NodeWithScore
@@ -115,12 +115,17 @@ class StreamingResponse:
             self.response_txt = response_txt
         return Response(self.response_txt, self.source_nodes, self.metadata)
 
-    def print_response_stream(self) -> None:
+    def print_response_stream(
+        self, callback: Optional[Callable[[str], Any]] = None
+    ) -> None:
         """Print the response stream."""
         if self.response_txt is None and self.response_gen is not None:
             response_txt = ""
             for text in self.response_gen:
-                print(text, end="", flush=True)
+                if callback is not None:
+                    callback(text)
+                else:
+                    print(text, end="", flush=True)
                 response_txt += text
             self.response_txt = response_txt
         else:

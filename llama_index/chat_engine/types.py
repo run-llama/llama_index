@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from threading import Event
-from typing import AsyncGenerator, Generator, List, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Generator, List, Optional, Union
 
 from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
@@ -171,13 +171,23 @@ class StreamingAgentChatResponse:
                 self._new_item_event.clear()  # Clear the event for the next wait
         self.response = self._unformatted_response.strip()
 
-    def print_response_stream(self) -> None:
+    def print_response_stream(
+        self, callback: Optional[Callable[[str], Any]] = None
+    ) -> None:
         for token in self.response_gen:
-            print(token, end="", flush=True)
+            if callback is not None:
+                callback(token)
+            else:
+                print(token, end="", flush=True)
 
-    async def aprint_response_stream(self) -> None:
+    async def aprint_response_stream(
+        self, callback: Optional[Callable[[str], Any]] = None
+    ) -> None:
         async for token in self.async_response_gen():
-            print(token, end="", flush=True)
+            if callback is not None:
+                callback(token)
+            else:
+                print(token, end="", flush=True)
 
 
 AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
