@@ -2,7 +2,7 @@ from typing import Any, Optional, Sequence
 
 from llama_index.evaluation import BaseEvaluator
 from llama_index.evaluation.base import EvaluationResult
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.response.schema import NodeWithScore, Response
 from llama_index.schema import TextNode
 
@@ -30,7 +30,7 @@ class MockEvaluator(BaseEvaluator):
         query: Optional[str] = None,
         response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> EvaluationResult:
         return EvaluationResult(
             query=query,
