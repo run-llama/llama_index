@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Generator, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Callable, Generator, Optional, Sequence, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.indices.service_context import ServiceContext

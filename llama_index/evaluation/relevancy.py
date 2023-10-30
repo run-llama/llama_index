@@ -1,7 +1,7 @@
 """Relevancy evaluation."""
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Sequence
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult

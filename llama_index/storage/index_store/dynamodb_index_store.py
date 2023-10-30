@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from llama_index.storage.index_store.keyval_index_store import KVIndexStore
 from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
 

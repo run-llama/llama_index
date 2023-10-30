@@ -1,7 +1,7 @@
 """Base query engine."""
 
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager

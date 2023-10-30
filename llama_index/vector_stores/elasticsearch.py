@@ -412,7 +412,7 @@ class ElasticsearchStore(VectorStore):
                 logger.warning(f"Could not find text {ref_doc_id} to delete")
             else:
                 logger.debug(f"Deleted text {ref_doc_id} from index")
-        except Exception as e:
+        except Exception:
             logger.error(f"Error deleting text: {ref_doc_id}")
             raise
 

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate

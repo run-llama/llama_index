@@ -1,5 +1,3 @@
-import json.decoder
-
 import pytest
 from llama_index.output_parsers.base import StructuredOutput
 from llama_index.output_parsers.selection import SelectionOutputParser

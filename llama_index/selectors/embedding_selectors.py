@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import Any, Dict, Optional, Sequence
 
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import resolve_embed_model

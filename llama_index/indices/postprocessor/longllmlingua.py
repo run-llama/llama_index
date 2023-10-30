@@ -1,6 +1,6 @@
 """Optimization related classes and functions."""
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.embeddings.base import BaseEmbedding

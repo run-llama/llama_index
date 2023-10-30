@@ -8,7 +8,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 """
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel

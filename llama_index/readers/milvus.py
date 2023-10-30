@@ -50,7 +50,7 @@ class MilvusReader(BaseReader):
         }
         try:
             self._create_connection_alias()
-        except MilvusException as e:
+        except MilvusException:
             raise
 
     def load_data(
@@ -75,13 +75,13 @@ class MilvusReader(BaseReader):
 
         try:
             self.collection = Collection(collection_name, using=self.alias)
-        except MilvusException as e:
+        except MilvusException:
             raise
 
         assert self.collection is not None
         try:
             self.collection.load()
-        except MilvusException as e:
+        except MilvusException:
             raise
         if search_params is None:
             search_params = self._create_search_params()

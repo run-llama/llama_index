@@ -1,6 +1,6 @@
 """Evaluator."""
 import asyncio
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
