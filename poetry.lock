@@ -1948,6 +1948,17 @@ files = [
 ]
 
 [[package]]
+name = "interegular"
+version = "0.3.2"
+description = "a regex intersection checker"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "interegular-0.3.2-py36-none-any.whl", hash = "sha256:548be87262bc041b01298c0e35afb69c5b7513425b6cce35db2fa140ede3db60"},
+    {file = "interegular-0.3.2.tar.gz", hash = "sha256:ea4645abace93d9f39d341205686a60b79777a43d94400933effb9c8f2901825"},
+]
+
+[[package]]
 name = "ipykernel"
 version = "6.25.2"
 description = "IPython Kernel for Jupyter"
@@ -2645,6 +2656,21 @@ files = [
 [package.dependencies]
 six = "*"
 tornado = {version = "*", markers = "python_version > \"2.7\""}
+
+[[package]]
+name = "lm-format-enforcer"
+version = "0.4.3"
+description = "Enforce the output format (JSON Schema, Regex etc) of a language model"
+optional = true
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "lm_format_enforcer-0.4.3-py3-none-any.whl", hash = "sha256:143385dc244c9802d2dcd5b5cbba2089b17e1ac255b96fc96fbfe15b022e2f4d"},
+    {file = "lm_format_enforcer-0.4.3.tar.gz", hash = "sha256:106d39f9669615ca37c338484dc4463f9a983fa618bebea5215ce7d61f48ce4f"},
+]
+
+[package.dependencies]
+interegular = ">=0.3.2"
+pydantic = ">=1.10.8"
 
 [[package]]
 name = "lxml"
@@ -7118,4 +7144,4 @@ query-tools = ["guidance", "jsonpath-ng", "rank-bm25", "scikit-learn", "spacy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "c5a4d4a97fde7e68a13ec88d9ecb7e7fb6a60988b7317e7b9d74a797a51f91d6"
+content-hash = "df9af1384364301fbbe24be521291adaafe0c471c12f8eb151bffdc7af3f27c4"
