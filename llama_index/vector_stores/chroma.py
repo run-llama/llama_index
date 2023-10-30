@@ -113,7 +113,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
         persist_dir: Optional[str] = None,
-        collection_kwargs: Optional[dict] = None,
+        collection_kwargs: Optional[dict] = {},
         **kwargs: Any,
     ) -> "ChromaVectorStore":
         try:
