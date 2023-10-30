@@ -1,7 +1,13 @@
 import json
 from typing import Any, Dict, Tuple
 
-from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    IndexNode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 
 DEFAULT_TEXT_KEY = "text"
 DEFAULT_EMBEDDING_KEY = "embedding"
@@ -44,6 +50,7 @@ def node_to_metadata_dict(
 
     # dump remainder of node_dict to json string
     metadata["_node_content"] = json.dumps(node_dict)
+    metadata["_node_type"] = node.get_type()
 
     # store ref doc id at top level to allow metadata filtering
     # kept for backwards compatibility, will consolidate in future
@@ -54,13 +61,17 @@ def node_to_metadata_dict(
     return metadata
 
 
-def metadata_dict_to_node(metadata: dict) -> TextNode:
+def metadata_dict_to_node(metadata: dict) -> BaseNode:
     """Common logic for loading Node data from metadata dict."""
     node_json = metadata.get("_node_content", None)
+    node_type = metadata.get("_node_type", None)
     if node_json is None:
         raise ValueError("Node content not found in metadata dict.")
 
-    return TextNode.parse_raw(node_json)
+    if node_type == IndexNode.get_type():
+        return IndexNode.parse_raw(node_json)
+    else:
+        return TextNode.parse_raw(node_json)
 
 
 # TODO: Deprecated conversion functions

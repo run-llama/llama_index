@@ -109,11 +109,7 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type(client.exceptions.ThrottlingException)
-            | retry_if_exception_type(client.exceptions.ModelTimeoutException)
-            | retry_if_exception_type(client.exceptions.ModelTimeoutException)
-        ),
+        retry=(retry_if_exception_type(client.exceptions.ThrottlingException)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -127,11 +123,6 @@ def completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    if stream:
-        return client.invoke_model_with_response_stream(
-            modelId=model, body=request_body
-        )
-    return client.invoke_model(modelId=model, body=request_body)
     retry_decorator = _create_retry_decorator(client=client, max_retries=max_retries)
 
     @retry_decorator
