@@ -75,7 +75,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 if model_name is not None
                 else DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
-            model = AutoModel.from_pretrained(model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code)
+            model = AutoModel.from_pretrained(
+                model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
+            )
         elif model_name is None:  # Extract model_name from model
             model_name = model.name_or_path
         self._model = model.to(self._device)
