@@ -107,7 +107,7 @@ class AstraVectorStore(VectorStore):
             token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
         )
 
-        self.astra_db.create_collection(collection_name=table, size=embedding_dimension)
+        self.astra_db.create_collection(collection_name=table, dimension=embedding_dimension)
 
         # Create the AstraClient object
         self.astra_db_collection = AstraDBCollection(
