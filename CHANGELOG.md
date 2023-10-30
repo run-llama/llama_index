@@ -5,6 +5,7 @@
 ### New Features
 
 - Add Amazon `BedrockEmbedding` (#8550)
+- Moves `HuggingFaceEmbedding` to center on `Pooling` enum for pooling (#8467)
 
 ## [0.8.55] - 2023-10-29
 
