@@ -48,9 +48,6 @@ class ClarifaiEmbedding(BaseEmbedding):
         if model_url is None and model_name is None:
             raise ValueError("You must specify one of model_url or model_name.")
 
-        if model_url is not None:
-            self._model = Model(model_url)
-
         if model_name is not None:
             if app_id is None or user_id is None:
                 raise ValueError(
@@ -63,6 +60,10 @@ class ClarifaiEmbedding(BaseEmbedding):
                     model_id=model_name,
                     model_version={"id": model_version_id},
                 )
+
+        if model_url is not None:
+            self._model = Model(model_url)
+            model_name = self._model.id
 
         super().__init__(
             embed_batch_size=embed_batch_size,
