@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -52,7 +51,7 @@ NOT_SUPPORT_METRIC_TYPE_ERROR = (
 
 def _try_import() -> None:
     try:
-        import tcvectordb
+        import tcvectordb  # noqa
     except ImportError:
         raise ImportError(
             "`tcvectordb` package not found, please run `pip install tcvectordb`"

@@ -3,7 +3,7 @@ from typing import List, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.indices.query.schema import QueryBundle, QueryType
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptMixin, PromptMixinType
 from llama_index.tools.types import ToolMetadata
 
 MetadataType = Union[str, ToolMetadata]
