@@ -87,7 +87,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         try:
-            import chromadb
+            import chromadb  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection

@@ -227,8 +227,8 @@ class UnstructuredElementNodeParser(NodeParser):
     ) -> None:
         """Initialize."""
         try:
-            import lxml
-            import unstructured
+            import lxml  # noqa
+            import unstructured  # noqa
         except ImportError:
             raise ImportError(
                 "You must install the `unstructured` and `lxml` package to use this node parser."

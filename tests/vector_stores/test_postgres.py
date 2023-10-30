@@ -33,11 +33,11 @@ TEST_SCHEMA_NAME = "test"
 TEST_EMBED_DIM = 2
 
 try:
-    import asyncpg
-    import pgvector
+    import asyncpg  # noqa
+    import pgvector  # noqa
     import psycopg2
     import sqlalchemy
-    import sqlalchemy.ext.asyncio
+    import sqlalchemy.ext.asyncio  # noqa
 
     # connection check
     conn__ = psycopg2.connect(**PARAMS)  # type: ignore

@@ -23,7 +23,7 @@ class MilvusReader(BaseReader):
             "`pymilvus` package not found, please run `pip install pymilvus`"
         )
         try:
-            import pymilvus
+            import pymilvus  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
 
