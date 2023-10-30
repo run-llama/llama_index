@@ -1,14 +1,66 @@
 # ChangeLog
 
-## [0.8.51] - 2023-10-25
+## [0.8.55] - 2023-10-29
+
+### New Features
+
+- allow prompts to take in functions with `function_mappings` (#8548)
+- add advanced prompt + "prompt engineering for RAG" notebook (#8555)
+- Leverage Replicate API for serving LLaVa modal (#8539)
+
+### Bug Fixes / Nits
+
+- Update pull request template with google colab support inclusion (#8525)
+
+## [0.8.54] - 2023-10-28
+
+### New Features
+
+- notebook showing how to fine-tune llama2 on structured outputs (#8540)
+  - added GradientAIFineTuningHandler
+  - added pydantic_program_mode to ServiceContext
+- Initialize MultiModal Retrieval using LlamaIndex (#8507)
+
+### Bug Fixes / Nits
+
+- Add missing import to `ChatEngine` usage pattern `.md` doc (#8518)
+- :bug: fixed async add (#8531)
+- fix: add the needed CondenseQuestionChatEngine import in the usage_pa… (#8518)
+- Add import LongLLMLinguaPostprocessor for LongLLMLingua.ipynb (#8519)
+
+## [0.8.53] - 2023-10-27
+
+### New Features
+
+- Docs refactor (#8500)
+  An overhaul of the docs organization. Major changes
+  - Added a big new "understanding" section
+  - Added a big new "optimizing" section
+  - Overhauled Getting Started content
+  - Categorized and moved module guides to a single section
+
+## [0.8.52] - 2023-10-26
+
+### New Features
+
+- Add longllmlingua (#8485)
+- Add google colab support for notebooks (#7560)
+
+### Bug Fixes / Nits
+
+- Adapt Cassandra VectorStore constructor DB connection through cassio.init (#8255)
+- Allow configuration of service context and storage context in managed index (#8487)
+
+## [0.8.51.post1] - 2023-10-25
 
 ### New Features
 
 - Add Llava MultiModal QA examples for Tesla 10k RAG (#8271)
 - fix bug streaming on react chat agent not working as expected (#8459)
 
-## Bug Fixes / Nits
+### Bug Fixes / Nits
 
+- patch: add selected result to response metadata for router query engines, fix bug (#8483)
 - add Jina AI embeddings notebook + huggingface embedding fix (#8478)
 - add `is_chat_model` to replicate (#8469)
 - Brought back `toml-sort` to `pre-commit` (#8267)
@@ -65,7 +117,7 @@
 ### New Features
 
 - add response synthesis to text-to-SQL (#8196)
-- Added support for `LLMRailsEmbeddings` (#8169)
+- Added support for `LLMRailsEmbedding` (#8169)
 - Inferring MPS device with PyTorch (#8195)
 - Consolidated query/text prepending (#8189)
 
@@ -220,7 +272,7 @@
 - Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
 - `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
 - Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
-- Added support for `ElasticsearchEmbeddings` (#7914)
+- Added support for `ElasticsearchEmbedding` (#7914)
 
 ## [0.8.37] - 2023-09-30
 

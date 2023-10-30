@@ -30,6 +30,8 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexDict] = None,
+        storage_context: Optional[StorageContext] = None,
+        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -37,8 +39,8 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=None,
-            storage_context=None,
+            service_context=service_context,
+            storage_context=storage_context,
             show_progress=show_progress,
             **kwargs,
         )

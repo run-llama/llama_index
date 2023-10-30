@@ -314,8 +314,13 @@ For bigger changes, you'll want to create a unit test. Our tests are in the `tes
 We use `pytest` for unit testing. To run all unit tests, run the following in the root dir:
 
 ```bash
-pip install -r data_requirements.txt
 pytest tests
+```
+
+or
+
+```bash
+make test
 ```
 
 ### Creating an Example Notebook

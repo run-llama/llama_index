@@ -55,5 +55,5 @@ response = query_engine.query("What did the author do growing up?")
 caption: Examples
 maxdepth: 1
 ---
-../../examples/vector_stores/VectaraDemo.ipynb
+/examples/managed/vectaraDemo.ipynb
 ```
