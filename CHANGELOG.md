@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Add Amazon `BedrockEmbedding` (#8550)
+
 ## [0.8.55] - 2023-10-29
 
 ### New Features
