@@ -1,6 +1,5 @@
 """Program utils."""
 
-from enum import Enum
 from typing import Any, List, Type
 
 from llama_index.bridge.pydantic import BaseModel, Field, create_model

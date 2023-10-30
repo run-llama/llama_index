@@ -101,7 +101,7 @@ class DiscordReader(BasePydanticReader):
     def __init__(self, discord_token: Optional[str] = None) -> None:
         """Initialize with parameters."""
         try:
-            import discord
+            import discord  # noqa
         except ImportError:
             raise ImportError(
                 "`discord.py` package not found, please run `pip install discord.py`"

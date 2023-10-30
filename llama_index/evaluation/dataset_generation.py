@@ -5,7 +5,7 @@ import asyncio
 import json
 import re
 import uuid
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, Field
 

@@ -132,11 +132,11 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
     ) -> None:
         try:
-            import asyncpg
-            import pgvector
-            import psycopg2
+            import asyncpg  # noqa
+            import pgvector  # noqa
+            import psycopg2  # noqa
             import sqlalchemy
-            import sqlalchemy.ext.asyncio
+            import sqlalchemy.ext.asyncio  # noqa
         except ImportError:
             raise ImportError(
                 "`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` "
@@ -521,8 +521,6 @@ class PGVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        import sqlalchemy
-
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
             results = await self._async_hybrid_query(query)

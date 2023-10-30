@@ -30,7 +30,7 @@ class FaissReader(BaseReader):
             https://github.com/facebookresearch/faiss/wiki/Installing-Faiss
         """
         try:
-            import faiss
+            import faiss  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
 

@@ -21,7 +21,7 @@ class SteamshipFileReader(BaseReader):
     def __init__(self, api_key: Optional[str] = None) -> None:
         """Initialize the Reader."""
         try:
-            import steamship
+            import steamship  # noqa
 
             self.api_key = api_key
         except ImportError:

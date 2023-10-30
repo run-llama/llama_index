@@ -4,7 +4,7 @@ An index that that is built on top of Vectara.
 
 import json
 import logging
-from typing import Any, List, Optional
+from typing import Any, List
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
@@ -69,7 +69,7 @@ class VectaraRetriever(BaseRetriever):
         Args:
             query: Query Bundle
         """
-        similarity_top_k = self._similarity_top_k
+        self._similarity_top_k
         corpus_key = {
             "customer_id": self._index._vectara_customer_id,
             "corpus_id": self._index._vectara_corpus_id,
