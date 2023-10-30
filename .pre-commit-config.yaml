@@ -53,3 +53,7 @@ repos:
     hooks:
       - id: toml-sort-fix
         exclude: poetry.lock
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.2.1
+    hooks:
+      - id: autoflake
