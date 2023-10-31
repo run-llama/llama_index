@@ -24,20 +24,7 @@ from llama_index.vector_stores.utils import (
 
 _logger = logging.getLogger(__name__)
 
-DEFAULT_INSERTION_BATCH_SIZE = 20
-
 T = TypeVar("T")
-
-
-def _batch_iterable(iterable: Iterable[T], batch_size: int) -> Iterable[Iterable[T]]:
-    this_batch = []
-    for entry in iterable:
-        this_batch.append(entry)
-        if len(this_batch) == batch_size:
-            yield this_batch
-            this_batch = []
-    if this_batch:
-        yield this_batch
 
 
 class AstraDBVectorStore(VectorStore):
@@ -59,8 +46,6 @@ class AstraDBVectorStore(VectorStore):
         namespace (Optional[str]): The namespace to use. If not provided, 'default_keyspace'
         ttl_seconds (Optional[int]): expiration time for inserted entries.
             Default is no expiration.
-        insertion_batch_size[Optional[int]]: Batch size for insertions.
-            Default is 20
 
     """
 
@@ -75,8 +60,7 @@ class AstraDBVectorStore(VectorStore):
         api_endpoint: str,
         embedding_dimension: int,
         namespace: Optional[str] = None,
-        ttl_seconds: Optional[int] = None,
-        insertion_batch_size: int = DEFAULT_INSERTION_BATCH_SIZE,
+        ttl_seconds: Optional[int] = None
     ) -> None:
         import_err_msg = "`astrapy` package not found, please run `pip install astrapy`"
 
@@ -89,7 +73,6 @@ class AstraDBVectorStore(VectorStore):
         # Set all the required class parameters
         self._embedding_dimension = embedding_dimension
         self._ttl_seconds = ttl_seconds
-        self._insertion_batch_size = insertion_batch_size
 
         _logger.debug("Creating the Astra DB table")
 
@@ -127,6 +110,7 @@ class AstraDBVectorStore(VectorStore):
 
         # Process each node individually
         for node in nodes:
+
             # Get the metadata
             metadata = node_to_metadata_dict(
                 node,
@@ -144,18 +128,13 @@ class AstraDBVectorStore(VectorStore):
                 }
             )
 
+        # Log the number of rows being added
         _logger.debug(f"Adding {len(nodes_list)} rows to table")
         
-        # Concurrent batching of inserts:
-        for insertion_batch in _batch_iterable(
-            nodes_list, batch_size=self._insertion_batch_size
-        ):
-            futures = []
-            for document in insertion_batch:
-                self.astra_db_collection.insert_one(document)
-            for future in futures:
-                _ = future.result()
+        # Perform the bulk insert
+        self.astra_db_collection.insert_many(nodes_list)
 
+        # Return the list of ids
         return [n["_id"] for n in nodes_list]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -199,9 +178,25 @@ class AstraDBVectorStore(VectorStore):
         # Call the find method of the Astra API
         matches = self.astra_db_collection.find(
             sort=sort,
+            options=options
+        )["data"]["documents"]
+
+        # Call the find method one more time to obtain similarity scores
+        matches_scores = self.astra_db_collection.find(
+            sort=sort,
             options=options,
             projection=projection
-        )
+        )["data"]["documents"]
+
+        # Convert matches_scores to a dictionary with _id as the key
+        scores_dict = {item['_id']: item for item in matches_scores}
+
+        # Merge the two lists based on _id
+        merged = []
+        for match in matches:
+            # Merge the dictionaries using dictionary unpacking
+            merged_match = {**match, **scores_dict[match['_id']]}
+            merged.append(merged_match)
 
         # We have three lists to return
         top_k_nodes = []
@@ -209,16 +204,12 @@ class AstraDBVectorStore(VectorStore):
         top_k_scores = []
 
         # Get every match
-        for my_match in matches["data"]["documents"]:
-            # Fetch the document data based on the id
-            # TODO: the content of the node is not returned by default. Do we have to call the API again like this?
-            document = self.astra_db_collection.find_one(filter={"_id": my_match["_id"]})["data"]["document"]
-
+        for my_match in merged:
             # Grab the node information
             my_match["_node_content"] = "{}"
 
             node = metadata_dict_to_node(my_match)
-            node.set_content(document["content"])
+            node.set_content(my_match["content"])
 
             # Append to the respective lists
             top_k_nodes.append(node)
