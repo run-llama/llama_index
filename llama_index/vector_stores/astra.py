@@ -209,15 +209,21 @@ class AstraDBVectorStore(VectorStore):
         top_k_scores = []
 
         # Get every match
-        for match in matches["data"]["documents"]:
+        for my_match in matches["data"]["documents"]:
+            # Fetch the document data based on the id
+            # TODO: the content of the node is not returned by default. Do we have to call the API again like this?
+            document = self.astra_db_collection.find_one(filter={"_id": my_match["_id"]})["data"]["document"]
+
             # Grab the node information
-            node = metadata_dict_to_node(match["metadata"])
-            node.set_content(match["content"])
+            my_match["_node_content"] = "{}"
+
+            node = metadata_dict_to_node(my_match)
+            node.set_content(document["content"])
 
             # Append to the respective lists
             top_k_nodes.append(node)
-            top_k_ids.append(match["_id"])
-            top_k_scores.append(match["$similarity"])
+            top_k_ids.append(my_match["_id"])
+            top_k_scores.append(my_match["$similarity"])
 
         return VectorStoreQueryResult(
             nodes=top_k_nodes,
