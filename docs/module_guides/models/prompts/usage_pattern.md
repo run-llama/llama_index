@@ -194,7 +194,7 @@ fmt_str = partial_prompt_tmpl.format(bar="def")
 
 #### Template Variable Mappings
 
-LlamaIndex prompt abstractiosn generally expect certain keys. E.g. our `text_qa_prompt` expects `context_str` for context and `query_str` for the user query.
+LlamaIndex prompt abstractions generally expect certain keys. E.g. our `text_qa_prompt` expects `context_str` for context and `query_str` for the user query.
 
 But if you're trying to adapt a string template for use with LlamaIndex, it can be annoying to change out the template variables.
 
