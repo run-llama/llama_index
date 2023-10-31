@@ -2,6 +2,33 @@
 
 There are many easy things to try, when you need to quickly squeeze out extra performance and optimize your RAG pipeline.
 
+## Prompt Engineering
+
+If you're encountering failures related to the LLM, like hallucinations or poorly formatted outputs, then this 
+should be one of the first things you try.
+
+Some tasks are listed below, from simple to advanced.
+
+1. Try inspecting the prompts used in your RAG pipeline (e.g. the question–answering prompt) and customizing it.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/prompts/prompt_mixin.ipynb
+/examples/prompts/advanced_prompts.ipynb
+```
+
+2. Try adding **prompt functions**, allowing you to dynamically inject few-shot examples or process the injected inputs.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/prompts/advanced_prompts.ipynb
+/examples/prompts/prompts_rag.ipynb
+```
+
 ## Embeddings
 
 Choosing the right embedding model plays a large role in overall performance.
