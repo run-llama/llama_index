@@ -126,10 +126,14 @@ class ChromaVectorStore(BasePydanticVectorStore):
             collection = client.get_or_create_collection(
                 name=collection_name, **collection_kwargs
             )
-        else:
+        elif host and port:
             client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
             collection = client.get_or_create_collection(
                 name=collection_name, **collection_kwargs
+            )
+        else:
+            raise ValueError(
+                "Either `persist_dir` or (`host`,`port`) must be specified"
             )
         return cls(
             chroma_collection=collection,
