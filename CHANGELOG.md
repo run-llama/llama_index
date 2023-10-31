@@ -22,6 +22,13 @@
 - Added default file_metadata to get basic metadata that many postprocessors use, for SimpleDirectoryReader (#8486)
 - Handle metadata with None values in chromadb (#8584)
 
+## [0.8.56] - 2023-10-30
+
+### Bug Fixes / Nits
+
+- In Knowledge Graph Index with hybrid retriever_mode, 
+  - return the nodes found by keyword search when 'No Relationship found' from embedding search.
+
 ## [0.8.55] - 2023-10-29
 
 ### New Features
