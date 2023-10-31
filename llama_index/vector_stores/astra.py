@@ -6,8 +6,7 @@ powered by the astrapy library
 """
 
 import logging
-
-from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
+from typing import Any, Dict, List, Optional, TypeVar, cast
 
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
@@ -60,16 +59,16 @@ class AstraDBVectorStore(VectorStore):
         api_endpoint: str,
         embedding_dimension: int,
         namespace: Optional[str] = None,
-        ttl_seconds: Optional[int] = None
+        ttl_seconds: Optional[int] = None,
     ) -> None:
         import_err_msg = "`astrapy` package not found, please run `pip install astrapy`"
 
         # Try to import astrapy for use
         try:
-            from astrapy.db import AstraDBCollection, AstraDB
+            from astrapy.db import AstraDB, AstraDBCollection
         except ImportError:
             raise ImportError(import_err_msg)
-        
+
         # Set all the required class parameters
         self._embedding_dimension = embedding_dimension
         self._ttl_seconds = ttl_seconds
@@ -78,21 +77,17 @@ class AstraDBVectorStore(VectorStore):
 
         # Build the Astra DB object
         self.astra_db = AstraDB(
-            api_endpoint=api_endpoint,
-            token=token,
-            namespace=namespace
+            api_endpoint=api_endpoint, token=token, namespace=namespace
         )
 
         # Create the new collection
         self.astra_db.create_collection(
-            collection_name=collection_name,
-            dimension=embedding_dimension
+            collection_name=collection_name, dimension=embedding_dimension
         )
 
         # Connect to the newly created collection
         self.astra_db_collection = AstraDBCollection(
-            collection_name=collection_name,
-            astra_db=self.astra_db
+            collection_name=collection_name, astra_db=self.astra_db
         )
 
     def add(
@@ -110,7 +105,6 @@ class AstraDBVectorStore(VectorStore):
 
         # Process each node individually
         for node in nodes:
-
             # Get the metadata
             metadata = node_to_metadata_dict(
                 node,
@@ -124,13 +118,13 @@ class AstraDBVectorStore(VectorStore):
                     "_id": node.node_id,
                     "content": node.get_content(metadata_mode=MetadataMode.NONE),
                     "metadata": metadata,
-                    "$vector": node.get_embedding()
+                    "$vector": node.get_embedding(),
                 }
             )
 
         # Log the number of rows being added
         _logger.debug(f"Adding {len(nodes_list)} rows to table")
-        
+
         # Perform the bulk insert
         self.astra_db_collection.insert_many(nodes_list)
 
@@ -147,10 +141,7 @@ class AstraDBVectorStore(VectorStore):
         """
         _logger.debug("Deleting a document from the Astra table")
 
-        self.astra_db_collection.delete(
-            id=ref_doc_id,
-            **delete_kwargs
-        )
+        self.astra_db_collection.delete(id=ref_doc_id, **delete_kwargs)
 
     @property
     def client(self) -> Any:
@@ -166,7 +157,6 @@ class AstraDBVectorStore(VectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
-
         # Get the query embedding
         query_embedding = cast(List[float], query.query_embedding)
 
@@ -176,26 +166,23 @@ class AstraDBVectorStore(VectorStore):
         projection = {"$vector": 1, "$similarity": 1}
 
         # Call the find method of the Astra API
-        matches = self.astra_db_collection.find(
-            sort=sort,
-            options=options
-        )["data"]["documents"]
+        matches = self.astra_db_collection.find(sort=sort, options=options)["data"][
+            "documents"
+        ]
 
         # Call the find method one more time to obtain similarity scores
         matches_scores = self.astra_db_collection.find(
-            sort=sort,
-            options=options,
-            projection=projection
+            sort=sort, options=options, projection=projection
         )["data"]["documents"]
 
         # Convert matches_scores to a dictionary with _id as the key
-        scores_dict = {item['_id']: item for item in matches_scores}
+        scores_dict = {item["_id"]: item for item in matches_scores}
 
         # Merge the two lists based on _id
         merged = []
         for match in matches:
             # Merge the dictionaries using dictionary unpacking
-            merged_match = {**match, **scores_dict[match['_id']]}
+            merged_match = {**match, **scores_dict[match["_id"]]}
             merged.append(merged_match)
 
         # We have three lists to return
