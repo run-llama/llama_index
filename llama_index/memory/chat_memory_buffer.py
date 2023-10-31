@@ -82,7 +82,7 @@ class ChatMemoryBuffer(BaseMemory):
     def from_dict(cls, json_dict: dict) -> "ChatMemoryBuffer":
         return cls.parse_obj(json_dict)
 
-    def get(self, initial_token_count: int = 0) -> List[ChatMessage]:
+    def get(self, initial_token_count: int = 0, **kwargs) -> List[ChatMessage]:
         """Get chat history."""
         message_count = len(self.chat_history)
         message_str = " ".join(

@@ -76,14 +76,11 @@ class SimpleChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
-        if self._prefix_messages:
-            initial_token_count = len(
-                self._memory.tokenizer_fn(
-                    " ".join([m.content for m in self._prefix_messages])
-                )
+        initial_token_count = len(
+            self._memory.tokenizer_fn(
+                " ".join([(m.content or "") for m in self._prefix_messages])
             )
-        else:
-            initial_token_count = 0
+        )
         all_messages = self._prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
@@ -101,14 +98,11 @@ class SimpleChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
-        if self._prefix_messages:
-            initial_token_count = len(
-                self._memory.tokenizer_fn(
-                    " ".join([m.content for m in self._prefix_messages])
-                )
+        initial_token_count = len(
+            self._memory.tokenizer_fn(
+                " ".join([(m.content or "") for m in self._prefix_messages])
             )
-        else:
-            initial_token_count = 0
+        )
         all_messages = self._prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
@@ -130,14 +124,11 @@ class SimpleChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
-        if self._prefix_messages:
-            initial_token_count = len(
-                self._memory.tokenizer_fn(
-                    " ".join([m.content for m in self._prefix_messages])
-                )
+        initial_token_count = len(
+            self._memory.tokenizer_fn(
+                " ".join([(m.content or "") for m in self._prefix_messages])
             )
-        else:
-            initial_token_count = 0
+        )
         all_messages = self._prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
@@ -155,14 +146,11 @@ class SimpleChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
         self._memory.put(ChatMessage(content=message, role="user"))
-        if self._prefix_messages:
-            initial_token_count = len(
-                self._memory.tokenizer_fn(
-                    " ".join([m.content for m in self._prefix_messages])
-                )
+        initial_token_count = len(
+            self._memory.tokenizer_fn(
+                " ".join([(m.content or "") for m in self._prefix_messages])
             )
-        else:
-            initial_token_count = 0
+        )
         all_messages = self._prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
