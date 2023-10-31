@@ -198,7 +198,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         where_filter = {
             "path": ["ref_doc_id"],
             "operator": "Equal",
-            "valueString": ref_doc_id,
+            "valueText": ref_doc_id,
         }
         query = (
             self._client.query.get(self.index_name)
@@ -224,7 +224,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             filter_with_doc_ids = {
                 "operator": "Or",
                 "operands": [
-                    {"path": ["doc_id"], "operator": "Equal", "valueString": doc_id}
+                    {"path": ["doc_id"], "operator": "Equal", "valueText": doc_id}
                     for doc_id in query.doc_ids
                 ],
             }
@@ -234,7 +234,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             filter_with_node_ids = {
                 "operator": "Or",
                 "operands": [
-                    {"path": ["id"], "operator": "Equal", "valueString": node_id}
+                    {"path": ["id"], "operator": "Equal", "valueText": node_id}
                     for node_id in query.node_ids
                 ],
             }
