@@ -8,6 +8,7 @@ from llama_index.program.predefined.df import (
     DFRowsProgram,
 )
 from llama_index.types import BasePydanticProgram
+from llama_index.program.lmformatenforcer_program import LMFormatEnforcerPydanticProgram
 
 __all__ = [
     "BasePydanticProgram",
@@ -18,4 +19,5 @@ __all__ = [
     "DataFrameRowsOnly",
     "DFRowsProgram",
     "DFFullProgram",
+    "LMFormatEnforcerPydanticProgram",
 ]
