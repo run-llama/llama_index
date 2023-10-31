@@ -4,14 +4,11 @@ An index based on a DB table with vector search capabilities,
 powered by the astrapy library
 
 """
-
 import logging
-from typing import Any, Dict, List, Optional, TypeVar, cast
+from typing import Any, List, Optional, cast
 
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
-    ExactMatchFilter,
-    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -22,8 +19,6 @@ from llama_index.vector_stores.utils import (
 )
 
 _logger = logging.getLogger(__name__)
-
-T = TypeVar("T")
 
 
 class AstraDBVectorStore(VectorStore):
@@ -147,13 +142,6 @@ class AstraDBVectorStore(VectorStore):
     def client(self) -> Any:
         """Return the underlying Astra vector table object."""
         return self.astra_db_collection
-
-    @staticmethod
-    def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
-        if any(not isinstance(f, ExactMatchFilter) for f in query_filters.filters):
-            raise NotImplementedError("Only `ExactMatchFilter` filters are supported")
-
-        return {f.key: f.value for f in query_filters.filters}
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
