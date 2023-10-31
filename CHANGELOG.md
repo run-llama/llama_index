@@ -26,7 +26,7 @@
 
 ### Bug Fixes / Nits
 
-- In Knowledge Graph Index with hybrid retriever_mode, 
+- In Knowledge Graph Index with hybrid retriever_mode,
   - return the nodes found by keyword search when 'No Relationship found'
 
 ### New Features
