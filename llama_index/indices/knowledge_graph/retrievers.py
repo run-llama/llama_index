@@ -275,8 +275,8 @@ class KGTableRetriever(BaseRetriever):
             if len(sorted_nodes_with_scores) == 0:
                 logger.info("> No nodes found by keywords, returning empty response.")
                 return [
-                        NodeWithScore(node=TextNode(text="No relationships found."), score=1.0)
-                    ]
+                    NodeWithScore(node=TextNode(text="No relationships found."), score=1.0)
+                ]
             # In else case the sorted_nodes_with_scores is not empty
             # thus returning the nodes found by keywords
             return sorted_nodes_with_scores
