@@ -154,9 +154,14 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = self._generate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(" ".join([m.content for m in prefix_messages]))
-        )
+        if prefix_messages:
+            initial_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join([m.content for m in prefix_messages])
+                )
+            )
+        else:
+            initial_token_count = 0
         all_messages = prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
@@ -187,9 +192,14 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = self._generate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(" ".join([m.content for m in prefix_messages]))
-        )
+        if prefix_messages:
+            initial_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join([m.content for m in prefix_messages])
+                )
+            )
+        else:
+            initial_token_count = 0
         all_messages = prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
@@ -223,9 +233,14 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = await self._agenerate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(" ".join([m.content for m in prefix_messages]))
-        )
+        if prefix_messages:
+            initial_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join([m.content for m in prefix_messages])
+                )
+            )
+        else:
+            initial_token_count = 0
         all_messages = prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
@@ -257,9 +272,14 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = await self._agenerate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(" ".join([m.content for m in prefix_messages]))
-        )
+        if prefix_messages:
+            initial_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join([m.content for m in prefix_messages])
+                )
+            )
+        else:
+            initial_token_count = 0
         all_messages = prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )

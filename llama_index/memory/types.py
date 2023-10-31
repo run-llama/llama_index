@@ -21,7 +21,7 @@ class BaseMemory(BaseModel):
         """Create a chat memory from defaults."""
 
     @abstractmethod
-    def get(self) -> List[ChatMessage]:
+    def get(self, **kwargs) -> List[ChatMessage]:
         """Get chat history."""
 
     @abstractmethod
