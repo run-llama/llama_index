@@ -65,4 +65,3 @@ maxdepth: 1
 /examples/prompts/advanced_prompts.ipynb
 /examples/prompts/prompts_rag.ipynb
 ```
-

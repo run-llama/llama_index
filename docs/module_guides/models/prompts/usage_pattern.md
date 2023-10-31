@@ -1,4 +1,4 @@
-## Usage Pattern 
+## Usage Pattern
 
 ### Defining a custom prompt
 
@@ -66,6 +66,7 @@ The most commonly used prompts will be the `text_qa_template` and the `refine_te
 You can call `get_prompts` on many modules in LlamaIndex to get a flat list of prompts used within the module and nested submodules.
 
 For instance, take a look at the following snippet.
+
 ```python
 query_engine = index.as_query_engine(response_mode="compact")
 prompts_dict = query_engine.get_prompts()
@@ -74,12 +75,12 @@ print(list(prompts_dict.keys()))
 ```
 
 You might get back the following keys:
+
 ```
 ['response_synthesizer:text_qa_template', 'response_synthesizer:refine_template']
 ```
 
 Note that prompts are prefixed by their sub-modules as "namespaces".
-
 
 #### Updating Prompts
 
@@ -167,7 +168,6 @@ index = TreeIndex.from_documents(docs, summary_template=<custom_prompt>)
 For more details on which index uses which prompts, please visit
 [Index class references](/api_reference/indices.rst).
 
-
 ### [Advanced] Advanced Prompt Capabilities
 
 In this section we show some advanced prompt capabilities in LlamaIndex.
@@ -214,10 +214,9 @@ prompt_tmpl = PromptTemplate(
 
 Pass in functions as template variables instead of fixed values.
 
-This is quite advanced and powerful; allows you to do dynamic few-shot prompting, etc. 
+This is quite advanced and powerful; allows you to do dynamic few-shot prompting, etc.
 
 Here's an example of reformatting the `context_str`.
-
 
 ```python
 def format_context_fn(**kwargs):
