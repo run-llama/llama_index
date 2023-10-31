@@ -1,6 +1,6 @@
 """Retriever tool."""
 
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.langchain_helpers.agents.tools import LlamaIndexTool
