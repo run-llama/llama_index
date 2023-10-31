@@ -27,7 +27,11 @@
 ### Bug Fixes / Nits
 
 - In Knowledge Graph Index with hybrid retriever_mode, 
-  - return the nodes found by keyword search when 'No Relationship found' from embedding search.
+  - return the nodes found by keyword search when 'No Relationship found'
+
+### New Features
+
+- Add Amazon `BedrockEmbedding` (#8550)
 
 ## [0.8.55] - 2023-10-29
 

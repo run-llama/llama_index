@@ -280,7 +280,6 @@ class KGTableRetriever(BaseRetriever):
             
             # In else case the sorted_nodes_with_scores is not empty 
             # thus returning the nodes found by keywords
-            logger.info("> No relationships found by embeddings, returning nodes found by keywords.")
             return sorted_nodes_with_scores
 
         # add relationships as Node
