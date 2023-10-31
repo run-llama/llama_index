@@ -4,7 +4,7 @@ There are many easy things to try, when you need to quickly squeeze out extra pe
 
 ## Prompt Engineering
 
-If you're encountering failures related to the LLM, like hallucinations or poorly formatted outputs, then this 
+If you're encountering failures related to the LLM, like hallucinations or poorly formatted outputs, then this
 should be one of the first things you try.
 
 Some tasks are listed below, from simple to advanced.
