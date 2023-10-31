@@ -76,4 +76,4 @@ class PydanticProgramMode(str, Enum):
     OPENAI = "openai"
     LLM = "llm"
     GUIDANCE = "guidance"
-    LM_FORMAT_ENFORCER = 'lm-format-enforcer'
+    LM_FORMAT_ENFORCER = "lm-format-enforcer"

@@ -79,8 +79,10 @@ def get_program_for_llm(
             **kwargs,
         )
     elif pydantic_program_mode == PydanticProgramMode.LM_FORMAT_ENFORCER:
-        from llama_index.program.lmformatenforcer_program import LMFormatEnforcerPydanticProgram
-        
+        from llama_index.program.lmformatenforcer_program import (
+            LMFormatEnforcerPydanticProgram,
+        )
+
         return LMFormatEnforcerPydanticProgram.from_defaults(
             output_cls=output_cls,
             llm=llm,

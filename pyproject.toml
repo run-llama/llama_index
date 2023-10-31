@@ -84,8 +84,8 @@ postgres = [
 ]
 query_tools = [
     "guidance",
-    "lm-format-enforcer",
     "jsonpath-ng",
+    "lm-format-enforcer",
     "rank-bm25",
     "scikit-learn",
     "spacy",
