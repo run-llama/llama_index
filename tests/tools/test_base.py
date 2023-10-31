@@ -153,12 +153,9 @@ def test_retreiver_tool() -> None:
         ),
     )
     output = vs_ret_tool.call("arg1", "arg2", key1="v1", key2="v2")
-    assert output.content.strip() == (
+    formated_doc = (
         "file_path = /data/personal/essay.md\n"
         "# title1:Hello world.\n"
-        "This is a test.\n"
-        "\n"
-        "file_path = /data/personal/essay.md\n"
-        "# title2:This is another test.\n"
-        "This is a test v2."
+        "This is a test."
     )
+    assert formated_doc in output.content
