@@ -9,6 +9,7 @@
 - Add IBM WatsonX LLM support (#8587)
 
 ### Bug Fixes / Nits
+
 - [Bug] Patch Clarifai classes (#8529)
 - fix retries for bedrock llm (#8528)
 - Fix : VectorStore’s QueryResult always returns saved Node as TextNode (#8521)
