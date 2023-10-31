@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import (
     Any,
     AsyncGenerator,
@@ -66,3 +67,12 @@ class BasePydanticProgram(ABC, Generic[Model]):
 
     async def acall(self, *args: Any, **kwds: Any) -> Model:
         return self(*args, **kwds)
+
+
+class PydanticProgramMode(str, Enum):
+    """Pydantic program mode."""
+
+    DEFAULT = "default"
+    OPENAI = "openai"
+    LLM = "llm"
+    GUIDANCE = "guidance"

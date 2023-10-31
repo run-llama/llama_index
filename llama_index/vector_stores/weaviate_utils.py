@@ -47,7 +47,7 @@ NODE_SCHEMA: List[Dict] = [
 def validate_client(client: Any) -> None:
     """Validate client and import weaviate library."""
     try:
-        import weaviate
+        import weaviate  # noqa
         from weaviate import Client
 
         client = cast(Client, client)

@@ -9,6 +9,7 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle, QueryType
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
 
 STR_OR_RESPONSE_TYPE = Union[Response, str]
@@ -28,6 +29,10 @@ class CustomQueryEngine(BaseModel, BaseQueryEngine):
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {}
 
     class Config:
         arbitrary_types_allowed = True

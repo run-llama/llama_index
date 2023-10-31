@@ -14,6 +14,7 @@ from itertools import islice
 from pathlib import Path
 from typing import (
     Any,
+    AsyncGenerator,
     Callable,
     Dict,
     Generator,
@@ -421,3 +422,27 @@ def infer_torch_device() -> str:
     if torch.backends.mps.is_available():
         return "mps"
     return "cpu"
+
+
+def unit_generator(x: Any) -> Generator[Any, None, None]:
+    """A function that returns a generator of a single element.
+
+    Args:
+        x (Any): the element to build yield
+
+    Yields:
+        Any: the single element
+    """
+    yield x
+
+
+async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
+    """A function that returns a generator of a single element.
+
+    Args:
+        x (Any): the element to build yield
+
+    Yields:
+        Any: the single element
+    """
+    yield x

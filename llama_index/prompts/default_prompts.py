@@ -26,7 +26,7 @@ DEFAULT_SUMMARY_PROMPT = PromptTemplate(
 # insert prompts
 DEFAULT_INSERT_PROMPT_TMPL = (
     "Context information is below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "(1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -45,7 +45,7 @@ DEFAULT_INSERT_PROMPT = PromptTemplate(
 # # single choice
 DEFAULT_QUERY_PROMPT_TMPL = (
     "Some choices are given below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "(1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"

@@ -1,11 +1,141 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.56] - 2023-10-30
 
 ### New Features
 
-- Added support for `LLMRailsEmbeddings` (#8169)
+- Add Amazon `BedrockEmbedding` (#8550)
+- Moves `HuggingFaceEmbedding` to center on `Pooling` enum for pooling (#8467)
+- Add IBM WatsonX LLM support (#8587)
+
+### Bug Fixes / Nits
+
+- [Bug] Patch Clarifai classes (#8529)
+- fix retries for bedrock llm (#8528)
+- Fix : VectorStore’s QueryResult always returns saved Node as TextNode (#8521)
+- Added default file_metadata to get basic metadata that many postprocessors use, for SimpleDirectoryReader (#8486)
+- Handle metadata with None values in chromadb (#8584)
+
+## [0.8.55] - 2023-10-29
+
+### New Features
+
+- allow prompts to take in functions with `function_mappings` (#8548)
+- add advanced prompt + "prompt engineering for RAG" notebook (#8555)
+- Leverage Replicate API for serving LLaVa modal (#8539)
+
+### Bug Fixes / Nits
+
+- Update pull request template with google colab support inclusion (#8525)
+
+## [0.8.54] - 2023-10-28
+
+### New Features
+
+- notebook showing how to fine-tune llama2 on structured outputs (#8540)
+  - added GradientAIFineTuningHandler
+  - added pydantic_program_mode to ServiceContext
+- Initialize MultiModal Retrieval using LlamaIndex (#8507)
+
+### Bug Fixes / Nits
+
+- Add missing import to `ChatEngine` usage pattern `.md` doc (#8518)
+- :bug: fixed async add (#8531)
+- fix: add the needed CondenseQuestionChatEngine import in the usage_pa… (#8518)
+- Add import LongLLMLinguaPostprocessor for LongLLMLingua.ipynb (#8519)
+
+## [0.8.53] - 2023-10-27
+
+### New Features
+
+- Docs refactor (#8500)
+  An overhaul of the docs organization. Major changes
+  - Added a big new "understanding" section
+  - Added a big new "optimizing" section
+  - Overhauled Getting Started content
+  - Categorized and moved module guides to a single section
+
+## [0.8.52] - 2023-10-26
+
+### New Features
+
+- Add longllmlingua (#8485)
+- Add google colab support for notebooks (#7560)
+
+### Bug Fixes / Nits
+
+- Adapt Cassandra VectorStore constructor DB connection through cassio.init (#8255)
+- Allow configuration of service context and storage context in managed index (#8487)
+
+## [0.8.51.post1] - 2023-10-25
+
+### New Features
+
+- Add Llava MultiModal QA examples for Tesla 10k RAG (#8271)
+- fix bug streaming on react chat agent not working as expected (#8459)
+
+### Bug Fixes / Nits
+
+- patch: add selected result to response metadata for router query engines, fix bug (#8483)
+- add Jina AI embeddings notebook + huggingface embedding fix (#8478)
+- add `is_chat_model` to replicate (#8469)
+- Brought back `toml-sort` to `pre-commit` (#8267)
+- Added `LocationConstraint` for local `test_s3_kvstore` (#8263)
+
+## [0.8.50] - 2023-10-24
+
+### New Features
+
+- Expose prompts in different modules (query engines, synthesizers, and more) (#8275)
+
+## [0.8.49] - 2023-10-23
+
+### New Features
+
+- New LLM integrations
+  - Support for Hugging Face Inference API's `conversational`, `text_generation`,
+    and `feature_extraction` endpoints via `huggingface_hub[inference]` (#8098)
+  - Add Amazon Bedrock LLMs (#8223)
+  - Add AI21 Labs LLMs (#8233)
+  - Add OpenAILike LLM class for OpenAI-compatible api servers (#7973)
+- New / updated vector store integrations
+  - Add DashVector (#7772)
+  - Add Tencent VectorDB (#8173)
+  - Add option for custom Postgres schema on PGVectorStore instead of only allowing public schema (#8080)
+- Add Gradient fine tuning engine (#8208)
+- docs(FAQ): frequently asked questions (#8249)
+
+### Bug Fixes / Nits
+
+- Fix inconsistencies with `ReActAgent.stream_chat` (#8147)
+- Deprecate some functions for GuardrailsOutputParser (#8016)
+- Simplify dependencies (#8236)
+- Bug fixes for LiteLLM (#7885)
+- Update for Predibase LLM (#8211)
+
+## [0.8.48] - 2023-10-20
+
+### New Features
+
+- Add `DELETE` for MyScale vector store (#8159)
+- Add SQL Retriever (#8197)
+- add semantic kernel document format (#8226)
+- Improve MyScale Hybrid Search and Add `DELETE` for MyScale vector store (#8159)
+
+### Bug Fixes / Nits
+
+- Fixed additional kwargs in ReActAgent.from_tools() (#8206)
+- Fixed missing spaces in prompt templates (#8190)
+- Remove auto-download of llama2-13B on exception (#8225)
+
+## [0.8.47] - 2023-10-19
+
+### New Features
+
+- add response synthesis to text-to-SQL (#8196)
+- Added support for `LLMRailsEmbedding` (#8169)
 - Inferring MPS device with PyTorch (#8195)
+- Consolidated query/text prepending (#8189)
 
 ## [0.8.46] - 2023-10-18
 
@@ -17,6 +147,7 @@
 ### Bug Fixes / Nits
 
 - Add normalization to huggingface embeddings (#8145)
+- Improve MyScale Hybrid Search (#8159)
 - Fixed duplicate `FORMAT_STR` being inside prompt (#8171)
 - Added: support for output_kwargs={'max_colwidth': xx} for PandasQueryEngine (#8110)
 - Minor fix in the description for an argument in cohere llm (#8163)
@@ -157,7 +288,7 @@
 - Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
 - `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
 - Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
-- Added support for `ElasticsearchEmbeddings` (#7914)
+- Added support for `ElasticsearchEmbedding` (#7914)
 
 ## [0.8.37] - 2023-09-30
 

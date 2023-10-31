@@ -9,6 +9,7 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.openai_generator import OpenAIQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
@@ -70,6 +71,13 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         self._verbose = verbose
         self._use_async = use_async
         super().__init__(callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {
+            "question_gen": self._question_gen,
+            "response_synthesizer": self._response_synthesizer,
+        }
 
     @classmethod
     def from_defaults(

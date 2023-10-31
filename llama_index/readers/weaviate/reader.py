@@ -26,9 +26,9 @@ class WeaviateReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            import weaviate
+            import weaviate  # noqa
             from weaviate import Client
-            from weaviate.auth import AuthCredentials
+            from weaviate.auth import AuthCredentials  # noqa
         except ImportError:
             raise ImportError(
                 "`weaviate` package not found, please run `pip install weaviate-client`"

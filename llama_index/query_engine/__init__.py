@@ -57,5 +57,6 @@ __all__ = [
     "CustomQueryEngine",
     # SQL
     "SQLTableRetrieverQueryEngine",
-    "NLSQLTableQueryEngine" "PGVectorSQLQueryEngine",
+    "NLSQLTableQueryEngine",
+    "PGVectorSQLQueryEngine",
 ]
