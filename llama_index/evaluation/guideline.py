@@ -7,7 +7,7 @@ from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.output_parsers import PydanticOutputParser
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 
 logger = logging.getLogger(__name__)
 

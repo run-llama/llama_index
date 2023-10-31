@@ -6,7 +6,7 @@ from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResp
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import ChatMessage
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
 
 

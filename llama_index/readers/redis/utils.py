@@ -84,7 +84,9 @@ def get_redis_query(
     from redis.commands.search.query import Query
 
     base_query = f"{filters}=>[KNN {top_k} @{vector_field} $vector AS vector_score]"
-    query = Query(base_query).return_fields(*return_fields).dialect(2)
+
+    query = Query(base_query).return_fields(*return_fields).dialect(2).paging(0, top_k)
+
     if sort:
         query.sort_by("vector_score")
     return query

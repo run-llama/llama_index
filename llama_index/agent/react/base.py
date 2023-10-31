@@ -15,7 +15,6 @@ from typing import (
 )
 
 from aiostream import stream as async_stream
-from aiostream.core import Stream
 
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser

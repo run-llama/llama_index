@@ -89,7 +89,7 @@ class TairVectorStore(VectorStore):
 
         """
         try:
-            from tair import Tair, tairvector
+            from tair import Tair, tairvector  # noqa
         except ImportError:
             raise ValueError(
                 "Could not import tair-py python package. "

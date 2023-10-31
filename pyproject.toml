@@ -38,7 +38,7 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.8.55"
+version = "0.8.56"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -108,6 +108,7 @@ pytest-dotenv = "0.5.2"
 pytest-mock = "3.11.1"
 rake-nltk = "1.0.6"
 ruff = "0.0.292"
+tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-redis = "4.5.5.0"
@@ -168,6 +169,7 @@ select = [
     "D4",
     "E7",
     "EXE004",
+    "F401",
     "F504",
     "F541",
     "F632",

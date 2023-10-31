@@ -4,7 +4,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.question_gen.prompts import build_tools_text
 from llama_index.question_gen.types import (
     BaseQuestionGenerator,

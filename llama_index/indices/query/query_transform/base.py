@@ -2,7 +2,7 @@
 
 import dataclasses
 from abc import abstractmethod
-from typing import Any, Dict, Optional, cast
+from typing import Dict, Optional, cast
 
 from llama_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,

@@ -1,5 +1,4 @@
 import json
-import warnings
 from typing import Any, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -27,7 +26,6 @@ from llama_index.llms.bedrock_utils import (
     get_text_from_response,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.custom import CustomLLM
 
 
 class Bedrock(LLM):

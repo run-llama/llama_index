@@ -91,7 +91,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         try:
-            import weaviate
+            import weaviate  # noqa
             from weaviate import Client
         except ImportError:
             raise ImportError(import_err_msg)
@@ -136,8 +136,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     ) -> "WeaviateVectorStore":
         """Create WeaviateVectorStore from config."""
         try:
-            import weaviate
-            from weaviate import AuthApiKey, Client
+            import weaviate  # noqa
+            from weaviate import AuthApiKey, Client  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
 

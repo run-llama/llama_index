@@ -287,7 +287,7 @@ class CognitiveSearchVectorStore(VectorStore):
         )
 
         try:
-            import azure.search.documents
+            import azure.search.documents  # noqa
             from azure.search.documents import SearchClient
             from azure.search.documents.indexes import SearchIndexClient
         except ImportError:
