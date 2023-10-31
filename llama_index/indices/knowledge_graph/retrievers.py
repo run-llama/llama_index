@@ -277,8 +277,7 @@ class KGTableRetriever(BaseRetriever):
                 return [
                         NodeWithScore(node=TextNode(text="No relationships found."), score=1.0)
                     ]
-            
-            # In else case the sorted_nodes_with_scores is not empty 
+            # In else case the sorted_nodes_with_scores is not empty
             # thus returning the nodes found by keywords
             return sorted_nodes_with_scores
 
