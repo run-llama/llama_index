@@ -5,9 +5,7 @@ powered by the astrapy library
 
 """
 
-import os
 import logging
-import cassio
 
 from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
 
@@ -42,8 +40,8 @@ def _batch_iterable(iterable: Iterable[T], batch_size: int) -> Iterable[Iterable
         yield this_batch
 
 
-class AstraVectorStore(VectorStore):
-    """Astra Vector Store.
+class AstraDBVectorStore(VectorStore):
+    """Astra DB Vector Store.
 
     An abstraction of a Astra table with
     vector-similarity-search. Documents, and their embeddings, are stored
@@ -54,12 +52,15 @@ class AstraVectorStore(VectorStore):
     All Astra operations are done through the astrapy library.
 
     Args:
-        session (astra.cluster.Session): the Astra session to use
-        keyspace (str): name of the Astra keyspace to work in
-        table (str): table name to use. If not existing, it will be created.
+        collection_name (str): collection name to use. If not existing, it will be created.
+        token (str): The Astra DB Application Token to use.
+        api_endpoint (str): The Astra DB JSON API endpoint for your database.
         embedding_dimension (int): length of the embedding vectors in use.
+        namespace (Optional[str]): The namespace to use. If not provided, 'default_keyspace'
         ttl_seconds (Optional[int]): expiration time for inserted entries.
             Default is no expiration.
+        insertion_batch_size[Optional[int]]: Batch size for insertions.
+            Default is 20
 
     """
 
@@ -68,10 +69,12 @@ class AstraVectorStore(VectorStore):
 
     def __init__(
         self,
-        session: Any,
-        keyspace: str,
-        table: str,
+        *,
+        collection_name: str,
+        token: str,
+        api_endpoint: str,
         embedding_dimension: int,
+        namespace: Optional[str] = None,
         ttl_seconds: Optional[int] = None,
         insertion_batch_size: int = DEFAULT_INSERTION_BATCH_SIZE,
     ) -> None:
@@ -79,39 +82,33 @@ class AstraVectorStore(VectorStore):
 
         # Try to import astrapy for use
         try:
-            from astrapy.collections import AstraDBCollection, AstraDB
+            from astrapy.db import AstraDBCollection, AstraDB
         except ImportError:
             raise ImportError(import_err_msg)
         
-        cassio.init()
-
         # Set all the required class parameters
-        self._session = session
-        self._keyspace = keyspace
-        self._table = table
         self._embedding_dimension = embedding_dimension
         self._ttl_seconds = ttl_seconds
         self._insertion_batch_size = insertion_batch_size
 
-        _logger.debug("Creating the Astra table")
+        _logger.debug("Creating the Astra DB table")
 
-        database_id = os.environ.get("ASTRA_DB_ID")
-        database_region = os.environ.get("ASTRA_DB_REGION")
-        database_base_url = "apps.astra.datastax.com"
-
-        # Build the endpoint URL:
-        api_endpoint = f"https://{database_id}-{database_region}.{database_base_url}"
-
+        # Build the Astra DB object
         self.astra_db = AstraDB(
             api_endpoint=api_endpoint,
-            token=os.environ.get("ASTRA_DB_APPLICATION_TOKEN")
+            token=token,
+            namespace=namespace
         )
 
-        self.astra_db.create_collection(collection_name=table, dimension=embedding_dimension)
+        # Create the new collection
+        self.astra_db.create_collection(
+            collection_name=collection_name,
+            dimension=embedding_dimension
+        )
 
-        # Create the AstraClient object
+        # Connect to the newly created collection
         self.astra_db_collection = AstraDBCollection(
-            collection_name=table,
+            collection_name=collection_name,
             astra_db=self.astra_db
         )
 
@@ -170,6 +167,7 @@ class AstraVectorStore(VectorStore):
 
         """
         _logger.debug("Deleting a document from the Astra table")
+
         self.astra_db_collection.delete(
             id=ref_doc_id,
             **delete_kwargs
@@ -184,6 +182,7 @@ class AstraVectorStore(VectorStore):
     def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
         if any(not isinstance(f, ExactMatchFilter) for f in query_filters.filters):
             raise NotImplementedError("Only `ExactMatchFilter` filters are supported")
+
         return {f.key: f.value for f in query_filters.filters}
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
