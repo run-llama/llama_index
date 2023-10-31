@@ -1,11 +1,20 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.56] - 2023-10-30
 
 ### New Features
 
 - Add Amazon `BedrockEmbedding` (#8550)
 - Moves `HuggingFaceEmbedding` to center on `Pooling` enum for pooling (#8467)
+- Add IBM WatsonX LLM support (#8587)
+
+### Bug Fixes / Nits
+
+- [Bug] Patch Clarifai classes (#8529)
+- fix retries for bedrock llm (#8528)
+- Fix : VectorStore’s QueryResult always returns saved Node as TextNode (#8521)
+- Added default file_metadata to get basic metadata that many postprocessors use, for SimpleDirectoryReader (#8486)
+- Handle metadata with None values in chromadb (#8584)
 
 ## [0.8.55] - 2023-10-29
 
