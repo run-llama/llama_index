@@ -1,6 +1,7 @@
 """Pairwise evaluation."""
 
-from typing import Any, Enum, Optional, Sequence, Tuple, Union
+from enum import Enum
+from typing import Any, Optional, Sequence, Tuple, Union
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
