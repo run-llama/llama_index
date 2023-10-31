@@ -163,27 +163,12 @@ class AstraDBVectorStore(VectorStore):
         # Set the parameters accordingly
         sort = {"$vector": query_embedding}
         options = {"limit": query.similarity_top_k}
-        projection = {"$vector": 1, "$similarity": 1}
+        projection = {"$vector": 1, "$similarity": 1, "content": 1}
 
         # Call the find method of the Astra API
-        matches = self.astra_db_collection.find(sort=sort, options=options)["data"][
-            "documents"
-        ]
-
-        # Call the find method one more time to obtain similarity scores
-        matches_scores = self.astra_db_collection.find(
+        matches = self.astra_db_collection.find(
             sort=sort, options=options, projection=projection
         )["data"]["documents"]
-
-        # Convert matches_scores to a dictionary with _id as the key
-        scores_dict = {item["_id"]: item for item in matches_scores}
-
-        # Merge the two lists based on _id
-        merged = []
-        for match in matches:
-            # Merge the dictionaries using dictionary unpacking
-            merged_match = {**match, **scores_dict[match["_id"]]}
-            merged.append(merged_match)
 
         # We have three lists to return
         top_k_nodes = []
@@ -191,7 +176,7 @@ class AstraDBVectorStore(VectorStore):
         top_k_scores = []
 
         # Get every match
-        for my_match in merged:
+        for my_match in matches:
             # Grab the node information
             my_match["_node_content"] = "{}"
 
