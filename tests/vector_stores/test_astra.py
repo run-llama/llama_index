@@ -15,7 +15,7 @@ except ImportError:
     has_astrapy = False
 
 
-def get_astra_db_store():
+def get_astra_db_store() -> AstraDBVectorStore:
     return AstraDBVectorStore(
         token="AstraCS:<...>",
         api_endpoint=f"https://<...>",

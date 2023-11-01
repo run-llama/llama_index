@@ -110,7 +110,7 @@ class AstraDBVectorStore(VectorStore):
             # One dictionary of node data per node
             nodes_list.append(
                 {
-                    "_id": node.node_id,
+                    "_id": str(node.node_id),
                     "content": node.get_content(metadata_mode=MetadataMode.NONE),
                     "metadata": metadata,
                     "$vector": node.get_embedding(),
