@@ -24,12 +24,6 @@
 - Added default file_metadata to get basic metadata that many postprocessors use, for SimpleDirectoryReader (#8486)
 - Handle metadata with None values in chromadb (#8584)
 
-
-
-### New Features
-
-- Add Amazon `BedrockEmbedding` (#8550)
-
 ## [0.8.55] - 2023-10-29
 
 ### New Features
