@@ -2,7 +2,7 @@
 
 # generation with retry
 import logging
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 from tenacity import (
     before_sleep_log,
@@ -98,7 +98,7 @@ async def acompletion_with_retry(
 def init_vertexai(
     project: Optional[str] = None,
     location: Optional[str] = None,
-    credentials: Optional["Credentials"] = None,
+    credentials: Optional[str] = None,
 ) -> None:
     """Init vertexai.
 
@@ -124,7 +124,7 @@ def init_vertexai(
     )
 
 
-def _parse_chat_history(history):
+def _parse_chat_history(history) -> Any:
     """Parse a sequence of messages into history.
 
     Args:
@@ -159,7 +159,7 @@ def _parse_chat_history(history):
     return {"context": context, "message_history": vertex_messages}
 
 
-def _parse_examples(examples) -> List["InputOutputTextPair"]:
+def _parse_examples(examples) -> Any:
     from vertexai.language_models import InputOutputTextPair
 
     if len(examples) % 2 != 0:
