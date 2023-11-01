@@ -4,9 +4,7 @@ An index that is built within DeepLake.
 
 """
 import logging
-from typing import Any, List, Optional, cast, Tuple, Callable
-
-import numpy as np
+from typing import Any, List, Optional, cast
 
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import VectorStore as VectorStoreBase
