@@ -8,13 +8,14 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 """
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.mixin import PromptMixin
 from llama_index.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 QueryTextType = Union[str, QueryBundle]
 
 
-class BaseSynthesizer(ABC):
+class BaseSynthesizer(PromptMixin):
     """Response builder class."""
 
     def __init__(
@@ -43,6 +44,11 @@ class BaseSynthesizer(ABC):
         self._callback_manager = self._service_context.callback_manager
         self._streaming = streaming
         self._output_cls = output_cls
+
+    def _get_prompt_modules(self) -> Dict[str, Any]:
+        """Get prompt modules."""
+        # TODO: keep this for now since response synthesizers don't generally have sub-modules
+        return {}
 
     @property
     def service_context(self) -> ServiceContext:
@@ -127,6 +133,7 @@ class BaseSynthesizer(ABC):
         query: QueryTextType,
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
             return Response("Empty Response")
@@ -142,6 +149,7 @@ class BaseSynthesizer(ABC):
                 text_chunks=[
                     n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
                 ],
+                **response_kwargs,
             )
 
             additional_source_nodes = additional_source_nodes or []
@@ -158,6 +166,7 @@ class BaseSynthesizer(ABC):
         query: QueryTextType,
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
             return Response("Empty Response")
@@ -173,6 +182,7 @@ class BaseSynthesizer(ABC):
                 text_chunks=[
                     n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
                 ],
+                **response_kwargs,
             )
 
             additional_source_nodes = additional_source_nodes or []

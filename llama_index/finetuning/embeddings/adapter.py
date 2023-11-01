@@ -7,6 +7,7 @@ from llama_index.embeddings.adapter import AdapterEmbeddingModel
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
 from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
+from llama_index.utils import infer_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         self.loader = self._get_data_loader(dataset)
 
         if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = infer_torch_device()
             logger.info(f"Use pytorch device: {device}")
         self._target_device = torch.device(device)
 

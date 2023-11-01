@@ -39,7 +39,7 @@ class MboxReader(BaseReader):
     ) -> None:
         """Init params."""
         try:
-            from bs4 import BeautifulSoup
+            from bs4 import BeautifulSoup  # noqa
         except ImportError:
             raise ImportError(
                 "`beautifulsoup4` package not found: `pip install beautifulsoup4`"
@@ -84,7 +84,7 @@ class MboxReader(BaseReader):
 
                 # Parse message HTML content and remove unneeded whitespace
                 soup = BeautifulSoup(content)
-                stripped_content = " ".join(soup.get_content().split())
+                stripped_content = " ".join(soup.get_text().split())
                 # Format message to include date, sender, receiver and subject
                 msg_string = self.message_format.format(
                     _date=msg["date"],

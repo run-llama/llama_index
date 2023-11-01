@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional, Sequence
 from llama_index.embeddings.base import SimilarityMode, similarity
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.mixin import PromptDictType
 
 
 class SemanticSimilarityEvaluator(BaseEvaluator):
@@ -41,6 +42,13 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
             self._similarity_fn = similarity_fn
 
         self._similarity_threshold = similarity_threshold
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
 
     async def aevaluate(
         self,

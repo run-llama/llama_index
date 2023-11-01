@@ -38,9 +38,9 @@ class GoogleDocsReader(BasePydanticReader):
     def __init__(self) -> None:
         """Initialize with parameters."""
         try:
-            import google
-            import google_auth_oauthlib
-            import googleapiclient
+            import google  # noqa
+            import google_auth_oauthlib  # noqa
+            import googleapiclient  # noqa
         except ImportError:
             raise ImportError(
                 "`google_auth_oauthlib`, `googleapiclient` and `google` "

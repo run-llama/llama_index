@@ -5,7 +5,7 @@ from IPython.display import Markdown, display
 
 from llama_index.img_utils import b64_2_img
 from llama_index.response.schema import Response
-from llama_index.schema import ImageNode, NodeWithScore
+from llama_index.schema import ImageNode, MetadataMode, NodeWithScore
 from llama_index.utils import truncate_text
 
 DEFAULT_THUMBNAIL_SIZE = (512, 512)
@@ -22,10 +22,11 @@ def display_source_node(
     source_node: NodeWithScore,
     source_length: int = 100,
     show_source_metadata: bool = False,
+    metadata_mode: MetadataMode = MetadataMode.NONE,
 ) -> None:
     """Display source node for jupyter notebook."""
     source_text_fmt = truncate_text(
-        source_node.node.get_content().strip(), source_length
+        source_node.node.get_content(metadata_mode=metadata_mode).strip(), source_length
     )
     text_md = (
         f"**Node ID:** {source_node.node.node_id}<br>"

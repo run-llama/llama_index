@@ -3,12 +3,13 @@ import logging
 from typing import List, Optional, Sequence, cast
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.bridge.pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.openai_generator import OpenAIQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
@@ -28,7 +29,7 @@ class SubQuestionAnswerPair(BaseModel):
 
     sub_q: SubQuestion
     answer: Optional[str] = None
-    sources: Optional[List[NodeWithScore]] = None
+    sources: List[NodeWithScore] = Field(default_factory=list)
 
 
 class SubQuestionQueryEngine(BaseQueryEngine):
@@ -70,6 +71,13 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         self._verbose = verbose
         self._use_async = use_async
         super().__init__(callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {
+            "question_gen": self._question_gen,
+            "response_synthesizer": self._response_synthesizer,
+        }
 
     @classmethod
     def from_defaults(
@@ -148,9 +156,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             nodes = [self._construct_node(pair) for pair in qa_pairs]
 
+            source_nodes = [node for qa_pair in qa_pairs for node in qa_pair.sources]
             response = self._response_synthesizer.synthesize(
                 query=query_bundle,
                 nodes=nodes,
+                additional_source_nodes=source_nodes,
             )
 
             query_event.on_end(payload={EventPayload.RESPONSE: response})
@@ -183,9 +193,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             nodes = [self._construct_node(pair) for pair in qa_pairs]
 
+            source_nodes = [node for qa_pair in qa_pairs for node in qa_pair.sources]
             response = await self._response_synthesizer.asynthesize(
                 query=query_bundle,
                 nodes=nodes,
+                additional_source_nodes=source_nodes,
             )
 
             query_event.on_end(payload={EventPayload.RESPONSE: response})

@@ -1,7 +1,7 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, Generator, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
@@ -31,6 +31,24 @@ def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
 
 import_err_msg = "`chromadb` package not found, please run `pip install chromadb`"
 
+MAX_CHUNK_SIZE = 41665  # One less than the max chunk size for ChromaDB
+
+
+def chunk_list(
+    lst: List[BaseNode], max_chunk_size: int
+) -> Generator[List[BaseNode], None, None]:
+    """Yield successive max_chunk_size-sized chunks from lst.
+
+    Args:
+        lst (List[BaseNode]): list of nodes with embeddings
+        max_chunk_size (int): max chunk size
+
+    Yields:
+        Generator[List[BaseNode], None, None]: list of nodes with embeddings
+    """
+    for i in range(0, len(lst), max_chunk_size):
+        yield lst[i : i + max_chunk_size]
+
 
 class ChromaVectorStore(BasePydanticVectorStore):
     """Chroma vector store.
@@ -53,6 +71,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     port: Optional[str]
     ssl: bool
     headers: Optional[Dict[str, str]]
+    persist_dir: Optional[str]
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     _collection: Any = PrivateAttr()
@@ -64,12 +83,13 @@ class ChromaVectorStore(BasePydanticVectorStore):
         port: Optional[str] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
+        persist_dir: Optional[str] = None,
         collection_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
         try:
-            import chromadb
+            import chromadb  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection
@@ -81,6 +101,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             port=port,
             ssl=ssl,
             headers=headers,
+            persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
 
@@ -92,25 +113,35 @@ class ChromaVectorStore(BasePydanticVectorStore):
         port: Optional[str] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
-        collection_kwargs: Optional[dict] = None,
+        persist_dir: Optional[str] = None,
+        collection_kwargs: Optional[dict] = {},
         **kwargs: Any,
     ) -> "ChromaVectorStore":
         try:
             import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
-
-        client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-        collection = client.get_or_create_collection(
-            name=collection_name, **collection_kwargs
-        )
-
+        if persist_dir:
+            client = chromadb.PersistentClient(path=persist_dir)
+            collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        elif host and port:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            raise ValueError(
+                "Either `persist_dir` or (`host`,`port`) must be specified"
+            )
         return cls(
             chroma_collection=collection,
             host=host,
             port=port,
             ssl=ssl,
             headers=headers,
+            persist_dir=persist_dir,
             collection_kwargs=collection_kwargs,
             **kwargs,
         )
@@ -129,27 +160,35 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        embeddings = []
-        metadatas = []
-        ids = []
-        documents = []
-        for node in nodes:
-            embeddings.append(node.get_embedding())
-            metadatas.append(
-                node_to_metadata_dict(
+        max_chunk_size = MAX_CHUNK_SIZE
+        node_chunks = chunk_list(nodes, max_chunk_size)
+
+        all_ids = []
+        for node_chunk in node_chunks:
+            embeddings = []
+            metadatas = []
+            ids = []
+            documents = []
+            for node in node_chunk:
+                embeddings.append(node.get_embedding())
+                metadata_dict = node_to_metadata_dict(
                     node, remove_text=True, flat_metadata=self.flat_metadata
                 )
-            )
-            ids.append(node.node_id)
-            documents.append(node.get_content(metadata_mode=MetadataMode.NONE))
+                if "context" in metadata_dict and metadata_dict["context"] is None:
+                    metadata_dict["context"] = ""
+                metadatas.append(metadata_dict)
+                ids.append(node.node_id)
+                documents.append(node.get_content(metadata_mode=MetadataMode.NONE))
 
-        self._collection.add(
-            embeddings=embeddings,
-            ids=ids,
-            metadatas=metadatas,
-            documents=documents,
-        )
-        return ids
+            self._collection.add(
+                embeddings=embeddings,
+                ids=ids,
+                metadatas=metadatas,
+                documents=documents,
+            )
+            all_ids.extend(ids)
+
+        return all_ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

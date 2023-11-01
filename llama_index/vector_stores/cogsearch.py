@@ -27,7 +27,7 @@ class MetadataIndexFieldType(int, enum.Enum):
     """
     Enumeration representing the supported types for metadata fields in an
     Azure Cognitive Search Index, corresponds with types supported in a flat
-    metadata dictionary
+    metadata dictionary.
     """
 
     STRING = auto()  # "Edm.String"
@@ -38,7 +38,7 @@ class MetadataIndexFieldType(int, enum.Enum):
 
 
 class IndexManagement(int, enum.Enum):
-    """Enumeration representing the supported index management operations"""
+    """Enumeration representing the supported index management operations."""
 
     NO_VALIDATION = auto()
     VALIDATE_INDEX = auto()
@@ -85,7 +85,7 @@ class CognitiveSearchVectorStore(VectorStore):
             self._create_index(index_name)
 
     def _create_metadata_index_fields(self) -> List[Any]:
-        """Create a list of index fields for storing metadata values"""
+        """Create a list of index fields for storing metadata values."""
         from azure.search.documents.indexes.models import SimpleField
 
         index_fields = []
@@ -113,7 +113,7 @@ class CognitiveSearchVectorStore(VectorStore):
     def _create_index(self, index_name: Optional[str]) -> None:
         """
         Creates a default index based on the supplied index name, key field names and
-        metadata filtering keys
+        metadata filtering keys.
         """
         from azure.search.documents.indexes.models import (
             HnswParameters,
@@ -287,7 +287,7 @@ class CognitiveSearchVectorStore(VectorStore):
         )
 
         try:
-            import azure.search.documents
+            import azure.search.documents  # noqa
             from azure.search.documents import SearchClient
             from azure.search.documents.indexes import SearchIndexClient
         except ImportError:
@@ -438,7 +438,7 @@ class CognitiveSearchVectorStore(VectorStore):
         return ids
 
     def _create_index_document(self, node: BaseNode) -> Dict[str, Any]:
-        """Create Cognitive Search index document from embedding result"""
+        """Create Cognitive Search index document from embedding result."""
         doc: Dict[str, Any] = {}
         doc["id"] = node.node_id
         doc["chunk"] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
@@ -478,7 +478,7 @@ class CognitiveSearchVectorStore(VectorStore):
             self._search_client.delete_documents(docs_to_delete)
 
     def _create_odata_filter(self, metadata_filters: MetadataFilters) -> str:
-        """Generate an OData filter string using supplied metadata filters"""
+        """Generate an OData filter string using supplied metadata filters."""
         odata_filter: List[str] = []
         for f in metadata_filters.filters:
             if not isinstance(f, ExactMatchFilter):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 from uuid import uuid4
 
 from llama_index.llm_predictor.vellum.types import (
@@ -72,7 +72,7 @@ class VellumPromptRegistry:
         return registered_prompt
 
     def get_compiled_prompt(
-        self, registered_prompt: VellumRegisteredPrompt, input_values: dict[str, Any]
+        self, registered_prompt: VellumRegisteredPrompt, input_values: Dict[str, Any]
     ) -> VellumCompiledPrompt:
         """Retrieves the fully-compiled prompt from Vellum, after all variable
         substitutions, templating, etc.

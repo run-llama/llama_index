@@ -17,7 +17,7 @@ class WikipediaReader(BasePydanticReader):
     def __init__(self) -> None:
         """Initialize with parameters."""
         try:
-            import wikipedia
+            import wikipedia  # noqa
         except ImportError:
             raise ImportError(
                 "`wikipedia` package not found, please run `pip install wikipedia`"

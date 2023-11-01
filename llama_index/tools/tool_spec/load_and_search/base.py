@@ -17,7 +17,7 @@ from llama_index.tools.utils import create_schema_from_function
 
 
 class LoadAndSearchToolSpec(BaseToolSpec):
-    """Load and Search Tool
+    """Load and Search Tool.
 
     This tool can be used with other tools that load large amounts of
     information. Compared to OndemandLoaderTool this returns two tools,

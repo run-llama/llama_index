@@ -22,22 +22,22 @@ _logger = logging.getLogger(__name__)
 
 NODE_SCHEMA: List[Dict] = [
     {
-        "dataType": ["string"],
+        "dataType": ["text"],
         "description": "Text property",
         "name": "text",
     },
     {
-        "dataType": ["string"],
+        "dataType": ["text"],
         "description": "The ref_doc_id of the Node",
         "name": "ref_doc_id",
     },
     {
-        "dataType": ["string"],
+        "dataType": ["text"],
         "description": "node_info (in JSON)",
         "name": "node_info",
     },
     {
-        "dataType": ["string"],
+        "dataType": ["text"],
         "description": "The relationships of the node (in JSON)",
         "name": "relationships",
     },
@@ -47,7 +47,7 @@ NODE_SCHEMA: List[Dict] = [
 def validate_client(client: Any) -> None:
     """Validate client and import weaviate library."""
     try:
-        import weaviate
+        import weaviate  # noqa
         from weaviate import Client
 
         client = cast(Client, client)

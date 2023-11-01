@@ -14,7 +14,7 @@ from llama_index.llms.custom import CustomLLM
 
 
 class PredibaseLLM(CustomLLM):
-    """Predibase LLM"""
+    """Predibase LLM."""
 
     model_name: str = Field(description="The Predibase model to use.")
     predibase_api_key: str = Field(description="The Predibase API key to use.")
@@ -80,17 +80,13 @@ class PredibaseLLM(CustomLLM):
             model_name=self.model_name,
         )
 
-    # "CompletionResponse"
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> "CompletionResponse":
-        model_kwargs = {
-            "temperature": self.temperature,
-            "max_new_tokens": self.max_new_tokens,
-        }
-        results = self._client.prompt(prompt, self.model_name, options=model_kwargs)
-        return CompletionResponse(
-            text=results.loc[0, "response"], additional_kwargs=model_kwargs
+        llm = self._client.LLM(f"pb://deployments/{self.model_name}")
+        results = llm.prompt(
+            prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature
         )
+        return CompletionResponse(text=results.response)
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> "CompletionResponseGen":

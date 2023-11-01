@@ -1,17 +1,43 @@
 import logging
 from threading import Thread
-from typing import Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.llms import ChatResponseAsyncGen, CompletionResponseAsyncGen
 from llama_index.llms.base import (
+    LLM,
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
+    llm_chat_callback,
     llm_completion_callback,
 )
 from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
 from llama_index.prompts.base import PromptTemplate
+
+if TYPE_CHECKING:
+    try:
+        from huggingface_hub import AsyncInferenceClient, InferenceClient
+        from huggingface_hub.hf_api import ModelInfo
+        from huggingface_hub.inference._types import ConversationalOutput
+    except ModuleNotFoundError:
+        AsyncInferenceClient = Any
+        InferenceClient = Any
+        ConversationalOutput = dict
+        ModelInfo = Any
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +74,9 @@ class HuggingFaceLLM(CustomLLM):
             "Unused if `tokenizer` is passed in directly."
         )
     )
-    device_map: str = Field(description="The device_map to use. Defaults to 'auto'.")
+    device_map: Optional[str] = Field(
+        description="The device_map to use. Defaults to 'auto'."
+    )
     stopping_ids: List[int] = Field(
         default_factory=list,
         description=(
@@ -78,6 +106,7 @@ class HuggingFaceLLM(CustomLLM):
     _model: Any = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
     _stopping_criteria: Any = PrivateAttr()
+    _messages_to_prompt: Callable = PrivateAttr()
 
     def __init__(
         self,
@@ -89,12 +118,13 @@ class HuggingFaceLLM(CustomLLM):
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: str = "auto",
+        device_map: Optional[str] = "auto",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
         model_kwargs: Optional[dict] = None,
         generate_kwargs: Optional[dict] = None,
+        messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
@@ -109,7 +139,7 @@ class HuggingFaceLLM(CustomLLM):
         except ImportError as exc:
             raise ImportError(
                 f"{type(self).__name__} requires torch and transformers packages.\n"
-                f"Please install both with `pip install torch transformers`."
+                "Please install both with `pip install transformers[torch]`."
             ) from exc
 
         model_kwargs = model_kwargs or {}
@@ -125,7 +155,7 @@ class HuggingFaceLLM(CustomLLM):
         if model_context_window and model_context_window < context_window:
             logger.warning(
                 f"Supplied context_window {context_window} is greater "
-                "than the model's max input size {model_context_window}. "
+                f"than the model's max input size {model_context_window}. "
                 "Disable this warning by setting a lower context_window."
             )
             context_window = model_context_window
@@ -158,6 +188,7 @@ class HuggingFaceLLM(CustomLLM):
         if isinstance(query_wrapper_prompt, PromptTemplate):
             query_wrapper_prompt = query_wrapper_prompt.template
 
+        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
@@ -191,10 +222,12 @@ class HuggingFaceLLM(CustomLLM):
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
         full_prompt = prompt
-        if self.query_wrapper_prompt:
-            full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-        if self.system_prompt:
-            full_prompt = f"{self.system_prompt} {full_prompt}"
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            if self.query_wrapper_prompt:
+                full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
+            if self.system_prompt:
+                full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self._model.device)
@@ -221,10 +254,12 @@ class HuggingFaceLLM(CustomLLM):
         from transformers import TextIteratorStreamer
 
         full_prompt = prompt
-        if self.query_wrapper_prompt:
-            full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-        if self.system_prompt:
-            full_prompt = f"{self.system_prompt} {full_prompt}"
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            if self.query_wrapper_prompt:
+                full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
+            if self.system_prompt:
+                full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self._model.device)
@@ -260,3 +295,246 @@ class HuggingFaceLLM(CustomLLM):
                 yield CompletionResponse(text=text, delta=x)
 
         return gen()
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        prompt = self._messages_to_prompt(messages)
+        completion_response = self.complete(prompt, formatted=True, **kwargs)
+        return completion_response_to_chat_response(completion_response)
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        prompt = self._messages_to_prompt(messages)
+        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
+        return stream_completion_response_to_chat_response(completion_response)
+
+
+def chat_messages_to_conversational_kwargs(
+    messages: Sequence[ChatMessage],
+) -> Dict[str, Any]:
+    """Convert ChatMessages to keyword arguments for Inference API conversational."""
+    if len(messages) % 2 != 1:
+        raise NotImplementedError("Messages passed in must be of odd length.")
+    last_message = messages[-1]
+    kwargs: Dict[str, Any] = {
+        "text": last_message.content,
+        **last_message.additional_kwargs,
+    }
+    if len(messages) != 1:
+        kwargs["past_user_inputs"] = []
+        kwargs["generated_responses"] = []
+        for user_msg, assistant_msg in zip(messages[::2], messages[1::2]):
+            if (
+                user_msg.role != MessageRole.USER
+                or assistant_msg.role != MessageRole.ASSISTANT
+            ):
+                raise NotImplementedError(
+                    "Didn't handle when messages aren't ordered in alternating"
+                    f" pairs of {(MessageRole.USER, MessageRole.ASSISTANT)}."
+                )
+            kwargs["past_user_inputs"].append(user_msg.content)
+            kwargs["generated_responses"].append(assistant_msg.content)
+    return kwargs
+
+
+class HuggingFaceInferenceAPI(LLM):
+    """
+    Wrapper on the Hugging Face's Inference API.
+
+    Overview of the design:
+    - Synchronous uses InferenceClient, asynchronous uses AsyncInferenceClient
+    - chat uses the conversational task: https://huggingface.co/tasks/conversational
+    - complete uses the text generation task: https://huggingface.co/tasks/text-generation
+
+    Note: some models that support the text generation task can leverage Hugging
+    Face's optimized deployment toolkit called text-generation-inference (TGI).
+    Use InferenceClient.get_model_status to check if TGI is being used.
+
+    Relevant links:
+    - General Docs: https://huggingface.co/docs/api-inference/index
+    - API Docs: https://huggingface.co/docs/huggingface_hub/main/en/package_reference/inference_client
+    - Source: https://github.com/huggingface/huggingface_hub/tree/main/src/huggingface_hub/inference
+    """
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "HuggingFaceInferenceAPI"
+
+    # Corresponds with huggingface_hub.InferenceClient
+    model_name: Optional[str] = Field(
+        default=None,
+        description=(
+            "The model to run inference with. Can be a model id hosted on the Hugging"
+            " Face Hub, e.g. bigcode/starcoder or a URL to a deployed Inference"
+            " Endpoint. Defaults to None, in which case a recommended model is"
+            " automatically selected for the task."
+        ),
+    )
+    token: Union[str, bool, None] = Field(
+        default=None,
+        description=(
+            "Hugging Face token. Will default to the locally saved token. Pass "
+            "token=False if you don’t want to send your token to the server."
+        ),
+    )
+    timeout: Optional[float] = Field(
+        default=None,
+        description=(
+            "The maximum number of seconds to wait for a response from the server."
+            " Loading a new model in Inference API can take up to several minutes."
+            " Defaults to None, meaning it will loop until the server is available."
+        ),
+    )
+    headers: Dict[str, str] = Field(
+        default=None,
+        description=(
+            "Additional headers to send to the server. By default only the"
+            " authorization and user-agent headers are sent. Values in this dictionary"
+            " will override the default values."
+        ),
+    )
+    cookies: Dict[str, str] = Field(
+        default=None, description="Additional cookies to send to the server."
+    )
+    _sync_client: "InferenceClient" = PrivateAttr()
+    _async_client: "AsyncInferenceClient" = PrivateAttr()
+    _get_model_info: "Callable[..., ModelInfo]" = PrivateAttr()
+
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description=(
+            LLMMetadata.__fields__["context_window"].field_info.description
+            + " This may be looked up in a model's `config.json`."
+        ),
+    )
+    num_output: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description=LLMMetadata.__fields__["num_output"].field_info.description,
+    )
+    is_chat_model: bool = Field(
+        default=False,
+        description=(
+            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            + " Unless chat templating is intentionally applied, Hugging Face models"
+            " are not chat models."
+        ),
+    )
+    is_function_calling_model: bool = Field(
+        default=False,
+        description=(
+            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            + " As of 10/17/2023, Hugging Face doesn't support function calling"
+            " messages."
+        ),
+    )
+
+    def _get_inference_client_kwargs(self) -> Dict[str, Any]:
+        """Extract the Hugging Face InferenceClient construction parameters."""
+        return {
+            "model": self.model_name,
+            "token": self.token,
+            "timeout": self.timeout,
+            "headers": self.headers,
+            "cookies": self.cookies,
+        }
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize.
+
+        Args:
+            kwargs: See the class-level Fields.
+        """
+        super().__init__(**kwargs)  # Populate pydantic Fields
+        try:
+            from huggingface_hub import (
+                AsyncInferenceClient,
+                InferenceClient,
+                model_info,
+            )
+        except ModuleNotFoundError as exc:
+            raise ImportError(
+                f"{type(self).__name__} requires huggingface_hub with its inference"
+                " extras, please run `pip install huggingface_hub[inference]`."
+            ) from exc
+        self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
+        self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
+        self._get_model_info = model_info
+
+    def validate_supported(self, task: str) -> None:
+        """
+        Confirm the contained model_name is deployed on the Inference API service.
+
+        Args:
+            task: Hugging Face task to check within. A list of all tasks can be
+                found here: https://huggingface.co/tasks
+        """
+        all_models = self._sync_client.list_deployed_models(frameworks="all")
+        try:
+            if self.model_name not in all_models[task]:
+                raise ValueError(
+                    "The Inference API service doesn't have the model"
+                    f" {self.model_name!r} deployed."
+                )
+        except KeyError as exc:
+            raise KeyError(
+                f"Input task {task!r} not in possible tasks {list(all_models.keys())}."
+            ) from exc
+
+    def get_model_info(self, **kwargs: Any) -> "ModelInfo":
+        """Get metadata on the current model from Hugging Face."""
+        return self._get_model_info(self.model_name, **kwargs)
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(
+            context_window=self.context_window,
+            num_output=self.num_output,
+            is_chat_model=self.is_chat_model,
+            is_function_calling_model=self.is_function_calling_model,
+            model_name=self.model_name,
+        )
+
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        output: "ConversationalOutput" = self._sync_client.conversational(
+            **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
+        )
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output["generated_text"]
+            )
+        )
+
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        return CompletionResponse(
+            text=self._sync_client.text_generation(
+                prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
+            )
+        )
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        raise NotImplementedError
+
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        raise NotImplementedError
+
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        raise NotImplementedError
+
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        raise NotImplementedError
+
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError
+
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        raise NotImplementedError

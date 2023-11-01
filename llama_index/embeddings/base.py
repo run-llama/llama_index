@@ -27,7 +27,7 @@ class SimilarityMode(str, Enum):
     EUCLIDEAN = "euclidean"
 
 
-def mean_agg(embeddings: List[List[float]]) -> List[float]:
+def mean_agg(embeddings: List[Embedding]) -> Embedding:
     """Mean aggregation for embeddings."""
     return list(np.array(embeddings).mean(axis=0))
 
@@ -76,20 +76,32 @@ class BaseEmbedding(BaseComponent):
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> Embedding:
-        """Get query embedding impl.
+        """
+        Embed the input query synchronously.
 
-        Sub-classes should implement this method.
+        Subclasses should implement this method. Reference get_query_embedding's
+        docstring for more information.
         """
 
     @abstractmethod
     async def _aget_query_embedding(self, query: str) -> Embedding:
-        """Async get query embedding impl.
+        """
+        Embed the input query asynchronously.
 
-        Sub-classes should implement this method.
+        Subclasses should implement this method. Reference get_query_embedding's
+        docstring for more information.
         """
 
     def get_query_embedding(self, query: str) -> Embedding:
-        """Get query embedding."""
+        """
+        Embed the input query.
+
+        When embedding a query, depending on the model, a special instruction
+        can be prepended to the raw query string. For example, "Represent the
+        question for retrieving supporting documents: ". If you're curious,
+        other examples of predefined instructions can be found in
+        embeddings/huggingface_utils.py.
+        """
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -121,7 +133,7 @@ class BaseEmbedding(BaseComponent):
     def get_agg_embedding_from_queries(
         self,
         queries: List[str],
-        agg_fn: Optional[Callable[..., List[float]]] = None,
+        agg_fn: Optional[Callable[..., Embedding]] = None,
     ) -> Embedding:
         """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
@@ -131,7 +143,7 @@ class BaseEmbedding(BaseComponent):
     async def aget_agg_embedding_from_queries(
         self,
         queries: List[str],
-        agg_fn: Optional[Callable[..., List[float]]] = None,
+        agg_fn: Optional[Callable[..., Embedding]] = None,
     ) -> Embedding:
         """Async get aggregated embedding from multiple queries."""
         query_embeddings = [await self.aget_query_embedding(query) for query in queries]
@@ -140,42 +152,52 @@ class BaseEmbedding(BaseComponent):
 
     @abstractmethod
     def _get_text_embedding(self, text: str) -> Embedding:
-        """Get text embedding impl.
+        """
+        Embed the input text synchronously.
 
-        Sub-classes should implement this method.
+        Subclasses should implement this method. Reference get_text_embedding's
+        docstring for more information.
         """
 
     async def _aget_text_embedding(self, text: str) -> Embedding:
-        """Asynchronously get text embedding.
-
-        By default, this falls back to _get_text_embedding.
-        Meant to be overridden if there is a true async implementation.
-
         """
+        Embed the input text asynchronously.
+
+        Subclasses can implement this method if there is a true async
+        implementation. Reference get_text_embedding's docstring for more
+        information.
+        """
+        # Default implementation just falls back on _get_text_embedding
         return self._get_text_embedding(text)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        """Get a list of text embeddings.
-
-        By default, this is a wrapper around _get_text_embedding.
-        Meant to be overridden for batch queries.
-
         """
+        Embed the input sequence of text synchronously.
+
+        Subclasses can implement this method if batch queries are supported.
+        """
+        # Default implementation just loops over _get_text_embedding
         return [self._get_text_embedding(text) for text in texts]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        """Async get a list of text embeddings.
+        """
+        Embed the input sequence of text asynchronously.
 
-        By default, this is a wrapper around _aget_text_embedding.
-        Meant to be overridden for batch queries.
-
+        Subclasses can implement this method if batch queries are supported.
         """
         return await asyncio.gather(
             *[self._aget_text_embedding(text) for text in texts]
         )
 
     def get_text_embedding(self, text: str) -> Embedding:
-        """Get text embedding."""
+        """
+        Embed the input text.
+
+        When embedding text, depending on the model, a special instruction
+        can be prepended to the raw text string. For example, "Represent the
+        document for retrieval: ". If you're curious, other examples of
+        predefined instructions can be found in embeddings/huggingface_utils.py.
+        """
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -211,7 +233,7 @@ class BaseEmbedding(BaseComponent):
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
         cur_batch: List[str] = []
-        result_embeddings: List[List[float]] = []
+        result_embeddings: List[Embedding] = []
 
         queue_with_progress = enumerate(
             get_tqdm_iterable(texts, show_progress, "Generating embeddings")
@@ -243,7 +265,7 @@ class BaseEmbedding(BaseComponent):
         """Asynchronously get a list of text embeddings, with batching."""
         cur_batch: List[str] = []
         callback_payloads: List[Tuple[str, List[str]]] = []
-        result_embeddings: List[List[float]] = []
+        result_embeddings: List[Embedding] = []
         embeddings_coroutines: List[Coroutine] = []
         for idx, text in enumerate(texts):
             cur_batch.append(text)

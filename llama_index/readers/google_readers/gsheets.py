@@ -38,9 +38,9 @@ class GoogleSheetsReader(BasePydanticReader):
     def __init__(self) -> None:
         """Initialize with parameters."""
         try:
-            import google
-            import google_auth_oauthlib
-            import googleapiclient
+            import google  # noqa
+            import google_auth_oauthlib  # noqa
+            import googleapiclient  # noqa
         except ImportError:
             raise ImportError(
                 "`google_auth_oauthlib`, `googleapiclient` and `google` "
@@ -104,8 +104,7 @@ class GoogleSheetsReader(BasePydanticReader):
                 .execute()
             )
             sheet_text += (
-                "\n".join(map(lambda row: "\t".join(row), response.get("values", [])))
-                + "\n"
+                "\n".join("\t".join(row) for row in response.get("values", [])) + "\n"
             )
         return sheet_text
 

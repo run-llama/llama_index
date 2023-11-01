@@ -198,12 +198,21 @@ def test_file_metadata() -> None:
         def filename_to_metadata(filename: str) -> Dict[str, Any]:
             return {"filename": filename, "author": test_author}
 
+        # test default file_metadata
+        reader = SimpleDirectoryReader(tmp_dir)
+
+        documents = reader.load_data()
+
+        for doc in documents:
+            assert "file_path" in doc.metadata
+
+        # test customized file_metadata
         reader = SimpleDirectoryReader(tmp_dir, file_metadata=filename_to_metadata)
 
         documents = reader.load_data()
 
-        for d in documents:
-            assert d.metadata is not None and d.metadata["author"] == test_author
+        for doc in documents:
+            assert doc.metadata is not None and doc.metadata["author"] == test_author
 
 
 def test_excluded_files() -> None:
@@ -343,6 +352,5 @@ def test_error_if_not_dir_or_file() -> None:
         SimpleDirectoryReader("not_a_dir")
     with pytest.raises(ValueError, match="File"):
         SimpleDirectoryReader(input_files=["not_a_file"])
-    with TemporaryDirectory() as tmp_dir:
-        with pytest.raises(ValueError, match="No files"):
-            SimpleDirectoryReader(tmp_dir)
+    with TemporaryDirectory() as tmp_dir, pytest.raises(ValueError, match="No files"):
+        SimpleDirectoryReader(tmp_dir)
