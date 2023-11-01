@@ -71,18 +71,18 @@ class AstraDBVectorStore(VectorStore):
         _logger.debug("Creating the Astra DB table")
 
         # Build the Astra DB object
-        self.astra_db = AstraDB(
+        self._astra_db = AstraDB(
             api_endpoint=api_endpoint, token=token, namespace=namespace
         )
 
         # Create the new collection
-        self.astra_db.create_collection(
+        self._astra_db.create_collection(
             collection_name=collection_name, dimension=embedding_dimension
         )
 
         # Connect to the newly created collection
-        self.astra_db_collection = AstraDBCollection(
-            collection_name=collection_name, astra_db=self.astra_db
+        self._astra_db_collection = AstraDBCollection(
+            collection_name=collection_name, astra_db=self._astra_db
         )
 
     def add(
@@ -121,7 +121,7 @@ class AstraDBVectorStore(VectorStore):
         _logger.debug(f"Adding {len(nodes_list)} rows to table")
 
         # Perform the bulk insert
-        self.astra_db_collection.insert_many(nodes_list)
+        self._astra_db_collection.insert_many(nodes_list)
 
         # Return the list of ids
         return [n["_id"] for n in nodes_list]
@@ -136,12 +136,12 @@ class AstraDBVectorStore(VectorStore):
         """
         _logger.debug("Deleting a document from the Astra table")
 
-        self.astra_db_collection.delete(id=ref_doc_id, **delete_kwargs)
+        self._astra_db_collection.delete(id=ref_doc_id, **delete_kwargs)
 
     @property
     def client(self) -> Any:
         """Return the underlying Astra vector table object."""
-        return self.astra_db_collection
+        return self._astra_db_collection
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
@@ -154,7 +154,7 @@ class AstraDBVectorStore(VectorStore):
         projection = {"$vector": 1, "$similarity": 1, "content": 1}
 
         # Call the find method of the Astra API
-        matches = self.astra_db_collection.find(
+        matches = self._astra_db_collection.find(
             sort=sort, options=options, projection=projection
         )["data"]["documents"]
 
