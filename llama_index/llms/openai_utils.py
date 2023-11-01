@@ -9,8 +9,11 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
+    stop_after_delay,
     wait_exponential,
+    wait_random_exponential,
 )
+from tenacity.stop import stop_base
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage
@@ -107,23 +110,37 @@ logger = logging.getLogger(__name__)
 CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
 
 
-def _create_retry_decorator(
-    max_retries: int, min_seconds: int = 4, max_seconds: int = 10
+def create_retry_decorator(
+    max_retries: int,
+    random_exponential: bool = False,
+    stop_after_delay_seconds: Optional[float] = None,
+    min_seconds: float = 4,
+    max_seconds: float = 10,
 ) -> Callable[[Any], Any]:
-    # Wait 2^x * 1 second between each retry starting with
-    # min_seconds, then up to max_seconds, then max_seconds afterwards
-    # By default:
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    wait_strategy = (
+        wait_random_exponential(min=min_seconds, max=max_seconds)
+        if random_exponential
+        else wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
+    )
+
+    stop_strategy: stop_base = stop_after_attempt(max_retries)
+    if stop_after_delay_seconds is not None:
+        stop_strategy = stop_strategy | stop_after_delay(stop_after_delay_seconds)
+
     return retry(
         reraise=True,
-        stop=stop_after_attempt(max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        stop=stop_strategy,
+        wait=wait_strategy,
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(
+                (
+                    openai.error.Timeout,
+                    openai.error.APIError,
+                    openai.error.APIConnectionError,
+                    openai.error.RateLimitError,
+                    openai.error.ServiceUnavailableError,
+                )
+            )
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -137,9 +154,7 @@ def completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(
-        max_retries=max_retries, min_seconds=min_seconds, max_seconds=max_seconds
-    )
+    retry_decorator = create_retry_decorator(max_retries=max_retries)
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
@@ -157,9 +172,7 @@ async def acompletion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(
-        max_retries=max_retries, min_seconds=min_seconds, max_seconds=max_seconds
-    )
+    retry_decorator = create_retry_decorator(max_retries=max_retries)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
