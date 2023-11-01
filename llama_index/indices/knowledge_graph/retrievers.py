@@ -214,15 +214,7 @@ class KGTableRetriever(BaseRetriever):
             )
             logger.debug(f"Found the following top_k rel_texts: {rel_texts!s}")
             rel_texts.extend(top_rel_texts)
-            if self._include_text:
-                keywords = self._extract_rel_text_keywords(top_rel_texts)
-                nested_node_ids = [
-                    self._index_struct.search_node_by_keyword(keyword)
-                    for keyword in keywords
-                ]
-                node_ids = [_id for ids in nested_node_ids for _id in ids]
-                for node_id in node_ids:
-                    chunk_indices_count[node_id] += 1
+
         elif len(self._index_struct.embedding_dict) == 0:
             logger.warning(
                 "Index was not constructed with embeddings, skipping embedding usage..."
@@ -242,6 +234,20 @@ class KGTableRetriever(BaseRetriever):
 
             # truncate rel_texts
             rel_texts = rel_texts[: self.max_knowledge_sequence]
+
+        # When include_text = True just get the actual content of all the nodes
+        # (Nodes with actual keyword match, Nodes which are found from the depth search and Nodes founnd from top_k similarity)
+        if self._include_text:
+            keywords = self._extract_rel_text_keywords(
+                rel_texts
+            )  # rel_texts will have all the Triplets retrieved with respect to the Query
+            nested_node_ids = [
+                self._index_struct.search_node_by_keyword(keyword)
+                for keyword in keywords
+            ]
+            node_ids = [_id for ids in nested_node_ids for _id in ids]
+            for node_id in node_ids:
+                chunk_indices_count[node_id] += 1
 
         sorted_chunk_indices = sorted(
             chunk_indices_count.keys(),
