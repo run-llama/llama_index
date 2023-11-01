@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Iterator
 
 from llama_index.llms.base import LLM
 from llama_index.llms.huggingface import HuggingFaceLLM
@@ -37,7 +37,9 @@ def build_lm_format_enforcer_function(
 
 
 @contextmanager
-def activate_lm_format_enforcer(llm: LLM, lm_format_enforcer_fn: Callable):
+def activate_lm_format_enforcer(
+    llm: LLM, lm_format_enforcer_fn: Callable
+) -> Iterator[None]:
     """Activate the LM Format Enforcer for the given LLM.
 
     with activate_lm_format_enforcer(llm, lm_format_enforcer_fn):
