@@ -204,27 +204,3 @@ class DeepLakeVectorStore(VectorStoreBase):
             nodes.append(metadata_dict_to_node(metadata))
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
-
-    def train(
-        self,
-        queries: List[str],
-        relevance: List[List[Tuple[str, int]]],
-        embedding_function: Optional[Callable[[str], np.ndarray]] = None,
-        token: Optional[str] = None,
-    ):
-        """Train the index with the given queries and relevance.
-
-        Args:
-            queries (List[str]): List of queries.
-            relevance (List[List[Tuple[str, int]]]): List of relevance for each query.
-            embedding_function (Optional[Callable[[str], np.ndarray]]): Function that
-                takes a string and returns its embedding. Defaults to None.
-            token (Optional[str]): The deeplake token that allows you to access the
-                dataset with proper access. Defaults to None.
-        """
-        return self.vectorstore.deep_memory.train(
-            queries=queries,
-            relevance=relevance,
-            embedding_function=embedding_function,
-            token=token,
-        )
