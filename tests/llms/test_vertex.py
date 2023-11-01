@@ -1,5 +1,5 @@
 import pytest
-from vertex import Vertex
+from llama_index.llms.vertex import Vertex
 from llama_index.llms.base import ChatMessage,MessageRole,CompletionResponse
 
 def test_vertex_initialization() -> None:
