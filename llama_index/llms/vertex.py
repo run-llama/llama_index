@@ -20,6 +20,7 @@ from llama_index.llms.vertex_utils import (
     CHAT_MODELS,
     CODE_CHAT_MODELS,
     CODE_MODELS,
+    TEXT_MODELS,
     _parse_chat_history,
     _parse_examples,
     acompletion_with_retry,
@@ -66,26 +67,26 @@ class Vertex(LLM):
         callback_manager = callback_manager or CallbackManager([])
 
         if model in CHAT_MODELS:
-            # print("Chat Model Detected")
             from vertexai.language_models import ChatModel
 
             self._chatclient = ChatModel.from_pretrained(model)
         elif model in CODE_CHAT_MODELS:
-            # print("Code Chat Model Detected")
             from vertexai.language_models import CodeChatModel
 
             self._chatclient = CodeChatModel.from_pretrained(model)
             iscode = True
         elif model in CODE_MODELS:
-            # print("Code Generation Model Detected")
             from vertexai.language_models import CodeGenerationModel
 
             self._client = CodeGenerationModel.from_pretrained(model)
             iscode = True
-        else:
+        elif model in TEXT_MODELS:
             from vertexai.language_models import TextGenerationModel
 
             self._client = TextGenerationModel.from_pretrained(model)
+        else:
+            raise (ValueError("Model Not Found Please Check the model name"))
+
         super().__init__(
             temperature=temperature,
             max_tokens=max_tokens,
@@ -103,13 +104,10 @@ class Vertex(LLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        # return LLMMetadata(
-        #     context_window=anthropic_modelname_to_contextsize(self.model),
-        #     num_output=self.max_tokens,
-        #     is_chat_model=True,
-        #     model_name=self.model,
-        # )
-        pass
+        return LLMMetadata(
+            is_chat_model=True,
+            model_name=self.model,
+        )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -299,10 +297,10 @@ class Vertex(LLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        print("""Not implemented for Vertex""")
+        raise (ValueError("Not Implemented"))
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        print("""Not implemented for Vertex""")
+        raise (ValueError("Not Implemented"))
