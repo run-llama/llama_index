@@ -1,12 +1,15 @@
 import json
-from importlib.util import find_spec
-from typing import Any, Callable, Optional, Type, Union, cast
+from typing import Any, Optional, Type, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.lmformatenforcer_utils import (
+    activate_lm_format_enforcer,
+    build_lm_format_enforcer_function,
+)
 
 
 class LMFormatEnforcerPydanticProgram(BaseLLMFunctionProgram):
@@ -25,11 +28,13 @@ class LMFormatEnforcerPydanticProgram(BaseLLMFunctionProgram):
         llm: Optional[Union[LlamaCPP, HuggingFaceLLM]] = None,
         verbose: bool = False,
     ):
-        if not find_spec("lmformatenforcer"):
+        try:
+            import lmformatenforcer
+        except ImportError as e:
             raise ImportError(
                 "lm-format-enforcer package not found."
                 "please run `pip install lm-format-enforcer`"
-            )
+            ) from e
 
         if llm is None:
             try:
@@ -47,7 +52,10 @@ class LMFormatEnforcerPydanticProgram(BaseLLMFunctionProgram):
         self._prompt_template_str = prompt_template_str
         self._output_cls = output_cls
         self._verbose = verbose
-        self._token_enforcer_fn = self._build_token_enforcer_function()
+        json_schema_parser = lmformatenforcer.JsonSchemaParser(self.output_cls.schema())
+        self._token_enforcer_fn = build_lm_format_enforcer_function(
+            self.llm, json_schema_parser
+        )
 
     @classmethod
     def from_defaults(
@@ -73,29 +81,6 @@ class LMFormatEnforcerPydanticProgram(BaseLLMFunctionProgram):
             **kwargs,
         )
 
-    def _build_token_enforcer_function(self) -> Callable:
-        import lmformatenforcer
-
-        json_schema_parser = lmformatenforcer.JsonSchemaParser(self.output_cls.schema())
-        if isinstance(self.llm, HuggingFaceLLM):
-            from lmformatenforcer.integrations.transformers import (
-                build_transformers_prefix_allowed_tokens_fn,
-            )
-
-            return build_transformers_prefix_allowed_tokens_fn(
-                self.llm._tokenizer, json_schema_parser
-            )
-        if isinstance(self.llm, LlamaCPP):
-            from llama_cpp import LogitsProcessorList
-            from lmformatenforcer.integrations.llamacpp import (
-                build_llamacpp_logits_processor,
-            )
-
-            return LogitsProcessorList(
-                [build_llamacpp_logits_processor(self.llm._model, json_schema_parser)]
-            )
-        raise ValueError("Unsupported LLM type")
-
     @property
     def output_cls(self) -> Type[BaseModel]:
         return self._output_cls
@@ -105,14 +90,8 @@ class LMFormatEnforcerPydanticProgram(BaseLLMFunctionProgram):
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
-        generate_kwargs_key = ""
-        if isinstance(self.llm, HuggingFaceLLM):
-            generate_kwargs_key = "prefix_allowed_tokens_fn"
-        elif isinstance(self.llm, LlamaCPP):
-            generate_kwargs_key = "logits_processor"
-
-        try:
-            self.llm.generate_kwargs[generate_kwargs_key] = self._token_enforcer_fn
+        # While the format enforcer is active, any calls to the llm will have the format enforced.
+        with activate_lm_format_enforcer(self.llm, self._token_enforcer_fn):
             json_schema_str = json.dumps(self.output_cls.schema())
             full_str = self._prompt_template_str.format(
                 *args, **kwargs, json_schema=json_schema_str
@@ -120,7 +99,3 @@ class LMFormatEnforcerPydanticProgram(BaseLLMFunctionProgram):
             output = self.llm.complete(full_str)
             text = output.text
             return self.output_cls.parse_raw(text)
-        finally:
-            # We remove the token enforcer function from the generate_kwargs at the end
-            # in case other code paths use the same llm object.
-            del self.llm.generate_kwargs[generate_kwargs_key]
