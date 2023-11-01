@@ -154,8 +154,14 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = self._generate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        all_messages = prefix_messages + self._memory.get()
-
+        initial_token_count = len(
+            self._memory.tokenizer_fn(
+                " ".join([(m.content or "") for m in prefix_messages])
+            )
+        )
+        all_messages = prefix_messages + self._memory.get(
+            initial_token_count=initial_token_count
+        )
         chat_response = self._llm.chat(all_messages)
         ai_message = chat_response.message
         self._memory.put(ai_message)
@@ -183,7 +189,14 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = self._generate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        all_messages = prefix_messages + self._memory.get()
+        initial_token_count = len(
+            self._memory.tokenizer_fn(
+                " ".join([(m.content or "") for m in prefix_messages])
+            )
+        )
+        all_messages = prefix_messages + self._memory.get(
+            initial_token_count=initial_token_count
+        )
 
         chat_response = StreamingAgentChatResponse(
             chat_stream=self._llm.stream_chat(all_messages),
@@ -214,7 +227,14 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = await self._agenerate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        all_messages = prefix_messages + self._memory.get()
+        initial_token_count = len(
+            self._memory.tokenizer_fn(
+                " ".join([(m.content or "") for m in prefix_messages])
+            )
+        )
+        all_messages = prefix_messages + self._memory.get(
+            initial_token_count=initial_token_count
+        )
 
         chat_response = await self._llm.achat(all_messages)
         ai_message = chat_response.message
@@ -243,7 +263,14 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = await self._agenerate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        all_messages = prefix_messages + self._memory.get()
+        initial_token_count = len(
+            self._memory.tokenizer_fn(
+                " ".join([(m.content or "") for m in prefix_messages])
+            )
+        )
+        all_messages = prefix_messages + self._memory.get(
+            initial_token_count=initial_token_count
+        )
 
         chat_response = StreamingAgentChatResponse(
             achat_stream=await self._llm.astream_chat(all_messages),
