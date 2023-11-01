@@ -81,4 +81,5 @@ __all__ = [
     "MetadataFilters",
     "DashVectorStore",
     "TencentVectorDB",
+    "AstraDBVectorStore",
 ]
