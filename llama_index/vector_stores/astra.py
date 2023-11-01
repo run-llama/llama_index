@@ -110,7 +110,7 @@ class AstraDBVectorStore(VectorStore):
             # One dictionary of node data per node
             nodes_list.append(
                 {
-                    "_id": str(node.node_id),
+                    "_id": node.node_id,
                     "content": node.get_content(metadata_mode=MetadataMode.NONE),
                     "metadata": metadata,
                     "$vector": node.get_embedding(),
@@ -124,7 +124,7 @@ class AstraDBVectorStore(VectorStore):
         self._astra_db_collection.insert_many(nodes_list)
 
         # Return the list of ids
-        return [n["_id"] for n in nodes_list]
+        return [str(n["_id"]) for n in nodes_list]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
