@@ -43,6 +43,7 @@ We are actively adding more integrations and improving feature coverage for each
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
 | TencentVectorDB          | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
+| AstraDB                  | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 

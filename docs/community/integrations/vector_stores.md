@@ -32,7 +32,8 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
-- DashVector(`DashVectorStore`).[Installation](https://help.aliyun.com/document_detail/2510230.html).
+- DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
+- AstraDB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/home/docs/index.html).
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 

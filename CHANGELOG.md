@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Add DataStax Astra DB support (#8609)
+
 ## [0.8.56] - 2023-10-30
 
 ### New Features
