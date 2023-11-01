@@ -14,6 +14,7 @@ from tenacity import (
     wait_exponential,
     wait_random_exponential,
 )
+from tenacity.stop import stop_base
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage
@@ -112,18 +113,18 @@ CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
 
 def create_retry_decorator(
     max_retries: int,
-    exponential: bool = True,
-    stop_after_delay_seconds: Union[int, None] = None,
+    random_exponential: bool = False,
+    stop_after_delay_seconds: Optional = None,
+    min_seconds: float = 4,
+    max_seconds: float = 10,
 ) -> Callable[[Any], Any]:
-    min_seconds = 4
-    max_seconds = 10
     wait_strategy = (
-        wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
-        if exponential
-        else wait_random_exponential(min=1, max=20)
+        wait_random_exponential(min=min_seconds, max=max_seconds)
+        if random_exponential
+        else wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
     )
 
-    stop_strategy: Union[stop_after_attempt, stop_any] = stop_after_attempt(max_retries)
+    stop_strategy: stop_base = stop_after_attempt(max_retries)
     if stop_after_delay_seconds is not None:
         stop_strategy = stop_strategy | stop_after_delay(stop_after_delay_seconds)
 

@@ -15,7 +15,11 @@ from llama_index.llms.openai_utils import (
 )
 
 embedding_retry_decorator = create_retry_decorator(
-    max_retries=6, exponential=False, stop_after_delay_seconds=60
+    max_retries=6,
+    random_exponential=True,
+    stop_after_delay_seconds=60,
+    min_seconds=1,
+    max_seconds=20,
 )
 
 
