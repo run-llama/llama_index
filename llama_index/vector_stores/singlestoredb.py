@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 from sqlalchemy.pool import QueuePool
 
@@ -218,7 +218,7 @@ class SingleStoreVectorStore(VectorStore):
             build_where_clause(where_clause_values, filter)
             where_clause += " AND ".join(arguments)
 
-        results: List[Any] = []
+        results: Sequence[Any] = []
         if query_embedding:
             try:
                 cur = conn.cursor()
