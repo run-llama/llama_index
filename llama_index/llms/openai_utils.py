@@ -149,12 +149,14 @@ def create_retry_decorator(
 def completion_with_retry(
     is_chat_model: bool,
     max_retries: int,
-    min_seconds: int = 4,
-    max_seconds: int = 10,
+    min_seconds: float = 4,
+    max_seconds: float = 10,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = create_retry_decorator(max_retries=max_retries)
+    retry_decorator = create_retry_decorator(
+        max_retries=max_retries, min_seconds=min_seconds, max_seconds=max_seconds
+    )
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
@@ -167,12 +169,14 @@ def completion_with_retry(
 async def acompletion_with_retry(
     is_chat_model: bool,
     max_retries: int,
-    min_seconds: int = 4,
-    max_seconds: int = 10,
+    min_seconds: float = 4,
+    max_seconds: float = 10,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = create_retry_decorator(max_retries=max_retries)
+    retry_decorator = create_retry_decorator(
+        max_retries=max_retries, min_seconds=min_seconds, max_seconds=max_seconds
+    )
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
