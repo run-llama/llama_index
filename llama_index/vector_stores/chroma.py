@@ -71,6 +71,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     port: Optional[str]
     ssl: bool
     headers: Optional[Dict[str, str]]
+    persist_dir: Optional[str]
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     _collection: Any = PrivateAttr()
@@ -82,6 +83,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         port: Optional[str] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
+        persist_dir: Optional[str] = None,
         collection_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
@@ -99,6 +101,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             port=port,
             ssl=ssl,
             headers=headers,
+            persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
 
@@ -110,25 +113,35 @@ class ChromaVectorStore(BasePydanticVectorStore):
         port: Optional[str] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
-        collection_kwargs: Optional[dict] = None,
+        persist_dir: Optional[str] = None,
+        collection_kwargs: Optional[dict] = {},
         **kwargs: Any,
     ) -> "ChromaVectorStore":
         try:
             import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
-
-        client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-        collection = client.get_or_create_collection(
-            name=collection_name, **collection_kwargs
-        )
-
+        if persist_dir:
+            client = chromadb.PersistentClient(path=persist_dir)
+            collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        elif host and port:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            raise ValueError(
+                "Either `persist_dir` or (`host`,`port`) must be specified"
+            )
         return cls(
             chroma_collection=collection,
             host=host,
             port=port,
             ssl=ssl,
             headers=headers,
+            persist_dir=persist_dir,
             collection_kwargs=collection_kwargs,
             **kwargs,
         )
