@@ -166,8 +166,6 @@ def get_embeddings(
 
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    print("list_of_text", list_of_text)
-
     data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
 
