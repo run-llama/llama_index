@@ -100,7 +100,9 @@ def init_vertexai(
     try:
         import vertexai
     except ImportError:
-        raise_vertex_import_error()
+        raise(ValueError(
+                f"Please install vertex AI client by following the steps"
+            ))
 
     vertexai.init(
         project=project,
