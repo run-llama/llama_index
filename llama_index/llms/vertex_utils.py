@@ -138,7 +138,7 @@ def _parse_chat_history(history):
         raise ValueError("total no of messages should be even")
     chat_history = {"context":context, "message_history":vertex_messages}
     return chat_history
-def _parse_examples(examples: List[ChatMessage]) -> List["InputOutputTextPair"]:
+def _parse_examples(examples) -> List["InputOutputTextPair"]:
     from vertexai.language_models import InputOutputTextPair
 
     if len(examples) % 2 != 0:
