@@ -1,4 +1,4 @@
-from .base import google_service_context, GoogleVectorStore
+from .base import GoogleVectorStore, google_service_context
 
 __all__ = [
     "google_service_context",

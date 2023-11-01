@@ -4,26 +4,26 @@ The content of this file should eventually go into the Python package
 google.generativeai.
 """
 
-from dataclasses import dataclass
 import datetime
+import logging
+import re
+import uuid
+from dataclasses import dataclass
+from typing import Any, Dict, Iterator, List, MutableSequence, Optional
+
 import google.ai.generativelanguage as genai
 from google.api_core import client_options as client_options_lib
 from google.api_core import gapic_v1
 from google.protobuf import timestamp_pb2
-import llama_index
-import logging
-import re
-from typing import Any, cast, Dict, Iterable, Iterator, List, MutableSequence, Optional
-import uuid
 
+import llama_index
 
 _logger = logging.getLogger(__name__)
 _DEFAULT_API_ENDPOINT = "autopush-generativelanguage.sandbox.googleapis.com"
 _USER_AGENT = f"llama_index/{llama_index.__version__}"
 _default_page_size = 20
 _default_text_service_model = "models/text-bison-001"
-_name_regex = re.compile(
-    r"^corpora/([^/]+?)(/documents/([^/]+?)(/chunks/([^/]+?))?)?$")
+_name_regex = re.compile(r"^corpora/([^/]+?)(/documents/([^/]+?)(/chunks/([^/]+?))?)?$")
 
 
 @dataclass
@@ -141,10 +141,11 @@ _config = Config()
 
 def build_retriever() -> genai.RetrieverServiceClient:
     return genai.RetrieverServiceClient(
-        client_info=gapic_v1.client_info.ClientInfo(
-            user_agent=_USER_AGENT),
+        client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
         client_options=client_options_lib.ClientOptions(
-            api_endpoint=_config.api_endpoint))
+            api_endpoint=_config.api_endpoint
+        ),
+    )
 
 
 _default_retriever: genai.RetrieverServiceClient = build_retriever()
@@ -157,10 +158,11 @@ def _set_default_retriever(retriever: genai.RetrieverServiceClient) -> None:
 
 def build_text_service() -> genai.TextServiceClient:
     return genai.TextServiceClient(
-        client_info=gapic_v1.client_info.ClientInfo(
-            user_agent=_USER_AGENT),
+        client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
         client_options=client_options_lib.ClientOptions(
-            api_endpoint=_config.api_endpoint))
+            api_endpoint=_config.api_endpoint
+        ),
+    )
 
 
 _default_text_service: genai.TextServiceClient = build_text_service()
@@ -192,12 +194,10 @@ def get_corpus(
         client = _default_retriever
     try:
         corpus = client.get_corpus(
-            genai.GetCorpusRequest(
-                name=str(EntityName(corpus_id=corpus_id))
-            )
+            genai.GetCorpusRequest(name=str(EntityName(corpus_id=corpus_id)))
         )
         return Corpus.from_corpus(corpus)
-    except:
+    except Exception:
         return None
 
 
@@ -220,9 +220,9 @@ def create_corpus(
 
     new_corpus = client.create_corpus(
         genai.CreateCorpusRequest(
-            corpus=genai.Corpus(
-                name=name,
-                display_name=new_display_name)))
+            corpus=genai.Corpus(name=name, display_name=new_display_name)
+        )
+    )
 
     return Corpus.from_corpus(new_corpus)
 
@@ -235,9 +235,8 @@ def delete_corpus(
     if client is None:
         client = _default_retriever
     client.delete_corpus(
-        genai.DeleteCorpusRequest(
-            name=str(EntityName(corpus_id=corpus_id)),
-            force=True))
+        genai.DeleteCorpusRequest(name=str(EntityName(corpus_id=corpus_id)), force=True)
+    )
 
 
 def list_documents(
@@ -249,8 +248,8 @@ def list_documents(
         client = _default_retriever
     for document in client.list_documents(
         genai.ListDocumentsRequest(
-            parent=str(EntityName(corpus_id=corpus_id)),
-            page_size=_default_page_size)
+            parent=str(EntityName(corpus_id=corpus_id)), page_size=_default_page_size
+        )
     ):
         yield Document.from_document(document)
 
@@ -266,10 +265,11 @@ def get_document(
     try:
         document = client.get_document(
             genai.GetDocumentRequest(
-                name=str(EntityName(
-                    corpus_id=corpus_id, document_id=document_id))))
+                name=str(EntityName(corpus_id=corpus_id, document_id=document_id))
+            )
+        )
         return Document.from_document(document)
-    except:
+    except Exception:
         return None
 
 
@@ -285,8 +285,7 @@ def create_document(
         client = _default_retriever
     name: Optional[str]
     if document_id is not None:
-        name = str(EntityName(
-            corpus_id=corpus_id, document_id=document_id))
+        name = str(EntityName(corpus_id=corpus_id, document_id=document_id))
     else:
         name = None
 
@@ -297,9 +296,10 @@ def create_document(
         genai.CreateDocumentRequest(
             parent=str(EntityName(corpus_id=corpus_id)),
             document=genai.Document(
-                name=name,
-                display_name=new_display_name,
-                custom_metadata=new_metadatas)))
+                name=name, display_name=new_display_name, custom_metadata=new_metadatas
+            ),
+        )
+    )
 
     return Document.from_document(new_document)
 
@@ -314,9 +314,10 @@ def delete_document(
         client = _default_retriever
     client.delete_document(
         genai.DeleteDocumentRequest(
-            name=str(EntityName(
-                corpus_id=corpus_id, document_id=document_id)),
-            force=True))
+            name=str(EntityName(corpus_id=corpus_id, document_id=document_id)),
+            force=True,
+        )
+    )
 
 
 def batch_create_chunk(
@@ -333,11 +334,10 @@ def batch_create_chunk(
         metadatas = [{} for _ in texts]
     if len(texts) != len(metadatas):
         raise ValueError(
-            f"metadatas's length {len(metadatas)} and texts's length {len(texts)} are mismatched")
+            f"metadatas's length {len(metadatas)} and texts's length {len(texts)} are mismatched"
+        )
 
-    doc_name = str(EntityName(
-        corpus_id=corpus_id,
-        document_id=document_id))
+    doc_name = str(EntityName(corpus_id=corpus_id, document_id=document_id))
 
     # Temporary solution until b/307125429 is fixed.
     created_chunks: List[genai.Chunk] = []
@@ -353,28 +353,29 @@ def batch_create_chunk(
         )
     return created_chunks
 
-    """Restore this after b/307125429 is fixed.
-    operation = client.batch_create_chunks(
-        genai.BatchCreateChunksRequest(
-            parent=doc_name,
-            requests=[
-                genai.CreateChunkRequest(
-                    parent=doc_name,
-                    chunk=genai.Chunk(
-                        data=genai.ChunkData(string_value=text),
-                        custom_metadata=_convertToMetadata(metadata),
-                    ),
-                )
-                for text, metadata in zip(texts, metadatas)
-            ]
-        )
-    )
 
-    while not operation.done():
-        _logger.info("Waiting on batch_create_chunk operation")
-    response = cast(genai.BatchCreateChunksResponse, operation.result())
-    return [chunk for chunk in response.chunks]
-    """
+"""Restore this after b/307125429 is fixed.
+operation = client.batch_create_chunks(
+    genai.BatchCreateChunksRequest(
+        parent=doc_name,
+        requests=[
+            genai.CreateChunkRequest(
+                parent=doc_name,
+                chunk=genai.Chunk(
+                    data=genai.ChunkData(string_value=text),
+                    custom_metadata=_convertToMetadata(metadata),
+                ),
+            )
+            for text, metadata in zip(texts, metadatas)
+        ]
+    )
+)
+
+while not operation.done():
+    _logger.info("Waiting on batch_create_chunk operation")
+response = cast(genai.BatchCreateChunksResponse, operation.result())
+return [chunk for chunk in response.chunks]
+"""
 
 
 def delete_chunk(
@@ -388,10 +389,13 @@ def delete_chunk(
         client = _default_retriever
     client.delete_chunk(
         genai.DeleteChunkRequest(
-            name=str(EntityName(
-                corpus_id=corpus_id,
-                document_id=document_id,
-                chunk_id=chunk_id))))
+            name=str(
+                EntityName(
+                    corpus_id=corpus_id, document_id=document_id, chunk_id=chunk_id
+                )
+            )
+        )
+    )
 
 
 def query_corpus(
@@ -400,7 +404,7 @@ def query_corpus(
     query: str,
     k: int = 4,
     filter: Optional[Dict[str, Any]] = None,
-    client: Optional[genai.RetrieverServiceClient] = None
+    client: Optional[genai.RetrieverServiceClient] = None,
 ) -> List[genai.RelevantChunk]:
     if client is None:
         client = _default_retriever
@@ -412,7 +416,7 @@ def query_corpus(
             results_count=k,
         )
     )
-    return [chunk for chunk in response.relevant_chunks]
+    return list(response.relevant_chunks)
 
 
 def query_document(
@@ -422,20 +426,19 @@ def query_document(
     query: str,
     k: int = 4,
     filter: Optional[Dict[str, Any]] = None,
-    client: Optional[genai.RetrieverServiceClient] = None
+    client: Optional[genai.RetrieverServiceClient] = None,
 ) -> List[genai.RelevantChunk]:
     if client is None:
         client = _default_retriever
     response = client.query_document(
         genai.QueryDocumentRequest(
-            name=str(EntityName(
-                corpus_id=corpus_id, document_id=document_id)),
+            name=str(EntityName(corpus_id=corpus_id, document_id=document_id)),
             query=query,
             metadata_filters=_convertFilter(filter),
             results_count=k,
         )
     )
-    return [chunk for chunk in response.relevant_chunks]
+    return list(response.relevant_chunks)
 
 
 @dataclass
@@ -475,14 +478,15 @@ def generate_text_answer(
                         for chunk in passages
                     ]
                 )
-            )
+            ),
         )
     )
     return TextAnswer(
         answer=response.answer.output,
         attributed_passages=[
             Passage(text=passage.text, ids=list(passage.passage_ids))
-            for passage in response.attributed_passages],
+            for passage in response.attributed_passages
+        ],
         answerable_probability=0.9,
     )
 
@@ -491,14 +495,11 @@ def _convertToMetadata(metadata: Dict[str, Any]) -> List[genai.CustomMetadata]:
     cs: List[genai.CustomMetadata] = []
     for key, value in metadata.items():
         if isinstance(value, str):
-            c = genai.CustomMetadata(
-                key=key, string_value=value)
+            c = genai.CustomMetadata(key=key, string_value=value)
         elif isinstance(value, int):
-            c = genai.CustomMetadata(
-                key=key, int_value=value)
+            c = genai.CustomMetadata(key=key, int_value=value)
         elif isinstance(value, float):
-            c = genai.CustomMetadata(
-                key=key, double_value=value)
+            c = genai.CustomMetadata(key=key, double_value=value)
         else:
             raise ValueError(f"Metadata value {value} is not supported")
 
@@ -507,7 +508,7 @@ def _convertToMetadata(metadata: Dict[str, Any]) -> List[genai.CustomMetadata]:
 
 
 def _convertFilter(fs: Optional[Dict[str, Any]]) -> List[genai.MetadataFilter]:
-    if fs == None:
+    if fs is None:
         return []
     assert isinstance(fs, dict)
 
@@ -515,22 +516,19 @@ def _convertFilter(fs: Optional[Dict[str, Any]]) -> List[genai.MetadataFilter]:
     for key, value in fs.items():
         if isinstance(value, str):
             condition = genai.Condition(
-                operation=genai.Condition.Operator.EQUAL,
-                string_value=value)
+                operation=genai.Condition.Operator.EQUAL, string_value=value
+            )
         elif isinstance(value, int):
             condition = genai.Condition(
-                operation=genai.Condition.Operator.EQUAL,
-                int_value=value)
+                operation=genai.Condition.Operator.EQUAL, int_value=value
+            )
         elif isinstance(value, float):
             condition = genai.Condition(
-                operation=genai.Condition.Operator.EQUAL,
-                double_value=value)
+                operation=genai.Condition.Operator.EQUAL, double_value=value
+            )
         else:
             raise ValueError(f"Filter value {value} is not supported")
 
-        filters.append(
-            genai.MetadataFilter(
-                key=key,
-                conditions=[condition]))
+        filters.append(genai.MetadataFilter(key=key, conditions=[condition]))
 
     return filters
