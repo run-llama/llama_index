@@ -94,7 +94,6 @@ class DeepLakeVectorStore(VectorStoreBase):
         self.token = token
         self.read_only = read_only
         self.dataset_path = dataset_path
-        self.deep_memory = kwargs.get("deep_memory", None)
 
         if not DEEPLAKE_INSTALLED:
             raise ImportError(
@@ -179,6 +178,7 @@ class DeepLakeVectorStore(VectorStoreBase):
                 the following attributes:
                 1. query_embedding (List[float]): query embedding
                 2. similarity_top_k (int): top k most similar nodes
+            deep_memory (bool): Whether to use deep memory for query execution.
 
         Returns:
             VectorStoreQueryResult
