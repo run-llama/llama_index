@@ -107,10 +107,12 @@ logger = logging.getLogger(__name__)
 CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
 
 
-def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
-    min_seconds = 4
-    max_seconds = 10
+def _create_retry_decorator(
+    max_retries: int, min_seconds: int = 4, max_seconds: int = 10
+) -> Callable[[Any], Any]:
     # Wait 2^x * 1 second between each retry starting with
+    # min_seconds, then up to max_seconds, then max_seconds afterwards
+    # By default:
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
     return retry(
         reraise=True,
@@ -127,9 +129,17 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     )
 
 
-def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) -> Any:
+def completion_with_retry(
+    is_chat_model: bool,
+    max_retries: int,
+    min_seconds: int = 4,
+    max_seconds: int = 10,
+    **kwargs: Any,
+) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(max_retries=max_retries)
+    retry_decorator = _create_retry_decorator(
+        max_retries=max_retries, min_seconds=min_seconds, max_seconds=max_seconds
+    )
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
@@ -140,10 +150,16 @@ def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) 
 
 
 async def acompletion_with_retry(
-    is_chat_model: bool, max_retries: int, **kwargs: Any
+    is_chat_model: bool,
+    max_retries: int,
+    min_seconds: int = 4,
+    max_seconds: int = 10,
+    **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(max_retries=max_retries)
+    retry_decorator = _create_retry_decorator(
+        max_retries=max_retries, min_seconds=min_seconds, max_seconds=max_seconds
+    )
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
