@@ -396,6 +396,24 @@ vector_store = TimescaleVectorStore.from_params(
 )
 ```
 
+**SingleStore**
+
+```python
+from llama_index.vector_stores import SingleStoreVectorStore
+import os
+
+# can set the singlestore db url in env
+# or pass it in as an argument to the SingleStoreVectorStore constructor
+os.environ["SINGLESTOREDB_URL"] = "PLACEHOLDER URL"
+vector_store = SingleStoreVectorStore(
+    table_name="embeddings",
+    content_field="content",
+    metadata_field="metadata",
+    vector_field="vector",
+    timeout=30,
+)
+```
+
 **DocArray**
 
 ```python
@@ -635,5 +653,6 @@ maxdepth: 1
 ../../examples/vector_stores/Neo4jVectorDemo.ipynb
 ../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ../../examples/vector_stores/Timescalevector.ipynb
+../../examples/vector_stores/SingleStoreDemo.ipynb
 ../../examples/vector_stores/DashvectorIndexDemo.ipynb
 ```

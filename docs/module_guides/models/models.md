@@ -8,5 +8,4 @@ maxdepth: 1
 ---
 llms.md
 embeddings.md
-prompts.md
 ```

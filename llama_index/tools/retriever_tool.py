@@ -1,9 +1,10 @@
 """Retriever tool."""
 
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.langchain_helpers.agents.tools import LlamaIndexTool
+from llama_index.schema import MetadataMode
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 
 DEFAULT_NAME = "retriever_tool"
@@ -51,21 +52,50 @@ class RetrieverTool(AsyncBaseTool):
     def metadata(self) -> ToolMetadata:
         return self._metadata
 
-    def call(self, input: Any) -> ToolOutput:
-        query_str = cast(str, input)
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        query_str = ""
+        if args is not None:
+            query_str += ", ".join([str(arg) for arg in args]) + "\n"
+        if kwargs is not None:
+            query_str += (
+                ", ".join([f"{k!s} is {v!s}" for k, v in kwargs.items()]) + "\n"
+            )
+        if query_str == "":
+            raise ValueError("Cannot call query engine without inputs")
+
         docs = self._retriever.retrieve(query_str)
+        content = ""
+        for doc in docs:
+            node_copy = doc.node.copy()
+            node_copy.text_template = "{metadata_str}\n{content}"
+            node_copy.metadata_template = "{key} = {value}"
+            content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
         return ToolOutput(
-            content=str(docs),
+            content=content,
             tool_name=self.metadata.name,
             raw_input={"input": input},
             raw_output=docs,
         )
 
-    async def acall(self, input: Any) -> ToolOutput:
-        query_str = cast(str, input)
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        query_str = ""
+        if args is not None:
+            query_str += ", ".join([str(arg) for arg in args]) + "\n"
+        if kwargs is not None:
+            query_str += (
+                ", ".join([f"{k!s} is {v!s}" for k, v in kwargs.items()]) + "\n"
+            )
+        if query_str == "":
+            raise ValueError("Cannot call query engine without inputs")
         docs = await self._retriever.aretrieve(query_str)
+        content = ""
+        for doc in docs:
+            node_copy = doc.node.copy()
+            node_copy.text_template = "{metadata_str}\n{content}"
+            node_copy.metadata_template = "{key} = {value}"
+            content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
         return ToolOutput(
-            content=str(docs),
+            content=content,
             tool_name=self.metadata.name,
             raw_input={"input": input},
             raw_output=docs,

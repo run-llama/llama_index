@@ -13,7 +13,7 @@ PyPI:
 
 LlamaIndex.TS (Typescript/Javascript): https://github.com/run-llama/LlamaIndexTS.
 
-Documentation: https://gpt-index.readthedocs.io/.
+Documentation: https://docs.llamaindex.ai/en/stable/.
 
 Twitter: https://twitter.com/llama_index.
 
