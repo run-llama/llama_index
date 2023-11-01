@@ -5,6 +5,8 @@
 ### Bug Fixes / Nits
 
 - Update dataType in Weaviate (#8608)
+- In Knowledge Graph Index with hybrid retriever_mode,
+  - return the nodes found by keyword search when 'No Relationship found'
 
 ## [0.8.56] - 2023-10-30
 
