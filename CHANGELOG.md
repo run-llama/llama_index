@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.57] - 2023-10-31
 
 ### New Features
 
