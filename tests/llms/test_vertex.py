@@ -5,7 +5,7 @@ from llama_index.llms.vertex import Vertex
 
 def test_vertex_initialization() -> None:
     llm = Vertex()
-    assert llm.class_name() == "Vertex_LLM"
+    assert llm.class_name() == "Vertex"
     assert llm.model == llm._client._model_id
 
 

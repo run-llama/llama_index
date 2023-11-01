@@ -100,7 +100,7 @@ class Vertex(LLM):
 
     @classmethod
     def class_name(cls) -> str:
-        return "Vertex_LLM"
+        return "Vertex"
 
     @property
     def metadata(self) -> LLMMetadata:
