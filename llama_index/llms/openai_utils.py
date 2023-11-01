@@ -113,7 +113,7 @@ CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
 def create_retry_decorator(
     max_retries: int,
     random_exponential: bool = False,
-    stop_after_delay_seconds: Optional = None,
+    stop_after_delay_seconds: Optional[float] = None,
     min_seconds: float = 4,
     max_seconds: float = 10,
 ) -> Callable[[Any], Any]:

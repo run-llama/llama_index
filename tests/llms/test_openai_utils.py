@@ -138,7 +138,7 @@ def test_from_openai_message_dicts_function_calling_azure(
     assert chat_messages == azure_chat_messages_with_function_calling
 
 
-def test_create_retry_decorator():
+def test_create_retry_decorator() -> None:
     test_retry_decorator = create_retry_decorator(
         max_retries=6,
         random_exponential=False,
@@ -148,7 +148,7 @@ def test_create_retry_decorator():
     )
 
     @test_retry_decorator
-    def mock_function():
+    def mock_function() -> str:
         # Simulate OpenAI API call with potential errors
         if mock_function.retry.statistics["attempt_number"] == 1:
             raise openai.error.Timeout(message="Timeout error")
