@@ -236,7 +236,7 @@ class Vertex(LLM):
             **params
         )
 
-        def gen() -> ChatResponseGen:
+        def gen() -> CompletionResponseGen:
             content = ""
             for r in completion:
                 content_delta = r.text
