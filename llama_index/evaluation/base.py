@@ -24,6 +24,13 @@ class EvaluationResult(BaseModel):
         None, description="Feedback or reasoning for the response"
     )
     score: Optional[float] = Field(None, description="Score for the response")
+    pairwise_source: Optional[str] = Field(
+        None,
+        description=(
+            "Used only for pairwise and specifies whether it is from original order of"
+            " presented answers or flipped order"
+        ),
+    )
 
 
 class BaseEvaluator(PromptMixin):

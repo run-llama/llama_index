@@ -149,7 +149,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         self,
         eval_result: EvaluationResult,
         flipped_eval_result: EvaluationResult,
-    ) -> Tuple[EvaluationResult, EvaluationSource]:
+    ) -> EvaluationResult:
         """Resolve eval results from evaluation + flipped evaluation.
 
         Args:
@@ -161,25 +161,30 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             came from: the eval_result or flipped_eval_result (or neither in case
             of inconclusive).
         """
+        # add pairwise_source to eval_result and flipped_eval_result
+        eval_result.pairwise_source = EvaluationSource.ORIGINAL
+        flipped_eval_result.pairwise_source = EvaluationSource.FLIPPED
+
         # count the votes for each of the 2 answers
-        votes_1 = eval_result.score + (1 - flipped_eval_result.score)
-        votes_2 = (1 - eval_result.score) + flipped_eval_result.score
-        if votes_1 + votes_2 != 2:  # each round, the judge can give a total of 1 vote
-            raise ValueError("Impossible score results. Total amount of votes is 2.")
+        if eval_result.score and flipped_eval_result.score:
+            votes_1 = eval_result.score + (1 - flipped_eval_result.score)
+            votes_2 = (1 - eval_result.score) + flipped_eval_result.score
+            if (
+                votes_1 + votes_2 != 2
+            ):  # each round, the judge can give a total of 1 vote
+                raise ValueError(
+                    "Impossible score results. Total amount of votes is 2."
+                )
 
         # get the judges (original and flipped) who voted for answer_1
-        voters_1 = [(eval_result, EvaluationSource.ORIGINAL)] * (
-            eval_result.score == 1.0
-        ) + [(flipped_eval_result, EvaluationSource.FLIPPED)] * (
-            flipped_eval_result.score == 0.0
-        )
+        voters_1 = [eval_result] * (eval_result.score == 1.0) + [
+            flipped_eval_result
+        ] * (flipped_eval_result.score == 0.0)
 
         # get the judges (original and flipped) who voted for answer_2
-        voters_2 = [(eval_result, EvaluationSource.ORIGINAL)] * (
-            eval_result.score == 0.0
-        ) + [(flipped_eval_result, EvaluationSource.FLIPPED)] * (
-            flipped_eval_result.score == 1.0
-        )
+        voters_2 = [eval_result] * (eval_result.score == 0.0) + [
+            flipped_eval_result
+        ] * (flipped_eval_result.score == 1.0)
 
         if votes_1 > votes_2:
             return voters_1[0]  # return any voter for answer_1
@@ -190,28 +195,26 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
                 eval_result.score == 0.5
             ):  # votes_1 == votes_2 can only happen if both are 1.0 (so actual tie)
                 # doesn't matter which one we return here
-                return (eval_result, EvaluationSource.ORIGINAL)
+                return eval_result
             else:  # Inconclusive case!
-                return (
-                    EvaluationResult(
-                        query=eval_result.query,
-                        response="",
-                        passing=None,
-                        score=0.5,
-                        feedback="",
-                    ),
-                    EvaluationSource.NEITHER,
+                return EvaluationResult(
+                    query=eval_result.query,
+                    response="",
+                    passing=None,
+                    score=0.5,
+                    feedback="",
+                    pairwise_source=EvaluationSource.NEITHER,
                 )
 
     async def aevaluate(
         self,
         query: Optional[str] = None,
         response: Optional[str] = None,
-        second_response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
+        second_response: Optional[str] = None,
         reference: Optional[str] = None,
         **kwargs: Any,
-    ) -> Tuple[EvaluationResult, str]:
+    ) -> EvaluationResult:
         del kwargs  # Unused
         del contexts  # Unused
 
@@ -236,8 +239,8 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             flipped_eval_result = await self._get_eval_result(
                 query, second_response, response, reference
             )
-            resolved_eval_result, eval_source = await self._resolve_results(
+            resolved_eval_result = await self._resolve_results(
                 eval_result, flipped_eval_result
             )
 
-        return resolved_eval_result, eval_source
+        return resolved_eval_result
