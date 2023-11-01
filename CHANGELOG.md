@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Update dataType in Weaviate (#8608)
+
 ## [0.8.56] - 2023-10-30
 
 ### New Features
