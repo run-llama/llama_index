@@ -4,6 +4,7 @@
 
 ### New Features
 
+- Add fine-tuning evaluator notebooks (#8596)
 - Add `SingleStoreDB` integration (#7991)
 - Add support for ChromaDB PersistentClient (#8582)
 - Add DataStax Astra DB support (#8609)
