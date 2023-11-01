@@ -1,13 +1,12 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from sqlalchemy.pool import QueuePool
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     BaseNode,
-    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
