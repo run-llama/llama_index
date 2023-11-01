@@ -1,6 +1,10 @@
 from enum import Enum
+from typing import TYPE_CHECKING, Union, overload
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import torch
 
 
 class Pooling(str, Enum):
@@ -15,7 +19,19 @@ class Pooling(str, Enum):
         return self.mean_pooling(array)
 
     @classmethod
+    @overload
     def cls_pooling(cls, array: np.ndarray) -> np.ndarray:
+        ...
+
+    @classmethod
+    @overload
+    def cls_pooling(cls, array: "torch.Tensor") -> "torch.Tensor":
+        ...
+
+    @classmethod
+    def cls_pooling(
+        cls, array: "Union[np.ndarray, torch.Tensor]"
+    ) -> "Union[np.ndarray, torch.Tensor]":
         if len(array.shape) == 3:
             return array[:, 0]
         if len(array.shape) == 2:

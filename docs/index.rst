@@ -120,14 +120,13 @@ Associated projects
    optimizing/evaluation/evaluation.md
    optimizing/fine-tuning/fine-tuning.md
    optimizing/production_rag.md
-   optimizing/building_rag_from_scratch.md
-
 .. toctree::
    :maxdepth: 2
    :caption: Module Guides
    :hidden:
 
    module_guides/models/models.md
+   module_guides/models/prompts.md
    module_guides/loading/loading.md
    module_guides/indexing/indexing.md
    module_guides/storing/storing.md

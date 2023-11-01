@@ -4,7 +4,34 @@
 
 ### New Features
 
+- Add `SingleStoreDB` integration (#7991)
+- Add support for ChromaDB PersistentClient (#8582)
+
+### Bug Fixes / Nits
+
+- Update dataType in Weaviate (#8608)
+- In Knowledge Graph Index with hybrid retriever_mode,
+  - return the nodes found by keyword search when 'No Relationship found'
+- Fix exceed context length error in chat engines (#8530)
+- Retrieve actual content of all the triplets from KG (#8579)
+- Return the nodes found by Keywords when no relationship is found by embeddings in hybrid retriever_mode in `KnowledgeGraphIndex` (#8575)
+- Optimize content of retriever tool and minor bug fix (#8588)
+
+## [0.8.56] - 2023-10-30
+
+### New Features
+
 - Add Amazon `BedrockEmbedding` (#8550)
+- Moves `HuggingFaceEmbedding` to center on `Pooling` enum for pooling (#8467)
+- Add IBM WatsonX LLM support (#8587)
+
+### Bug Fixes / Nits
+
+- [Bug] Patch Clarifai classes (#8529)
+- fix retries for bedrock llm (#8528)
+- Fix : VectorStore’s QueryResult always returns saved Node as TextNode (#8521)
+- Added default file_metadata to get basic metadata that many postprocessors use, for SimpleDirectoryReader (#8486)
+- Handle metadata with None values in chromadb (#8584)
 
 ## [0.8.55] - 2023-10-29
 

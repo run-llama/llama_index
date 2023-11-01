@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import LLM, ChatMessage
@@ -21,7 +21,7 @@ class BaseMemory(BaseModel):
         """Create a chat memory from defaults."""
 
     @abstractmethod
-    def get(self) -> List[ChatMessage]:
+    def get(self, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
 
     @abstractmethod
