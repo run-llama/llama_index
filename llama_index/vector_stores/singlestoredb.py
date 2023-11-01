@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 from sqlalchemy.pool import QueuePool
 
@@ -172,7 +172,7 @@ class SingleStoreVectorStore(VectorStore):
             conn.close()
 
     def query(
-        self, query: VectorStoreQuery, filter: Optional[dict] = None
+        self, query: VectorStoreQuery, filter: Optional[dict] = None, **kwargs: Any
     ) -> VectorStoreQueryResult:
         """
         Query index for top k most similar nodes.
@@ -218,7 +218,7 @@ class SingleStoreVectorStore(VectorStore):
             build_where_clause(where_clause_values, filter)
             where_clause += " AND ".join(arguments)
 
-        results = []
+        results: Sequence[Any] = []
         if query_embedding:
             try:
                 cur = conn.cursor()
