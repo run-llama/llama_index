@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 import requests
 
 from llama_index.indices.query.base import BaseQueryEngine
@@ -57,3 +59,7 @@ class CogniswitchQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         return self.query_knowledge(query_bundle.query_str)
+
+    def _get_prompt_modules(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {}
