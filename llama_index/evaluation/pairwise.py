@@ -1,7 +1,7 @@
 """Pairwise evaluation."""
 
 from enum import Enum
-from typing import Any, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Sequence, Union
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
@@ -157,9 +157,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             flipped_eval_result (EvaluationResult): Result when answer_2 is shown first
 
         Returns:
-            Tuple[EvaluationResult, str]: The final evaluation result, and where it
-            came from: the eval_result or flipped_eval_result (or neither in case
-            of inconclusive).
+            EvaluationResult: The final evaluation result
         """
         # add pairwise_source to eval_result and flipped_eval_result
         eval_result.pairwise_source = EvaluationSource.ORIGINAL
