@@ -18,6 +18,7 @@ from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
 from llama_index.prompts.base import BasePromptTemplate
 from llama_index.text_splitter.types import TextSplitter
+from llama_index.types import PydanticProgramMode
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,8 @@ class ServiceContext:
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         query_wrapper_prompt: Optional[BasePromptTemplate] = None,
+        # pydantic program mode (used if output_cls is specified)
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
@@ -151,7 +154,9 @@ class ServiceContext:
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
             llm = resolve_llm(llm)
-        llm_predictor = llm_predictor or LLMPredictor(llm=llm)
+        llm_predictor = llm_predictor or LLMPredictor(
+            llm=llm, pydantic_program_mode=pydantic_program_mode
+        )
         if isinstance(llm_predictor, LLMPredictor):
             llm_predictor.llm.callback_manager = callback_manager
             if system_prompt:

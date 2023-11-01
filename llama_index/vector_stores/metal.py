@@ -39,7 +39,7 @@ class MetalVectorStore(VectorStore):
             "`metal_sdk` package not found, please run `pip install metal_sdk`"
         )
         try:
-            import metal_sdk
+            import metal_sdk  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
         from metal_sdk.metal import Metal

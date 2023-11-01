@@ -5,6 +5,7 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -27,6 +28,15 @@ class Accumulate(BaseSynthesizer):
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         self._output_cls = output_cls
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"text_qa_template": self._text_qa_template}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "text_qa_template" in prompts:
+            self._text_qa_template = prompts["text_qa_template"]
 
     def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
         return [item for sublist in md_array for item in sublist]
@@ -52,7 +62,9 @@ class Accumulate(BaseSynthesizer):
             raise ValueError("Unable to stream in Accumulate response mode")
 
         tasks = [
-            self._give_responses(query_str, text_chunk, use_async=True)
+            self._give_responses(
+                query_str, text_chunk, use_async=True, **response_kwargs
+            )
             for text_chunk in text_chunks
         ]
 
@@ -73,7 +85,9 @@ class Accumulate(BaseSynthesizer):
             raise ValueError("Unable to stream in Accumulate response mode")
 
         tasks = [
-            self._give_responses(query_str, text_chunk, use_async=self._use_async)
+            self._give_responses(
+                query_str, text_chunk, use_async=self._use_async, **response_kwargs
+            )
             for text_chunk in text_chunks
         ]
 
@@ -85,7 +99,11 @@ class Accumulate(BaseSynthesizer):
         return self._format_response(outputs, separator)
 
     def _give_responses(
-        self, query_str: str, text_chunk: str, use_async: bool = False
+        self,
+        query_str: str,
+        text_chunk: str,
+        use_async: bool = False,
+        **response_kwargs: Any,
     ) -> List[Any]:
         """Give responses given a query and a corresponding text chunk."""
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
@@ -105,6 +123,7 @@ class Accumulate(BaseSynthesizer):
                 text_qa_template,
                 context_str=cur_text_chunk,
                 output_cls=self._output_cls,
+                **response_kwargs,
             )
             for cur_text_chunk in text_chunks
         ]

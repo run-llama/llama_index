@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool

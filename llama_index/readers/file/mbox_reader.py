@@ -39,7 +39,7 @@ class MboxReader(BaseReader):
     ) -> None:
         """Init params."""
         try:
-            from bs4 import BeautifulSoup
+            from bs4 import BeautifulSoup  # noqa
         except ImportError:
             raise ImportError(
                 "`beautifulsoup4` package not found: `pip install beautifulsoup4`"

@@ -45,7 +45,7 @@ def extract_final_response(input_text: str) -> Tuple[str, str]:
 class ReActOutputParser(BaseOutputParser):
     """ReAct Output parser."""
 
-    def parse(self, output: str) -> BaseReasoningStep:
+    def parse(self, output: str, is_streaming: bool = False) -> BaseReasoningStep:
         """Parse output from ReAct agent.
 
         We expect the output to be in one of the following formats:
@@ -65,12 +65,16 @@ class ReActOutputParser(BaseOutputParser):
             # NOTE: handle the case where the agent directly outputs the answer
             # instead of following the thought-answer format
             return ResponseReasoningStep(
-                thought="I can answer without any tools.", response=output
+                thought="(Implicit) I can answer without any more tools!",
+                response=output,
+                is_streaming=is_streaming,
             )
 
         if "Answer:" in output:
             thought, answer = extract_final_response(output)
-            return ResponseReasoningStep(thought=thought, response=answer)
+            return ResponseReasoningStep(
+                thought=thought, response=answer, is_streaming=is_streaming
+            )
 
         if "Action:" in output:
             thought, action, action_input = extract_tool_use(output)

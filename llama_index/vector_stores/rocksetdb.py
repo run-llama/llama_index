@@ -4,7 +4,7 @@ from enum import Enum
 from os import getenv
 from time import sleep
 from types import ModuleType
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, List, Type, TypeVar
 
 from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (

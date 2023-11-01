@@ -45,7 +45,8 @@ def _batch_iterable(iterable: Iterable[T], batch_size: int) -> Iterable[Iterable
 
 
 class CassandraVectorStore(VectorStore):
-    """Cassandra Vector Store.
+    """
+    Cassandra Vector Store.
 
     An abstraction of a Cassandra table with
     vector-similarity-search. Documents, and their embeddings, are stored
@@ -53,16 +54,29 @@ class CassandraVectorStore(VectorStore):
     The table does not need to exist beforehand: if necessary it will
     be created behind the scenes.
 
-    All Cassandra operations are done through the cassIO library.
+    All Cassandra operations are done through the CassIO library.
+
+    Note: in recent versions, only `table` and `embedding_dimension` can be
+    passed positionally. Please revise your code if needed.
+    This is to accommodate for a leaner usage, whereby the DB connection
+    is set globally through a `cassio.init(...)` call: then, the DB details
+    are not to be specified anymore when creating a vector store, unless
+    desired.
 
     Args:
-        session (cassandra.cluster.Session): the Cassandra session to use
-        keyspace (str): name of the Cassandra keyspace to work in
         table (str): table name to use. If not existing, it will be created.
         embedding_dimension (int): length of the embedding vectors in use.
-        ttl_seconds (Optional[int]): expiration time for inserted entries.
-            Default is no expiration.
-
+        session (optional, cassandra.cluster.Session): the Cassandra session
+            to use.
+            Can be omitted, or equivalently set to None, to use the
+            DB connection set globally through cassio.init() beforehand.
+        keyspace (optional. str): name of the Cassandra keyspace to work in
+            Can be omitted, or equivalently set to None, to use the
+            DB connection set globally through cassio.init() beforehand.
+        ttl_seconds (optional, int): expiration time for inserted entries.
+            Default is no expiration (None).
+        insertion_batch_size (optional, int): how many vectors are inserted
+            concurrently, for use by bulk inserts. Defaults to 20.
     """
 
     stores_text: bool = True
@@ -70,14 +84,17 @@ class CassandraVectorStore(VectorStore):
 
     def __init__(
         self,
-        session: Any,
-        keyspace: str,
         table: str,
         embedding_dimension: int,
+        *,
+        session: Optional[Any] = None,
+        keyspace: Optional[str] = None,
         ttl_seconds: Optional[int] = None,
         insertion_batch_size: int = DEFAULT_INSERTION_BATCH_SIZE,
     ) -> None:
-        import_err_msg = "`cassio` package not found, please run `pip install cassio`"
+        import_err_msg = (
+            "`cassio` package not found, please run `pip install --upgrade cassio`"
+        )
         try:
             from cassio.table import ClusteredMetadataVectorCassandraTable
         except ImportError:

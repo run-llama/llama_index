@@ -7,6 +7,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,15 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         self.llm_predictor = llm_predictor or LLMPredictor()
         self.should_resynthesize_query = resynthesize_query
         self.resynthesis_prompt = resynthesis_prompt or DEFAULT_RESYNTHESIS_PROMPT
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"resynthesis_prompt": self.resynthesis_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "resynthesis_prompt" in prompts:
+            self.resynthesis_prompt = prompts["resynthesis_prompt"]
 
     def _run(self, query_bundle: QueryBundle, metadata: Dict) -> QueryBundle:
         orig_query_str = query_bundle.query_str

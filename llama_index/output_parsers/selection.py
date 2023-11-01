@@ -16,7 +16,7 @@ def _escape_curly_braces(input_string: str) -> str:
 
 FORMAT_STR = """The output should be ONLY JSON formatted as a JSON instance.
 
-Here's an example:
+Here is an example:
 [
     {
         choice: 1,
@@ -92,7 +92,7 @@ class SelectionOutputParser(BaseOutputParser):
             json_obj = [json_obj]
 
         if not json_obj:
-            raise ValueError(f"Failed to convert output to JSON: {output}")
+            raise ValueError(f"Failed to convert output to JSON: {output!r}")
 
         json_output = self._format_output(json_obj)
         answers = [Answer.from_dict(json_dict) for json_dict in json_output]

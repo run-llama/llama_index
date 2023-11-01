@@ -38,11 +38,12 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.8.45.post1"
+version = "0.8.56"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
 dataclasses-json = "^0.5.7"
+deprecated = ">=1.2.9.3"
 fsspec = ">=2023.5.0"
 langchain = ">=0.0.303"
 nest-asyncio = "^1.5.8"
@@ -56,33 +57,20 @@ tiktoken = ">=0.3.3"
 typing-extensions = ">=4.5.0"
 typing-inspect = ">=0.8.0"
 urllib3 = "<2"
+asyncpg = {optional = true, version = "^0.28.0"}
+pgvector = {optional = true, version = "^0.1.0"}
+psycopg-binary = {optional = true, version = "^3.1.12"}
+optimum = {extras = ["onnxruntime"], optional = true, version = "^1.13.2"}
+sentencepiece = {optional = true, version = "^0.1.99"}
+transformers = {extras = ["torch"], optional = true, version = "^4.34.0"}
+guidance = {optional = true, version = "^0.0.64"}
+jsonpath-ng = {optional = true, version = "^1.6.0"}
+rank-bm25 = {optional = true, version = "^0.2.2"}
+scikit-learn = {optional = true, version = "<1.3.0"}
+spacy = {optional = true, version = "^3.7.1"}
+aiostream = "^0.5.2"
 
 [tool.poetry.extras]
-dataloaders = [
-    "EbookLib",
-    "Pillow",
-    "bark",
-    "beautifulsoup4",
-    "discord.py",
-    "elevenlabs",
-    "feedparser",
-    "google-api-python-client",
-    "google-auth-httplib2",
-    "google-auth-oauthlib",
-    "html2text",
-    "mailbox",
-    "nbconvert",
-    "psychicapi",
-    "pydub",
-    "pypdf",
-    "python-pptx",
-    "slack-sdk",
-    "trafilatura",
-    "tree-sitter-languages",
-    "tweepy",
-    "wikipedia",
-    "youtube-transcript-api",
-]
 local_models = [
     "optimum",
     "sentencepiece",
@@ -94,7 +82,6 @@ postgres = [
     "psycopg-binary",
 ]
 query_tools = [
-    "guardrails-ai",
     "guidance",
     "jsonpath-ng",
     "rank-bm25",
@@ -102,50 +89,13 @@ query_tools = [
     "spacy",
 ]
 
-[tool.poetry.group.callbacks]
-optional = true
-
-[tool.poetry.group.callbacks.dependencies]
-aim = {optional = true, version = "^4.0.3"}
-arize-phoenix = {optional = true, version = "^0.0.44"}
-wandb = {optional = true, version = "^0.15.12"}
-
-[tool.poetry.group.dataloaders]
-optional = true
-
-[tool.poetry.group.dataloaders.dependencies]
-EbookLib = {optional = true, version = "^0.18"}
-Pillow = {optional = true, version = "<=9.5.0"}
-bark = {optional = true, version = "^0.1.5"}
-beautifulsoup4 = {optional = true, version = "^4.12.2"}
-"discord.py" = {optional = true, version = "^2.3.2"}
-elevenlabs = {optional = true, version = "^0.2.24"}
-feedparser = {optional = true, version = "^6.0.10"}
-google-api-python-client = {optional = true, version = "^2.102.0"}
-google-auth-httplib2 = {optional = true, version = "^0.1.1"}
-google-auth-oauthlib = {optional = true, version = "^1.1.0"}
-# steamship = {version = "^2.17.31", optional = true}  # conflicts with weaviate-client
-html2text = {optional = true, version = "^2020.1.16"}
-mailbox = {optional = true, version = "^0.4"}
-nbconvert = {optional = true, version = "^6.5.0"}
-psychicapi = {optional = true, version = "^0.8.4"}
-pydub = {optional = true, version = "^0.25.1"}
-pypdf = {optional = true, version = "^3.16.3"}
-python-pptx = {optional = true, version = "^0.6.22"}
-slack-sdk = {optional = true, version = "^3.23.0"}
-trafilatura = {optional = true, version = "^1.6.2"}
-# openai-whisper = {git = "https://github.com/openai/whisper.git", optional = true}  # conflicts with litellm due to tiktoken
-tree-sitter-languages = {optional = true, version = "^1.7.0"}
-tweepy = {optional = true, version = "^4.14.0"}
-wikipedia = {optional = true, version = "^1.4.0"}
-youtube-transcript-api = {optional = true, version = "^0.6.1"}
-
 [tool.poetry.group.dev.dependencies]
 beautifulsoup4 = "^4.12.2"  # needed for tests
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 google-generativeai = {python = ">=3.9,<3.12", version = "^0.2.1"}
 ipython = "8.10.0"
+jupyter = "^1.0.0"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
@@ -156,6 +106,8 @@ pytest-dotenv = "0.5.2"
 pytest-mock = "3.11.1"
 rake-nltk = "1.0.6"
 ruff = "0.0.292"
+tree-sitter-languages = "^1.8.0"
+types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-redis = "4.5.5.0"
 types-requests = "2.28.11.8"
@@ -175,104 +127,6 @@ myst-parser = "0.18.1"
 pydantic = "<2.0.0"
 sphinx = ">=4.3.0"
 sphinx-autobuild = "^2021.3.14"
-
-[tool.poetry.group.embeddings]
-optional = true
-
-[tool.poetry.group.embeddings.dependencies]
-# clarifai = {version = "^9.9.0", optional = true}  # conflicts with chromadb
-InstructorEmbedding = {optional = true, version = "^1.0.1"}
-sentence-transformers = {optional = true, version = "^2.2.2"}
-
-[tool.poetry.group.llms]
-optional = true
-
-[tool.poetry.group.llms.dependencies]
-anthropic = {optional = true, version = "^0.3.11"}
-# clarifai = {version = "^9.9.0", optional = true}  # conflicts with chromadb
-cohere = {optional = true, version = "^4.27"}
-google-generativeai = {optional = true, python = ">=3.9,<3.12", version = "^0.2.1"}
-gradientai = {optional = true, python = ">=3.10,<4.0", version = "^1.1.0"}
-litellm = {optional = true, version = "^0.5.6"}
-llama-cpp-python = {optional = true, version = "^0.2.11"}
-llamaapi = {optional = true, python = ">=3.9,<3.12", version = "^0.1.36"}
-monsterapi = {optional = true, version = "^1.0.2"}
-portkey-ai = {optional = true, version = "^0.1.52"}
-predibase = {optional = true, version = "^2023.10.3"}
-replicate = {optional = true, version = "^0.15.4"}
-sseclient-py = {optional = true, version = "^1.8.0"}
-vellum-ai = {optional = true, version = "^0.0.42"}
-xinference = {optional = true, version = "^0.5.2"}
-
-[tool.poetry.group.metadata_extractors]
-optional = true
-
-[tool.poetry.group.metadata_extractors.dependencies]
-marvin = {optional = true, python = ">=3.9,<3.12", version = "^1.5.1"}
-span-marker = {optional = true, version = "^1.4.0"}
-
-[tool.poetry.group.model_utils]
-optional = true
-
-[tool.poetry.group.model_utils.dependencies]
-optimum = {extras = ["onnxruntime"], optional = true, version = "^1.13.2"}
-sentencepiece = {optional = true, version = "^0.1.99"}
-transformers = {extras = ["torch"], optional = true, version = "^4.34.0"}
-
-[tool.poetry.group.query]
-optional = true
-
-[tool.poetry.group.query.dependencies]
-# guardrails-ai = {version = "^0.2.4", optional = true}  # conflicts with bageldb due to pydantic
-guidance = {optional = true, version = "^0.0.64"}
-jsonpath-ng = {optional = true, version = "^1.6.0"}
-rank-bm25 = {optional = true, version = "^0.2.2"}
-scikit-learn = {optional = true, version = "<1.3.0"}
-spacy = {optional = true, version = "^3.7.1"}
-
-[tool.poetry.group.storage]
-optional = true
-
-[tool.poetry.group.storage.dependencies]
-boto3 = {optional = true, version = ">=1.28.0"}
-google-cloud-firestore = {optional = true, version = "^2.12.0"}
-kuzu = {optional = true, version = "^0.0.9"}
-nebula3-python = {optional = true, version = "^3.4.0"}
-neo4j = {optional = true, version = "^5.13.0"}
-networkx = {optional = true, version = "^3.1"}
-pymongo = {optional = true, version = "^4.5.0"}
-redis = {optional = true, version = ">=4.4.4"}
-
-[tool.poetry.group.vector_stores]
-optional = true
-
-[tool.poetry.group.vector_stores.dependencies]
-asyncpg = {optional = true, version = "^0.28.0"}
-awadb = {optional = true, version = "^0.3.10"}
-azure-search-documents = {optional = true, version = "^11.3.0"}
-betabageldb = {optional = true, version = "^0.2.34"}
-cassio = {optional = true, version = "^0.1.3"}
-chromadb = {optional = true, version = ">=0.4.0"}
-clickhouse-connect = {optional = true, version = "^0.6.14"}
-deeplake = {optional = true, version = "^3.7.3"}
-docarray = {optional = true, version = "^0.39.0"}
-elasticsearch = {optional = true, version = "^8.10.0"}
-faiss = {optional = true, version = "^1.5.3"}
-metal-sdk = {optional = true, version = "^2.2.2"}
-opensearch-py = {optional = true, version = "^2.3.1"}
-pgvector = {optional = true, version = "^0.1.0"}
-pinecone-client = {optional = true, version = "^2.2.4"}
-psycopg-binary = {optional = true, version = "^3.1.12"}
-pyepsilla = {optional = true, version = "^0.1.12"}
-pymilvus = {optional = true, version = "^2.3.1"}
-qdrant-client = {optional = true, version = "^1.6.0"}
-rockset = {optional = true, version = "^2.1.0"}
-tair = {optional = true, version = "^1.3.7"}
-timescale-vector = {optional = true, version = "^0.0.1"}
-typesense = {optional = true, version = "^0.17.0"}
-vecs = {optional = true, version = "^0.4.1"}
-weaviate-client = {optional = true, version = "^3.24.2"}
-zep-python = {optional = true, version = "^1.2.1"}
 
 [tool.ruff]
 exclude = [
@@ -313,6 +167,7 @@ select = [
     "D4",
     "E7",
     "EXE004",
+    "F401",
     "F504",
     "F541",
     "F632",
@@ -379,3 +234,6 @@ in_place = true
 spaces_before_inline_comment = 2  # Match Python PEP 8
 spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
+
+[tool.tomlsort.overrides."tool.poetry.dependencies"]
+table_keys = false

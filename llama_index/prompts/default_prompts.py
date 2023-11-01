@@ -26,7 +26,7 @@ DEFAULT_SUMMARY_PROMPT = PromptTemplate(
 # insert prompts
 DEFAULT_INSERT_PROMPT_TMPL = (
     "Context information is below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "(1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -45,7 +45,7 @@ DEFAULT_INSERT_PROMPT = PromptTemplate(
 # # single choice
 DEFAULT_QUERY_PROMPT_TMPL = (
     "Some choices are given below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "(1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -224,7 +224,7 @@ description. Be careful to not query for columns that do not exist. \
 Pay attention to which column is in which table. Also, qualify column names \
 with the table name when needed.
 
-IMPORTANT NOTE: you can use specialized pgvector syntax (`<-->`) to do nearest \
+IMPORTANT NOTE: you can use specialized pgvector syntax (`<->`) to do nearest \
 neighbors/semantic search to a given vector from an embeddings column in the table. \
 The embeddings value for a given row typically represents the semantic meaning of that row. \
 The vector represents an embedding representation \

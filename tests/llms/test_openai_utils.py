@@ -1,8 +1,10 @@
 from typing import List
 
+import openai
 import pytest
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai_utils import (
+    create_retry_decorator,
     from_openai_message_dicts,
     to_openai_message_dicts,
 )
@@ -134,3 +136,36 @@ def test_from_openai_message_dicts_function_calling_azure(
         azure_openi_message_dicts_with_function_calling
     )
     assert chat_messages == azure_chat_messages_with_function_calling
+
+
+def test_create_retry_decorator() -> None:
+    test_retry_decorator = create_retry_decorator(
+        max_retries=6,
+        random_exponential=False,
+        stop_after_delay_seconds=10,
+        min_seconds=2,
+        max_seconds=5,
+    )
+
+    @test_retry_decorator
+    def mock_function() -> str:
+        # Simulate OpenAI API call with potential errors
+        if mock_function.retry.statistics["attempt_number"] == 1:
+            raise openai.error.Timeout(message="Timeout error")
+        elif mock_function.retry.statistics["attempt_number"] == 2:
+            raise openai.error.APIError(message="API error")
+        elif mock_function.retry.statistics["attempt_number"] == 3:
+            raise openai.error.APIConnectionError(message="API connection error")
+        elif mock_function.retry.statistics["attempt_number"] == 4:
+            raise openai.error.ServiceUnavailableError(
+                message="Service Unavailable error"
+            )
+        elif mock_function.retry.statistics["attempt_number"] == 5:
+            raise openai.error.RateLimitError("Rate limit error")
+        else:
+            # Succeed on the final attempt
+            return "Success"
+
+    # Test that the decorator retries as expected
+    with pytest.raises(openai.error.RateLimitError, match="Rate limit error"):
+        mock_function()
