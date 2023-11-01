@@ -166,15 +166,14 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         flipped_eval_result.pairwise_source = EvaluationSource.FLIPPED
 
         # count the votes for each of the 2 answers
-        if eval_result.score and flipped_eval_result.score:
+        votes_1 = 0.0
+        votes_2 = 0.0
+        if eval_result.score is not None and flipped_eval_result.score is not None:
             votes_1 = eval_result.score + (1 - flipped_eval_result.score)
             votes_2 = (1 - eval_result.score) + flipped_eval_result.score
-            if (
-                votes_1 + votes_2 != 2
-            ):  # each round, the judge can give a total of 1 vote
-                raise ValueError(
-                    "Impossible score results. Total amount of votes is 2."
-                )
+
+        if votes_1 + votes_2 != 2:  # each round, the judge can give a total of 1 vote
+            raise ValueError("Impossible score results. Total amount of votes is 2.")
 
         # get the judges (original and flipped) who voted for answer_1
         voters_1 = [eval_result] * (eval_result.score == 1.0) + [
