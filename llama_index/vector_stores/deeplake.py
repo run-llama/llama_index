@@ -4,7 +4,9 @@ An index that is built within DeepLake.
 
 """
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional, cast, Tuple, Callable
+
+import numpy as np
 
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import VectorStore as VectorStoreBase
@@ -48,7 +50,7 @@ class DeepLakeVectorStore(VectorStoreBase):
         ingestion_batch_size: int = 1024,
         ingestion_num_workers: int = 4,
         overwrite: bool = False,
-        exec_option: str = "python",
+        exec_option: Optional[str] = None,
         verbose: bool = True,
         **kwargs: Any,
     ):
@@ -94,6 +96,7 @@ class DeepLakeVectorStore(VectorStoreBase):
         self.token = token
         self.read_only = read_only
         self.dataset_path = dataset_path
+        self.deep_memory = kwargs.get("deep_memory", None)
 
         if not DEEPLAKE_INSTALLED:
             raise ImportError(
@@ -184,11 +187,13 @@ class DeepLakeVectorStore(VectorStoreBase):
         """
         query_embedding = cast(List[float], query.query_embedding)
         exec_option = kwargs.get("exec_option")
+        deep_memory = kwargs.get("deep_memory")
         data = self.vectorstore.search(
             embedding=query_embedding,
             exec_option=exec_option,
             k=query.similarity_top_k,
             filter=query.filters,
+            deep_memory=deep_memory,
         )
 
         similarities = data["score"]
@@ -199,3 +204,27 @@ class DeepLakeVectorStore(VectorStoreBase):
             nodes.append(metadata_dict_to_node(metadata))
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def train(
+        self,
+        queries: List[str],
+        relevance: List[List[Tuple[str, int]]],
+        embedding_function: Optional[Callable[[str], np.ndarray]] = None,
+        token: Optional[str] = None,
+    ):
+        """Train the index with the given queries and relevance.
+
+        Args:
+            queries (List[str]): List of queries.
+            relevance (List[List[Tuple[str, int]]]): List of relevance for each query.
+            embedding_function (Optional[Callable[[str], np.ndarray]]): Function that
+                takes a string and returns its embedding. Defaults to None.
+            token (Optional[str]): The deeplake token that allows you to access the
+                dataset with proper access. Defaults to None.
+        """
+        return self.vectorstore.deep_memory.train(
+            queries=queries,
+            relevance=relevance,
+            embedding_function=embedding_function,
+            token=token,
+        )
