@@ -169,7 +169,7 @@ class SimpleDirectoryReader(BaseReader):
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
             is_dir = ref.is_dir()
-            hidden_parts = [part for part in ref.parts if part.startswith('.')]
+            hidden_parts = [part for part in ref.parts if part.startswith(".")]
             skip_because_hidden = self.exclude_hidden and any(hidden_parts)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
