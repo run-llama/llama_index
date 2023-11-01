@@ -1,6 +1,9 @@
-#utils script 
+# utils script
 
-#generation with retry
+# generation with retry
+import logging
+from typing import Any, Callable, List, Optional
+
 from tenacity import (
     before_sleep_log,
     retry,
@@ -8,24 +11,21 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence
+
 from llama_index.llms.base import MessageRole
 
-
-CHAT_MODELS = ["chat-bison","chat-bison-32k","chat-bison@001"]
-TEXT_MODELS = ["text-bison","text-bison-32k","text-bison@001"]
-CODE_MODELS = ["code-bison","code-bison-32k","code-bison@001"]
-CODE_CHAT_MODELS = ["codechat-bison","codechat-bison-32k","codechat-bison@001"]
-
+CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
+TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]
+CODE_MODELS = ["code-bison", "code-bison-32k", "code-bison@001"]
+CODE_CHAT_MODELS = ["codechat-bison", "codechat-bison-32k", "codechat-bison@001"]
 
 
 logger = logging.getLogger(__name__)
 
 
-
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     import google.api_core
+
     min_seconds = 4
     max_seconds = 10
     errors = [
@@ -34,51 +34,66 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
         google.api_core.exceptions.Aborted,
         google.api_core.exceptions.DeadlineExceeded,
     ]
-    decorator = retry(
+
+    return retry(
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(retry_if_exception_type(errors)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-    return decorator
+
 
 def completion_with_retry(
-    client: Any, prompt,max_retries: int = 5, chat: bool = False,stream = False,params: Any = {}, **kwargs: Any
+    client: Any,
+    prompt,
+    max_retries: int = 5,
+    chat: bool = False,
+    stream=False,
+    params: Any = {},
+    **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
+
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
-                
         if chat:
             generation = client.start_chat(**params)
             if stream:
-                return generation.send_message_streaming(prompt,**kwargs)
+                return generation.send_message_streaming(prompt, **kwargs)
             else:
-                return generation.send_message(prompt,**kwargs)
+                return generation.send_message(prompt, **kwargs)
         else:
             if stream:
-                return client.predict_streaming(prompt,**kwargs)
+                return client.predict_streaming(prompt, **kwargs)
             else:
-                return client.predict(prompt,**kwargs)
-        
+                return client.predict(prompt, **kwargs)
 
     return _completion_with_retry(**kwargs)
+
+
 async def acompletion_with_retry(
-    client: Any, prompt,max_retries: int = 5, chat: bool = False,params: Any = {}, **kwargs: Any
+    client: Any,
+    prompt,
+    max_retries: int = 5,
+    chat: bool = False,
+    params: Any = {},
+    **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
+
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
         if chat:
             generation = client.start_chat(**params)
-            return await generation.send_message_async(prompt,**kwargs)
+            return await generation.send_message_async(prompt, **kwargs)
         else:
-            return await client.predict_async(prompt,**kwargs)
+            return await client.predict_async(prompt, **kwargs)
 
     return await _completion_with_retry(**kwargs)
+
 
 def init_vertexai(
     project: Optional[str] = None,
@@ -100,22 +115,24 @@ def init_vertexai(
     try:
         import vertexai
     except ImportError:
-        raise(ValueError(
-                f"Please install vertex AI client by following the steps"
-            ))
+        raise (ValueError(f"Please install vertex AI client by following the steps"))
 
     vertexai.init(
         project=project,
         location=location,
         credentials=credentials,
     )
+
+
 def _parse_chat_history(history):
     """Parse a sequence of messages into history.
 
     Args:
         history: The list of messages to re-create the history of the chat.
+
     Returns:
         A parsed chat history.
+
     Raises:
         ValueError: If a sequence of message has a SystemMessage not at the
         first place.
@@ -136,10 +153,12 @@ def _parse_chat_history(history):
             raise ValueError(
                 f"Unexpected message with type {type(message)} at the position {i}."
             )
-    if len(vertex_messages)%2 != 0:
+    if len(vertex_messages) % 2 != 0:
         raise ValueError("total no of messages should be even")
-    chat_history = {"context":context, "message_history":vertex_messages}
-    return chat_history
+
+    return {"context": context, "message_history": vertex_messages}
+
+
 def _parse_examples(examples) -> List["InputOutputTextPair"]:
     from vertexai.language_models import InputOutputTextPair
 

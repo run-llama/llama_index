@@ -34,9 +34,10 @@ from llama_index.llms.palm import PaLM
 from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
+from llama_index.llms.vertex import Vertex
 from llama_index.llms.watsonx import WatsonX
 from llama_index.llms.xinference import Xinference
-from llama_index.llms.vertex import Vertex
+
 __all__ = [
     "AI21",
     "Anthropic",
@@ -76,5 +77,5 @@ __all__ = [
     "Replicate",
     "WatsonX",
     "Xinference",
-    "Vertex"
+    "Vertex",
 ]

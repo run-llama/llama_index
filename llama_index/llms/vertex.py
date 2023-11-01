@@ -1,8 +1,7 @@
-from typing import Any, Dict, Optional, Sequence, List
-import warnings
+from typing import Any, Dict, Optional, Sequence
+
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -17,25 +16,33 @@ from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-
-from llama_index.llms.vertex_utils import completion_with_retry,acompletion_with_retry,_parse_chat_history,CHAT_MODELS,CODE_MODELS,CODE_CHAT_MODELS,init_vertexai,_parse_examples
-
+from llama_index.llms.vertex_utils import (
+    CHAT_MODELS,
+    CODE_CHAT_MODELS,
+    CODE_MODELS,
+    _parse_chat_history,
+    _parse_examples,
+    acompletion_with_retry,
+    completion_with_retry,
+    init_vertexai,
+)
 
 
 class Vertex(LLM):
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
-    examples: Optional[ChatMessage] = Field(description="Example messages for the chat model.")
-    context: Optional[str] = Field(desciption = " Context for the chat models.")
-    max_retries: int = Field(
-        default=10, description="The maximum number of retries."
+    examples: Optional[ChatMessage] = Field(
+        description="Example messages for the chat model."
     )
+    max_retries: int = Field(default=10, description="The maximum number of retries.")
 
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Vertex."
     )
-    iscode: bool = Field(default= False,description="Flag to determine if current model is a Code Model")
+    iscode: bool = Field(
+        default=False, description="Flag to determine if current model is a Code Model"
+    )
     _client: Any = PrivateAttr()
     _chatclient: Any = PrivateAttr()
 
@@ -53,29 +60,31 @@ class Vertex(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        init_vertexai(project = project, location = location , credentials = credential)
+        init_vertexai(project=project, location=location, credentials=credential)
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-        
-        
+
         if model in CHAT_MODELS:
             # print("Chat Model Detected")
             from vertexai.language_models import ChatModel
-            
+
             self._chatclient = ChatModel.from_pretrained(model)
         elif model in CODE_CHAT_MODELS:
             # print("Code Chat Model Detected")
             from vertexai.language_models import CodeChatModel
+
             self._chatclient = CodeChatModel.from_pretrained(model)
-            iscode= True
+            iscode = True
         elif model in CODE_MODELS:
             # print("Code Generation Model Detected")
             from vertexai.language_models import CodeGenerationModel
+
             self._client = CodeGenerationModel.from_pretrained(model)
-            iscode=True
+            iscode = True
         else:
             from vertexai.language_models import TextGenerationModel
+
             self._client = TextGenerationModel.from_pretrained(model)
         super().__init__(
             temperature=temperature,
@@ -124,57 +133,79 @@ class Vertex(LLM):
         question = messages[-1].content
         chat_history = _parse_chat_history(messages[:-1])
         chat_params = {**chat_history}
-        
-        kwargs = kwargs if kwargs else {}
-        
-        params = {**self._model_kwargs,**kwargs}
-        
-        if self.iscode and "candidate_count" in params:
-            raise(ValueError("candidate_count is not supported by the codey model's"))
-        if self.examples and 'examples' not in params:
-            chat_params['examples'] = _parse_examples(self.examples)
-        elif "examples" in params:
-            raise(ValueError("examples are not supported in chat generation pass them as a contructor parameter"))
-        
-        
-        generation = completion_with_retry(client= self._chatclient,prompt = question ,
-        chat= True,stream=False,params=chat_params,
-        max_retries=self.max_retries,**params)
 
-        return ChatResponse(message= ChatMessage(role= MessageRole.ASSISTANT,content = generation.text)
-                            ,raw = generation.__dict__  )
+        kwargs = kwargs if kwargs else {}
+
+        params = {**self._model_kwargs, **kwargs}
+
+        if self.iscode and "candidate_count" in params:
+            raise (ValueError("candidate_count is not supported by the codey model's"))
+        if self.examples and "examples" not in params:
+            chat_params["examples"] = _parse_examples(self.examples)
+        elif "examples" in params:
+            raise (
+                ValueError(
+                    "examples are not supported in chat generation pass them as a constructor parameter"
+                )
+            )
+
+        generation = completion_with_retry(
+            client=self._chatclient,
+            prompt=question,
+            chat=True,
+            stream=False,
+            params=chat_params,
+            max_retries=self.max_retries,
+            **params
+        )
+
+        return ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=generation.text),
+            raw=generation.__dict__,
+        )
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
-        params = {**self._model_kwargs,**kwargs}
+        params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
-            raise(ValueError("candidate_count is not supported by the codey model's"))
-            
-        completion = completion_with_retry(self._client,prompt,max_retries=self.max_retries,**params)
-        return CompletionResponse(text=completion.text,raw = completion.__dict__)
+            raise (ValueError("candidate_count is not supported by the codey model's"))
+
+        completion = completion_with_retry(
+            self._client, prompt, max_retries=self.max_retries, **params
+        )
+        return CompletionResponse(text=completion.text, raw=completion.__dict__)
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        
         question = messages[-1].content
         chat_history = _parse_chat_history(messages[:-1])
         chat_params = {**chat_history}
         kwargs = kwargs if kwargs else {}
-        params = {**self._model_kwargs,**kwargs}
+        params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
-            raise(ValueError("candidate_count is not supported by the codey model's"))
-        if self.examples and 'examples' not in params:
-            chat_params['examples'] = _parse_examples(self.examples)
+            raise (ValueError("candidate_count is not supported by the codey model's"))
+        if self.examples and "examples" not in params:
+            chat_params["examples"] = _parse_examples(self.examples)
         elif "examples" in params:
-            raise(ValueError("examples are not supported in chat generation pass them as a contructor parameter"))
+            raise (
+                ValueError(
+                    "examples are not supported in chat generation pass them as a constructor parameter"
+                )
+            )
 
-        response = completion_with_retry(client= self._chatclient,
-        prompt = question ,chat= True,
-        stream = True,params=chat_params,
-        max_retries=self.max_retries,**params)
+        response = completion_with_retry(
+            client=self._chatclient,
+            prompt=question,
+            chat=True,
+            stream=True,
+            params=chat_params,
+            max_retries=self.max_retries,
+            **params
+        )
+
         def gen() -> ChatResponseGen:
             content = ""
             role = MessageRole.ASSISTANT
@@ -189,16 +220,24 @@ class Vertex(LLM):
                     delta=content_delta,
                     raw=r.__dict__,
                 )
+
         return gen()
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         kwargs = kwargs if kwargs else {}
-        params = {**self._model_kwargs,**kwargs}
+        params = {**self._model_kwargs, **kwargs}
         if "candidate_count" in params:
-            raise(ValueError("candidate_count is not supported by the streaming"))
-        
-        completion = completion_with_retry(client= self._client,prompt = prompt ,stream = True,max_retries=self.max_retries,**params)
+            raise (ValueError("candidate_count is not supported by the streaming"))
+
+        completion = completion_with_retry(
+            client=self._client,
+            prompt=prompt,
+            stream=True,
+            max_retries=self.max_retries,
+            **params
+        )
+
         def gen() -> ChatResponseGen:
             content = ""
             for r in completion:
@@ -207,39 +246,53 @@ class Vertex(LLM):
                 yield CompletionResponse(
                     text=content, delta=content_delta, raw=r.__dict__
                 )
+
         return gen()
 
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        
         question = messages[-1].content
         chat_history = _parse_chat_history(messages[:-1])
         chat_params = {**chat_history}
         kwargs = kwargs if kwargs else {}
-        params = {**self._model_kwargs,**kwargs}
+        params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
-            raise(ValueError("candidate_count is not supported by the codey model's"))
-        if self.examples and 'examples' not in params:
-            chat_params['examples'] = _parse_examples(self.examples)
+            raise (ValueError("candidate_count is not supported by the codey model's"))
+        if self.examples and "examples" not in params:
+            chat_params["examples"] = _parse_examples(self.examples)
         elif "examples" in params:
-            raise(ValueError("examples are not supported in chat generation pass them as a contructor parameter"))  
-        generation = await acompletion_with_retry(client= self._chatclient,prompt = question ,
-            chat= True,params=chat_params,max_retries=self.max_retries,**params)
-        ##this is due to a bug in vertex AI we have to await twice 
+            raise (
+                ValueError(
+                    "examples are not supported in chat generation pass them as a constructor parameter"
+                )
+            )
+        generation = await acompletion_with_retry(
+            client=self._chatclient,
+            prompt=question,
+            chat=True,
+            params=chat_params,
+            max_retries=self.max_retries,
+            **params
+        )
+        ##this is due to a bug in vertex AI we have to await twice
         if self.iscode:
             generation = await generation
-        return ChatResponse(message= ChatMessage(role= MessageRole.ASSISTANT,content = generation.text)
-                            ,raw = generation.__dict__  )
+        return ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=generation.text),
+            raw=generation.__dict__,
+        )
 
     @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
-        params = {**self._model_kwargs,**kwargs}
+        params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
-            raise(ValueError("candidate_count is not supported by the codey model's"))
-        completion = await acompletion_with_retry(client= self._client,prompt = prompt,max_retries=self.max_retries,**params)
+            raise (ValueError("candidate_count is not supported by the codey model's"))
+        completion = await acompletion_with_retry(
+            client=self._client, prompt=prompt, max_retries=self.max_retries, **params
+        )
         return CompletionResponse(text=completion.text)
 
     @llm_chat_callback()
@@ -247,12 +300,9 @@ class Vertex(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         print("""Not implemented for Vertex""")
-        pass
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        
         print("""Not implemented for Vertex""")
-        pass
