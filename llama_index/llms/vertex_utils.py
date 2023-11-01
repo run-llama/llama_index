@@ -28,28 +28,31 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
 
     min_seconds = 4
     max_seconds = 10
-    errors = [
-        google.api_core.exceptions.ResourceExhausted,
-        google.api_core.exceptions.ServiceUnavailable,
-        google.api_core.exceptions.Aborted,
-        google.api_core.exceptions.DeadlineExceeded,
-    ]
 
     return retry(
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type(errors)),
+        retry=(
+            retry_if_exception_type(
+                [
+                    google.api_core.exceptions.ResourceExhausted,
+                    google.api_core.exceptions.ServiceUnavailable,
+                    google.api_core.exceptions.Aborted,
+                    google.api_core.exceptions.DeadlineExceeded,
+                ]
+            )
+        ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
 
 def completion_with_retry(
     client: Any,
-    prompt,
+    prompt: str,
     max_retries: int = 5,
     chat: bool = False,
-    stream=False,
+    stream: bool = False,
     params: Any = {},
     **kwargs: Any,
 ) -> Any:
@@ -75,7 +78,7 @@ def completion_with_retry(
 
 async def acompletion_with_retry(
     client: Any,
-    prompt,
+    prompt: str,
     max_retries: int = 5,
     chat: bool = False,
     params: Any = {},
@@ -124,7 +127,7 @@ def init_vertexai(
     )
 
 
-def _parse_chat_history(history) -> Any:
+def _parse_chat_history(history: Any) -> Any:
     """Parse a sequence of messages into history.
 
     Args:
@@ -159,7 +162,7 @@ def _parse_chat_history(history) -> Any:
     return {"context": context, "message_history": vertex_messages}
 
 
-def _parse_examples(examples) -> Any:
+def _parse_examples(examples: Any) -> Any:
     from vertexai.language_models import InputOutputTextPair
 
     if len(examples) % 2 != 0:
