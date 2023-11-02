@@ -211,3 +211,12 @@ maxdepth: 1
 ---
 /examples/llm/bedrock.ipynb
 ```
+
+## Vertex
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/vertex.ipynb
+```
