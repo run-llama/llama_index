@@ -1,7 +1,6 @@
 """OpenAI embeddings file."""
 
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 import voyageai
 
@@ -24,7 +23,7 @@ class VoyageEmbedding(BaseEmbedding):
     voyage_api_key: Optional[str] = None
 
     def __init__(
-        self, 
+        self,
         model: str = "voyage-01",
         voyage_api_key: Optional[str] = None,
     ):
