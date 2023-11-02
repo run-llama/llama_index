@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import openai
@@ -326,10 +327,36 @@ def resolve_openai_credentials(
     api_base = api_base or openai.api_base or DEFAULT_OPENAI_API_BASE
     api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
 
-    if not api_key:
+    if not api_key and api_type not in ("azuread", "azure_ad"):
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
 
     return api_key, api_type, api_base, api_version
+
+
+def refresh_openai_azuread_token(
+    azure_ad_token=None,
+):
+    try:
+        from azure.core.exceptions import ClientAuthenticationError
+        from azure.identity import DefaultAzureCredential
+    except ImportError as ex:
+        raise ValueError(
+            "Using API type `azure_ad` or `azuread` requires the package"
+            " `azure-identity` to be installed."
+        ) from ex
+
+    if not azure_ad_token or azure_ad_token.expires_on < time.time() + 60:
+        try:
+            credential = DefaultAzureCredential()
+            azure_ad_token = credential.get_token(
+                "https://cognitiveservices.azure.com/.default"
+            )
+        except ClientAuthenticationError as err:
+            raise ValueError(
+                "Unable to acquire a valid Microsoft Entra ID (former Azure AD) token for "
+                f"the resource due to the following error: {err.message}"
+            ) from err
+    return azure_ad_token
 
 
 def validate_openai_api_key(api_key: Optional[str] = None) -> None:
