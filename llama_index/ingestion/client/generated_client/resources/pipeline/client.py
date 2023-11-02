@@ -6,29 +6,37 @@ from json.decoder import JSONDecodeError
 
 import pydantic
 
-from llama_index.ingestion.client.core.api_error import ApiError
-from llama_index.ingestion.client.core.client_wrapper import (
+from llama_index.ingestion.client.generated_client.core.api_error import ApiError
+from llama_index.ingestion.client.generated_client.core.client_wrapper import (
     AsyncClientWrapper,
     SyncClientWrapper,
 )
-from llama_index.ingestion.client.core.jsonable_encoder import jsonable_encoder
-from llama_index.ingestion.client.core.remove_none_from_dict import (
+from llama_index.ingestion.client.generated_client.core.jsonable_encoder import (
+    jsonable_encoder,
+)
+from llama_index.ingestion.client.generated_client.core.remove_none_from_dict import (
     remove_none_from_dict,
 )
-from llama_index.ingestion.client.errors.unprocessable_entity_error import (
+from llama_index.ingestion.client.generated_client.errors.unprocessable_entity_error import (
     UnprocessableEntityError,
 )
-from llama_index.ingestion.client.types.configured_transformation_execution import (
+from llama_index.ingestion.client.generated_client.types.configured_transformation_execution import (
     ConfiguredTransformationExecution,
 )
-from llama_index.ingestion.client.types.configured_transformation_item import (
+from llama_index.ingestion.client.generated_client.types.configured_transformation_item import (
     ConfiguredTransformationItem,
 )
-from llama_index.ingestion.client.types.data_sink_create import DataSinkCreate
-from llama_index.ingestion.client.types.data_source_create import DataSourceCreate
-from llama_index.ingestion.client.types.http_validation_error import HttpValidationError
-from llama_index.ingestion.client.types.pipeline import Pipeline
-from llama_index.ingestion.client.types.text_node import TextNode
+from llama_index.ingestion.client.generated_client.types.data_sink_create import (
+    DataSinkCreate,
+)
+from llama_index.ingestion.client.generated_client.types.data_source_create import (
+    DataSourceCreate,
+)
+from llama_index.ingestion.client.generated_client.types.http_validation_error import (
+    HttpValidationError,
+)
+from llama_index.ingestion.client.generated_client.types.pipeline import Pipeline
+from llama_index.ingestion.client.generated_client.types.text_node import TextNode
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -37,41 +45,6 @@ OMIT = typing.cast(typing.Any, ...)
 class PipelineClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
-
-    def get_pipeline_by_name_api_pipeline_get(
-        self,
-        *,
-        pipeline_name: typing.Optional[str] = None,
-        project_name: typing.Optional[str] = None,
-    ) -> typing.List[Pipeline]:
-        """
-        Get a pipeline by name.
-
-        Parameters:
-            - pipeline_name: typing.Optional[str].
-
-            - project_name: typing.Optional[str].
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "GET",
-            urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/pipeline/"
-            ),
-            params=remove_none_from_dict(
-                {"pipeline_name": pipeline_name, "project_name": project_name}
-            ),
-            headers=self._client_wrapper.get_headers(),
-            timeout=60,
-        )
-        if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(typing.List[Pipeline], _response.json())  # type: ignore
-        if _response.status_code == 422:
-            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
-        try:
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, body=_response.text)
-        raise ApiError(status_code=_response.status_code, body=_response_json)
 
     def get_pipeline_for_project(self, pipeline_id: str) -> Pipeline:
         """
@@ -295,41 +268,6 @@ class PipelineClient:
 class AsyncPipelineClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
-
-    async def get_pipeline_by_name_api_pipeline_get(
-        self,
-        *,
-        pipeline_name: typing.Optional[str] = None,
-        project_name: typing.Optional[str] = None,
-    ) -> typing.List[Pipeline]:
-        """
-        Get a pipeline by name.
-
-        Parameters:
-            - pipeline_name: typing.Optional[str].
-
-            - project_name: typing.Optional[str].
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "GET",
-            urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/pipeline"
-            ),
-            params=remove_none_from_dict(
-                {"pipeline_name": pipeline_name, "project_name": project_name}
-            ),
-            headers=self._client_wrapper.get_headers(),
-            timeout=60,
-        )
-        if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(typing.List[Pipeline], _response.json())  # type: ignore
-        if _response.status_code == 422:
-            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
-        try:
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, body=_response.text)
-        raise ApiError(status_code=_response.status_code, body=_response_json)
 
     async def get_pipeline_for_project(self, pipeline_id: str) -> Pipeline:
         """

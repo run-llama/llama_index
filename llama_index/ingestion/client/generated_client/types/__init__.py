@@ -62,7 +62,6 @@ from .pinecone_vector_store import PineconeVectorStore
 from .pipeline import Pipeline
 from .pipeline_create import PipelineCreate
 from .project import Project
-from .project_create import ProjectCreate
 from .qdrant_vector_store import QdrantVectorStore
 from .questions_answered_extractor import QuestionsAnsweredExtractor
 from .raw_file import RawFile
@@ -148,7 +147,6 @@ __all__ = [
     "Pipeline",
     "PipelineCreate",
     "Project",
-    "ProjectCreate",
     "QdrantVectorStore",
     "QuestionsAnsweredExtractor",
     "RawFile",
