@@ -33,7 +33,7 @@ class CohereEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        cohere_api_key: str = None,
+        cohere_api_key: Optional[str] = None,
         model_name: str = "embed-english-v2.0",
         truncate: str = "END",
         input_type: Optional[str] = None,
