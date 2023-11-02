@@ -85,6 +85,7 @@ def test_add(mock_create_document: MagicMock, mock_create_chunk: MagicMock) -> N
                         metadata={"file_name": "Title for doc-456"},
                     )
                 },
+                metadata={"position": 100},
             ),
             TextNode(
                 text="Goodbye, my baby",
@@ -94,6 +95,7 @@ def test_add(mock_create_document: MagicMock, mock_create_chunk: MagicMock) -> N
                         metadata={"file_name": "Title for doc-456"},
                     )
                 },
+                metadata={"position": 200},
             ),
         ]
     )
@@ -109,7 +111,7 @@ def test_add(mock_create_document: MagicMock, mock_create_chunk: MagicMock) -> N
                 genai.CustomMetadata(
                     key="file_name",
                     string_value="Title for doc-456",
-                )
+                ),
             ],
         ),
     )
@@ -120,13 +122,29 @@ def test_add(mock_create_document: MagicMock, mock_create_chunk: MagicMock) -> N
     first_create_chunk_request = create_chunk_requests[0].args[0]
     assert first_create_chunk_request == genai.CreateChunkRequest(
         parent="corpora/123/documents/doc-456",
-        chunk=genai.Chunk(data=genai.ChunkData(string_value="Hello, my darling")),
+        chunk=genai.Chunk(
+            data=genai.ChunkData(string_value="Hello, my darling"),
+            custom_metadata=[
+                genai.CustomMetadata(
+                    key="position",
+                    numeric_value=100,
+                ),
+            ],
+        ),
     )
 
     second_create_chunk_request = create_chunk_requests[1].args[0]
     assert second_create_chunk_request == genai.CreateChunkRequest(
         parent="corpora/123/documents/doc-456",
-        chunk=genai.Chunk(data=genai.ChunkData(string_value="Goodbye, my baby")),
+        chunk=genai.Chunk(
+            data=genai.ChunkData(string_value="Goodbye, my baby"),
+            custom_metadata=[
+                genai.CustomMetadata(
+                    key="position",
+                    numeric_value=200,
+                ),
+            ],
+        ),
     )
 
 

@@ -132,14 +132,14 @@ class Config:
 def set_defaults(config: Config) -> None:
     global _config
     _config = config
-    _set_default_retriever(build_retriever())
+    _set_default_retriever(build_semantic_retriever())
     _set_default_text_service(build_text_service())
 
 
 _config = Config()
 
 
-def build_retriever() -> genai.RetrieverServiceClient:
+def build_semantic_retriever() -> genai.RetrieverServiceClient:
     return genai.RetrieverServiceClient(
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
         client_options=client_options_lib.ClientOptions(
@@ -148,7 +148,7 @@ def build_retriever() -> genai.RetrieverServiceClient:
     )
 
 
-_default_retriever: genai.RetrieverServiceClient = build_retriever()
+_default_retriever: genai.RetrieverServiceClient = build_semantic_retriever()
 
 
 def _set_default_retriever(retriever: genai.RetrieverServiceClient) -> None:
@@ -290,7 +290,7 @@ def create_document(
         name = None
 
     new_display_name = display_name or f"Untitled {datetime.datetime.now()}"
-    new_metadatas = _convertToMetadata(metadata) if metadata else None
+    new_metadatas = _convert_to_metadata(metadata) if metadata else None
 
     new_document = client.create_document(
         genai.CreateDocumentRequest(
@@ -347,7 +347,7 @@ def batch_create_chunk(
                 parent=doc_name,
                 chunk=genai.Chunk(
                     data=genai.ChunkData(string_value=text),
-                    custom_metadata=_convertToMetadata(metadata),
+                    custom_metadata=_convert_to_metadata(metadata),
                 ),
             )
         )
@@ -363,7 +363,7 @@ operation = client.batch_create_chunks(
                 parent=doc_name,
                 chunk=genai.Chunk(
                     data=genai.ChunkData(string_value=text),
-                    custom_metadata=_convertToMetadata(metadata),
+                    custom_metadata=_convert_to_metadata(metadata),
                 ),
             )
             for text, metadata in zip(texts, metadatas)
@@ -412,7 +412,7 @@ def query_corpus(
         genai.QueryCorpusRequest(
             name=str(EntityName(corpus_id=corpus_id)),
             query=query,
-            metadata_filters=_convertFilter(filter),
+            metadata_filters=_convert_filter(filter),
             results_count=k,
         )
     )
@@ -434,7 +434,7 @@ def query_document(
         genai.QueryDocumentRequest(
             name=str(EntityName(corpus_id=corpus_id, document_id=document_id)),
             query=query,
-            metadata_filters=_convertFilter(filter),
+            metadata_filters=_convert_filter(filter),
             results_count=k,
         )
     )
@@ -487,19 +487,17 @@ def generate_text_answer(
             Passage(text=passage.text, ids=list(passage.passage_ids))
             for passage in response.attributed_passages
         ],
-        answerable_probability=0.9,
+        answerable_probability=response.answerable_probability,
     )
 
 
-def _convertToMetadata(metadata: Dict[str, Any]) -> List[genai.CustomMetadata]:
+def _convert_to_metadata(metadata: Dict[str, Any]) -> List[genai.CustomMetadata]:
     cs: List[genai.CustomMetadata] = []
     for key, value in metadata.items():
         if isinstance(value, str):
             c = genai.CustomMetadata(key=key, string_value=value)
-        elif isinstance(value, int):
-            c = genai.CustomMetadata(key=key, int_value=value)
-        elif isinstance(value, float):
-            c = genai.CustomMetadata(key=key, double_value=value)
+        elif isinstance(value, (float, int)):
+            c = genai.CustomMetadata(key=key, numeric_value=value)
         else:
             raise ValueError(f"Metadata value {value} is not supported")
 
@@ -507,7 +505,7 @@ def _convertToMetadata(metadata: Dict[str, Any]) -> List[genai.CustomMetadata]:
     return cs
 
 
-def _convertFilter(fs: Optional[Dict[str, Any]]) -> List[genai.MetadataFilter]:
+def _convert_filter(fs: Optional[Dict[str, Any]]) -> List[genai.MetadataFilter]:
     if fs is None:
         return []
     assert isinstance(fs, dict)
@@ -518,13 +516,9 @@ def _convertFilter(fs: Optional[Dict[str, Any]]) -> List[genai.MetadataFilter]:
             condition = genai.Condition(
                 operation=genai.Condition.Operator.EQUAL, string_value=value
             )
-        elif isinstance(value, int):
+        elif isinstance(value, (float, int)):
             condition = genai.Condition(
-                operation=genai.Condition.Operator.EQUAL, int_value=value
-            )
-        elif isinstance(value, float):
-            condition = genai.Condition(
-                operation=genai.Condition.Operator.EQUAL, double_value=value
+                operation=genai.Condition.Operator.EQUAL, numeric_value=value
             )
         else:
             raise ValueError(f"Filter value {value} is not supported")
