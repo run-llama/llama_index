@@ -12,7 +12,7 @@ Get started with:
 ```python
 from llama_index import download_loader
 
-GoogleDocsReader = download_loader('GoogleDocsReader')
+GoogleDocsReader = download_loader("GoogleDocsReader")
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=[...])
 ```
@@ -24,7 +24,7 @@ documents = loader.load_data(document_ids=[...])
 ```python
 from llama_index import SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('./data').load_data()
+documents = SimpleDirectoryReader("./data").load_data()
 ```
 
 ## Available connectors

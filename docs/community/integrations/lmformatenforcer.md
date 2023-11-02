@@ -17,6 +17,7 @@ class Song(BaseModel):
     title: str
     length_seconds: int
 
+
 class Album(BaseModel):
     name: str
     artist: str
@@ -35,20 +36,27 @@ program = LMFormatEnforcerPydanticProgram(
     llm=LlamaCPP(),
     verbose=True,
 )
-
 ```
 
 Now we can run the program by calling it with additional user input.
 Here let's go for something spooky and create an album inspired by the Shining.
 
 ```python
-output = program(movie_name='The Shining')
+output = program(movie_name="The Shining")
 ```
 
 We have our pydantic object:
 
 ```python
-Album(name='The Shining: A Musical Journey Through the Haunted Halls of the Overlook Hotel', artist='The Shining Choir', songs=[Song(title='Redrum', length_seconds=300), Song(title='All Work and No Play Makes Jack a Dull Boy', length_seconds=240), Song(title="Heeeeere's Johnny!", length_seconds=180)])
+Album(
+    name="The Shining: A Musical Journey Through the Haunted Halls of the Overlook Hotel",
+    artist="The Shining Choir",
+    songs=[
+        Song(title="Redrum", length_seconds=300),
+        Song(title="All Work and No Play Makes Jack a Dull Boy", length_seconds=240),
+        Song(title="Heeeeere's Johnny!", length_seconds=180),
+    ],
+)
 ```
 
 You can play with [this notebook](/examples/output_parsing/lmformatenforcer_pydantic_program.ipynb) for more details.

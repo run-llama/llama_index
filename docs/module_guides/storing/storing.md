@@ -27,15 +27,13 @@ We have confirmed support for the following storage backends:
 Many vector stores (except FAISS) will store both the data as well as the index (embeddings). This means that you will not need to use a separate document store or index store. This _also_ means that you will not need to explicitly persist this data - this happens automatically. Usage would look something like the following to build a new index / reload an existing one.
 
 ```python
-
 ## build a new index
 from llama_index import VectorStoreIndex, StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
+
 # construct vector store and customize storage context
 vector_store = DeepLakeVectorStore(dataset_path="<dataset_path>")
-storage_context = StorageContext.from_defaults(
-    vector_store = vector_store
-)
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
 # Load documents and build index
 index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
 

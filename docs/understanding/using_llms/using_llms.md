@@ -18,7 +18,7 @@ LlamaIndex provides a single interface to a large number of different LLMs, allo
 ```python
 from llama_index.llms import OpenAI
 
-response = OpenAI().complete('Paul Graham is ')
+response = OpenAI().complete("Paul Graham is ")
 print(response)
 ```
 
@@ -31,8 +31,8 @@ from llama_index import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
 llm = OpenAI(temperature=0.1, model="gpt-4")
 service_context = ServiceContext.from_defaults(llm=llm)
 
-documents = SimpleDirectoryReader('data').load_data()
-index = VectorStoreIndex.from_documents(documents,service_context=service_context)
+documents = SimpleDirectoryReader("data").load_data()
+index = VectorStoreIndex.from_documents(documents, service_context=service_context)
 ```
 
 In this case, you've instantiated OpenAI and customized it to use the `gpt-4` model instead of the default `gpt-3.5-turbo`, and also modified the `temperature`. The `VectorStoreIndex` will now use gpt-4 to encode or `embed` your documents for later querying.
@@ -53,6 +53,7 @@ Once you have a local LLM such as Llama 2 installed, you can use it like this:
 
 ```python
 from llama_index import ServiceContext
+
 service_context = ServiceContext.from_defaults(llm="local")
 ```
 

@@ -14,10 +14,9 @@ During query-time, Summary Index constructs an answer using the _create and refi
 from llama_index import SummaryIndex, SimpleDirectoryReader
 
 # build index
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader("data").load_data()
 index = SummaryIndex.from_documents(documents)
 # query
 query_engine = index.as_query_engine()
 response = query_engine.query("<question text>")
-
 ```

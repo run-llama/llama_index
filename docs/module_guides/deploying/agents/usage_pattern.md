@@ -10,10 +10,12 @@ from llama_index.tools import FunctionTool
 from llama_index.llms import OpenAI
 from llama_index.agent import ReActAgent
 
+
 # define sample Tool
 def multiply(a: int, b: int) -> int:
     """Multiple two integers and returns the result integer"""
     return a * b
+
 
 multiply_tool = FunctionTool.from_defaults(fn=multiply)
 
@@ -37,7 +39,6 @@ agent.chat("What is 2123 * 215123")
 It is easy to wrap query engines as tools for an agent as well. Simply do the following:
 
 ```python
-
 from llama_index.agent import ReActAgent
 from llama_index.tools import QueryEngineTool
 
@@ -66,7 +67,6 @@ query_engine_tools = [
 
 # initialize ReAct agent
 agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
-
 ```
 
 ## Use other agents as Tools
@@ -81,15 +81,13 @@ query_engine_tools = [
     QueryEngineTool(
         query_engine=sql_agent,
         metadata=ToolMetadata(
-            name="sql_agent",
-            description="Agent that can execute SQL queries."
+            name="sql_agent", description="Agent that can execute SQL queries."
         ),
     ),
     QueryEngineTool(
         query_engine=gmail_agent,
         metadata=ToolMetadata(
-            name="gmail_agent",
-            description="Tool that can send emails on Gmail."
+            name="gmail_agent", description="Tool that can send emails on Gmail."
         ),
     ),
 ]
@@ -189,5 +187,4 @@ agent = OpenAIAgent.from_tools(
 
 # should output a query plan to call march, june, and september tools
 response = agent.query("Analyze Uber revenue growth in March, June, and September")
-
 ```

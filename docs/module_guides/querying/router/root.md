@@ -80,7 +80,6 @@ selector = PydanticMultiSelector.from_defaults()
 selector = LLMSingleSelector.from_defaults()
 # multi selector (LLM)
 selector = LLMMultiSelector.from_defaults()
-
 ```
 
 ## Using as a Query Engine
@@ -118,7 +117,6 @@ query_engine = RouterQueryEngine(
     ],
 )
 query_engine.query("<query>")
-
 ```
 
 ## Using as a Retriever
@@ -155,7 +153,6 @@ retriever = RouterRetriever(
         vector_tool,
     ],
 )
-
 ```
 
 ## Using selector as a standalone module
@@ -177,9 +174,10 @@ choices = [
 choices = ["choice 1 - description for choice 1", "choice 2: description for choice 2"]
 
 selector = LLMSingleSelector.from_defaults()
-selector_result = selector.select(choices, query="What's revenue growth for IBM in 2007?")
+selector_result = selector.select(
+    choices, query="What's revenue growth for IBM in 2007?"
+)
 print(selector_result.selections)
-
 ```
 
 ```{toctree}

@@ -28,6 +28,7 @@ index = VectorStoreIndex(nodes, storage_context=storage_context)
 
 # or alternatively, load index
 from llama_index import load_index_from_storage
+
 index = load_index_from_storage(storage_context)
 ```
 
@@ -52,9 +53,7 @@ from llama_index import VectorStoreIndex
 
 # create (or load) docstore and add nodes
 index_store = RedisIndexStore.from_host_and_port(
-  host="127.0.0.1",
-  port="6379",
-  namespace='llama_index'
+    host="127.0.0.1", port="6379", namespace="llama_index"
 )
 
 # create storage context
@@ -65,6 +64,7 @@ index = VectorStoreIndex(nodes, storage_context=storage_context)
 
 # or alternatively, load index
 from llama_index import load_index_from_storage
+
 index = load_index_from_storage(storage_context)
 ```
 
