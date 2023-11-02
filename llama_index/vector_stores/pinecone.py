@@ -119,9 +119,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     """
 
-    stores_text: bool = True
     flat_metadata: bool = False
 
+    stores_text: bool
     api_key: Optional[str]
     index_name: Optional[str]
     environment: Optional[str]
@@ -146,6 +146,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         tokenizer: Optional[Callable] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        stores_text: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -172,6 +173,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
             tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
 
+        self.stores_text = stores_text
+
         super().__init__(
             index_name=index_name,
             environment=environment,
@@ -195,6 +198,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         tokenizer: Optional[Callable] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        stores_text: bool = True,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
         try:
@@ -216,6 +220,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             tokenizer=tokenizer,
             text_key=text_key,
             batch_size=batch_size,
+            stores_text=stores_text,
             **kwargs,
         )
 
@@ -238,8 +243,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
         for node in nodes:
             node_id = node.node_id
 
+            remove_text = not self.stores_text
             metadata = node_to_metadata_dict(
-                node, remove_text=False, flat_metadata=self.flat_metadata
+                node, remove_text=remove_text, flat_metadata=self.flat_metadata
             )
 
             entry = {
