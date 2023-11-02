@@ -1,5 +1,58 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Add `lm-format-enforcer` integration for structured output (#8601)
+
+## [0.8.57] - 2023-10-31
+
+### New Features
+
+- Add fine-tuning evaluator notebooks (#8596)
+- Add `SingleStoreDB` integration (#7991)
+- Add support for ChromaDB PersistentClient (#8582)
+- Add DataStax Astra DB support (#8609)
+
+### Bug Fixes / Nits
+
+- Update dataType in Weaviate (#8608)
+- In Knowledge Graph Index with hybrid retriever_mode,
+  - return the nodes found by keyword search when 'No Relationship found'
+- Fix exceed context length error in chat engines (#8530)
+- Retrieve actual content of all the triplets from KG (#8579)
+- Return the nodes found by Keywords when no relationship is found by embeddings in hybrid retriever_mode in `KnowledgeGraphIndex` (#8575)
+- Optimize content of retriever tool and minor bug fix (#8588)
+
+## [0.8.56] - 2023-10-30
+
+### New Features
+
+- Add Amazon `BedrockEmbedding` (#8550)
+- Moves `HuggingFaceEmbedding` to center on `Pooling` enum for pooling (#8467)
+- Add IBM WatsonX LLM support (#8587)
+
+### Bug Fixes / Nits
+
+- [Bug] Patch Clarifai classes (#8529)
+- fix retries for bedrock llm (#8528)
+- Fix : VectorStore’s QueryResult always returns saved Node as TextNode (#8521)
+- Added default file_metadata to get basic metadata that many postprocessors use, for SimpleDirectoryReader (#8486)
+- Handle metadata with None values in chromadb (#8584)
+
+## [0.8.55] - 2023-10-29
+
+### New Features
+
+- allow prompts to take in functions with `function_mappings` (#8548)
+- add advanced prompt + "prompt engineering for RAG" notebook (#8555)
+- Leverage Replicate API for serving LLaVa modal (#8539)
+
+### Bug Fixes / Nits
+
+- Update pull request template with google colab support inclusion (#8525)
+
 ## [0.8.54] - 2023-10-28
 
 ### New Features
@@ -105,7 +158,7 @@
 ### New Features
 
 - add response synthesis to text-to-SQL (#8196)
-- Added support for `LLMRailsEmbeddings` (#8169)
+- Added support for `LLMRailsEmbedding` (#8169)
 - Inferring MPS device with PyTorch (#8195)
 - Consolidated query/text prepending (#8189)
 
@@ -260,7 +313,7 @@
 - Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
 - `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
 - Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
-- Added support for `ElasticsearchEmbeddings` (#7914)
+- Added support for `ElasticsearchEmbedding` (#7914)
 
 ## [0.8.37] - 2023-09-30
 

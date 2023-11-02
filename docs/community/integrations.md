@@ -37,6 +37,7 @@ integrations/deepeval.md
 maxdepth: 1
 ---
 integrations/guidance.md
+integrations/lmformatenforcer.md
 Guardrails </examples/output_parsing/GuardrailsDemo.ipynb>
 OpenAI Function Calling </examples/output_parsing/openai_pydantic_program.ipynb>
 ```

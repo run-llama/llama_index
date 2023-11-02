@@ -1,6 +1,7 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
 
@@ -32,6 +33,27 @@ DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".mbox": MboxReader,
     ".ipynb": IPYNBReader,
 }
+
+
+def default_file_metadata_func(file_path: str) -> Dict:
+    """Get some handy metadate from filesystem.
+
+    Args:
+        file_path: str: file path in str
+    """
+    return {
+        "file_path": file_path,
+        "creation_date": datetime.fromtimestamp(
+            Path(file_path).stat().st_ctime
+        ).strftime("%Y-%m-%d"),
+        "last_modified_date": datetime.fromtimestamp(
+            Path(file_path).stat().st_mtime
+        ).strftime("%Y-%m-%d"),
+        "last_accessed_date": datetime.fromtimestamp(
+            Path(file_path).stat().st_atime
+        ).strftime("%Y-%m-%d"),
+    }
+
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +140,7 @@ class SimpleDirectoryReader(BaseReader):
             self.file_extractor = {}
 
         self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
-        self.file_metadata = file_metadata
+        self.file_metadata = file_metadata or default_file_metadata_func
         self.filename_as_id = filename_as_id
 
     def _add_files(self, input_dir: Path) -> List[Path]:
@@ -147,7 +169,8 @@ class SimpleDirectoryReader(BaseReader):
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
             is_dir = ref.is_dir()
-            skip_because_hidden = self.exclude_hidden and ref.name.startswith(".")
+            hidden_parts = [part for part in ref.parts if part.startswith(".")]
+            skip_because_hidden = self.exclude_hidden and any(hidden_parts)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
             )
@@ -219,5 +242,25 @@ class SimpleDirectoryReader(BaseReader):
                     doc.id_ = str(input_file)
 
                 documents.append(doc)
+
+        for doc in documents:
+            # Keep only metadata['file_path'] in both embedding and llm content
+            # str, which contain extreme important context that about the chunks.
+            # Dates is provided for convenience of postprocessor such as
+            # TimeWeightedPostprocessor, but excluded for embedding and LLMprompts
+            doc.excluded_embed_metadata_keys.extend(
+                [
+                    "creation_date",
+                    "last_modified_date",
+                    "last_accessed_date",
+                ]
+            )
+            doc.excluded_llm_metadata_keys.extend(
+                [
+                    "creation_date",
+                    "last_modified_date",
+                    "last_accessed_date",
+                ]
+            )
 
         return documents

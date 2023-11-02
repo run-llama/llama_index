@@ -39,7 +39,7 @@ class TextEmbeddingsInference(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
     ):
         try:
-            import httpx
+            import httpx  # noqa
         except ImportError:
             raise ImportError(
                 "TextEmbeddingsInterface requires httpx to be installed.\n"

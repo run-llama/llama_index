@@ -1,6 +1,6 @@
 """Answer inserter."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from llama_index.indices.service_context import ServiceContext

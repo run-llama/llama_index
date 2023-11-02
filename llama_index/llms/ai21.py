@@ -44,7 +44,7 @@ class AI21(CustomLLM):
     ) -> None:
         """Initialize params."""
         try:
-            import ai21 as _
+            import ai21 as _  # noqa
         except ImportError as e:
             raise ImportError(
                 "You must install the `ai21` package to use AI21."

@@ -10,7 +10,7 @@ from llama_index.prompts import (
     MessageRole,
     PromptTemplate,
 )
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.

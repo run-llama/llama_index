@@ -67,7 +67,7 @@ class DeepLakeReader(BaseReader):
             "`deeplake` package not found, please run `pip install deeplake`"
         )
         try:
-            import deeplake
+            import deeplake  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
         self.token = token

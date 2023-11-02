@@ -32,7 +32,8 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
-- DashVector(`DashVectorStore`).[Installation](https://help.aliyun.com/document_detail/2510230.html).
+- DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
+- AstraDB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/home/docs/index.html).
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -395,6 +396,24 @@ vector_store = TimescaleVectorStore.from_params(
 )
 ```
 
+**SingleStore**
+
+```python
+from llama_index.vector_stores import SingleStoreVectorStore
+import os
+
+# can set the singlestore db url in env
+# or pass it in as an argument to the SingleStoreVectorStore constructor
+os.environ["SINGLESTOREDB_URL"] = "PLACEHOLDER URL"
+vector_store = SingleStoreVectorStore(
+    table_name="embeddings",
+    content_field="content",
+    metadata_field="metadata",
+    vector_field="vector",
+    timeout=30,
+)
+```
+
 **DocArray**
 
 ```python
@@ -634,5 +653,6 @@ maxdepth: 1
 ../../examples/vector_stores/Neo4jVectorDemo.ipynb
 ../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ../../examples/vector_stores/Timescalevector.ipynb
+../../examples/vector_stores/SingleStoreDemo.ipynb
 ../../examples/vector_stores/DashvectorIndexDemo.ipynb
 ```

@@ -5,7 +5,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.output_parsers.base import StructuredOutput
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.question_gen.output_parser import SubQuestionOutputParser
 from llama_index.question_gen.prompts import (

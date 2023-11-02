@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import List, Sequence
 
 from llama_index.bridge.pydantic import BaseModel

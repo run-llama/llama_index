@@ -1,6 +1,5 @@
 """Program utils."""
 
-from enum import Enum
 from typing import Any, List, Type
 
 from llama_index.bridge.pydantic import BaseModel, Field, create_model
@@ -75,6 +74,17 @@ def get_program_for_llm(
 
         return LLMTextCompletionProgram.from_defaults(
             output_parser=PydanticOutputParser(output_cls=output_cls),
+            llm=llm,
+            prompt=prompt,
+            **kwargs,
+        )
+    elif pydantic_program_mode == PydanticProgramMode.LM_FORMAT_ENFORCER:
+        from llama_index.program.lmformatenforcer_program import (
+            LMFormatEnforcerPydanticProgram,
+        )
+
+        return LMFormatEnforcerPydanticProgram.from_defaults(
+            output_cls=output_cls,
             llm=llm,
             prompt=prompt,
             **kwargs,

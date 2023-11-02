@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,

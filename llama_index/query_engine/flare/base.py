@@ -11,7 +11,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.query_engine.flare.answer_inserter import (
     BaseLookaheadAnswerInserter,
     LLMLookaheadAnswerInserter,

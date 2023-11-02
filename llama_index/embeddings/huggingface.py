@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -17,11 +17,14 @@ from llama_index.embeddings.pooling import Pooling
 from llama_index.llms.huggingface import HuggingFaceInferenceAPI
 from llama_index.utils import get_cache_dir, infer_torch_device
 
+if TYPE_CHECKING:
+    import torch
+
 
 class HuggingFaceEmbedding(BaseEmbedding):
     tokenizer_name: str = Field(description="Tokenizer name from HuggingFace.")
     max_length: int = Field(description="Maximum length of input.")
-    pooling: str = Field(description="Pooling strategy. One of ['cls', 'mean'].")
+    pooling: Pooling = Field(default=Pooling.CLS, description="Pooling strategy.")
     normalize: str = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
@@ -41,7 +44,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         self,
         model_name: Optional[str] = None,
         tokenizer_name: Optional[str] = None,
-        pooling: str = "cls",
+        pooling: Union[str, Pooling] = "cls",
         max_length: Optional[int] = None,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
@@ -66,35 +69,46 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
         cache_folder = cache_folder or get_cache_dir()
 
-        if model is None:
-            model_name = model_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
-            self._model = AutoModel.from_pretrained(
+        if model is None:  # Use model_name with AutoModel
+            model_name = (
+                model_name
+                if model_name is not None
+                else DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
+            )
+            model = AutoModel.from_pretrained(
                 model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
-            ).to(self._device)
-        else:
-            self._model = model
+            )
+        elif model_name is None:  # Extract model_name from model
+            model_name = model.name_or_path
+        self._model = model.to(self._device)
 
-        if tokenizer is None:
+        if tokenizer is None:  # Use tokenizer_name with AutoTokenizer
             tokenizer_name = (
                 model_name or tokenizer_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
-            self._tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer = AutoTokenizer.from_pretrained(
                 tokenizer_name, cache_dir=cache_folder
             )
-        else:
-            self._tokenizer = tokenizer
+        elif tokenizer_name is None:  # Extract tokenizer_name from model
+            tokenizer_name = tokenizer.name_or_path
+        self._tokenizer = tokenizer
 
         if max_length is None:
             try:
                 max_length = int(self._model.config.max_position_embeddings)
-            except Exception:
+            except AttributeError as exc:
                 raise ValueError(
-                    "Unable to find max_length from model config. "
-                    "Please provide max_length."
-                )
+                    "Unable to find max_length from model config. Please specify max_length."
+                ) from exc
 
-        if pooling not in ["cls", "mean"]:
-            raise ValueError(f"Pooling {pooling} not supported.")
+        if isinstance(pooling, str):
+            try:
+                pooling = Pooling(pooling)
+            except ValueError as exc:
+                raise NotImplementedError(
+                    f"Pooling {pooling} unsupported, please pick one in"
+                    f" {[p.value for p in Pooling]}."
+                ) from exc
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -112,22 +126,15 @@ class HuggingFaceEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
 
-    def _mean_pooling(self, model_output: Any, attention_mask: Any) -> Any:
+    def _mean_pooling(
+        self, token_embeddings: "torch.Tensor", attention_mask: "torch.Tensor"
+    ) -> "torch.Tensor":
         """Mean Pooling - Take attention mask into account for correct averaging."""
-        import torch
-
-        # First element of model_output contains all token embeddings
-        token_embeddings = model_output[0]
         input_mask_expanded = (
             attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         )
-        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(
-            input_mask_expanded.sum(1), min=1e-9
-        )
-
-    def _cls_pooling(self, model_output: list) -> Any:
-        """Use the CLS token as the pooling token."""
-        return model_output[0][:, 0]
+        numerator = (token_embeddings * input_mask_expanded).sum(1)
+        return numerator / input_mask_expanded.sum(1).clamp(min=1e-9)
 
     def _embed(self, sentences: List[str]) -> List[List[float]]:
         """Embed sentences."""
@@ -146,11 +153,13 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
         model_output = self._model(**encoded_input)
 
-        if self.pooling == "cls":
-            embeddings = self._cls_pooling(model_output)
+        if self.pooling == Pooling.CLS:
+            context_layer: "torch.Tensor" = model_output[0]
+            embeddings = self.pooling.cls_pooling(context_layer)
         else:
             embeddings = self._mean_pooling(
-                model_output, encoded_input["attention_mask"]
+                token_embeddings=model_output[0],
+                attention_mask=encoded_input["attention_mask"],
             )
 
         if self.normalize:
@@ -186,7 +195,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed(texts)
 
 
-class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):  # type: ignore[misc]
+class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding):  # type: ignore[misc]
     """
     Wrapper on the Hugging Face's Inference API for embeddings.
 
@@ -220,7 +229,7 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        return "HuggingFaceInferenceAPIEmbeddings"
+        return "HuggingFaceInferenceAPIEmbedding"
 
     async def _async_embed_single(self, text: str) -> Embedding:
         embedding = (await self._async_client.feature_extraction(text)).squeeze(axis=0)
@@ -292,3 +301,6 @@ class HuggingFaceInferenceAPIEmbeddings(HuggingFaceInferenceAPI, BaseEmbedding):
                 for text in texts
             ]
         )
+
+
+HuggingFaceInferenceAPIEmbeddings = HuggingFaceInferenceAPIEmbedding

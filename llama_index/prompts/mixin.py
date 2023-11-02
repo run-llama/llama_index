@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import deepcopy
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Union
 
 from llama_index.prompts.base import BasePromptTemplate
 

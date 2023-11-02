@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Tuple, cast
+from typing import Any, Tuple, cast
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager

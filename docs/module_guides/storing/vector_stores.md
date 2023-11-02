@@ -31,6 +31,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Deeplake                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Neo4jVector              | self-hosted / cloud |                    |               | ✓      | ✓               |       |
+| SingleStore              | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Azure Cognitive Search   | cloud               |                    | ✓             | ✓      | ✓               |       |
 | DashVector               | cloud               | ✓                  |               | ✓      | ✓               |       |
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
@@ -43,6 +44,7 @@ We are actively adding more integrations and improving feature coverage for each
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
 | TencentVectorDB          | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
+| AstraDB                  | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 
@@ -80,6 +82,7 @@ maxdepth: 1
 /examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 /examples/vector_stores/EpsillaIndexDemo.ipynb
 /examples/vector_stores/Timescalevector.ipynb
+/examples/vector_stores/SingleStoreDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo.ipynb
 /examples/vector_stores/TencentVectorDBIndexDemo.ipynb
 ```

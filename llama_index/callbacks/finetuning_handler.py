@@ -1,8 +1,6 @@
 import json
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Type
-
-from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload

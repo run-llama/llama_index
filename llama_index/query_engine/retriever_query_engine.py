@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager

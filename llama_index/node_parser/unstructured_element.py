@@ -121,7 +121,7 @@ def extract_table_summaries(
         try:
             response = query_engine.query(summary_query_str)
             element.table_output = cast(PydanticResponse, response).response
-        except ValidationError as e:
+        except ValidationError:
             # There was a pydantic validation error, so we will run with text completion
             # fill in the summary and leave other fields blank
             query_engine = index.as_query_engine()
@@ -227,8 +227,8 @@ class UnstructuredElementNodeParser(NodeParser):
     ) -> None:
         """Initialize."""
         try:
-            import lxml
-            import unstructured
+            import lxml  # noqa
+            import unstructured  # noqa
         except ImportError:
             raise ImportError(
                 "You must install the `unstructured` and `lxml` package to use this node parser."

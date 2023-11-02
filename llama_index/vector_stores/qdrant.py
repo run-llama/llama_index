@@ -374,7 +374,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
-        from qdrant_client.http.models import Filter, Payload
+        from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
 
