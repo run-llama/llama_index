@@ -31,7 +31,6 @@ from llama_hub.tools.gmail.base import GmailToolSpec
 
 tool_spec = GmailToolSpec()
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list(), verbose=True)
-
 ```
 
 See our Usage Pattern Guide for more details.

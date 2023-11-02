@@ -30,7 +30,11 @@ storage_context = StorageContext.from_defaults(
 We can then load specific indices from the `StorageContext` through some convenience functions below.
 
 ```python
-from llama_index import load_index_from_storage, load_indices_from_storage, load_graph_from_storage
+from llama_index import (
+    load_index_from_storage,
+    load_indices_from_storage,
+    load_graph_from_storage,
+)
 
 # load a single index
 # need to specify index_id if multiple indexes are persisted to the same directory
@@ -40,11 +44,15 @@ index = load_index_from_storage(storage_context, index_id="<index_id>")
 index = load_index_from_storage(storage_context)
 
 # load multiple indices
-indices = load_indices_from_storage(storage_context) # loads all indices
-indices = load_indices_from_storage(storage_context, index_ids=[index_id1, ...]) # loads specific indices
+indices = load_indices_from_storage(storage_context)  # loads all indices
+indices = load_indices_from_storage(
+    storage_context, index_ids=[index_id1, ...]
+)  # loads specific indices
 
 # load composable graph
-graph = load_graph_from_storage(storage_context, root_id="<root_id>") # loads graph with the specified root_id
+graph = load_graph_from_storage(
+    storage_context, root_id="<root_id>"
+)  # loads graph with the specified root_id
 ```
 
 Here's the full [API Reference on saving and loading](/api_reference/storage/indices_save_load.rst).
@@ -59,10 +67,13 @@ Here's a simple example, instantiating a vector store:
 import dotenv
 import s3fs
 import os
+
 dotenv.load_dotenv("../../../.env")
 
 # load documents
-documents = SimpleDirectoryReader('../../../examples/paul_graham_essay/data/').load_data()
+documents = SimpleDirectoryReader(
+    "../../../examples/paul_graham_essay/data/"
+).load_data()
 print(len(documents))
 index = VectorStoreIndex.from_documents(documents)
 ```
@@ -71,17 +82,17 @@ At this point, everything has been the same. Now - let's instantiate a S3 filesy
 
 ```python
 # set up s3fs
-AWS_KEY = os.environ['AWS_ACCESS_KEY_ID']
-AWS_SECRET = os.environ['AWS_SECRET_ACCESS_KEY']
-R2_ACCOUNT_ID = os.environ['R2_ACCOUNT_ID']
+AWS_KEY = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET = os.environ["AWS_SECRET_ACCESS_KEY"]
+R2_ACCOUNT_ID = os.environ["R2_ACCOUNT_ID"]
 
 assert AWS_KEY is not None and AWS_KEY != ""
 
 s3 = s3fs.S3FileSystem(
-   key=AWS_KEY,
-   secret=AWS_SECRET,
-   endpoint_url=f'https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com',
-   s3_additional_kwargs={'ACL': 'public-read'}
+    key=AWS_KEY,
+    secret=AWS_SECRET,
+    endpoint_url=f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+    s3_additional_kwargs={"ACL": "public-read"},
 )
 
 # If you're using 2+ indexes with the same StorageContext,
@@ -89,13 +100,13 @@ s3 = s3fs.S3FileSystem(
 index.set_index_id("vector_index")
 
 # persist index to s3
-s3_bucket_name = 'llama-index/storage_demo'  # {bucket_name}/{index_name}
+s3_bucket_name = "llama-index/storage_demo"  # {bucket_name}/{index_name}
 index.storage_context.persist(persist_dir=s3_bucket_name, fs=s3)
 
 # load index from s3
 index_from_s3 = load_index_from_storage(
     StorageContext.from_defaults(persist_dir=s3_bucket_name, fs=s3),
-    index_id='vector_index'
+    index_id="vector_index",
 )
 ```
 
