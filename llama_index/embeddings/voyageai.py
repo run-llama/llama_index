@@ -1,34 +1,48 @@
-"""OpenAI embeddings file."""
+"""Voyage embeddings file."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
-import voyageai
+try:
+    import voyageai
+except ImportError:
+    raise ImportError(
+        "voyageai package not found, install with" "'pip install voyageai'"
+    )
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
+
+DEFAULT_VOYAGE_BATCH_SIZE = 8
 
 
 class VoyageEmbedding(BaseEmbedding):
     """Class for Voyage embeddings.
 
     Args:
-        model (str): Model for embedding.
+        model_name (str): Model for embedding.
             Defaults to "voyage-01".
 
-        deployment_name (Optional[str]): Optional deployment of model. Defaults to None.
-            If this value is not None, mode and model will be ignored.
-            Only available for using AzureOpenAI.
+        voyage_api_key (Optional[str]): Voyage API key. Defaults to None.
+            You can either specify the key here or store it as an environment variable.
     """
 
-    model: str = "voyage-01"
     voyage_api_key: Optional[str] = None
 
     def __init__(
         self,
-        model: str = "voyage-01",
+        model_name: str = "voyage-01",
         voyage_api_key: Optional[str] = None,
+        embed_batch_size: int = DEFAULT_VOYAGE_BATCH_SIZE,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ):
         voyageai.api_key = voyage_api_key
-        super().__init__(model=model)
+        super().__init__(
+            model_name=model_name,
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+            **kwargs,
+        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -36,24 +50,24 @@ class VoyageEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        return voyageai.get_embedding(query, model=self.model)
+        return voyageai.get_embedding(query, model=self.model_name)
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        return await voyageai.aget_embedding(query, model=self.model)
+        return await voyageai.aget_embedding(query, model=self.model_name)
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        return voyageai.get_embedding(text, model=self.model)
+        return voyageai.get_embedding(text, model=self.model_name)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        return await voyageai.aget_embedding(text, model=self.model)
+        return await voyageai.aget_embedding(text, model=self.model_name)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        return voyageai.get_embeddings(texts, model=self.model)
+        return voyageai.get_embeddings(texts, model=self.model_name)
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return await voyageai.aget_embeddings(texts, model=self.model)
+        return await voyageai.aget_embeddings(texts, model=self.model_name)
