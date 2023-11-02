@@ -22,6 +22,15 @@ from llama_index.vector_stores.google.generativeai import (
 SKIP_TEST_REASON = "Google GenerativeAI is not installed"
 
 
+if has_google:
+    import llama_index.vector_stores.google.generativeai.genai_extension as genaix
+
+    # Make sure the tests do not hit actual production servers.
+    genaix.set_defaults(
+        genaix.Config(api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend")
+    )
+
+
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_corpus")
 def test_create_corpus(mock_create_corpus: MagicMock) -> None:

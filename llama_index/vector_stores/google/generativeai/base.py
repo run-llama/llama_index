@@ -1,6 +1,6 @@
 """Google GenerativeAI Vector Store.
 
-The GenAI Semantic Retriever API is a managed end to end service that allows
+The GenAI Semantic Retriever API is a managed end-to-end service that allows
 developers to create a corpus of documents to perform semantic search on
 related passages given a user query. For more information visit:
 https://developers.generativeai.google/guide
