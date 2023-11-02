@@ -335,7 +335,13 @@ def resolve_openai_credentials(
 
 def refresh_openai_azuread_token(
     azure_ad_token=None,
-):
+) -> "AccessToken":
+    """
+    Checks the validity of the associated token, if any, and tries to refresh it
+    using the credentials available in the current context. Different authentication
+    methods are tried, in order, until a successful one is found as defined at the
+    package `azure-indentity`.
+    """
     try:
         from azure.core.exceptions import ClientAuthenticationError
         from azure.identity import DefaultAzureCredential
