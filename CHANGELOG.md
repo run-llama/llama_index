@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Add `lm-format-enforcer` integration for structured output (#8601)
+
 ## [0.8.57] - 2023-10-31
 
 ### New Features
