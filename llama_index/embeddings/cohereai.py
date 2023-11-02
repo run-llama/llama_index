@@ -127,17 +127,17 @@ class CohereEmbedding(BaseEmbedding):
     def _embed(self, texts: List[str]) -> List[List[float]]:
         """Embed sentences using Cohere."""
         if self.input_type:
-            embeddings = self.cohere_client.embed(
+            result = self.cohere_client.embed(
                 texts=texts,
                 input_type=self.input_type,
                 model=self.model_name,
                 truncate=self.truncate,
             ).embeddings
         else:
-            embeddings = self.cohere_client.embed(
+            result = self.cohere_client.embed(
                 texts=texts, model=self.model_name, truncate=self.truncate
             ).embeddings
-        return [list(map(float, e)) for e in embeddings]
+        return [list(map(float, e)) for e in result]
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
