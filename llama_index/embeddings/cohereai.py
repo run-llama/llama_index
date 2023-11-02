@@ -14,7 +14,7 @@ DEFAULT_MODELS_REQUIRING_INPUT_TYPE = [
 
 DEFAULT_INPUT_TYPES = [
     "search_query",
-    "search_documents",
+    "search_document",
     "classification",
     "clustering",
 ]
