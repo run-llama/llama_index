@@ -104,7 +104,7 @@ class CohereEmbedding(BaseEmbedding):
         # Validate model_name and input_type
         if (model_name, input_type) not in VALID_MODEL_INPUT_TYPES:
             raise ValueError(
-                f"{(model_name, input_type)} is not valid for model '{self.model_name}'"
+                f"{(model_name, input_type)} is not valid for model '{model_name}'"
             )
 
         if truncate not in VALID_TRUNCATE_OPTIONS:
