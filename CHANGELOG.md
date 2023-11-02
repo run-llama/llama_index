@@ -5,7 +5,7 @@
 ### New Features
 
 - Add `lm-format-enforcer` integration for structured output (#8601)
-- Google Vertex Support  (#8626)
+- Google Vertex Support (#8626)
 
 ## [0.8.57] - 2023-10-31
 
