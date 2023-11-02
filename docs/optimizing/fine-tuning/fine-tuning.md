@@ -58,7 +58,7 @@ Embedding Fine-tuning Blog <https://medium.com/llamaindex-blog/fine-tuning-embed
 
 ## Fine-tuning LLMs
 
-### Finetuning GPT-3.5 to distill GPT-4
+### Fine-tuning GPT-3.5 to distill GPT-4
 
 We have multiple guides showing how to use OpenAI's finetuning endpoints to fine-tune gpt-3.5-turbo to output GPT-4 responses for RAG/agents.
 
@@ -112,7 +112,7 @@ OpenAI Function Calling Fine-tuning </examples/finetuning/openai_fine_tuning_fun
 Llama2 Structured Output Fine-tuning </examples/finetuning/gradient/gradient_structured.ipynb>
 ```
 
-### [WIP] Finetuning GPT-3.5 to Memorize Knowledge
+### [WIP] Fine-tuning GPT-3.5 to Memorize Knowledge
 
 We have a guide experimenting with showing how to use OpenAI fine-tuning to memorize a body of text.
 Still WIP! Not quite as good as RAG yet.
@@ -124,7 +124,7 @@ maxdepth: 1
 /examples/finetuning/knowledge/finetune_knowledge.ipynb
 ```
 
-### Finetuning Llama 2 for Better Text-to-SQL
+### Fine-tuning Llama 2 for Better Text-to-SQL
 
 In this tutorial, we show you how you can finetune Llama 2 on a text-to-SQL dataset, and then use it for structured analytics against any SQL database using LlamaIndex abstractions.
 
@@ -139,7 +139,24 @@ Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Repo) <https://github.com/run-llama/m
 Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Notebook) <https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb>
 ```
 
-## Finetuning Cross-Encoders for Re-Ranking
+### Fine-tuning An Evaluator
+
+In these tutorials, we aim to distill a GPT-4 judge (or evaluator) onto a GPT-3.5 judge. It has
+been recently observed that GPT-4 judges can reach high levels of agreement with human evaluators (e.g.,
+see https://arxiv.org/pdf/2306.05685.pdf).
+
+Thus, by fine-tuning a GPT-3.5 judge, we may be able to reach GPT-4 levels (and
+by proxy, agreement with humans) at a lower cost.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/finetuning/llm_judge/correctness/finetune_llm_judge_single_grading_correctness.ipynb
+/examples/finetuning/llm_judge/pairwise/finetune_llm_judge.ipynb
+```
+
+## Fine-tuning Cross-Encoders for Re-Ranking
 
 By finetuning a cross encoder, we can attempt to improve re-ranking performance on our own private data.
 

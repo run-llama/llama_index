@@ -4,20 +4,22 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    stop_after_delay,
-    stop_all,
-    wait_random_exponential,
-)
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import (
+    create_retry_decorator,
     resolve_from_aliases,
     resolve_openai_credentials,
+)
+
+embedding_retry_decorator = create_retry_decorator(
+    max_retries=6,
+    random_exponential=True,
+    stop_after_delay_seconds=60,
+    min_seconds=1,
+    max_seconds=20,
 )
 
 
@@ -100,10 +102,7 @@ _TEXT_MODE_MODEL_DICT = {
 }
 
 
-@retry(
-    wait=wait_random_exponential(min=1, max=20),
-    stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
-)
+@embedding_retry_decorator
 def get_embedding(
     text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
@@ -123,10 +122,7 @@ def get_embedding(
     ]
 
 
-@retry(
-    wait=wait_random_exponential(min=1, max=20),
-    stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
-)
+@embedding_retry_decorator
 async def aget_embedding(
     text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
@@ -146,10 +142,7 @@ async def aget_embedding(
     ][0]["embedding"]
 
 
-@retry(
-    wait=wait_random_exponential(min=1, max=20),
-    stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
-)
+@embedding_retry_decorator
 def get_embeddings(
     list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:
@@ -170,10 +163,7 @@ def get_embeddings(
     return [d["embedding"] for d in data]
 
 
-@retry(
-    wait=wait_random_exponential(min=1, max=20),
-    stop=stop_all(stop_after_attempt(6), stop_after_delay(60)),
-)
+@embedding_retry_decorator
 async def aget_embeddings(
     list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:

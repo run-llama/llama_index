@@ -1,11 +1,20 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.58] - 2023-11-02
 
 ### New Features
 
+- Add `lm-format-enforcer` integration for structured output (#8601)
+- Google Vertex Support (#8626)
+
+## [0.8.57] - 2023-10-31
+
+### New Features
+
+- Add fine-tuning evaluator notebooks (#8596)
 - Add `SingleStoreDB` integration (#7991)
 - Add support for ChromaDB PersistentClient (#8582)
+- Add DataStax Astra DB support (#8609)
 
 ### Bug Fixes / Nits
 
