@@ -71,7 +71,7 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
             text_key: An Azure CosmosDB MongoDB field that will contain the text for each document.
             metadata_key: An Azure CosmosDB MongoDB field that will contain
             the metadata for each document.
-            cosmos_search_kwargs: An Azure CosmosDB MongoDB field that will 
+            cosmos_search_kwargs: An Azure CosmosDB MongoDB field that will
             contain search options, such as kind, numLists, similarity, and dimensions.
             insert_kwargs: The kwargs used during `insert`.
         """
@@ -89,7 +89,9 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
                     "Must specify Azure cosmodb 'AZURE_COSMOSDB_MONGODB_URI' via env variable "
                     "if not directly passing in client."
                 )
-            self._mongodb_client = pymongo.MongoClient(os.environ["AZURE_COSMOSDB_MONGODB_URI"])
+            self._mongodb_client = pymongo.MongoClient(
+                os.environ["AZURE_COSMOSDB_MONGODB_URI"]
+            )
 
         self._collection = self._mongodb_client[db_name][collection_name]
         self._index_name = index_name
@@ -103,25 +105,31 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         self._cosmos_search_kwargs = cosmos_search_kwargs or {}
         self._create_vector_search_index()
 
-    def _create_vector_search_index(self):  
+    def _create_vector_search_index(self):
         db = self._mongodb_client[self._db_name]
-        db.command({
-            'createIndexes': self._collection_name,
-            'indexes': [
-                {
-                'name': self._index_name,
-                'key': {
-                    self._embedding_key: "cosmosSearch"
-                },
-                'cosmosSearchOptions': {
-                    'kind': self._cosmos_search_kwargs.get('kind', 'vector-ivf'),
-                    'numLists': self._cosmos_search_kwargs.get('numLists', 1),
-                    'similarity': self._cosmos_search_kwargs.get('similarity', 'COS'),
-                    'dimensions': self._cosmos_search_kwargs.get('dimensions', 1536)
-                }
-                }
-            ]
-            })
+        db.command(
+            {
+                "createIndexes": self._collection_name,
+                "indexes": [
+                    {
+                        "name": self._index_name,
+                        "key": {self._embedding_key: "cosmosSearch"},
+                        "cosmosSearchOptions": {
+                            "kind": self._cosmos_search_kwargs.get(
+                                "kind", "vector-ivf"
+                            ),
+                            "numLists": self._cosmos_search_kwargs.get("numLists", 1),
+                            "similarity": self._cosmos_search_kwargs.get(
+                                "similarity", "COS"
+                            ),
+                            "dimensions": self._cosmos_search_kwargs.get(
+                                "dimensions", 1536
+                            ),
+                        },
+                    }
+                ],
+            }
+        )
 
     def add(
         self,
@@ -177,7 +185,6 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         return self._mongodb_client
 
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-
         params: Dict[str, Any] = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
@@ -186,24 +193,29 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         if query.filters:
             params["filter"] = _to_mongodb_filter(query.filters)
 
-        query_field = {"$search": {"cosmosSearch":params, "returnStoredSource": True }}
+        query_field = {"$search": {"cosmosSearch": params, "returnStoredSource": True}}
 
         pipeline = [
-                query_field,
-                {"$project": { "similarityScore": { "$meta": "searchScore" }, "document" : "$$ROOT" } }
-            ]
+            query_field,
+            {
+                "$project": {
+                    "similarityScore": {"$meta": "searchScore"},
+                    "document": "$$ROOT",
+                }
+            },
+        ]
 
         logger.debug("Running query pipeline: %s", pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore
-        
+
         top_k_nodes = []
         top_k_ids = []
         top_k_scores = []
         for res in cursor:
-            text = res['document'].pop(self._text_key)
+            text = res["document"].pop(self._text_key)
             score = res.pop("similarityScore")
-            id = res['document'].pop(self._id_key)
-            metadata_dict = res['document'].pop(self._metadata_key)
+            id = res["document"].pop(self._id_key)
+            metadata_dict = res["document"].pop(self._metadata_key)
 
             try:
                 node = metadata_dict_to_node(metadata_dict)

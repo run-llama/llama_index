@@ -85,5 +85,5 @@ __all__ = [
     "DashVectorStore",
     "TencentVectorDB",
     "AstraDBVectorStore",
-    "AzureCosmosDBMongoDBVectorSearch"
+    "AzureCosmosDBMongoDBVectorSearch",
 ]

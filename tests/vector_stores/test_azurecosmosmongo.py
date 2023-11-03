@@ -84,9 +84,9 @@ class TestAzureMongovCoreVectorSearch:
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             index_name=INDEX_NAME,
-            cosmos_search_kwargs={'dimensions':3}
+            cosmos_search_kwargs={"dimensions": 3},
         )
-        sleep(1)  # waits for azure cosmosdb mongodb to update 
+        sleep(1)  # waits for azure cosmosdb mongodb to update
         vector_store.add(
             [
                 TextNode(
@@ -112,7 +112,7 @@ class TestAzureMongovCoreVectorSearch:
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             index_name=INDEX_NAME,
-            cosmos_search_kwargs={'dimensions':3}
+            cosmos_search_kwargs={"dimensions": 3},
         )
         vector_store.add(node_embeddings)  # type: ignore
         sleep(1)  # wait for azure cosmodb mongodb to update the index
@@ -120,7 +120,7 @@ class TestAzureMongovCoreVectorSearch:
         res = vector_store.query(
             VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
         )
-        print('res:\n', res)
+        print("res:\n", res)
         sleep(5)
         assert res.nodes
         assert res.nodes[0].get_content() == "lorem ipsum"
@@ -131,10 +131,11 @@ class TestAzureMongovCoreVectorSearch:
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             index_name=INDEX_NAME,
-            cosmos_search_kwargs={'dimensions':3}
+            cosmos_search_kwargs={"dimensions": 3},
         )
-        import logging 
-        logging.basicConfig(filename = "myapp.log", level = logging.DEBUG)
+        import logging
+
+        logging.basicConfig(filename="myapp.log", level=logging.DEBUG)
         logger = logging.getLogger(__name__)
         vector_store.add(node_embeddings)  # type: ignore
         sleep(1)  # wait for azure cosmosdb mongodb to update the index
@@ -142,7 +143,7 @@ class TestAzureMongovCoreVectorSearch:
         res = vector_store.query(
             VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
         )
-        print('res:\n', res)
+        print("res:\n", res)
         logger.log(logging.INFO, f"Value to log: {res.nodes[0]}")
         assert res.nodes
         assert res.nodes[0].get_content() == "lorem ipsum"
