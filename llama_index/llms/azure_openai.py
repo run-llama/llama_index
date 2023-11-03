@@ -114,7 +114,7 @@ class AzureOpenAI(OpenAI):
             self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
             self.api_key = self._azure_ad_token.token
 
-        return super()._credential_kwargs()
+        return super()._credential_kwargs
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:

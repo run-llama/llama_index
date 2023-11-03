@@ -304,7 +304,7 @@ def resolve_openai_credentials(
     api_type: Optional[str] = None,
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
-) -> Tuple[str, str, str, str]:
+) -> Tuple[Optional[str], str, str, str]:
     """ "Resolve OpenAI credentials.
 
     The order of precedence is:
@@ -334,8 +334,8 @@ def resolve_openai_credentials(
 
 
 def refresh_openai_azuread_token(
-    azure_ad_token=None,
-) -> "AccessToken":
+    azure_ad_token: Any = None,
+) -> Any:
     """
     Checks the validity of the associated token, if any, and tries to refresh it
     using the credentials available in the current context. Different authentication
