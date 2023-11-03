@@ -4,6 +4,7 @@
 
 - Deepmemory support (#8625)
 - Add CohereAI embeddings (#8650)
+- Add Azure AD (Microsoft Entra ID) support (#8667)
 
 ## [0.8.58] - 2023-11-02
 
