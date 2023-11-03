@@ -65,7 +65,7 @@ class EntityName:
         return self.document_id is None
 
     def is_document(self) -> bool:
-        return self.chunk_id is None
+        return self.document_id is not None and self.chunk_id is None
 
     def is_chunk(self) -> bool:
         return self.chunk_id is not None
@@ -125,11 +125,24 @@ class Document:
 
 @dataclass
 class Config:
+    """Global configuration for Google Generative AI API.
+
+    Normally, the defaults should work fine. Change them only if you understand
+    why.
+
+    Attributes:
+        api_endpoint: The Google Generative API endpoint address.
+        user_agent: The user agent to use for logging.
+        page_size: For paging RPCs, how many entities to return per RPC.
+    """
+
     api_endpoint: str = _DEFAULT_API_ENDPOINT
     user_agent: str = _USER_AGENT
+    page_size: int = _default_page_size
 
 
 def set_defaults(config: Config) -> None:
+    """Set global defaults for operations with Google Generative AI API."""
     global _config
     _config = config
     _set_default_retriever(build_semantic_retriever())
@@ -180,7 +193,7 @@ def list_corpora(
     if client is None:
         client = _default_retriever
     for corpus in client.list_corpora(
-        genai.ListCorporaRequest(page_size=_default_page_size)
+        genai.ListCorporaRequest(page_size=_config.page_size)
     ):
         yield Corpus.from_corpus(corpus)
 

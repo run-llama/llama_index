@@ -1,4 +1,4 @@
-"""Google GenerativeAI Vector Store.
+"""Google Generative AI Vector Store.
 
 The GenAI Semantic Retriever API is a managed end-to-end service that allows
 developers to create a corpus of documents to perform semantic search on
@@ -235,7 +235,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
         return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes using with ref_doc_id.
+        """Delete nodes by ref_doc_id.
 
         Both the underlying nodes and the document will be deleted from Google
         server.
@@ -301,6 +301,8 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
         relevant_chunks: List[genai.RelevantChunk] = []
         if query.doc_ids is None:
+            # The chunks from query_corpus should be sorted in reverse order by
+            # relevant score.
             relevant_chunks = genaix.query_corpus(
                 corpus_id=self.corpus_id,
                 query=query_str,
@@ -320,10 +322,9 @@ class GoogleVectorStore(BasePydanticVectorStore):
                         client=client,
                     )
                 )
-
-        # Make sure the chunks are reversed sorted according to relevant scores
-        # even across multiple documents.
-        relevant_chunks.sort(key=lambda c: c.chunk_relevance_score, reverse=True)
+            # Make sure the chunks are reversed sorted according to relevant
+            # scores even across multiple documents.
+            relevant_chunks.sort(key=lambda c: c.chunk_relevance_score, reverse=True)
 
         return VectorStoreQueryResult(
             nodes=[
