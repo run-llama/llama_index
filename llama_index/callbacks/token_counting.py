@@ -50,11 +50,25 @@ def get_llm_token_counts(
 
             messages_tokens = usage_dict["prompt_tokens"]
             response_tokens = usage_dict["completion_tokens"]
-        except (ValueError, KeyError):
-            messages_tokens = token_counter.estimate_tokens_in_messages(
-                [x.message for x in messages]  # type: ignore
+
+            if messages_tokens == 0 or response_tokens == 0:
+                raise ValueError("Invalid token counts!")
+
+            return TokenCountingEvent(
+                event_id=event_id,
+                prompt=messages_str,
+                prompt_token_count=messages_tokens,
+                completion=response_str,
+                completion_token_count=response_tokens,
             )
-            response_tokens = token_counter.get_string_tokens(response_str)
+
+        except (ValueError, KeyError):
+            # Invalid token counts, or no token counts attached
+            pass
+
+        # Should count tokens ourselves
+        messages_tokens = token_counter.estimate_tokens_in_messages(messages)
+        response_tokens = token_counter.get_string_tokens(response_str)
 
         return TokenCountingEvent(
             event_id=event_id,
