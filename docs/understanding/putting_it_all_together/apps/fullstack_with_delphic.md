@@ -194,7 +194,7 @@ async def add_file_to_collection(request,
                                  collection_id: int,
                                  file: UploadedFile = File(...),
                                  description: str = Form(...), ):
-    collection = await sync_to_async(Collection.objects.get)(id=collection_id
+    collection = await sync_to_async(Collection.objects.get)(id=collection_id)
 ```
 
 ### Intro to Websockets
