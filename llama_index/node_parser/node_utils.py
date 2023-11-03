@@ -9,7 +9,6 @@ from llama_index.schema import (
     Document,
     ImageDocument,
     ImageNode,
-    MetadataMode,
     NodeRelationship,
     TextNode,
 )
