@@ -16,6 +16,14 @@ from llama_index.response_synthesizers.google.generativeai import (
 SKIP_TEST_REASON = "Google GenerativeAI is not installed"
 
 
+if has_google:
+    import llama_index.vector_stores.google.generativeai.genai_extension as genaix
+
+    genaix.set_defaults(
+        genaix.Config(api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend")
+    )
+
+
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.TextServiceClient.generate_text_answer")
 def test_get_response(mock_generate_text_answer: MagicMock) -> None:
@@ -39,7 +47,7 @@ def test_get_response(mock_generate_text_answer: MagicMock) -> None:
                 passage_ids=["corpora/123/documents/456/chunks/789"],
             ),
         ],
-        answerable_probability=0.9,
+        answerable_probability=0.7,
     )
 
     # Act
@@ -54,7 +62,7 @@ def test_get_response(mock_generate_text_answer: MagicMock) -> None:
     # Assert
     assert response.answer == "42"
     assert response.attributed_passages == ["Meaning of life is 42."]
-    assert response.answerable_probability == 0.9
+    assert response.answerable_probability == pytest.approx(0.7)
 
     assert mock_generate_text_answer.call_count == 1
     request = mock_generate_text_answer.call_args.args[0]
