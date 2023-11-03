@@ -118,7 +118,7 @@ class ReplicateMultiModal(MultiModalLLM):
                 raise FileNotFoundError(
                     "Could not load image file. Please check whether the file exists"
                 )
-        return None
+        return {}
 
     def complete(
         self,
