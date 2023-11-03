@@ -55,7 +55,7 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
     )
 
     _chunking_tokenizer_fn: Callable[[str], List[str]] = PrivateAttr()
-    _tokenizer: Callable = PrivateAttr(default_factory=get_tokenizer)
+    _tokenizer: Callable = PrivateAttr()
     _split_fns: List[Callable] = PrivateAttr()
     _sub_sentence_split_fns: List[Callable] = PrivateAttr()
 

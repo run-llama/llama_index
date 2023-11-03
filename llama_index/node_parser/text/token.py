@@ -36,7 +36,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
         default_factory=list, description="Additional separators for splitting."
     )
 
-    _tokenizer: Callable = PrivateAttr(default_factory=get_tokenizer)
+    _tokenizer: Callable = PrivateAttr()
     _split_fns: List[Callable] = PrivateAttr()
 
     def __init__(
