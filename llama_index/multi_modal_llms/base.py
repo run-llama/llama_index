@@ -102,7 +102,7 @@ class MultiModalLLM(BaseComponent):
     def complete(
         self,
         prompt: str,
-        image_documets: Sequence[ImageDocument],
+        image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponse:
@@ -112,7 +112,7 @@ class MultiModalLLM(BaseComponent):
     def stream_complete(
         self,
         prompt: str,
-        image_documets: Sequence[ImageDocument],
+        image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponse:
@@ -122,7 +122,7 @@ class MultiModalLLM(BaseComponent):
     async def acomplete(
         self,
         prompt: str,
-        image_documets: Sequence[ImageDocument],
+        image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponse:
@@ -132,7 +132,7 @@ class MultiModalLLM(BaseComponent):
     async def astream_complete(
         self,
         prompt: str,
-        image_documets: Sequence[ImageDocument],
+        image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponseAsyncGen:
