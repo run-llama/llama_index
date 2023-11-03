@@ -1,5 +1,6 @@
 from llama_index.multi_modal_llms.base import (
     MultiModalCompletionResponse,
+    MultiModalCompletionResponseAsyncGen,
     MultiModalCompletionResponseGen,
     MultiModalLLM,
     MultiModalLLMMetadata,
@@ -10,6 +11,7 @@ __all__ = [
     "ReplicateMultiModal",
     "MultiModalCompletionResponse",
     "MultiModalCompletionResponseGen",
+    "MultiModalCompletionResponseAsyncGen",
     "MultiModalLLMMetadata",
     "MultiModalLLM",
 ]

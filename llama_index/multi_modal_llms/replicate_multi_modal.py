@@ -8,6 +8,7 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.multi_modal_llms import (
     MultiModalCompletionResponse,
+    MultiModalCompletionResponseAsyncGen,
     MultiModalCompletionResponseGen,
     MultiModalLLM,
     MultiModalLLMMetadata,
@@ -183,5 +184,5 @@ class ReplicateMultiModal(MultiModalLLM):
         image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
-    ) -> MultiModalCompletionResponseGen:
+    ) -> MultiModalCompletionResponseAsyncGen:
         raise NotImplementedError
