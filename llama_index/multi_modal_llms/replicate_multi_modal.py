@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -123,7 +123,7 @@ class ReplicateMultiModal(MultiModalLLM):
     def complete(
         self,
         prompt: str,
-        image_documents: list[ImageDocument],
+        image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponse:
@@ -138,7 +138,7 @@ class ReplicateMultiModal(MultiModalLLM):
     def stream_complete(
         self,
         prompt: str,
-        image_documents: list[ImageDocument],
+        image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponseGen:
@@ -171,7 +171,7 @@ class ReplicateMultiModal(MultiModalLLM):
     async def acomplete(
         self,
         prompt: str,
-        image_documents: list[ImageDocument],
+        image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponse:
@@ -180,7 +180,7 @@ class ReplicateMultiModal(MultiModalLLM):
     async def astream_complete(
         self,
         prompt: str,
-        image_documents: list[ImageDocument],
+        image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponseGen:

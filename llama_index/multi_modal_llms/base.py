@@ -100,24 +100,40 @@ class MultiModalLLM(BaseComponent):
 
     @abstractmethod
     def complete(
-        self, prompt: str, image_documets: Sequence[ImageDocument], **kwargs: Any
+        self,
+        prompt: str,
+        image_documets: Sequence[ImageDocument],
+        image_idx: int,
+        **kwargs: Any
     ) -> MultiModalCompletionResponse:
         """Completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     def stream_complete(
-        self, prompt: str, image_documets: Sequence[ImageDocument], **kwargs: Any
+        self,
+        prompt: str,
+        image_documets: Sequence[ImageDocument],
+        image_idx: int,
+        **kwargs: Any
     ) -> MultiModalCompletionResponse:
         """Streaming completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     async def acomplete(
-        self, prompt: str, image_documets: Sequence[ImageDocument], **kwargs: Any
+        self,
+        prompt: str,
+        image_documets: Sequence[ImageDocument],
+        image_idx: int,
+        **kwargs: Any
     ) -> MultiModalCompletionResponse:
         """Async completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     async def astream_complete(
-        self, prompt: str, image_documets: Sequence[ImageDocument], **kwargs: Any
+        self,
+        prompt: str,
+        image_documets: Sequence[ImageDocument],
+        image_idx: int,
+        **kwargs: Any
     ) -> MultiModalCompletionResponseAsyncGen:
         """Async streaming completion endpoint for Multi-Modal LLM."""
