@@ -48,7 +48,7 @@ class DeepLakeVectorStore(VectorStoreBase):
         ingestion_batch_size: int = 1024,
         ingestion_num_workers: int = 4,
         overwrite: bool = False,
-        exec_option: str = "python",
+        exec_option: Optional[str] = None,
         verbose: bool = True,
         **kwargs: Any,
     ):
@@ -178,17 +178,20 @@ class DeepLakeVectorStore(VectorStoreBase):
                 the following attributes:
                 1. query_embedding (List[float]): query embedding
                 2. similarity_top_k (int): top k most similar nodes
+            deep_memory (bool): Whether to use deep memory for query execution.
 
         Returns:
             VectorStoreQueryResult
         """
         query_embedding = cast(List[float], query.query_embedding)
         exec_option = kwargs.get("exec_option")
+        deep_memory = kwargs.get("deep_memory")
         data = self.vectorstore.search(
             embedding=query_embedding,
             exec_option=exec_option,
             k=query.similarity_top_k,
             filter=query.filters,
+            deep_memory=deep_memory,
         )
 
         similarities = data["score"]
