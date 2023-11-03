@@ -33,7 +33,7 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
     return filters
 
 
-class AzureCosmosMongoVectorSearch(VectorStore):
+class AzureCosmosDBMongoVectorSearch(VectorStore):
     """Azure CosmosDB MongoDB vCore Vector Store.
 
     To use, you should have both:
