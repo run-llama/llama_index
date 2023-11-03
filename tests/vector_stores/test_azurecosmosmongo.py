@@ -125,7 +125,6 @@ class TestAzureMongovCoreVectorSearch:
         assert res.nodes
         assert res.nodes[0].get_content() == "lorem ipsum"
 
-
     def test_query_logging(self, node_embeddings: list[TextNode]) -> None:
         vector_store = AzureCosmosDBMongoDBVectorSearch(
             mongodb_client=test_client,  # type: ignore
