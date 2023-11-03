@@ -72,7 +72,7 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
             metadata_key: An Azure CosmosDB MongoDB field that will contain
             the metadata for each document.
             cosmos_search_kwargs: An Azure CosmosDB MongoDB field that will 
-            contain search options, such as kind, numLists, similairty, and dimensions.
+            contain search options, such as kind, numLists, similarity, and dimensions.
             insert_kwargs: The kwargs used during `insert`.
         """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
