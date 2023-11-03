@@ -61,7 +61,6 @@ def node_embeddings() -> list[TextNode]:
 
 
 @pytest.mark.skipif(not pymongo_available, reason="pymongo is not available")
-@pytest.mark.skip(reason="Need to manually provide a valid Azure Cosmodb Mongodb URI")
 class TestAzureMongovCoreVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
