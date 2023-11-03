@@ -64,14 +64,6 @@ class MultiModalLLMMetadata(BaseModel):
         default=DEFAULT_NUM_INPUT_FILES,
         description="Number of input files the model can take when generating a response.",
     )
-    is_chat_model: bool = Field(
-        default=False,
-        description=(
-            "Set True if the model exposes a chat interface (i.e. can be passed a"
-            " sequence of messages, rather than text), like OpenAI's"
-            " /v1/chat/completions endpoint."
-        ),
-    )
     is_function_calling_model: bool = Field(
         default=False,
         # SEE: https://openai.com/blog/function-calling-and-other-api-updates
@@ -105,12 +97,6 @@ class MultiModalLLM(BaseComponent):
     @abstractmethod
     def metadata(self) -> MultiModalLLMMetadata:
         """Multi-Modal LLM metadata."""
-
-    @abstractmethod
-    def load_image_documents(
-        self, file_path: Sequence[str], **kwargs: Any
-    ) -> list[ImageDocument]:
-        """Multi-Modal LLM load raw images and return ImageDocuments."""
 
     @abstractmethod
     def complete(

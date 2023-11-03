@@ -9,13 +9,14 @@ from llama_index.llms.generic_utils import (
 from llama_index.multi_modal_llms import (
     MultiModalCompletionResponse,
     MultiModalCompletionResponseGen,
+    MultiModalLLM,
     MultiModalLLMMetadata,
 )
 from llama_index.schema import ImageDocument
 
 
-class Fuyu(MultiModalLLMMetadata):
-    model: str = Field(description="The Fuyu model to use.")
+class ReplicateMultiModal(MultiModalLLM):
+    model: str = Field(description="The Multi-Modal model to use from Replicate.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_new_tokens: int = Field(
         description=" The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt"
@@ -27,9 +28,6 @@ class Fuyu(MultiModalLLMMetadata):
     image_key: str = Field(description="The key to use for the image in API calls.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Replicate API."
-    )
-    is_chat_model: bool = Field(
-        default=False, description="Whether the model is a chat model."
     )
 
     _messages_to_prompt: Callable = PrivateAttr()
@@ -48,7 +46,6 @@ class Fuyu(MultiModalLLMMetadata):
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
-        is_chat_model: bool = False,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
@@ -63,12 +60,11 @@ class Fuyu(MultiModalLLMMetadata):
             prompt_key=prompt_key,
             image_key=image_key,
             callback_manager=callback_manager,
-            is_chat_model=is_chat_model,
         )
 
     @classmethod
     def class_name(cls) -> str:
-        return "fuyu_multi_modal_llm"
+        return "replicate_multi_modal_llm"
 
     @property
     def metadata(self) -> MultiModalLLMMetadata:
@@ -77,7 +73,6 @@ class Fuyu(MultiModalLLMMetadata):
             context_window=self.context_window,
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
-            is_chat_model=self.is_chat_model,
         )
 
     @property
@@ -92,45 +87,38 @@ class Fuyu(MultiModalLLMMetadata):
             **self.additional_kwargs,
         }
 
-    def load_image_documents(
-        self, image_paths: list[str], **kwargs: Any
-    ) -> list[ImageDocument]:
-        image_documents = []
-        for i in range(min(self.num_input_files, len(image_paths))):
-            new_image_document = ImageDocument()
-            if "http" in image_paths[i] or "https" in image_paths[i]:
-                # remote image file with url
-                new_image_document.image_url = image_paths[i]
-            else:
-                # local image file with path
-                new_image_document.image_local_file_path = image_paths[i]
-
-            image_documents.append(new_image_document)
-        return image_documents
-
     def _get_multi_modal_input_dict(
         self, prompt: str, image_document: ImageDocument, **kwargs: Any
     ) -> Dict[str, Any]:
-        if image_document and image_document.image_local_file_path:
-            # load local image file and pass file handler to replicate
-            try:
+        if image_document and image_document.metadata:
+            if "file_path" in image_document.metadata:
+                # load local image file and pass file handler to replicate
+                try:
+                    return {
+                        self.prompt_key: prompt,
+                        self.image_key: open(
+                            image_document.metadata["file_path"], "rb"
+                        ),
+                        **self._model_kwargs,
+                        **kwargs,
+                    }
+                except FileNotFoundError:
+                    raise FileNotFoundError(
+                        "Could not load local image file. Please check whether the file exists"
+                    )
+            elif "image_url" in image_document.metadata:
+                # load remote image url and pass file url to replicate
                 return {
                     self.prompt_key: prompt,
-                    self.image_key: open(image_document.image_local_file_path, "rb"),
+                    self.image_key: image_document.metadata["image_url"],
                     **self._model_kwargs,
                     **kwargs,
                 }
-            except FileNotFoundError:
+            else:
                 raise FileNotFoundError(
-                    "Could not load local image file. Please check whether the file exists"
+                    "Could not load image file. Please check whether the file exists"
                 )
-        # load remote image url and pass file url to replicate
-        return {
-            self.prompt_key: prompt,
-            self.image_key: image_document.image_url,
-            **self._model_kwargs,
-            **kwargs,
-        }
+        return None
 
     def complete(
         self,
@@ -139,6 +127,21 @@ class Fuyu(MultiModalLLMMetadata):
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponse:
+        response_gen = self.stream_complete(
+            prompt, image_documents, image_idx, **kwargs
+        )
+        response_list = list(response_gen)
+        final_response = response_list[-1]
+        final_response.delta = None
+        return final_response
+
+    def stream_complete(
+        self,
+        prompt: str,
+        image_documents: list[ImageDocument],
+        image_idx: int,
+        **kwargs: Any
+    ) -> MultiModalCompletionResponseGen:
         try:
             import replicate
         except ImportError:
@@ -148,20 +151,37 @@ class Fuyu(MultiModalLLMMetadata):
             )
 
         prompt = self._completion_to_prompt(prompt)
-        # load one of image from image document list for understanding
         input_dict = self._get_multi_modal_input_dict(
             prompt, image_documents[image_idx], **kwargs
         )
 
-        return replicate.run(self.model, input=input_dict)
+        response_iter = replicate.run(self.model, input=input_dict)
 
-    def stream_complete(
+        def gen() -> MultiModalCompletionResponseGen:
+            text = ""
+            for delta in response_iter:
+                text += delta
+                yield MultiModalCompletionResponse(
+                    delta=delta,
+                    text=text,
+                )
+
+        return gen()
+
+    async def acomplete(
+        self,
+        prompt: str,
+        image_documents: list[ImageDocument],
+        image_idx: int,
+        **kwargs: Any
+    ) -> MultiModalCompletionResponse:
+        raise NotImplementedError
+
+    async def astream_complete(
         self,
         prompt: str,
         image_documents: list[ImageDocument],
         image_idx: int,
         **kwargs: Any
     ) -> MultiModalCompletionResponseGen:
-        raise NotImplementedError(
-            "stream_complete is not supported for Fuyu 8B model Replicate API atm."
-        )
+        raise NotImplementedError

@@ -618,10 +618,6 @@ class ImageDocument(Document):
 
     # base64 encoded image str
     image: Optional[str] = None
-    # image URL for remote image
-    image_url: Optional[str] = None
-    # image local path for local image
-    image_local_file_path: Optional[str] = None
 
     @classmethod
     def class_name(cls) -> str:
