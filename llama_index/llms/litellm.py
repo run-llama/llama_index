@@ -30,7 +30,6 @@ from llama_index.llms.litellm_utils import (
     acompletion_with_retry,
     completion_with_retry,
     from_openai_message_dict,
-    is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
@@ -76,6 +75,7 @@ class LiteLLM(LLM):
         max_retries: int = 10,
         api_key: Optional[str] = None,
         api_type: Optional[str] = None,
+        api_base: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -93,6 +93,8 @@ class LiteLLM(LLM):
             additional_kwargs["api_key"] = api_key
         if api_type is not None:
             additional_kwargs["api_type"] = api_type
+        if api_base is not None:
+            additional_kwargs["api_base"] = api_base
 
         super().__init__(
             model=model,
@@ -122,7 +124,7 @@ class LiteLLM(LLM):
         return LLMMetadata(
             context_window=openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
-            is_chat_model=self._is_chat_model,
+            is_chat_model=True,
             is_function_calling_model=is_function_calling_model(self._get_model_name()),
             model_name=self.model,
         )
@@ -147,10 +149,12 @@ class LiteLLM(LLM):
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        # litellm assumes all llms are chat llms
         if self._is_chat_model:
             complete_fn = chat_to_completion_decorator(self._chat)
         else:
             complete_fn = self._complete
+
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
@@ -163,7 +167,8 @@ class LiteLLM(LLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        return is_chat_model(self._get_model_name())
+        # litellm assumes all llms are chat llms
+        return True
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -189,6 +194,11 @@ class LiteLLM(LLM):
 
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if "max_tokens" in all_kwargs and all_kwargs["max_tokens"] is None:
+            all_kwargs.pop(
+                "max_tokens"
+            )  # don't send max_tokens == None, this throws errors for Non OpenAI providers
+
         response = completion_with_retry(
             is_chat_model=self._is_chat_model,
             max_retries=self.max_retries,
@@ -213,6 +223,10 @@ class LiteLLM(LLM):
 
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if "max_tokens" in all_kwargs and all_kwargs["max_tokens"] is None:
+            all_kwargs.pop(
+                "max_tokens"
+            )  # don't send max_tokens == None, this throws errors for Non OpenAI providers
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -258,58 +272,10 @@ class LiteLLM(LLM):
         return gen()
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        if self._is_chat_model:
-            raise ValueError("This model is a chat model.")
-
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
-
-        response = completion_with_retry(
-            is_chat_model=self._is_chat_model,
-            max_retries=self.max_retries,
-            prompt=prompt,
-            stream=False,
-            **all_kwargs,
-        )
-        text = response["choices"][0]["text"]
-        return CompletionResponse(
-            text=text,
-            raw=response,
-            additional_kwargs=self._get_response_token_counts(response),
-        )
+        raise NotImplementedError("litellm assumes all llms are chat llms.")
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        if self._is_chat_model:
-            raise ValueError("This model is a chat model.")
-
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
-
-        def gen() -> CompletionResponseGen:
-            text = ""
-            for response in completion_with_retry(
-                is_chat_model=self._is_chat_model,
-                max_retries=self.max_retries,
-                prompt=prompt,
-                stream=True,
-                **all_kwargs,
-            ):
-                delta = response["choices"][0]["text"]
-                text += delta
-                yield CompletionResponse(
-                    delta=delta,
-                    text=text,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
-
-        return gen()
+        raise NotImplementedError("litellm assumes all llms are chat llms.")
 
     def _get_max_token_for_prompt(self, prompt: str) -> int:
         try:
@@ -319,7 +285,12 @@ class LiteLLM(LLM):
                 "Please install tiktoken to use the max_tokens=None feature."
             )
         context_window = self.metadata.context_window
-        encoding = tiktoken.encoding_for_model(self._get_model_name())
+        try:
+            encoding = tiktoken.encoding_for_model(self._get_model_name())
+        except KeyError:
+            encoding = encoding = tiktoken.get_encoding(
+                "cl100k_base"
+            )  # default to using cl10k_base
         tokens = encoding.encode(prompt)
         max_token = context_window - len(tokens)
         if max_token <= 0:
@@ -467,57 +438,9 @@ class LiteLLM(LLM):
         return gen()
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        if self._is_chat_model:
-            raise ValueError("This model is a chat model.")
-
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
-
-        response = await acompletion_with_retry(
-            is_chat_model=self._is_chat_model,
-            max_retries=self.max_retries,
-            prompt=prompt,
-            stream=False,
-            **all_kwargs,
-        )
-        text = response["choices"][0]["text"]
-        return CompletionResponse(
-            text=text,
-            raw=response,
-            additional_kwargs=self._get_response_token_counts(response),
-        )
+        raise NotImplementedError("litellm assumes all llms are chat llms.")
 
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        if self._is_chat_model:
-            raise ValueError("This model is a chat model.")
-
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        if self.max_tokens is None:
-            # NOTE: non-chat completion endpoint requires max_tokens to be set
-            max_tokens = self._get_max_token_for_prompt(prompt)
-            all_kwargs["max_tokens"] = max_tokens
-
-        async def gen() -> CompletionResponseAsyncGen:
-            text = ""
-            async for response in await acompletion_with_retry(
-                is_chat_model=self._is_chat_model,
-                max_retries=self.max_retries,
-                prompt=prompt,
-                stream=True,
-                **all_kwargs,
-            ):
-                delta = response["choices"][0]["text"]
-                text += delta
-                yield CompletionResponse(
-                    delta=delta,
-                    text=text,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
-
-        return gen()
+        raise NotImplementedError("litellm assumes all llms are chat llms.")

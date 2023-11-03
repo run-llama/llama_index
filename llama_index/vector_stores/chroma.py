@@ -72,6 +72,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     port: Optional[str]
     ssl: bool
     headers: Optional[Dict[str, str]]
+    persist_dir: Optional[str]
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     _collection: Any = PrivateAttr()
@@ -84,6 +85,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         port: Optional[str] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
+        persist_dir: Optional[str] = None,
         collection_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
@@ -108,7 +110,49 @@ class ChromaVectorStore(BasePydanticVectorStore):
             ssl=ssl,
             headers=headers,
             collection_name=collection_name,
+            persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
+        )
+
+    @classmethod
+    def from_params(
+        cls,
+        collection_name: str,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        ssl: bool = False,
+        headers: Optional[Dict[str, str]] = None,
+        persist_dir: Optional[str] = None,
+        collection_kwargs: Optional[dict] = {},
+        **kwargs: Any,
+    ) -> "ChromaVectorStore":
+        try:
+            import chromadb
+        except ImportError:
+            raise ImportError(import_err_msg)
+        if persist_dir:
+            client = chromadb.PersistentClient(path=persist_dir)
+            collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        elif host and port:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            raise ValueError(
+                "Either `persist_dir` or (`host`,`port`) must be specified"
+            )
+        return cls(
+            chroma_collection=collection,
+            host=host,
+            port=port,
+            ssl=ssl,
+            headers=headers,
+            persist_dir=persist_dir,
+            collection_kwargs=collection_kwargs,
+            **kwargs,
         )
 
     @classmethod
@@ -136,11 +180,12 @@ class ChromaVectorStore(BasePydanticVectorStore):
             documents = []
             for node in node_chunk:
                 embeddings.append(node.get_embedding())
-                metadatas.append(
-                    node_to_metadata_dict(
-                        node, remove_text=True, flat_metadata=self.flat_metadata
-                    )
+                metadata_dict = node_to_metadata_dict(
+                    node, remove_text=True, flat_metadata=self.flat_metadata
                 )
+                if "context" in metadata_dict and metadata_dict["context"] is None:
+                    metadata_dict["context"] = ""
+                metadatas.append(metadata_dict)
                 ids.append(node.node_id)
                 documents.append(node.get_content(metadata_mode=MetadataMode.NONE))
 

@@ -1,8 +1,6 @@
-from copy import deepcopy
 from typing import List
 
-from llama_index.llms.base import ChatMessage
-from llama_index.prompts.base import BasePromptTemplate, ChatPromptTemplate
+from llama_index.prompts.base import BasePromptTemplate
 
 
 def get_empty_prompt_txt(prompt: BasePromptTemplate) -> str:

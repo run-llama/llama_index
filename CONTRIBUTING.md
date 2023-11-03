@@ -14,7 +14,7 @@ The best part of LlamaIndex is our community of users and contributors.
 4. 🧪 Add experimental features
 5. 📄 Improve code quality & documentation
 
-Also, join our Discord for ideas and discussions: https://discord.gg/dGcwcsnxhU.
+Also, join our Discord for ideas and discussions: <https://discord.gg/dGcwcsnxhU>.
 
 ### 1. 🆕 Extend Core Modules
 
@@ -38,7 +38,12 @@ Below, we will describe what each module does, give a high-level idea of the int
 
 A data loader ingests data of any format from anywhere into `Document` objects, which can then be parsed and indexed.
 
-**Interface**: `load_data` takes arbitrary arguments as input (e.g. path to data), and outputs a sequence of `Document` objects.
+**Interface**:
+
+- `load_data` takes arbitrary arguments as input (e.g. path to data), and outputs a sequence of `Document` objects.
+- `lazy_load_data` takes arbitrary arguments as input (e.g. path to data), and outputs an iterable object of `Document` objects. This is a lazy version of `load_data`, which is useful for large datasets.
+
+> **Note**: If only `lazy_load_data` is implemented, `load_data` will be delegated to it.
 
 **Examples**:
 
@@ -126,6 +131,7 @@ These serve as the main data store and retrieval engine for our vector index.
 - [Pinecone](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/pinecone.py)
 - [Faiss](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/faiss.py)
 - [Chroma](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/chroma.py)
+- [DashVector](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/dashvector.py)
 
 **Ideas**:
 
@@ -313,8 +319,13 @@ For bigger changes, you'll want to create a unit test. Our tests are in the `tes
 We use `pytest` for unit testing. To run all unit tests, run the following in the root dir:
 
 ```bash
-pip install -r data_requirements.txt
 pytest tests
+```
+
+or
+
+```bash
+make test
 ```
 
 ### Creating an Example Notebook
@@ -322,7 +333,7 @@ pytest tests
 For changes that involve entirely new features, it may be worth adding an example Jupyter notebook to showcase
 this feature.
 
-Example notebooks can be found in this folder: https://github.com/jerryjliu/llama_index/tree/main/examples.
+Example notebooks can be found in this folder: <https://github.com/jerryjliu/llama_index/tree/main/examples>.
 
 ### Creating a pull request
 

@@ -91,7 +91,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         try:
-            import weaviate
+            import weaviate  # noqa
             from weaviate import AuthApiKey, Client
         except ImportError:
             raise ImportError(import_err_msg)
@@ -129,6 +129,37 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             text_key=text_key,
             auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
+        )
+
+    @classmethod
+    def from_params(
+        cls,
+        url: str,
+        auth_config: Any,
+        index_name: Optional[str] = None,
+        text_key: str = DEFAULT_TEXT_KEY,
+        client_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> "WeaviateVectorStore":
+        """Create WeaviateVectorStore from config."""
+        try:
+            import weaviate  # noqa
+            from weaviate import AuthApiKey, Client  # noqa
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        client_kwargs = client_kwargs or {}
+        weaviate_client = Client(
+            url=url, auth_client_secret=auth_config, **client_kwargs
+        )
+        return cls(
+            weaviate_client=weaviate_client,
+            url=url,
+            auth_config=auth_config.__dict__,
+            client_kwargs=client_kwargs,
+            index_name=index_name,
+            text_key=text_key,
+            **kwargs,
         )
 
     @classmethod
@@ -174,7 +205,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         where_filter = {
             "path": ["ref_doc_id"],
             "operator": "Equal",
-            "valueString": ref_doc_id,
+            "valueText": ref_doc_id,
         }
         query = (
             self._client.query.get(self.index_name)
@@ -200,7 +231,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             filter_with_doc_ids = {
                 "operator": "Or",
                 "operands": [
-                    {"path": ["doc_id"], "operator": "Equal", "valueString": doc_id}
+                    {"path": ["doc_id"], "operator": "Equal", "valueText": doc_id}
                     for doc_id in query.doc_ids
                 ],
             }
@@ -210,7 +241,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             filter_with_node_ids = {
                 "operator": "Or",
                 "operands": [
-                    {"path": ["id"], "operator": "Equal", "valueString": node_id}
+                    {"path": ["id"], "operator": "Equal", "valueText": node_id}
                     for node_id in query.node_ids
                 ],
             }

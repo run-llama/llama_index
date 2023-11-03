@@ -13,6 +13,7 @@ from llama_index.objects.base import ObjectRetriever
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
@@ -115,6 +116,11 @@ class RouterQueryEngine(BaseQueryEngine):
 
         super().__init__(self.service_context.callback_manager)
 
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        # NOTE: don't include tools for now
+        return {"summarizer": self._summarizer, "selector": self._selector}
+
     @classmethod
     def from_defaults(
         cls,
@@ -171,6 +177,10 @@ class RouterQueryEngine(BaseQueryEngine):
 
                 final_response = selected_query_engine.query(query_bundle)
 
+            # add selected result
+            final_response.metadata = final_response.metadata or {}
+            final_response.metadata["selector_result"] = result
+
             query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
         return final_response
@@ -207,6 +217,10 @@ class RouterQueryEngine(BaseQueryEngine):
                     raise ValueError("Failed to select query engine") from e
 
                 final_response = await selected_query_engine.aquery(query_bundle)
+
+            # add selected result
+            final_response.metadata = final_response.metadata or {}
+            final_response.metadata["selector_result"] = result
 
             query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
@@ -257,6 +271,11 @@ class RetrieverRouterQueryEngine(BaseQueryEngine):
         self._node_to_query_engine_fn = node_to_query_engine_fn
         super().__init__(callback_manager)
 
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        # NOTE: don't include tools for now
+        return {"retriever": self._retriever}
+
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         nodes_with_score = self._retriever.retrieve(query_bundle)
         # TODO: for now we only support retrieving one node
@@ -299,6 +318,11 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
 
         super().__init__(self.service_context.callback_manager)
 
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        # NOTE: don't include tools for now
+        return {"summarizer": self._summarizer}
+
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
@@ -315,6 +339,10 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
                 )
             else:
                 final_response = responses[0]
+
+            # add selected result
+            final_response.metadata = final_response.metadata or {}
+            final_response.metadata["retrieved_tools"] = query_engine_tools
 
             query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 
@@ -336,6 +364,10 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
                 )
             else:
                 final_response = responses[0]
+
+            # add selected result
+            final_response.metadata = final_response.metadata or {}
+            final_response.metadata["retrieved_tools"] = query_engine_tools
 
             query_event.on_end(payload={EventPayload.RESPONSE: final_response})
 

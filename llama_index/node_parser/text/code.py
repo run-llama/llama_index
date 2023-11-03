@@ -1,12 +1,9 @@
 """Code splitter."""
-from typing import Any, List, Optional, Sequence
+from typing import Any, List
 
 from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.interface import TextNodeParser
-from llama_index.node_parser.node_utils import build_nodes_from_splits
-from llama_index.schema import BaseNode
 
 DEFAULT_CHUNK_LINES = 40
 DEFAULT_LINES_OVERLAP = 15
@@ -95,7 +92,7 @@ class CodeNodeParser(TextNodeParser):
 
             try:
                 parser = tree_sitter_languages.get_parser(self.language)
-            except Exception as e:
+            except Exception:
                 print(
                     f"Could not get parser for language {self.language}. Check "
                     "https://github.com/grantjenks/py-tree-sitter-languages#license "

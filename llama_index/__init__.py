@@ -6,9 +6,8 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 
 
 import logging
-from functools import partial
 from logging import NullHandler
-from typing import Callable, List, Optional, cast
+from typing import Callable, Optional
 
 # import global eval handler
 from llama_index.callbacks.global_handlers import set_global_handler

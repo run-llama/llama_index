@@ -10,6 +10,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.node_parser import SentenceAwareNodeParser, TextNodeParser
 from llama_index.prompts import PromptTemplate
 from llama_index.prompts.base import BasePromptTemplate
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
@@ -181,6 +182,10 @@ class CitationQueryEngine(BaseQueryEngine):
             text_splitter=text_splitter,
             node_postprocessors=node_postprocessors,
         )
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {"response_synthesizer": self._response_synthesizer}
 
     def _create_citation_nodes(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
         """Modify retrieved nodes to be granular sources."""

@@ -1,6 +1,6 @@
 """Token splitter."""
 import logging
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Callable, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager

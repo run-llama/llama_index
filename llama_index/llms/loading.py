@@ -1,6 +1,7 @@
 from typing import Dict, Type
 
 from llama_index.llms.base import LLM
+from llama_index.llms.bedrock import Bedrock
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 from llama_index.llms.huggingface import HuggingFaceLLM
@@ -11,6 +12,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.palm import PaLM
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
+from llama_index.llms.vertex import Vertex
 from llama_index.llms.xinference import Xinference
 
 RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
@@ -23,9 +25,11 @@ RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
     LangChainLLM.class_name(): LangChainLLM,
     PaLM.class_name(): PaLM,
     PredibaseLLM.class_name(): PredibaseLLM,
+    Bedrock.class_name(): Bedrock,
     CustomLLM.class_name(): CustomLLM,
     GradientBaseModelLLM.class_name(): GradientBaseModelLLM,
     GradientModelAdapterLLM.class_name(): GradientModelAdapterLLM,
+    Vertex.class_name(): Vertex,
 }
 
 

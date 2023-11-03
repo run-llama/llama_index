@@ -26,7 +26,7 @@ class LangchainNodeParser(TextNodeParser):
     ):
         """Initialize with parameters."""
         try:
-            from langchain.text_splitter import TextSplitter
+            from langchain.text_splitter import TextSplitter  # noqa
         except ImportError:
             raise ImportError(
                 "Could not run `from langchain.text_splitter import TextSplitter`, "
