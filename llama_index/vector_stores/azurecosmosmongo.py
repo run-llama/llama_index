@@ -84,12 +84,12 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         if mongodb_client is not None:
             self._mongodb_client = cast(pymongo.MongoClient, mongodb_client)
         else:
-            if "MONGO_URI" not in os.environ:
+            if "AZURE_COSMOSDB_MONGODB_URI" not in os.environ:
                 raise ValueError(
-                    "Must specify Azure cosmodb 'MONGO_URI' via env variable "
+                    "Must specify Azure cosmodb 'AZURE_COSMOSDB_MONGODB_URI' via env variable "
                     "if not directly passing in client."
                 )
-            self._mongodb_client = pymongo.MongoClient(os.environ["MONGO_URI"])
+            self._mongodb_client = pymongo.MongoClient(os.environ["AZURE_COSMOSDB_MONGODB_URI"])
 
         self._collection = self._mongodb_client[db_name][collection_name]
         self._index_name = index_name
