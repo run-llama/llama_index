@@ -184,8 +184,10 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         }
 
         if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for azure cosmosdb mongodb yet.")
-        
+            raise ValueError(
+                "Metadata filters not implemented for azure cosmosdb mongodb yet."
+            )
+
         query_field = {"$search": {"cosmosSearch": params, "returnStoredSource": True}}
 
         pipeline = [
