@@ -274,11 +274,11 @@ async def connect(self):
         self.index = await load_collection_model(self.collection_id)
         await self.accept()
 
-except ValueError as e:
-await self.accept()
-await self.close(code=4000)
-except Exception as e:
-pass
+    except ValueError as e:
+        await self.accept()
+        await self.close(code=4000)
+    except Exception as e:
+        pass
 ```
 
 #### Websocket disconnect listener
