@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Make pgvector's setup (extension, schema, and table creation) optional (#8656)
+
 ## [0.8.58] - 2023-11-02
 
 ### New Features
