@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document, ImageDocument
+from llama_index.utils import infer_torch_device
 
 
 class ImageReader(BaseReader):
@@ -28,9 +29,9 @@ class ImageReader(BaseReader):
         """Init parser."""
         if parser_config is None and parse_text:
             try:
-                import sentencepiece
-                import torch
-                from PIL import Image
+                import sentencepiece  # noqa
+                import torch  # noqa
+                from PIL import Image  # noqa
                 from transformers import DonutProcessor, VisionEncoderDecoderModel
             except ImportError:
                 raise ImportError(
@@ -72,13 +73,11 @@ class ImageReader(BaseReader):
         # Parse image into text
         text_str: str = ""
         if self._parse_text:
-            import torch
-
             assert self._parser_config is not None
             model = self._parser_config["model"]
             processor = self._parser_config["processor"]
 
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = infer_torch_device()
             model.to(device)
 
             # prepare decoder inputs

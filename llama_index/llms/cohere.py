@@ -200,7 +200,7 @@ class Cohere(LLM):
             **all_kwargs,
         )
 
-        def gen() -> ChatResponseGen:
+        def gen() -> CompletionResponseGen:
             content = ""
             for r in response:
                 content_delta = r.text

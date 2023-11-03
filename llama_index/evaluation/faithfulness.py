@@ -1,12 +1,13 @@
 """Faithfulness evaluation."""
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Sequence
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices import SummaryIndex
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
@@ -95,6 +96,20 @@ class FaithfulnessEvaluator(BaseEvaluator):
             self._refine_template = PromptTemplate(refine_template)
         else:
             self._refine_template = refine_template or DEFAULT_REFINE_TEMPLATE
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {
+            "eval_template": self._eval_template,
+            "refine_template": self._refine_template,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "eval_template" in prompts:
+            self._eval_template = prompts["eval_template"]
+        if "refine_template" in prompts:
+            self._refine_template = prompts["refine_template"]
 
     async def aevaluate(
         self,

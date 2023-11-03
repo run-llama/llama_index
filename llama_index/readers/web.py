@@ -36,7 +36,7 @@ class SimpleWebPageReader(BasePydanticReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            import html2text
+            import html2text  # noqa
         except ImportError:
             raise ImportError(
                 "`html2text` package not found, please run `pip install html2text`"
@@ -95,7 +95,7 @@ class TrafilaturaWebReader(BasePydanticReader):
             error_on_missing (bool): Throw an error when data cannot be parsed
         """
         try:
-            import trafilatura
+            import trafilatura  # noqa
         except ImportError:
             raise ImportError(
                 "`trafilatura` package not found, please run `pip install trafilatura`"
@@ -174,10 +174,10 @@ class BeautifulSoupWebReader(BasePydanticReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            from urllib.parse import urlparse
+            from urllib.parse import urlparse  # noqa
 
-            import requests
-            from bs4 import BeautifulSoup
+            import requests  # noqa
+            from bs4 import BeautifulSoup  # noqa
         except ImportError:
             raise ImportError(
                 "`bs4`, `requests`, and `urllib` must be installed to scrape websites."
@@ -253,7 +253,7 @@ class RssReader(BasePydanticReader):
 
         """
         try:
-            import feedparser
+            import feedparser  # noqa
         except ImportError:
             raise ImportError(
                 "`feedparser` package not found, please run `pip install feedparser`"
@@ -261,7 +261,7 @@ class RssReader(BasePydanticReader):
 
         if html_to_text:
             try:
-                import html2text
+                import html2text  # noqa
             except ImportError:
                 raise ImportError(
                     "`html2text` package not found, please run `pip install html2text`"

@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document, ImageDocument
+from llama_index.utils import infer_torch_device
 
 
 class ImageCaptionReader(BaseReader):
@@ -22,9 +23,9 @@ class ImageCaptionReader(BaseReader):
         if parser_config is None:
             """Init parser."""
             try:
-                import sentencepiece
+                import sentencepiece  # noqa
                 import torch
-                from PIL import Image
+                from PIL import Image  # noqa
                 from transformers import BlipForConditionalGeneration, BlipProcessor
             except ImportError:
                 raise ImportError(
@@ -33,7 +34,7 @@ class ImageCaptionReader(BaseReader):
                     "`pip install torch transformers sentencepiece Pillow`"
                 )
 
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = infer_torch_device()
             dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
             processor = BlipProcessor.from_pretrained(

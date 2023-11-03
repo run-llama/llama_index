@@ -1,8 +1,8 @@
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from langchain.base_language import BaseLanguageModel
 
-from llama_index.llms.base import LLM, ChatMessage
+from llama_index.llms.base import LLM
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.llama_utils import completion_to_prompt, messages_to_prompt
@@ -19,13 +19,13 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
         try:
             llm = OpenAI()
         except ValueError as e:
-            llm = "local"
-            print(
+            raise ValueError(
                 "******\n"
-                "Could not load OpenAI model. Using default LlamaCPP=llama2-13b-chat. "
+                "Could not load OpenAI model. "
                 "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
                 "Original error:\n"
                 f"{e!s}"
+                "\nTo disable the LLM entirely, set llm=None."
                 "\n******"
             )
 

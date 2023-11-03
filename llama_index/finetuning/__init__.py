@@ -8,6 +8,7 @@ from llama_index.finetuning.embeddings.common import (
 from llama_index.finetuning.embeddings.sentence_transformer import (
     SentenceTransformersFinetuneEngine,
 )
+from llama_index.finetuning.gradient.base import GradientFinetuneEngine
 from llama_index.finetuning.openai.base import OpenAIFinetuneEngine
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "EmbeddingQAFinetuneDataset",
     "SentenceTransformersFinetuneEngine",
     "EmbeddingAdapterFinetuneEngine",
+    "GradientFinetuneEngine",
 ]

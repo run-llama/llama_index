@@ -198,5 +198,5 @@ class SQLDatabase:
                 ) from exc
             if cursor.returns_rows:
                 result = cursor.fetchall()
-                return str(result), {"result": result}
+                return str(result), {"result": result, "col_keys": list(cursor.keys())}
         return "", {}

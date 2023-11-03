@@ -4,13 +4,14 @@ Active Retrieval Augmented Generation.
 
 """
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.query_engine.flare.answer_inserter import (
     BaseLookaheadAnswerInserter,
     LLMLookaheadAnswerInserter,
@@ -145,6 +146,24 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         self._max_iterations = max_iterations
         self._max_lookahead_query_tasks = max_lookahead_query_tasks
         self._verbose = verbose
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {
+            "instruct_prompt": self._instruct_prompt,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "instruct_prompt" in prompts:
+            self._instruct_prompt = prompts["instruct_prompt"]
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {
+            "query_engine": self._query_engine,
+            "lookahead_answer_inserter": self._lookahead_answer_inserter,
+        }
 
     def _get_relevant_lookahead_response(self, updated_lookahead_resp: str) -> str:
         """Get relevant lookahead response."""

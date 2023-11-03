@@ -192,3 +192,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         return await super().achat(
             formatted_message, chat_history=chat_history, function_call=function_call
         )
+
+    def get_tools(self, message: str) -> List[BaseTool]:
+        """Get tools."""
+        return self._get_tools(message)

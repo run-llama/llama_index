@@ -34,7 +34,7 @@ class TimescaleVectorStore(VectorStore):
         time_partition_interval: Optional[timedelta] = None,
     ) -> None:
         try:
-            from timescale_vector import client
+            from timescale_vector import client  # noqa
         except ImportError:
             raise ImportError("`timescale-vector` package should be pre installed")
 
