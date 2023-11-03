@@ -65,3 +65,12 @@ maxdepth: 1
 /examples/prompts/advanced_prompts.ipynb
 /examples/prompts/prompts_rag.ipynb
 ```
+
+Experimental
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/prompts/prompt_optimization.ipynb
+```
