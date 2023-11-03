@@ -115,7 +115,7 @@ class MultiModalLLM(BaseComponent):
         image_documents: Sequence[ImageDocument],
         image_idx: int,
         **kwargs: Any
-    ) -> MultiModalCompletionResponse:
+    ) -> MultiModalCompletionResponseGen:
         """Streaming completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
