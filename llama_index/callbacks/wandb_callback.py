@@ -23,6 +23,7 @@ from llama_index.callbacks.schema import (
     EventPayload,
 )
 from llama_index.callbacks.token_counting import get_llm_token_counts
+from llama_index.utilities.token_counting import TokenCounter
 from llama_index.utils import get_tokenizer
 
 if TYPE_CHECKING:
@@ -161,6 +162,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
         self.tokenizer = tokenizer or get_tokenizer()
+        self._token_counter = TokenCounter(tokenizer=self.tokenizer)
+
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -463,7 +466,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 [str(x) for x in inputs[EventPayload.MESSAGES]]
             )
 
-        token_counts = get_llm_token_counts(self.tokenizer, outputs)
+        token_counts = get_llm_token_counts(self._token_counter, outputs)
         metadata = {
             "formatted_prompt_tokens_count": token_counts.prompt_token_count,
             "prediction_tokens_count": token_counts.completion_token_count,

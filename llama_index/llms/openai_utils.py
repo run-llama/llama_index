@@ -21,7 +21,7 @@ DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
 
 
-GPT4_MODELS = {
+GPT4_MODELS: Dict[str, int] = {
     # stable model names:
     #   resolves to gpt-4-0314 before 2023-06-27,
     #   resolves to gpt-4-0613 after
@@ -36,12 +36,12 @@ GPT4_MODELS = {
     "gpt-4-32k-0314": 32768,
 }
 
-AZURE_TURBO_MODELS = {
+AZURE_TURBO_MODELS: Dict[str, int] = {
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
 }
 
-TURBO_MODELS = {
+TURBO_MODELS: Dict[str, int] = {
     # stable model names:
     #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
     #   resolves to gpt-3.5-turbo-0613 after
@@ -56,14 +56,14 @@ TURBO_MODELS = {
     "gpt-3.5-turbo-0301": 4096,
 }
 
-GPT3_5_MODELS = {
+GPT3_5_MODELS: Dict[str, int] = {
     "text-davinci-003": 4097,
     "text-davinci-002": 4097,
     # instruct models
     "gpt-3.5-turbo-instruct": 4096,
 }
 
-GPT3_MODELS = {
+GPT3_MODELS: Dict[str, int] = {
     "text-ada-001": 2049,
     "text-babbage-001": 2040,
     "text-curie-001": 2049,

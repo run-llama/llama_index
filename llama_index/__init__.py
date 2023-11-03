@@ -255,6 +255,4 @@ SQLContextBuilder = SQLDocumentContextBuilder
 global_service_context: Optional[ServiceContext] = None
 
 # global tokenizer
-from llama_index.utils import Tokenizer
-
-global_tokenizer: Optional[Tokenizer] = None
+global_tokenizer: Optional[Callable[[str], list]] = None

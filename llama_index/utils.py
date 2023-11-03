@@ -25,6 +25,7 @@ from typing import (
     Type,
     Union,
     cast,
+    runtime_checkable,
 )
 
 
@@ -88,15 +89,19 @@ globals_helper = GlobalsHelper()
 
 
 # Global Tokenizer
+@runtime_checkable
 class Tokenizer(Protocol):
     def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]:
         ...
 
 
-def set_global_tokenizer(tokenizer: Tokenizer) -> None:
+def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> None:
     import llama_index
 
-    llama_index.global_tokenizer = tokenizer
+    if isinstance(tokenizer, Tokenizer):
+        llama_index.global_tokenizer = tokenizer.encode
+    else:
+        llama_index.global_tokenizer = tokenizer
 
 
 def get_tokenizer() -> Callable[[str], List]:
@@ -111,10 +116,11 @@ def get_tokenizer() -> Callable[[str], List]:
         except ImportError:
             raise ImportError(tiktoken_import_err)
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
-        enc.encode = partial(enc.encode, allowed_special="all")
-        llama_index.global_tokenizer = enc
+        tokenizer = partial(enc.encode, allowed_special="all")
+        set_global_tokenizer(tokenizer)
 
-    return llama_index.global_tokenizer.encode
+    assert llama_index.global_tokenizer is not None
+    return llama_index.global_tokenizer
 
 
 def get_new_id(d: Set) -> str:
@@ -264,9 +270,8 @@ def get_tqdm_iterable(items: Iterable, show_progress: bool, desc: str) -> Iterab
 
 
 def count_tokens(text: str) -> int:
-    from llama_index import global_tokenizer
-
-    tokens = global_tokenizer(text)
+    tokenizer = get_tokenizer()
+    tokens = tokenizer(text)
     return len(tokens)
 
 

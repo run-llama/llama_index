@@ -1,10 +1,10 @@
 # Modified from:
 # https://github.com/nyno-ai/openai-token-counter
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from llama_index.llms import ChatMessage, MessageRole
-from llama_index.utils import Tokenizer, get_tokenizer
+from llama_index.utils import get_tokenizer
 
 
 class TokenCounter:
@@ -14,7 +14,7 @@ class TokenCounter:
         model (Optional[str]): The model to use for token counting.
     """
 
-    def __init__(self, tokenizer: Optional[Tokenizer] = None) -> None:
+    def __init__(self, tokenizer: Optional[Callable[[str], list]] = None) -> None:
         self.tokenizer = tokenizer or get_tokenizer()
 
     def get_string_tokens(self, string: str) -> int:
