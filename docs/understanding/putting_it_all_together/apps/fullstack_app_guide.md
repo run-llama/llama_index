@@ -123,7 +123,6 @@ def initialize_index():
 
   with lock:
     # same as before ...
-  ...
 
 def query_index(query_text):
   global index
