@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Make pgvector's setup (extension, schema, and table creation) optional (#8656)
+
 ## [0.8.59] - 2023-11-02
 
 - Deepmemory support (#8625)
