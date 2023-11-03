@@ -26,7 +26,11 @@ if has_google:
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
-def test_from_corpus() -> None:
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
+def test_from_corpus(mock_get_corpus: MagicMock) -> None:
+    # Arrange
+    mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
+
     # Act
     store = GoogleIndex.from_corpus(corpus_id="123")
 
@@ -105,10 +109,14 @@ def test_from_documents(
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.query_corpus")
 @patch("google.ai.generativelanguage.TextServiceClient.generate_text_answer")
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
 def test_as_query_engine(
-    mock_generate_text_answer: MagicMock, mock_query_corpus: MagicMock
+    mock_get_corpus: MagicMock,
+    mock_generate_text_answer: MagicMock,
+    mock_query_corpus: MagicMock,
 ) -> None:
     # Arrange
+    mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
     mock_query_corpus.return_value = genai.QueryCorpusResponse(
         relevant_chunks=[
             genai.RelevantChunk(
