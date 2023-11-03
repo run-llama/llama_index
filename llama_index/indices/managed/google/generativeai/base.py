@@ -1,12 +1,12 @@
 """Google GenerativeAI Semantic Vector Store & Attributed Question and Answering.
 
-The GenAI Semantic Retriever API is a managed end to end service that allows
-developers to create a corpus of documents to perform semantic search on
+Google Generative AI Semantic Retriever API is a managed end to end service that
+allows developers to create a corpus of documents to perform semantic search on
 related passages given a user query.
 
-The GenAI Semantic AQA API is a managed end to end service that allows
-developers to create responses grounded on specified passages based on
-a user query.
+Google Generative AI Attributed Question and Answering API is a managed
+end-to-end service that allows developers to create responses grounded on
+specified passages based on user queries.
 
 For more information visit:
 https://developers.generativeai.google/guide
@@ -151,11 +151,11 @@ class GoogleIndex(BaseManagedIndex):
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
-        """Deletes a document and it's nodes by using ref_doc_id."""
+        """Deletes a document and its nodes by using ref_doc_id."""
         self._index.delete_ref_doc(ref_doc_id=ref_doc_id)
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
-        """Updates a document and it's corresponding nodes."""
+        """Updates a document and its corresponding nodes."""
         self._index.update(document=document)
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
