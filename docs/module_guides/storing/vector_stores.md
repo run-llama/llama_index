@@ -86,4 +86,5 @@ maxdepth: 1
 /examples/vector_stores/SingleStoreDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo.ipynb
 /examples/vector_stores/TencentVectorDBIndexDemo.ipynb
+/examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
 ```
