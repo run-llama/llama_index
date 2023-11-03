@@ -24,7 +24,7 @@ class ImageReader(BaseReader):
         self,
         parser_config: Optional[Dict] = None,
         keep_image: bool = False,
-        parse_text: bool = True,
+        parse_text: bool = False,
     ):
         """Init parser."""
         if parser_config is None and parse_text:

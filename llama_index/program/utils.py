@@ -78,5 +78,16 @@ def get_program_for_llm(
             prompt=prompt,
             **kwargs,
         )
+    elif pydantic_program_mode == PydanticProgramMode.LM_FORMAT_ENFORCER:
+        from llama_index.program.lmformatenforcer_program import (
+            LMFormatEnforcerPydanticProgram,
+        )
+
+        return LMFormatEnforcerPydanticProgram.from_defaults(
+            output_cls=output_cls,
+            llm=llm,
+            prompt=prompt,
+            **kwargs,
+        )
     else:
         raise ValueError(f"Unsupported pydantic program mode: {pydantic_program_mode}")

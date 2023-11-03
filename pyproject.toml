@@ -38,7 +38,7 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.8.56"
+version = "0.8.59"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -64,6 +64,7 @@ optimum = {extras = ["onnxruntime"], optional = true, version = "^1.13.2"}
 sentencepiece = {optional = true, version = "^0.1.99"}
 transformers = {extras = ["torch"], optional = true, version = "^4.34.0"}
 guidance = {optional = true, version = "^0.0.64"}
+lm-format-enforcer = {optional = true, version = "^0.4.3"}
 jsonpath-ng = {optional = true, version = "^1.6.0"}
 rank-bm25 = {optional = true, version = "^0.2.2"}
 scikit-learn = {optional = true, version = "<1.3.0"}
@@ -84,6 +85,7 @@ postgres = [
 query_tools = [
     "guidance",
     "jsonpath-ng",
+    "lm-format-enforcer",
     "rank-bm25",
     "scikit-learn",
     "spacy",

@@ -659,7 +659,7 @@ class PydanticProgramExtractor(MetadataFeatureExtractor):
         default="input",
         description=(
             "Key to use as input to the program (the program "
-            "template string must expose this key).",
+            "template string must expose this key)."
         ),
     )
     extract_template_str: str = Field(
