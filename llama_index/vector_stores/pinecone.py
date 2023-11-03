@@ -174,8 +174,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
             tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
 
-        self.remove_text_from_metadata = remove_text_from_metadata
-
         super().__init__(
             index_name=index_name,
             environment=environment,
@@ -246,7 +244,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
             node_id = node.node_id
 
             metadata = node_to_metadata_dict(
-                node, remove_text=self.remove_text_from_metadata, flat_metadata=self.flat_metadata
+                node,
+                remove_text=self.remove_text_from_metadata,
+                flat_metadata=self.flat_metadata,
             )
 
             entry = {
