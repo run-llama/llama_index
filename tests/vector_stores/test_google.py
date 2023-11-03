@@ -53,7 +53,11 @@ def test_create_corpus(mock_create_corpus: MagicMock) -> None:
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
-def test_from_corpus() -> None:
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
+def test_from_corpus(mock_get_corpus: MagicMock) -> None:
+    # Arrange
+    mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
+
     # Act
     store = GoogleVectorStore.from_corpus(corpus_id="123")
 
@@ -73,8 +77,14 @@ def test_class_name() -> None:
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_chunk")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_document")
-def test_add(mock_create_document: MagicMock, mock_create_chunk: MagicMock) -> None:
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
+def test_add(
+    mock_get_corpus: MagicMock,
+    mock_create_document: MagicMock,
+    mock_create_chunk: MagicMock,
+) -> None:
     # Arrange
+    mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
     mock_create_document.return_value = genai.Document(
         name="corpora/123/documents/doc-456"
     )
@@ -159,7 +169,11 @@ def test_add(mock_create_document: MagicMock, mock_create_chunk: MagicMock) -> N
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.delete_document")
-def test_delete(mock_delete_document: MagicMock) -> None:
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
+def test_delete(mock_get_corpus: MagicMock, mock_delete_document: MagicMock) -> None:
+    # Arrange
+    mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
+
     # Act
     store = GoogleVectorStore.from_corpus(corpus_id="123")
     store.delete(ref_doc_id="doc-456")
@@ -174,8 +188,10 @@ def test_delete(mock_delete_document: MagicMock) -> None:
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.query_corpus")
-def test_query(mock_query_corpus: MagicMock) -> None:
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
+def test_query(mock_get_corpus: MagicMock, mock_query_corpus: MagicMock) -> None:
     # Arrange
+    mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
     mock_query_corpus.return_value = genai.QueryCorpusResponse(
         relevant_chunks=[
             genai.RelevantChunk(

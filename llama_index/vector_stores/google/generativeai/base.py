@@ -39,12 +39,15 @@ See the docstring for `GoogleVectorStore` for usage example.
 """
 
 
+class NoSuchCorpusException(Exception):
+    def __init__(self, *, corpus_id: str) -> None:
+        super().__init__(f"No such corpus {corpus_id} found")
+
+
 class GoogleVectorStore(BasePydanticVectorStore):
     """Google GenerativeAI Vector Store.
 
     Currently, it computes the embedding vectors on the server side.
-    However, in the near future, a series of embedding models will be
-    released for various applications such as medical, legal, etc.
 
     Example:
         google_vector_store = GoogleVectorStore.from_corpus(
@@ -97,6 +100,9 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
         Returns:
             An instance of the vector store that points to the specified corpus.
+
+        Raises:
+            NoSuchCorpusException if no such corpus is found.
         """
         try:
             import llama_index.vector_stores.google.generativeai.genai_extension as genaix
@@ -104,6 +110,8 @@ class GoogleVectorStore(BasePydanticVectorStore):
             raise ImportError(_import_err_msg)
 
         _logger.debug(f"\n\nGoogleVectorStore.from_corpus(corpus_id={corpus_id})")
+        if genaix.get_corpus(corpus_id=corpus_id) is None:
+            raise NoSuchCorpusException(corpus_id=corpus_id)
 
         return cls(corpus_id=corpus_id, client=genaix.build_semantic_retriever())
 
