@@ -25,14 +25,6 @@ from llama_index.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
-    """Convert from standard dataclass to filter dict."""
-    filters = {}
-    for filter in standard_filters.filters:
-        filters[filter.key] = filter.value
-    return filters
-
-
 class AzureCosmosDBMongoDBVectorSearch(VectorStore):
     """Azure CosmosDB MongoDB vCore Vector Store.
 
@@ -190,9 +182,10 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
             "path": self._embedding_key,
             "k": query.similarity_top_k * 10,
         }
-        if query.filters:
-            params["filter"] = _to_mongodb_filter(query.filters)
 
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for azure cosmosdb mongodb yet.")
+        
         query_field = {"$search": {"cosmosSearch": params, "returnStoredSource": True}}
 
         pipeline = [
