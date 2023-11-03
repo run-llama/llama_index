@@ -7,10 +7,8 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.node_parser.interface import MetadataAwareTextNodeParser
-from llama_index.node_parser.node_utils import build_nodes_from_splits
 from llama_index.node_parser.text.utils import split_by_char, split_by_sep
-from llama_index.schema import BaseNode, MetadataMode
-from llama_index.utils import globals_helper
+from llama_index.utils import get_tokenizer
 
 _logger = logging.getLogger(__name__)
 
@@ -39,7 +37,6 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
     )
 
     _tokenizer: Callable = PrivateAttr()
-
     _split_fns: List[Callable] = PrivateAttr()
 
     def __init__(
@@ -60,7 +57,8 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
                 f"({chunk_size}), should be smaller."
             )
         callback_manager = callback_manager or CallbackManager([])
-        self._tokenizer = tokenizer or globals_helper.tokenizer
+
+        self._tokenizer = tokenizer or get_tokenizer()
 
         all_seps = [separator] + (backup_separators or [])
         self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]

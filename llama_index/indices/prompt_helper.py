@@ -9,18 +9,24 @@ needed), or truncating them so that they fit in a single LLM call.
 """
 
 import logging
+from copy import deepcopy
+from string import Formatter
 from typing import Callable, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import LLMMetadata
-from llama_index.llms.openai_utils import is_chat_model
+from llama_index.llms.base import LLM, ChatMessage
 from llama_index.node_parser.text.token import TokenAwareNodeParser
 from llama_index.node_parser.text.utils import truncate_text
-from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts import (
+    BasePromptTemplate,
+    ChatPromptTemplate,
+    SelectorPromptTemplate,
+)
 from llama_index.prompts.prompt_utils import get_empty_prompt_txt
 from llama_index.schema import BaseComponent
-from llama_index.utils import globals_helper
+from llama_index.utilities.token_counting import TokenCounter
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
@@ -68,7 +74,7 @@ class PromptHelper(BaseComponent):
         default=" ", description="The separator when chunking tokens."
     )
 
-    _tokenizer: Callable[[str], List] = PrivateAttr()
+    _token_counter: TokenCounter = PrivateAttr()
 
     def __init__(
         self,
@@ -84,7 +90,7 @@ class PromptHelper(BaseComponent):
             raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
 
         # TODO: make configurable
-        self._tokenizer = tokenizer or globals_helper.tokenizer
+        self._token_counter = TokenCounter(tokenizer=tokenizer)
 
         super().__init__(
             context_window=context_window,
@@ -114,11 +120,6 @@ class PromptHelper(BaseComponent):
         else:
             num_output = llm_metadata.num_output
 
-        # TODO: account for token counting in chat models
-        model_name = llm_metadata.model_name
-        if is_chat_model(model_name):
-            context_window -= 150
-
         return cls(
             context_window=context_window,
             num_output=num_output,
@@ -132,7 +133,7 @@ class PromptHelper(BaseComponent):
     def class_name(cls) -> str:
         return "PromptHelper"
 
-    def _get_available_context_size(self, prompt: BasePromptTemplate) -> int:
+    def _get_available_context_size(self, num_prompt_tokens: int) -> int:
         """Get available context size.
 
         This is calculated as:
@@ -143,11 +144,7 @@ class PromptHelper(BaseComponent):
         Notes:
         - Available context size is further clamped to be non-negative.
         """
-        empty_prompt_txt = get_empty_prompt_txt(prompt)
-        num_empty_prompt_tokens = len(self._tokenizer(empty_prompt_txt))
-        context_size_tokens = (
-            self.context_window - num_empty_prompt_tokens - self.num_output
-        )
+        context_size_tokens = self.context_window - num_prompt_tokens - self.num_output
         if context_size_tokens < 0:
             raise ValueError(
                 f"Calculated available context size {context_size_tokens} was"
@@ -156,7 +153,11 @@ class PromptHelper(BaseComponent):
         return context_size_tokens
 
     def _get_available_chunk_size(
-        self, prompt: BasePromptTemplate, num_chunks: int = 1, padding: int = 5
+        self,
+        prompt: BasePromptTemplate,
+        num_chunks: int = 1,
+        padding: int = 5,
+        llm: Optional[LLM] = None,
     ) -> int:
         """Get available chunk size.
 
@@ -168,7 +169,47 @@ class PromptHelper(BaseComponent):
         - By default, we use padding of 5 (to save space for formatting needs).
         - Available chunk size is further clamped to chunk_size_limit if specified.
         """
-        available_context_size = self._get_available_context_size(prompt)
+        if isinstance(prompt, SelectorPromptTemplate):
+            prompt = prompt.select(llm=llm)
+
+        if isinstance(prompt, ChatPromptTemplate):
+            messages: List[ChatMessage] = prompt.message_templates
+
+            # account for partial formatting
+            partial_messages = []
+            for message in messages:
+                partial_message = deepcopy(message)
+
+                # get string variables (if any)
+                template_vars = [
+                    var
+                    for _, var, _, _ in Formatter().parse(str(message))
+                    if var is not None
+                ]
+
+                # figure out which variables are partially formatted
+                used_vars = {}
+                for var_name, val in prompt.kwargs.items():
+                    if var_name in template_vars:
+                        used_vars[var_name] = val
+
+                # format partial message
+                if len(used_vars) > 0 and partial_message.content is not None:
+                    partial_message.content = partial_message.content.format(
+                        **used_vars
+                    )
+
+                # add to list of partial messages
+                partial_messages.append(partial_message)
+
+            num_prompt_tokens = self._token_counter.estimate_tokens_in_messages(
+                partial_messages
+            )
+        else:
+            prompt_str = get_empty_prompt_txt(prompt)
+            num_prompt_tokens = self._token_counter.get_string_tokens(prompt_str)
+
+        available_context_size = self._get_available_context_size(num_prompt_tokens)
         result = available_context_size // num_chunks - padding
         if self.chunk_size_limit is not None:
             result = min(result, self.chunk_size_limit)
@@ -179,11 +220,14 @@ class PromptHelper(BaseComponent):
         prompt: BasePromptTemplate,
         num_chunks: int = 1,
         padding: int = DEFAULT_PADDING,
+        llm: Optional[LLM] = None,
     ) -> TokenAwareNodeParser:
         """Get text splitter configured to maximally pack available context window,
         taking into account of given prompt, and desired number of chunks.
         """
-        chunk_size = self._get_available_chunk_size(prompt, num_chunks, padding=padding)
+        chunk_size = self._get_available_chunk_size(
+            prompt, num_chunks, padding=padding, llm=llm
+        )
         if chunk_size <= 0:
             raise ValueError(f"Chunk size {chunk_size} is not positive.")
         chunk_overlap = int(self.chunk_overlap_ratio * chunk_size)
@@ -191,7 +235,7 @@ class PromptHelper(BaseComponent):
             separator=self.separator,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
-            tokenizer=self._tokenizer,
+            tokenizer=self._token_counter.tokenizer,
         )
 
     def truncate(
@@ -199,12 +243,14 @@ class PromptHelper(BaseComponent):
         prompt: BasePromptTemplate,
         text_chunks: Sequence[str],
         padding: int = DEFAULT_PADDING,
+        llm: Optional[LLM] = None,
     ) -> List[str]:
         """Truncate text chunks to fit available context window."""
         text_splitter = self.get_text_splitter_given_prompt(
             prompt,
             num_chunks=len(text_chunks),
             padding=padding,
+            llm=llm,
         )
         return [truncate_text(chunk, text_splitter) for chunk in text_chunks]
 
@@ -213,6 +259,7 @@ class PromptHelper(BaseComponent):
         prompt: BasePromptTemplate,
         text_chunks: Sequence[str],
         padding: int = DEFAULT_PADDING,
+        llm: Optional[LLM] = None,
     ) -> List[str]:
         """Repack text chunks to fit available context window.
 
@@ -220,6 +267,8 @@ class PromptHelper(BaseComponent):
         that more fully "pack" the prompt template given the context_window.
 
         """
-        text_splitter = self.get_text_splitter_given_prompt(prompt, padding=padding)
+        text_splitter = self.get_text_splitter_given_prompt(
+            prompt, padding=padding, llm=llm
+        )
         combined_str = "\n\n".join([c.strip() for c in text_chunks if c.strip()])
         return text_splitter.split_text(combined_str)
