@@ -14,6 +14,7 @@ from llama_index.tools.function_tool import FunctionTool
 # Use a tool spec from Llama-Hub
 tool_spec = GmailToolSpec()
 
+
 # Create a custom tool. Type annotations and docstring are used for the
 # tool definition sent to the Function calling API.
 def add_numbers(x: int, y: int) -> int:

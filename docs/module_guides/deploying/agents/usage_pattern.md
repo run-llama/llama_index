@@ -10,6 +10,7 @@ from llama_index.tools import FunctionTool
 from llama_index.llms import OpenAI
 from llama_index.agent import ReActAgent
 
+
 # define sample Tool
 def multiply(a: int, b: int) -> int:
     """Multiple two integers and returns the result integer"""

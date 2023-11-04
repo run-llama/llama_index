@@ -33,6 +33,7 @@ loader = SimpleWebPageReader(html_to_text=True)
 url = "http://www.paulgraham.com/worked.html"
 documents = loader.load_data(urls=[url])
 
+
 # Convert LlamaIndex Documents to JSON format
 def dump_docs_to_json(documents: List[Document], out_path: str) -> Dict:
     """Convert LlamaIndex Documents to JSON format and save it."""

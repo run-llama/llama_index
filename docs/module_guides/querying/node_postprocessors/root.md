@@ -113,7 +113,6 @@ class DummyNodePostprocessor:
     def postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:
-
         # subtracts 1 from the score
         for n in nodes:
             n.score -= 1
