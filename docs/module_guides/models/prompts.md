@@ -73,4 +73,5 @@ Experimental
 maxdepth: 1
 ---
 /examples/prompts/prompt_optimization.ipynb
+/examples/prompts/emotion_prompt.ipynb
 ```
