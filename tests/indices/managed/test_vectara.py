@@ -28,6 +28,10 @@ def get_docs() -> Tuple[List[Document], List[str]]:
             "text": "when 900 year you will be, look as good you will not",
             "metadata": {"test_num": "3"},
         },
+        {
+            "text": "when 850 year you will be, look as good you will not",
+            "metadata": {"test_num": "4"},
+        },
     ]
     docs: List[Document] = []
     ids = []
@@ -57,7 +61,47 @@ def test_simple_query() -> None:
     qe = index.as_retriever(similarity_top_k=1)
     res = qe.retrieve("how will I look?")
     assert len(res) == 1
-    assert res[0].node.text == docs[2].text
+    assert res[0].node.text == docs[3].text
+
+    remove_docs(index, ids)
+
+
+def test_mmr_query() -> None:
+    docs, ids = get_docs()
+    try:
+        index = VectaraIndex.from_documents(docs)
+    except ValueError:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
+    assert isinstance(index, VectaraIndex)
+
+    # test with diversity bias = 0
+    qe = index.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        vectara_query_mode="mmr",
+        mmr_k=10,
+        mmr_diversity_bias=0.0,
+    )
+    res = qe.retrieve("how will I look?")
+    assert len(res) == 2
+    assert res[0].node.text == docs[3].text
+    assert res[1].node.text == docs[2].text
+
+    # test with diversity bias = 1
+    qe = index.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        vectara_query_mode="mmr",
+        mmr_k=10,
+        mmr_diversity_bias=1.0,
+    )
+    res = qe.retrieve("how will I look?")
+    assert len(res) == 2
+    assert res[0].node.text == docs[3].text
+    assert res[1].node.text == docs[0].text
 
     remove_docs(index, ids)
 

@@ -4,10 +4,11 @@ An index that that is built on top of Vectara
 
 import json
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.managed.types import ManagedIndexQueryMode
 from llama_index.indices.managed.vectara.base import VectaraIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import NodeWithScore, TextNode
@@ -21,6 +22,8 @@ class VectaraRetriever(BaseRetriever):
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return.
+        vectara_query_mode (str): vector store query mode
+            See reference for vectara_query_mode for full list of supported modes.
         lambda_val (float): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
@@ -30,25 +33,24 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_after (int):
              number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
-        mmr: if True, use maximal marginal relevance to select the results
-        mmr_k: number of results to fetch for MMR, defaults to 50
-        mmr_diversity_bias: number between 0 and 1 that determines the degree
-            of diversity among the results with 0 corresponding
-            to minimum diversity and 1 to maximum diversity.
-            Defaults to 0.3.
+        vectara_kwargs (dict): Additional vectara specific kwargs to pass
+            through to Vectara at query time.
+            * mmr_k: number of results to fetch for MMR, defaults to 50
+            * mmr_diversity_bias: number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to minimum diversity and 1 to maximum diversity.
+                Defaults to 0.3.
     """
 
     def __init__(
         self,
         index: VectaraIndex,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        vectara_query_mode: ManagedIndexQueryMode = ManagedIndexQueryMode.DEFAULT,
         lambda_val: float = 0.025,
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
         filter: str = "",
-        mmr: bool = False,
-        mmr_k: int = 50,
-        mmr_diversity_bias: float = 0.3,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -58,9 +60,14 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
-        self._mmr = mmr
-        self._mmr_k = mmr_k
-        self._mmr_diversity_bias = mmr_diversity_bias
+        self._kwargs: Dict[str, Any] = kwargs.get("vectara_kwargs", {})
+
+        if vectara_query_mode == ManagedIndexQueryMode.MMR:
+            self._mmr = True
+            self._mmr_k = kwargs.get("mmr_k", 50)
+            self._mmr_diversity_bias = kwargs.get("mmr_diversity_bias", 0.3)
+        else:
+            self._mmr = False
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
@@ -70,6 +77,16 @@ class VectaraRetriever(BaseRetriever):
             "Content-Type": "application/json",
             "X-Source": "llama_index",
         }
+
+    @property
+    def similarity_top_k(self) -> int:
+        """Return similarity top k."""
+        return self._similarity_top_k
+
+    @similarity_top_k.setter
+    def similarity_top_k(self, similarity_top_k: int) -> None:
+        """Set similarity top k."""
+        self._similarity_top_k = similarity_top_k
 
     def _retrieve(
         self,
